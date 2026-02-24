@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { useAgent, useAgentListings, useAgentStats } from '@/hooks/useAgent';
+import { useExtractedColor } from '@/hooks/useExtractedColor';
 import { useAuthorBlogPosts } from '@/hooks/useBlog';
 import { useSavedArticles } from '@/hooks/useSavedArticles';
 import { Card, CardContent } from '@/components/ui/card';
@@ -42,6 +43,8 @@ export default function AgentDetail() {
   const [category, setCategory] = useState<'buy' | 'rent'>('buy');
   
   const { data: agent, isLoading: agentLoading } = useAgent(id || '');
+  const agencyLogoUrl = agent?.agency?.logo_url ?? null;
+  const accentColor = useExtractedColor(agencyLogoUrl);
   const { data: activeListings, isLoading: activeLoading } = useAgentListings(id || '', 'active', category);
   const { data: pastListings, isLoading: pastLoading } = useAgentListings(id || '', 'past', category);
   const { data: stats } = useAgentStats(id || '', category);
@@ -164,7 +167,13 @@ export default function AgentDetail() {
         />
 
         {/* Hero Section */}
-        <Card className="overflow-hidden">
+        <Card 
+          className="overflow-hidden"
+          style={accentColor ? {
+            borderTop: `3px solid ${accentColor}`,
+            background: `linear-gradient(160deg, ${accentColor}12, ${accentColor}05 40%, transparent 70%)`,
+          } : undefined}
+        >
           <CardContent className="p-6 md:p-8">
             <div className="flex flex-col md:flex-row gap-6">
               <Avatar className="h-24 w-24 md:h-28 md:w-28 ring-2 ring-border">
@@ -233,12 +242,21 @@ export default function AgentDetail() {
 
               <div className="flex flex-col gap-2 md:min-w-[160px]">
                 {agent.phone && whatsappUrl && (
-                  <Button className="gap-2" onClick={handleWhatsAppClick}>
+                  <Button 
+                    className="gap-2" 
+                    onClick={handleWhatsAppClick}
+                    style={accentColor ? { backgroundColor: accentColor, borderColor: accentColor } : undefined}
+                  >
                     <MessageCircle className="h-4 w-4" />
                     WhatsApp
                   </Button>
                 )}
-                <Button variant="outline" className="gap-1.5" onClick={handleEmail}>
+                <Button 
+                  variant="outline" 
+                  className="gap-1.5" 
+                  onClick={handleEmail}
+                  style={accentColor ? { borderColor: `${accentColor}40`, color: accentColor } : undefined}
+                >
                   <Mail className="h-4 w-4" />
                   Email
                 </Button>

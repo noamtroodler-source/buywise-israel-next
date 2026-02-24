@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAgencies } from '@/hooks/useAgency';
 import { Layout } from '@/components/layout/Layout';
+import { useExtractedColor } from '@/hooks/useExtractedColor';
 
 export default function Agencies() {
   const { data: agencies, isLoading } = useAgencies();
@@ -69,10 +70,14 @@ interface AgencyCardProps {
 
 function AgencyCard({ agency }: AgencyCardProps) {
   const [logoError, setLogoError] = useState(false);
+  const accentColor = useExtractedColor(agency.logo_url);
   
   return (
     <Link to={`/agencies/${agency.slug}`}>
-      <Card className="h-full hover:shadow-lg transition-shadow group">
+      <Card 
+        className="h-full hover:shadow-lg transition-shadow group"
+        style={accentColor ? { borderLeft: `3px solid ${accentColor}` } : undefined}
+      >
         <CardContent className="p-6 space-y-4">
           {/* Logo & Name */}
           <div className="flex items-start gap-4">
