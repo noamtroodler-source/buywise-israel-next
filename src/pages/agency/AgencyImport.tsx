@@ -12,7 +12,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { useMyAgency } from '@/hooks/useAgencyManagement';
+import { useMyAgency, useAgencyStats } from '@/hooks/useAgencyManagement';
+import { InfoBanner } from '@/components/tools/shared/InfoBanner';
 import {
   useImportJobs,
   useImportJobItems,
@@ -42,6 +43,7 @@ function normalizeUrl(raw: string): string {
 
 export default function AgencyImport() {
   const { data: agency, isLoading: agencyLoading } = useMyAgency();
+  const { data: stats } = useAgencyStats(agency?.id);
   const { data: jobs = [], isLoading: jobsLoading } = useImportJobs(agency?.id);
   const discoverMutation = useDiscoverListings();
   const processBatchMutation = useProcessBatch();
@@ -131,6 +133,18 @@ export default function AgencyImport() {
               <p className="text-muted-foreground">Import property listings from your website automatically</p>
             </div>
           </div>
+
+          {/* Nudge for agencies that already have listings */}
+          {(stats?.activeListings || 0) > 0 && (
+            <InfoBanner variant="tip">
+              You already have {stats?.activeListings} listing{(stats?.activeListings || 0) !== 1 ? 's' : ''}. 
+              This tool is designed for first-time bulk imports. For new individual listings, the{' '}
+              <Link to="/agency/listings/new" className="font-medium text-primary hover:underline">
+                Add Listing
+              </Link>{' '}
+              wizard gives you more control and better accuracy.
+            </InfoBanner>
+          )}
 
           {/* Resale & Rental only notice */}
           <div className="flex items-start gap-3 p-4 rounded-xl bg-primary/5 border border-primary/10">

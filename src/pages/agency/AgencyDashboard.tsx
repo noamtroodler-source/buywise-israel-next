@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { 
   Building2, Users, Home, Eye, Plus, Copy, Check, Loader2, 
   UserPlus, Settings, ExternalLink, ArrowLeft, BadgeCheck, Clock, Hash,
-  FileText, Megaphone, Mail, PenLine, CreditCard, Star, Download
+  FileText, Megaphone, Mail, PenLine, CreditCard, Star
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -40,6 +40,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { SeatSummaryCard } from '@/components/agency/SeatSummaryCard';
 import { SeatManagementPanel } from '@/components/agency/SeatManagementPanel';
 import { SeatOverageConsentDialog } from '@/components/agency/SeatOverageConsentDialog';
+import { ImportWelcomeBanner } from '@/components/agency/ImportWelcomeBanner';
 
 export default function AgencyDashboard() {
   const { data: agency, isLoading: agencyLoading } = useMyAgency();
@@ -188,12 +189,6 @@ export default function AgencyDashboard() {
                   </Link>
                 </Button>
                 <Button variant="outline" asChild className="rounded-xl border-primary/20 hover:bg-primary/5">
-                  <Link to="/agency/import">
-                    <Download className="h-4 w-4 mr-2" />
-                    Import
-                  </Link>
-                </Button>
-                <Button variant="outline" asChild className="rounded-xl border-primary/20 hover:bg-primary/5">
                   <Link to="/agency/settings">
                     <Settings className="h-4 w-4 mr-2" />
                     Settings
@@ -208,6 +203,9 @@ export default function AgencyDashboard() {
               </div>
             </div>
           </div>
+
+          {/* Import Welcome Banner (onboarding) */}
+          <ImportWelcomeBanner activeListings={stats?.activeListings || 0} />
 
           {/* No Plan Activation Banner */}
           <NoPlanBanner />
