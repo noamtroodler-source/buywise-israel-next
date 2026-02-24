@@ -232,7 +232,7 @@ export default function AgencyImport() {
               </form>
               {isDiscovering && (
                 <p className="text-sm text-muted-foreground mt-3 animate-pulse">
-                  Scanning your website for listing pages... This may take 60-120 seconds.
+                  Scanning your website for listing pages... This may take 30-60 seconds.
                 </p>
               )}
             </CardContent>
