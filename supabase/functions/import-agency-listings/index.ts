@@ -15,11 +15,28 @@ function supabaseAdmin() {
 
 // ─── DISCOVER ───────────────────────────────────────────────────────────────
 
+function normalizeUrl(raw: string): string {
+  let url = raw.trim();
+  if (!url.startsWith("http")) url = `https://${url}`;
+  try {
+    const parsed = new URL(url);
+    parsed.hostname = parsed.hostname.toLowerCase();
+    // Remove trailing slash from pathname
+    if (parsed.pathname.endsWith("/") && parsed.pathname.length > 1) {
+      parsed.pathname = parsed.pathname.slice(0, -1);
+    }
+    return parsed.toString();
+  } catch {
+    return url.toLowerCase().replace(/\/+$/, "");
+  }
+}
+
 async function handleDiscover(body: any) {
   const { agency_id, website_url } = body;
   if (!agency_id || !website_url) throw new Error("agency_id and website_url required");
 
   const sb = supabaseAdmin();
+  const normalizedUrl = normalizeUrl(website_url);
 
   // Verify agency exists
   const { data: agency, error: agencyErr } = await sb
@@ -29,12 +46,38 @@ async function handleDiscover(body: any) {
     .single();
   if (agencyErr || !agency) throw new Error("Agency not found");
 
+  // Check for existing job with same URL (duplicate prevention)
+  const { data: existingJobs } = await sb
+    .from("import_jobs")
+    .select("id, status, total_urls")
+    .eq("agency_id", agency_id)
+    .eq("website_url", normalizedUrl)
+    .not("status", "eq", "failed")
+    .order("created_at", { ascending: false })
+    .limit(1);
+
+  if (existingJobs && existingJobs.length > 0) {
+    const existing = existingJobs[0];
+    // Count pending items
+    const { count } = await sb
+      .from("import_job_items")
+      .select("id", { count: "exact", head: true })
+      .eq("job_id", existing.id);
+    
+    console.log(`Duplicate detected — returning existing job ${existing.id} (status: ${existing.status})`);
+    return {
+      job_id: existing.id,
+      total_listings: existing.total_urls || 0,
+      total_discovered: count || 0,
+      resumed: true,
+    };
+  }
+
   // 1. Firecrawl MAP — discover all URLs
   const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
   if (!FIRECRAWL_API_KEY) throw new Error("FIRECRAWL_API_KEY not configured");
 
-  let formattedUrl = website_url.trim();
-  if (!formattedUrl.startsWith("http")) formattedUrl = `https://${formattedUrl}`;
+  let formattedUrl = normalizedUrl;
 
   console.log("Mapping URL:", formattedUrl);
   const mapRes = await fetch("https://api.firecrawl.dev/v1/map", {

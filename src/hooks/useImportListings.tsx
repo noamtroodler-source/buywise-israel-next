@@ -82,10 +82,14 @@ export function useDiscoverListings() {
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      return data as { job_id: string; total_listings: number; total_discovered: number };
+      return data as { job_id: string; total_listings: number; total_discovered: number; resumed?: boolean };
     },
     onSuccess: (data) => {
-      toast.success(`Found ${data.total_listings} listing pages`);
+      if (data.resumed) {
+        toast.info('Resumed existing job for this URL');
+      } else {
+        toast.success(`Found ${data.total_listings} listing pages`);
+      }
       queryClient.invalidateQueries({ queryKey: ['importJobs'] });
     },
     onError: (err: Error) => {
