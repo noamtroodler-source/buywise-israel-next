@@ -96,14 +96,7 @@ export function AgencyTestimonialsCarousel({ testimonials, accentColor }: Props)
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs font-medium text-muted-foreground">— {t.author_name}</span>
               {t.author_context && (
-                <span
-                  className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium border"
-                  style={{
-                    backgroundColor: `${accentColor}08`,
-                    borderColor: `${accentColor}20`,
-                    color: `${accentColor}CC`,
-                  }}
-                >
+                <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium border border-border bg-muted text-muted-foreground">
                   {t.author_context}
                 </span>
               )}
