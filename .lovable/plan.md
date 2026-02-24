@@ -1,23 +1,47 @@
 
 
-## Filter Out Sold/Rented Listings During Import
+## Add Project/Development Detection to the Import Scraper
 
-### Problem
-The scraper currently imports all listings it finds, including ones marked as sold (נמכר) or rented (הושכר). These shouldn't be imported as draft listings.
+### What Changes
 
-### Solution
-Add an `is_sold_or_rented` boolean to the AI extraction schema. The AI will detect sold/rented indicators in the page content and flag them. Flagged listings get skipped with a clear reason.
+When the scraper encounters a page that's a **new development / project** (rather than an individual resale or rental listing), it will recognize it and insert it into the `projects` table instead of `properties`.
 
-### Technical Changes
+### How It Works
+
+1. **AI Detection** -- The extraction schema gets a new field `listing_category` with values: `"property"`, `"project"`, or `"not_listing"`. The AI prompt is updated to explain the difference:
+   - **Property**: A single unit for sale or rent (resale, rental)
+   - **Project/Development**: A new construction project with multiple units, marketed by a developer (may use words like "פרויקט", "project", "development", "new construction", "בנייה חדשה", etc.)
+
+2. **Separate extraction schema for projects** -- When the AI identifies a page as a project, a second tool-call schema captures project-specific fields: `name`, `description`, `city`, `neighborhood`, `address`, `price_from`, `price_to`, `total_units`, `status` (construction stage), `completion_date`, `amenities`, and `image_urls`.
+
+3. **Branching insert logic** -- After extraction:
+   - If `listing_category === "project"` -> insert into `projects` table (with `verification_status: 'draft'`, `is_published: false`)
+   - If `listing_category === "property"` -> existing flow (insert into `properties`)
+   - If `"not_listing"` -> skip as before
+
+4. **Database changes**:
+   - Add `project_id` column (nullable UUID) to `import_job_items` so we can track which imports became projects vs properties
+   - Add `import_source` column to `projects` table (like properties already has) to mark scraped projects
+
+5. **Frontend** -- The import results page already shows items by status. No major UI changes needed; the `extracted_data` JSON will contain the category info for reference.
+
+### Technical Details
 
 **File: `supabase/functions/import-agency-listings/index.ts`**
 
-1. **Update the extraction prompt** (around line 247) -- add instruction:
-   - "Detect if the listing is marked as sold (נמכר), rented (הושכר), under contract (בהסכם), or otherwise no longer available. Set is_sold_or_rented=true if so."
+- **Discovery phase (lines 61-72)**: Update the URL filtering prompt to also look for project/development page URLs (e.g., `/project/`, `/פרויקט/`, `/development/`)
+- **Extraction prompt (lines 247-264)**: Add instructions to detect project pages and set `listing_category`
+- **Extraction schema (lines 283-311)**: Add `listing_category` field with enum `["property", "project", "not_listing"]`. Add project-specific optional fields: `project_name`, `price_from`, `price_to`, `total_units`, `completion_date`, `construction_status`
+- **Processing logic (lines 346-475)**: After extraction, branch on `listing_category`:
+  - `"project"` -> insert into `projects` table with scraped data, store `project_id` on the job item
+  - `"property"` -> existing property insert flow
+  - `"not_listing"` -> skip
+- **Duplicate detection for projects (new)**: Check `projects` table by name + city before inserting
 
-2. **Add `is_sold_or_rented` to the tool-calling schema** (around line 306) -- add the field alongside `is_listing_page`:
-   - `is_sold_or_rented: { type: "boolean", description: "True if listing is sold, rented, or no longer available" }`
+**Database migration**:
+```sql
+ALTER TABLE import_job_items ADD COLUMN project_id UUID REFERENCES projects(id);
+ALTER TABLE projects ADD COLUMN import_source TEXT;
+```
 
-3. **Add skip logic after extraction** (around line 345, right after the `is_listing_page` check) -- if `listing.is_sold_or_rented === true`, mark the item as `skipped` with error message "Listing is sold or rented" and continue to the next item.
-
-This approach is reliable because the AI reads the full page content and can detect Hebrew indicators like נמכר, הושכר, sold, rented, under contract, etc. -- regardless of whether the URL itself gives any hint.
+This approach uses a single scrape + single AI call per page. The AI determines the category and extracts the right fields in one pass, keeping costs and latency the same.
