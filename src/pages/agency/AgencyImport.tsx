@@ -21,6 +21,22 @@ import {
   useRetryFailed,
 } from '@/hooks/useImportListings';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+
+function normalizeUrl(raw: string): string {
+  let url = raw.trim();
+  if (!url.startsWith('http')) url = `https://${url}`;
+  try {
+    const parsed = new URL(url);
+    parsed.hostname = parsed.hostname.toLowerCase();
+    if (parsed.pathname.endsWith('/') && parsed.pathname.length > 1) {
+      parsed.pathname = parsed.pathname.slice(0, -1);
+    }
+    return parsed.toString();
+  } catch {
+    return url.toLowerCase().replace(/\/+$/, '');
+  }
+}
 
 export default function AgencyImport() {
   const { data: agency, isLoading: agencyLoading } = useMyAgency();
@@ -45,6 +61,16 @@ export default function AgencyImport() {
   const handleDiscover = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!agency?.id || !websiteUrl.trim()) return;
+
+    // Client-side duplicate check
+    const normalized = normalizeUrl(websiteUrl);
+    const existingJob = jobs.find(j => normalizeUrl(j.website_url) === normalized);
+    if (existingJob) {
+      toast.info('A job for this URL already exists — showing it');
+      setActiveJobId(existingJob.id);
+      setWebsiteUrl('');
+      return;
+    }
 
     const result = await discoverMutation.mutateAsync({
       agencyId: agency.id,
