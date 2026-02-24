@@ -125,7 +125,7 @@ export default function ProfessionalDetail() {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-4 lg:sticky lg:top-6 lg:self-start">
+          <div className="space-y-4 lg:sticky lg:top-24 lg:self-start">
             <ProfessionalContactCard professional={professional} accentColor={accentColor} />
           </div>
         </div>
