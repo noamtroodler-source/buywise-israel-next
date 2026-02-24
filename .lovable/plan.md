@@ -1,45 +1,54 @@
 
+## Retry Failed Import Items
 
-## Auto-Refresh Import Jobs + Cleanup After Delete
+### What This Adds
 
-### What's Changing
+A "Retry Failed" button that resets all failed/skipped items back to "pending" so they can be re-processed in the next batch -- without re-running discovery or re-importing items that already succeeded.
 
-Two improvements to the import page so everything stays in sync automatically:
+### Changes
 
-1. **Auto-refresh the jobs list** while any job is actively processing or discovering -- so the status badge, processed counts, and total URLs update live without needing a manual page refresh.
+**1. Edge Function: `supabase/functions/import-agency-listings/index.ts`**
 
-2. **Properly clear the UI after deleting** -- when you delete the current/active job, the Step 2 card and stats disappear immediately instead of lingering.
+Add a new `retry_failed` action handler that:
+- Takes a `job_id` parameter
+- Updates all items with status `failed` or `skipped` back to `pending`
+- Resets their `error_message` to null
+- Sets the job status back to `ready` so the "Import Next Batch" button appears
+- Returns the count of items reset
 
-### How It Works
+**2. Hook: `src/hooks/useImportListings.tsx`**
 
-**File: `src/hooks/useImportListings.tsx`**
+Add a new `useRetryFailed` mutation that:
+- Calls the edge function with `action: 'retry_failed'`
+- Shows a toast with how many items were reset
+- Invalidates the import jobs and items queries so the UI refreshes
 
-- Add a `refetchInterval` to `useImportJobs` (same pattern already used in `useImportJobItems`):
-  - If any job in the list has status `discovering`, `ready`, or `processing`, poll every 3 seconds
-  - Otherwise, stop polling (no unnecessary network requests)
-- Also add `refetchInterval` to `useImportJobItems` for the `pending` status too (not just `processing`), so when a batch finishes and items flip from pending to done, the counts update immediately
+**3. UI: `src/pages/agency/AgencyImport.tsx`**
 
-**File: `src/pages/agency/AgencyImport.tsx`**
-
-- When deleting the active job (the one shown in Step 2), reset `activeJobId` to `null` **and** handle the edge case where `currentJob` falls back to `jobs[0]` even after deletion -- by checking that `currentJob` still exists in the jobs array after the query invalidates
-- No visual/design changes needed; existing layout stays the same
+Add a "Retry Failed" button in the action buttons area that:
+- Only appears when there are failed/skipped items (`failedCount > 0`)
+- Shows a retry icon with the count of failed items
+- Disables while the retry mutation is running
+- Sits alongside the existing "Import Next Batch" and "View Imported Drafts" buttons
 
 ### Technical Details
 
 ```text
-useImportJobs (hook)
-  +-- refetchInterval: checks if any job has status
-  |   in ['discovering', 'ready', 'processing']
-  |   -> 3000ms polling if yes, false if no
-  
-useImportJobItems (hook)  
-  +-- refetchInterval: updated to also poll when
-  |   items have status 'pending' (not just 'processing')
-  |   -> catches the transition after a batch completes
+Edge Function (new action: retry_failed)
+  1. Validate job_id
+  2. UPDATE import_job_items SET status='pending', error_message=NULL
+     WHERE job_id = ? AND status IN ('failed', 'skipped')
+  3. UPDATE import_jobs SET status='ready' WHERE id = ?
+  4. Return { reset_count: N }
 
-AgencyImport (page)
-  +-- currentJob logic: guard against stale fallback
-  |   after deletion by checking jobs array is non-empty
+Hook (useRetryFailed)
+  - mutationFn: invoke('import-agency-listings', { action: 'retry_failed', job_id })
+  - onSuccess: toast + invalidate queries
+
+UI (AgencyImport)
+  - New button: "Retry Failed (N)" with RefreshCw icon
+  - Condition: failedCount > 0
+  - Matches existing button styling (rounded-xl, outline variant)
 ```
 
-This is a small, focused change -- just adding polling logic to one hook and tightening the delete flow. No database changes, no new components.
+No database migrations needed -- the existing `import_job_items` table already has the `status` and `error_message` columns.
