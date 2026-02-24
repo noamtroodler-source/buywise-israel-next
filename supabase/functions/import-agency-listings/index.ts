@@ -1026,7 +1026,7 @@ async function processOneItem(
     if (existingByUrl && existingByUrl.length > 0) {
       console.log(`URL duplicate skip: ${item.url} → existing property ${existingByUrl[0].id}`);
       await sb.from("import_job_items")
-        .update({ status: "skipped", error_message: `Duplicate: URL already imported as property ${existingByUrl[0].id}` })
+        .update({ status: "skipped", error_message: `Duplicate: URL already imported as property ${existingByUrl[0].id}`, error_type: "permanent" })
         .eq("id", item.id);
       return { succeeded: false };
     }
@@ -1044,7 +1044,7 @@ async function processOneItem(
     if (existingJobItem && existingJobItem.length > 0) {
       console.log(`In-job duplicate skip: ${item.url} → already done as item ${existingJobItem[0].id}`);
       await sb.from("import_job_items")
-        .update({ status: "skipped", error_message: `Duplicate: same URL already processed in this job` })
+        .update({ status: "skipped", error_message: `Duplicate: same URL already processed in this job`, error_type: "permanent" })
         .eq("id", item.id);
       return { succeeded: false };
     }
@@ -1053,8 +1053,10 @@ async function processOneItem(
     const preCheck = await preCheckUrl(item.url);
     if (!preCheck.ok) {
       console.log(`Pre-check skip: ${item.url} — ${preCheck.skipReason}`);
+      // Timeouts and network errors are transient; 404s/redirects are permanent
+      const preCheckErrorType = (preCheck.skipReason?.includes("timed out") || preCheck.skipReason?.includes("network error")) ? "transient" : "permanent";
       await sb.from("import_job_items")
-        .update({ status: "skipped", error_message: preCheck.skipReason })
+        .update({ status: "skipped", error_message: preCheck.skipReason, error_type: preCheckErrorType })
         .eq("id", item.id);
       return { succeeded: false };
     }
@@ -1078,24 +1080,26 @@ async function processOneItem(
     if (!scrapeRes.ok) {
       const statusCode = scrapeRes.status;
       if (statusCode === 404 || statusCode === 410) {
-        await sb.from("import_job_items").update({ status: "skipped", error_message: `Page not found (${statusCode})` }).eq("id", item.id);
+        await sb.from("import_job_items").update({ status: "skipped", error_message: `Page not found (${statusCode})`, error_type: "permanent" }).eq("id", item.id);
         return { succeeded: false };
       }
-      throw new Error(`Scrape failed: ${JSON.stringify(scrapeData)}`);
+      // 5xx and other scrape failures are transient
+      await sb.from("import_job_items").update({ status: "failed", error_message: `Scrape failed (${statusCode})`, error_type: "transient" }).eq("id", item.id);
+      return { succeeded: false };
     }
 
     const markdown = scrapeData.data?.markdown || scrapeData.markdown || "";
     const pageLinks = scrapeData.data?.links || scrapeData.links || [];
 
     if (!markdown || markdown.length < 50) {
-      await sb.from("import_job_items").update({ status: "skipped", error_message: "Page content too short — likely not a listing" }).eq("id", item.id);
+      await sb.from("import_job_items").update({ status: "skipped", error_message: "Page content too short — likely not a listing", error_type: "permanent" }).eq("id", item.id);
       return { succeeded: false };
     }
 
     // Pre-LLM sold/rented keyword check
     if (isSoldOrRentedPage(markdown)) {
       console.log(`Pre-filter: sold/rented detected for ${item.url}`);
-      await sb.from("import_job_items").update({ status: "skipped", error_message: "Pre-filter: listing appears sold/rented" }).eq("id", item.id);
+      await sb.from("import_job_items").update({ status: "skipped", error_message: "Pre-filter: listing appears sold/rented", error_type: "permanent" }).eq("id", item.id);
       return { succeeded: false };
     }
 
@@ -1200,17 +1204,19 @@ ${pageLinks.slice(0, 50).join("\n")}`;
       const errText = await extractRes.text();
       console.error("AI extraction error:", extractRes.status, errText);
       if (extractRes.status === 429) {
-        await sb.from("import_job_items").update({ status: "pending", error_message: "Rate limited, will retry" }).eq("id", item.id);
+        await sb.from("import_job_items").update({ status: "pending", error_message: "Rate limited, will retry", error_type: "transient" }).eq("id", item.id);
         return { succeeded: false };
       }
-      throw new Error(`AI extraction failed (${extractRes.status})`);
+      // Other AI failures are transient (might work on retry)
+      await sb.from("import_job_items").update({ status: "failed", error_message: `AI extraction failed (${extractRes.status})`, error_type: "transient" }).eq("id", item.id);
+      return { succeeded: false };
     }
 
     const extractData = await extractRes.json();
     const extractToolCall = extractData.choices?.[0]?.message?.tool_calls?.[0];
 
     if (!extractToolCall?.function?.arguments) {
-      await sb.from("import_job_items").update({ status: "failed", error_message: "AI returned no extraction data" }).eq("id", item.id);
+      await sb.from("import_job_items").update({ status: "failed", error_message: "AI returned no extraction data", error_type: "permanent" }).eq("id", item.id);
       return { succeeded: false };
     }
 
@@ -1223,14 +1229,14 @@ ${pageLinks.slice(0, 50).join("\n")}`;
 
     // ── NOT A LISTING ──
     if (category === "not_listing") {
-      await sb.from("import_job_items").update({ status: "skipped", error_message: "Not a listing page" }).eq("id", item.id);
+      await sb.from("import_job_items").update({ status: "skipped", error_message: "Not a listing page", error_type: "permanent" }).eq("id", item.id);
       return { succeeded: false };
     }
 
     // ── PROJECT/DEVELOPMENT — skip (add manually via Project Wizard) ──
     if (category === "project") {
       console.log(`Project page skipped: ${item.url}`);
-      await sb.from("import_job_items").update({ status: "skipped", error_message: "Project/development page — skipped (add projects manually via Project Wizard)" }).eq("id", item.id);
+      await sb.from("import_job_items").update({ status: "skipped", error_message: "Project/development page — skipped (add projects manually via Project Wizard)", error_type: "permanent" }).eq("id", item.id);
       return { succeeded: false };
     }
 
@@ -1247,6 +1253,7 @@ ${pageLinks.slice(0, 50).join("\n")}`;
       await sb.from("import_job_items").update({
         status: "skipped",
         error_message: `City not supported: "${listing.city || '(none)'}". Only 25 featured cities are imported.`,
+        error_type: "permanent",
       }).eq("id", item.id);
       return { succeeded: false };
     }
@@ -1257,7 +1264,7 @@ ${pageLinks.slice(0, 50).join("\n")}`;
     // ── PROPERTY PATH ──
 
     if (listing.is_sold_or_rented) {
-      await sb.from("import_job_items").update({ status: "skipped", error_message: "Listing is sold or rented" }).eq("id", item.id);
+      await sb.from("import_job_items").update({ status: "skipped", error_message: "Listing is sold or rented", error_type: "permanent" }).eq("id", item.id);
       return { succeeded: false };
     }
 
@@ -1266,6 +1273,7 @@ ${pageLinks.slice(0, 50).join("\n")}`;
       await sb.from("import_job_items").update({
         status: "failed",
         error_message: `Validation failed: ${propertyErrors.join("; ")}`,
+        error_type: "permanent",
       }).eq("id", item.id);
       return { succeeded: false };
     }
@@ -1286,7 +1294,8 @@ ${pageLinks.slice(0, 50).join("\n")}`;
         if (dupes && dupes.length > 0) {
           await sb.from("import_job_items").update({
             status: "skipped",
-            error_message: `Duplicate: matches existing property ${dupes[0].id} (same address + city)`
+            error_message: `Duplicate: matches existing property ${dupes[0].id} (same address + city)`,
+            error_type: "permanent",
           }).eq("id", item.id);
           return { succeeded: false };
         }
@@ -1312,7 +1321,8 @@ ${pageLinks.slice(0, 50).join("\n")}`;
       if (fuzzyDupes && fuzzyDupes.length > 0) {
         await sb.from("import_job_items").update({
           status: "skipped",
-          error_message: `Duplicate: matches existing property ${fuzzyDupes[0].id} (same city, rooms, size, ~price)`
+          error_message: `Duplicate: matches existing property ${fuzzyDupes[0].id} (same city, rooms, size, ~price)`,
+          error_type: "permanent",
         }).eq("id", item.id);
         return { succeeded: false };
       }
@@ -1373,7 +1383,7 @@ ${pageLinks.slice(0, 50).join("\n")}`;
 
     if (propErr) {
       console.error("Property insert error:", propErr);
-      await sb.from("import_job_items").update({ status: "failed", error_message: `Insert failed: ${propErr.message}` }).eq("id", item.id);
+      await sb.from("import_job_items").update({ status: "failed", error_message: `Insert failed: ${propErr.message}`, error_type: "transient" }).eq("id", item.id);
       return { succeeded: false };
     }
 
@@ -1383,7 +1393,7 @@ ${pageLinks.slice(0, 50).join("\n")}`;
     console.error(`Error processing ${item.url}:`, err);
     await sb
       .from("import_job_items")
-      .update({ status: "failed", error_message: err instanceof Error ? err.message : "Unknown error" })
+      .update({ status: "failed", error_message: err instanceof Error ? err.message : "Unknown error", error_type: "transient" })
       .eq("id", item.id);
     return { succeeded: false };
   }
@@ -1545,22 +1555,32 @@ async function handleRetryFailed(body: any) {
 
   const sb = supabaseAdmin();
 
+  // Only reset transient failures (worth retrying)
   const { data: resetItems, error: resetErr } = await sb
     .from("import_job_items")
-    .update({ status: "pending", error_message: null })
+    .update({ status: "pending", error_message: null, error_type: null })
     .eq("job_id", job_id)
     .in("status", ["failed", "skipped"])
+    .eq("error_type", "transient")
     .select("id");
 
   if (resetErr) throw new Error(`Failed to reset items: ${resetErr.message}`);
 
   const resetCount = resetItems?.length || 0;
 
+  // Count permanent failures for UI feedback
+  const { count: permanentCount } = await sb
+    .from("import_job_items")
+    .select("id", { count: "exact", head: true })
+    .eq("job_id", job_id)
+    .in("status", ["failed", "skipped"])
+    .eq("error_type", "permanent");
+
   if (resetCount > 0) {
     await sb.from("import_jobs").update({ status: "ready" }).eq("id", job_id);
   }
 
-  return { reset_count: resetCount };
+  return { reset_count: resetCount, transient_count: resetCount, permanent_count: permanentCount || 0 };
 }
 
 // ─── MAIN ───────────────────────────────────────────────────────────────────

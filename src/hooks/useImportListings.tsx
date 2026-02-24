@@ -24,6 +24,7 @@ export interface ImportJobItem {
   property_id: string | null;
   project_id: string | null;
   error_message: string | null;
+  error_type: string | null;
   extracted_data: any;
   created_at: string;
 }
@@ -133,10 +134,13 @@ export function useRetryFailed() {
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      return data as { reset_count: number };
+      return data as { reset_count: number; transient_count: number; permanent_count: number };
     },
     onSuccess: (data) => {
-      toast.success(`${data.reset_count} failed items reset — ready to retry`);
+      const msg = data.permanent_count > 0
+        ? `${data.reset_count} retryable items reset. ${data.permanent_count} permanent failures unchanged.`
+        : `${data.reset_count} failed items reset — ready to retry`;
+      toast.success(msg);
       queryClient.invalidateQueries({ queryKey: ['importJobs'] });
       queryClient.invalidateQueries({ queryKey: ['importJobItems'] });
     },

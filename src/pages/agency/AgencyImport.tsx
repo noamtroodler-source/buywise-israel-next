@@ -111,6 +111,8 @@ export default function AgencyImport() {
 
   const doneCount = jobItems.filter(i => i.status === 'done').length;
   const failedCount = jobItems.filter(i => ['failed', 'skipped'].includes(i.status)).length;
+  const transientCount = jobItems.filter(i => ['failed', 'skipped'].includes(i.status) && i.error_type === 'transient').length;
+  const permanentCount = jobItems.filter(i => ['failed', 'skipped'].includes(i.status) && i.error_type === 'permanent').length;
   const pendingCount = jobItems.filter(i => i.status === 'pending').length;
   const processingCount = jobItems.filter(i => i.status === 'processing').length;
   const totalItems = jobItems.length;
@@ -342,24 +344,31 @@ export default function AgencyImport() {
                   )}
 
                   {failedCount > 0 && (
-                    <Button
-                      variant="outline"
-                      onClick={() => retryFailedMutation.mutate(currentJob!.id)}
-                      disabled={retryFailedMutation.isPending}
-                      className="rounded-xl"
-                    >
-                      {retryFailedMutation.isPending ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Resetting...
-                        </>
-                      ) : (
-                        <>
-                          <RefreshCw className="h-4 w-4 mr-2" />
-                          Retry Failed ({failedCount})
-                        </>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => retryFailedMutation.mutate(currentJob!.id)}
+                        disabled={retryFailedMutation.isPending || transientCount === 0}
+                        className="rounded-xl"
+                      >
+                        {retryFailedMutation.isPending ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Resetting...
+                          </>
+                        ) : (
+                          <>
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                            Retry ({transientCount})
+                          </>
+                        )}
+                      </Button>
+                      {permanentCount > 0 && (
+                        <span className="text-xs text-muted-foreground">
+                          {permanentCount} permanent
+                        </span>
                       )}
-                    </Button>
+                    </div>
                   )}
 
                   {doneCount > 0 && (

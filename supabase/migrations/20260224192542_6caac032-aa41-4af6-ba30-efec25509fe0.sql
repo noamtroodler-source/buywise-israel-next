@@ -1,0 +1,1 @@
+ALTER TABLE public.import_job_items ADD COLUMN error_type text;
