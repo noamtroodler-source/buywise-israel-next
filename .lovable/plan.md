@@ -1,151 +1,97 @@
 
 
-## Dynamic Batch Sizing with Mid-Batch Refill
+## Pre-Filter Non-Listing URL Patterns Before AI Classification
 
 ### Problem
-The batch is fixed at 10 items fetched upfront (`.limit(10)`). With 3-way parallelism and a 120s timeout guard, this works well when all 10 items need full processing (~10-12s each). But when items are skipped quickly (404, sold/rented, too-short content), the function finishes early and wastes the remaining time window. For a site with many sold listings, a batch might complete in 15 seconds having only done real work on 3 items.
+The discovery flow sends all discovered URLs to the AI for classification, including URLs that are obviously not property listings -- pages like `/about`, `/contact`, `/blog/post-title`, `/team`, `/privacy-policy`, `/terms`, etc. These waste AI tokens and attention, reducing both speed and accuracy.
 
 ### Solution
-Replace the fixed `.limit(10)` upfront fetch with a **refill loop** that fetches small batches of pending items and keeps processing until the time budget runs out. Instead of deciding how many items to grab at the start, the function continuously pulls more work as long as there's time remaining.
-
-### Architecture
-
-```text
-BEFORE (fixed 10):                   AFTER (dynamic refill):
-┌──────────────────────┐             ┌──────────────────────────────────┐
-│ Fetch 10 items       │             │ LOOP until time runs out:        │
-│ Process in 3s chunks │             │   Fetch next 6 pending items     │
-│ Done (maybe early)   │             │   Process in 3s chunks           │
-└──────────────────────┘             │   If all fast-skipped, loop now  │
- Total: 10 items max                 │   If time > 120s, stop           │
-                                     └──────────────────────────────────┘
-                                      Total: 10-30+ items depending on
-                                      how many skip quickly
-```
+Add a regex-based pre-filter between the existing sold-keyword filter and the AI classification call. This removes URLs matching common non-listing patterns before any AI call is made.
 
 ### What Changes
 
 **Single file:** `supabase/functions/import-agency-listings/index.ts`
 
-Only the `handleProcessBatch` function changes. `processOneItem` and all other functions remain untouched.
+**New function: `filterNonListingUrls(urls: string[]): { listingCandidates: string[], removed: number }`**
 
-**Refactored `handleProcessBatch`:**
+Placed right after the existing sold-keyword filter (around line 707) and before the AI classification call (line 712).
 
-1. **Remove the single upfront `.limit(10)` query** (line 1296-1302)
+### Filter Strategy
 
-2. **Replace with a refill loop:**
-   - Each iteration fetches the next batch of 6 pending items from the DB
-   - If 0 items returned, the job is complete -- break
-   - Process the fetched items in chunks of 3 (same `Promise.allSettled` pattern)
-   - After each chunk completes, check elapsed time
-   - If elapsed > 120s, stop and return `remaining > 0`
-   - Otherwise, loop back and fetch more items
+The filter uses two complementary approaches:
 
-3. **Why fetch 6 per refill (not more)?**
-   - 6 items = 2 concurrent chunks of 3
-   - If all 6 skip quickly (~2-3s), we immediately refill -- minimal wasted time
-   - If all 6 need full processing (~20-25s for 2 chunks), we check the clock after and decide whether to refill
-   - Fetching too many (e.g., 20) upfront reintroduces the original problem -- items sit in memory while we might timeout before reaching them
-   - 6 is the sweet spot: small enough for fast refill cycles, large enough to amortize the DB query cost
+**1. Path-segment blocklist (exact segment match)**
+Matches URL path segments exactly (between slashes) to avoid false positives. For example, `/about` is blocked but `/about-project-x` is not.
 
-4. **Track totals across refills:**
-   - `totalProcessed`, `totalSucceeded`, `totalFailed` accumulate across all refill cycles
-   - The final DB count query at the end stays the same
-
-5. **Prevent re-fetching items being processed:**
-   - The existing pattern already handles this: items are set to `status: "processing"` at the start of `processOneItem`, so the next `.eq("status", "pending")` fetch won't return them
-   - No race condition possible because we `await` each chunk before fetching more
-
-### Pseudocode
-
+Blocked segments:
 ```text
-async function handleProcessBatch(body) {
-  // ... setup (job fetch, agent lookup, etc.) -- unchanged
-
-  const batchStartTime = Date.now();
-  const CONCURRENCY = 3;
-  const REFILL_SIZE = 6;
-  const TIME_LIMIT_MS = 120_000;
-
-  let totalProcessed = 0;
-  let totalSucceeded = 0;
-  let totalFailed = 0;
-
-  // Reset geocode rate limiter
-  _lastGeoTime = 0;
-  _geoQueue = Promise.resolve();
-
-  while (true) {
-    // Time check before fetching more work
-    if (Date.now() - batchStartTime > TIME_LIMIT_MS) {
-      console.log("Time limit reached, stopping refill loop");
-      break;
-    }
-
-    // Fetch next batch of pending items
-    const { data: pendingItems } = await sb
-      .from("import_job_items")
-      .select("*")
-      .eq("job_id", job_id)
-      .eq("status", "pending")
-      .order("created_at", { ascending: true })
-      .limit(REFILL_SIZE);
-
-    if (!pendingItems || pendingItems.length === 0) break; // All done
-
-    // Process in chunks of CONCURRENCY
-    for (let i = 0; i < pendingItems.length; i += CONCURRENCY) {
-      if (Date.now() - batchStartTime > TIME_LIMIT_MS) break;
-
-      const chunk = pendingItems.slice(i, i + CONCURRENCY);
-      const results = await Promise.allSettled(
-        chunk.map(item => processOneItem(item, ...))
-      );
-
-      for (const result of results) {
-        totalProcessed++;
-        if (result.status === "fulfilled" && result.value.succeeded) {
-          totalSucceeded++;
-        } else {
-          totalFailed++;
-        }
-      }
-    }
-  }
-
-  // Final count query and status update -- same as current
-  // ...
-}
+about, contact, team, careers, jobs, privacy, terms, legal, disclaimer,
+login, signin, signup, register, auth, account, dashboard, admin, panel,
+blog, news, press, media, faq, help, support, sitemap, accessibility,
+cookie, cookies, cart, checkout, payment, subscribe, unsubscribe,
+partners, affiliates, investors, testimonials, reviews, awards
 ```
 
-### Edge Cases and Gaps Addressed
+**2. File-extension blocklist**
+Removes URLs ending in non-HTML extensions:
+```text
+.pdf, .jpg, .jpeg, .png, .gif, .svg, .webp, .mp4, .mp3, .zip, .doc, .docx, .xls, .xlsx, .css, .js, .xml, .json, .rss, .atom
+```
+
+**3. Fragment/anchor-only and query-heavy URLs**
+Removes URLs that are just anchors (`#section`) on the same page or have no meaningful path (just `/` or empty).
+
+### Why Exact Segment Matching (Not Substring)
+
+Substring matching would cause false positives:
+- `/properties/about-view-apartment` -- contains "about" but IS a listing
+- `/sale/contact-us-for-details` -- contains "contact" but could be a listing path
+- `/blog-project-luxury-tower` -- contains "blog" but is a project page
+
+Exact segment matching splits the path by `/` and checks each segment independently, so only `/about/` or `/about` (as a full segment) triggers the filter.
+
+### Integration Point
+
+```text
+Existing flow:
+  1. Firecrawl map  -->  rawUrls (300+)
+  2. Sold keyword filter  -->  allUrls (280)
+  3. Index page sold filter  -->  allUrls (260)
+  4. AI classification  -->  listingUrls (120)   <-- expensive
+
+New flow:
+  1. Firecrawl map  -->  rawUrls (300+)
+  2. Sold keyword filter  -->  allUrls (280)
+  3. Index page sold filter  -->  allUrls (260)
+  4. **Non-listing pattern filter  -->  allUrls (200)**   <-- new, instant
+  5. AI classification  -->  listingUrls (110)   <-- fewer URLs = cheaper + more accurate
+```
+
+### Edge Cases Handled
 
 | Concern | How it's handled |
 |---|---|
-| All items skip fast (many sold) | Loop refills rapidly, processing 20-30+ items in the same time window that used to handle 10 |
-| All items need full processing | First refill of 6 takes ~20-25s for 2 chunks, second refill of 6 takes another ~20-25s, time check kicks in after ~3-4 refills (18-24 items). Very similar to the old behavior of ~10 items. |
-| Mix of fast and slow items | Fast items clear quickly, freeing time for more refills. Naturally adaptive. |
-| DB query overhead per refill | A simple indexed query (`job_id + status + order by created_at + limit 6`) takes <50ms. Negligible compared to scraping time. |
-| Race condition on refetch | Items are marked `status: "processing"` at the start of `processOneItem`, before `await` yields. The next refill query filters `status = "pending"` so it won't re-fetch. |
-| Edge function timeout (150s) | Same 120s safety check, now checked both before each refill AND before each chunk within a refill. |
-| Job marked completed prematurely | Only marked completed when refill returns 0 items AND no items were in-flight. The final DB count query is the source of truth. |
-| Geocoding rate limiter state | Reset once at the start, shared across all refills (same as before). |
-| Client-side `useProcessAll` loop | No change needed. Each `process_batch` call returns `remaining` count. The client loop continues calling until `remaining === 0`. With dynamic batching, each call now processes more items, so fewer total calls are needed. |
-| Reporting accuracy | `totalProcessed` counts all items touched across refills. The final DB count query gives the authoritative `remaining` count. |
+| Hebrew/encoded URLs | `decodeURIComponent` before checking segments, with try/catch fallback |
+| `/about-this-project` false positive | Exact segment match only -- `about` as a segment, not substring |
+| Root URL `/` | Kept (not filtered) -- the homepage might be needed for context |
+| Query parameters on listing URLs | Only the pathname is checked, query params are ignored |
+| URLs with mixed case | Lowercased before matching |
+| Aggressive filtering removes real listings | The blocklist is conservative -- only universally non-listing terms. Better to send a few extra to AI than miss a listing. |
+| Empty result after filtering | If filter removes everything, skip it and pass all URLs to AI (safety check) |
 
-### Expected Performance
+### Expected Impact
 
-- **Mostly-active sites** (few skips): Processes ~12-18 items per call instead of 10. ~20-40% more throughput.
-- **High-skip sites** (many sold/404): Processes ~25-40 items per call instead of 10. ~150-300% more throughput.
-- **Mixed sites**: Naturally adapts. Fast items are consumed quickly, freeing time for more work.
-- **Client-side**: Fewer `process_batch` calls needed overall, which means fewer edge function invocations and faster total import time.
+- **10-30% fewer URLs** sent to AI classification
+- **Faster discovery**: fewer URLs = fewer/smaller AI chunks
+- **Better accuracy**: AI focuses on actual listing candidates, less noise
+- **Zero cost**: pure regex, runs in microseconds
+- **No risk**: only removes URLs that are definitively not listings
 
 ### Technical Summary
 
-1. Replace fixed `.limit(10)` fetch with a `while (true)` refill loop that fetches 6 items at a time
-2. Process each refill's items in chunks of 3 (same `Promise.allSettled` concurrency pattern)
-3. Check elapsed time (120s limit) before each refill and before each chunk
-4. Accumulate totals across refills
-5. Final DB count query and status update remain unchanged
-6. `processOneItem` and all other functions are untouched
-7. No changes needed to the client-side hooks (`useProcessAll`, `useProcessBatch`)
+1. New function `filterNonListingUrls()` with segment-based blocklist + file extension filter
+2. Called in `handleDiscover()` between the index-page sold filter and AI classification
+3. Safety check: if filter would remove ALL URLs, skip it entirely
+4. Logging: reports how many URLs were removed for debugging
+5. No changes to any other function
+
