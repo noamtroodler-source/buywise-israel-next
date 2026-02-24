@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  ArrowLeft, Loader2, Home, Plus, Search,
+  ArrowLeft, Loader2, Home, Plus, Search, Download,
   Eye, Clock, CheckCircle2, Building2,
   Edit, Trash2, Send, MoreHorizontal, Copy, Key,
 } from 'lucide-react';
@@ -134,12 +134,20 @@ export default function AgencyListings() {
                 <p className="text-muted-foreground">Manage all properties across your team</p>
               </div>
             </div>
-            <Button asChild className="rounded-xl">
-              <Link to="/agency/properties/new">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Listing
-              </Link>
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" asChild className="rounded-xl">
+                <Link to="/agency/import">
+                  <Download className="h-4 w-4 mr-2" />
+                  Import from Website
+                </Link>
+              </Button>
+              <Button asChild className="rounded-xl">
+                <Link to="/agency/properties/new">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Listing
+                </Link>
+              </Button>
+            </div>
           </div>
 
           {/* Stats Cards */}
