@@ -982,7 +982,40 @@ async function processOneItem(
   try {
     await sb.from("import_job_items").update({ status: "processing" }).eq("id", item.id);
 
-    // 0. Lightweight pre-check (free, no Firecrawl credit)
+    // 0a. Skip duplicate URLs early (free, no Firecrawl credit or AI call)
+    const { data: existingByUrl } = await sb
+      .from("properties")
+      .select("id")
+      .eq("source_url", item.url)
+      .limit(1);
+
+    if (existingByUrl && existingByUrl.length > 0) {
+      console.log(`URL duplicate skip: ${item.url} → existing property ${existingByUrl[0].id}`);
+      await sb.from("import_job_items")
+        .update({ status: "skipped", error_message: `Duplicate: URL already imported as property ${existingByUrl[0].id}` })
+        .eq("id", item.id);
+      return { succeeded: false };
+    }
+
+    // 0b. Also check if another item in the same job already imported this URL
+    const { data: existingJobItem } = await sb
+      .from("import_job_items")
+      .select("id, property_id")
+      .eq("job_id", jobId)
+      .eq("url", item.url)
+      .eq("status", "done")
+      .neq("id", item.id)
+      .limit(1);
+
+    if (existingJobItem && existingJobItem.length > 0) {
+      console.log(`In-job duplicate skip: ${item.url} → already done as item ${existingJobItem[0].id}`);
+      await sb.from("import_job_items")
+        .update({ status: "skipped", error_message: `Duplicate: same URL already processed in this job` })
+        .eq("id", item.id);
+      return { succeeded: false };
+    }
+
+    // 0c. Lightweight pre-check (free, no Firecrawl credit)
     const preCheck = await preCheckUrl(item.url);
     if (!preCheck.ok) {
       console.log(`Pre-check skip: ${item.url} — ${preCheck.skipReason}`);
@@ -1404,6 +1437,7 @@ ${pageLinks.slice(0, 50).join("\n")}`;
         is_published: false, is_featured: false, views_count: 0,
         verification_status: "draft",
         import_source: "website_scrape",
+        source_url: item.url,
       })
       .select("id")
       .single();
