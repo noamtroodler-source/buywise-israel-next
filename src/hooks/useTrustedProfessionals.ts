@@ -23,6 +23,13 @@ export interface TrustedProfessional {
   accent_color: string | null;
   display_order: number;
   is_published: boolean;
+  linkedin_url: string | null;
+  instagram_url: string | null;
+  facebook_url: string | null;
+  founded_year: number | null;
+  office_address: string | null;
+  testimonial_quote: string | null;
+  testimonial_author: string | null;
   created_at: string;
   updated_at: string;
 }

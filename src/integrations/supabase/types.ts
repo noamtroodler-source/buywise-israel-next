@@ -4882,16 +4882,23 @@ export type Database = {
           description: string | null
           display_order: number | null
           email: string | null
+          facebook_url: string | null
+          founded_year: number | null
           id: string
+          instagram_url: string | null
           is_featured: boolean | null
           is_published: boolean | null
           languages: string[] | null
+          linkedin_url: string | null
           logo_url: string | null
           long_description: string | null
           name: string
+          office_address: string | null
           phone: string | null
           slug: string
           specializations: string[] | null
+          testimonial_author: string | null
+          testimonial_quote: string | null
           updated_at: string | null
           website: string | null
           whatsapp: string | null
@@ -4907,16 +4914,23 @@ export type Database = {
           description?: string | null
           display_order?: number | null
           email?: string | null
+          facebook_url?: string | null
+          founded_year?: number | null
           id?: string
+          instagram_url?: string | null
           is_featured?: boolean | null
           is_published?: boolean | null
           languages?: string[] | null
+          linkedin_url?: string | null
           logo_url?: string | null
           long_description?: string | null
           name: string
+          office_address?: string | null
           phone?: string | null
           slug: string
           specializations?: string[] | null
+          testimonial_author?: string | null
+          testimonial_quote?: string | null
           updated_at?: string | null
           website?: string | null
           whatsapp?: string | null
@@ -4932,16 +4946,23 @@ export type Database = {
           description?: string | null
           display_order?: number | null
           email?: string | null
+          facebook_url?: string | null
+          founded_year?: number | null
           id?: string
+          instagram_url?: string | null
           is_featured?: boolean | null
           is_published?: boolean | null
           languages?: string[] | null
+          linkedin_url?: string | null
           logo_url?: string | null
           long_description?: string | null
           name?: string
+          office_address?: string | null
           phone?: string | null
           slug?: string
           specializations?: string[] | null
+          testimonial_author?: string | null
+          testimonial_quote?: string | null
           updated_at?: string | null
           website?: string | null
           whatsapp?: string | null
