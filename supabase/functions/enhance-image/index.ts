@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
               content: [
                 {
                   type: "text",
-                  text: "Enhance this real estate property photo. Improve sharpness, color balance, brightness, and contrast to make it look professional and appealing for a property listing. Fix any color cast, brighten dark areas, and make the image look crisp and inviting. Keep the image realistic — do not add objects, change the room layout, or alter the property. Only improve the photographic quality.",
+                  text: "Apply only technical photo corrections to this real estate image. Allowed adjustments: white balance correction, exposure/brightness normalization, sharpness enhancement, noise reduction, and minor lens distortion correction. Do NOT add, remove, or move any objects. Do NOT change wall colors, floor materials, or surface finishes. Do NOT replace or enhance the sky. Do NOT apply HDR effects or boost saturation beyond natural levels. Do NOT make rooms appear larger or alter geometry. The result must look like the same photo taken with a better camera and proper lighting — indistinguishable from reality.",
                 },
                 {
                   type: "image_url",
