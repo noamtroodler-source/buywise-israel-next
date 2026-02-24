@@ -220,13 +220,45 @@ export default function AgencyImport() {
                   </Badge>
                 </div>
 
+                {/* Auto-import active indicator */}
+                {isProcessingAll && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="flex items-center gap-3 p-3 rounded-xl bg-primary/10 border border-primary/20"
+                  >
+                    <Loader2 className="h-4 w-4 animate-spin text-primary shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-primary">
+                        Importing listings…
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {doneCount} imported · {failedCount} skipped · {pendingCount} remaining
+                      </p>
+                    </div>
+                    <Button
+                      onClick={stopProcessAll}
+                      variant="ghost"
+                      size="sm"
+                      className="shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-lg"
+                    >
+                      Stop
+                    </Button>
+                  </motion.div>
+                )}
+
                 {/* Progress bar */}
                 <div>
                   <div className="flex justify-between text-sm mb-2">
                     <span>{doneCount + failedCount} of {totalItems} processed</span>
                     <span>{progressPercent}%</span>
                   </div>
-                  <Progress value={progressPercent} className="h-3" />
+                  <Progress
+                    value={progressPercent}
+                    className="h-3"
+                    indicatorClassName={isProcessingAll ? 'animate-pulse' : ''}
+                  />
                 </div>
 
                 {/* Stats */}
