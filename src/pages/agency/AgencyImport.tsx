@@ -153,10 +153,26 @@ export default function AgencyImport() {
           {currentJob && (
             <Card className="rounded-2xl border-primary/10">
               <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent rounded-t-2xl">
-                <CardTitle className="flex items-center gap-2">
-                  <Download className="h-5 w-5 text-primary" />
-                  Step 2: Import Listings
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Download className="h-5 w-5 text-primary" />
+                    Step 2: Import Listings
+                  </CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="rounded-xl text-muted-foreground hover:text-destructive"
+                    disabled={deleteJobMutation.isPending}
+                    onClick={() => {
+                      if (confirm('Delete this import job and all its items?')) {
+                        deleteJobMutation.mutate(currentJob!.id);
+                        setActiveJobId(null);
+                      }
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="pt-4 space-y-4">
                 {/* Job info */}
