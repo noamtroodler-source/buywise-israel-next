@@ -71,13 +71,15 @@ export function ProfessionalContactCard({ professional, accentColor }: Professio
           </Button>
         )}
 
-        <ProfileShareMenu
-          name={professional.name}
-          profileType="agent"
-          variant="outline"
-          size="sm"
-          label="Share Profile"
-        />
+        <div className="flex items-center justify-center pt-1">
+          <ProfileShareMenu
+            name={professional.name}
+            profileType="agent"
+            variant="ghost"
+            size="sm"
+            label="Share Profile"
+          />
+        </div>
 
         {professional.office_address && (
           <div className="flex items-start gap-2 pt-2 border-t border-border/50">
