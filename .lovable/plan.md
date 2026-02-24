@@ -1,147 +1,122 @@
 
 
-## "Import All" Auto-Batching + Background Completion Notifications
+## Fix Import Failures + City-Only Filtering
 
-### Problem
-Users with many listings (e.g. 280) must click "Import Next Batch" 28 times manually. If they navigate away during import, they get no notification when it finishes.
+### Problems Identified
 
-### Solution
-1. Add a **"Process All Remaining"** button that chains batch calls automatically on the frontend
-2. Show a **toast notification** when the import completes, even if the user navigated away from the import page
+1. **Missing city**: AI fails to extract city from pages where it's implied by the domain (e.g., `jerusalem-real-estate.co`) or neighborhood context
+2. **Price on request**: Listings with no price fail validation (`price must be greater than 0`)
+3. **Off-platform cities**: Listings from cities not served by the platform get imported unnecessarily
+4. **Strict validation**: No fallback logic before rejecting items
 
-### Changes
+### Solution (all changes in `supabase/functions/import-agency-listings/index.ts`)
 
-**File: `src/hooks/useImportListings.tsx`**
+#### 1. Add a supported cities whitelist
 
-Add a new `useProcessAll` hook that:
-- Accepts a `jobId`
-- Calls `process_batch` in a loop until `remaining === 0`
-- Tracks state: `isProcessingAll`, `stopRequested`
-- Exposes a `stop()` function so the user can cancel the auto-batching
-- On completion (remaining === 0), shows a persistent toast: "Import complete! X listings imported as drafts"
-- On error, stops the loop and shows the error toast
-- Invalidates queries after each batch (so the progress bar updates live)
+Add a constant array of the 25 cities from the `cities` table at the top of the file. After AI extraction, if the extracted city doesn't match any supported city (case-insensitive, with common alias matching), skip the listing with a clear message like "City not supported: Tiberias".
 
 ```text
-export function useProcessAll() {
-  const queryClient = useQueryClient();
-  const [isProcessingAll, setIsProcessingAll] = useState(false);
-  const stopRef = useRef(false);
+const SUPPORTED_CITIES = [
+  "Ashdod", "Ashkelon", "Beer Sheva", "Beit Shemesh", "Caesarea",
+  "Efrat", "Eilat", "Givat Shmuel", "Gush Etzion", "Hadera",
+  "Haifa", "Herzliya", "Hod HaSharon", "Jerusalem", "Kfar Saba",
+  "Ma'ale Adumim", "Mevaseret Zion", "Modi'in", "Netanya",
+  "Pardes Hanna", "Petah Tikva", "Ra'anana", "Ramat Gan",
+  "Tel Aviv", "Zichron Yaakov",
+];
+```
 
-  const startProcessAll = async (jobId: string) => {
-    setIsProcessingAll(true);
-    stopRef.current = false;
-    let totalSucceeded = 0;
-    let totalFailed = 0;
+A fuzzy matcher function will normalize strings (strip apostrophes, hyphens, lowercase) and match against the list, returning the canonical city name. This handles variations like "Modiin" -> "Modi'in", "Beer Sheba" -> "Beer Sheva", "TLV" -> "Tel Aviv", etc.
 
-    try {
-      while (!stopRef.current) {
-        const { data, error } = await supabase.functions.invoke(
-          'import-agency-listings',
-          { body: { action: 'process_batch', job_id: jobId } }
-        );
-        if (error) throw error;
-        if (data?.error) throw new Error(data.error);
+#### 2. Add city inference from domain/URL
 
-        totalSucceeded += data.succeeded;
-        totalFailed += data.failed;
+Before the AI extraction prompt, extract the website domain from the item URL. Pass it as context to the AI prompt so Gemini can infer the city. Additionally, after AI extraction, if city is still missing, apply a code-level domain-to-city mapping:
 
-        // Refresh UI after each batch
-        queryClient.invalidateQueries({ queryKey: ['importJobs'] });
-        queryClient.invalidateQueries({ queryKey: ['importJobItems'] });
+```text
+const DOMAIN_CITY_HINTS: Record<string, string> = {
+  "jerusalem": "Jerusalem",
+  "telaviv": "Tel Aviv",
+  "tlv": "Tel Aviv",
+  "haifa": "Haifa",
+  "herzliya": "Herzliya",
+  "netanya": "Netanya",
+  "raanana": "Ra'anana",
+  "modiin": "Modi'in",
+  "beersheva": "Beer Sheva",
+  "ashdod": "Ashdod",
+  "ashkelon": "Ashkelon",
+  // ... etc
+};
+```
 
-        if (data.remaining === 0 || data.status === 'completed') break;
-      }
+After AI extraction, if `listing.city` is empty:
+1. Check the URL domain against `DOMAIN_CITY_HINTS`
+2. If a match is found, set `listing.city` to that value
 
-      queryClient.invalidateQueries({ queryKey: ['agencyListingsManagement'] });
+#### 3. Update the AI extraction prompt
 
-      if (stopRef.current) {
-        toast.info(`Import paused. ${totalSucceeded} imported, ${totalFailed} skipped/failed so far.`);
-      } else {
-        toast.success(
-          `Import complete! ${totalSucceeded} listings imported, ${totalFailed} skipped/failed.`,
-          { duration: 10000 }
-        );
-      }
-    } catch (err) {
-      toast.error(`Import failed: ${err.message}`);
-    } finally {
-      setIsProcessingAll(false);
-    }
-  };
+Add two pieces of context to the extraction prompt:
+- The website domain name (so the AI can infer city from domain like `jerusalem-real-estate.co`)
+- The list of supported cities (so the AI returns canonical names)
+- Explicit instruction: "If the city is not explicitly stated, infer it from the domain name, URL path, or neighborhood context. Return city as one of the supported cities."
+- Explicit instruction: "If no price is listed (e.g., 'Price on Request', 'Call for price'), set price to 0."
 
-  const stopProcessAll = () => { stopRef.current = true; };
+#### 4. Relax validation for price
 
-  return { startProcessAll, stopProcessAll, isProcessingAll };
+Change the `validatePropertyData` function to allow `price === 0` as a valid "Price on Request" state instead of failing validation. The check becomes:
+
+```text
+if (listing.price != null && listing.price < 0) {
+  errors.push("price cannot be negative");
+} else if (listing.price != null && listing.price > 0 && listing.price < 1000) {
+  errors.push(`price ${listing.price} seems too low`);
 }
+// price === 0 or null/undefined is allowed (Price on Request)
 ```
 
-Key design decisions:
-- Uses `useRef` for the stop flag so it's immediately visible in the async loop (no stale closure)
-- No `useState` import needed -- it's already imported in the file... actually needs `useState` and `useRef` from React
-- Toast `duration: 10000` (10 seconds) for the completion notification so the user notices it even if they're on another page
-- Each batch invalidates queries so the progress bar, stats, and status badge update in real-time
+Also default missing price to 0 (instead of failing) when inserting:
+```text
+price: listing.price || 0,  // 0 = Price on Request
+```
 
-**File: `src/pages/agency/AgencyImport.tsx`**
+#### 5. City validation gate (after extraction, before insert)
 
-1. Import `useProcessAll` from the hooks file
-2. Initialize the hook in the component
-3. Add a "Process All Remaining" button next to the existing "Import Next Batch" button
-4. When `isProcessingAll` is true, show a "Stop" button instead
-5. Disable the single-batch button while auto-batching is active
-
-Updated action buttons section:
+After AI extraction and city inference, validate the city against the supported list:
 
 ```text
-{(isReady || (isCompleted && pendingCount > 0)) && (
-  <>
-    {/* Single batch button */}
-    <Button
-      onClick={handleProcessBatch}
-      disabled={isProcessing || isProcessingAll}
-      variant="outline"
-      className="rounded-xl"
-    >
-      ...existing content...
-    </Button>
-
-    {/* Process All / Stop button */}
-    {isProcessingAll ? (
-      <Button
-        onClick={stopProcessAll}
-        variant="destructive"
-        className="rounded-xl"
-      >
-        <XCircle className="h-4 w-4 mr-2" />
-        Stop Import
-      </Button>
-    ) : (
-      <Button
-        onClick={() => startProcessAll(currentJob!.id)}
-        disabled={isProcessing}
-        className="rounded-xl"
-      >
-        <Download className="h-4 w-4 mr-2" />
-        Import All Remaining ({pendingCount} listings)
-      </Button>
-    )}
-  </>
-)}
+// Normalize and match city
+const matchedCity = matchSupportedCity(listing.city);
+if (!matchedCity) {
+  await sb.from("import_job_items").update({
+    status: "skipped",
+    error_message: `City not supported: "${listing.city || '(none)'}". Only 25 featured cities are imported.`
+  }).eq("id", item.id);
+  failed++;
+  continue;
+}
+listing.city = matchedCity; // Use canonical name
 ```
 
-Design changes:
-- "Import All Remaining" becomes the primary (default variant) button
-- "Import Next Batch" becomes secondary (outline variant)
-- During auto-batching, a red "Stop Import" button replaces "Import All"
-- The processing spinner shows on the progress bar area (already works via polling)
-- The `isProcessing` state derived from `processBatchMutation.isPending || currentJob?.status === 'processing'` is updated to also include `isProcessingAll`
+This applies to both property and project paths.
 
-### Background Notifications
-The toast with `duration: 10000` from `sonner` will show even if the user navigated to a different page (e.g. /agency/listings), because `sonner`'s `<Toaster>` is mounted at the app layout level. No additional infrastructure needed -- the toast just fires from the async loop when it completes.
+### Order of Operations (per item)
 
-### No Backend Changes
-The edge function already processes batches of 10 and returns `remaining` count. The frontend simply chains these calls. No new edge function action needed.
+1. Scrape page
+2. Pre-filter sold/rented keywords
+3. AI extraction (with domain hint + supported cities in prompt)
+4. Post-extraction city inference from domain (if city still missing)
+5. City whitelist validation (skip if not in 25 cities)
+6. Data validation (relaxed price rules)
+7. Duplicate detection
+8. Image download, geocode, insert
 
 ### Files Modified
-- `src/hooks/useImportListings.tsx` -- add `useProcessAll` hook
-- `src/pages/agency/AgencyImport.tsx` -- add "Import All" / "Stop" buttons, wire up the hook
+
+- `supabase/functions/import-agency-listings/index.ts` -- all changes in this single file
+
+### No UI Changes Needed
+
+The existing import UI already displays skip/fail messages. Users will see clear messages like:
+- "City not supported: Tiberias. Only 25 featured cities are imported."
+- Items with "Price on Request" will import successfully with price = 0
+
