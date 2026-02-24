@@ -1,80 +1,97 @@
 
 
-## Prevent Duplicate Discoveries
+## Pre-LLM Sold/Rented Filtering
 
 ### Problem
-Clicking "Discover" on the same URL creates a brand new job with duplicate items every time. There's no check for existing jobs.
+The current import pipeline relies solely on the AI model detecting sold/rented status via the `is_sold_or_rented` field. Hebrew terms like "נמכר" (sold), "הושכר" (rented), or English equivalents can be missed by the LLM, resulting in unavailable listings cluttering the dashboard.
 
 ### Solution
-Add duplicate detection in two places: the edge function (server-side guard) and the UI (client-side warning with option to resume).
-
----
+Add a deterministic keyword check on the scraped markdown **before** sending it to the AI for extraction. If the page content matches known sold/rented indicators, skip it immediately -- saving an AI call and preventing false positives.
 
 ### Changes
 
-**1. Edge Function: `supabase/functions/import-agency-listings/index.ts`**
+**File: `supabase/functions/import-agency-listings/index.ts`**
 
-In `handleDiscover`, before calling Firecrawl, query `import_jobs` for an existing job with the same `agency_id` and `website_url` that isn't in a terminal state:
+Add a helper function `isSoldOrRentedPage(markdown)` and call it in `handleProcessBatch` right after scraping succeeds (after the content-length check at line ~287, before the AI extraction prompt at line ~294).
 
-- If an existing job is found with status `ready`, `processing`, or `discovering` -- return it immediately without re-scanning. Response includes a `resumed: true` flag so the UI knows.
-- If an existing job is found with status `completed` -- still return it with `resumed: true`, letting the user continue from where they left off (they can delete it manually if they want a fresh scan).
-- Only create a new job if no matching job exists.
+**The helper function** scans the markdown for known patterns in Hebrew and English:
 
-This is the authoritative guard -- even if the UI check is bypassed, the server won't create duplicates.
+Hebrew terms:
+- נמכר / נמכרה (sold, masculine/feminine)
+- הושכר / הושכרה (rented, masculine/feminine)
+- בהסכם (under contract)
+- לא זמין (not available)
+- אין בנמצא / לא פנוי (unavailable/not vacant)
 
-**2. UI: `src/pages/agency/AgencyImport.tsx`**
+English terms:
+- sold, under contract, sale agreed
+- rented, leased, let agreed
+- off market, no longer available, under offer
 
-Before calling the discover mutation, check the local `jobs` array for a job with the same URL (normalized). If found:
+The check uses case-insensitive regex matching and looks for these terms as whole words (not substrings of other words), to avoid false positives like "sold" appearing in "soldier".
 
-- Show a toast warning: "A job for this URL already exists"
-- Auto-select that job (set `activeJobId`) instead of starting discovery
-- Skip the mutation entirely
+**Logic flow:**
+```text
+1. Scrape page -> get markdown
+2. Check markdown length (existing, line ~287)
+3. NEW: Run isSoldOrRentedPage(markdown)
+   - If true -> mark item as "skipped" with message
+     "Pre-filter: listing appears sold/rented"
+   - If false -> continue to AI extraction (existing flow)
+4. AI extraction still has is_sold_or_rented as backup
+```
 
-This gives instant feedback without waiting for a server round-trip.
-
-**3. Hook: `src/hooks/useImportListings.tsx`**
-
-Update the `useDiscoverListings` mutation's return type to include `resumed?: boolean` so the success handler can show an appropriate toast ("Resumed existing job" vs "Found N listing pages").
-
----
+This means there are now **two layers** of sold/rented detection:
+- Layer 1 (new): Fast keyword scan -- catches obvious cases, saves AI credits
+- Layer 2 (existing): AI extraction's `is_sold_or_rented` field -- catches nuanced cases the keywords miss
 
 ### Technical Details
 
+The new function added near the top of the file:
+
 ```text
-Edge Function (handleDiscover) - lines ~18-159
-  BEFORE Firecrawl call, add:
-  
-  1. Normalize website_url (trim, lowercase hostname, remove trailing slash)
-  2. Query: SELECT * FROM import_jobs
-     WHERE agency_id = ? AND website_url = ?
-     AND status NOT IN ('failed')
-     ORDER BY created_at DESC LIMIT 1
-  3. If found:
-     - Count pending items for that job
-     - Return { job_id, total_listings, total_discovered, resumed: true }
-  4. If not found: proceed with existing Firecrawl + AI flow
+function isSoldOrRentedPage(markdown: string): boolean {
+  // Hebrew patterns
+  const hebrewPatterns = [
+    /נמכר[הו]?/,        // sold (masc/fem/plural)
+    /הושכר[הו]?/,       // rented (masc/fem/plural)
+    /בהסכם/,            // under contract
+    /לא\s*זמינ[הו]?/,   // not available
+    /לא\s*פנוי[הו]?/,   // not vacant
+    /אין\s*בנמצא/,       // unavailable
+  ];
 
-UI (AgencyImport.tsx) - handleDiscover function
-  BEFORE calling discoverMutation:
-  
-  1. Normalize the input URL same way as server
-  2. Check: jobs.find(j => normalize(j.website_url) === normalize(websiteUrl))
-  3. If match found:
-     - toast.info("Job already exists for this URL — showing it")
-     - setActiveJobId(match.id)
-     - return early (don't call mutation)
+  // English patterns (word-boundary protected)
+  const englishPatterns = [
+    /\bsold\b/i,
+    /\brented\b/i,
+    /\bleased\b/i,
+    /\bunder\s+contract\b/i,
+    /\bunder\s+offer\b/i,
+    /\bsale\s+agreed\b/i,
+    /\blet\s+agreed\b/i,
+    /\boff\s*market\b/i,
+    /\bno\s+longer\s+available\b/i,
+    /\bunavailable\b/i,
+  ];
 
-Hook (useImportListings.tsx) - useDiscoverListings
-  - Update return type to include resumed?: boolean
-  - Update onSuccess toast: show "Resumed existing job" when resumed is true
+  // Check first ~2000 chars (status badges are usually near the top)
+  const snippet = markdown.substring(0, 2000);
+
+  for (const p of hebrewPatterns) {
+    if (p.test(snippet)) return true;
+  }
+  for (const p of englishPatterns) {
+    if (p.test(snippet)) return true;
+  }
+  return false;
+}
 ```
 
-### URL Normalization
+Key design decisions:
+- Only scans the **first 2000 characters** of the markdown -- sold/rented badges are almost always in the page header/title area, and this avoids false positives from body text like "recently sold in this area"
+- Hebrew patterns don't use `\b` (word boundary doesn't work with Hebrew Unicode) -- instead relies on the specificity of the terms themselves
+- The existing AI `is_sold_or_rented` check (line 563) remains as a safety net for edge cases
 
-Both client and server will normalize URLs the same way:
-- Add `https://` if no protocol
-- Lowercase the hostname
-- Remove trailing slash
-
-This prevents edge cases like `https://Example.com/` vs `http://example.com` creating duplicate jobs.
-
+### No UI Changes
+This is entirely a backend optimization. No frontend changes needed. Items filtered this way will show as "skipped" with a clear reason message in the existing UI.
