@@ -119,7 +119,7 @@ export function useDeleteAnnouncement() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agencyAnnouncements'] });
-      toast.success('Announcement deleted');
+      // No toast - row disappears from list visually
     },
     onError: (error) => {
       toast.error('Failed to delete announcement: ' + error.message);

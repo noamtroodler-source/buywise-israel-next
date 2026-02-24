@@ -51,7 +51,7 @@ export default function AdminEnterpriseInquiries() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['enterprise-inquiries'] });
-      toast.success('Status updated');
+      // No toast - badge updates inline
     },
     onError: (err: any) => toast.error(err.message),
   });
