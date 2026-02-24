@@ -41,6 +41,11 @@ export function useImportJobs(agencyId: string | undefined) {
       return data as ImportJob[];
     },
     enabled: !!agencyId,
+    refetchInterval: (query) => {
+      const data = query.state.data as ImportJob[] | undefined;
+      const hasActive = data?.some(j => ['discovering', 'ready', 'processing'].includes(j.status));
+      return hasActive ? 3000 : false;
+    },
   });
 }
 
@@ -61,8 +66,8 @@ export function useImportJobItems(jobId: string | undefined) {
     refetchInterval: (query) => {
       // Auto-refresh while processing
       const data = query.state.data as ImportJobItem[] | undefined;
-      const hasProcessing = data?.some(i => i.status === 'processing');
-      return hasProcessing ? 3000 : false;
+      const hasActive = data?.some(i => ['processing', 'pending'].includes(i.status));
+      return hasActive ? 3000 : false;
     },
   });
 }
