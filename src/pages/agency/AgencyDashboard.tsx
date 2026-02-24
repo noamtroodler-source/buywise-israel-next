@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { 
   Building2, Users, Home, Eye, Plus, Copy, Check, Loader2, 
   UserPlus, Settings, ExternalLink, ArrowLeft, BadgeCheck, Clock, Hash,
-  FileText, Megaphone, Mail, PenLine, CreditCard, Star
+  FileText, Megaphone, Mail, PenLine, CreditCard, Star, Download
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -185,6 +185,12 @@ export default function AgencyDashboard() {
                   <Link to="/agency/featured">
                     <Star className="h-4 w-4 mr-2" />
                     Featured
+                  </Link>
+                </Button>
+                <Button variant="outline" asChild className="rounded-xl border-primary/20 hover:bg-primary/5">
+                  <Link to="/agency/import">
+                    <Download className="h-4 w-4 mr-2" />
+                    Import
                   </Link>
                 </Button>
                 <Button variant="outline" asChild className="rounded-xl border-primary/20 hover:bg-primary/5">

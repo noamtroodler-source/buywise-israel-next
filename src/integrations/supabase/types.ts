@@ -2341,6 +2341,108 @@ export type Database = {
         }
         Relationships: []
       }
+      import_job_items: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          extracted_data: Json | null
+          id: string
+          job_id: string
+          property_id: string | null
+          status: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          extracted_data?: Json | null
+          id?: string
+          job_id: string
+          property_id?: string | null
+          status?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          extracted_data?: Json | null
+          id?: string
+          job_id?: string
+          property_id?: string | null
+          status?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_job_items_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "import_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "import_job_items_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      import_jobs: {
+        Row: {
+          agency_id: string
+          created_at: string
+          discovered_urls: string[] | null
+          failed_count: number
+          id: string
+          processed_count: number
+          status: string
+          total_urls: number
+          updated_at: string
+          website_url: string
+        }
+        Insert: {
+          agency_id: string
+          created_at?: string
+          discovered_urls?: string[] | null
+          failed_count?: number
+          id?: string
+          processed_count?: number
+          status?: string
+          total_urls?: number
+          updated_at?: string
+          website_url: string
+        }
+        Update: {
+          agency_id?: string
+          created_at?: string
+          discovered_urls?: string[] | null
+          failed_count?: number
+          id?: string
+          processed_count?: number
+          status?: string
+          total_urls?: number
+          updated_at?: string
+          website_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_jobs_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "import_jobs_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inquiries: {
         Row: {
           agent_id: string
@@ -3814,6 +3916,7 @@ export type Database = {
           has_storage: boolean | null
           id: string
           images: string[] | null
+          import_source: string | null
           is_accessible: boolean | null
           is_featured: boolean | null
           is_furnished: boolean | null
@@ -3874,6 +3977,7 @@ export type Database = {
           has_storage?: boolean | null
           id?: string
           images?: string[] | null
+          import_source?: string | null
           is_accessible?: boolean | null
           is_featured?: boolean | null
           is_furnished?: boolean | null
@@ -3934,6 +4038,7 @@ export type Database = {
           has_storage?: boolean | null
           id?: string
           images?: string[] | null
+          import_source?: string | null
           is_accessible?: boolean | null
           is_featured?: boolean | null
           is_furnished?: boolean | null
