@@ -61,15 +61,6 @@ export function ProfessionalHeroCard({ professional, accentColor, logoUrl }: Pro
                   {getCategoryLabel(professional.category)}
                 </Badge>
 
-                {professional.works_with_internationals && (
-                  <Badge
-                    style={{ backgroundColor: `${accentColor}15`, color: accentColor, borderColor: `${accentColor}30` }}
-                    className="border font-medium gap-1"
-                  >
-                    <Globe className="h-3 w-3" />
-                    Works with Internationals
-                  </Badge>
-                )}
               </div>
 
               <ProfessionalSocialLinks professional={professional} />
