@@ -3951,6 +3951,7 @@ export type Database = {
           reviewed_at: string | null
           reviewed_by: string | null
           size_sqm: number | null
+          source_url: string | null
           subletting_allowed: string | null
           submitted_at: string | null
           title: string
@@ -4012,6 +4013,7 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           size_sqm?: number | null
+          source_url?: string | null
           subletting_allowed?: string | null
           submitted_at?: string | null
           title: string
@@ -4073,6 +4075,7 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           size_sqm?: number | null
+          source_url?: string | null
           subletting_allowed?: string | null
           submitted_at?: string | null
           title?: string
