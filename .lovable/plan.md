@@ -1,68 +1,60 @@
 
 
-# Incremental Re-Import
+# Import Listings: Onboarding-First Positioning
 
-## What It Does
-When an agency re-runs discovery on the same website URL, instead of blocking them ("A job for this URL already exists"), the system will:
-1. Re-scan the website for all URLs
-2. Compare against URLs already in ANY previous job for that agency + URL combo
-3. Only create new job items for URLs that haven't been seen before
-4. Skip all the filtering/classification/scraping for already-known URLs
+## Overview
+Reposition the Import Listings feature as a **one-time onboarding accelerator** rather than a regular feature. Three changes:
 
-This means agencies can periodically re-import to pick up new listings without re-processing their entire site.
-
-## Current Behavior
-- **Backend**: If a non-failed job exists for the same `agency_id + website_url`, it returns `resumed: true` and does nothing new
-- **Frontend**: Client-side check also blocks submission if a matching URL job exists
+1. **Dashboard welcome banner** — A prominent, one-time CTA for new agencies with zero listings to import from their website. Disappears after first import or manual dismiss.
+2. **"Already have listings" nudge on the import page** — When an agency already has listings, show a gentle message steering them toward manual listing creation instead.
+3. **Move Import out of primary nav** — Demote the "Import" button from the dashboard header row into the Settings page or a less prominent location.
 
 ## Changes
 
-### 1. Backend: `handleDiscover` (edge function)
-Instead of blocking on duplicate jobs, the new flow:
-1. Run Firecrawl map as usual to get fresh URL list
-2. Query ALL `import_job_items` URLs from previous jobs for this `agency_id + website_url` (across all past jobs, not just the latest)
-3. Also check the `properties` table for `source_url` matches (catches listings imported from older deleted jobs)
-4. Filter out already-known URLs before AI classification
-5. If zero new URLs found, return early with a clear message: `{ new_urls: 0, total_discovered: X }`
-6. If new URLs exist, create a NEW job (not reuse the old one) with only the new items
+### 1. New Component: `ImportWelcomeBanner`
+A new component rendered on the Agency Dashboard, shown only when:
+- The agency has **0 active listings** (from `stats.activeListings`)
+- The banner hasn't been dismissed (tracked via `localStorage` key `agency_import_banner_dismissed`)
+- No completed import jobs exist (optional extra check)
 
-This approach is clean because:
-- Each job is a self-contained unit with its own progress tracking
-- Past job history is preserved
-- The "Past Imports" UI continues to work naturally
+The banner will display:
+- Heading: "Get started quickly"
+- Body: "Import your existing listings from your website in minutes"
+- Two actions: **[Import from Website]** (links to `/agency/import`) and **[Skip - I'll add manually]** (dismisses)
+- Styled consistently with the existing `AgencyOnboardingProgress` card (gradient border, rounded-2xl)
 
-### 2. Frontend: Remove client-side duplicate block
-The `AgencyImport.tsx` currently short-circuits if it finds an existing job with the same URL (line 69-75). Remove this block so the request reaches the backend, which handles the incremental logic.
+Once dismissed or after the first import job completes, it never shows again.
 
-Update the discovery success toast to show how many NEW URLs were found vs. how many were skipped as already imported.
+### 2. Import Page: "Already have listings" nudge
+On `AgencyImport.tsx`, add an info banner (using the existing `InfoBanner` component) at the top when `stats.activeListings > 0`:
 
-### 3. Frontend: UI feedback for incremental results
-When discovery returns with `new_urls: 0`, show a friendly message like "Your site is up to date - no new listings found." instead of creating an empty job.
+> "You already have X listings. This tool is designed for first-time bulk imports. For new individual listings, the **Add Listing** wizard gives you more control and better accuracy."
 
-## Edge Cases Handled
+This is a soft nudge, not a block — they can still use the import tool.
 
-| Scenario | Behavior |
-|----------|----------|
-| No previous jobs for this URL | Normal full discovery (unchanged) |
-| Previous job exists, all URLs already known | Returns `{ new_urls: 0 }`, no new job created |
-| Previous job exists, some new URLs found | Creates new job with only new URLs |
-| Previous job was deleted but listings remain in `properties` | `source_url` check catches these too |
-| Agency re-imports after deleting all old jobs | Falls through to normal full discovery |
-| URL normalization differences | Uses existing `normalizeUrl()` for consistent matching |
+### 3. Move Import button in dashboard header
+Remove the "Import" button from the dashboard's top nav button row (line 191-195 in `AgencyDashboard.tsx`). Instead, the import page will be accessible via:
+- The welcome banner (for new agencies)
+- The onboarding checklist (already has a "First listing published" item)
+- Direct URL `/agency/import` (for those who know about it)
+- A link in Settings or at the bottom of the Listings page
 
 ## Technical Details
 
-**File: `supabase/functions/import-agency-listings/index.ts`**
-- Rewrite the duplicate-check block in `handleDiscover` (lines 600-623)
-- After Firecrawl map + filtering + AI classification, subtract known URLs
-- Add `source_url` lookup from `properties` table as secondary dedup
-- Return response with `new_urls` count and `skipped_existing` count
+### New file: `src/components/agency/ImportWelcomeBanner.tsx`
+- Accepts `activeListings: number` and optional `hasCompletedImport: boolean`
+- Uses `localStorage` key `agency_import_banner_dismissed` for persistence
+- Renders a card with gradient styling, two buttons, and an animated collapse on dismiss
 
-**File: `src/pages/agency/AgencyImport.tsx`**
-- Remove client-side duplicate URL block (lines 68-75)
-- Update toast messages to reflect incremental results
-- Handle `new_urls: 0` response with an informational message instead of switching to a job
+### Modified file: `src/pages/agency/AgencyDashboard.tsx`
+- Import and render `ImportWelcomeBanner` above the stats cards (or just below the onboarding checklist)
+- Remove the "Import" button from the header button row
+- Pass `stats?.activeListings` to the banner
 
-**File: `src/hooks/useImportListings.tsx`**
-- Update `useDiscoverListings` return type to include `new_urls` and `skipped_existing`
+### Modified file: `src/pages/agency/AgencyImport.tsx`
+- Add a query for listing count (reuse `useAgencyStats` or similar)
+- When `activeListings > 0`, show an `InfoBanner` with the nudge message between the header and the discovery form
+
+### Modified file: `src/hooks/useImportListings.tsx`
+- No changes needed (existing hooks are sufficient)
 
