@@ -221,33 +221,25 @@ export function SortableImageUpload({
       onImagesChange(allImages);
       setUploading(false);
 
-      // Enhance images in background after upload completes
-      setEnhancingCount(newUrls.length);
-      sonnerToast.info(`Enhancing ${newUrls.length} image(s) with AI...`, { duration: 3000 });
+      // Enhance only the cover photo (index 0) if it's among the newly uploaded batch
+      const coverUrl = allImages[0];
+      const isCoverNew = newUrls.includes(coverUrl);
 
-      const enhancedResults = await Promise.allSettled(
-        newUrls.map(url => enhanceUploadedImage(url))
-      );
+      if (isCoverNew) {
+        setEnhancingCount(1);
+        sonnerToast.info('Enhancing cover photo with AI...', { duration: 3000 });
 
-      const enhancedUrls = enhancedResults.map((r, i) =>
-        r.status === 'fulfilled' ? r.value : newUrls[i]
-      );
+        const enhancedCover = await enhanceUploadedImage(coverUrl);
 
-      // Replace original URLs with enhanced ones
-      const updatedImages = allImages.map(url => {
-        const origIdx = newUrls.indexOf(url);
-        return origIdx >= 0 ? enhancedUrls[origIdx] : url;
-      });
-      onImagesChange(updatedImages);
-
-      const enhancedCount = enhancedResults.filter(
-        (r, i) => r.status === 'fulfilled' && r.value !== newUrls[i]
-      ).length;
-
-      if (enhancedCount > 0) {
-        sonnerToast.success(`${enhancedCount} image(s) enhanced with AI`);
+        if (enhancedCover !== coverUrl) {
+          const updatedImages = allImages.map(url =>
+            url === coverUrl ? enhancedCover : url
+          );
+          onImagesChange(updatedImages);
+          sonnerToast.success('Cover photo enhanced with AI');
+        }
+        setEnhancingCount(0);
       }
-      setEnhancingCount(0);
     } catch (error) {
       console.error('Upload error:', error);
       toast({

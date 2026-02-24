@@ -953,7 +953,8 @@ async function parallelImageDownload(
   for (let i = 0; i < images.length; i += BATCH_SIZE) {
     const batch = images.slice(i, i + BATCH_SIZE);
     const results = await Promise.allSettled(
-      batch.map(async (imgUrl) => {
+      batch.map(async (imgUrl, batchIdx) => {
+        const globalIdx = i + batchIdx;
         const imgRes = await fetch(imgUrl);
         if (!imgRes.ok) return null;
 
@@ -971,9 +972,12 @@ async function parallelImageDownload(
           const publicUrl = urlData?.publicUrl || null;
           if (!publicUrl) return null;
 
-          // Best-effort AI enhancement
-          const enhanced = await enhanceImage(publicUrl, sb, bucketName, jobId);
-          return enhanced;
+          // Only enhance the first image (cover photo) to reduce costs
+          if (globalIdx === 0) {
+            const enhanced = await enhanceImage(publicUrl, sb, bucketName, jobId);
+            return enhanced;
+          }
+          return publicUrl;
         }
         return null;
       })
