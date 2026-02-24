@@ -23,6 +23,10 @@ export default function ProfessionalDetail() {
   const { slug } = useParams<{ slug: string }>();
   const { data: professional, isLoading } = useTrustedProfessional(slug || '');
 
+  const logoUrl = professional?.logo_url || (professional ? PROFESSIONAL_LOGOS[professional.slug] : undefined) || undefined;
+  const extractedColor = useExtractedColor(logoUrl);
+  const accentColor = professional ? (extractedColor || getAccentColor(professional)) : extractedColor || '#6366f1';
+
   if (isLoading) return <PageLoader />;
 
   if (!professional) {
@@ -38,10 +42,6 @@ export default function ProfessionalDetail() {
       </Layout>
     );
   }
-
-  const logoUrl = professional.logo_url || PROFESSIONAL_LOGOS[professional.slug] || undefined;
-  const extractedColor = useExtractedColor(logoUrl);
-  const accentColor = extractedColor || getAccentColor(professional);
 
   const title = `${professional.name}${professional.company ? ` — ${professional.company}` : ''} | ${SITE_CONFIG.siteName}`;
   const description = professional.description || `${getCategoryLabel(professional.category)} working with international buyers in Israel.`;
