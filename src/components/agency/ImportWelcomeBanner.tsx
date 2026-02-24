@@ -42,8 +42,8 @@ export function ImportWelcomeBanner({ activeListings }: ImportWelcomeBannerProps
                   <h3 className="text-lg font-semibold text-foreground mb-1">
                     Get started quickly
                   </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Import your existing listings from your website in minutes — no manual data entry needed.
+                   <p className="text-sm text-muted-foreground">
+                    Import your existing listings from your website in minutes. You'll review and complete each listing before publishing.
                   </p>
                 </div>
                 <div className="flex gap-2 flex-shrink-0">
