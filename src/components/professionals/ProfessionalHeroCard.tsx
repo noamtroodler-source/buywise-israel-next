@@ -70,20 +70,6 @@ export function ProfessionalHeroCard({ professional, accentColor, logoUrl }: Pro
                     Works with Internationals
                   </Badge>
                 )}
-
-                {professional.website && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground"
-                    asChild
-                  >
-                    <a href={professional.website} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="h-3 w-3" />
-                      Website
-                    </a>
-                  </Button>
-                )}
               </div>
 
               <ProfessionalSocialLinks professional={professional} />
