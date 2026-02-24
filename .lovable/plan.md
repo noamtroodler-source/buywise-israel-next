@@ -1,72 +1,121 @@
 
 
-## Scrape Index Pages to Pre-Filter Sold/Rented Listings
+## Parallelize Batch Processing (3 Concurrent Items)
 
-### Problem
-The URL keyword filter only caught 4 URLs on jerusalem-real-estate.co because the site uses clean URLs without "sold" or "rented" in the path. The sold/rented status is only visible as a badge on the listing grid pages (index/category pages), not in the URL itself. This means 317 items enter the queue when many are sold -- each gets individually scraped and skipped, wasting Firecrawl credits and time.
+### What Changes
 
-### Solution
-During discovery, after Firecrawl MAP finds all URLs and before the AI classifies them, scrape the site's listing index/category pages to find which individual listing URLs appear next to "sold" or "rented" badges. Remove those URLs before AI classification.
+**Single file:** `supabase/functions/import-agency-listings/index.ts`
 
-### How It Works
+The current `for (const item of pendingItems)` loop (lines 727-1257) processes each item one at a time: scrape, AI extract, validate, duplicate check, download images, geocode, insert. This means 10 items take ~10x the time of one item.
 
-**Single file change:** `supabase/functions/import-agency-listings/index.ts`
+### Architecture
 
-#### Step-by-step in `handleDiscover`:
-
-1. **Identify index pages from the mapped URLs** -- look for URLs matching common listing index patterns like `/properties`, `/for-sale`, `/listings`, `/נכסים`, `/דירות`, etc. Also include the homepage. Typically 3-10 pages.
-
-2. **Batch-scrape these index pages using Firecrawl** (HTML format, not markdown, to preserve badge structure). Cost: ~3-8 Firecrawl credits.
-
-3. **Parse each index page's HTML** to find listing cards/links that contain sold/rented signals nearby:
-   - Look for `<a href="/property/xyz">` elements where the surrounding HTML (within ~500 chars) contains keywords like "sold", "נמכר", "rented", "הושכר", "under contract", "בהסכם"
-   - Also detect CSS classes like `sold`, `rented`, `unavailable`, `off-market` on parent containers
-   - Build a Set of "sold URLs" from this analysis
-
-4. **Filter out sold URLs** from the `allUrls` list before passing to AI classification
-
-5. **Log the count** of index-page-filtered URLs for transparency
-
-#### Edge Cases Handled
-
-- **Pagination**: Scrape up to 5 index pages (first few pages catch most sold listings). Sites with deep pagination won't block the process -- remaining sold listings are still caught by the existing per-item `isSoldOrRentedPage()` safety net during processing.
-- **No index pages found**: If no index-pattern URLs are detected, skip this step gracefully and proceed as before.
-- **Scrape failures**: If an index page fails to scrape, log a warning and continue. Never block discovery.
-- **Hebrew content**: All regex patterns include Hebrew equivalents.
-- **False positives**: Only mark a URL as sold if the sold keyword appears within close proximity to the link (not just anywhere on the page). This prevents filtering out an active listing just because a "Recently Sold" section exists elsewhere on the page.
-- **URL normalization**: URLs extracted from HTML `href` attributes are normalized to absolute URLs and matched against the discovered URL list.
-
-#### Expected Results
-
-- **Cost**: Adds ~3-8 Firecrawl credits per discovery, but saves ~30-50 credits by not scraping individual sold pages during processing
-- **Time**: Adds ~10-20 seconds to discovery, saves 2-5 minutes during processing
-- **Effectiveness**: ~70-80% of sold listings caught at discovery. The remaining ~20-30% are still caught by the existing content-based check during individual processing.
-
-### Technical Details
-
-New helper function `findSoldUrlsFromIndexPages`:
+Replace the sequential loop with a controlled concurrency model:
 
 ```text
-async function findSoldUrlsFromIndexPages(
-  allUrls: string[], 
-  websiteUrl: string, 
-  firecrawlKey: string
-): Promise<Set<string>>
+ BEFORE (sequential):                AFTER (parallel, 3 at a time):
+ ┌──────────┐                        ┌──────────┐ ┌──────────┐ ┌──────────┐
+ │ Item 1   │──> done                │ Item 1   │ │ Item 2   │ │ Item 3   │
+ ├──────────┤                        │ scrape   │ │ scrape   │ │ scrape   │
+ │ Item 2   │──> done                │ AI       │ │ AI       │ │ AI       │
+ ├──────────┤                        │ save     │ │ save     │ │ save     │
+ │ Item 3   │──> done                └──────────┘ └──────────┘ └──────────┘
+ │  ...     │                              ──> all settle ──>
+ ├──────────┤                        ┌──────────┐ ┌──────────┐ ┌──────────┐
+ │ Item 10  │──> done                │ Item 4   │ │ Item 5   │ │ Item 6   │
+ └──────────┘                        └──────────┘ └──────────┘ └──────────┘
+ ~100-120 seconds                         ~40-50 seconds
 ```
 
-Index page detection patterns:
+### Implementation Details
+
+**1. Extract single-item processing into a helper function**
+
+Pull the entire body of the current `for` loop (lines 728-1256) into:
 ```text
-/properties, /listings, /for-sale, /for-rent, /our-listings,
-/נכסים, /דירות, /למכירה, /להשכרה, /catalog, /portfolio
+async function processOneItem(
+  item, sb, job, agentId, firecrawlKey, lovableKey, jobId, domainCity
+): Promise<{ succeeded: boolean }>
 ```
 
-Sold badge detection patterns (in surrounding HTML context):
+This function handles one item end-to-end: scrape, AI, validate, dedup, images, geocode, insert. It updates the item status in the DB itself and returns whether it succeeded.
+
+**2. Process items in parallel chunks of 3**
+
+Instead of `for (const item of pendingItems)`, chunk the 10 pending items into groups of 3 and use `Promise.allSettled`:
+
 ```text
-English: sold, rented, leased, under contract, off market, 
-         no longer available, sale agreed, let agreed
-Hebrew:  נמכר, הושכר, בהסכם, לא זמין, לא פנוי
-CSS:     class containing "sold", "rented", "unavailable", "off-market"
+const CONCURRENCY = 3;
+for (let i = 0; i < pendingItems.length; i += CONCURRENCY) {
+  const chunk = pendingItems.slice(i, i + CONCURRENCY);
+  const results = await Promise.allSettled(
+    chunk.map(item => processOneItem(item, ...))
+  );
+  // tally succeeded/failed from results
+}
 ```
 
-The existing URL keyword filter and per-item `isSoldOrRentedPage()` check remain untouched as additional safety nets.
+**3. Geocoding rate-limit guard**
+
+Nominatim enforces 1 request/second. The current code makes one geocoding call per item. With 3 concurrent items, they'd all hit Nominatim simultaneously.
+
+Solution: Use a simple shared mutex/queue for geocoding. A `geocodeWithRateLimit` wrapper that uses a shared promise chain to serialize geocoding calls with a 1.1-second gap:
+
+```text
+let lastGeoTime = 0;
+async function geocodeWithRateLimit(address, city) {
+  const now = Date.now();
+  const wait = Math.max(0, 1100 - (now - lastGeoTime));
+  if (wait > 0) await delay(wait);
+  lastGeoTime = Date.now();
+  // ...actual fetch...
+}
+```
+
+**4. Image downloads -- parallel within each item**
+
+Currently images are downloaded one at a time per item (line 1158: `for (const imgUrl of sourceImages.slice(0, 15))`). Change to `Promise.allSettled` with batches of 5 images at a time within each item. This alone saves significant time per item since image downloads are pure I/O.
+
+**5. Timeout safety**
+
+Edge functions have a ~150s hard timeout. Add a start-time check at the beginning of each chunk. If elapsed time exceeds 120 seconds, stop launching new chunks and return early with `remaining > 0` so the client calls another batch.
+
+```text
+const startTime = Date.now();
+// Before each chunk:
+if (Date.now() - startTime > 120_000) break; // safety margin
+```
+
+### Edge Cases and Gaps Addressed
+
+| Concern | How it's handled |
+|---|---|
+| Firecrawl rate limits | 3 concurrent scrapes is well within typical API rate limits. Firecrawl allows much more than this. |
+| AI gateway rate limits | Lovable AI gateway handles concurrent calls fine. 3 simultaneous is conservative. |
+| Nominatim 1 req/sec | Serialized via shared rate-limit wrapper with 1.1s delay between calls. |
+| DB write conflicts | Each item writes to its own row (by item.id) -- no conflicts possible. |
+| One item crashing kills batch | `Promise.allSettled` ensures other items continue even if one throws. |
+| Edge function timeout (150s) | Elapsed-time check before each chunk; exits early if > 120s. |
+| Image download flooding | Capped at 5 concurrent image downloads per item, 15 images max. |
+| Status tracking accuracy | Each item updates its own DB status independently. Final tally uses DB query (unchanged). |
+| Error isolation | Each `processOneItem` has its own try/catch. Failures are logged per-item. |
+
+### Expected Performance
+
+- **Before**: 10 items at ~10-12s each = ~100-120 seconds per batch
+- **After**: 10 items in chunks of 3 = ~4 chunks, ~10-12s per chunk = ~40-50 seconds per batch
+- **Net improvement**: ~60% faster batch processing
+- **No additional cost**: Same number of Firecrawl credits and AI calls, just run concurrently
+
+### Technical Summary
+
+Changes within `handleProcessBatch` only:
+
+1. New helper: `processOneItem()` -- extracted from lines 728-1256
+2. New helper: `geocodeWithRateLimit()` -- wraps Nominatim calls with 1.1s serialization
+3. New helper: `parallelImageDownload()` -- downloads up to 5 images concurrently
+4. Replace sequential `for` loop with chunked `Promise.allSettled` (concurrency = 3)
+5. Add elapsed-time safety check before each chunk
+
+No changes to discovery, retry, or any other functions.
 
