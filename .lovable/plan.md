@@ -1,114 +1,147 @@
 
 
-## Improved Deduplication Against Existing Listings
+## "Import All" Auto-Batching + Background Completion Notifications
 
-### Current State
-There is already duplicate detection at lines 716-735 for properties (address + city + price within 5%) and lines 578-592 for projects (name + city). However, the property check has gaps:
-
-1. **Requires price** -- if price changes between imports, duplicates slip through
-2. **Requires all 3 fields** -- if address or city is missing, no dedup check runs at all
-3. **No normalization** -- address strings like "Herzl 5" vs "herzl 5" only match via `ilike` (case-insensitive), but "5 Herzl St" vs "Herzl 5" would not match
-4. **No agent scoping** -- checks the entire properties table, not just the agency's listings
+### Problem
+Users with many listings (e.g. 280) must click "Import Next Batch" 28 times manually. If they navigate away during import, they get no notification when it finishes.
 
 ### Solution
-Replace the existing property duplicate detection with a two-tier approach:
-
-**Tier 1: Exact match (address + city)**
-- If a property exists with the same address and city (case-insensitive via `ilike`), it's a duplicate regardless of price
-- Scoped to the same agent (via `agent_id`) to avoid cross-agency false positives
-
-**Tier 2: Fuzzy match (city + bedrooms + size + similar price)**
-- If address is missing or empty, fall back to matching on city + bedrooms + size_sqm + price within 5%
-- This catches cases where the address wasn't extracted but it's clearly the same unit
-
-Both tiers mark the item as `skipped` with a clear message including the existing property ID for reference.
+1. Add a **"Process All Remaining"** button that chains batch calls automatically on the frontend
+2. Show a **toast notification** when the import completes, even if the user navigated away from the import page
 
 ### Changes
 
-**File: `supabase/functions/import-agency-listings/index.ts`**
+**File: `src/hooks/useImportListings.tsx`**
 
-Replace the existing property duplicate detection block (lines 716-735) with improved logic:
+Add a new `useProcessAll` hook that:
+- Accepts a `jobId`
+- Calls `process_batch` in a loop until `remaining === 0`
+- Tracks state: `isProcessingAll`, `stopRequested`
+- Exposes a `stop()` function so the user can cancel the auto-batching
+- On completion (remaining === 0), shows a persistent toast: "Import complete! X listings imported as drafts"
+- On error, stops the loop and shows the error toast
+- Invalidates queries after each batch (so the progress bar updates live)
 
 ```text
-// ── Duplicate detection (two-tier) ──
+export function useProcessAll() {
+  const queryClient = useQueryClient();
+  const [isProcessingAll, setIsProcessingAll] = useState(false);
+  const stopRef = useRef(false);
 
-// Tier 1: Same address + city (strongest signal)
-if (listing.address && listing.city) {
-  const trimmedAddr = listing.address.trim();
-  if (trimmedAddr.length > 0) {
-    const { data: dupes } = await sb
-      .from("properties")
-      .select("id")
-      .eq("agent_id", agentId)
-      .ilike("address", trimmedAddr)
-      .ilike("city", listing.city.trim())
-      .limit(1);
+  const startProcessAll = async (jobId: string) => {
+    setIsProcessingAll(true);
+    stopRef.current = false;
+    let totalSucceeded = 0;
+    let totalFailed = 0;
 
-    if (dupes && dupes.length > 0) {
-      await sb.from("import_job_items").update({
-        status: "skipped",
-        error_message: `Duplicate: matches existing property ${dupes[0].id} (same address + city)`
-      }).eq("id", item.id);
-      failed++;
-      continue;
+    try {
+      while (!stopRef.current) {
+        const { data, error } = await supabase.functions.invoke(
+          'import-agency-listings',
+          { body: { action: 'process_batch', job_id: jobId } }
+        );
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+
+        totalSucceeded += data.succeeded;
+        totalFailed += data.failed;
+
+        // Refresh UI after each batch
+        queryClient.invalidateQueries({ queryKey: ['importJobs'] });
+        queryClient.invalidateQueries({ queryKey: ['importJobItems'] });
+
+        if (data.remaining === 0 || data.status === 'completed') break;
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['agencyListingsManagement'] });
+
+      if (stopRef.current) {
+        toast.info(`Import paused. ${totalSucceeded} imported, ${totalFailed} skipped/failed so far.`);
+      } else {
+        toast.success(
+          `Import complete! ${totalSucceeded} listings imported, ${totalFailed} skipped/failed.`,
+          { duration: 10000 }
+        );
+      }
+    } catch (err) {
+      toast.error(`Import failed: ${err.message}`);
+    } finally {
+      setIsProcessingAll(false);
     }
-  }
-}
+  };
 
-// Tier 2: Fuzzy match when address is weak — city + rooms + size + ~price
-if (listing.city && listing.bedrooms != null && listing.size_sqm && listing.price) {
-  const priceLow = listing.price * 0.95;
-  const priceHigh = listing.price * 1.05;
+  const stopProcessAll = () => { stopRef.current = true; };
 
-  const { data: fuzzyDupes } = await sb
-    .from("properties")
-    .select("id")
-    .eq("agent_id", agentId)
-    .ilike("city", listing.city.trim())
-    .eq("bedrooms", Math.floor(listing.bedrooms))
-    .eq("size_sqm", listing.size_sqm)
-    .gte("price", priceLow)
-    .lte("price", priceHigh)
-    .limit(1);
-
-  if (fuzzyDupes && fuzzyDupes.length > 0) {
-    await sb.from("import_job_items").update({
-      status: "skipped",
-      error_message: `Duplicate: matches existing property ${fuzzyDupes[0].id} (same city, rooms, size, ~price)`
-    }).eq("id", item.id);
-    failed++;
-    continue;
-  }
+  return { startProcessAll, stopProcessAll, isProcessingAll };
 }
 ```
 
-**Also improve the project duplicate detection** (lines 578-592) to include the existing project ID in the skip message for easier debugging:
+Key design decisions:
+- Uses `useRef` for the stop flag so it's immediately visible in the async loop (no stale closure)
+- No `useState` import needed -- it's already imported in the file... actually needs `useState` and `useRef` from React
+- Toast `duration: 10000` (10 seconds) for the completion notification so the user notices it even if they're on another page
+- Each batch invalidates queries so the progress bar, stats, and status badge update in real-time
+
+**File: `src/pages/agency/AgencyImport.tsx`**
+
+1. Import `useProcessAll` from the hooks file
+2. Initialize the hook in the component
+3. Add a "Process All Remaining" button next to the existing "Import Next Batch" button
+4. When `isProcessingAll` is true, show a "Stop" button instead
+5. Disable the single-batch button while auto-batching is active
+
+Updated action buttons section:
 
 ```text
-if (dupeProjects && dupeProjects.length > 0) {
-  await sb.from("import_job_items").update({
-    status: "skipped",
-    error_message: `Duplicate: matches existing project ${dupeProjects[0].id} (same name + city)`
-  }).eq("id", item.id);
-  failed++;
-  continue;
-}
+{(isReady || (isCompleted && pendingCount > 0)) && (
+  <>
+    {/* Single batch button */}
+    <Button
+      onClick={handleProcessBatch}
+      disabled={isProcessing || isProcessingAll}
+      variant="outline"
+      className="rounded-xl"
+    >
+      ...existing content...
+    </Button>
+
+    {/* Process All / Stop button */}
+    {isProcessingAll ? (
+      <Button
+        onClick={stopProcessAll}
+        variant="destructive"
+        className="rounded-xl"
+      >
+        <XCircle className="h-4 w-4 mr-2" />
+        Stop Import
+      </Button>
+    ) : (
+      <Button
+        onClick={() => startProcessAll(currentJob!.id)}
+        disabled={isProcessing}
+        className="rounded-xl"
+      >
+        <Download className="h-4 w-4 mr-2" />
+        Import All Remaining ({pendingCount} listings)
+      </Button>
+    )}
+  </>
+)}
 ```
 
-### Key Design Decisions
+Design changes:
+- "Import All Remaining" becomes the primary (default variant) button
+- "Import Next Batch" becomes secondary (outline variant)
+- During auto-batching, a red "Stop Import" button replaces "Import All"
+- The processing spinner shows on the progress bar area (already works via polling)
+- The `isProcessing` state derived from `processBatchMutation.isPending || currentJob?.status === 'processing'` is updated to also include `isProcessingAll`
 
-- **Agent-scoped**: Duplicates are checked within the same agent's listings only. Two different agents can legitimately list the same property (co-exclusives, etc.)
-- **Tier 1 doesn't need price**: If the same agent has a property at "Herzl 5, Tel Aviv", it's the same listing even if the price changed
-- **Tier 2 requires exact size_sqm match**: This is intentional -- size is a strong identifier for a specific unit, and unlike price it rarely changes between imports
-- **Existing property ID in message**: The skip message now includes the matching property ID so agents can easily verify it's truly a duplicate
+### Background Notifications
+The toast with `duration: 10000` from `sonner` will show even if the user navigated to a different page (e.g. /agency/listings), because `sonner`'s `<Toaster>` is mounted at the app layout level. No additional infrastructure needed -- the toast just fires from the async loop when it completes.
 
-### What the User Sees
+### No Backend Changes
+The edge function already processes batches of 10 and returns `remaining` count. The frontend simply chains these calls. No new edge function action needed.
 
-In the import job items UI, duplicates will show clear messages like:
-- "Duplicate: matches existing property abc-123 (same address + city)"
-- "Duplicate: matches existing property def-456 (same city, rooms, size, ~price)"
-- "Duplicate: matches existing project ghi-789 (same name + city)"
-
-### No UI Changes Needed
-The existing UI already displays `error_message` for skipped items. The improved messages will appear there automatically.
-
+### Files Modified
+- `src/hooks/useImportListings.tsx` -- add `useProcessAll` hook
+- `src/pages/agency/AgencyImport.tsx` -- add "Import All" / "Stop" buttons, wire up the hook
