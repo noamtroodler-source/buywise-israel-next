@@ -902,6 +902,72 @@ async function parallelImageDownload(
   return imageUrls;
 }
 
+// Lightweight pre-check: HEAD request to detect dead links before using a Firecrawl credit
+async function preCheckUrl(url: string): Promise<{
+  ok: boolean;
+  skipReason: string | null;
+  finalUrl: string | null;
+}> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+
+    let response = await fetch(url, {
+      method: "HEAD",
+      redirect: "follow",
+      signal: controller.signal,
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; PropertyImporter/1.0)",
+      },
+    });
+
+    // Some servers reject HEAD requests
+    if (response.status === 405 || response.status === 403) {
+      response = await fetch(url, {
+        method: "GET",
+        redirect: "follow",
+        signal: controller.signal,
+        headers: {
+          "User-Agent": "Mozilla/5.0 (compatible; PropertyImporter/1.0)",
+        },
+      });
+    }
+
+    clearTimeout(timeout);
+
+    const status = response.status;
+    const finalUrl = response.url;
+
+    // Dead links
+    if (status === 404 || status === 410 || status === 451) {
+      return { ok: false, skipReason: `HTTP ${status} — page not found`, finalUrl };
+    }
+
+    // Server errors
+    if (status >= 500) {
+      return { ok: false, skipReason: `HTTP ${status} — server error`, finalUrl };
+    }
+
+    // Check if redirect landed on homepage (common for deleted listings)
+    if (finalUrl !== url) {
+      try {
+        const originalPath = new URL(url).pathname;
+        const finalPath = new URL(finalUrl).pathname;
+        if (finalPath === "/" && originalPath !== "/") {
+          return { ok: false, skipReason: `Redirected to homepage (listing removed)`, finalUrl };
+        }
+      } catch { /* URL parse failed, continue anyway */ }
+    }
+
+    return { ok: true, skipReason: null, finalUrl };
+  } catch (err: any) {
+    if (err.name === "AbortError") {
+      return { ok: false, skipReason: "Pre-check timed out (8s)", finalUrl: null };
+    }
+    return { ok: false, skipReason: `Pre-check network error: ${err.message?.slice(0, 100)}`, finalUrl: null };
+  }
+}
+
 // Process a single item end-to-end
 async function processOneItem(
   item: any,
@@ -915,6 +981,16 @@ async function processOneItem(
 ): Promise<{ succeeded: boolean }> {
   try {
     await sb.from("import_job_items").update({ status: "processing" }).eq("id", item.id);
+
+    // 0. Lightweight pre-check (free, no Firecrawl credit)
+    const preCheck = await preCheckUrl(item.url);
+    if (!preCheck.ok) {
+      console.log(`Pre-check skip: ${item.url} — ${preCheck.skipReason}`);
+      await sb.from("import_job_items")
+        .update({ status: "skipped", error_message: preCheck.skipReason })
+        .eq("id", item.id);
+      return { succeeded: false };
+    }
 
     // 1. Scrape the page
     console.log(`Scraping: ${item.url}`);
