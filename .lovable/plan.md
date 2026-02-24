@@ -1,60 +1,51 @@
 
 
-# Import Listings: Onboarding-First Positioning
+# Progress ETA for Import Processing
 
-## Overview
-Reposition the Import Listings feature as a **one-time onboarding accelerator** rather than a regular feature. Three changes:
+## What It Does
+While listings are being imported, show an estimated time remaining based on the average processing speed observed so far. This gives agencies a clear sense of how long they'll need to wait.
 
-1. **Dashboard welcome banner** — A prominent, one-time CTA for new agencies with zero listings to import from their website. Disappears after first import or manual dismiss.
-2. **"Already have listings" nudge on the import page** — When an agency already has listings, show a gentle message steering them toward manual listing creation instead.
-3. **Move Import out of primary nav** — Demote the "Import" button from the dashboard header row into the Settings page or a less prominent location.
+## Placement
+Inside the **"Auto-import active" indicator** (the blue pulsing banner at lines 247-272) -- this is the natural place since it only appears during active processing and already shows live counts. The ETA will appear as an additional line of text below the existing "X imported / Y skipped / Z remaining" line.
 
-## Changes
+When not actively auto-importing (e.g. between manual batches), the ETA won't show -- there's no meaningful speed to measure.
 
-### 1. New Component: `ImportWelcomeBanner`
-A new component rendered on the Agency Dashboard, shown only when:
-- The agency has **0 active listings** (from `stats.activeListings`)
-- The banner hasn't been dismissed (tracked via `localStorage` key `agency_import_banner_dismissed`)
-- No completed import jobs exist (optional extra check)
+## Design
+The ETA will appear as a subtle line within the existing processing indicator:
 
-The banner will display:
-- Heading: "Get started quickly"
-- Body: "Import your existing listings from your website in minutes"
-- Two actions: **[Import from Website]** (links to `/agency/import`) and **[Skip - I'll add manually]** (dismisses)
-- Styled consistently with the existing `AgencyOnboardingProgress` card (gradient border, rounded-2xl)
+```
+[spinner] Importing listings...
+           12 imported · 3 skipped · 25 remaining
+           ~8 min remaining (avg 18s per listing)
+```
 
-Once dismissed or after the first import job completes, it never shows again.
+- Uses `text-xs text-muted-foreground` to keep it secondary to the main counts
+- Shows both the time estimate AND the per-item speed for transparency
+- Gracefully handles edge cases (shows "Calculating..." until at least 2 items are done)
 
-### 2. Import Page: "Already have listings" nudge
-On `AgencyImport.tsx`, add an info banner (using the existing `InfoBanner` component) at the top when `stats.activeListings > 0`:
+## How It Works
+Track two values via `useRef` in the `useProcessAll` hook:
+1. `startTimeRef` -- timestamp when processing started
+2. `processedSoFarRef` -- count of items processed so far (succeeded + failed)
 
-> "You already have X listings. This tool is designed for first-time bulk imports. For new individual listings, the **Add Listing** wizard gives you more control and better accuracy."
-
-This is a soft nudge, not a block — they can still use the import tool.
-
-### 3. Move Import button in dashboard header
-Remove the "Import" button from the dashboard's top nav button row (line 191-195 in `AgencyDashboard.tsx`). Instead, the import page will be accessible via:
-- The welcome banner (for new agencies)
-- The onboarding checklist (already has a "First listing published" item)
-- Direct URL `/agency/import` (for those who know about it)
-- A link in Settings or at the bottom of the Listings page
+Expose these as return values. The UI component calculates:
+```
+avgTimePerItem = elapsed / processedSoFar
+estimatedRemaining = avgTimePerItem * pendingCount
+```
 
 ## Technical Details
 
-### New file: `src/components/agency/ImportWelcomeBanner.tsx`
-- Accepts `activeListings: number` and optional `hasCompletedImport: boolean`
-- Uses `localStorage` key `agency_import_banner_dismissed` for persistence
-- Renders a card with gradient styling, two buttons, and an animated collapse on dismiss
+### File: `src/hooks/useImportListings.tsx`
+- Add `startTimeRef` and `processedCountRef` refs to `useProcessAll`
+- Set `startTimeRef` at the start of `startProcessAll`
+- Update `processedCountRef` after each batch
+- Return `{ processingStartTime, processedSoFar }` alongside existing values
 
-### Modified file: `src/pages/agency/AgencyDashboard.tsx`
-- Import and render `ImportWelcomeBanner` above the stats cards (or just below the onboarding checklist)
-- Remove the "Import" button from the header button row
-- Pass `stats?.activeListings` to the banner
-
-### Modified file: `src/pages/agency/AgencyImport.tsx`
-- Add a query for listing count (reuse `useAgencyStats` or similar)
-- When `activeListings > 0`, show an `InfoBanner` with the nudge message between the header and the discovery form
-
-### Modified file: `src/hooks/useImportListings.tsx`
-- No changes needed (existing hooks are sufficient)
+### File: `src/pages/agency/AgencyImport.tsx`
+- Destructure new values from `useProcessAll`
+- Add a small `useEffect` + `useState` that recalculates the ETA every 3 seconds (to keep the display updating smoothly even between batch completions)
+- Render the ETA line inside the `isProcessingAll` motion div, below the existing counts
+- Format time as "~Xm Ys remaining" or "less than a minute" for small values
+- Show "Calculating..." until at least 2 items have been processed (need enough data for a meaningful average)
 
