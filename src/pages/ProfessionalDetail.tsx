@@ -59,10 +59,16 @@ export default function ProfessionalDetail() {
           <div className="lg:col-span-2 space-y-6">
             {/* Hero Card */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-              <Card className="overflow-hidden" style={{ background: `linear-gradient(135deg, ${accentColor}0A, transparent)` }}>
+              <Card className="overflow-hidden" style={{ background: `linear-gradient(160deg, ${accentColor}12, ${accentColor}05 40%, transparent 70%)` }}>
+                {/* Bold accent top bar */}
+                <div className="h-1.5 w-full" style={{ background: `linear-gradient(90deg, ${accentColor}, ${accentColor}80)` }} />
                 <CardContent className="p-6 md:p-8">
                   <div className="flex items-start gap-5">
-                    <div className="shrink-0 h-20 w-20 rounded-xl flex items-center justify-center overflow-hidden" style={{ backgroundColor: `${accentColor}15` }}>
+                    {/* Logo with colored ring */}
+                    <div
+                      className="shrink-0 h-20 w-20 rounded-xl flex items-center justify-center overflow-hidden ring-2"
+                      style={{ backgroundColor: `${accentColor}12`, boxShadow: `0 0 0 2px ${accentColor}40` }}
+                    >
                       {(professional.logo_url || PROFESSIONAL_LOGOS[professional.slug]) ? (
                         <img
                           src={professional.logo_url || PROFESSIONAL_LOGOS[professional.slug]}
@@ -70,7 +76,7 @@ export default function ProfessionalDetail() {
                           className="h-full w-full object-cover rounded-xl"
                         />
                       ) : (
-                        <span className="text-3xl font-bold text-primary">
+                        <span className="text-3xl font-bold" style={{ color: accentColor }}>
                           {professional.name.charAt(0)}
                         </span>
                       )}
@@ -85,17 +91,20 @@ export default function ProfessionalDetail() {
                       )}
 
                       <div className="flex flex-wrap gap-2">
-                        <Badge style={{ backgroundColor: `${accentColor}18`, color: accentColor }} className="border-transparent hover:opacity-80">
+                        <Badge
+                          style={{ backgroundColor: `${accentColor}20`, color: accentColor, borderColor: `${accentColor}35` }}
+                          className="border hover:opacity-80 font-semibold"
+                        >
                           {getCategoryLabel(professional.category)}
                         </Badge>
                       </div>
                     </div>
                   </div>
 
-                  <ProfessionalHighlights professional={professional} />
+                  <ProfessionalHighlights professional={professional} accentColor={accentColor} />
 
-                  {/* Language & city badges */}
-                  <div className="mt-5 pt-5 border-t border-border space-y-4">
+                  {/* Language & city badges — accent divider */}
+                  <div className="mt-5 pt-5 space-y-4" style={{ borderTop: `1.5px solid ${accentColor}25` }}>
                     {professional.languages?.length > 0 && (
                       <div>
                         <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Languages</p>
@@ -180,7 +189,7 @@ export default function ProfessionalDetail() {
 
           {/* Sidebar */}
           <div className="space-y-4">
-            <ProfessionalContactCard professional={professional} />
+            <ProfessionalContactCard professional={professional} accentColor={accentColor} />
           </div>
         </div>
       </div>
