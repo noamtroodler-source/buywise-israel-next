@@ -252,7 +252,7 @@ function AgencyEditWizardContent({ propertyId }: { propertyId: string }) {
 
             {/* Progress */}
             <motion.div variants={itemVariants}>
-              <WizardProgress currentStep={currentStep} steps={steps} />
+              <WizardProgress currentStep={currentStep} steps={steps} onStepClick={setCurrentStep} />
             </motion.div>
 
             {/* Step Content */}

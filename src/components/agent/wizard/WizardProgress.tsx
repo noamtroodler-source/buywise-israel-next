@@ -4,9 +4,10 @@ import { cn } from '@/lib/utils';
 interface WizardProgressProps {
   currentStep: number;
   steps: { title: string; description: string }[];
+  onStepClick?: (step: number) => void;
 }
 
-export function WizardProgress({ currentStep, steps }: WizardProgressProps) {
+export function WizardProgress({ currentStep, steps, onStepClick }: WizardProgressProps) {
   return (
     <div className="mb-6">
       {/* Mobile: Simple step indicator */}
@@ -35,7 +36,15 @@ export function WizardProgress({ currentStep, steps }: WizardProgressProps) {
 
               return (
                 <div key={step.title} className="flex items-center flex-1">
-                  <div className="flex flex-col items-center flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => onStepClick?.(index)}
+                    disabled={!onStepClick}
+                    className={cn(
+                      "flex flex-col items-center flex-shrink-0",
+                      onStepClick && "cursor-pointer hover:opacity-80 transition-opacity"
+                    )}
+                  >
                     <div
                       className={cn(
                         "w-11 h-11 rounded-xl flex items-center justify-center font-semibold text-sm transition-all duration-300",
@@ -58,7 +67,7 @@ export function WizardProgress({ currentStep, steps }: WizardProgressProps) {
                         {step.title}
                       </p>
                     </div>
-                  </div>
+                  </button>
                   {index < steps.length - 1 && (
                     <div className={cn(
                       "flex-1 h-1 mx-3 rounded-full transition-colors",
