@@ -1,121 +1,100 @@
 
 
-## Parallelize Batch Processing (3 Concurrent Items)
+## Batch AI Classification During Discovery
+
+### Problem
+The current discovery flow sends all ~300+ URLs in a single AI prompt (line 601). For large sites this can:
+- Hit token limits (input + output), causing truncated or incomplete responses
+- Overwhelm the model's attention, causing it to miss valid listing URLs
+- Create a single point of failure -- if that one AI call fails, the entire discovery fails
+
+### Solution
+Split the URL list into chunks of ~80 URLs and run multiple AI classification calls in parallel (up to 3 concurrent). Merge results with deduplication.
+
+### Architecture
+
+```text
+BEFORE (single call):                 AFTER (chunked + parallel):
+┌──────────────────────┐              ┌──────────┐ ┌──────────┐ ┌──────────┐
+│ 300+ URLs            │              │ URLs 1-80│ │ URLs     │ │ URLs     │
+│ ──> 1 AI call        │              │ AI call 1│ │ 81-160   │ │ 161-240  │
+│ ──> hope it works    │              │          │ │ AI call 2│ │ AI call 3│
+└──────────────────────┘              └──────────┘ └──────────┘ └──────────┘
+                                            ──> all settle ──>
+                                      ┌──────────┐
+                                      │ URLs     │
+                                      │ 241-317  │
+                                      │ AI call 4│
+                                      └──────────┘
+                                            ──> merge + deduplicate
+```
 
 ### What Changes
 
 **Single file:** `supabase/functions/import-agency-listings/index.ts`
 
-The current `for (const item of pendingItems)` loop (lines 727-1257) processes each item one at a time: scrape, AI extract, validate, duplicate check, download images, geocode, insert. This means 10 items take ~10x the time of one item.
+**1. New helper function: `classifyUrlChunk()`**
 
-### Architecture
-
-Replace the sequential loop with a controlled concurrency model:
+Extracts the AI call logic (lines 582-651) into a reusable function that takes a subset of URLs and returns the listing URLs identified by AI:
 
 ```text
- BEFORE (sequential):                AFTER (parallel, 3 at a time):
- ┌──────────┐                        ┌──────────┐ ┌──────────┐ ┌──────────┐
- │ Item 1   │──> done                │ Item 1   │ │ Item 2   │ │ Item 3   │
- ├──────────┤                        │ scrape   │ │ scrape   │ │ scrape   │
- │ Item 2   │──> done                │ AI       │ │ AI       │ │ AI       │
- ├──────────┤                        │ save     │ │ save     │ │ save     │
- │ Item 3   │──> done                └──────────┘ └──────────┘ └──────────┘
- │  ...     │                              ──> all settle ──>
- ├──────────┤                        ┌──────────┐ ┌──────────┐ ┌──────────┐
- │ Item 10  │──> done                │ Item 4   │ │ Item 5   │ │ Item 6   │
- └──────────┘                        └──────────┘ └──────────┘ └──────────┘
- ~100-120 seconds                         ~40-50 seconds
+async function classifyUrlChunk(
+  urls: string[],
+  lovableKey: string
+): Promise<string[]>
 ```
 
-### Implementation Details
+- Contains the same prompt and tool-calling setup
+- Has its own try/catch -- if one chunk's AI call fails, others still succeed
+- Returns empty array on failure (logged as warning, not fatal)
 
-**1. Extract single-item processing into a helper function**
+**2. New orchestrator: `classifyUrlsInBatches()`**
 
-Pull the entire body of the current `for` loop (lines 728-1256) into:
-```text
-async function processOneItem(
-  item, sb, job, agentId, firecrawlKey, lovableKey, jobId, domainCity
-): Promise<{ succeeded: boolean }>
-```
-
-This function handles one item end-to-end: scrape, AI, validate, dedup, images, geocode, insert. It updates the item status in the DB itself and returns whether it succeeded.
-
-**2. Process items in parallel chunks of 3**
-
-Instead of `for (const item of pendingItems)`, chunk the 10 pending items into groups of 3 and use `Promise.allSettled`:
+Replaces the single AI call with chunked parallel processing:
 
 ```text
-const CONCURRENCY = 3;
-for (let i = 0; i < pendingItems.length; i += CONCURRENCY) {
-  const chunk = pendingItems.slice(i, i + CONCURRENCY);
-  const results = await Promise.allSettled(
-    chunk.map(item => processOneItem(item, ...))
-  );
-  // tally succeeded/failed from results
-}
+async function classifyUrlsInBatches(
+  allUrls: string[],
+  lovableKey: string,
+  chunkSize = 80,
+  concurrency = 3
+): Promise<string[]>
 ```
 
-**3. Geocoding rate-limit guard**
+- Splits `allUrls` into chunks of 80
+- Processes chunks in parallel groups of 3 using `Promise.allSettled`
+- Merges all results into a single deduplicated array
+- If ALL chunks fail, falls back to returning up to 100 URLs (same as current fallback)
 
-Nominatim enforces 1 request/second. The current code makes one geocoding call per item. With 3 concurrent items, they'd all hit Nominatim simultaneously.
+**3. Update `handleDiscover()`**
 
-Solution: Use a simple shared mutex/queue for geocoding. A `geocodeWithRateLimit` wrapper that uses a shared promise chain to serialize geocoding calls with a 1.1-second gap:
+Replace lines 579-655 with a call to `classifyUrlsInBatches()`. The prompt, tool definition, and response parsing remain identical -- they just move into the helper.
 
-```text
-let lastGeoTime = 0;
-async function geocodeWithRateLimit(address, city) {
-  const now = Date.now();
-  const wait = Math.max(0, 1100 - (now - lastGeoTime));
-  if (wait > 0) await delay(wait);
-  lastGeoTime = Date.now();
-  // ...actual fetch...
-}
-```
-
-**4. Image downloads -- parallel within each item**
-
-Currently images are downloaded one at a time per item (line 1158: `for (const imgUrl of sourceImages.slice(0, 15))`). Change to `Promise.allSettled` with batches of 5 images at a time within each item. This alone saves significant time per item since image downloads are pure I/O.
-
-**5. Timeout safety**
-
-Edge functions have a ~150s hard timeout. Add a start-time check at the beginning of each chunk. If elapsed time exceeds 120 seconds, stop launching new chunks and return early with `remaining > 0` so the client calls another batch.
-
-```text
-const startTime = Date.now();
-// Before each chunk:
-if (Date.now() - startTime > 120_000) break; // safety margin
-```
-
-### Edge Cases and Gaps Addressed
+### Edge Cases Handled
 
 | Concern | How it's handled |
 |---|---|
-| Firecrawl rate limits | 3 concurrent scrapes is well within typical API rate limits. Firecrawl allows much more than this. |
-| AI gateway rate limits | Lovable AI gateway handles concurrent calls fine. 3 simultaneous is conservative. |
-| Nominatim 1 req/sec | Serialized via shared rate-limit wrapper with 1.1s delay between calls. |
-| DB write conflicts | Each item writes to its own row (by item.id) -- no conflicts possible. |
-| One item crashing kills batch | `Promise.allSettled` ensures other items continue even if one throws. |
-| Edge function timeout (150s) | Elapsed-time check before each chunk; exits early if > 120s. |
-| Image download flooding | Capped at 5 concurrent image downloads per item, 15 images max. |
-| Status tracking accuracy | Each item updates its own DB status independently. Final tally uses DB query (unchanged). |
-| Error isolation | Each `processOneItem` has its own try/catch. Failures are logged per-item. |
+| One chunk's AI call fails | `Promise.allSettled` -- other chunks still return results. Failed chunk logged as warning. |
+| All chunks fail | Falls back to returning first 100 URLs (same as current behavior) |
+| Duplicate URLs across chunks | Results merged into a `Set` before converting to array |
+| Small sites (under 80 URLs) | Only 1 chunk created, 1 AI call made -- same behavior as today |
+| AI rate limiting (429) | Chunks run in groups of 3 max. If 429 hit, that chunk returns empty + warning. Remaining chunks in next group may succeed after the delay. |
+| Token limits per chunk | 80 URLs is well within token limits for Gemini Flash. Average URL is ~60 chars, so 80 URLs = ~5K chars input. |
+| Ordering consistency | Results are deduplicated but order doesn't matter -- they become `import_job_items` rows. |
+| Edge function timeout | 3-4 AI calls at ~3-5s each, running in parallel groups of 3 = ~6-10s total. Well within the 150s limit and faster than the current single large call. |
 
-### Expected Performance
+### Expected Results
 
-- **Before**: 10 items at ~10-12s each = ~100-120 seconds per batch
-- **After**: 10 items in chunks of 3 = ~4 chunks, ~10-12s per chunk = ~40-50 seconds per batch
-- **Net improvement**: ~60% faster batch processing
-- **No additional cost**: Same number of Firecrawl credits and AI calls, just run concurrently
+- **Accuracy**: Better classification because the AI sees fewer URLs per call, reducing attention dilution
+- **Reliability**: No more single-point-of-failure. Partial results are better than zero results.
+- **Speed**: Parallel chunks (3 at a time) complete in roughly the same wall-clock time as the current single call, sometimes faster
+- **Cost**: Same or marginally more AI tokens overall (prompt overhead repeated per chunk), but negligible difference
+- **No behavioral change for small sites**: Sites with fewer than 80 URLs still make exactly 1 AI call
 
 ### Technical Summary
 
-Changes within `handleProcessBatch` only:
-
-1. New helper: `processOneItem()` -- extracted from lines 728-1256
-2. New helper: `geocodeWithRateLimit()` -- wraps Nominatim calls with 1.1s serialization
-3. New helper: `parallelImageDownload()` -- downloads up to 5 images concurrently
-4. Replace sequential `for` loop with chunked `Promise.allSettled` (concurrency = 3)
-5. Add elapsed-time safety check before each chunk
-
-No changes to discovery, retry, or any other functions.
+1. New helper: `classifyUrlChunk()` -- single AI call for a subset of URLs
+2. New helper: `classifyUrlsInBatches()` -- orchestrates chunks with concurrency control
+3. Update `handleDiscover()` lines 579-655 to call `classifyUrlsInBatches()` instead of inline AI logic
+4. No changes to any other function (process_batch, retry, etc.)
 
