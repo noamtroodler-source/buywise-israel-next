@@ -1,51 +1,74 @@
 
 
-# Progress ETA for Import Processing
+# Split "Failed" into "Skipped" vs "Failed" in Import UI
 
-## What It Does
-While listings are being imported, show an estimated time remaining based on the average processing speed observed so far. This gives agencies a clear sense of how long they'll need to wait.
+## Problem
+The import page shows all non-successful items as "Failed", making it look like something went wrong. In reality, most are intentional skips (duplicates, sold/rented, unsupported city, not a listing page) -- not errors.
 
-## Placement
-Inside the **"Auto-import active" indicator** (the blue pulsing banner at lines 247-272) -- this is the natural place since it only appears during active processing and already shows live counts. The ETA will appear as an additional line of text below the existing "X imported / Y skipped / Z remaining" line.
+## What Changes
 
-When not actively auto-importing (e.g. between manual batches), the ETA won't show -- there's no meaningful speed to measure.
+### 1. Separate the counts (AgencyImport.tsx)
 
-## Design
-The ETA will appear as a subtle line within the existing processing indicator:
+Split the current combined `failedCount` into two distinct counts:
+- **`skippedCount`** -- items with `status === 'skipped'` (duplicates, sold/rented, not a listing, unsupported city, projects)
+- **`failedCount`** -- items with `status === 'failed'` (actual errors: scrape failures, AI extraction failures, validation errors)
 
+### 2. Update the stats grid from 4 columns to 5
+
+```text
+ Imported | Skipped | Failed | Pending | Processing
+   12         4         1        25         3
 ```
-[spinner] Importing listings...
-           12 imported · 3 skipped · 25 remaining
-           ~8 min remaining (avg 18s per listing)
-```
 
-- Uses `text-xs text-muted-foreground` to keep it secondary to the main counts
-- Shows both the time estimate AND the per-item speed for transparency
-- Gracefully handles edge cases (shows "Calculating..." until at least 2 items are done)
+- **Skipped**: gray/neutral icon (a "skip forward" or "minus circle" icon), `text-muted-foreground`
+- **Failed**: keeps the red XCircle icon (only shows real errors now)
 
-## How It Works
-Track two values via `useRef` in the `useProcessAll` hook:
-1. `startTimeRef` -- timestamp when processing started
-2. `processedSoFarRef` -- count of items processed so far (succeeded + failed)
+### 3. Update the auto-import banner text
 
-Expose these as return values. The UI component calculates:
-```
-avgTimePerItem = elapsed / processedSoFar
-estimatedRemaining = avgTimePerItem * pendingCount
-```
+Change from:
+> 12 imported . 4 skipped . 25 remaining
+
+To:
+> 12 imported . 3 skipped . 1 failed . 25 remaining
+
+(Only show the "failed" segment if failedCount > 0)
+
+### 4. Update progress calculation
+
+The progress bar already counts both as "processed" -- no change needed there. Just update the label text to say `doneCount + skippedCount + failedCount` of `totalItems`.
+
+### 5. Retry button logic
+
+The retry button already checks `transientCount` (which is only on actual `failed` items). This stays the same -- only real failures with `error_type: 'transient'` can be retried.
+
+### 6. Completion message
+
+Update the completion banner to mention skipped items:
+> Import complete! 12 listings imported, 4 skipped, 1 failed.
 
 ## Technical Details
 
-### File: `src/hooks/useImportListings.tsx`
-- Add `startTimeRef` and `processedCountRef` refs to `useProcessAll`
-- Set `startTimeRef` at the start of `startProcessAll`
-- Update `processedCountRef` after each batch
-- Return `{ processingStartTime, processedSoFar }` alongside existing values
-
 ### File: `src/pages/agency/AgencyImport.tsx`
-- Destructure new values from `useProcessAll`
-- Add a small `useEffect` + `useState` that recalculates the ETA every 3 seconds (to keep the display updating smoothly even between batch completions)
-- Render the ETA line inside the `isProcessingAll` motion div, below the existing counts
-- Format time as "~Xm Ys remaining" or "less than a minute" for small values
-- Show "Calculating..." until at least 2 items have been processed (need enough data for a meaningful average)
+
+**Counts (lines ~142-149):**
+- Add `skippedCount = jobItems.filter(i => i.status === 'skipped').length`
+- Change `failedCount` to only count `status === 'failed'`
+- Update `transientCount` and `permanentCount` to only look at `status === 'failed'`
+- Adjust `progressPercent` denominator: `doneCount + skippedCount + failedCount`
+
+**Stats grid (lines ~324-340):**
+- Change from 4 columns (`grid-cols-4`) to 5 columns (`grid-cols-5`)
+- Add "Skipped" stat with a neutral gray icon (e.g., `AlertCircle` or a `MinusCircle` from lucide)
+- Keep "Failed" with red icon but it will now only show real errors
+
+**Auto-import banner (line ~295):**
+- Update text to: `{doneCount} imported . {skippedCount} skipped{failedCount > 0 ? ` . ${failedCount} failed` : ''} . {pendingCount} remaining`
+
+**Completion banner (lines ~427-433):**
+- Update to show skipped and failed separately
+
+**Import for icon:**
+- Add `SkipForward` or `MinusCircle` from lucide-react for the skipped stat
+
+No backend changes needed -- the edge function already correctly sets `status: 'skipped'` vs `status: 'failed'`.
 
