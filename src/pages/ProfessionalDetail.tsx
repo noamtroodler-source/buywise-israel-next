@@ -7,6 +7,7 @@ import { PageLoader } from '@/components/shared/PageLoader';
 import { ProfessionalContactCard } from '@/components/professionals/ProfessionalContactCard';
 import { ProfessionalHighlights } from '@/components/professionals/ProfessionalHighlights';
 import { PROFESSIONAL_LOGOS } from '@/components/professionals/professionalLogos';
+import { getAccentColor } from '@/components/professionals/professionalColors';
 import { useTrustedProfessional, getCategoryLabel } from '@/hooks/useTrustedProfessionals';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -35,6 +36,8 @@ export default function ProfessionalDetail() {
     );
   }
 
+  const accentColor = getAccentColor(professional);
+
   const title = `${professional.name}${professional.company ? ` — ${professional.company}` : ''} | ${SITE_CONFIG.siteName}`;
   const description = professional.description || `${getCategoryLabel(professional.category)} working with international buyers in Israel.`;
 
@@ -56,10 +59,10 @@ export default function ProfessionalDetail() {
           <div className="lg:col-span-2 space-y-6">
             {/* Hero Card */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-              <Card className="overflow-hidden">
+              <Card className="overflow-hidden" style={{ background: `linear-gradient(135deg, ${accentColor}0A, transparent)` }}>
                 <CardContent className="p-6 md:p-8">
                   <div className="flex items-start gap-5">
-                    <div className="shrink-0 h-20 w-20 rounded-xl bg-primary/10 flex items-center justify-center overflow-hidden">
+                    <div className="shrink-0 h-20 w-20 rounded-xl flex items-center justify-center overflow-hidden" style={{ backgroundColor: `${accentColor}15` }}>
                       {(professional.logo_url || PROFESSIONAL_LOGOS[professional.slug]) ? (
                         <img
                           src={professional.logo_url || PROFESSIONAL_LOGOS[professional.slug]}
@@ -82,7 +85,7 @@ export default function ProfessionalDetail() {
                       )}
 
                       <div className="flex flex-wrap gap-2">
-                        <Badge className="bg-primary/10 text-primary hover:bg-primary/20">
+                        <Badge style={{ backgroundColor: `${accentColor}18`, color: accentColor }} className="border-transparent hover:opacity-80">
                           {getCategoryLabel(professional.category)}
                         </Badge>
                       </div>

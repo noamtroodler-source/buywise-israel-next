@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowRight } from 'lucide-react';
 import type { TrustedProfessional } from '@/hooks/useTrustedProfessionals';
 import { PROFESSIONAL_LOGOS } from './professionalLogos';
+import { getAccentColor } from './professionalColors';
 
 interface ProfessionalCardProps {
   professional: TrustedProfessional;
@@ -12,6 +13,8 @@ interface ProfessionalCardProps {
 }
 
 export function ProfessionalCard({ professional, index = 0 }: ProfessionalCardProps) {
+  const accentColor = getAccentColor(professional);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -20,11 +23,17 @@ export function ProfessionalCard({ professional, index = 0 }: ProfessionalCardPr
       transition={{ delay: index * 0.05 }}
     >
       <Link to={`/professionals/${professional.slug}`}>
-        <Card className="h-full border-border/50 hover:border-primary/30 hover:shadow-md transition-all duration-300 group">
+        <Card
+          className="h-full border-border/50 hover:border-primary/30 hover:shadow-md transition-all duration-300 group"
+          style={{ borderLeft: `3px solid ${accentColor}` }}
+        >
           <CardContent className="p-5">
             <div className="flex items-start gap-4">
               {/* Logo or fallback */}
-              <div className="shrink-0 h-14 w-14 rounded-xl bg-primary/10 flex items-center justify-center overflow-hidden">
+              <div
+                className="shrink-0 h-14 w-14 rounded-xl flex items-center justify-center overflow-hidden"
+                style={{ backgroundColor: `${accentColor}15` }}
+              >
                 {(professional.logo_url || PROFESSIONAL_LOGOS[professional.slug]) ? (
                   <img
                     src={professional.logo_url || PROFESSIONAL_LOGOS[professional.slug]}
