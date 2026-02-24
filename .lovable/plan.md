@@ -1,47 +1,45 @@
 
 
-## Add Project/Development Detection to the Import Scraper
+## Auto-Refresh Import Jobs + Cleanup After Delete
 
-### What Changes
+### What's Changing
 
-When the scraper encounters a page that's a **new development / project** (rather than an individual resale or rental listing), it will recognize it and insert it into the `projects` table instead of `properties`.
+Two improvements to the import page so everything stays in sync automatically:
+
+1. **Auto-refresh the jobs list** while any job is actively processing or discovering -- so the status badge, processed counts, and total URLs update live without needing a manual page refresh.
+
+2. **Properly clear the UI after deleting** -- when you delete the current/active job, the Step 2 card and stats disappear immediately instead of lingering.
 
 ### How It Works
 
-1. **AI Detection** -- The extraction schema gets a new field `listing_category` with values: `"property"`, `"project"`, or `"not_listing"`. The AI prompt is updated to explain the difference:
-   - **Property**: A single unit for sale or rent (resale, rental)
-   - **Project/Development**: A new construction project with multiple units, marketed by a developer (may use words like "פרויקט", "project", "development", "new construction", "בנייה חדשה", etc.)
+**File: `src/hooks/useImportListings.tsx`**
 
-2. **Separate extraction schema for projects** -- When the AI identifies a page as a project, a second tool-call schema captures project-specific fields: `name`, `description`, `city`, `neighborhood`, `address`, `price_from`, `price_to`, `total_units`, `status` (construction stage), `completion_date`, `amenities`, and `image_urls`.
+- Add a `refetchInterval` to `useImportJobs` (same pattern already used in `useImportJobItems`):
+  - If any job in the list has status `discovering`, `ready`, or `processing`, poll every 3 seconds
+  - Otherwise, stop polling (no unnecessary network requests)
+- Also add `refetchInterval` to `useImportJobItems` for the `pending` status too (not just `processing`), so when a batch finishes and items flip from pending to done, the counts update immediately
 
-3. **Branching insert logic** -- After extraction:
-   - If `listing_category === "project"` -> insert into `projects` table (with `verification_status: 'draft'`, `is_published: false`)
-   - If `listing_category === "property"` -> existing flow (insert into `properties`)
-   - If `"not_listing"` -> skip as before
+**File: `src/pages/agency/AgencyImport.tsx`**
 
-4. **Database changes**:
-   - Add `project_id` column (nullable UUID) to `import_job_items` so we can track which imports became projects vs properties
-   - Add `import_source` column to `projects` table (like properties already has) to mark scraped projects
-
-5. **Frontend** -- The import results page already shows items by status. No major UI changes needed; the `extracted_data` JSON will contain the category info for reference.
+- When deleting the active job (the one shown in Step 2), reset `activeJobId` to `null` **and** handle the edge case where `currentJob` falls back to `jobs[0]` even after deletion -- by checking that `currentJob` still exists in the jobs array after the query invalidates
+- No visual/design changes needed; existing layout stays the same
 
 ### Technical Details
 
-**File: `supabase/functions/import-agency-listings/index.ts`**
+```text
+useImportJobs (hook)
+  +-- refetchInterval: checks if any job has status
+  |   in ['discovering', 'ready', 'processing']
+  |   -> 3000ms polling if yes, false if no
+  
+useImportJobItems (hook)  
+  +-- refetchInterval: updated to also poll when
+  |   items have status 'pending' (not just 'processing')
+  |   -> catches the transition after a batch completes
 
-- **Discovery phase (lines 61-72)**: Update the URL filtering prompt to also look for project/development page URLs (e.g., `/project/`, `/פרויקט/`, `/development/`)
-- **Extraction prompt (lines 247-264)**: Add instructions to detect project pages and set `listing_category`
-- **Extraction schema (lines 283-311)**: Add `listing_category` field with enum `["property", "project", "not_listing"]`. Add project-specific optional fields: `project_name`, `price_from`, `price_to`, `total_units`, `completion_date`, `construction_status`
-- **Processing logic (lines 346-475)**: After extraction, branch on `listing_category`:
-  - `"project"` -> insert into `projects` table with scraped data, store `project_id` on the job item
-  - `"property"` -> existing property insert flow
-  - `"not_listing"` -> skip
-- **Duplicate detection for projects (new)**: Check `projects` table by name + city before inserting
-
-**Database migration**:
-```sql
-ALTER TABLE import_job_items ADD COLUMN project_id UUID REFERENCES projects(id);
-ALTER TABLE projects ADD COLUMN import_source TEXT;
+AgencyImport (page)
+  +-- currentJob logic: guard against stale fallback
+  |   after deletion by checking jobs array is non-empty
 ```
 
-This approach uses a single scrape + single AI call per page. The AI determines the category and extracts the right fields in one pass, keeping costs and latency the same.
+This is a small, focused change -- just adding polling logic to one hook and tightening the delete flow. No database changes, no new components.
