@@ -447,6 +447,54 @@ export type Database = {
           },
         ]
       }
+      agency_testimonials: {
+        Row: {
+          agency_id: string
+          author_context: string | null
+          author_name: string
+          created_at: string
+          display_order: number
+          id: string
+          quote: string
+          service_used: string | null
+        }
+        Insert: {
+          agency_id: string
+          author_context?: string | null
+          author_name: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          quote: string
+          service_used?: string | null
+        }
+        Update: {
+          agency_id?: string
+          author_context?: string | null
+          author_name?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          quote?: string
+          service_used?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agency_testimonials_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agency_testimonials_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_notifications: {
         Row: {
           action_url: string | null

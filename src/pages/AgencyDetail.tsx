@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Building2, Globe, Phone, Mail, MapPin, CheckCircle2, Users, Home, Clock, TrendingUp, FileText, Linkedin, Instagram, Facebook, Key } from 'lucide-react';
 import { useExtractedColor } from '@/hooks/useExtractedColor';
+import { useAgencyTestimonials } from '@/hooks/useAgencyTestimonials';
+import { AgencyTestimonialsCarousel } from '@/components/agencies/AgencyTestimonialsCarousel';
 import { ProfileShareMenu } from '@/components/shared/ProfileShareMenu';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -34,6 +36,7 @@ export default function AgencyDetail() {
   
   const { data: agency, isLoading: agencyLoading, error } = useAgency(slug || '');
   const accentColor = useExtractedColor(agency?.logo_url);
+  const { data: testimonials = [] } = useAgencyTestimonials(agency?.id);
   const { data: agents, isLoading: agentsLoading } = useAgencyAgents(agency?.id, category);
   const { data: activeListings, isLoading: activeLoading } = useAgencyListings(agency?.id, 'active', category);
   const { data: pastListings, isLoading: pastLoading } = useAgencyListings(agency?.id, 'past', category);
@@ -336,6 +339,11 @@ export default function AgencyDetail() {
               )}
             </div>
           </section>
+        )}
+
+        {/* Client Testimonials */}
+        {testimonials.length > 0 && (
+          <AgencyTestimonialsCarousel testimonials={testimonials} accentColor={accentColor || 'hsl(var(--primary))'} />
         )}
 
         {/* Listings Tabs */}
