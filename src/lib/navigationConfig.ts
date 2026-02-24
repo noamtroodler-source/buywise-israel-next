@@ -40,6 +40,7 @@ export const NAV_CONFIG: Record<string, NavSection> = {
           { label: 'All Properties for Sale', href: '/listings?status=for_sale', phase: 'explore' },
           { label: 'Understand Markets', href: '/areas', description: 'Price & trend context', phase: 'understand' },
           { label: 'Trusted Professionals', href: '/professionals', description: 'Vetted lawyers & advisors', phase: 'move_forward' },
+          { label: 'Real Estate Agencies', href: '/agencies', description: 'Browse agency teams', phase: 'explore' },
         ]
       },
       {
@@ -74,6 +75,7 @@ export const NAV_CONFIG: Record<string, NavSection> = {
         items: [
           { label: 'All Rentals', href: '/listings?status=for_rent', phase: 'explore' },
           { label: 'Market Overview', href: '/areas', description: 'Rental prices by city', phase: 'understand' },
+          { label: 'Real Estate Agencies', href: '/agencies', description: 'Browse agency teams', phase: 'explore' },
         ]
       },
       {

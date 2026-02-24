@@ -55,6 +55,21 @@ export function MoreNav() {
                   <li>
                     <NavigationMenuLink asChild>
                       <Link
+                        to="/agencies"
+                        className="group flex flex-col rounded-md px-2 py-1.5 hover:bg-accent transition-colors"
+                      >
+                        <span className="text-sm font-medium text-foreground group-hover:text-accent-foreground">
+                          Agencies
+                        </span>
+                        <span className="text-xs text-muted-foreground group-hover:text-accent-foreground/70">
+                          Browse teams
+                        </span>
+                      </Link>
+                    </NavigationMenuLink>
+                  </li>
+                  <li>
+                    <NavigationMenuLink asChild>
+                      <Link
                         to="/contact"
                         className="group flex flex-col rounded-md px-2 py-1.5 hover:bg-accent transition-colors"
                       >
