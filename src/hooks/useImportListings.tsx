@@ -84,11 +84,20 @@ export function useDiscoverListings() {
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      return data as { job_id: string; total_listings: number; total_discovered: number; resumed?: boolean };
+      return data as {
+        job_id: string | null;
+        total_listings: number;
+        total_discovered: number;
+        new_urls?: number;
+        skipped_existing?: number;
+        resumed?: boolean;
+      };
     },
     onSuccess: (data) => {
-      if (data.resumed) {
-        toast.info('Resumed existing job for this URL');
+      if (data.new_urls === 0 || (!data.job_id && data.skipped_existing)) {
+        toast.info(`Your site is up to date — no new listings found. (${data.total_discovered} URLs scanned, ${data.skipped_existing || 0} already imported)`);
+      } else if (data.skipped_existing && data.skipped_existing > 0) {
+        toast.success(`Found ${data.new_urls || data.total_listings} new listing pages (${data.skipped_existing} already imported)`);
       } else {
         toast.success(`Found ${data.total_listings} listing pages`);
       }

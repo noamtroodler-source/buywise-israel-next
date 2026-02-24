@@ -597,29 +597,43 @@ async function handleDiscover(body: any) {
     .single();
   if (agencyErr || !agency) throw new Error("Agency not found");
 
-  const { data: existingJobs } = await sb
+  // Gather all previously-known URLs for this agency + website combo (for incremental dedup)
+  const { data: previousJobIds } = await sb
     .from("import_jobs")
-    .select("id, status, total_urls")
+    .select("id")
     .eq("agency_id", agency_id)
-    .eq("website_url", normalizedUrl)
-    .not("status", "eq", "failed")
-    .order("created_at", { ascending: false })
-    .limit(1);
+    .eq("website_url", normalizedUrl);
 
-  if (existingJobs && existingJobs.length > 0) {
-    const existing = existingJobs[0];
-    const { count } = await sb
-      .from("import_job_items")
-      .select("id", { count: "exact", head: true })
-      .eq("job_id", existing.id);
-    
-    console.log(`Duplicate detected — returning existing job ${existing.id} (status: ${existing.status})`);
-    return {
-      job_id: existing.id,
-      total_listings: existing.total_urls || 0,
-      total_discovered: count || 0,
-      resumed: true,
-    };
+  let knownUrlSet = new Set<string>();
+  if (previousJobIds && previousJobIds.length > 0) {
+    const jobIds = previousJobIds.map((j: any) => j.id);
+    // Fetch all URLs from previous job items in batches (Supabase 1000-row limit)
+    for (let i = 0; i < jobIds.length; i += 50) {
+      const batch = jobIds.slice(i, i + 50);
+      const { data: prevItems } = await sb
+        .from("import_job_items")
+        .select("url")
+        .in("job_id", batch);
+      if (prevItems) {
+        for (const item of prevItems) {
+          knownUrlSet.add(normalizeUrl(item.url));
+        }
+      }
+    }
+    console.log(`Found ${knownUrlSet.size} previously-known URLs across ${previousJobIds.length} past jobs`);
+  }
+
+  // Also check properties table for source_url matches (catches listings from deleted jobs)
+  const { data: existingProperties } = await sb
+    .from("properties")
+    .select("source_url")
+    .eq("agency_id", agency_id)
+    .not("source_url", "is", null);
+  if (existingProperties) {
+    for (const prop of existingProperties) {
+      if (prop.source_url) knownUrlSet.add(normalizeUrl(prop.source_url));
+    }
+    console.log(`Added ${existingProperties.length} source_urls from properties table, total known: ${knownUrlSet.size}`);
   }
 
   const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
@@ -698,8 +712,41 @@ async function handleDiscover(body: any) {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-  const listingUrls = await classifyUrlsInBatches(allUrls, LOVABLE_API_KEY);
-  console.log(`AI identified ${listingUrls.length} listing URLs`);
+  // Subtract already-known URLs BEFORE AI classification to save AI calls
+  const newUrls = knownUrlSet.size > 0
+    ? allUrls.filter(url => !knownUrlSet.has(normalizeUrl(url)))
+    : allUrls;
+  const skippedExisting = allUrls.length - newUrls.length;
+  
+  if (skippedExisting > 0) {
+    console.log(`Incremental dedup: ${skippedExisting} URLs already known, ${newUrls.length} new URLs to classify`);
+  }
+
+  // If no new URLs, return early without creating a job
+  if (newUrls.length === 0) {
+    console.log(`All ${allUrls.length} discovered URLs already known — site is up to date`);
+    return {
+      job_id: null,
+      total_listings: 0,
+      total_discovered: allUrls.length,
+      new_urls: 0,
+      skipped_existing: skippedExisting,
+    };
+  }
+
+  const listingUrls = await classifyUrlsInBatches(newUrls, LOVABLE_API_KEY);
+  console.log(`AI identified ${listingUrls.length} listing URLs from ${newUrls.length} new candidates`);
+
+  if (listingUrls.length === 0) {
+    console.log(`No new listing URLs found after classification`);
+    return {
+      job_id: null,
+      total_listings: 0,
+      total_discovered: allUrls.length,
+      new_urls: 0,
+      skipped_existing: skippedExisting,
+    };
+  }
 
   const { data: job, error: jobErr } = await sb
     .from("import_jobs")
@@ -723,7 +770,13 @@ async function handleDiscover(body: any) {
   const { error: itemsErr } = await sb.from("import_job_items").insert(items);
   if (itemsErr) throw new Error(`Failed to create job items: ${itemsErr.message}`);
 
-  return { job_id: job.id, total_listings: listingUrls.length, total_discovered: allUrls.length };
+  return {
+    job_id: job.id,
+    total_listings: listingUrls.length,
+    total_discovered: allUrls.length,
+    new_urls: listingUrls.length,
+    skipped_existing: skippedExisting,
+  };
 }
 
 // ─── HELPERS: PARALLEL PROCESSING ───────────────────────────────────────────
