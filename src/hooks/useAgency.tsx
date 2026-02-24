@@ -50,17 +50,68 @@ export function useAgency(slug: string) {
   });
 }
 
+export interface AgencyWithCounts extends Agency {
+  agent_count: number;
+  listing_count: number;
+}
+
 export function useAgencies() {
   return useQuery({
-    queryKey: ['agencies'],
+    queryKey: ['agencies-with-counts'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Fetch agencies
+      const { data: agencies, error } = await supabase
         .from('agencies')
         .select('*')
         .order('name');
 
       if (error) throw error;
-      return data as Agency[];
+      if (!agencies || agencies.length === 0) return [] as AgencyWithCounts[];
+
+      const agencyIds = agencies.map((a) => a.id);
+
+      // Fetch agent counts grouped by agency
+      const { data: agents } = await supabase
+        .from('agents')
+        .select('id, agency_id')
+        .in('agency_id', agencyIds);
+
+      // Fetch published listing counts per agent
+      const agentIds = (agents || []).map((a) => a.id);
+      let listingsByAgent: Record<string, string> = {};
+      if (agentIds.length > 0) {
+        const { data: listings } = await supabase
+          .from('properties')
+          .select('agent_id')
+          .in('agent_id', agentIds)
+          .eq('is_published', true);
+
+        (listings || []).forEach((l) => {
+          listingsByAgent[l.agent_id] = l.agent_id;
+        });
+        // Count listings per agent, then map to agency
+        const listingCountByAgent: Record<string, number> = {};
+        (listings || []).forEach((l) => {
+          listingCountByAgent[l.agent_id] = (listingCountByAgent[l.agent_id] || 0) + 1;
+        });
+        listingsByAgent = listingCountByAgent as any;
+      }
+
+      // Build agent-to-agency mapping and count
+      const agentCountByAgency: Record<string, number> = {};
+      const listingCountByAgency: Record<string, number> = {};
+      (agents || []).forEach((agent) => {
+        if (agent.agency_id) {
+          agentCountByAgency[agent.agency_id] = (agentCountByAgency[agent.agency_id] || 0) + 1;
+          listingCountByAgency[agent.agency_id] = (listingCountByAgency[agent.agency_id] || 0) + ((listingsByAgent as any)[agent.id] || 0);
+        }
+      });
+
+      return agencies.map((agency) => ({
+        ...agency,
+        agent_count: agentCountByAgency[agency.id] || 0,
+        listing_count: listingCountByAgency[agency.id] || 0,
+      })) as AgencyWithCounts[];
     },
   });
 }
