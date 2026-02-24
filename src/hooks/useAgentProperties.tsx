@@ -295,6 +295,7 @@ export function useDeleteProperty() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agentProperties'] });
+      queryClient.invalidateQueries({ queryKey: ['agencyListingsManagement'] });
       queryClient.invalidateQueries({ queryKey: ['properties'] });
       toast.success('Property deleted successfully');
     },
