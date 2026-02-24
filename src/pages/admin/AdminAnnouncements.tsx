@@ -131,7 +131,7 @@ export function AdminAnnouncements() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-announcements'] });
-      toast.success('Announcement deleted');
+      // No toast - row disappears from table visually
       setDeletingAnnouncement(null);
     },
     onError: (error) => {
@@ -149,7 +149,7 @@ export function AdminAnnouncements() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-announcements'] });
-      toast.success('Announcement status updated');
+      // No toast - toggle updates inline
     },
     onError: (error) => {
       toast.error('Failed to update: ' + error.message);

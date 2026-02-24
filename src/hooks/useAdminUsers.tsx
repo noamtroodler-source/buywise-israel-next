@@ -166,7 +166,7 @@ export function useDeleteUser() {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
       queryClient.invalidateQueries({ queryKey: ['admin-user-stats'] });
       queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
-      toast.success('User deleted successfully');
+      // No toast - row disappears from table visually
     },
     onError: (error) => {
       console.error('Delete error:', error);
@@ -202,7 +202,7 @@ export function useDeleteAgent() {
       queryClient.invalidateQueries({ queryKey: ['admin-agent-stats'] });
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
       queryClient.invalidateQueries({ queryKey: ['admin-user-stats'] });
-      toast.success('Agent deleted successfully');
+      // No toast - row disappears from table visually
     },
     onError: (error) => {
       console.error('Delete agent error:', error);
@@ -238,7 +238,7 @@ export function useDeleteDeveloper() {
       queryClient.invalidateQueries({ queryKey: ['admin-developer-stats'] });
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
       queryClient.invalidateQueries({ queryKey: ['admin-user-stats'] });
-      toast.success('Developer deleted successfully');
+      // No toast - row disappears from table visually
     },
     onError: (error) => {
       console.error('Delete developer error:', error);

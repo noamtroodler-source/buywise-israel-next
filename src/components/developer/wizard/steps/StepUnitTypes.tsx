@@ -266,7 +266,7 @@ export function StepUnitTypes() {
     updateData({
       unit_types: data.unit_types.filter(ut => ut.id !== id),
     });
-    toast.success('Unit type removed');
+    // No toast - item disappears from list visually
   };
 
   // Validation helpers for range fields

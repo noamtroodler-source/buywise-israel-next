@@ -76,7 +76,7 @@ export function AdminContactSubmissions() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-contact-submissions'] });
-      toast.success('Status updated');
+      // No toast - badge updates inline
     },
     onError: (error) => {
       toast.error('Failed to update status: ' + error.message);
