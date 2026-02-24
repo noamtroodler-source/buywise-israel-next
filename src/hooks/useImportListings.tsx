@@ -191,10 +191,18 @@ export function useProcessAll() {
   const queryClient = useQueryClient();
   const [isProcessingAll, setIsProcessingAll] = useState(false);
   const stopRef = useRef(false);
+  const startTimeRef = useRef<number | null>(null);
+  const processedCountRef = useRef(0);
+  const [processedSoFar, setProcessedSoFar] = useState(0);
+  const [processingStartTime, setProcessingStartTime] = useState<number | null>(null);
 
   const startProcessAll = async (jobId: string) => {
     setIsProcessingAll(true);
     stopRef.current = false;
+    startTimeRef.current = Date.now();
+    processedCountRef.current = 0;
+    setProcessingStartTime(Date.now());
+    setProcessedSoFar(0);
     let totalSucceeded = 0;
     let totalFailed = 0;
 
@@ -209,6 +217,8 @@ export function useProcessAll() {
 
         totalSucceeded += data.succeeded;
         totalFailed += data.failed;
+        processedCountRef.current += data.succeeded + data.failed;
+        setProcessedSoFar(processedCountRef.current);
 
         queryClient.invalidateQueries({ queryKey: ['importJobs'] });
         queryClient.invalidateQueries({ queryKey: ['importJobItems'] });
@@ -230,10 +240,12 @@ export function useProcessAll() {
       toast.error(`Import failed: ${err.message}`);
     } finally {
       setIsProcessingAll(false);
+      startTimeRef.current = null;
+      setProcessingStartTime(null);
     }
   };
 
   const stopProcessAll = () => { stopRef.current = true; };
 
-  return { startProcessAll, stopProcessAll, isProcessingAll };
+  return { startProcessAll, stopProcessAll, isProcessingAll, processingStartTime, processedSoFar };
 }

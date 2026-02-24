@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -26,6 +26,41 @@ import {
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
+function formatEta(seconds: number): string {
+  if (seconds < 60) return 'less than a minute';
+  const m = Math.floor(seconds / 60);
+  const s = Math.round(seconds % 60);
+  if (m >= 60) {
+    const h = Math.floor(m / 60);
+    const rm = m % 60;
+    return `~${h}h ${rm}m`;
+  }
+  return s > 0 ? `~${m}m ${s}s` : `~${m}m`;
+}
+
+function ImportEta({ startTime, processedSoFar, remaining }: { startTime: number | null; processedSoFar: number; remaining: number }) {
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    if (!startTime || processedSoFar < 2) return;
+    const id = setInterval(() => setTick(t => t + 1), 3000);
+    return () => clearInterval(id);
+  }, [startTime, processedSoFar]);
+
+  if (!startTime || remaining <= 0) return null;
+  if (processedSoFar < 2) return <p className="text-xs text-muted-foreground">Calculating…</p>;
+
+  const elapsed = (Date.now() - startTime) / 1000;
+  const avgPerItem = elapsed / processedSoFar;
+  const etaSeconds = avgPerItem * remaining;
+
+  return (
+    <p className="text-xs text-muted-foreground">
+      {formatEta(etaSeconds)} remaining <span className="opacity-60">(avg {Math.round(avgPerItem)}s per listing)</span>
+    </p>
+  );
+}
+
 function normalizeUrl(raw: string): string {
   let url = raw.trim();
   if (!url.startsWith('http')) url = `https://${url}`;
@@ -49,7 +84,7 @@ export default function AgencyImport() {
   const processBatchMutation = useProcessBatch();
   const deleteJobMutation = useDeleteImportJob();
   const retryFailedMutation = useRetryFailed();
-  const { startProcessAll, stopProcessAll, isProcessingAll } = useProcessAll();
+  const { startProcessAll, stopProcessAll, isProcessingAll, processingStartTime, processedSoFar } = useProcessAll();
   const [websiteUrl, setWebsiteUrl] = useState('');
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
 
@@ -256,9 +291,10 @@ export default function AgencyImport() {
                       <p className="text-sm font-medium text-primary">
                         Importing listings…
                       </p>
-                      <p className="text-xs text-muted-foreground">
+                     <p className="text-xs text-muted-foreground">
                         {doneCount} imported · {failedCount} skipped · {pendingCount} remaining
                       </p>
+                      <ImportEta startTime={processingStartTime} processedSoFar={processedSoFar} remaining={pendingCount} />
                     </div>
                     <Button
                       onClick={stopProcessAll}
