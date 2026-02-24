@@ -32,9 +32,11 @@ export default function AgencyImport() {
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
 
   // Use the most recent active job or the one selected
-  const currentJob = activeJobId
-    ? jobs.find(j => j.id === activeJobId)
-    : jobs.find(j => ['discovering', 'ready', 'processing'].includes(j.status)) || jobs[0];
+  const currentJob = jobs.length === 0
+    ? undefined
+    : activeJobId
+      ? jobs.find(j => j.id === activeJobId)
+      : jobs.find(j => ['discovering', 'ready', 'processing'].includes(j.status)) || jobs[0];
 
   const { data: jobItems = [] } = useImportJobItems(currentJob?.id);
 
