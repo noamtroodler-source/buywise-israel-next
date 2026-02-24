@@ -1,30 +1,23 @@
 
 
-# Make Wizard Steps Clickable
+# Tighten AI Image Enhancement Prompt
 
-## What Changes
-The step indicators at the top of the wizard (1 Basics, 2 Details, etc.) will become clickable, so you can jump directly to any step instead of clicking Next/Previous repeatedly.
+## Overview
+Update the image enhancement prompt in the edge function to strictly limit corrections to **technical photo quality only** — the digital equivalent of Lightroom Auto-Enhance. No content changes, no HDR look, no "AI feel."
 
-## How It Works
-- Each numbered step circle becomes a button
-- Clicking any step takes you directly to that step
-- This will work across all wizards (agency edit, agent edit, developer edit, and new listing wizards)
+## Changes
 
-## Technical Details
+### File: `supabase/functions/enhance-image/index.ts`
 
-### 1. Update `WizardProgress` component (`src/components/agent/wizard/WizardProgress.tsx`)
-- Add an optional `onStepClick` prop to the component
-- When provided, wrap each step indicator in a clickable button with a pointer cursor
-- When not provided, behavior stays the same (non-clickable) for backward compatibility
+Replace the current open-ended prompt with a strict technical-correction-only prompt that:
 
-### 2. Pass `onStepClick` in all edit wizards
-Wire up the `setCurrentStep` function as the `onStepClick` handler in these files:
-- `src/pages/agency/AgencyEditPropertyWizard.tsx`
-- `src/pages/agent/EditPropertyWizard.tsx`
-- `src/pages/developer/EditProjectWizard.tsx`
+- Limits to: white balance, exposure, sharpness, noise reduction, lens distortion
+- Explicitly forbids: adding/removing objects, changing colors of walls/surfaces, sky replacement, HDR effects, saturation boosting beyond natural levels
+- Anchors output with: "The result must be indistinguishable from a well-shot photo of the exact same scene"
+- Keeps the tone realistic and natural — as if a professional photographer took the same photo with better equipment and lighting
 
-Also add it to new-listing wizards so the experience is consistent:
-- `src/pages/agency/AgencyNewPropertyWizard.tsx`
-- `src/pages/agent/NewPropertyWizard.tsx`
-- `src/pages/developer/NewProjectWizard.tsx`
+### New prompt (replacing the current one):
+> "Apply only technical photo corrections to this real estate image. Allowed adjustments: white balance correction, exposure/brightness normalization, sharpness enhancement, noise reduction, and minor lens distortion correction. Do NOT add, remove, or move any objects. Do NOT change wall colors, floor materials, or surface finishes. Do NOT replace or enhance the sky. Do NOT apply HDR effects or boost saturation beyond natural levels. Do NOT make rooms appear larger or alter geometry. The result must look like the same photo taken with a better camera and proper lighting — indistinguishable from reality."
+
+No other files need to change — the prompt is the only thing controlling the AI's behavior.
 
