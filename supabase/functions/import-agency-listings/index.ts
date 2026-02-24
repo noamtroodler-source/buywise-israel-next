@@ -1503,7 +1503,7 @@ async function handleProcessBatch(body: any) {
 
   const CONCURRENCY = 3;
   const REFILL_SIZE = 6;
-  const MAX_ITEMS = 10; // Hard cap per single batch call
+  const MAX_ITEMS = 9; // Hard cap per single batch call (3 concurrency × 3 chunks)
   const TIME_LIMIT_MS = 120_000;
   const batchStartTime = Date.now();
 
