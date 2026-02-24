@@ -20,6 +20,7 @@ export interface TrustedProfessional {
   cities_covered: string[];
   works_with_internationals: boolean;
   is_featured: boolean;
+  accent_color: string | null;
   display_order: number;
   is_published: boolean;
   created_at: string;

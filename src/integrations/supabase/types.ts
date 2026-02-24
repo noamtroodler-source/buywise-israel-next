@@ -4873,6 +4873,7 @@ export type Database = {
       }
       trusted_professionals: {
         Row: {
+          accent_color: string | null
           booking_url: string | null
           category: string
           cities_covered: string[] | null
@@ -4897,6 +4898,7 @@ export type Database = {
           works_with_internationals: boolean | null
         }
         Insert: {
+          accent_color?: string | null
           booking_url?: string | null
           category: string
           cities_covered?: string[] | null
@@ -4921,6 +4923,7 @@ export type Database = {
           works_with_internationals?: boolean | null
         }
         Update: {
+          accent_color?: string | null
           booking_url?: string | null
           category?: string
           cities_covered?: string[] | null
