@@ -3240,6 +3240,47 @@ export type Database = {
         }
         Relationships: []
       }
+      professional_testimonials: {
+        Row: {
+          author_context: string | null
+          author_name: string
+          created_at: string
+          display_order: number
+          id: string
+          professional_id: string
+          quote: string
+          service_used: string | null
+        }
+        Insert: {
+          author_context?: string | null
+          author_name: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          professional_id: string
+          quote: string
+          service_used?: string | null
+        }
+        Update: {
+          author_context?: string | null
+          author_name?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          professional_id?: string
+          quote?: string
+          service_used?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "professional_testimonials_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "trusted_professionals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -4878,16 +4919,19 @@ export type Database = {
           category: string
           cities_covered: string[] | null
           company: string | null
+          consultation_type: string | null
           created_at: string | null
           description: string | null
           display_order: number | null
           email: string | null
+          engagement_model: string | null
           facebook_url: string | null
           founded_year: number | null
           id: string
           instagram_url: string | null
           is_featured: boolean | null
           is_published: boolean | null
+          key_differentiators: string[] | null
           languages: string[] | null
           linkedin_url: string | null
           logo_url: string | null
@@ -4895,6 +4939,8 @@ export type Database = {
           name: string
           office_address: string | null
           phone: string | null
+          process_steps: Json | null
+          response_time: string | null
           slug: string
           specializations: string[] | null
           testimonial_author: string | null
@@ -4910,16 +4956,19 @@ export type Database = {
           category: string
           cities_covered?: string[] | null
           company?: string | null
+          consultation_type?: string | null
           created_at?: string | null
           description?: string | null
           display_order?: number | null
           email?: string | null
+          engagement_model?: string | null
           facebook_url?: string | null
           founded_year?: number | null
           id?: string
           instagram_url?: string | null
           is_featured?: boolean | null
           is_published?: boolean | null
+          key_differentiators?: string[] | null
           languages?: string[] | null
           linkedin_url?: string | null
           logo_url?: string | null
@@ -4927,6 +4976,8 @@ export type Database = {
           name: string
           office_address?: string | null
           phone?: string | null
+          process_steps?: Json | null
+          response_time?: string | null
           slug: string
           specializations?: string[] | null
           testimonial_author?: string | null
@@ -4942,16 +4993,19 @@ export type Database = {
           category?: string
           cities_covered?: string[] | null
           company?: string | null
+          consultation_type?: string | null
           created_at?: string | null
           description?: string | null
           display_order?: number | null
           email?: string | null
+          engagement_model?: string | null
           facebook_url?: string | null
           founded_year?: number | null
           id?: string
           instagram_url?: string | null
           is_featured?: boolean | null
           is_published?: boolean | null
+          key_differentiators?: string[] | null
           languages?: string[] | null
           linkedin_url?: string | null
           logo_url?: string | null
@@ -4959,6 +5013,8 @@ export type Database = {
           name?: string
           office_address?: string | null
           phone?: string | null
+          process_steps?: Json | null
+          response_time?: string | null
           slug?: string
           specializations?: string[] | null
           testimonial_author?: string | null

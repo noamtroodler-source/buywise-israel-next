@@ -10,8 +10,10 @@ import { PROFESSIONAL_LOGOS } from '@/components/professionals/professionalLogos
 import { getAccentColor } from '@/components/professionals/professionalColors';
 import { useExtractedColor } from '@/hooks/useExtractedColor';
 import { useTrustedProfessional, getCategoryLabel } from '@/hooks/useTrustedProfessionals';
+import { useProfessionalTestimonials } from '@/hooks/useProfessionalTestimonials';
 import { ProfessionalHeroCard } from '@/components/professionals/ProfessionalHeroCard';
 import { ProfessionalTestimonialCard } from '@/components/professionals/ProfessionalTestimonialCard';
+import { ProfessionalProcessCard } from '@/components/professionals/ProfessionalProcessCard';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -22,6 +24,7 @@ import { ROUTES } from '@/lib/routes';
 export default function ProfessionalDetail() {
   const { slug } = useParams<{ slug: string }>();
   const { data: professional, isLoading } = useTrustedProfessional(slug || '');
+  const { data: testimonials } = useProfessionalTestimonials(professional?.id);
 
   const logoUrl = professional?.logo_url || (professional ? PROFESSIONAL_LOGOS[professional.slug] : undefined) || undefined;
   const extractedColor = useExtractedColor(logoUrl);
@@ -82,8 +85,11 @@ export default function ProfessionalDetail() {
               </motion.div>
             )}
 
-            {/* Testimonial */}
-            <ProfessionalTestimonialCard professional={professional} accentColor={accentColor} />
+            {/* How It Works */}
+            <ProfessionalProcessCard professional={professional} accentColor={accentColor} />
+
+            {/* Testimonials */}
+            <ProfessionalTestimonialCard professional={professional} accentColor={accentColor} testimonials={testimonials} />
 
             {/* Specializations */}
             {professional.specializations?.length > 0 && (

@@ -30,6 +30,11 @@ export interface TrustedProfessional {
   office_address: string | null;
   testimonial_quote: string | null;
   testimonial_author: string | null;
+  key_differentiators: string[] | null;
+  consultation_type: string | null;
+  response_time: string | null;
+  engagement_model: string | null;
+  process_steps: { step: string; description: string }[] | null;
   created_at: string;
   updated_at: string;
 }
