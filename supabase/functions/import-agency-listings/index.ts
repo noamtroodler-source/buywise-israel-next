@@ -251,6 +251,7 @@ IMPORTANT CONVENTIONS:
 - Default currency is ILS (₪) unless explicitly stated otherwise.
 - Property types in Hebrew: דירה=apartment, פנטהאוז=penthouse, דופלקס=duplex, בית/וילה=house, קוטג'=cottage, דירת גן=garden_apartment, מיני פנטהאוז=mini_penthouse
 - listing_status: for_sale if buying/מכירה, for_rent if renting/השכרה
+- Detect if the listing is marked as sold (נמכר), rented (הושכר), under contract (בהסכם), or otherwise no longer available. Set is_sold_or_rented=true if so.
 - Price might appear as "₪1,500,000" or "1,500,000 ש״ח" or "$450,000"
 - Extract ALL image URLs you can find (from markdown image syntax, linked images, etc.)
 - For floor: "קומה 3" = floor 3, "קרקע" = floor 0
@@ -304,6 +305,7 @@ ${pageLinks.slice(0, 50).join("\n")}`;
                     ac_type: { type: "string", enum: ["none", "split", "central", "mini_central"] },
                     image_urls: { type: "array", items: { type: "string" }, description: "All image URLs found" },
                     is_listing_page: { type: "boolean", description: "Whether this is actually a property listing page" },
+                    is_sold_or_rented: { type: "boolean", description: "True if listing is marked as sold (נמכר), rented (הושכר), under contract (בהסכם), or otherwise no longer available" },
                   },
                   required: ["is_listing_page"],
                   additionalProperties: false,
@@ -344,6 +346,13 @@ ${pageLinks.slice(0, 50).join("\n")}`;
       // Not a listing page?
       if (!listing.is_listing_page) {
         await sb.from("import_job_items").update({ status: "skipped", error_message: "Not a listing page" }).eq("id", item.id);
+        failed++;
+        continue;
+      }
+
+      // Sold or rented listing?
+      if (listing.is_sold_or_rented) {
+        await sb.from("import_job_items").update({ status: "skipped", error_message: "Listing is sold or rented" }).eq("id", item.id);
         failed++;
         continue;
       }
