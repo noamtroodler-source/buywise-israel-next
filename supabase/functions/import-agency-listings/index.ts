@@ -326,10 +326,33 @@ async function handleDiscover(body: any) {
   const mapData = await mapRes.json();
   if (!mapRes.ok) throw new Error(`Firecrawl MAP failed: ${JSON.stringify(mapData)}`);
 
-  const allUrls: string[] = mapData.links || mapData.data || [];
-  if (allUrls.length === 0) throw new Error("No URLs discovered on this website");
+  const rawUrls: string[] = mapData.links || mapData.data || [];
+  if (rawUrls.length === 0) throw new Error("No URLs discovered on this website");
 
-  console.log(`Discovered ${allUrls.length} total URLs`);
+  console.log(`Discovered ${rawUrls.length} total URLs`);
+
+  // Pre-filter: remove URLs that contain sold/rented keywords
+  const SOLD_URL_KEYWORDS = [
+    'sold', 'rented', 'leased', 'archived', 'completed',
+    'past-sale', 'under-contract', 'off-market',
+    'נמכר', 'הושכר', 'בהסכם',
+    '%D7%A0%D7%9E%D7%9B%D7%A8',  // נמכר URL-encoded
+    '%D7%94%D7%95%D7%A9%D7%9B%D7%A8', // הושכר URL-encoded
+  ];
+
+  const allUrls = rawUrls.filter(url => {
+    try {
+      const decoded = decodeURIComponent(url).toLowerCase();
+      return !SOLD_URL_KEYWORDS.some(kw => decoded.includes(kw));
+    } catch {
+      return true; // keep URL if decode fails
+    }
+  });
+
+  const filteredOut = rawUrls.length - allUrls.length;
+  if (filteredOut > 0) {
+    console.log(`Pre-filtered ${filteredOut} sold/rented URLs, ${allUrls.length} remaining`);
+  }
 
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
@@ -346,7 +369,11 @@ Also look for project/development pages:
 - URLs with paths like /project/, /פרויקט/, /development/, /בנייה-חדשה/, /new-construction/
 - URLs that point to a new construction development page
 
-Return ONLY the listing and project URLs as a JSON array of strings. If unsure about a URL, exclude it.
+IMPORTANT: Only return URLs for ACTIVE, LIVE listings that are currently for sale or for rent. 
+Exclude any URLs that appear to be sold, rented, leased, archived, off-market, or completed listings.
+Look for signals like "sold", "rented", "נמכר", "הושכר", "under-contract", "past-sales", "archive" in the URL path or slug.
+
+Return ONLY the active listing and project URLs as a JSON array of strings. If unsure about a URL, exclude it.
 
 URLs to analyze:
 ${allUrls.join("\n")}`;
