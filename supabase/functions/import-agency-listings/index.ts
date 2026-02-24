@@ -706,6 +706,16 @@ async function handleDiscover(body: any) {
     console.warn(`Index page pre-filter failed (non-blocking): ${err}`);
   }
 
+  // Non-listing URL pattern pre-filter (before AI classification)
+  const { listingCandidates, removed: nonListingRemoved } = filterNonListingUrls(allUrls);
+  if (nonListingRemoved > 0 && listingCandidates.length > 0) {
+    allUrls.length = 0;
+    allUrls.push(...listingCandidates);
+    console.log(`Non-listing pattern filter: removed ${nonListingRemoved} URLs, ${allUrls.length} remaining`);
+  } else if (nonListingRemoved > 0 && listingCandidates.length === 0) {
+    console.warn(`Non-listing filter would remove ALL ${allUrls.length} URLs — skipping filter (safety check)`);
+  }
+
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
@@ -741,7 +751,72 @@ async function handleDiscover(body: any) {
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-// Geocoding rate limiter — serializes Nominatim calls with 1.1s gap
+// ─── NON-LISTING URL PATTERN FILTER ─────────────────────────────────────────
+
+const NON_LISTING_SEGMENTS = new Set([
+  "about", "contact", "team", "careers", "jobs", "privacy", "terms", "legal",
+  "disclaimer", "login", "signin", "signup", "register", "auth", "account",
+  "dashboard", "admin", "panel", "blog", "news", "press", "media", "faq",
+  "help", "support", "sitemap", "accessibility", "cookie", "cookies", "cart",
+  "checkout", "payment", "subscribe", "unsubscribe", "partners", "affiliates",
+  "investors", "testimonials", "reviews", "awards", "archive", "category",
+  "tag", "tags", "author", "feed", "wp-admin", "wp-login", "wp-content",
+]);
+
+const NON_LISTING_EXTENSIONS = new Set([
+  ".pdf", ".jpg", ".jpeg", ".png", ".gif", ".svg", ".webp", ".mp4", ".mp3",
+  ".zip", ".doc", ".docx", ".xls", ".xlsx", ".css", ".js", ".xml", ".json",
+  ".rss", ".atom", ".ico", ".woff", ".woff2", ".ttf", ".eot",
+]);
+
+function filterNonListingUrls(urls: string[]): { listingCandidates: string[]; removed: number } {
+  const listingCandidates: string[] = [];
+  let removed = 0;
+
+  for (const url of urls) {
+    let pathname: string;
+    try {
+      const parsed = new URL(url);
+      pathname = parsed.pathname;
+    } catch {
+      // If URL can't be parsed, keep it (let AI decide)
+      listingCandidates.push(url);
+      continue;
+    }
+
+    // Decode for Hebrew/encoded URLs
+    let decodedPath: string;
+    try {
+      decodedPath = decodeURIComponent(pathname).toLowerCase();
+    } catch {
+      decodedPath = pathname.toLowerCase();
+    }
+
+    // Check file extension
+    const lastDot = decodedPath.lastIndexOf(".");
+    if (lastDot > decodedPath.lastIndexOf("/")) {
+      const ext = decodedPath.slice(lastDot);
+      if (NON_LISTING_EXTENSIONS.has(ext)) {
+        removed++;
+        continue;
+      }
+    }
+
+    // Check path segments (exact match only)
+    const segments = decodedPath.split("/").filter(Boolean);
+    const hasBlockedSegment = segments.some(seg => NON_LISTING_SEGMENTS.has(seg));
+    if (hasBlockedSegment) {
+      removed++;
+      continue;
+    }
+
+    listingCandidates.push(url);
+  }
+
+  return { listingCandidates, removed };
+}
+
+
 let _lastGeoTime = 0;
 let _geoQueue: Promise<void> = Promise.resolve();
 
