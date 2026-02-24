@@ -1,59 +1,72 @@
 
 
-## Filter Out Sold/Rented Listings During Discovery (Step 1)
+## Scrape Index Pages to Pre-Filter Sold/Rented Listings
 
-### Current Behavior
-Right now, ALL listing URLs are discovered and added as import job items (296 in your case). Sold/rented listings are only detected later during processing -- each one gets scraped, checked, and marked as "skipped", wasting time and Firecrawl credits.
+### Problem
+The URL keyword filter only caught 4 URLs on jerusalem-real-estate.co because the site uses clean URLs without "sold" or "rented" in the path. The sold/rented status is only visible as a badge on the listing grid pages (index/category pages), not in the URL itself. This means 317 items enter the queue when many are sold -- each gets individually scraped and skipped, wasting Firecrawl credits and time.
 
-### What Changes
+### Solution
+During discovery, after Firecrawl MAP finds all URLs and before the AI classifies them, scrape the site's listing index/category pages to find which individual listing URLs appear next to "sold" or "rented" badges. Remove those URLs before AI classification.
 
-**Single file:** `supabase/functions/import-agency-listings/index.ts`
+### How It Works
 
-#### 1. URL-level pre-filter before AI classification
+**Single file change:** `supabase/functions/import-agency-listings/index.ts`
 
-After Firecrawl maps all URLs but before sending them to the AI for classification, filter out URLs whose path/slug contains sold/rented keywords:
+#### Step-by-step in `handleDiscover`:
 
-```text
-Keywords to check in URL: sold, rented, leased, נמכר, הושכר, sold-out, 
-under-contract, בהסכם, past-sales, archive, completed
-```
+1. **Identify index pages from the mapped URLs** -- look for URLs matching common listing index patterns like `/properties`, `/for-sale`, `/listings`, `/נכסים`, `/דירות`, etc. Also include the homepage. Typically 3-10 pages.
 
-This catches URLs like `/property/sold-apartment-123` or `/נמכר/דירה-בירושלים` before they even get classified.
+2. **Batch-scrape these index pages using Firecrawl** (HTML format, not markdown, to preserve badge structure). Cost: ~3-8 Firecrawl credits.
 
-#### 2. Update the AI URL-classification prompt
+3. **Parse each index page's HTML** to find listing cards/links that contain sold/rented signals nearby:
+   - Look for `<a href="/property/xyz">` elements where the surrounding HTML (within ~500 chars) contains keywords like "sold", "נמכר", "rented", "הושכר", "under contract", "בהסכם"
+   - Also detect CSS classes like `sold`, `rented`, `unavailable`, `off-market` on parent containers
+   - Build a Set of "sold URLs" from this analysis
 
-Add explicit instructions to the AI prompt that filters URLs:
-- "Exclude any URLs that appear to be sold, rented, archived, or completed listings"
-- "Only return URLs for active/live listings that are currently for sale or for rent"
+4. **Filter out sold URLs** from the `allUrls` list before passing to AI classification
 
-This way the AI will also skip URLs that have subtler sold/rented signals in their URL structure.
+5. **Log the count** of index-page-filtered URLs for transparency
 
-#### 3. Result
+#### Edge Cases Handled
 
-- Discovery will return fewer items (e.g., maybe 250 instead of 296)
-- No sold/rented listings will appear in the pending queue
-- The existing per-item sold/rented check during processing remains as a safety net (in case a URL looked normal but the page content reveals it's sold)
+- **Pagination**: Scrape up to 5 index pages (first few pages catch most sold listings). Sites with deep pagination won't block the process -- remaining sold listings are still caught by the existing per-item `isSoldOrRentedPage()` safety net during processing.
+- **No index pages found**: If no index-pattern URLs are detected, skip this step gracefully and proceed as before.
+- **Scrape failures**: If an index page fails to scrape, log a warning and continue. Never block discovery.
+- **Hebrew content**: All regex patterns include Hebrew equivalents.
+- **False positives**: Only mark a URL as sold if the sold keyword appears within close proximity to the link (not just anywhere on the page). This prevents filtering out an active listing just because a "Recently Sold" section exists elsewhere on the page.
+- **URL normalization**: URLs extracted from HTML `href` attributes are normalized to absolute URLs and matched against the discovered URL list.
+
+#### Expected Results
+
+- **Cost**: Adds ~3-8 Firecrawl credits per discovery, but saves ~30-50 credits by not scraping individual sold pages during processing
+- **Time**: Adds ~10-20 seconds to discovery, saves 2-5 minutes during processing
+- **Effectiveness**: ~70-80% of sold listings caught at discovery. The remaining ~20-30% are still caught by the existing content-based check during individual processing.
 
 ### Technical Details
 
-In the `handleDiscover` function:
+New helper function `findSoldUrlsFromIndexPages`:
 
-1. After `allUrls` is populated from Firecrawl map, add a filter step:
 ```text
-const SOLD_URL_KEYWORDS = [
-  'sold', 'rented', 'leased', 'archived', 'completed',
-  'past-sale', 'under-contract',
-  '%D7%A0%D7%9E%D7%9B%D7%A8',  // נמכר URL-encoded
-  '%D7%94%D7%95%D7%A9%D7%9B%D7%A8', // הושכר URL-encoded
-];
-
-const liveUrls = allUrls.filter(url => {
-  const lower = decodeURIComponent(url).toLowerCase();
-  return !SOLD_URL_KEYWORDS.some(kw => lower.includes(kw));
-});
+async function findSoldUrlsFromIndexPages(
+  allUrls: string[], 
+  websiteUrl: string, 
+  firecrawlKey: string
+): Promise<Set<string>>
 ```
 
-2. Pass `liveUrls` (instead of `allUrls`) to the AI classification prompt.
+Index page detection patterns:
+```text
+/properties, /listings, /for-sale, /for-rent, /our-listings,
+/נכסים, /דירות, /למכירה, /להשכרה, /catalog, /portfolio
+```
 
-3. Add to the AI prompt: "Only return URLs for active, live listings currently for sale or for rent. Exclude sold, rented, archived, or completed listings."
+Sold badge detection patterns (in surrounding HTML context):
+```text
+English: sold, rented, leased, under contract, off market, 
+         no longer available, sale agreed, let agreed
+Hebrew:  נמכר, הושכר, בהסכם, לא זמין, לא פנוי
+CSS:     class containing "sold", "rented", "unavailable", "off-market"
+```
+
+The existing URL keyword filter and per-item `isSoldOrRentedPage()` check remain untouched as additional safety nets.
 
