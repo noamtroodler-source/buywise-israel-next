@@ -16,7 +16,6 @@ import { useAgencies, type AgencyWithCounts } from '@/hooks/useAgency';
 import { Layout } from '@/components/layout/Layout';
 import { useExtractedColor } from '@/hooks/useExtractedColor';
 import { Button } from '@/components/ui/button';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 type SortOption = 'az' | 'established' | 'team' | 'listings';
 
@@ -26,7 +25,6 @@ export default function Agencies() {
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>('az');
 
-  // Extract unique cities from all agencies
   const allCities = useMemo(() => {
     if (!agencies) return [];
     const citySet = new Set<string>();
@@ -36,23 +34,19 @@ export default function Agencies() {
     return Array.from(citySet).sort();
   }, [agencies]);
 
-  // Filter and sort
   const filteredAgencies = useMemo(() => {
     if (!agencies) return [];
     let result = [...agencies];
 
-    // Search
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter((a) => a.name.toLowerCase().includes(q));
     }
 
-    // City filter
     if (selectedCity) {
       result = result.filter((a) => a.cities_covered?.includes(selectedCity));
     }
 
-    // Sort
     switch (sortBy) {
       case 'az':
         result.sort((a, b) => a.name.localeCompare(b.name));
@@ -99,75 +93,53 @@ export default function Agencies() {
           </p>
         </div>
 
-        {/* Search + Sort Row */}
+        {/* Search + City + Sort Row */}
         {!isLoading && agencies && agencies.length > 0 && (
-          <div className="space-y-3">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search agencies by name…"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
-              <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search agencies…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            {allCities.length > 0 && (
+              <Select value={selectedCity || 'all'} onValueChange={(v) => setSelectedCity(v === 'all' ? null : v)}>
                 <SelectTrigger className="w-full sm:w-[180px]">
-                  <SelectValue placeholder="Sort by" />
+                  <SelectValue placeholder="All Cities" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="az">A – Z</SelectItem>
-                  <SelectItem value="established">Most Established</SelectItem>
-                  <SelectItem value="team">Largest Team</SelectItem>
-                  <SelectItem value="listings">Most Listings</SelectItem>
+                  <SelectItem value="all">All Cities</SelectItem>
+                  {allCities.map((city) => (
+                    <SelectItem key={city} value={city}>{city}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
-            </div>
-
-            {/* City Filter Pills */}
-            {allCities.length > 0 && (
-              <ScrollArea className="w-full whitespace-nowrap">
-                <div className="flex gap-2 pb-2">
-                  <button
-                    onClick={() => setSelectedCity(null)}
-                    className={`inline-flex items-center rounded-full px-3 py-1.5 text-sm font-medium transition-colors border ${
-                      selectedCity === null
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : 'bg-background text-muted-foreground border-border hover:bg-accent hover:text-accent-foreground'
-                    }`}
-                  >
-                    All
-                  </button>
-                  {allCities.map((city) => (
-                    <button
-                      key={city}
-                      onClick={() => setSelectedCity(selectedCity === city ? null : city)}
-                      className={`inline-flex items-center rounded-full px-3 py-1.5 text-sm font-medium transition-colors border ${
-                        selectedCity === city
-                          ? 'bg-primary text-primary-foreground border-primary'
-                          : 'bg-background text-muted-foreground border-border hover:bg-accent hover:text-accent-foreground'
-                      }`}
-                    >
-                      {city}
-                    </button>
-                  ))}
-                </div>
-                <ScrollBar orientation="horizontal" />
-              </ScrollArea>
             )}
+            <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="az">A – Z</SelectItem>
+                <SelectItem value="established">Most Established</SelectItem>
+                <SelectItem value="team">Largest Team</SelectItem>
+                <SelectItem value="listings">Most Listings</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         )}
 
-        {/* Agencies Grid */}
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -249,12 +221,10 @@ function AgencyCard({ agency }: AgencyCardProps) {
             </div>
           </div>
 
-          {/* Description */}
           {agency.description && (
             <p className="text-sm text-muted-foreground line-clamp-2">{agency.description}</p>
           )}
 
-          {/* Specializations */}
           {agency.specializations && agency.specializations.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {agency.specializations.slice(0, 3).map((spec) => (
@@ -265,7 +235,6 @@ function AgencyCard({ agency }: AgencyCardProps) {
             </div>
           )}
 
-          {/* Cities */}
           {agency.cities_covered && agency.cities_covered.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {agency.cities_covered.slice(0, 3).map((city) => (
@@ -281,7 +250,6 @@ function AgencyCard({ agency }: AgencyCardProps) {
             </div>
           )}
 
-          {/* Footer with real stats */}
           <div className="flex items-center justify-between pt-2 border-t">
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
               <span className="flex items-center gap-1">
