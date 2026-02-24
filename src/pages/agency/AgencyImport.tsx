@@ -212,7 +212,7 @@ export default function AgencyImport() {
                       ) : (
                         <>
                           <Download className="h-4 w-4 mr-2" />
-                          Import Next Batch ({Math.min(pendingCount, 10)} listings)
+                          {doneCount + failedCount === 0 ? 'Import First Batch' : 'Import Next Batch'} ({Math.min(pendingCount, 10)} listings)
                         </>
                       )}
                     </Button>
