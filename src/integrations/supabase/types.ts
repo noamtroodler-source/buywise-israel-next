@@ -2345,6 +2345,7 @@ export type Database = {
         Row: {
           created_at: string
           error_message: string | null
+          error_type: string | null
           extracted_data: Json | null
           id: string
           job_id: string
@@ -2356,6 +2357,7 @@ export type Database = {
         Insert: {
           created_at?: string
           error_message?: string | null
+          error_type?: string | null
           extracted_data?: Json | null
           id?: string
           job_id: string
@@ -2367,6 +2369,7 @@ export type Database = {
         Update: {
           created_at?: string
           error_message?: string | null
+          error_type?: string | null
           extracted_data?: Json | null
           id?: string
           job_id?: string
