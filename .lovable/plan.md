@@ -1,63 +1,72 @@
 
 
-## Firm Personality Colors
+## Auto-Extract Brand Colors from Logos
 
-Add a unique brand accent color to each professional's profile, creating a subtle visual identity that makes each card and detail page feel "owned" rather than generic.
+Replace the hardcoded color map with a system that automatically extracts the dominant color from each professional's logo image using an HTML canvas.
 
-### What you'll see
+### How it works
 
-**On the listing cards** (`/professionals`):
-- A thin 3px left border in each firm's brand color
-- The logo background circle tinted with that firm's color instead of the generic primary blue
+1. When a logo image loads, we draw it onto a hidden canvas
+2. We sample all pixels, skip whites/near-whites/blacks/near-blacks/grays (these are backgrounds, not brand colors)
+3. We find the most frequently occurring "colorful" pixel -- that's the brand color
+4. Cache the result so we only extract once per logo
 
-**On the detail page** (`/professionals/:slug`):
-- A soft gradient banner across the top of the hero card using the firm's color at ~5% opacity
-- The category badge tinted with the firm's accent color
-- The logo background uses the firm's color
+### What changes
 
-### Color assignments (curated per firm)
+**New utility: `src/hooks/useExtractedColor.ts`**
+- A React hook that takes an image URL and returns the extracted dominant color
+- Uses an off-screen canvas to sample pixels when the image loads
+- Filters out whites (r,g,b all > 220), near-blacks (all < 35), and low-saturation grays
+- Groups similar colors into buckets (rounding to nearest 16) to find the true dominant
+- Caches results in a module-level Map so extraction only runs once per URL
+- Returns `null` while loading, then the hex color string
 
-| Firm | Color | Rationale |
-|------|-------|-----------|
-| Cohen, Levy & Partners | `#1B4D6E` | Navy — classic legal authority |
-| Adv. Sarah Goldstein | `#6B4C9A` | Purple — distinctive, modern counsel |
-| Shapira Legal Group | `#2C5F3F` | Forest green — stability, trust |
-| Ben-David & Associates | `#8B5A2B` | Warm brown — approachable, grounded |
-| Israel Mortgage Advisors | `#0E6B5C` | Teal — financial confidence |
-| FirstHome Finance | `#D4761C` | Warm orange — first-time buyer energy |
-| Global Lending IL | `#2A5CAA` | Blue — global, institutional |
-| Aliyah Mortgage Solutions | `#1A7A4F` | Green — growth, new beginnings |
-| Katz & Co. Accounting | `#4A4A4A` | Charcoal — precision, seriousness |
-| Stern Tax Advisory | `#7B3B3A` | Burgundy — established, premium |
-| Levi Financial Partners | `#2E5B8A` | Steel blue — corporate finance |
-| Dvora Mizrachi, CPA | `#8A6B3D` | Gold-brown — personal, warm expertise |
+**Update: `src/components/professionals/professionalColors.ts`**
+- Keep the hardcoded map as an instant fallback (so colors render before images load)
+- Keep `getAccentColor` for initial/server-side use
+- The extracted color will override at the component level once available
 
----
+**Update: `src/components/professionals/ProfessionalCard.tsx`**
+- Import the new `useExtractedColor` hook
+- Resolve the logo URL (from DB or local fallback map)
+- Use extracted color when available, fall back to `getAccentColor` for the initial render
+- Result: colors automatically match the logo with zero manual mapping needed
+
+**Update: `src/pages/ProfessionalDetail.tsx`**
+- Same pattern: use extracted color when ready, hardcoded fallback until then
+- Pass the resolved color down to `ProfessionalContactCard` and `ProfessionalHighlights`
+
+**No changes needed** to `ProfessionalContactCard.tsx` or `ProfessionalHighlights.tsx` -- they already accept `accentColor` as a prop.
+
+### Edge case handling
+
+- **White/light logos**: Skip pixels where R, G, and B are all above 220
+- **Black text in logos**: Skip pixels where R, G, and B are all below 35
+- **Gray backgrounds**: Skip pixels with low saturation (difference between max and min channel < 30)
+- **Transparent PNGs**: Skip fully transparent pixels (alpha < 128)
+- **Multi-color logos**: The bucketing algorithm picks the most frequently occurring colorful region
+- **Fallback chain**: Extracted color > DB `accent_color` > hardcoded map > default blue
 
 ### Technical details
 
-**1. Database migration** -- Add `accent_color` column to `trusted_professionals`:
-```sql
-ALTER TABLE trusted_professionals ADD COLUMN accent_color TEXT DEFAULT NULL;
+The pixel sampling algorithm:
+```text
+1. Draw image onto 50x50 canvas (small = fast, enough for dominant color)
+2. Read all pixel data
+3. For each pixel:
+   - Skip if alpha < 128
+   - Skip if near-white, near-black, or gray
+   - Round R/G/B to nearest 16 to create a "bucket key"
+   - Increment that bucket's count, store the actual pixel color
+4. Return the color from the most popular bucket
+5. Cache by image URL
 ```
-Then populate with the curated colors above via UPDATE statements.
 
-**2. Update TypeScript type** -- Add `accent_color` to the `TrustedProfessional` interface in `useTrustedProfessionals.ts`.
+### Files to create/modify
 
-**3. Create helper** -- A small `professionalColors.ts` with a hardcoded fallback map (so colors work even before DB values load), plus a `getAccentColor(professional)` function that prefers DB value, falls back to the map, then falls back to the theme primary.
-
-**4. Update `ProfessionalCard.tsx`**:
-- Add `borderLeft: 3px solid ${accentColor}` inline style on the Card
-- Tint the logo container background with `${accentColor}10` (6% opacity)
-
-**5. Update `ProfessionalDetail.tsx`**:
-- Add a gradient overlay on the hero card: `background: linear-gradient(135deg, ${accentColor}08, transparent)`
-- Tint the category badge and logo background with the accent color
-- Keep all other UI unchanged
-
-**Files modified:**
-- `src/hooks/useTrustedProfessionals.ts` (add `accent_color` to interface)
-- `src/components/professionals/professionalColors.ts` (new file -- fallback map + helper)
-- `src/components/professionals/ProfessionalCard.tsx` (left border + logo tint)
-- `src/pages/ProfessionalDetail.tsx` (hero gradient + badge tint)
-- Database migration (add column + seed colors)
+| File | Action |
+|------|--------|
+| `src/hooks/useExtractedColor.ts` | Create -- canvas-based color extraction hook |
+| `src/components/professionals/ProfessionalCard.tsx` | Edit -- use extracted color with fallback |
+| `src/pages/ProfessionalDetail.tsx` | Edit -- use extracted color with fallback |
+| `src/components/professionals/professionalColors.ts` | Keep as-is (instant fallback) |
