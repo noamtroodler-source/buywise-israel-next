@@ -681,100 +681,153 @@ ${allUrls.join("\n")}`;
   return { job_id: job.id, total_listings: listingUrls.length, total_discovered: allUrls.length };
 }
 
-// ─── PROCESS BATCH ──────────────────────────────────────────────────────────
+// ─── HELPERS: PARALLEL PROCESSING ───────────────────────────────────────────
 
-async function handleProcessBatch(body: any) {
-  const { job_id } = body;
-  if (!job_id) throw new Error("job_id required");
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-  const sb = supabaseAdmin();
-  const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY")!;
-  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
+// Geocoding rate limiter — serializes Nominatim calls with 1.1s gap
+let _lastGeoTime = 0;
+let _geoQueue: Promise<void> = Promise.resolve();
 
-  const { data: job, error: jobErr } = await sb
-    .from("import_jobs")
-    .select("*, agencies!inner(id, admin_user_id)")
-    .eq("id", job_id)
-    .single();
-  if (jobErr || !job) throw new Error("Import job not found");
+async function geocodeWithRateLimit(
+  address: string,
+  city: string
+): Promise<{ lat: number; lng: number } | null> {
+  // Chain onto the shared queue to serialize
+  const result = await new Promise<{ lat: number; lng: number } | null>((resolve) => {
+    _geoQueue = _geoQueue.then(async () => {
+      const now = Date.now();
+      const wait = Math.max(0, 1100 - (now - _lastGeoTime));
+      if (wait > 0) await delay(wait);
+      _lastGeoTime = Date.now();
 
-  const { data: pendingItems, error: itemsErr } = await sb
-    .from("import_job_items")
-    .select("*")
-    .eq("job_id", job_id)
-    .eq("status", "pending")
-    .order("created_at", { ascending: true })
-    .limit(10);
-  if (itemsErr) throw new Error(`Failed to fetch pending items: ${itemsErr.message}`);
+      try {
+        const geoQuery = encodeURIComponent(`${address}, ${city}, Israel`);
+        const geoRes = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${geoQuery}&format=json&limit=1`,
+          { headers: { "User-Agent": "BuyWiseIsrael/1.0" } }
+        );
+        const geoData = await geoRes.json();
+        if (geoData?.[0]) {
+          resolve({
+            lat: parseFloat(geoData[0].lat),
+            lng: parseFloat(geoData[0].lon),
+          });
+        } else {
+          resolve(null);
+        }
+      } catch (geoErr) {
+        console.warn("Geocoding failed:", geoErr);
+        resolve(null);
+      }
+    });
+  });
+  return result;
+}
 
-  if (!pendingItems || pendingItems.length === 0) {
-    await sb.from("import_jobs").update({ status: "completed" }).eq("id", job_id);
-    return { processed: 0, succeeded: 0, failed: 0, remaining: 0, status: "completed" };
+// Parallel image download — batches of 5
+async function parallelImageDownload(
+  sourceImages: string[],
+  sb: any,
+  bucketName: string,
+  jobId: string,
+  maxImages = 15
+): Promise<string[]> {
+  const imageUrls: string[] = [];
+  const images = sourceImages.slice(0, maxImages);
+  const BATCH_SIZE = 5;
+
+  for (let i = 0; i < images.length; i += BATCH_SIZE) {
+    const batch = images.slice(i, i + BATCH_SIZE);
+    const results = await Promise.allSettled(
+      batch.map(async (imgUrl) => {
+        const imgRes = await fetch(imgUrl);
+        if (!imgRes.ok) return null;
+
+        const contentType = imgRes.headers.get("content-type") || "image/jpeg";
+        const ext = contentType.includes("png") ? "png" : contentType.includes("webp") ? "webp" : "jpg";
+        const imgBuffer = await imgRes.arrayBuffer();
+        const fileName = `imports/${jobId}/${crypto.randomUUID()}.${ext}`;
+
+        const { error: uploadErr } = await sb.storage
+          .from(bucketName)
+          .upload(fileName, imgBuffer, { contentType, upsert: false });
+
+        if (!uploadErr) {
+          const { data: urlData } = sb.storage.from(bucketName).getPublicUrl(fileName);
+          return urlData?.publicUrl || null;
+        }
+        return null;
+      })
+    );
+
+    for (const r of results) {
+      if (r.status === "fulfilled" && r.value) {
+        imageUrls.push(r.value);
+      }
+    }
   }
 
-  await sb.from("import_jobs").update({ status: "processing" }).eq("id", job_id);
+  return imageUrls;
+}
 
-  const { data: agents } = await sb
-    .from("agents")
-    .select("id")
-    .eq("agency_id", job.agency_id)
-    .limit(1);
-  const agentId = agents?.[0]?.id || null;
+// Process a single item end-to-end
+async function processOneItem(
+  item: any,
+  sb: any,
+  job: any,
+  agentId: string | null,
+  firecrawlKey: string,
+  lovableKey: string,
+  jobId: string,
+): Promise<{ succeeded: boolean }> {
+  try {
+    await sb.from("import_job_items").update({ status: "processing" }).eq("id", item.id);
 
-  let succeeded = 0;
-  let failed = 0;
+    // 1. Scrape the page
+    console.log(`Scraping: ${item.url}`);
+    const scrapeRes = await fetch("https://api.firecrawl.dev/v1/scrape", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${firecrawlKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        url: item.url,
+        formats: ["markdown", "links"],
+        onlyMainContent: true,
+      }),
+    });
 
-  for (const item of pendingItems) {
-    try {
-      await sb.from("import_job_items").update({ status: "processing" }).eq("id", item.id);
-
-      // 1. Scrape the page
-      console.log(`Scraping: ${item.url}`);
-      const scrapeRes = await fetch("https://api.firecrawl.dev/v1/scrape", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${FIRECRAWL_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          url: item.url,
-          formats: ["markdown", "links"],
-          onlyMainContent: true,
-        }),
-      });
-
-      const scrapeData = await scrapeRes.json();
-      if (!scrapeRes.ok) {
-        const statusCode = scrapeRes.status;
-        if (statusCode === 404 || statusCode === 410) {
-          await sb.from("import_job_items").update({ status: "skipped", error_message: `Page not found (${statusCode})` }).eq("id", item.id);
-          failed++;
-          continue;
-        }
-        throw new Error(`Scrape failed: ${JSON.stringify(scrapeData)}`);
+    const scrapeData = await scrapeRes.json();
+    if (!scrapeRes.ok) {
+      const statusCode = scrapeRes.status;
+      if (statusCode === 404 || statusCode === 410) {
+        await sb.from("import_job_items").update({ status: "skipped", error_message: `Page not found (${statusCode})` }).eq("id", item.id);
+        return { succeeded: false };
       }
+      throw new Error(`Scrape failed: ${JSON.stringify(scrapeData)}`);
+    }
 
-      const markdown = scrapeData.data?.markdown || scrapeData.markdown || "";
-      const pageLinks = scrapeData.data?.links || scrapeData.links || [];
+    const markdown = scrapeData.data?.markdown || scrapeData.markdown || "";
+    const pageLinks = scrapeData.data?.links || scrapeData.links || [];
 
-      if (!markdown || markdown.length < 50) {
-        await sb.from("import_job_items").update({ status: "skipped", error_message: "Page content too short — likely not a listing" }).eq("id", item.id);
-        failed++;
-        continue;
-      }
+    if (!markdown || markdown.length < 50) {
+      await sb.from("import_job_items").update({ status: "skipped", error_message: "Page content too short — likely not a listing" }).eq("id", item.id);
+      return { succeeded: false };
+    }
 
-      // Pre-LLM sold/rented keyword check
-      if (isSoldOrRentedPage(markdown)) {
-        console.log(`Pre-filter: sold/rented detected for ${item.url}`);
-        await sb.from("import_job_items").update({ status: "skipped", error_message: "Pre-filter: listing appears sold/rented" }).eq("id", item.id);
-        failed++;
-        continue;
-      }
+    // Pre-LLM sold/rented keyword check
+    if (isSoldOrRentedPage(markdown)) {
+      console.log(`Pre-filter: sold/rented detected for ${item.url}`);
+      await sb.from("import_job_items").update({ status: "skipped", error_message: "Pre-filter: listing appears sold/rented" }).eq("id", item.id);
+      return { succeeded: false };
+    }
 
-      // 2. AI extraction — with domain hint + supported cities context
-      const domain = getDomainFromUrl(item.url);
+    // 2. AI extraction
+    const domain = getDomainFromUrl(item.url);
 
-      const extractionPrompt = `You are extracting structured data from a scraped Israeli real estate page.
+    const extractionPrompt = `You are extracting structured data from a scraped Israeli real estate page.
 
 IMPORTANT CONTEXT:
 - Website domain: ${domain}
@@ -820,439 +873,423 @@ ${markdown.substring(0, 8000)}
 Links found on page:
 ${pageLinks.slice(0, 50).join("\n")}`;
 
-      const extractRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages: [{ role: "user", content: extractionPrompt }],
-          tools: [
-            {
-              type: "function",
-              function: {
-                name: "extract_listing",
-                description: "Extract structured data from a real estate page — could be a property listing or a project/development",
-                parameters: {
-                  type: "object",
-                  properties: {
-                    listing_category: {
-                      type: "string",
-                      enum: ["property", "project", "not_listing"],
-                      description: "The category of the page: property (single unit listing), project (new development), or not_listing",
-                    },
-                    title: { type: "string", description: "Listing title (for properties)" },
-                    description: { type: "string", description: "Property description" },
-                    price: { type: "number", description: "Price as number (0 if Price on Request)" },
-                    currency: { type: "string", enum: ["ILS", "USD", "EUR"], description: "Currency code" },
-                    bedrooms: { type: "number", description: "Number of bedrooms (rooms - 1)" },
-                    bathrooms: { type: "number", description: "Number of bathrooms" },
-                    size_sqm: { type: "number", description: "Size in square meters" },
-                    address: { type: "string", description: "Street address" },
-                    city: { type: "string", description: "City name — must be one of the supported cities" },
-                    neighborhood: { type: "string", description: "Neighborhood name" },
-                    property_type: {
-                      type: "string",
-                      enum: ["apartment", "garden_apartment", "penthouse", "mini_penthouse", "duplex", "house", "cottage", "land", "commercial"],
-                    },
-                    listing_status: { type: "string", enum: ["for_sale", "for_rent"] },
-                    floor: { type: "number", description: "Floor number" },
-                    total_floors: { type: "number", description: "Total floors in building" },
-                    features: { type: "array", items: { type: "string" }, description: "Features like balcony, elevator, etc." },
-                    parking: { type: "number", description: "Number of parking spots" },
-                    entry_date: { type: "string", description: "Entry date (YYYY-MM-DD or 'immediate')" },
-                    year_built: { type: "number", description: "Year built" },
-                    ac_type: { type: "string", enum: ["none", "split", "central", "mini_central"] },
-                    is_sold_or_rented: { type: "boolean", description: "True if listing is sold/rented/under contract" },
-                    project_name: { type: "string", description: "Name of the project/development" },
-                    project_description: { type: "string", description: "Description of the project" },
-                    price_from: { type: "number", description: "Lowest unit price in project (0 if not listed)" },
-                    price_to: { type: "number", description: "Highest unit price in project" },
-                    total_units: { type: "number", description: "Total number of units" },
-                    construction_status: {
-                      type: "string",
-                      enum: ["planning", "pre_sale", "foundation", "structure", "finishing", "delivery", "completed"],
-                      description: "Construction stage",
-                    },
-                    completion_date: { type: "string", description: "Expected completion (YYYY-MM-DD)" },
-                    amenities: { type: "array", items: { type: "string" }, description: "Project amenities" },
-                    image_urls: { type: "array", items: { type: "string" }, description: "All image URLs found" },
+    const extractRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${lovableKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [{ role: "user", content: extractionPrompt }],
+        tools: [
+          {
+            type: "function",
+            function: {
+              name: "extract_listing",
+              description: "Extract structured data from a real estate page — could be a property listing or a project/development",
+              parameters: {
+                type: "object",
+                properties: {
+                  listing_category: {
+                    type: "string",
+                    enum: ["property", "project", "not_listing"],
+                    description: "The category of the page: property (single unit listing), project (new development), or not_listing",
                   },
-                  required: ["listing_category"],
-                  additionalProperties: false,
+                  title: { type: "string", description: "Listing title (for properties)" },
+                  description: { type: "string", description: "Property description" },
+                  price: { type: "number", description: "Price as number (0 if Price on Request)" },
+                  currency: { type: "string", enum: ["ILS", "USD", "EUR"], description: "Currency code" },
+                  bedrooms: { type: "number", description: "Number of bedrooms (rooms - 1)" },
+                  bathrooms: { type: "number", description: "Number of bathrooms" },
+                  size_sqm: { type: "number", description: "Size in square meters" },
+                  address: { type: "string", description: "Street address" },
+                  city: { type: "string", description: "City name — must be one of the supported cities" },
+                  neighborhood: { type: "string", description: "Neighborhood name" },
+                  property_type: {
+                    type: "string",
+                    enum: ["apartment", "garden_apartment", "penthouse", "mini_penthouse", "duplex", "house", "cottage", "land", "commercial"],
+                  },
+                  listing_status: { type: "string", enum: ["for_sale", "for_rent"] },
+                  floor: { type: "number", description: "Floor number" },
+                  total_floors: { type: "number", description: "Total floors in building" },
+                  features: { type: "array", items: { type: "string" }, description: "Features like balcony, elevator, etc." },
+                  parking: { type: "number", description: "Number of parking spots" },
+                  entry_date: { type: "string", description: "Entry date (YYYY-MM-DD or 'immediate')" },
+                  year_built: { type: "number", description: "Year built" },
+                  ac_type: { type: "string", enum: ["none", "split", "central", "mini_central"] },
+                  is_sold_or_rented: { type: "boolean", description: "True if listing is sold/rented/under contract" },
+                  project_name: { type: "string", description: "Name of the project/development" },
+                  project_description: { type: "string", description: "Description of the project" },
+                  price_from: { type: "number", description: "Lowest unit price in project (0 if not listed)" },
+                  price_to: { type: "number", description: "Highest unit price in project" },
+                  total_units: { type: "number", description: "Total number of units" },
+                  construction_status: {
+                    type: "string",
+                    enum: ["planning", "pre_sale", "foundation", "structure", "finishing", "delivery", "completed"],
+                    description: "Construction stage",
+                  },
+                  completion_date: { type: "string", description: "Expected completion (YYYY-MM-DD)" },
+                  amenities: { type: "array", items: { type: "string" }, description: "Project amenities" },
+                  image_urls: { type: "array", items: { type: "string" }, description: "All image URLs found" },
                 },
+                required: ["listing_category"],
+                additionalProperties: false,
               },
             },
-          ],
-          tool_choice: { type: "function", function: { name: "extract_listing" } },
-        }),
-      });
+          },
+        ],
+        tool_choice: { type: "function", function: { name: "extract_listing" } },
+      }),
+    });
 
-      if (!extractRes.ok) {
-        const errText = await extractRes.text();
-        console.error("AI extraction error:", extractRes.status, errText);
-        if (extractRes.status === 429) {
-          await sb.from("import_job_items").update({ status: "pending", error_message: "Rate limited, will retry" }).eq("id", item.id);
-          failed++;
-          continue;
-        }
-        throw new Error(`AI extraction failed (${extractRes.status})`);
+    if (!extractRes.ok) {
+      const errText = await extractRes.text();
+      console.error("AI extraction error:", extractRes.status, errText);
+      if (extractRes.status === 429) {
+        await sb.from("import_job_items").update({ status: "pending", error_message: "Rate limited, will retry" }).eq("id", item.id);
+        return { succeeded: false };
       }
+      throw new Error(`AI extraction failed (${extractRes.status})`);
+    }
 
-      const extractData = await extractRes.json();
-      const extractToolCall = extractData.choices?.[0]?.message?.tool_calls?.[0];
+    const extractData = await extractRes.json();
+    const extractToolCall = extractData.choices?.[0]?.message?.tool_calls?.[0];
 
-      if (!extractToolCall?.function?.arguments) {
-        await sb.from("import_job_items").update({ status: "failed", error_message: "AI returned no extraction data" }).eq("id", item.id);
-        failed++;
-        continue;
+    if (!extractToolCall?.function?.arguments) {
+      await sb.from("import_job_items").update({ status: "failed", error_message: "AI returned no extraction data" }).eq("id", item.id);
+      return { succeeded: false };
+    }
+
+    const listing = JSON.parse(extractToolCall.function.arguments);
+
+    // Store raw extraction
+    await sb.from("import_job_items").update({ extracted_data: listing }).eq("id", item.id);
+
+    const category = listing.listing_category || (listing.is_listing_page === false ? "not_listing" : "property");
+
+    // ── NOT A LISTING / PROJECT ──
+    if (category === "not_listing") {
+      await sb.from("import_job_items").update({ status: "skipped", error_message: "Not a listing page" }).eq("id", item.id);
+      return { succeeded: false };
+    }
+
+    // ── POST-EXTRACTION CITY INFERENCE ──
+    if (!listing.city || listing.city.trim() === "") {
+      const domainCity = inferCityFromDomain(item.url);
+      if (domainCity) {
+        console.log(`City inferred from domain for ${item.url}: ${domainCity}`);
+        listing.city = domainCity;
       }
+    }
 
-      const listing = JSON.parse(extractToolCall.function.arguments);
+    // ── CITY WHITELIST GATE ──
+    const matchedCity = matchSupportedCity(listing.city);
+    if (!matchedCity) {
+      await sb.from("import_job_items").update({
+        status: "skipped",
+        error_message: `City not supported: "${listing.city || '(none)'}". Only 25 featured cities are imported.`,
+      }).eq("id", item.id);
+      return { succeeded: false };
+    }
+    listing.city = matchedCity;
 
-      // Store raw extraction
-      await sb.from("import_job_items").update({ extracted_data: listing }).eq("id", item.id);
-
-      const category = listing.listing_category || (listing.is_listing_page === false ? "not_listing" : "property");
-
-      // ── NOT A LISTING / PROJECT ──
-      if (category === "not_listing") {
-        await sb.from("import_job_items").update({ status: "skipped", error_message: "Not a listing page" }).eq("id", item.id);
-        failed++;
-        continue;
-      }
-
-      // ── POST-EXTRACTION CITY INFERENCE ──
-      // If AI didn't extract a city, try to infer from domain
-      if (!listing.city || listing.city.trim() === "") {
-        const domainCity = inferCityFromDomain(item.url);
-        if (domainCity) {
-          console.log(`City inferred from domain for ${item.url}: ${domainCity}`);
-          listing.city = domainCity;
-        }
-      }
-
-      // ── CITY WHITELIST GATE ──
-      const matchedCity = matchSupportedCity(listing.city);
-      if (!matchedCity) {
-        await sb.from("import_job_items").update({
-          status: "skipped",
-          error_message: `City not supported: "${listing.city || '(none)'}". Only 25 featured cities are imported.`,
-        }).eq("id", item.id);
-        failed++;
-        continue;
-      }
-      listing.city = matchedCity; // Use canonical name
-
-      // ── PROJECT PATH ──
-      if (category === "project") {
-        const projectErrors = validateProjectData(listing);
-        if (projectErrors.length > 0) {
-          await sb.from("import_job_items").update({
-            status: "failed",
-            error_message: `Validation failed: ${projectErrors.join("; ")}`,
-          }).eq("id", item.id);
-          failed++;
-          continue;
-        }
-
-        const projectName = listing.project_name || listing.title || `Imported project from ${new URL(item.url).hostname}`;
-        const projectCity = listing.city;
-
-        // Duplicate detection for projects
-        if (projectName && projectCity) {
-          const { data: dupeProjects } = await sb
-            .from("projects")
-            .select("id")
-            .ilike("name", projectName)
-            .ilike("city", projectCity)
-            .limit(1);
-
-          if (dupeProjects && dupeProjects.length > 0) {
-            await sb.from("import_job_items").update({
-              status: "skipped",
-              error_message: `Duplicate: matches existing project ${dupeProjects[0].id} (same name + city)`
-            }).eq("id", item.id);
-            failed++;
-            continue;
-          }
-        }
-
-        // Download & re-host images
-        const imageUrls: string[] = [];
-        const sourceImages = listing.image_urls || [];
-        for (const imgUrl of sourceImages.slice(0, 15)) {
-          try {
-            const imgRes = await fetch(imgUrl);
-            if (!imgRes.ok) continue;
-            const contentType = imgRes.headers.get("content-type") || "image/jpeg";
-            const ext = contentType.includes("png") ? "png" : contentType.includes("webp") ? "webp" : "jpg";
-            const imgBuffer = await imgRes.arrayBuffer();
-            const fileName = `imports/${job_id}/${crypto.randomUUID()}.${ext}`;
-            const { error: uploadErr } = await sb.storage
-              .from("project-images")
-              .upload(fileName, imgBuffer, { contentType, upsert: false });
-            if (!uploadErr) {
-              const { data: urlData } = sb.storage.from("project-images").getPublicUrl(fileName);
-              if (urlData?.publicUrl) imageUrls.push(urlData.publicUrl);
-            }
-          } catch (imgErr) {
-            console.warn("Image download failed:", imgUrl, imgErr);
-          }
-        }
-
-        // Geocode
-        let latitude: number | null = null;
-        let longitude: number | null = null;
-        const geoAddr = listing.address || projectName;
-        if (geoAddr && projectCity) {
-          try {
-            const geoQuery = encodeURIComponent(`${geoAddr}, ${projectCity}, Israel`);
-            const geoRes = await fetch(
-              `https://nominatim.openstreetmap.org/search?q=${geoQuery}&format=json&limit=1`,
-              { headers: { "User-Agent": "BuyWiseIsrael/1.0" } }
-            );
-            const geoData = await geoRes.json();
-            if (geoData?.[0]) {
-              latitude = parseFloat(geoData[0].lat);
-              longitude = parseFloat(geoData[0].lon);
-            }
-          } catch (geoErr) {
-            console.warn("Geocoding failed:", geoErr);
-          }
-        }
-
-        const slug = projectName
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "-")
-          .replace(/^-|-$/g, "") + "-" + crypto.randomUUID().substring(0, 6);
-
-        const statusMap: Record<string, string> = {
-          planning: "planning",
-          pre_sale: "pre_sale",
-          foundation: "foundation",
-          structure: "structure",
-          finishing: "finishing",
-          delivery: "delivery",
-          completed: "completed",
-        };
-        const projectStatus = statusMap[listing.construction_status] || "pre_sale";
-
-        const { data: project, error: projErr } = await sb
-          .from("projects")
-          .insert({
-            name: projectName,
-            slug,
-            description: listing.project_description || listing.description || null,
-            city: projectCity,
-            neighborhood: listing.neighborhood || null,
-            address: listing.address || null,
-            latitude,
-            longitude,
-            status: projectStatus,
-            total_units: listing.total_units || 0,
-            available_units: listing.total_units || 0,
-            price_from: listing.price_from || null,
-            price_to: listing.price_to || null,
-            currency: listing.currency || "ILS",
-            completion_date: listing.completion_date || null,
-            amenities: listing.amenities || null,
-            images: imageUrls.length > 0 ? imageUrls : null,
-            is_featured: false,
-            is_published: false,
-            views_count: 0,
-            import_source: "website_scrape",
-          })
-          .select("id")
-          .single();
-
-        if (projErr) {
-          console.error("Project insert error:", projErr);
-          await sb.from("import_job_items").update({ status: "failed", error_message: `Project insert failed: ${projErr.message}` }).eq("id", item.id);
-          failed++;
-          continue;
-        }
-
-        await sb.from("import_job_items").update({ status: "done", project_id: project.id }).eq("id", item.id);
-        succeeded++;
-        continue;
-      }
-
-      // ── PROPERTY PATH ──
-
-      // Sold or rented listing?
-      if (listing.is_sold_or_rented) {
-        await sb.from("import_job_items").update({ status: "skipped", error_message: "Listing is sold or rented" }).eq("id", item.id);
-        failed++;
-        continue;
-      }
-
-      // Validate property data (relaxed price rules)
-      const propertyErrors = validatePropertyData(listing);
-      if (propertyErrors.length > 0) {
+    // ── PROJECT PATH ──
+    if (category === "project") {
+      const projectErrors = validateProjectData(listing);
+      if (projectErrors.length > 0) {
         await sb.from("import_job_items").update({
           status: "failed",
-          error_message: `Validation failed: ${propertyErrors.join("; ")}`,
+          error_message: `Validation failed: ${projectErrors.join("; ")}`,
         }).eq("id", item.id);
-        failed++;
-        continue;
+        return { succeeded: false };
       }
 
-      // ── Duplicate detection (two-tier) ──
+      const projectName = listing.project_name || listing.title || `Imported project from ${new URL(item.url).hostname}`;
+      const projectCity = listing.city;
 
-      // Tier 1: Same address + city
-      if (listing.address && listing.city) {
-        const trimmedAddr = listing.address.trim();
-        if (trimmedAddr.length > 0) {
-          const { data: dupes } = await sb
-            .from("properties")
-            .select("id")
-            .eq("agent_id", agentId)
-            .ilike("address", trimmedAddr)
-            .ilike("city", listing.city.trim())
-            .limit(1);
-
-          if (dupes && dupes.length > 0) {
-            await sb.from("import_job_items").update({
-              status: "skipped",
-              error_message: `Duplicate: matches existing property ${dupes[0].id} (same address + city)`
-            }).eq("id", item.id);
-            failed++;
-            continue;
-          }
-        }
-      }
-
-      // Tier 2: Fuzzy match — city + rooms + size + ~price (skip if price is 0 / Price on Request)
-      if (listing.city && listing.bedrooms != null && listing.size_sqm && listing.price && listing.price > 0) {
-        const priceLow = listing.price * 0.95;
-        const priceHigh = listing.price * 1.05;
-
-        const { data: fuzzyDupes } = await sb
-          .from("properties")
+      // Duplicate detection for projects
+      if (projectName && projectCity) {
+        const { data: dupeProjects } = await sb
+          .from("projects")
           .select("id")
-          .eq("agent_id", agentId)
-          .ilike("city", listing.city.trim())
-          .eq("bedrooms", Math.floor(listing.bedrooms))
-          .eq("size_sqm", listing.size_sqm)
-          .gte("price", priceLow)
-          .lte("price", priceHigh)
+          .ilike("name", projectName)
+          .ilike("city", projectCity)
           .limit(1);
 
-        if (fuzzyDupes && fuzzyDupes.length > 0) {
+        if (dupeProjects && dupeProjects.length > 0) {
           await sb.from("import_job_items").update({
             status: "skipped",
-            error_message: `Duplicate: matches existing property ${fuzzyDupes[0].id} (same city, rooms, size, ~price)`
+            error_message: `Duplicate: matches existing project ${dupeProjects[0].id} (same name + city)`
           }).eq("id", item.id);
-          failed++;
-          continue;
+          return { succeeded: false };
         }
       }
 
-      // Download and re-host images
-      const imageUrls: string[] = [];
-      const sourceImages = listing.image_urls || [];
+      // Download & re-host images (parallel)
+      const imageUrls = await parallelImageDownload(
+        listing.image_urls || [], sb, "project-images", jobId
+      );
 
-      for (const imgUrl of sourceImages.slice(0, 15)) {
-        try {
-          const imgRes = await fetch(imgUrl);
-          if (!imgRes.ok) continue;
-
-          const contentType = imgRes.headers.get("content-type") || "image/jpeg";
-          const ext = contentType.includes("png") ? "png" : contentType.includes("webp") ? "webp" : "jpg";
-          const imgBuffer = await imgRes.arrayBuffer();
-          const fileName = `imports/${job_id}/${crypto.randomUUID()}.${ext}`;
-
-          const { error: uploadErr } = await sb.storage
-            .from("property-images")
-            .upload(fileName, imgBuffer, { contentType, upsert: false });
-
-          if (!uploadErr) {
-            const { data: urlData } = sb.storage.from("property-images").getPublicUrl(fileName);
-            if (urlData?.publicUrl) imageUrls.push(urlData.publicUrl);
-          }
-        } catch (imgErr) {
-          console.warn("Image download failed:", imgUrl, imgErr);
-        }
-      }
-
-      // Geocode
+      // Geocode (rate-limited)
       let latitude: number | null = null;
       let longitude: number | null = null;
-
-      if (listing.address && listing.city) {
-        try {
-          const geoQuery = encodeURIComponent(`${listing.address}, ${listing.city}, Israel`);
-          const geoRes = await fetch(
-            `https://nominatim.openstreetmap.org/search?q=${geoQuery}&format=json&limit=1`,
-            { headers: { "User-Agent": "BuyWiseIsrael/1.0" } }
-          );
-          const geoData = await geoRes.json();
-          if (geoData?.[0]) {
-            latitude = parseFloat(geoData[0].lat);
-            longitude = parseFloat(geoData[0].lon);
-          }
-        } catch (geoErr) {
-          console.warn("Geocoding failed:", geoErr);
+      const geoAddr = listing.address || projectName;
+      if (geoAddr && projectCity) {
+        const coords = await geocodeWithRateLimit(geoAddr, projectCity);
+        if (coords) {
+          latitude = coords.lat;
+          longitude = coords.lng;
         }
       }
 
-      // Insert property
-      const entryDate = listing.entry_date === "immediate" ? new Date().toISOString().split("T")[0] : listing.entry_date || null;
+      const slug = projectName
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "") + "-" + crypto.randomUUID().substring(0, 6);
 
-      const { data: property, error: propErr } = await sb
-        .from("properties")
+      const statusMap: Record<string, string> = {
+        planning: "planning", pre_sale: "pre_sale", foundation: "foundation",
+        structure: "structure", finishing: "finishing", delivery: "delivery", completed: "completed",
+      };
+      const projectStatus = statusMap[listing.construction_status] || "pre_sale";
+
+      const { data: project, error: projErr } = await sb
+        .from("projects")
         .insert({
-          agent_id: agentId,
-          title: listing.title || `Imported from ${new URL(item.url).hostname}`,
-          description: listing.description || null,
-          property_type: listing.property_type || "apartment",
-          listing_status: listing.listing_status || "for_sale",
-          price: listing.price || 0, // 0 = Price on Request
+          name: projectName, slug,
+          description: listing.project_description || listing.description || null,
+          city: projectCity, neighborhood: listing.neighborhood || null,
+          address: listing.address || null, latitude, longitude,
+          status: projectStatus,
+          total_units: listing.total_units || 0,
+          available_units: listing.total_units || 0,
+          price_from: listing.price_from || null,
+          price_to: listing.price_to || null,
           currency: listing.currency || "ILS",
-          address: listing.address || "",
-          city: listing.city, // Already canonical from whitelist gate
-          neighborhood: listing.neighborhood || null,
-          latitude,
-          longitude,
-          bedrooms: Math.floor(listing.bedrooms ?? 0),
-          bathrooms: Math.floor(listing.bathrooms ?? 1),
-          size_sqm: listing.size_sqm || null,
-          floor: listing.floor ?? null,
-          total_floors: listing.total_floors ?? null,
-          year_built: listing.year_built ?? null,
-          features: listing.features || [],
+          completion_date: listing.completion_date || null,
+          amenities: listing.amenities || null,
           images: imageUrls.length > 0 ? imageUrls : null,
-          parking: listing.parking ?? 0,
-          ac_type: listing.ac_type || null,
-          entry_date: entryDate,
-          is_published: false,
-          is_featured: false,
-          views_count: 0,
-          verification_status: "draft",
+          is_featured: false, is_published: false, views_count: 0,
           import_source: "website_scrape",
         })
         .select("id")
         .single();
 
-      if (propErr) {
-        console.error("Property insert error:", propErr);
-        await sb.from("import_job_items").update({ status: "failed", error_message: `Insert failed: ${propErr.message}` }).eq("id", item.id);
-        failed++;
-        continue;
+      if (projErr) {
+        console.error("Project insert error:", projErr);
+        await sb.from("import_job_items").update({ status: "failed", error_message: `Project insert failed: ${projErr.message}` }).eq("id", item.id);
+        return { succeeded: false };
       }
 
-      await sb.from("import_job_items").update({ status: "done", property_id: property.id }).eq("id", item.id);
-      succeeded++;
-    } catch (err) {
-      console.error(`Error processing ${item.url}:`, err);
-      await sb
-        .from("import_job_items")
-        .update({ status: "failed", error_message: err instanceof Error ? err.message : "Unknown error" })
-        .eq("id", item.id);
-      failed++;
+      await sb.from("import_job_items").update({ status: "done", project_id: project.id }).eq("id", item.id);
+      return { succeeded: true };
+    }
+
+    // ── PROPERTY PATH ──
+
+    if (listing.is_sold_or_rented) {
+      await sb.from("import_job_items").update({ status: "skipped", error_message: "Listing is sold or rented" }).eq("id", item.id);
+      return { succeeded: false };
+    }
+
+    const propertyErrors = validatePropertyData(listing);
+    if (propertyErrors.length > 0) {
+      await sb.from("import_job_items").update({
+        status: "failed",
+        error_message: `Validation failed: ${propertyErrors.join("; ")}`,
+      }).eq("id", item.id);
+      return { succeeded: false };
+    }
+
+    // ── Duplicate detection (two-tier) ──
+    // Tier 1: Same address + city
+    if (listing.address && listing.city) {
+      const trimmedAddr = listing.address.trim();
+      if (trimmedAddr.length > 0) {
+        const { data: dupes } = await sb
+          .from("properties")
+          .select("id")
+          .eq("agent_id", agentId)
+          .ilike("address", trimmedAddr)
+          .ilike("city", listing.city.trim())
+          .limit(1);
+
+        if (dupes && dupes.length > 0) {
+          await sb.from("import_job_items").update({
+            status: "skipped",
+            error_message: `Duplicate: matches existing property ${dupes[0].id} (same address + city)`
+          }).eq("id", item.id);
+          return { succeeded: false };
+        }
+      }
+    }
+
+    // Tier 2: Fuzzy match
+    if (listing.city && listing.bedrooms != null && listing.size_sqm && listing.price && listing.price > 0) {
+      const priceLow = listing.price * 0.95;
+      const priceHigh = listing.price * 1.05;
+
+      const { data: fuzzyDupes } = await sb
+        .from("properties")
+        .select("id")
+        .eq("agent_id", agentId)
+        .ilike("city", listing.city.trim())
+        .eq("bedrooms", Math.floor(listing.bedrooms))
+        .eq("size_sqm", listing.size_sqm)
+        .gte("price", priceLow)
+        .lte("price", priceHigh)
+        .limit(1);
+
+      if (fuzzyDupes && fuzzyDupes.length > 0) {
+        await sb.from("import_job_items").update({
+          status: "skipped",
+          error_message: `Duplicate: matches existing property ${fuzzyDupes[0].id} (same city, rooms, size, ~price)`
+        }).eq("id", item.id);
+        return { succeeded: false };
+      }
+    }
+
+    // Download and re-host images (parallel)
+    const imageUrls = await parallelImageDownload(
+      listing.image_urls || [], sb, "property-images", jobId
+    );
+
+    // Geocode (rate-limited)
+    let latitude: number | null = null;
+    let longitude: number | null = null;
+
+    if (listing.address && listing.city) {
+      const coords = await geocodeWithRateLimit(listing.address, listing.city);
+      if (coords) {
+        latitude = coords.lat;
+        longitude = coords.lng;
+      }
+    }
+
+    // Insert property
+    const entryDate = listing.entry_date === "immediate" ? new Date().toISOString().split("T")[0] : listing.entry_date || null;
+
+    const { data: property, error: propErr } = await sb
+      .from("properties")
+      .insert({
+        agent_id: agentId,
+        title: listing.title || `Imported from ${new URL(item.url).hostname}`,
+        description: listing.description || null,
+        property_type: listing.property_type || "apartment",
+        listing_status: listing.listing_status || "for_sale",
+        price: listing.price || 0,
+        currency: listing.currency || "ILS",
+        address: listing.address || "",
+        city: listing.city,
+        neighborhood: listing.neighborhood || null,
+        latitude, longitude,
+        bedrooms: Math.floor(listing.bedrooms ?? 0),
+        bathrooms: Math.floor(listing.bathrooms ?? 1),
+        size_sqm: listing.size_sqm || null,
+        floor: listing.floor ?? null,
+        total_floors: listing.total_floors ?? null,
+        year_built: listing.year_built ?? null,
+        features: listing.features || [],
+        images: imageUrls.length > 0 ? imageUrls : null,
+        parking: listing.parking ?? 0,
+        ac_type: listing.ac_type || null,
+        entry_date: entryDate,
+        is_published: false, is_featured: false, views_count: 0,
+        verification_status: "draft",
+        import_source: "website_scrape",
+      })
+      .select("id")
+      .single();
+
+    if (propErr) {
+      console.error("Property insert error:", propErr);
+      await sb.from("import_job_items").update({ status: "failed", error_message: `Insert failed: ${propErr.message}` }).eq("id", item.id);
+      return { succeeded: false };
+    }
+
+    await sb.from("import_job_items").update({ status: "done", property_id: property.id }).eq("id", item.id);
+    return { succeeded: true };
+  } catch (err) {
+    console.error(`Error processing ${item.url}:`, err);
+    await sb
+      .from("import_job_items")
+      .update({ status: "failed", error_message: err instanceof Error ? err.message : "Unknown error" })
+      .eq("id", item.id);
+    return { succeeded: false };
+  }
+}
+
+// ─── PROCESS BATCH ──────────────────────────────────────────────────────────
+
+async function handleProcessBatch(body: any) {
+  const { job_id } = body;
+  if (!job_id) throw new Error("job_id required");
+
+  const sb = supabaseAdmin();
+  const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY")!;
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
+
+  const { data: job, error: jobErr } = await sb
+    .from("import_jobs")
+    .select("*, agencies!inner(id, admin_user_id)")
+    .eq("id", job_id)
+    .single();
+  if (jobErr || !job) throw new Error("Import job not found");
+
+  const { data: pendingItems, error: itemsErr } = await sb
+    .from("import_job_items")
+    .select("*")
+    .eq("job_id", job_id)
+    .eq("status", "pending")
+    .order("created_at", { ascending: true })
+    .limit(10);
+  if (itemsErr) throw new Error(`Failed to fetch pending items: ${itemsErr.message}`);
+
+  if (!pendingItems || pendingItems.length === 0) {
+    await sb.from("import_jobs").update({ status: "completed" }).eq("id", job_id);
+    return { processed: 0, succeeded: 0, failed: 0, remaining: 0, status: "completed" };
+  }
+
+  await sb.from("import_jobs").update({ status: "processing" }).eq("id", job_id);
+
+  const { data: agents } = await sb
+    .from("agents")
+    .select("id")
+    .eq("agency_id", job.agency_id)
+    .limit(1);
+  const agentId = agents?.[0]?.id || null;
+
+  let succeeded = 0;
+  let failed = 0;
+
+  // Reset geocode rate limiter for this batch
+  _lastGeoTime = 0;
+  _geoQueue = Promise.resolve();
+
+  const CONCURRENCY = 3;
+  const batchStartTime = Date.now();
+
+  for (let i = 0; i < pendingItems.length; i += CONCURRENCY) {
+    // Timeout safety: stop launching new chunks if we've used > 120s
+    if (Date.now() - batchStartTime > 120_000) {
+      console.log(`Timeout safety: ${Date.now() - batchStartTime}ms elapsed, stopping before chunk ${i}. Remaining items will be processed in next batch.`);
+      break;
+    }
+
+    const chunk = pendingItems.slice(i, i + CONCURRENCY);
+    console.log(`Processing chunk ${Math.floor(i / CONCURRENCY) + 1}: ${chunk.length} items concurrently`);
+
+    const results = await Promise.allSettled(
+      chunk.map(item => processOneItem(item, sb, job, agentId, FIRECRAWL_API_KEY, LOVABLE_API_KEY, job_id))
+    );
+
+    for (const result of results) {
+      if (result.status === "fulfilled" && result.value.succeeded) {
+        succeeded++;
+      } else {
+        failed++;
+      }
     }
   }
 
