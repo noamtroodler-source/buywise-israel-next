@@ -5,6 +5,7 @@ export interface AgentAgency {
   id: string;
   name: string;
   slug: string;
+  logo_url: string | null;
 }
 
 export interface Agent {
@@ -38,7 +39,7 @@ export function useAgent(agentId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('agents')
-        .select('*, agency:agencies(id, name, slug)')
+        .select('*, agency:agencies(id, name, slug, logo_url)')
         .eq('id', agentId)
         .single();
       

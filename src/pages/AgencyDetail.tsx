@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Building2, Globe, Phone, Mail, Share2, MapPin, CheckCircle2, Users, Home, Clock, TrendingUp, FileText, Linkedin, Instagram, Facebook, Key } from 'lucide-react';
+import { useExtractedColor } from '@/hooks/useExtractedColor';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -31,6 +32,7 @@ export default function AgencyDetail() {
   const [logoError, setLogoError] = useState(false);
   
   const { data: agency, isLoading: agencyLoading, error } = useAgency(slug || '');
+  const accentColor = useExtractedColor(agency?.logo_url);
   const { data: agents, isLoading: agentsLoading } = useAgencyAgents(agency?.id, category);
   const { data: activeListings, isLoading: activeLoading } = useAgencyListings(agency?.id, 'active', category);
   const { data: pastListings, isLoading: pastLoading } = useAgencyListings(agency?.id, 'past', category);
@@ -135,11 +137,20 @@ export default function AgencyDetail() {
         />
 
         {/* Hero Card */}
-        <Card className="overflow-hidden">
+        <Card 
+          className="overflow-hidden"
+          style={accentColor ? {
+            borderTop: `3px solid ${accentColor}`,
+            background: `linear-gradient(160deg, ${accentColor}12, ${accentColor}05 40%, transparent 70%)`,
+          } : undefined}
+        >
           <CardContent className="p-6 md:p-8">
             <div className="flex flex-col md:flex-row gap-6">
               <div className="flex-shrink-0">
-                <div className="w-24 h-24 md:w-32 md:h-32 rounded-xl bg-muted flex items-center justify-center overflow-hidden">
+                <div 
+                  className="w-24 h-24 md:w-32 md:h-32 rounded-xl bg-muted flex items-center justify-center overflow-hidden"
+                  style={accentColor ? { boxShadow: `0 0 0 2px ${accentColor}30` } : undefined}
+                >
                   {agency.logo_url && !logoError ? (
                     <img 
                       src={agency.logo_url} 
@@ -197,7 +208,12 @@ export default function AgencyDetail() {
                     </Button>
                   )}
                   {agency.phone && (
-                    <Button variant="outline" size="sm" asChild>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      asChild
+                      style={accentColor ? { borderColor: `${accentColor}40`, color: accentColor } : undefined}
+                    >
                       <a href={`tel:${agency.phone}`}>
                         <Phone className="h-4 w-4 mr-2" />
                         Call
@@ -205,7 +221,12 @@ export default function AgencyDetail() {
                     </Button>
                   )}
                   {agency.email && (
-                    <Button variant="outline" size="sm" asChild>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      asChild
+                      style={accentColor ? { borderColor: `${accentColor}40`, color: accentColor } : undefined}
+                    >
                       <a href={`mailto:${agency.email}`}>
                         <Mail className="h-4 w-4 mr-2" />
                         Email
@@ -262,7 +283,7 @@ export default function AgencyDetail() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card>
             <CardContent className="p-4 text-center">
-              <Users className="h-5 w-5 mx-auto text-primary mb-2" />
+              <Users className="h-5 w-5 mx-auto mb-2" style={accentColor ? { color: accentColor } : undefined} />
               <p className="text-2xl font-bold">{stats?.totalAgents ?? 0}</p>
               <p className="text-sm text-muted-foreground">Agents</p>
             </CardContent>
@@ -270,9 +291,9 @@ export default function AgencyDetail() {
           <Card>
             <CardContent className="p-4 text-center">
               {category === 'buy' ? (
-                <Home className="h-5 w-5 mx-auto text-primary mb-2" />
+                <Home className="h-5 w-5 mx-auto mb-2" style={accentColor ? { color: accentColor } : undefined} />
               ) : (
-                <Key className="h-5 w-5 mx-auto text-primary mb-2" />
+                <Key className="h-5 w-5 mx-auto mb-2" style={accentColor ? { color: accentColor } : undefined} />
               )}
               <p className="text-2xl font-bold">{stats?.activeListingsCount ?? 0}</p>
               <p className="text-sm text-muted-foreground">
@@ -282,7 +303,7 @@ export default function AgencyDetail() {
           </Card>
           <Card>
             <CardContent className="p-4 text-center">
-              <TrendingUp className="h-5 w-5 mx-auto text-primary mb-2" />
+              <TrendingUp className="h-5 w-5 mx-auto mb-2" style={accentColor ? { color: accentColor } : undefined} />
               <p className="text-2xl font-bold">{formatPrice(stats?.medianPrice ?? null)}</p>
               <p className="text-sm text-muted-foreground">
                 {category === 'buy' ? 'Median Price' : 'Median Rent'}
@@ -291,7 +312,7 @@ export default function AgencyDetail() {
           </Card>
           <Card>
             <CardContent className="p-4 text-center">
-              <Clock className="h-5 w-5 mx-auto text-primary mb-2" />
+              <Clock className="h-5 w-5 mx-auto mb-2" style={accentColor ? { color: accentColor } : undefined} />
               <p className="text-2xl font-bold">{stats?.avgDaysOnMarket ?? 'N/A'}</p>
               <p className="text-sm text-muted-foreground">Avg. Days on Market</p>
             </CardContent>
