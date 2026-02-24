@@ -54,19 +54,23 @@ async function handleDiscover(body: any) {
 
   console.log(`Discovered ${allUrls.length} total URLs`);
 
-  // 2. AI filter — which are listing pages?
+  // 2. AI filter — which are listing or project pages?
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
   const filterPrompt = `You are analyzing URLs from a real estate agency website. 
-Given this list of URLs, identify which ones are individual property/listing detail pages (not category pages, contact pages, about pages, blog posts, etc.).
+Given this list of URLs, identify which ones are individual property/listing detail pages OR project/development pages (not category pages, contact pages, about pages, blog posts, etc.).
 
 Look for URL patterns that suggest individual listings, such as:
 - URLs containing property IDs, slugs, or numeric identifiers
 - URLs with paths like /property/, /listing/, /נכס/, /דירה/, etc.
 - URLs that look like they point to a single property page
 
-Return ONLY the listing URLs as a JSON array of strings. If unsure about a URL, exclude it.
+Also look for project/development pages:
+- URLs with paths like /project/, /פרויקט/, /development/, /בנייה-חדשה/, /new-construction/
+- URLs that point to a new construction development page
+
+Return ONLY the listing and project URLs as a JSON array of strings. If unsure about a URL, exclude it.
 
 URLs to analyze:
 ${allUrls.join("\n")}`;
@@ -85,14 +89,14 @@ ${allUrls.join("\n")}`;
           type: "function",
           function: {
             name: "return_listing_urls",
-            description: "Return the filtered listing URLs",
+            description: "Return the filtered listing and project URLs",
             parameters: {
               type: "object",
               properties: {
                 listing_urls: {
                   type: "array",
                   items: { type: "string" },
-                  description: "Array of URLs that are individual listing pages",
+                  description: "Array of URLs that are individual listing or project pages",
                 },
               },
               required: ["listing_urls"],
@@ -243,18 +247,35 @@ async function handleProcessBatch(body: any) {
         continue;
       }
 
-      // 2. AI extraction
-      const extractionPrompt = `You are extracting structured property listing data from a scraped Israeli real estate page.
+      // 2. AI extraction — detect category (property vs project vs not_listing) and extract fields
+      const extractionPrompt = `You are extracting structured data from a scraped Israeli real estate page.
 
-IMPORTANT CONVENTIONS:
+FIRST, determine the CATEGORY of this page:
+- "property": A single unit for sale or rent (resale, rental listing for one apartment/house)
+- "project": A new construction project / development with multiple units, marketed by a developer. Keywords: פרויקט, project, development, new construction, בנייה חדשה, דירות חדשות, מתחם מגורים. These pages typically show a project name, multiple unit types, construction timeline, developer info, etc.
+- "not_listing": Not a property listing or project page (blog, about, contact, category page, etc.)
+
+FOR PROPERTIES — extract these fields:
 - In Israel, "rooms" (חדרים) = bedrooms + 1 living room. So 4 rooms = 3 bedrooms. Always subtract 1 for bedrooms.
 - Default currency is ILS (₪) unless explicitly stated otherwise.
-- Property types in Hebrew: דירה=apartment, פנטהאוז=penthouse, דופלקס=duplex, בית/וילה=house, קוטג'=cottage, דירת גן=garden_apartment, מיני פנטהאוז=mini_penthouse
+- Property types: דירה=apartment, פנטהאוז=penthouse, דופלקס=duplex, בית/וילה=house, קוטג'=cottage, דירת גן=garden_apartment, מיני פנטהאוז=mini_penthouse
 - listing_status: for_sale if buying/מכירה, for_rent if renting/השכרה
-- Detect if the listing is marked as sold (נמכר), rented (הושכר), under contract (בהסכם), or otherwise no longer available. Set is_sold_or_rented=true if so.
+- Detect if sold (נמכר), rented (הושכר), under contract (בהסכם). Set is_sold_or_rented=true if so.
 - Price might appear as "₪1,500,000" or "1,500,000 ש״ח" or "$450,000"
-- Extract ALL image URLs you can find (from markdown image syntax, linked images, etc.)
+- Extract ALL image URLs you can find
 - For floor: "קומה 3" = floor 3, "קרקע" = floor 0
+
+FOR PROJECTS — extract these fields:
+- project_name: The name of the development/project
+- project_description: Description of the project
+- city, neighborhood, address: Location
+- price_from / price_to: Price range for units (numbers only)
+- currency: ILS/USD/EUR
+- total_units: Total number of units in the project
+- construction_status: One of planning, pre_sale, foundation, structure, finishing, delivery, completed
+- completion_date: Expected completion date (YYYY-MM-DD)
+- amenities: List of project amenities
+- image_urls: All image URLs found
 
 Page URL: ${item.url}
 Page content:
@@ -277,13 +298,19 @@ ${pageLinks.slice(0, 50).join("\n")}`;
               type: "function",
               function: {
                 name: "extract_listing",
-                description: "Extract structured property listing data",
+                description: "Extract structured data from a real estate page — could be a property listing or a project/development",
                 parameters: {
                   type: "object",
                   properties: {
-                    title: { type: "string", description: "Listing title" },
+                    listing_category: {
+                      type: "string",
+                      enum: ["property", "project", "not_listing"],
+                      description: "The category of the page: property (single unit listing), project (new development), or not_listing",
+                    },
+                    // Property fields
+                    title: { type: "string", description: "Listing title (for properties)" },
                     description: { type: "string", description: "Property description" },
-                    price: { type: "number", description: "Price as number" },
+                    price: { type: "number", description: "Price as number (for properties)" },
                     currency: { type: "string", enum: ["ILS", "USD", "EUR"], description: "Currency code" },
                     bedrooms: { type: "number", description: "Number of bedrooms (rooms - 1)" },
                     bathrooms: { type: "number", description: "Number of bathrooms" },
@@ -298,16 +325,29 @@ ${pageLinks.slice(0, 50).join("\n")}`;
                     listing_status: { type: "string", enum: ["for_sale", "for_rent"] },
                     floor: { type: "number", description: "Floor number" },
                     total_floors: { type: "number", description: "Total floors in building" },
-                    features: { type: "array", items: { type: "string" }, description: "Features like balcony, elevator, storage, etc." },
+                    features: { type: "array", items: { type: "string" }, description: "Features like balcony, elevator, etc." },
                     parking: { type: "number", description: "Number of parking spots" },
-                    entry_date: { type: "string", description: "Entry date in YYYY-MM-DD or 'immediate'" },
+                    entry_date: { type: "string", description: "Entry date (YYYY-MM-DD or 'immediate')" },
                     year_built: { type: "number", description: "Year built" },
                     ac_type: { type: "string", enum: ["none", "split", "central", "mini_central"] },
+                    is_sold_or_rented: { type: "boolean", description: "True if listing is sold/rented/under contract" },
+                    // Project fields
+                    project_name: { type: "string", description: "Name of the project/development" },
+                    project_description: { type: "string", description: "Description of the project" },
+                    price_from: { type: "number", description: "Lowest unit price in project" },
+                    price_to: { type: "number", description: "Highest unit price in project" },
+                    total_units: { type: "number", description: "Total number of units" },
+                    construction_status: {
+                      type: "string",
+                      enum: ["planning", "pre_sale", "foundation", "structure", "finishing", "delivery", "completed"],
+                      description: "Construction stage",
+                    },
+                    completion_date: { type: "string", description: "Expected completion (YYYY-MM-DD)" },
+                    amenities: { type: "array", items: { type: "string" }, description: "Project amenities" },
+                    // Shared
                     image_urls: { type: "array", items: { type: "string" }, description: "All image URLs found" },
-                    is_listing_page: { type: "boolean", description: "Whether this is actually a property listing page" },
-                    is_sold_or_rented: { type: "boolean", description: "True if listing is marked as sold (נמכר), rented (הושכר), under contract (בהסכם), or otherwise no longer available" },
                   },
-                  required: ["is_listing_page"],
+                  required: ["listing_category"],
                   additionalProperties: false,
                 },
               },
@@ -321,7 +361,6 @@ ${pageLinks.slice(0, 50).join("\n")}`;
         const errText = await extractRes.text();
         console.error("AI extraction error:", extractRes.status, errText);
         if (extractRes.status === 429) {
-          // Rate limited — keep as pending for retry
           await sb.from("import_job_items").update({ status: "pending", error_message: "Rate limited, will retry" }).eq("id", item.id);
           failed++;
           continue;
@@ -343,12 +382,139 @@ ${pageLinks.slice(0, 50).join("\n")}`;
       // Store raw extraction
       await sb.from("import_job_items").update({ extracted_data: listing }).eq("id", item.id);
 
-      // Not a listing page?
-      if (!listing.is_listing_page) {
+      const category = listing.listing_category || (listing.is_listing_page === false ? "not_listing" : "property");
+
+      // ── NOT A LISTING / PROJECT ──
+      if (category === "not_listing") {
         await sb.from("import_job_items").update({ status: "skipped", error_message: "Not a listing page" }).eq("id", item.id);
         failed++;
         continue;
       }
+
+      // ── PROJECT PATH ──
+      if (category === "project") {
+        const projectName = listing.project_name || listing.title || `Imported project from ${new URL(item.url).hostname}`;
+        const projectCity = listing.city || "";
+
+        // Duplicate detection for projects — by name + city
+        if (projectName && projectCity) {
+          const { data: dupeProjects } = await sb
+            .from("projects")
+            .select("id")
+            .ilike("name", projectName)
+            .ilike("city", projectCity)
+            .limit(1);
+
+          if (dupeProjects && dupeProjects.length > 0) {
+            await sb.from("import_job_items").update({ status: "skipped", error_message: "Duplicate project detected" }).eq("id", item.id);
+            failed++;
+            continue;
+          }
+        }
+
+        // Download & re-host images to project-images bucket
+        const imageUrls: string[] = [];
+        const sourceImages = listing.image_urls || [];
+        for (const imgUrl of sourceImages.slice(0, 15)) {
+          try {
+            const imgRes = await fetch(imgUrl);
+            if (!imgRes.ok) continue;
+            const contentType = imgRes.headers.get("content-type") || "image/jpeg";
+            const ext = contentType.includes("png") ? "png" : contentType.includes("webp") ? "webp" : "jpg";
+            const imgBuffer = await imgRes.arrayBuffer();
+            const fileName = `imports/${job_id}/${crypto.randomUUID()}.${ext}`;
+            const { error: uploadErr } = await sb.storage
+              .from("project-images")
+              .upload(fileName, imgBuffer, { contentType, upsert: false });
+            if (!uploadErr) {
+              const { data: urlData } = sb.storage.from("project-images").getPublicUrl(fileName);
+              if (urlData?.publicUrl) imageUrls.push(urlData.publicUrl);
+            }
+          } catch (imgErr) {
+            console.warn("Image download failed:", imgUrl, imgErr);
+          }
+        }
+
+        // Geocode
+        let latitude: number | null = null;
+        let longitude: number | null = null;
+        const geoAddr = listing.address || projectName;
+        if (geoAddr && projectCity) {
+          try {
+            const geoQuery = encodeURIComponent(`${geoAddr}, ${projectCity}, Israel`);
+            const geoRes = await fetch(
+              `https://nominatim.openstreetmap.org/search?q=${geoQuery}&format=json&limit=1`,
+              { headers: { "User-Agent": "BuyWiseIsrael/1.0" } }
+            );
+            const geoData = await geoRes.json();
+            if (geoData?.[0]) {
+              latitude = parseFloat(geoData[0].lat);
+              longitude = parseFloat(geoData[0].lon);
+            }
+          } catch (geoErr) {
+            console.warn("Geocoding failed:", geoErr);
+          }
+        }
+
+        // Generate slug
+        const slug = projectName
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-|-$/g, "") + "-" + crypto.randomUUID().substring(0, 6);
+
+        // Map construction_status to ProjectStatus
+        const statusMap: Record<string, string> = {
+          planning: "planning",
+          pre_sale: "pre_sale",
+          foundation: "foundation",
+          structure: "structure",
+          finishing: "finishing",
+          delivery: "delivery",
+          completed: "completed",
+        };
+        const projectStatus = statusMap[listing.construction_status] || "pre_sale";
+
+        const { data: project, error: projErr } = await sb
+          .from("projects")
+          .insert({
+            name: projectName,
+            slug,
+            description: listing.project_description || listing.description || null,
+            city: projectCity,
+            neighborhood: listing.neighborhood || null,
+            address: listing.address || null,
+            latitude,
+            longitude,
+            status: projectStatus,
+            total_units: listing.total_units || 0,
+            available_units: listing.total_units || 0,
+            price_from: listing.price_from || null,
+            price_to: listing.price_to || null,
+            currency: listing.currency || "ILS",
+            completion_date: listing.completion_date || null,
+            amenities: listing.amenities || null,
+            images: imageUrls.length > 0 ? imageUrls : null,
+            is_featured: false,
+            is_published: false,
+            views_count: 0,
+            import_source: "website_scrape",
+          })
+          .select("id")
+          .single();
+
+        if (projErr) {
+          console.error("Project insert error:", projErr);
+          await sb.from("import_job_items").update({ status: "failed", error_message: `Project insert failed: ${projErr.message}` }).eq("id", item.id);
+          failed++;
+          continue;
+        }
+
+        await sb.from("import_job_items").update({ status: "done", project_id: project.id }).eq("id", item.id);
+        succeeded++;
+        continue;
+      }
+
+      // ── PROPERTY PATH (existing logic) ──
 
       // Sold or rented listing?
       if (listing.is_sold_or_rented) {
@@ -357,7 +523,7 @@ ${pageLinks.slice(0, 50).join("\n")}`;
         continue;
       }
 
-      // 3. Duplicate detection
+      // Duplicate detection for properties
       if (listing.address && listing.city && listing.price) {
         const priceLow = listing.price * 0.95;
         const priceHigh = listing.price * 1.05;
@@ -378,7 +544,7 @@ ${pageLinks.slice(0, 50).join("\n")}`;
         }
       }
 
-      // 4. Download and re-host images
+      // Download and re-host images
       const imageUrls: string[] = [];
       const sourceImages = listing.image_urls || [];
 
@@ -405,7 +571,7 @@ ${pageLinks.slice(0, 50).join("\n")}`;
         }
       }
 
-      // 5. Geocode
+      // Geocode
       let latitude: number | null = null;
       let longitude: number | null = null;
 
@@ -426,7 +592,7 @@ ${pageLinks.slice(0, 50).join("\n")}`;
         }
       }
 
-      // 6. Insert property
+      // Insert property
       const entryDate = listing.entry_date === "immediate" ? new Date().toISOString().split("T")[0] : listing.entry_date || null;
 
       const { data: property, error: propErr } = await sb
@@ -541,4 +707,3 @@ Deno.serve(async (req) => {
     );
   }
 });
-

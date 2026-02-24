@@ -21,6 +21,7 @@ export interface ImportJobItem {
   url: string;
   status: string;
   property_id: string | null;
+  project_id: string | null;
   error_message: string | null;
   extracted_data: any;
   created_at: string;
