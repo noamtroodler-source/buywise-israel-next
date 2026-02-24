@@ -856,6 +856,52 @@ async function geocodeWithRateLimit(
   return result;
 }
 
+// Enhance a single image via AI (best-effort, returns original on failure)
+async function enhanceImage(
+  imagePublicUrl: string,
+  sb: any,
+  bucketName: string,
+  jobId: string,
+): Promise<string> {
+  try {
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) return imagePublicUrl;
+
+    const enhancePath = `imports/${jobId}/${crypto.randomUUID()}-enhanced.png`;
+
+    const res = await fetch(
+      `${Deno.env.get("SUPABASE_URL")}/functions/v1/enhance-image`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          image_url: imagePublicUrl,
+          bucket: bucketName,
+          path: enhancePath,
+        }),
+      }
+    );
+
+    if (!res.ok) {
+      console.log(`Enhancement failed (${res.status}), keeping original`);
+      return imagePublicUrl;
+    }
+
+    const data = await res.json();
+    if (data.success && data.enhanced && data.image_url) {
+      console.log(`Image enhanced: ${data.image_url.slice(0, 80)}`);
+      return data.image_url;
+    }
+    return imagePublicUrl;
+  } catch (err) {
+    console.log(`Enhancement error, keeping original:`, err);
+    return imagePublicUrl;
+  }
+}
+
 // Parallel image download — batches of 5
 async function parallelImageDownload(
   sourceImages: string[],
@@ -886,7 +932,12 @@ async function parallelImageDownload(
 
         if (!uploadErr) {
           const { data: urlData } = sb.storage.from(bucketName).getPublicUrl(fileName);
-          return urlData?.publicUrl || null;
+          const publicUrl = urlData?.publicUrl || null;
+          if (!publicUrl) return null;
+
+          // Best-effort AI enhancement
+          const enhanced = await enhanceImage(publicUrl, sb, bucketName, jobId);
+          return enhanced;
         }
         return null;
       })
