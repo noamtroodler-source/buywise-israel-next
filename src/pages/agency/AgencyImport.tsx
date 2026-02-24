@@ -213,9 +213,10 @@ export default function AgencyImport() {
                   </span>
                   <Badge variant="outline" className={cn(
                     isCompleted && 'bg-green-500/10 text-green-600',
-                    isProcessing && 'bg-blue-500/10 text-blue-600',
+                    isProcessing && 'bg-blue-500/10 text-blue-600 animate-pulse',
                     isReady && 'bg-yellow-500/10 text-yellow-600',
                   )}>
+                    {isProcessing && <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />}
                     {currentJob.status}
                   </Badge>
                 </div>
@@ -264,14 +265,17 @@ export default function AgencyImport() {
                 {/* Stats */}
                 <div className="grid grid-cols-4 gap-3">
                   {[
-                    { label: 'Imported', value: doneCount, icon: CheckCircle2, color: 'text-green-600' },
-                    { label: 'Failed', value: failedCount, icon: XCircle, color: 'text-red-500' },
-                    { label: 'Pending', value: pendingCount, icon: AlertCircle, color: 'text-yellow-600' },
-                    { label: 'Processing', value: processingCount, icon: RefreshCw, color: 'text-blue-500' },
+                    { label: 'Imported', value: doneCount, icon: CheckCircle2, color: 'text-green-600', active: false },
+                    { label: 'Failed', value: failedCount, icon: XCircle, color: 'text-red-500', active: false },
+                    { label: 'Pending', value: pendingCount, icon: AlertCircle, color: 'text-yellow-600', active: false },
+                    { label: 'Processing', value: processingCount, icon: RefreshCw, color: 'text-blue-500', active: processingCount > 0 },
                   ].map(stat => (
-                    <div key={stat.label} className="text-center p-3 rounded-xl bg-muted/30">
-                      <stat.icon className={cn('h-4 w-4 mx-auto mb-1', stat.color)} />
-                      <p className="text-lg font-bold">{stat.value}</p>
+                    <div key={stat.label} className={cn(
+                      "text-center p-3 rounded-xl bg-muted/30 transition-all",
+                      stat.active && "bg-blue-500/10 ring-1 ring-blue-500/20"
+                    )}>
+                      <stat.icon className={cn('h-4 w-4 mx-auto mb-1', stat.color, stat.active && 'animate-spin')} />
+                      <p className={cn("text-lg font-bold", stat.active && "animate-pulse")}>{stat.value}</p>
                       <p className="text-xs text-muted-foreground">{stat.label}</p>
                     </div>
                   ))}
