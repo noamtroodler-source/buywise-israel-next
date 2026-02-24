@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowRight } from 'lucide-react';
 import type { TrustedProfessional } from '@/hooks/useTrustedProfessionals';
+import { useExtractedColor } from '@/hooks/useExtractedColor';
 import { PROFESSIONAL_LOGOS } from './professionalLogos';
 import { getAccentColor } from './professionalColors';
 
@@ -13,7 +14,9 @@ interface ProfessionalCardProps {
 }
 
 export function ProfessionalCard({ professional, index = 0 }: ProfessionalCardProps) {
-  const accentColor = getAccentColor(professional);
+  const logoUrl = professional.logo_url || PROFESSIONAL_LOGOS[professional.slug] || undefined;
+  const extractedColor = useExtractedColor(logoUrl);
+  const accentColor = extractedColor || getAccentColor(professional);
 
   return (
     <motion.div

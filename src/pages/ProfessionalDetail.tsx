@@ -8,6 +8,7 @@ import { ProfessionalContactCard } from '@/components/professionals/Professional
 import { ProfessionalHighlights } from '@/components/professionals/ProfessionalHighlights';
 import { PROFESSIONAL_LOGOS } from '@/components/professionals/professionalLogos';
 import { getAccentColor } from '@/components/professionals/professionalColors';
+import { useExtractedColor } from '@/hooks/useExtractedColor';
 import { useTrustedProfessional, getCategoryLabel } from '@/hooks/useTrustedProfessionals';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -36,7 +37,9 @@ export default function ProfessionalDetail() {
     );
   }
 
-  const accentColor = getAccentColor(professional);
+  const logoUrl = professional.logo_url || PROFESSIONAL_LOGOS[professional.slug] || undefined;
+  const extractedColor = useExtractedColor(logoUrl);
+  const accentColor = extractedColor || getAccentColor(professional);
 
   const title = `${professional.name}${professional.company ? ` — ${professional.company}` : ''} | ${SITE_CONFIG.siteName}`;
   const description = professional.description || `${getCategoryLabel(professional.category)} working with international buyers in Israel.`;
