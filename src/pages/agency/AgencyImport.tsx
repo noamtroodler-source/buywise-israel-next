@@ -64,22 +64,15 @@ export default function AgencyImport() {
     e.preventDefault();
     if (!agency?.id || !websiteUrl.trim()) return;
 
-    // Client-side duplicate check
-    const normalized = normalizeUrl(websiteUrl);
-    const existingJob = jobs.find(j => normalizeUrl(j.website_url) === normalized);
-    if (existingJob) {
-      toast.info('A job for this URL already exists — showing it');
-      setActiveJobId(existingJob.id);
-      setWebsiteUrl('');
-      return;
-    }
-
     const result = await discoverMutation.mutateAsync({
       agencyId: agency.id,
       websiteUrl: websiteUrl.trim(),
     });
 
-    setActiveJobId(result.job_id);
+    // Only switch to job if one was created (new_urls > 0)
+    if (result.job_id) {
+      setActiveJobId(result.job_id);
+    }
     setWebsiteUrl('');
   };
 
