@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import {
   ArrowLeft, Globe, Loader2, Download, CheckCircle2,
   XCircle, AlertCircle, FileText, RefreshCw, Trash2,
+  Info,
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -134,6 +135,18 @@ export default function AgencyImport() {
               <h1 className="text-2xl font-bold">Import Listings</h1>
               <p className="text-muted-foreground">Import property listings from your website automatically</p>
             </div>
+          </div>
+
+          {/* Resale & Rental only notice */}
+          <div className="flex items-start gap-3 p-4 rounded-xl bg-primary/5 border border-primary/10">
+            <Info className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+            <p className="text-sm text-muted-foreground">
+              This tool imports <span className="font-medium text-foreground">resale and rental listings only</span>. 
+              New construction projects and developments are skipped automatically — add those via the{' '}
+              <Link to="/agency/projects/new" className="text-primary font-medium hover:underline">
+                Project Wizard
+              </Link> for best results.
+            </p>
           </div>
 
           {/* Step 1: Discover */}
