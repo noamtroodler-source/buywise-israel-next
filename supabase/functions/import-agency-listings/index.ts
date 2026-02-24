@@ -52,6 +52,84 @@ function isSoldOrRentedPage(markdown: string): boolean {
   return false;
 }
 
+// ─── DATA VALIDATION ────────────────────────────────────────────────────────
+
+const VALID_PROPERTY_TYPES = [
+  "apartment", "garden_apartment", "penthouse", "mini_penthouse",
+  "duplex", "house", "cottage", "land", "commercial",
+];
+const VALID_LISTING_STATUSES = ["for_sale", "for_rent"];
+const VALID_CONSTRUCTION_STATUSES = [
+  "planning", "pre_sale", "foundation", "structure", "finishing", "delivery", "completed",
+];
+
+function validatePropertyData(listing: Record<string, any>): string[] {
+  const errors: string[] = [];
+  const currentYear = new Date().getFullYear();
+
+  // Required fields
+  if (typeof listing.price !== "number" || listing.price <= 0) {
+    errors.push("price must be greater than 0");
+  } else if (listing.price < 1000) {
+    errors.push(`price ${listing.price} seems too low (likely extraction error)`);
+  }
+
+  if (!listing.city || typeof listing.city !== "string" || listing.city.trim() === "") {
+    errors.push("city is required");
+  }
+
+  // Enum validation
+  if (listing.property_type && !VALID_PROPERTY_TYPES.includes(listing.property_type)) {
+    errors.push(`invalid property_type '${listing.property_type}'`);
+  }
+
+  if (listing.listing_status && !VALID_LISTING_STATUSES.includes(listing.listing_status)) {
+    errors.push(`invalid listing_status '${listing.listing_status}'`);
+  }
+
+  // Numeric sanity
+  if (listing.bedrooms != null && (typeof listing.bedrooms !== "number" || listing.bedrooms < 0)) {
+    errors.push("bedrooms must be a non-negative number");
+  }
+  if (listing.bathrooms != null && (typeof listing.bathrooms !== "number" || listing.bathrooms < 0)) {
+    errors.push("bathrooms must be a non-negative number");
+  }
+  if (listing.size_sqm != null && (typeof listing.size_sqm !== "number" || listing.size_sqm <= 0)) {
+    errors.push("size_sqm must be a positive number");
+  }
+  if (listing.floor != null && (typeof listing.floor !== "number" || listing.floor < -2 || listing.floor > 200)) {
+    errors.push(`floor ${listing.floor} is out of range (-2 to 200)`);
+  }
+  if (listing.year_built != null && (typeof listing.year_built !== "number" || listing.year_built < 1800 || listing.year_built > currentYear + 5)) {
+    errors.push(`year_built ${listing.year_built} is out of range (1800–${currentYear + 5})`);
+  }
+
+  return errors;
+}
+
+function validateProjectData(listing: Record<string, any>): string[] {
+  const errors: string[] = [];
+
+  const name = listing.project_name || listing.title;
+  if (!name || typeof name !== "string" || name.trim() === "") {
+    errors.push("project name is required");
+  }
+
+  if (!listing.city || typeof listing.city !== "string" || listing.city.trim() === "") {
+    errors.push("city is required");
+  }
+
+  if (listing.price_from != null && (typeof listing.price_from !== "number" || listing.price_from <= 0)) {
+    errors.push("price_from must be a positive number");
+  }
+
+  if (listing.construction_status && !VALID_CONSTRUCTION_STATUSES.includes(listing.construction_status)) {
+    errors.push(`invalid construction_status '${listing.construction_status}'`);
+  }
+
+  return errors;
+}
+
 // ─── DISCOVER ───────────────────────────────────────────────────────────────
 
 function normalizeUrl(raw: string): string {
@@ -483,6 +561,17 @@ ${pageLinks.slice(0, 50).join("\n")}`;
 
       // ── PROJECT PATH ──
       if (category === "project") {
+        // Validate project data before expensive operations
+        const projectErrors = validateProjectData(listing);
+        if (projectErrors.length > 0) {
+          await sb.from("import_job_items").update({
+            status: "failed",
+            error_message: `Validation failed: ${projectErrors.join("; ")}`,
+          }).eq("id", item.id);
+          failed++;
+          continue;
+        }
+
         const projectName = listing.project_name || listing.title || `Imported project from ${new URL(item.url).hostname}`;
         const projectCity = listing.city || "";
 
@@ -609,6 +698,17 @@ ${pageLinks.slice(0, 50).join("\n")}`;
       // Sold or rented listing?
       if (listing.is_sold_or_rented) {
         await sb.from("import_job_items").update({ status: "skipped", error_message: "Listing is sold or rented" }).eq("id", item.id);
+        failed++;
+        continue;
+      }
+
+      // Validate property data before expensive operations
+      const propertyErrors = validatePropertyData(listing);
+      if (propertyErrors.length > 0) {
+        await sb.from("import_job_items").update({
+          status: "failed",
+          error_message: `Validation failed: ${propertyErrors.join("; ")}`,
+        }).eq("id", item.id);
         failed++;
         continue;
       }
