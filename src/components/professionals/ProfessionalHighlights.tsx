@@ -17,7 +17,6 @@ const CATEGORY_ICONS: Record<string, React.ReactNode> = {
 function generateHighlights(professional: TrustedProfessional): Highlight[] {
   const highlights: Highlight[] = [];
 
-  // International focus
   if (professional.works_with_internationals) {
     highlights.push({
       label: 'Works with international buyers',
@@ -25,7 +24,6 @@ function generateHighlights(professional: TrustedProfessional): Highlight[] {
     });
   }
 
-  // Languages
   const langCount = professional.languages?.length || 0;
   if (langCount >= 3) {
     highlights.push({
@@ -39,7 +37,6 @@ function generateHighlights(professional: TrustedProfessional): Highlight[] {
     });
   }
 
-  // Specializations depth
   const specCount = professional.specializations?.length || 0;
   if (specCount >= 5) {
     highlights.push({
@@ -53,7 +50,6 @@ function generateHighlights(professional: TrustedProfessional): Highlight[] {
     });
   }
 
-  // Coverage breadth
   const cities = professional.cities_covered || [];
   const isNationwide = cities.some(c => c.toLowerCase() === 'nationwide');
   if (isNationwide) {
@@ -68,7 +64,6 @@ function generateHighlights(professional: TrustedProfessional): Highlight[] {
     });
   }
 
-  // Notable specializations (keyword-based)
   const specs = (professional.specializations || []).map(s => s.toLowerCase());
 
   if (specs.some(s => s.includes('olim') || s.includes('new immigrant') || s.includes('aliyah'))) {
@@ -99,7 +94,6 @@ function generateHighlights(professional: TrustedProfessional): Highlight[] {
     });
   }
 
-  // Deduplicate by label and cap at 3
   const seen = new Set<string>();
   return highlights.filter(h => {
     if (seen.has(h.label)) return false;
@@ -110,21 +104,36 @@ function generateHighlights(professional: TrustedProfessional): Highlight[] {
 
 interface ProfessionalHighlightsProps {
   professional: TrustedProfessional;
+  accentColor?: string;
 }
 
-export function ProfessionalHighlights({ professional }: ProfessionalHighlightsProps) {
+export function ProfessionalHighlights({ professional, accentColor }: ProfessionalHighlightsProps) {
   const highlights = generateHighlights(professional);
 
   if (highlights.length === 0) return null;
 
   return (
-    <div className="mt-5 pt-4 border-t border-border/60">
-      <p className="text-[11px] font-medium text-primary/70 uppercase tracking-wider mb-2">Why this firm</p>
+    <div className="mt-5 pt-4" style={accentColor ? { borderTop: `1.5px solid ${accentColor}20` } : { borderTop: '1px solid hsl(var(--border) / 0.6)' }}>
+      <p
+        className="text-[11px] font-medium uppercase tracking-wider mb-2"
+        style={accentColor ? { color: `${accentColor}B0` } : { color: 'hsl(var(--primary) / 0.7)' }}
+      >
+        Why this firm
+      </p>
       <div className="flex flex-wrap gap-2">
         {highlights.map((h) => (
           <div
             key={h.label}
-            className="inline-flex items-center gap-1.5 rounded-md bg-primary/5 border border-primary/10 px-2.5 py-1 text-xs font-medium text-primary/80"
+            className="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium"
+            style={accentColor ? {
+              backgroundColor: `${accentColor}0A`,
+              borderColor: `${accentColor}20`,
+              color: `${accentColor}CC`,
+            } : {
+              backgroundColor: 'hsl(var(--primary) / 0.05)',
+              borderColor: 'hsl(var(--primary) / 0.1)',
+              color: 'hsl(var(--primary) / 0.8)',
+            }}
           >
             {h.icon}
             {h.label}
