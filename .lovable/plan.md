@@ -1,74 +1,68 @@
 
 
-## Add Brand Colors to Agency and Agent Pages
+## Enhance Trusted Professional Detail Pages
 
-Use the existing `useExtractedColor` hook to automatically apply brand colors extracted from agency logos to both the Agency Detail page, Agency listing cards, and Agent Detail pages (via their parent agency's logo).
+Two phases: quick wins using existing data, then a database migration for social links, founded year, and testimonials.
 
-### Strategy
+---
 
-- **Agency pages**: Extract color from `agency.logo_url` -- agencies have logos, so this works directly
-- **Agent pages**: If the agent belongs to an agency, inherit the brand color from the **agency's logo** (not the agent's headshot, which would yield skin tones). Solo agents without an agency keep the default theme colors
-- **Agency listing cards** (`/agencies`): Add a subtle 3px left border with the extracted color, matching the pattern used on Professional cards
+### Phase 1: Quick Wins (No Database Changes)
 
-### Changes
+**1. Add Share Profile button to sidebar**
+- Import and add `ProfileShareMenu` to the `ProfessionalContactCard` component (same component used on Agent/Agency pages)
+- Place it below the existing contact buttons
 
-**1. `src/hooks/useAgent.tsx`** -- Add `logo_url` to agency select
+**2. Promote "Works with internationals" as a visible badge**
+- In `ProfessionalDetail.tsx`, show a prominent badge next to the category badge when `works_with_internationals` is true
+- Styled with the accent color, using a Globe icon
 
-The agent query currently fetches `agency:agencies(id, name, slug)`. We need to also fetch `logo_url` so we can extract the brand color from it on the agent detail page.
+**3. Promote Website link to hero area**
+- Add a small "Visit Website" button in the hero card (next to the category badge row) so it's visible without scrolling to the sidebar
+- Keep the existing website button in the sidebar contact card too
 
-```text
-Before: .select('*, agency:agencies(id, name, slug)')
-After:  .select('*, agency:agencies(id, name, slug, logo_url)')
-```
+### Phase 2: Database Migration + UI Updates
 
-Update the `AgentAgency` interface to include `logo_url: string | null`.
+**4. Add new columns to `trusted_professionals` table**
 
-**2. `src/pages/AgencyDetail.tsx`** -- Apply brand colors to agency detail page
+| Column | Type | Default | Purpose |
+|--------|------|---------|---------|
+| `linkedin_url` | text | null | LinkedIn profile |
+| `instagram_url` | text | null | Instagram profile |
+| `facebook_url` | text | null | Facebook page |
+| `founded_year` | integer | null | Year established |
+| `office_address` | text | null | Physical office location |
+| `testimonial_quote` | text | null | Client testimonial text |
+| `testimonial_author` | text | null | Testimonial attribution |
 
-- Import `useExtractedColor`
-- Extract color from `agency.logo_url`
-- Apply to the hero card: gradient background, 1.5px accent top bar, colored logo ring
-- Tint stat card icons with the accent color instead of generic `text-primary`
-- Color the contact buttons (Call, Email) with the accent color
+**5. Update `TrustedProfessional` interface**
+- Add all 7 new fields to the TypeScript interface in `useTrustedProfessionals.ts`
 
-**3. `src/pages/Agencies.tsx`** -- Brand colors on agency listing cards
+**6. Social links in hero section**
+- Display LinkedIn, Instagram, Facebook icons in the hero card (same pattern as Agency/Agent detail pages)
+- Only render if at least one social URL exists
 
-- Import `useExtractedColor` into the `AgencyCard` component
-- Extract color from `agency.logo_url`
-- Add a 3px left border with the extracted color (same pattern as `ProfessionalCard`)
+**7. "Established" year in hero**
+- Show "Est. 2015" text below the company name when `founded_year` is populated
 
-**4. `src/pages/AgentDetail.tsx`** -- Agency brand colors on agent profiles
+**8. Office address in sidebar**
+- Add a MapPin row below the contact buttons in `ProfessionalContactCard` showing the office address
 
-- Import `useExtractedColor`
-- Extract color from `agent.agency.logo_url` (only when agent has an agency)
-- Apply to the hero card: gradient background, accent top bar
-- Tint the WhatsApp/Email buttons with the agency color
-- Solo agents (no agency) get no accent treatment -- just default theme styling
+**9. Client testimonial card**
+- New section between "About" and "Specializations" on the detail page
+- Simple blockquote card with the testimonial quote and author attribution
+- Only renders when `testimonial_quote` is populated
 
-### What each page looks like after
+---
 
-**Agency Detail (`/agencies/:slug`)**:
-- Bold gradient hero tinted with the agency's logo color
-- 1.5px colored top bar on the hero card
-- Logo container with colored ring/shadow
-- Stat icons use the accent color
+### Files to Modify
 
-**Agency Cards (`/agencies`)**:
-- Subtle 3px left border in the agency's brand color
-- Everything else unchanged
+| File | Changes |
+|------|---------|
+| `src/hooks/useTrustedProfessionals.ts` | Add 7 new interface fields |
+| `src/pages/ProfessionalDetail.tsx` | Add social links, founded year, website button in hero, "works with internationals" badge, testimonial card |
+| `src/components/professionals/ProfessionalContactCard.tsx` | Add ProfileShareMenu, office address row |
 
-**Agent Detail (`/agents/:id`)**:
-- If agent belongs to an agency: gradient hero + top bar using the agency's brand color
-- WhatsApp/Email buttons tinted with the agency color
-- If solo agent: no accent styling, default theme
+### Database Migration
 
-### Files to modify
+Single SQL migration adding 7 nullable columns to `trusted_professionals`. No RLS changes needed (table is already public-read).
 
-| File | Change |
-|------|--------|
-| `src/hooks/useAgent.tsx` | Add `logo_url` to agency select + interface |
-| `src/pages/AgencyDetail.tsx` | Apply extracted color to hero, stats, and buttons |
-| `src/pages/Agencies.tsx` | Add accent left border to agency cards |
-| `src/pages/AgentDetail.tsx` | Apply agency brand color to hero and CTAs |
-
-No new files needed -- reuses the existing `useExtractedColor` hook.
