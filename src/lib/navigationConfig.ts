@@ -57,7 +57,6 @@ export const NAV_CONFIG: Record<string, NavSection> = {
         title: 'Guides',
         items: [
           { label: 'Complete Buying Guide', href: '/guides/buying-in-israel', description: '14 chapters', phase: 'understand' },
-          { label: 'Understanding Listings', href: '/guides/understanding-listings', description: 'Read listings confidently', phase: 'explore' },
           { label: 'Purchase Tax Guide', href: '/guides/purchase-tax', description: 'Mas Rechisha explained', phase: 'check' },
           { label: 'True Cost of Buying', href: '/guides/true-cost', description: 'Hidden costs revealed', phase: 'check' },
           { label: 'Mortgages in Israel', href: '/guides/mortgages', description: 'Financing for foreigners', phase: 'move_forward' },
@@ -90,7 +89,6 @@ export const NAV_CONFIG: Record<string, NavSection> = {
         title: 'Guides',
         items: [
           { label: 'Rent vs Buy Guide', href: '/guides/rent-vs-buy', description: 'Decision framework', phase: 'understand' },
-          { label: 'Understanding Listings', href: '/guides/understanding-listings', description: 'Decode Israeli listings', phase: 'explore' },
         ]
       }
     ],
@@ -163,7 +161,7 @@ export const GUIDES_BY_PHASE: Record<string, { title: string; description: strin
   explore: {
     title: 'Explore Real Options',
     description: 'Make sense of what you\'re seeing in the market.',
-    slugs: ['understanding-listings', 'new-vs-resale']
+    slugs: ['new-vs-resale']
   },
   check: {
     title: 'Check Before You Commit',

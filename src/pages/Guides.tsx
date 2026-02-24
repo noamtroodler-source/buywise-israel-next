@@ -42,14 +42,8 @@ const allGuides: Record<string, Guide> = {
     chaptersCount: 14,
     featured: true,
   },
-  'understanding-listings': {
-    slug: 'understanding-listings',
-    title: 'Understanding Israeli Listings',
-    description: 'Why listings feel misleading to internationals and how to read them with confidence.',
-    image: understandingListingsHero,
-    readingTime: 20,
-    chaptersCount: 13,
-  },
+  // 'understanding-listings' hidden for now
+
   'purchase-tax': {
     slug: 'purchase-tax',
     title: 'Purchase Tax Guide',
