@@ -3,7 +3,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { MessageCircle, Mail, Globe, CalendarCheck, MapPin } from 'lucide-react';
 import { ProfileShareMenu } from '@/components/shared/ProfileShareMenu';
 import { buildWhatsAppUrl, openWhatsApp } from '@/lib/whatsapp';
-import { getFilledButtonStyle, getOutlineButtonStyle } from '@/lib/colorContrast';
 import type { TrustedProfessional } from '@/hooks/useTrustedProfessionals';
 
 interface ProfessionalContactCardProps {
@@ -28,7 +27,7 @@ export function ProfessionalContactCard({ professional, accentColor }: Professio
         {whatsappUrl && (
           <Button
             className="w-full gap-2 text-white font-semibold"
-            style={getFilledButtonStyle(accentColor)}
+            style={accentColor ? { backgroundColor: accentColor } : undefined}
             onClick={() => openWhatsApp(whatsappUrl)}
           >
             <MessageCircle className="h-4 w-4" />
@@ -40,7 +39,7 @@ export function ProfessionalContactCard({ professional, accentColor }: Professio
           <Button
             variant="outline"
             className="w-full gap-2"
-            style={getOutlineButtonStyle(accentColor)}
+            style={accentColor ? { borderColor: `${accentColor}30`, color: accentColor } : undefined}
             onClick={() => {
               window.location.href = `mailto:${professional.email}?subject=${encodeURIComponent(`Inquiry via BuyWise Israel — ${professional.name}`)}`;
             }}
@@ -62,7 +61,7 @@ export function ProfessionalContactCard({ professional, accentColor }: Professio
         {professional.booking_url && (
           <Button
             className="w-full gap-2 text-white font-semibold"
-            style={getFilledButtonStyle(accentColor)}
+            style={accentColor ? { backgroundColor: accentColor } : undefined}
             asChild
           >
             <a href={professional.booking_url} target="_blank" rel="noopener noreferrer">
