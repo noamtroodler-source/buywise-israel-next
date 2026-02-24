@@ -348,6 +348,7 @@ export default function AgencyDetail() {
 
         {/* Listings Tabs */}
         <Tabs defaultValue="active" className="space-y-6">
+          <div className="flex justify-center">
           <TabsList className="h-12 p-1 bg-muted/50 rounded-xl">
             <TabsTrigger value="active" className="gap-2 h-10 px-4 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
               {category === 'buy' ? 'For Sale' : 'For Rent'}
@@ -368,6 +369,7 @@ export default function AgencyDetail() {
               </span>
             </TabsTrigger>
           </TabsList>
+          </div>
 
           <TabsContent value="active" className="space-y-6">
             {activeLoading ? (
