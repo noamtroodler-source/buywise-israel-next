@@ -34,6 +34,7 @@ import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { trackInquiry } from '@/hooks/useInquiryTracking';
 import { useAuth } from '@/hooks/useAuth';
 import { buildWhatsAppUrl, openWhatsApp } from '@/lib/whatsapp';
+import { getFilledButtonStyle, getOutlineButtonStyle } from '@/lib/colorContrast';
 import { SEOHead } from '@/components/seo/SEOHead';
 import { DualNavigation } from '@/components/shared/DualNavigation';
 import { generateAgentMeta, generateAgentJsonLd, SITE_CONFIG } from '@/lib/seo';
@@ -235,7 +236,7 @@ export default function AgentDetail() {
                   <Button 
                     className="gap-2" 
                     onClick={handleWhatsAppClick}
-                    style={accentColor ? { backgroundColor: accentColor, borderColor: accentColor } : undefined}
+                    style={getFilledButtonStyle(accentColor)}
                   >
                     <MessageCircle className="h-4 w-4" />
                     WhatsApp
@@ -245,7 +246,7 @@ export default function AgentDetail() {
                   variant="outline" 
                   className="gap-1.5" 
                   onClick={handleEmail}
-                  style={accentColor ? { borderColor: `${accentColor}40`, color: accentColor } : undefined}
+                  style={getOutlineButtonStyle(accentColor)}
                 >
                   <Mail className="h-4 w-4" />
                   Email
