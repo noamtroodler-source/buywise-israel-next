@@ -382,7 +382,7 @@ export default function AgencyImport() {
                         className="rounded-xl"
                       >
                         <Download className="h-4 w-4 mr-2" />
-                        Next Batch ({Math.min(pendingCount, 9)})
+                        {doneCount + skippedCount + failedCount > 0 ? 'Next' : 'First'} Batch ({Math.min(pendingCount, 9)})
                       </Button>
                     </>
                   )}
