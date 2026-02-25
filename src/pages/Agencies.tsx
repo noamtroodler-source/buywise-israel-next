@@ -20,7 +20,7 @@ import { Button } from '@/components/ui/button';
 type SortOption = 'az' | 'established' | 'team' | 'listings';
 
 export default function Agencies() {
-  const { data: agencies, isLoading } = useAgencies();
+  const { data: agencies, isLoading } = useAgencies(); // refreshed logos
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>('az');
