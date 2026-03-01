@@ -173,6 +173,38 @@ export function useFormatPrice() {
   }, [currency, exchangeRate]);
 }
 
+/**
+ * Hook version of formatPriceRange that respects the user's currency preference.
+ * Converts ILS amounts to USD when the user has selected USD.
+ */
+export function useFormatPriceRange() {
+  const { currency, exchangeRate } = usePreferences();
+
+  return useCallback((low: number, high: number, originalCurrency: 'ILS' | 'USD' = 'ILS'): string => {
+    let lowConverted = low;
+    let highConverted = high;
+
+    if (originalCurrency === 'ILS' && currency === 'USD') {
+      lowConverted = low / exchangeRate;
+      highConverted = high / exchangeRate;
+    } else if (originalCurrency === 'USD' && currency === 'ILS') {
+      lowConverted = low * exchangeRate;
+      highConverted = high * exchangeRate;
+    }
+
+    const targetCurrency = currency;
+    const symbol = targetCurrency === 'USD' ? '$' : '₪';
+
+    const formatCompact = (value: number): string => {
+      if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`.replace('.0M', 'M');
+      if (value >= 1000) return `${(value / 1000).toFixed(1)}k`.replace('.0k', 'k');
+      return value.toFixed(0);
+    };
+
+    return `${symbol}${formatCompact(lowConverted)}–${formatCompact(highConverted)}`;
+  }, [currency, exchangeRate]);
+}
+
 export function useFormatArea() {
   const { areaUnit } = usePreferences();
 
