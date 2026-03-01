@@ -272,6 +272,8 @@ export default function MapSearchLayout() {
             <MapListPanel
               items={items}
               totalCount={drawnPolygon ? items.length : totalCount}
+              propertyCount={drawnPolygon ? properties.length : propertyCount}
+              projectCount={drawnPolygon ? projects.length : (shouldFetchProjects ? projectCount : 0)}
               isLoading={isLoading}
               isFetching={isFetching}
               hasNextPage={hasNextPage}
@@ -281,6 +283,8 @@ export default function MapSearchLayout() {
               hoveredPropertyId={hoveredPropertyId}
               onCardHover={handleCardHover}
               onClearFilters={handleClearFilters}
+              filters={componentFilters}
+              onFiltersChange={handleFiltersChange}
             />
           </div>
         </div>
@@ -328,6 +332,8 @@ export default function MapSearchLayout() {
         <MobileMapSheet
           items={items}
           totalCount={drawnPolygon ? items.length : totalCount}
+          propertyCount={drawnPolygon ? properties.length : propertyCount}
+          projectCount={drawnPolygon ? projects.length : (shouldFetchProjects ? projectCount : 0)}
           isLoading={isLoading}
           isFetching={isFetching}
           hasNextPage={hasNextPage}
@@ -338,6 +344,8 @@ export default function MapSearchLayout() {
           onCardHover={handleCardHover}
           activeSnap={mobileSnap}
           onSnapChange={handleSnapChange}
+          filters={componentFilters}
+          onFiltersChange={handleFiltersChange}
         />
       </div>
       <CreateAlertDialog

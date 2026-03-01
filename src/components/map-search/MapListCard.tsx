@@ -6,7 +6,7 @@ import { PropertyThumbnail } from '@/components/shared/PropertyThumbnail';
 import { FavoriteButton } from '@/components/property/FavoriteButton';
 import { CarouselDots } from '@/components/shared/CarouselDots';
 import { Badge } from '@/components/ui/badge';
-import { useFormatPrice, useFormatArea } from '@/contexts/PreferencesContext';
+import { useFormatPrice, useFormatArea, useFormatPricePerArea } from '@/contexts/PreferencesContext';
 import { PROPERTY_TYPE_LABELS } from '@/lib/seo/constants';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -48,6 +48,7 @@ function getStatusBadge(property: Property) {
 export const MapListCard = memo(function MapListCard({ property, isHovered, onHover, onHoverEnd }: MapListCardProps) {
   const formatPrice = useFormatPrice();
   const formatArea = useFormatArea();
+  const formatPricePerArea = useFormatPricePerArea();
   const navigate = useNavigate();
   const [imageIndex, setImageIndex] = useState(0);
   const [isCardHovered, setIsCardHovered] = useState(false);
@@ -75,6 +76,13 @@ export const MapListCard = memo(function MapListCard({ property, isHovered, onHo
     property.bathrooms > 0 ? `${property.bathrooms} ba` : null,
     property.size_sqm ? formatArea(property.size_sqm) : null,
   ].filter(Boolean).join(' | ');
+
+  const pricePerArea = property.size_sqm
+    ? formatPricePerArea(property.price / property.size_sqm, property.currency)
+    : null;
+
+  const daysSinceListed = Math.floor((Date.now() - new Date(property.created_at).getTime()) / (1000 * 60 * 60 * 24));
+  const daysLabel = daysSinceListed > 14 ? `${daysSinceListed}d on market` : null;
 
   const location = [property.neighborhood, property.city].filter(Boolean).join(', ');
   const typeLabel = PROPERTY_TYPE_LABELS[property.property_type] || property.property_type;
@@ -155,6 +163,9 @@ export const MapListCard = memo(function MapListCard({ property, isHovered, onHo
           <span className="text-base font-bold text-foreground">
             {formatPrice(property.price, property.currency)}
           </span>
+          {pricePerArea && (
+            <span className="text-xs text-muted-foreground">{pricePerArea}</span>
+          )}
           {hasOriginalPrice && (
             <span className="text-xs text-muted-foreground line-through">
               {formatPrice(property.original_price!, property.currency)}
@@ -169,7 +180,12 @@ export const MapListCard = memo(function MapListCard({ property, isHovered, onHo
         <p className="text-sm text-foreground truncate">{location}</p>
 
         <div className="flex items-center justify-between">
-          <p className="text-xs text-muted-foreground capitalize">{typeLabel}</p>
+          <div className="flex items-center gap-2">
+            <p className="text-xs text-muted-foreground capitalize">{typeLabel}</p>
+            {daysLabel && (
+              <span className="text-xs text-muted-foreground">· {daysLabel}</span>
+            )}
+          </div>
           {property.agent?.agency?.logo_url && (
             <TooltipProvider delayDuration={200}>
               <Tooltip>
