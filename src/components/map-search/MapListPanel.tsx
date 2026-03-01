@@ -7,9 +7,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { MapListCard } from './MapListCard';
 import { MapProjectCard } from './MapProjectCard';
-import { Property, SortOption } from '@/types/database';
+import { Property, SortOption, PropertyFilters } from '@/types/database';
 import { Project } from '@/types/projects';
 import type { MapItem } from '@/types/mapItem';
+import { ActiveFilterChips } from './ActiveFilterChips';
 
 const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: 'newest', label: 'Newest' },
@@ -23,6 +24,8 @@ const SORT_OPTIONS: { value: SortOption; label: string }[] = [
 interface MapListPanelProps {
   items: MapItem[];
   totalCount: number;
+  propertyCount?: number;
+  projectCount?: number;
   isLoading: boolean;
   isFetching: boolean;
   hasNextPage: boolean;
@@ -32,6 +35,8 @@ interface MapListPanelProps {
   hoveredPropertyId?: string | null;
   onCardHover?: (id: string | null) => void;
   onClearFilters?: () => void;
+  filters?: PropertyFilters;
+  onFiltersChange?: (filters: PropertyFilters) => void;
 }
 
 function CardSkeleton() {
@@ -51,6 +56,8 @@ function CardSkeleton() {
 export function MapListPanel({
   items,
   totalCount,
+  propertyCount,
+  projectCount,
   isLoading,
   isFetching,
   hasNextPage,
@@ -60,6 +67,8 @@ export function MapListPanel({
   hoveredPropertyId,
   onCardHover,
   onClearFilters,
+  filters,
+  onFiltersChange,
 }: MapListPanelProps) {
   const sentinelRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -96,9 +105,16 @@ export function MapListPanel({
       )}
 
       <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
-        <span className="text-sm font-semibold text-foreground">
-          {totalCount.toLocaleString()} results
-        </span>
+        <div className="flex flex-col">
+          <span className="text-sm font-semibold text-foreground">
+            {totalCount.toLocaleString()} results
+          </span>
+          {propertyCount != null && projectCount != null && projectCount > 0 && (
+            <span className="text-xs text-muted-foreground">
+              {propertyCount.toLocaleString()} properties · {projectCount.toLocaleString()} projects
+            </span>
+          )}
+        </div>
         <Select value={sortBy} onValueChange={(v) => onSortChange(v as SortOption)}>
           <SelectTrigger className="w-[150px] h-8 text-xs">
             <SelectValue />
@@ -112,6 +128,12 @@ export function MapListPanel({
           </SelectContent>
         </Select>
       </div>
+
+      {filters && onFiltersChange && (
+        <div className="shrink-0 px-4 pt-2">
+          <ActiveFilterChips filters={filters} onFiltersChange={onFiltersChange} />
+        </div>
+      )}
 
       <ScrollArea className="flex-1">
         {isLoading ? (

@@ -7,9 +7,10 @@ import { Progress } from '@/components/ui/progress';
 import { MobileCardCarousel } from './MobileCardCarousel';
 import { MapListCard } from './MapListCard';
 import { MapProjectCard } from './MapProjectCard';
-import { Property, SortOption } from '@/types/database';
+import { Property, SortOption, PropertyFilters } from '@/types/database';
 import { Project } from '@/types/projects';
 import type { MapItem } from '@/types/mapItem';
+import { ActiveFilterChips } from './ActiveFilterChips';
 
 const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: 'newest', label: 'Newest' },
@@ -25,6 +26,8 @@ const SNAP_POINTS = ['148px', '50%', 1] as const;
 interface MobileMapSheetProps {
   items: MapItem[];
   totalCount: number;
+  propertyCount?: number;
+  projectCount?: number;
   isLoading: boolean;
   isFetching?: boolean;
   hasNextPage: boolean;
@@ -35,11 +38,15 @@ interface MobileMapSheetProps {
   onCardHover?: (id: string | null) => void;
   activeSnap: string | number | null;
   onSnapChange: (snap: string | number | null) => void;
+  filters?: PropertyFilters;
+  onFiltersChange?: (filters: PropertyFilters) => void;
 }
 
 export function MobileMapSheet({
   items,
   totalCount,
+  propertyCount,
+  projectCount,
   isLoading,
   isFetching = false,
   hasNextPage,
@@ -50,6 +57,8 @@ export function MobileMapSheet({
   onCardHover,
   activeSnap,
   onSnapChange,
+  filters,
+  onFiltersChange,
 }: MobileMapSheetProps) {
   const sentinelRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -99,9 +108,16 @@ export function MobileMapSheet({
           )}
 
           <div className="flex items-center justify-between px-4 pb-2">
-            <span className="text-sm font-semibold text-foreground">
-              {totalCount.toLocaleString()} results
-            </span>
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold text-foreground">
+                {totalCount.toLocaleString()} results
+              </span>
+              {propertyCount != null && projectCount != null && projectCount > 0 && (
+                <span className="text-xs text-muted-foreground">
+                  {propertyCount.toLocaleString()} properties · {projectCount.toLocaleString()} projects
+                </span>
+              )}
+            </div>
             {showList && (
               <Select value={sortBy} onValueChange={(v) => onSortChange(v as SortOption)}>
                 <SelectTrigger className="w-[120px] h-7 text-xs">
@@ -117,6 +133,12 @@ export function MobileMapSheet({
               </Select>
             )}
           </div>
+
+          {showList && filters && onFiltersChange && (
+            <div className="px-4 pb-2">
+              <ActiveFilterChips filters={filters} onFiltersChange={onFiltersChange} />
+            </div>
+          )}
 
           {isPeek && <MobileCardCarousel items={items} />}
 
