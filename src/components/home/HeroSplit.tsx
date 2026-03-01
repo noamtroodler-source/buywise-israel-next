@@ -104,19 +104,12 @@ export function HeroSplit() {
                   {/* Category Select */}
                   <Select value={category} onValueChange={(val) => setCategory(val as SearchCategory)}>
                     <SelectTrigger className="w-full sm:w-[140px] h-11 sm:h-12 gap-2">
-                      {getCategoryIcon()}
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-background">
-                      <SelectItem value="for_sale">
-                        <span className="flex items-center gap-2"><Home className="h-4 w-4" />Buy</span>
-                      </SelectItem>
-                      <SelectItem value="for_rent">
-                        <span className="flex items-center gap-2"><Key className="h-4 w-4" />Rent</span>
-                      </SelectItem>
-                      <SelectItem value="projects">
-                        <span className="flex items-center gap-2"><Building2 className="h-4 w-4" />Projects</span>
-                      </SelectItem>
+                      <SelectItem value="for_sale">Buy</SelectItem>
+                      <SelectItem value="for_rent">Rent</SelectItem>
+                      <SelectItem value="projects">Projects</SelectItem>
                     </SelectContent>
                   </Select>
 
