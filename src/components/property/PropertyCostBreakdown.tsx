@@ -5,13 +5,13 @@ import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { useFormatPrice } from '@/contexts/PreferencesContext';
+import { useFormatPrice, useFormatPriceRange } from '@/contexts/PreferencesContext';
 import { useBuyerProfile, getBuyerTaxCategory, getBuyerCategoryLabel, profileToDimensions } from '@/hooks/useBuyerProfile';
 import { usePurchaseTaxBrackets } from '@/hooks/usePurchaseTaxBrackets';
 import { useCityDetails } from '@/hooks/useCityDetails';
 import { useMortgageEstimate, useMortgagePreferences } from '@/hooks/useMortgagePreferences';
 import { PersonalizationHeader } from './PersonalizationHeader';
-import { FEE_RANGES, RENTAL_FEE_RANGES, VAT_RATE, formatPriceRange, getUtilitiesEstimate } from '@/lib/utils/formatRange';
+import { FEE_RANGES, RENTAL_FEE_RANGES, VAT_RATE, getUtilitiesEstimate } from '@/lib/utils/formatRange';
 import { cn } from '@/lib/utils';
 import { BuyerProfileDimensions, deriveEffectiveBuyerType } from '@/lib/calculations/buyerProfile';
 import { BuyerType } from '@/lib/calculations/purchaseTax';
@@ -93,6 +93,7 @@ export function PropertyCostBreakdown({
 }: PropertyCostBreakdownProps) {
   const { data: buyerProfile, isLoading } = useBuyerProfile();
   const formatPrice = useFormatPrice();
+  const formatRange = useFormatPriceRange();
   const { user } = useAuth();
   
   // Get saved profile dimensions (buyer type comes from profile, not editable inline)
@@ -319,7 +320,7 @@ export function PropertyCostBreakdown({
                 </div>
                 <div className="text-right">
                   <div className="font-bold text-primary">
-                    {formatPriceRange(rentalTotalUpfrontRange.low, rentalTotalUpfrontRange.high, 'ILS')}
+                    {formatRange(rentalTotalUpfrontRange.low, rentalTotalUpfrontRange.high)}
                   </div>
                   <div className="text-xs text-muted-foreground">~{upfrontPercentLow}–{upfrontPercentHigh}% of annual rent</div>
                 </div>
@@ -347,7 +348,7 @@ export function PropertyCostBreakdown({
                     </TooltipContent>
                   </Tooltip>
                   <span className="font-medium">
-                    {formatPriceRange(rentalSecurityDepositRange.low, rentalSecurityDepositRange.high, 'ILS')}
+                    {formatRange(rentalSecurityDepositRange.low, rentalSecurityDepositRange.high)}
                   </span>
                 </div>
                 
@@ -381,7 +382,7 @@ export function PropertyCostBreakdown({
                         <p className="text-xs">A one-time broker fee (1 month's rent + 18% VAT). This applies when an agent is involved in the rental process.</p>
                       </TooltipContent>
                     </Tooltip>
-                    <span className="font-medium">{formatPrice(rentalAgentFee, 'ILS')}</span>
+                    <span className="font-medium">{formatPrice(rentalAgentFee)}</span>
                   </div>
                 )}
                 
@@ -433,7 +434,7 @@ export function PropertyCostBreakdown({
                   )}
                   <div className="text-right">
                     <div className="font-bold text-primary">
-                      {formatPriceRange(rentalMonthlyRange.low, rentalMonthlyRange.high, 'ILS')}/mo
+                      {formatRange(rentalMonthlyRange.low, rentalMonthlyRange.high)}/mo
                     </div>
                   </div>
                 </div>
@@ -483,7 +484,7 @@ export function PropertyCostBreakdown({
                       )}
                     </TooltipContent>
                   </Tooltip>
-                  <span className="font-medium">{formatPrice(rentalArnonaEstimate.discountedMonthly, 'ILS')}</span>
+                  <span className="font-medium">{formatPrice(rentalArnonaEstimate.discountedMonthly)}</span>
                 </div>
                 
                 {/* Va'ad Bayit */}
@@ -504,7 +505,7 @@ export function PropertyCostBreakdown({
                       <p className="text-xs">Monthly building maintenance fee covering shared expenses like cleaning, elevator, and common utilities.</p>
                     </TooltipContent>
                   </Tooltip>
-                  <span className="font-medium">{formatPrice(vaadBayit, 'ILS')}</span>
+                  <span className="font-medium">{formatPrice(vaadBayit)}</span>
                 </div>
                 
                 {/* Utilities Estimate */}
@@ -524,7 +525,7 @@ export function PropertyCostBreakdown({
                     </TooltipContent>
                   </Tooltip>
                   <span className="font-medium text-muted-foreground">
-                    {formatPriceRange(utilitiesEstimate.min, utilitiesEstimate.max, 'ILS')}
+                    {formatRange(utilitiesEstimate.min, utilitiesEstimate.max)}
                   </span>
                 </div>
               </CollapsibleContent>
@@ -543,7 +544,7 @@ export function PropertyCostBreakdown({
                 <TooltipTrigger asChild>
                   <div className="text-right cursor-help">
                     <div className="font-bold text-lg text-primary">
-                      {formatPriceRange(firstYearTotalRange.low, firstYearTotalRange.high, 'ILS')}
+                      {formatRange(firstYearTotalRange.low, firstYearTotalRange.high)}
                     </div>
                   </div>
                 </TooltipTrigger>
@@ -595,7 +596,7 @@ export function PropertyCostBreakdown({
                 <h4 className="font-medium text-foreground">Upfront Costs</h4>
               </div>
               <div className="text-right">
-                <div className="font-bold text-primary">{formatPriceRange(totalOneTimeRange.low, totalOneTimeRange.high, 'ILS')}</div>
+                <div className="font-bold text-primary">{formatRange(totalOneTimeRange.low, totalOneTimeRange.high)}</div>
                 <div className="text-xs text-muted-foreground">~{oneTimePercentLow}–{oneTimePercentHigh}% of price</div>
               </div>
             </div>
@@ -627,7 +628,7 @@ export function PropertyCostBreakdown({
                       <p className="text-xs">
                         Calculated using 2025 tax brackets for {effectiveDerived.label} buyers. 
                         Your {effectiveTaxRate.toFixed(2)}% rate reflects tiered brackets where lower portions are taxed at reduced rates.
-                        {taxSavings > 0 && ` Saving ~${formatPrice(taxSavings, 'ILS')} vs. investor rates.`}
+                        {taxSavings > 0 && ` Saving ~${formatPrice(taxSavings)} vs. investor rates.`}
                       </p>
                     </TooltipContent>
                   </Tooltip>
@@ -635,7 +636,7 @@ export function PropertyCostBreakdown({
                     {effectiveTaxRate.toFixed(2)}% effective
                   </p>
                 </div>
-                <span className="font-medium">{formatPrice(purchaseTax, 'ILS')}</span>
+                <span className="font-medium">{formatPrice(purchaseTax)}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-border/50">
                 <Tooltip>
@@ -650,7 +651,7 @@ export function PropertyCostBreakdown({
                     </p>
                   </TooltipContent>
                 </Tooltip>
-                <span className="font-medium">{formatPriceRange(lawyerFeesRange.low + lawyerVatRange.low, lawyerFeesRange.high + lawyerVatRange.high, 'ILS')}</span>
+                <span className="font-medium">{formatRange(lawyerFeesRange.low + lawyerVatRange.low, lawyerFeesRange.high + lawyerVatRange.high)}</span>
               </div>
               {isNewConstruction && (
                 <div className="flex justify-between py-2 border-b border-border/50">
@@ -669,7 +670,7 @@ export function PropertyCostBreakdown({
                       </p>
                     </TooltipContent>
                   </Tooltip>
-                  <span className="font-medium">{formatPriceRange(developerLawyerFeesRange.low, developerLawyerFeesRange.high, 'ILS')}</span>
+                  <span className="font-medium">{formatRange(developerLawyerFeesRange.low, developerLawyerFeesRange.high)}</span>
                 </div>
               )}
               <div className="flex justify-between py-2 border-b border-border/50">
@@ -685,7 +686,7 @@ export function PropertyCostBreakdown({
                     </p>
                   </TooltipContent>
                 </Tooltip>
-                <span className="font-medium">{formatPriceRange(agentFeesRange.low + agentVatRange.low, agentFeesRange.high + agentVatRange.high, 'ILS')}</span>
+                <span className="font-medium">{formatRange(agentFeesRange.low + agentVatRange.low, agentFeesRange.high + agentVatRange.high)}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-border/50">
                 <Tooltip>
@@ -695,13 +696,13 @@ export function PropertyCostBreakdown({
                   <TooltipContent className="max-w-xs">
                     <p className="font-medium mb-1">Additional Closing Costs</p>
                     <p className="text-xs">
-                      Includes: Property appraisal ({formatPrice(FEE_RANGES.appraisal.min, 'ILS')}–{formatPrice(FEE_RANGES.appraisal.max, 'ILS').replace('₪', '')}), 
-                      mortgage origination ({formatPrice(FEE_RANGES.mortgageOrigination.min, 'ILS')}–{formatPrice(FEE_RANGES.mortgageOrigination.max, 'ILS').replace('₪', '')}), 
-                      and Tabu registration ({formatPrice(FEE_RANGES.registration.min, 'ILS')}–{formatPrice(FEE_RANGES.registration.max, 'ILS').replace('₪', '')}).
+                      Includes: Property appraisal ({formatPrice(FEE_RANGES.appraisal.min)}–{formatPrice(FEE_RANGES.appraisal.max).replace(/^[₪$]/, '')}), 
+                      mortgage origination ({formatPrice(FEE_RANGES.mortgageOrigination.min)}–{formatPrice(FEE_RANGES.mortgageOrigination.max).replace(/^[₪$]/, '')}), 
+                      and Tabu registration ({formatPrice(FEE_RANGES.registration.min)}–{formatPrice(FEE_RANGES.registration.max).replace(/^[₪$]/, '')}).
                     </p>
                   </TooltipContent>
                 </Tooltip>
-                <span className="font-medium">{formatPriceRange(mortgageFeesRange.low + registrationFeesRange.low, mortgageFeesRange.high + registrationFeesRange.high, 'ILS')}</span>
+                <span className="font-medium">{formatRange(mortgageFeesRange.low + registrationFeesRange.low, mortgageFeesRange.high + registrationFeesRange.high)}</span>
               </div>
             </CollapsibleContent>
           </div>
@@ -726,8 +727,8 @@ export function PropertyCostBreakdown({
                 <div className="text-right">
                   <div className="font-bold text-primary">
                     {includeMortgage 
-                      ? `${formatPrice(mortgageEstimate.monthlyPaymentLow + monthlyOwnershipCosts, 'ILS')}–${formatPrice(mortgageEstimate.monthlyPaymentHigh + monthlyOwnershipCosts, 'ILS').replace('₪', '')}/mo`
-                      : `${formatPrice(monthlyOwnershipCosts, 'ILS')}/mo`
+                      ? `${formatRange(mortgageEstimate.monthlyPaymentLow + monthlyOwnershipCosts, mortgageEstimate.monthlyPaymentHigh + monthlyOwnershipCosts)}/mo`
+                      : `${formatPrice(monthlyOwnershipCosts)}/mo`
                     }
                   </div>
                 </div>
@@ -757,7 +758,7 @@ export function PropertyCostBreakdown({
                         <TooltipContent className="max-w-xs">
                           <p className="font-medium mb-1">Monthly Payment Estimate</p>
                           <p className="text-xs">
-                            Based on {mortgageEstimate.downPaymentPercent}% down payment ({formatPrice(mortgageEstimate.downPayment, 'ILS')}), 
+                            Based on {mortgageEstimate.downPaymentPercent}% down payment ({formatPrice(mortgageEstimate.downPayment)}), 
                             {mortgageEstimate.termYears}-year term, and typical rates of 4.5%–6.0%. 
                             Adjust assumptions in the panel above.
                           </p>
@@ -768,7 +769,7 @@ export function PropertyCostBreakdown({
                       </p>
                     </div>
                     <span className="font-medium">
-                      {formatPrice(mortgageEstimate.monthlyPaymentLow, 'ILS')}–{formatPrice(mortgageEstimate.monthlyPaymentHigh, 'ILS').replace('₪', '')}
+                      {formatRange(mortgageEstimate.monthlyPaymentLow, mortgageEstimate.monthlyPaymentHigh)}
                     </span>
                   </div>
                 </div>
@@ -788,7 +789,7 @@ export function PropertyCostBreakdown({
                     </p>
                   </TooltipContent>
                 </Tooltip>
-                <span className="font-medium">{formatPrice(arnona, 'ILS')}</span>
+                <span className="font-medium">{formatPrice(arnona)}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-border/50">
                 <Tooltip>
@@ -809,7 +810,7 @@ export function PropertyCostBreakdown({
                     </p>
                   </TooltipContent>
                 </Tooltip>
-                <span className="font-medium">{formatPrice(vaadBayit, 'ILS')}</span>
+                <span className="font-medium">{formatPrice(vaadBayit)}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-border/50">
                 <Tooltip>
@@ -823,7 +824,7 @@ export function PropertyCostBreakdown({
                     </p>
                   </TooltipContent>
                 </Tooltip>
-                <span className="font-medium">{formatPrice(insurance, 'ILS')}</span>
+                <span className="font-medium">{formatPrice(insurance)}</span>
               </div>
             </CollapsibleContent>
           </div>
