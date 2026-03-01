@@ -109,13 +109,13 @@ export function HeroSplit() {
                     </SelectTrigger>
                     <SelectContent className="bg-background">
                       <SelectItem value="for_sale">
-                        <span className="flex items-center gap-2">Buy</span>
+                        <span className="flex items-center gap-2"><Home className="h-4 w-4" />Buy</span>
                       </SelectItem>
                       <SelectItem value="for_rent">
-                        <span className="flex items-center gap-2">Rent</span>
+                        <span className="flex items-center gap-2"><Key className="h-4 w-4" />Rent</span>
                       </SelectItem>
                       <SelectItem value="projects">
-                        <span className="flex items-center gap-2">Projects</span>
+                        <span className="flex items-center gap-2"><Building2 className="h-4 w-4" />Projects</span>
                       </SelectItem>
                     </SelectContent>
                   </Select>
