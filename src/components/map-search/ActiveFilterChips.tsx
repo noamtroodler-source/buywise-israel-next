@@ -26,12 +26,6 @@ function buildChips(filters: PropertyFilters, currency: 'ILS' | 'USD'): FilterCh
 
   // Price range
   if (filters.min_price || filters.max_price) {
-    const parts: string[] = [];
-    if (filters.min_price) parts.push(formatCompact(filters.min_price, currency));
-    parts.push('–');
-    if (filters.max_price) parts.push(formatCompact(filters.max_price, currency));
-    else parts.push('Any');
-    if (!filters.min_price) parts.unshift('Up to');
     const label = filters.min_price && filters.max_price
       ? `${formatCompact(filters.min_price, currency)}–${formatCompact(filters.max_price, currency)}`
       : filters.min_price
