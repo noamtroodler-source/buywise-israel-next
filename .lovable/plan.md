@@ -1,36 +1,38 @@
 
 
-# Cover-Photo-Only AI Enhancement
+## Cleanup: Remove Dead Code in ActiveFilterChips
 
-## Overview
-Limit AI image enhancement to **only the first (cover) photo** for each listing — both during manual uploads and bulk imports. This drops costs from ~$0.28/listing to ~$0.04/listing while keeping the highest-impact image looking sharp.
+### What was found
 
-## Changes
+After reviewing all three recently implemented features (Price/m2 + days on market, Active filter chips, Result count breakdown), everything is functioning correctly with one minor code quality issue:
 
-### 1. Manual Upload — `src/components/agent/SortableImageUpload.tsx`
+In `ActiveFilterChips.tsx`, lines 29-34 build a `parts` array that is never actually used. The display label is computed separately on lines 35-39. This dead code should be removed for cleanliness.
 
-Currently, after uploading, ALL new images get enhanced in the background. Change this so only the **first image in the full list** (the cover photo) gets enhanced — and only if it's among the newly uploaded batch.
+### Changes
 
-- After upload, check if the cover photo (index 0 in `allImages`) is one of the newly uploaded URLs
-- If yes, enhance only that one image
-- Skip enhancement for all other images
-- Update the toast message to say "Enhancing cover photo..." instead of "Enhancing X images..."
+**File: `src/components/map-search/ActiveFilterChips.tsx`**
 
-### 2. Bulk Import — `supabase/functions/import-agency-listings/index.ts`
+Remove the unused `parts` array construction (lines 29-34) inside the price range chip builder. The `label` variable already handles all cases correctly.
 
-Currently, every downloaded image gets passed through `enhanceImage()`. Change this so only the **first image** in the array gets enhanced.
+Before:
+```text
+if (filters.min_price || filters.max_price) {
+    const parts: string[] = [];
+    if (filters.min_price) parts.push(formatCompact(filters.min_price, currency));
+    parts.push('--');
+    if (filters.max_price) parts.push(formatCompact(filters.max_price, currency));
+    else parts.push('Any');
+    if (!filters.min_price) parts.unshift('Up to');
+    const label = filters.min_price && filters.max_price
+      ...
+```
 
-- In the image download loop, track the image index
-- Only call `enhanceImage()` for index 0 (the cover/first image)
-- All other images keep their original uploaded URL
+After:
+```text
+if (filters.min_price || filters.max_price) {
+    const label = filters.min_price && filters.max_price
+      ...
+```
 
-### 3. No changes needed to:
-- The `enhance-image` edge function itself (the prompt is already tightened)
-- The `ImageUpload.tsx` component (used elsewhere, will check if still relevant)
-- Database schema or storage
-
-## Cost Impact
-- Before: ~$0.28/listing (7 images x $0.039)
-- After: ~$0.04/listing (1 image x $0.039)
-- For 100 listings: ~$4 instead of ~$28
+No other changes needed -- all three features are properly implemented and integrated across desktop and mobile views.
 
