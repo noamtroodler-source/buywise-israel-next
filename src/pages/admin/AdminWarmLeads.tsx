@@ -95,7 +95,7 @@ function WarmUsersTab() {
         </Card>
         <Card>
           <CardContent className="py-3 px-4 flex items-center gap-3">
-            <Flame className="h-5 w-5 text-orange-500" />
+            <Flame className="h-5 w-5 text-accent-foreground" />
             <div>
               <p className="text-2xl font-bold">{avgScore}</p>
               <p className="text-xs text-muted-foreground">Avg heat score</p>
