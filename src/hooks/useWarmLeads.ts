@@ -5,6 +5,7 @@ import { differenceInDays } from 'date-fns';
 export interface WarmUser {
   id: string;
   email: string | null;
+  phone: string | null;
   full_name: string | null;
   last_active_at: string | null;
   favorites_count: number;
@@ -12,6 +13,8 @@ export interface WarmUser {
   has_buyer_profile: boolean;
   target_cities: string[];
   heat_score: number;
+  last_email_at: string | null;
+  last_email_trigger: string | null;
 }
 
 function calculateHeatScore(
@@ -35,7 +38,7 @@ export function useWarmLeads() {
       // Fetch all profiles
       const { data: profiles, error: profilesErr } = await supabase
         .from('profiles')
-        .select('id, email, full_name, last_active_at');
+        .select('id, email, full_name, last_active_at, phone');
       if (profilesErr) throw profilesErr;
 
       // Fetch favorites counts grouped by user
@@ -72,6 +75,19 @@ export function useWarmLeads() {
         buyerMap.set(r.user_id, (r.target_cities as string[]) || []);
       });
 
+      // Fetch latest retention email per user
+      const { data: emailRows } = await supabase
+        .from('retention_emails_log' as any)
+        .select('user_id, trigger_type, sent_at')
+        .order('sent_at', { ascending: false });
+
+      const lastEmailMap = new Map<string, { trigger: string; sent_at: string }>();
+      (emailRows || []).forEach((r: any) => {
+        if (!lastEmailMap.has(r.user_id)) {
+          lastEmailMap.set(r.user_id, { trigger: r.trigger_type, sent_at: r.sent_at });
+        }
+      });
+
       // Build warm users list
       const warmUsers: WarmUser[] = (profiles || [])
         .map(p => {
@@ -80,10 +96,12 @@ export function useWarmLeads() {
           const hasBuyerProfile = buyerMap.has(p.id);
           const targetCities = buyerMap.get(p.id) || [];
           const heatScore = calculateHeatScore(favCount, guidesRead, hasBuyerProfile, p.last_active_at);
+          const lastEmail = lastEmailMap.get(p.id);
 
           return {
             id: p.id,
             email: p.email,
+            phone: p.phone,
             full_name: p.full_name,
             last_active_at: p.last_active_at,
             favorites_count: favCount,
@@ -91,6 +109,8 @@ export function useWarmLeads() {
             has_buyer_profile: hasBuyerProfile,
             target_cities: targetCities,
             heat_score: heatScore,
+            last_email_at: lastEmail?.sent_at || null,
+            last_email_trigger: lastEmail?.trigger || null,
           };
         })
         .filter(u => u.heat_score > 0)

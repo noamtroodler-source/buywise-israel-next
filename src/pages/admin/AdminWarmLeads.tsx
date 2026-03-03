@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Flame, Mail, Copy, Check, User, Heart, BookOpen, Target } from 'lucide-react';
+import { Flame, Mail, Copy, Check, User, Heart, BookOpen, Target, MessageCircle } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useWarmLeads, useRetentionEmailsLog, WarmUser } from '@/hooks/useWarmLeads';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { buildWhatsAppUrl, openWhatsApp } from '@/lib/whatsapp';
 
 function HeatBadge({ score }: { score: number }) {
   const level = score >= 30 ? 'hot' : score >= 15 ? 'warm' : 'mild';
@@ -41,6 +42,21 @@ function CopyEmailButton({ email }: { email: string | null }) {
     <Button variant="ghost" size="sm" onClick={handleCopy} className="h-7 px-2 text-xs">
       {copied ? <Check className="h-3 w-3 mr-1" /> : <Copy className="h-3 w-3 mr-1" />}
       {copied ? 'Copied' : 'Copy'}
+    </Button>
+  );
+}
+
+function WhatsAppButton({ phone }: { phone: string | null }) {
+  if (!phone) return null;
+  
+  const handleClick = () => {
+    const url = buildWhatsAppUrl(phone);
+    openWhatsApp(url, phone);
+  };
+
+  return (
+    <Button variant="ghost" size="sm" onClick={handleClick} className="h-7 px-2 text-xs text-green-600 hover:text-green-700 hover:bg-green-50">
+      <MessageCircle className="h-3 w-3" />
     </Button>
   );
 }
@@ -113,6 +129,7 @@ function WarmUsersTab() {
             <TableHead>Profile</TableHead>
             <TableHead>Target Cities</TableHead>
             <TableHead>Last Active</TableHead>
+            <TableHead>Last Email</TableHead>
             <TableHead>Score</TableHead>
             <TableHead></TableHead>
           </TableRow>
@@ -150,8 +167,27 @@ function WarmUsersTab() {
                   ? formatDistanceToNow(new Date(user.last_active_at), { addSuffix: true })
                   : '—'}
               </TableCell>
+              <TableCell>
+                {user.last_email_at ? (
+                  <div className="text-xs">
+                    <Badge variant="outline" className="text-xs capitalize">
+                      {user.last_email_trigger?.replace(/_/g, ' ')}
+                    </Badge>
+                    <p className="text-muted-foreground mt-0.5">
+                      {formatDistanceToNow(new Date(user.last_email_at), { addSuffix: true })}
+                    </p>
+                  </div>
+                ) : (
+                  <span className="text-muted-foreground text-xs">—</span>
+                )}
+              </TableCell>
               <TableCell><HeatBadge score={user.heat_score} /></TableCell>
-              <TableCell><CopyEmailButton email={user.email} /></TableCell>
+              <TableCell>
+                <div className="flex items-center gap-1">
+                  <CopyEmailButton email={user.email} />
+                  <WhatsAppButton phone={user.phone} />
+                </div>
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
