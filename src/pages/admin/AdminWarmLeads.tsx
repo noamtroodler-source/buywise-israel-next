@@ -129,6 +129,7 @@ function WarmUsersTab() {
             <TableHead>Profile</TableHead>
             <TableHead>Target Cities</TableHead>
             <TableHead>Last Active</TableHead>
+            <TableHead>Last Email</TableHead>
             <TableHead>Score</TableHead>
             <TableHead></TableHead>
           </TableRow>
