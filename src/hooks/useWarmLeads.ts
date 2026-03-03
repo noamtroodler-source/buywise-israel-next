@@ -38,7 +38,7 @@ export function useWarmLeads() {
       // Fetch all profiles
       const { data: profiles, error: profilesErr } = await supabase
         .from('profiles')
-        .select('id, email, full_name, last_active_at');
+        .select('id, email, full_name, last_active_at, phone');
       if (profilesErr) throw profilesErr;
 
       // Fetch favorites counts grouped by user
