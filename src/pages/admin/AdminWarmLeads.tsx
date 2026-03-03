@@ -17,7 +17,7 @@ function HeatBadge({ score }: { score: number }) {
     <Badge className={cn(
       'font-mono text-xs',
       level === 'hot' && 'bg-destructive text-destructive-foreground',
-      level === 'warm' && 'bg-orange-500 text-white dark:bg-orange-600',
+      level === 'warm' && 'bg-accent text-accent-foreground',
       level === 'mild' && 'bg-muted text-muted-foreground',
     )}>
       <Flame className="h-3 w-3 mr-1" />
