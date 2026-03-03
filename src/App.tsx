@@ -140,6 +140,7 @@ const HeroPreview = lazy(() => import("./pages/admin/HeroPreview"));
 const ImportNeighborhoods = lazy(() => import("./pages/admin/ImportNeighborhoods"));
 const AdminClientErrors = lazy(() => import("./pages/admin/AdminClientErrors"));
 const AdminEnterpriseInquiries = lazy(() => import("./pages/admin/AdminEnterpriseInquiries"));
+const AdminWarmLeads = lazy(() => import("./pages/admin/AdminWarmLeads"));
 // Global query client config for optimal caching
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -461,6 +462,7 @@ const App = () => (
                           <Route path="import-neighborhoods" element={<ImportNeighborhoods />} />
                           <Route path="errors" element={<AdminClientErrors />} />
                           <Route path="enterprise-inquiries" element={<AdminEnterpriseInquiries />} />
+                          <Route path="warm-leads" element={<AdminWarmLeads />} />
                         </Route>
                         
                         <Route path="*" element={<NotFound />} />

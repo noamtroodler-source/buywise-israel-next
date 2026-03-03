@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Users, Home, Building, Building2, 
   FileText, MapPin, BarChart3, Settings, ClipboardCheck, Sliders,
   Mail, ToggleLeft, BookOpen, Megaphone, Star, Package, Globe,
-  Wrench, ChevronRight, PenLine, Bug, Zap, TrendingUp
+  Wrench, ChevronRight, PenLine, Bug, Zap, TrendingUp, Flame
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { cn } from '@/lib/utils';
@@ -86,6 +86,7 @@ export function AdminLayout() {
     { href: '/admin/enterprise-inquiries', label: 'Enterprise Leads', icon: Building2, badge: newEnterpriseCount },
     { href: '/admin/overages', label: 'Overage Billing', icon: TrendingUp },
     { href: '/admin/errors', label: 'Client Errors', icon: Bug },
+    { href: '/admin/warm-leads', label: 'Warm Leads', icon: Flame },
   ];
 
   return (
