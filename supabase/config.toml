@@ -86,3 +86,6 @@ verify_jwt = false
 
 [functions.sync-stripe-plans]
 verify_jwt = false
+
+[functions.process-retention-emails]
+verify_jwt = false

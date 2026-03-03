@@ -3456,6 +3456,7 @@ export type Database = {
           full_name: string | null
           id: string
           is_banned: boolean | null
+          last_active_at: string | null
           notify_email: boolean | null
           notify_price_drops: boolean | null
           notify_recommendations: boolean | null
@@ -3476,6 +3477,7 @@ export type Database = {
           full_name?: string | null
           id: string
           is_banned?: boolean | null
+          last_active_at?: string | null
           notify_email?: boolean | null
           notify_price_drops?: boolean | null
           notify_recommendations?: boolean | null
@@ -3496,6 +3498,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           is_banned?: boolean | null
+          last_active_at?: string | null
           notify_email?: boolean | null
           notify_price_drops?: boolean | null
           notify_recommendations?: boolean | null
@@ -4460,6 +4463,33 @@ export type Database = {
           source_notes?: string | null
           title?: string | null
           version_key?: string
+        }
+        Relationships: []
+      }
+      retention_emails_log: {
+        Row: {
+          created_at: string
+          email_sent_to: string
+          id: string
+          metadata: Json | null
+          trigger_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email_sent_to: string
+          id?: string
+          metadata?: Json | null
+          trigger_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email_sent_to?: string
+          id?: string
+          metadata?: Json | null
+          trigger_type?: string
+          user_id?: string
         }
         Relationships: []
       }
