@@ -5,6 +5,7 @@ import { differenceInDays } from 'date-fns';
 export interface WarmUser {
   id: string;
   email: string | null;
+  phone: string | null;
   full_name: string | null;
   last_active_at: string | null;
   favorites_count: number;
@@ -12,6 +13,8 @@ export interface WarmUser {
   has_buyer_profile: boolean;
   target_cities: string[];
   heat_score: number;
+  last_email_at: string | null;
+  last_email_trigger: string | null;
 }
 
 function calculateHeatScore(
