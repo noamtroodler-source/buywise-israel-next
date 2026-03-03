@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { buildWhatsAppUrl, openWhatsApp } from '@/lib/whatsapp';
 
 function HeatBadge({ score }: { score: number }) {
   const level = score >= 30 ? 'hot' : score >= 15 ? 'warm' : 'mild';
