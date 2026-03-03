@@ -1,38 +1,43 @@
 
 
-## Cleanup: Remove Dead Code in ActiveFilterChips
+## Build "Warmest Users" Admin Page
 
-### What was found
+A new admin page at `/admin/warm-leads` showing your highest-intent users ranked by engagement signals, plus a log of retention emails sent.
 
-After reviewing all three recently implemented features (Price/m2 + days on market, Active filter chips, Result count breakdown), everything is functioning correctly with one minor code quality issue:
+### What it shows
 
-In `ActiveFilterChips.tsx`, lines 29-34 build a `parts` array that is never actually used. The display label is computed separately on lines 35-39. This dead code should be removed for cleanliness.
+**Warm Users Table** — ranked by a composite "heat score" calculated from:
+- Number of saved properties (favorites)
+- Number of guide chapters read (content_visits where content_type = 'guide')
+- Whether they completed a buyer profile
+- Days since last active (recency bonus)
 
-### Changes
+Each row shows: name, email, target cities, favorites count, guides read, last active date, heat score, and a quick "Copy email" button for personal outreach.
 
-**File: `src/components/map-search/ActiveFilterChips.tsx`**
+**Retention Emails Log** — a second tab showing all emails sent by the retention system: who received it, trigger type, when, and what content was included.
 
-Remove the unused `parts` array construction (lines 29-34) inside the price range chip builder. The `label` variable already handles all cases correctly.
+### Technical approach
 
-Before:
-```text
-if (filters.min_price || filters.max_price) {
-    const parts: string[] = [];
-    if (filters.min_price) parts.push(formatCompact(filters.min_price, currency));
-    parts.push('--');
-    if (filters.max_price) parts.push(formatCompact(filters.max_price, currency));
-    else parts.push('Any');
-    if (!filters.min_price) parts.unshift('Up to');
-    const label = filters.min_price && filters.max_price
-      ...
+**No database changes needed.** All data already exists in `profiles`, `favorites`, `content_visits`, `buyer_profiles`, and `retention_emails_log`.
+
+**Files to create:**
+1. `src/pages/admin/AdminWarmLeads.tsx` — main page with two tabs (Warm Users + Email Log)
+2. `src/hooks/useWarmLeads.ts` — queries for warm users (joins profiles + favorites count + content visits count + buyer profile existence) and retention email log
+
+**Files to modify:**
+3. `src/App.tsx` — add lazy import and route at `/admin/warm-leads`
+4. `src/pages/admin/AdminLayout.tsx` — add nav item under System section (or a new "Retention" section with a Heart icon)
+
+**Heat score formula** (computed client-side from query results):
 ```
-
-After:
-```text
-if (filters.min_price || filters.max_price) {
-    const label = filters.min_price && filters.max_price
-      ...
+score = (favorites_count * 3) + (guides_read * 5) + (has_buyer_profile ? 10 : 0) + recency_bonus
 ```
+Where recency_bonus = max(0, 14 - days_since_active) — users active in the last 2 weeks get up to 14 bonus points.
 
-No other changes needed -- all three features are properly implemented and integrated across desktop and mobile views.
+**Warm users query** uses 3 sub-queries aggregated by user_id:
+- `SELECT user_id, COUNT(*) as fav_count FROM favorites GROUP BY user_id`
+- `SELECT user_id, COUNT(*) as guide_count FROM content_visits WHERE content_type = 'guide' GROUP BY user_id`
+- `SELECT user_id FROM buyer_profiles`
+
+Then joins with `profiles` for name/email/last_active_at, sorts by computed score descending, limits to top 50.
 
