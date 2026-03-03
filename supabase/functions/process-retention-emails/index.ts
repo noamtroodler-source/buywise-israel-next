@@ -265,12 +265,6 @@ serve(async (req) => {
     console.log("Processing guide stalled trigger...");
 
     // Find users with 2+ guide visits whose most recent was 10-21 days ago
-    const { data: guideUsers, error: guideErr } = await supabase.rpc(
-      // We'll use a raw query approach since we need aggregation
-      // Instead, query content_visits directly
-    ).catch(() => ({ data: null, error: { message: "rpc not available" } }));
-
-    // Fallback: query content_visits for guide-type visits
     const { data: guideVisits, error: guideVisitsErr } = await supabase
       .from("content_visits")
       .select("user_id, content_path, last_visited_at")
