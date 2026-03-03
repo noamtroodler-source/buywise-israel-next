@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Flame, Mail, Copy, Check, User, Heart, BookOpen, Target } from 'lucide-react';
+import { Flame, Mail, Copy, Check, User, Heart, BookOpen, Target, MessageCircle } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useWarmLeads, useRetentionEmailsLog, WarmUser } from '@/hooks/useWarmLeads';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
