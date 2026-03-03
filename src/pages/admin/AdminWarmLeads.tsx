@@ -46,6 +46,21 @@ function CopyEmailButton({ email }: { email: string | null }) {
   );
 }
 
+function WhatsAppButton({ phone }: { phone: string | null }) {
+  if (!phone) return null;
+  
+  const handleClick = () => {
+    const url = buildWhatsAppUrl(phone);
+    openWhatsApp(url, phone);
+  };
+
+  return (
+    <Button variant="ghost" size="sm" onClick={handleClick} className="h-7 px-2 text-xs text-green-600 hover:text-green-700 hover:bg-green-50">
+      <MessageCircle className="h-3 w-3" />
+    </Button>
+  );
+}
+
 function WarmUsersTab() {
   const { data: users, isLoading } = useWarmLeads();
 
