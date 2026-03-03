@@ -167,8 +167,27 @@ function WarmUsersTab() {
                   ? formatDistanceToNow(new Date(user.last_active_at), { addSuffix: true })
                   : '—'}
               </TableCell>
+              <TableCell>
+                {user.last_email_at ? (
+                  <div className="text-xs">
+                    <Badge variant="outline" className="text-xs capitalize">
+                      {user.last_email_trigger?.replace(/_/g, ' ')}
+                    </Badge>
+                    <p className="text-muted-foreground mt-0.5">
+                      {formatDistanceToNow(new Date(user.last_email_at), { addSuffix: true })}
+                    </p>
+                  </div>
+                ) : (
+                  <span className="text-muted-foreground text-xs">—</span>
+                )}
+              </TableCell>
               <TableCell><HeatBadge score={user.heat_score} /></TableCell>
-              <TableCell><CopyEmailButton email={user.email} /></TableCell>
+              <TableCell>
+                <div className="flex items-center gap-1">
+                  <CopyEmailButton email={user.email} />
+                  <WhatsAppButton phone={user.phone} />
+                </div>
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
