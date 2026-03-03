@@ -462,6 +462,7 @@ const App = () => (
                           <Route path="import-neighborhoods" element={<ImportNeighborhoods />} />
                           <Route path="errors" element={<AdminClientErrors />} />
                           <Route path="enterprise-inquiries" element={<AdminEnterpriseInquiries />} />
+                          <Route path="warm-leads" element={<AdminWarmLeads />} />
                         </Route>
                         
                         <Route path="*" element={<NotFound />} />

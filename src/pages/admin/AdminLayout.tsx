@@ -86,6 +86,7 @@ export function AdminLayout() {
     { href: '/admin/enterprise-inquiries', label: 'Enterprise Leads', icon: Building2, badge: newEnterpriseCount },
     { href: '/admin/overages', label: 'Overage Billing', icon: TrendingUp },
     { href: '/admin/errors', label: 'Client Errors', icon: Bug },
+    { href: '/admin/warm-leads', label: 'Warm Leads', icon: Flame },
   ];
 
   return (
