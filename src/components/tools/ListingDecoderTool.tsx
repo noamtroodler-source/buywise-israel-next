@@ -353,9 +353,7 @@ export function ListingDecoderTool() {
       leftColumn={leftColumn}
       rightColumn={rightColumn}
       disclaimer={
-        <ToolDisclaimer variant="ai">
-          This tool uses AI to analyze listings. Always verify details independently and consult a licensed professional before making decisions.
-        </ToolDisclaimer>
+      <ToolDisclaimer text="This tool uses AI to analyze listings. Always verify details independently and consult a licensed professional before making decisions." />
       }
     />
   );

@@ -89,3 +89,6 @@ verify_jwt = false
 
 [functions.process-retention-emails]
 verify_jwt = false
+
+[functions.decode-listing]
+verify_jwt = false
