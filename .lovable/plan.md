@@ -1,38 +1,15 @@
 
 
-## Cleanup: Remove Dead Code in ActiveFilterChips
+## Neighborhood Search — Implemented ✅
 
-### What was found
+All changes from the plan have been implemented:
 
-After reviewing all three recently implemented features (Price/m2 + days on market, Active filter chips, Result count breakdown), everything is functioning correctly with one minor code quality issue:
-
-In `ActiveFilterChips.tsx`, lines 29-34 build a `parts` array that is never actually used. The display label is computed separately on lines 35-39. This dead code should be removed for cleanliness.
-
-### Changes
-
-**File: `src/components/map-search/ActiveFilterChips.tsx`**
-
-Remove the unused `parts` array construction (lines 29-34) inside the price range chip builder. The `label` variable already handles all cases correctly.
-
-Before:
-```text
-if (filters.min_price || filters.max_price) {
-    const parts: string[] = [];
-    if (filters.min_price) parts.push(formatCompact(filters.min_price, currency));
-    parts.push('--');
-    if (filters.max_price) parts.push(formatCompact(filters.max_price, currency));
-    else parts.push('Any');
-    if (!filters.min_price) parts.unshift('Up to');
-    const label = filters.min_price && filters.max_price
-      ...
-```
-
-After:
-```text
-if (filters.min_price || filters.max_price) {
-    const label = filters.min_price && filters.max_price
-      ...
-```
-
-No other changes needed -- all three features are properly implemented and integrated across desktop and mobile views.
-
+1. **`useNeighborhoodNames` hook** — Shared hook fetching neighborhood names per city + `useAllNeighborhoods` for cross-city search.
+2. **`useMapFilters`** — Added `neighborhoods` URL param (comma-separated).
+3. **`useProperties`** — Added `neighborhoods[]` array filter via `.in('neighborhood', ...)` in both count and listing queries.
+4. **`PropertyFilters` city popover** — Shows `NeighborhoodSelector` multi-select after city is chosen. Button label updates to show selected neighborhoods.
+5. **`MobileFilterSheet`** — Same `NeighborhoodSelector` in mobile Location section.
+6. **`CitySearchInput`** — Autocomplete now searches neighborhoods too, grouped under "Neighborhoods" with "Name, City" format. Selecting navigates with both city + neighborhood params.
+7. **`NeighborhoodChips`** — Map chips now trigger listing filter via `onFilterNeighborhood` callback.
+8. **`MapSearchLayout`** — Wires neighborhood filter between map chips and URL params. Includes neighborhoods in clear-all.
+9. **`ActiveFilterChips`** — Dismissible chip for active neighborhood filters.
