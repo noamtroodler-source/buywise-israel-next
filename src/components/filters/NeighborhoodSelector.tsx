@@ -9,6 +9,7 @@ interface NeighborhoodSelectorProps {
   cityName: string | undefined;
   selectedNeighborhoods: string[];
   onNeighborhoodsChange: (neighborhoods: string[]) => void;
+  externalSearch?: string;
 }
 
 export function NeighborhoodSelector({
