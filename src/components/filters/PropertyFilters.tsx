@@ -9,6 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { PropertyFilters as PropertyFiltersType, PropertyType, PropertyCondition, SortOption } from '@/types/database';
 import { useCities } from '@/hooks/useCities';
+import { useNeighborhoodNames } from '@/hooks/useNeighborhoodNames';
 import { cn } from '@/lib/utils';
 import { matchCities } from '@/lib/utils/cityMatcher';
 import { Link, useNavigate } from 'react-router-dom';
