@@ -70,6 +70,7 @@ export function PropertyMap({
   initialCenter,
   initialZoom,
   onMapMove,
+  onNeighborhoodFilter,
 }: PropertyMapProps) {
   const { isLoaded } = useGoogleMaps();
   const [map, setMap] = useState<google.maps.Map | null>(null);
