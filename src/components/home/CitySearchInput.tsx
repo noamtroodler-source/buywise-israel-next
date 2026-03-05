@@ -103,6 +103,15 @@ export function CitySearchInput({
     ? allCityNames.filter(city => cityMatchesQuery(city, inputValue))
     : [];
 
+  // Filter neighborhoods based on input
+  const filteredNeighborhoods = useMemo(() => {
+    if (!inputValue.trim()) return [];
+    const q = inputValue.trim().toLowerCase();
+    return allNeighborhoods
+      .filter(n => n.name.toLowerCase().includes(q))
+      .slice(0, 8);
+  }, [inputValue, allNeighborhoods]);
+
   // Build the list of items to show
   const showHistory = !inputValue.trim() && searchHistory.length > 0;
   const showPopular = !inputValue.trim();
