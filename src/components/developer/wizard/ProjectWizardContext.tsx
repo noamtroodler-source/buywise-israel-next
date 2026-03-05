@@ -134,7 +134,7 @@ export function ProjectWizardProvider({ children }: { children: ReactNode }) {
     switch (currentStep) {
       case 0: // Basics
         const hasValidAddress = data.address && data.latitude && data.longitude && /\d+/.test(data.address);
-        return !!(data.name && data.city && hasValidAddress);
+        return !!(data.name && data.city && data.neighborhood && hasValidAddress);
       case 1: // Details
         // If both dates are provided, completion must be after start
         if (data.construction_start && data.completion_date) {
