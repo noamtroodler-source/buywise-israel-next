@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { MapPin, DollarSign, LayoutGrid, Building2, SlidersHorizontal, Filter, X, Loader2, Bath, Car, Layers, Clock, CalendarCheck, Cat, Dog, PawPrint, Navigation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
