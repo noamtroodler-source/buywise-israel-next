@@ -209,12 +209,29 @@ export function MobileFilterSheet({
                         ? "bg-primary text-primary-foreground" 
                         : "bg-muted hover:bg-muted/80"
                     )}
-                    onClick={() => updateFilter('city', filters.city === city.name ? undefined : city.name)}
+                    onClick={() => {
+                      if (filters.city === city.name) {
+                        onFiltersChange({ ...filters, city: undefined, neighborhoods: undefined });
+                      } else {
+                        onFiltersChange({ ...filters, city: city.name, neighborhoods: undefined });
+                      }
+                    }}
                   >
                     {city.name}
                   </button>
                 ))}
               </div>
+              {/* Neighborhood selection after city is chosen */}
+              <NeighborhoodSelector
+                cityName={filters.city}
+                selectedNeighborhoods={filters.neighborhoods || []}
+                onNeighborhoodsChange={(neighborhoods) => {
+                  onFiltersChange({
+                    ...filters,
+                    neighborhoods: neighborhoods.length > 0 ? neighborhoods : undefined,
+                  });
+                }}
+              />
             </section>
 
             {/* Price Section */}
