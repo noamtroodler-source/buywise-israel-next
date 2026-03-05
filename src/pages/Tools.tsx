@@ -5,7 +5,7 @@ import useEmblaCarousel from 'embla-carousel-react';
 import { 
   Calculator, Wallet, Scale, TrendingUp, Receipt, 
   Hammer, ClipboardList, ArrowRight, ArrowLeft, Compass,
-  Search, Home, ChevronRight
+  Search, Home, ChevronRight, Languages
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { SEOHead } from '@/components/seo/SEOHead';
@@ -20,6 +20,7 @@ import { RentVsBuyCalculator } from '@/components/tools/RentVsBuyCalculator';
 import { InvestmentReturnCalculator } from '@/components/tools/InvestmentReturnCalculator';
 import { RenovationCostEstimator } from '@/components/tools/RenovationCostEstimator';
 import { DocumentChecklistTool } from '@/components/tools/DocumentChecklistTool';
+import { ListingDecoderTool } from '@/components/tools/ListingDecoderTool';
 import { DualNavigation } from '@/components/shared/DualNavigation';
 import { TOOLS_BY_PHASE } from '@/lib/navigationConfig';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -83,6 +84,13 @@ const allTools: Record<string, Tool> = {
     icon: ClipboardList,
     guidanceHint: 'Keep this open during the process',
   },
+  'listing-decoder': {
+    id: 'listing-decoder',
+    label: 'Listing Decoder',
+    description: 'Paste a Hebrew listing URL — get a full English breakdown, missing data flags, and questions to ask.',
+    icon: Languages,
+    guidanceHint: 'Found a listing? Start here',
+  },
 };
 
 const toolComponents: Record<string, React.ComponentType> = {
@@ -93,6 +101,7 @@ const toolComponents: Record<string, React.ComponentType> = {
   rentvsbuy: RentVsBuyCalculator,
   renovation: RenovationCostEstimator,
   documents: DocumentChecklistTool,
+  'listing-decoder': ListingDecoderTool,
 };
 
 // Journey phase order

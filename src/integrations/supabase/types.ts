@@ -2591,6 +2591,27 @@ export type Database = {
         }
         Relationships: []
       }
+      listing_decoder_usage: {
+        Row: {
+          id: string
+          session_id: string
+          used_at: string
+          user_id: string | null
+        }
+        Insert: {
+          id?: string
+          session_id: string
+          used_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          id?: string
+          session_id?: string
+          used_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       listing_impressions: {
         Row: {
           card_variant: string | null
@@ -4554,6 +4575,33 @@ export type Database = {
           name?: string | null
           results?: Json
           updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      saved_listing_analyses: {
+        Row: {
+          created_at: string
+          decoded_result: Json
+          detected_city: string | null
+          id: string
+          source_url: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          decoded_result: Json
+          detected_city?: string | null
+          id?: string
+          source_url: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          decoded_result?: Json
+          detected_city?: string | null
+          id?: string
+          source_url?: string
           user_id?: string
         }
         Relationships: []
