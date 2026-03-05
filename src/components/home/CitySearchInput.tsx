@@ -172,9 +172,19 @@ export function CitySearchInput({
       case 'Enter':
         e.preventDefault();
         if (highlightedIndex >= 0 && selectableItems[highlightedIndex]) {
-          handleSelect(selectableItems[highlightedIndex].city);
+          const item = selectableItems[highlightedIndex];
+          if (item.type === 'neighborhood' && item.neighborhood) {
+            handleNeighborhoodClick(item.neighborhood, item.city);
+          } else {
+            handleSelect(item.city);
+          }
         } else if (selectableItems.length > 0) {
-          handleSelect(selectableItems[0].city);
+          const item = selectableItems[0];
+          if (item.type === 'neighborhood' && item.neighborhood) {
+            handleNeighborhoodClick(item.neighborhood, item.city);
+          } else {
+            handleSelect(item.city);
+          }
         }
         break;
       case 'Escape':
