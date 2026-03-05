@@ -525,7 +525,7 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
 
                   {filters.city && <Label className="text-sm font-medium">Cities</Label>}
 
-                   <div className="max-h-[84px] overflow-y-auto space-y-1">
+                   <div className="max-h-[96px] overflow-y-auto space-y-1">
                      {filteredCities?.map(city => (
                        <button
                          key={city.id}
