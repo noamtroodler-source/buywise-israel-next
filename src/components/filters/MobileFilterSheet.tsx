@@ -211,7 +211,7 @@ export function MobileFilterSheet({
                 }}
                 externalSearch={citySearch}
               />
-              {filters.city && <Label className="text-sm font-medium text-muted-foreground">Cities</Label>}
+              
               <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
                 {filteredCities.slice(0, 12).map(city => (
                   <button
