@@ -50,6 +50,7 @@ interface PropertyMapProps {
   initialCenter?: [number, number];
   initialZoom?: number;
   onMapMove?: (lat: number, lng: number, zoom: number) => void;
+  onNeighborhoodFilter?: (name: string | null) => void;
 }
 
 export function PropertyMap({
