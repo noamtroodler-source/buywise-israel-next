@@ -263,7 +263,6 @@ export function StepBasics() {
               {!data.neighborhood && data.city && (
                 <p className="text-xs text-destructive">Neighborhood is required</p>
               )}
-              />
             </div>
           </div>
 
