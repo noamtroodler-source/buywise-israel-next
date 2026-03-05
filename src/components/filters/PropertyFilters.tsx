@@ -439,10 +439,16 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
             <PopoverTrigger asChild>
               <Button 
                 variant="outline" 
-                className={cn(filterButtonBase, filters.city && "border-primary/50", cityOpen && filterButtonActive)}
+                className={cn(filterButtonBase, (filters.city || filters.neighborhoods?.length) && "border-primary/50", cityOpen && filterButtonActive)}
               >
                 <MapPin className="h-4 w-4" />
-                <span>{filters.city || 'City'}</span>
+                <span>
+                  {filters.neighborhoods?.length === 1
+                    ? filters.neighborhoods[0]
+                    : filters.neighborhoods?.length
+                      ? `${filters.city} · ${filters.neighborhoods.length} areas`
+                      : filters.city || 'City'}
+                </span>
                 {cityOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
               </Button>
             </PopoverTrigger>
