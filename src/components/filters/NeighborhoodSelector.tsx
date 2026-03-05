@@ -16,14 +16,17 @@ export function NeighborhoodSelector({
   cityName,
   selectedNeighborhoods,
   onNeighborhoodsChange,
+  externalSearch,
 }: NeighborhoodSelectorProps) {
   const [search, setSearch] = useState('');
   const { data: neighborhoods = [] } = useNeighborhoodNames(cityName);
+  const hasExternalSearch = externalSearch !== undefined;
+  const activeSearch = hasExternalSearch ? externalSearch : search;
 
   if (!cityName || neighborhoods.length === 0) return null;
 
-  const filtered = search
-    ? neighborhoods.filter(n => n.toLowerCase().includes(search.toLowerCase()))
+  const filtered = activeSearch
+    ? neighborhoods.filter(n => n.toLowerCase().includes(activeSearch.toLowerCase()))
     : neighborhoods;
 
   const toggleNeighborhood = (name: string) => {
