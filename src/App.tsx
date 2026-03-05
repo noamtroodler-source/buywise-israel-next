@@ -248,6 +248,11 @@ const App = () => (
                             <Profile />
                           </ProtectedRoute>
                         } />
+                        <Route path="/my-journey" element={
+                          <ProtectedRoute>
+                            <MyJourney />
+                          </ProtectedRoute>
+                        } />
                         <Route path="/favorites" element={<Favorites />} />
                         
                         {/* Agent routes */}
