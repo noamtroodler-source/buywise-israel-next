@@ -51,6 +51,7 @@ export const NAV_CONFIG: Record<string, NavSection> = {
           { label: 'True Cost', href: '/tools?tool=totalcost', description: 'Taxes, fees & closing costs', phase: 'check' },
           { label: 'Investment Returns', href: '/tools?tool=investment', description: 'ROI & cash flow analysis', phase: 'check' },
           { label: 'Rent vs Buy', href: '/tools?tool=rentvsbuy', description: 'Compare your options', phase: 'define' },
+          { label: 'Listing Decoder', href: '/tools?tool=listing-decoder', description: 'Translate & analyze listings', phase: 'check' },
         ]
       },
       {
