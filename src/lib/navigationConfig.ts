@@ -137,7 +137,7 @@ export const TOOLS_BY_PHASE: Record<string, { title: string; description: string
   check: {
     title: 'Calculate True Costs',
     description: 'Know the full picture before making an offer.',
-    tools: ['totalcost', 'investment']
+    tools: ['totalcost', 'investment', 'listing-decoder']
   },
   move_forward: {
     title: 'Move Forward Confidently',

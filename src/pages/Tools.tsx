@@ -101,6 +101,7 @@ const toolComponents: Record<string, React.ComponentType> = {
   rentvsbuy: RentVsBuyCalculator,
   renovation: RenovationCostEstimator,
   documents: DocumentChecklistTool,
+  'listing-decoder': ListingDecoderTool,
 };
 
 // Journey phase order
