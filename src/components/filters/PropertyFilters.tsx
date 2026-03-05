@@ -456,13 +456,14 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
               <div className="p-4 space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold text-lg">Location</h3>
-                  {filters.city && (
+                  {(filters.city || filters.neighborhoods?.length) && (
                     <button 
                       className="text-sm text-muted-foreground hover:text-foreground"
                       onClick={() => {
                         onFiltersChange({
                           ...filters,
                           city: undefined,
+                          neighborhoods: undefined,
                         });
                       }}
                     >
