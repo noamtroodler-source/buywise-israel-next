@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -64,8 +64,18 @@ export interface DecodedListing {
 export interface DecoderResult {
   result: DecodedListing;
   market_context: MarketContext | null;
+  images: string[];
+  screenshot: string | null;
   usage: { used: number; limit: number };
 }
+
+export type LoadingStep = 'scraping' | 'analyzing' | 'matching' | null;
+
+const LOADING_STEPS: { step: LoadingStep; label: string; progress: number; duration: number }[] = [
+  { step: 'scraping', label: 'Scraping listing page…', progress: 25, duration: 2500 },
+  { step: 'analyzing', label: 'Translating & analyzing…', progress: 60, duration: 4000 },
+  { step: 'matching', label: 'Matching market data…', progress: 90, duration: 1500 },
+];
 
 function getSessionId(): string {
   let id = localStorage.getItem('listing_decoder_session');
@@ -81,6 +91,38 @@ export function useListingDecoder() {
   const [isLoading, setIsLoading] = useState(false);
   const [data, setData] = useState<DecoderResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loadingStep, setLoadingStep] = useState<LoadingStep>(null);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  // Clean up timers
+  useEffect(() => {
+    return () => {
+      timerRef.current.forEach(clearTimeout);
+    };
+  }, []);
+
+  const startLoadingSequence = useCallback(() => {
+    timerRef.current.forEach(clearTimeout);
+    timerRef.current = [];
+    
+    let elapsed = 0;
+    LOADING_STEPS.forEach(({ step, progress, duration }) => {
+      const timer = setTimeout(() => {
+        setLoadingStep(step);
+        setLoadingProgress(progress);
+      }, elapsed);
+      timerRef.current.push(timer);
+      elapsed += duration;
+    });
+  }, []);
+
+  const stopLoadingSequence = useCallback(() => {
+    timerRef.current.forEach(clearTimeout);
+    timerRef.current = [];
+    setLoadingStep(null);
+    setLoadingProgress(100);
+  }, []);
 
   const analyze = useCallback(async () => {
     if (!url.trim()) {
@@ -91,6 +133,8 @@ export function useListingDecoder() {
     setIsLoading(true);
     setError(null);
     setData(null);
+    setLoadingProgress(5);
+    startLoadingSequence();
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -118,15 +162,17 @@ export function useListingDecoder() {
         throw new Error(fnData.error);
       }
 
+      stopLoadingSequence();
       setData(fnData as DecoderResult);
     } catch (err: any) {
       const msg = err?.message || 'Something went wrong';
       setError(msg);
       toast.error(msg);
+      stopLoadingSequence();
     } finally {
       setIsLoading(false);
     }
-  }, [url]);
+  }, [url, startLoadingSequence, stopLoadingSequence]);
 
   const saveAnalysis = useCallback(async () => {
     if (!data) return;
@@ -157,6 +203,8 @@ export function useListingDecoder() {
     setUrl('');
     setData(null);
     setError(null);
+    setLoadingStep(null);
+    setLoadingProgress(0);
   }, []);
 
   return {
@@ -165,6 +213,8 @@ export function useListingDecoder() {
     isLoading,
     data,
     error,
+    loadingStep,
+    loadingProgress,
     analyze,
     saveAnalysis,
     reset,
