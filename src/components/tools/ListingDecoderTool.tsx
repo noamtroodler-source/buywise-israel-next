@@ -324,7 +324,7 @@ export function ListingDecoderTool() {
     if (e.key === 'Enter' && !isLoading) analyze();
   };
 
-  const summary = data?.result.property_summary || {};
+  const summary = (data?.result.property_summary || {}) as Record<string, string | undefined>;
   const locationText = [summary.neighborhood, summary.city].filter(Boolean).join(', ');
   const title = summary.property_type
     ? `${summary.property_type}${locationText ? ` in ${locationText}` : ''}`
