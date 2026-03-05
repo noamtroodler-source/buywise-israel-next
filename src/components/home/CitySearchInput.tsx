@@ -10,6 +10,7 @@ interface CitySearchInputProps {
   value: string;
   onValueChange: (value: string) => void;
   onSearch?: (city: string) => void;
+  onNeighborhoodSelect?: (neighborhood: string, city: string) => void;
   placeholder?: string;
 }
 
