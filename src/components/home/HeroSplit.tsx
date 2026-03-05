@@ -98,6 +98,18 @@ export function HeroSplit() {
                       value={selectedCity}
                       onValueChange={setSelectedCity}
                       placeholder="Where are you looking?"
+                      onNeighborhoodSelect={(neighborhood, city) => {
+                        setSelectedCity(city);
+                        const params = new URLSearchParams();
+                        params.set('city', city);
+                        params.set('neighborhoods', neighborhood);
+                        if (category === 'projects') {
+                          navigate(`/projects?${params.toString()}`);
+                        } else {
+                          params.set('status', category);
+                          navigate(`/listings?${params.toString()}`);
+                        }
+                      }}
                     />
                   </div>
 
