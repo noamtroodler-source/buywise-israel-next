@@ -20,6 +20,7 @@ import { RentVsBuyCalculator } from '@/components/tools/RentVsBuyCalculator';
 import { InvestmentReturnCalculator } from '@/components/tools/InvestmentReturnCalculator';
 import { RenovationCostEstimator } from '@/components/tools/RenovationCostEstimator';
 import { DocumentChecklistTool } from '@/components/tools/DocumentChecklistTool';
+import { ListingDecoderTool } from '@/components/tools/ListingDecoderTool';
 import { DualNavigation } from '@/components/shared/DualNavigation';
 import { TOOLS_BY_PHASE } from '@/lib/navigationConfig';
 import { useIsMobile } from '@/hooks/use-mobile';
