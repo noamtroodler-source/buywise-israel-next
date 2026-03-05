@@ -291,9 +291,12 @@ export function CitySearchInput({
               </div>
             )}
 
-            {/* Filtered Results */}
-            {showFiltered && (
+            {/* Filtered Results - Cities */}
+            {showFiltered && filteredCities.length > 0 && (
               <div>
+                <div className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Cities
+                </div>
                 {filteredCities.map((city, idx) => (
                   <button
                     key={`result-${city}`}
@@ -309,6 +312,35 @@ export function CitySearchInput({
                     </span>
                   </button>
                 ))}
+              </div>
+            )}
+
+            {/* Filtered Results - Neighborhoods */}
+            {showFiltered && filteredNeighborhoods.length > 0 && (
+              <div>
+                {filteredCities.length > 0 && <div className="border-t border-border my-1" />}
+                <div className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Neighborhoods
+                </div>
+                {filteredNeighborhoods.map((n, idx) => {
+                  const itemIndex = filteredCities.length + idx;
+                  return (
+                    <button
+                      key={`neighborhood-${n.city}-${n.name}`}
+                      onClick={() => handleNeighborhoodClick(n.name, n.city)}
+                      className={cn(
+                        "w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-muted transition-colors",
+                        highlightedIndex === itemIndex && "bg-muted"
+                      )}
+                    >
+                      <Building className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <span className="text-muted-foreground">
+                        {highlightMatch(n.name, inputValue)}
+                        <span className="text-xs ml-1 opacity-60">{n.city}</span>
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             )}
 
