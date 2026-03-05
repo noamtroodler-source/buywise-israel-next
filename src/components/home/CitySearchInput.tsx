@@ -119,7 +119,7 @@ export function CitySearchInput({
   const showNoResults = inputValue.trim() && filteredCities.length === 0 && filteredNeighborhoods.length === 0;
 
   // Get all selectable items for keyboard navigation
-  const selectableItems: { type: 'history' | 'popular' | 'filtered'; city: string }[] = [];
+  const selectableItems: { type: 'history' | 'popular' | 'city' | 'neighborhood'; city: string; neighborhood?: string }[] = [];
   if (showHistory) {
     searchHistory.forEach(city => selectableItems.push({ type: 'history', city }));
   }
@@ -128,7 +128,8 @@ export function CitySearchInput({
     popularToShow.forEach(city => selectableItems.push({ type: 'popular', city }));
   }
   if (showFiltered) {
-    filteredCities.forEach(city => selectableItems.push({ type: 'filtered', city }));
+    filteredCities.forEach(city => selectableItems.push({ type: 'city', city }));
+    filteredNeighborhoods.forEach(n => selectableItems.push({ type: 'neighborhood', city: n.city, neighborhood: n.name }));
   }
 
   const handleSelect = (city: string) => {
