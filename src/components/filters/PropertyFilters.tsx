@@ -523,7 +523,7 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
                     externalSearch={citySearch}
                   />
 
-                  
+                  {filters.city && <Label className="text-sm font-medium">Cities</Label>}
 
                    <div className="max-h-[150px] overflow-y-auto space-y-1">
                      {filteredCities?.map(city => (
