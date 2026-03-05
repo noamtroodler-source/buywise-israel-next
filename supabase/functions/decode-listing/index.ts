@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         url: url.trim(),
-        formats: ["markdown"],
+        formats: ["markdown", "screenshot", "links"],
         onlyMainContent: true,
         waitFor: 3000,
       }),
