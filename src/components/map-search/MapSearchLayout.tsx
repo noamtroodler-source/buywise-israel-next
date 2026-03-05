@@ -141,7 +141,7 @@ export default function MapSearchLayout() {
 
   const handleClearFilters = useCallback(() => {
     setMultipleFilters({
-      city: null, min_price: null, max_price: null, min_rooms: null, max_rooms: null,
+      city: null, neighborhoods: null, min_price: null, max_price: null, min_rooms: null, max_rooms: null,
       property_type: null, property_types: null, min_bathrooms: null,
       min_size: null, max_size: null, min_floor: null, max_floor: null,
       min_parking: null, max_days_listed: null, features: null,
