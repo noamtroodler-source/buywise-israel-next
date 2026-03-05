@@ -38,7 +38,7 @@ export function NeighborhoodSelector({
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 border-b border-border pb-3 mb-1">
       <Label className="text-sm font-medium">Neighborhoods</Label>
       {!hasExternalSearch && neighborhoods.length > 6 && (
         <div className="relative">
