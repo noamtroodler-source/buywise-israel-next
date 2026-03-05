@@ -51,7 +51,7 @@ export function NeighborhoodSelector({
           />
         </div>
       )}
-      <div className="max-h-[168px] overflow-y-auto space-y-0.5">
+      <div className="max-h-[84px] overflow-y-auto space-y-0.5">
         {filtered.map(name => {
           const isSelected = selectedNeighborhoods.includes(name);
           return (
