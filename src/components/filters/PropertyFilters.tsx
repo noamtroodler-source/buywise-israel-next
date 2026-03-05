@@ -508,45 +508,48 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
                    </div>
                  )}
  
-                 <div className="border-t my-2" />
- 
-                  <div className="max-h-[150px] overflow-y-auto space-y-1">
-                    {filteredCities?.map(city => (
-                      <button
-                        key={city.id}
-                        className={cn(
-                          "w-full text-left px-3 py-2 text-sm rounded-lg transition-colors",
-                          filters.city === city.name 
-                            ? "bg-primary text-primary-foreground font-medium" 
-                            : "hover:bg-muted"
-                        )}
-                        onClick={() => {
-                          onFiltersChange({
-                            ...filters,
-                            city: city.name,
-                            neighborhoods: undefined,
-                          });
-                          setCityOpen(false);
-                          setCitySearch('');
-                        }}
-                      >
-                        {city.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                  <div className="border-t my-2" />
 
-                {/* Neighborhood Selection - only when city is selected */}
-                <NeighborhoodSelector
-                  cityName={filters.city}
-                  selectedNeighborhoods={filters.neighborhoods || []}
-                  onNeighborhoodsChange={(neighborhoods) => {
-                    onFiltersChange({
-                      ...filters,
-                      neighborhoods: neighborhoods.length > 0 ? neighborhoods : undefined,
-                    });
-                  }}
-                />
+                  {/* Neighborhood Selection - only when city is selected, shown BEFORE cities */}
+                  <NeighborhoodSelector
+                    cityName={filters.city}
+                    selectedNeighborhoods={filters.neighborhoods || []}
+                    onNeighborhoodsChange={(neighborhoods) => {
+                      onFiltersChange({
+                        ...filters,
+                        neighborhoods: neighborhoods.length > 0 ? neighborhoods : undefined,
+                      });
+                    }}
+                    externalSearch={citySearch}
+                  />
+
+                  {filters.city && <Label className="text-sm font-medium">Cities</Label>}
+
+                   <div className="max-h-[150px] overflow-y-auto space-y-1">
+                     {filteredCities?.map(city => (
+                       <button
+                         key={city.id}
+                         className={cn(
+                           "w-full text-left px-3 py-2 text-sm rounded-lg transition-colors",
+                           filters.city === city.name 
+                             ? "bg-primary text-primary-foreground font-medium" 
+                             : "hover:bg-muted"
+                         )}
+                         onClick={() => {
+                           onFiltersChange({
+                             ...filters,
+                             city: city.name,
+                             neighborhoods: undefined,
+                           });
+                           setCityOpen(false);
+                           setCitySearch('');
+                         }}
+                       >
+                         {city.name}
+                       </button>
+                     ))}
+                   </div>
+                </div>
 
 
                 <Link 

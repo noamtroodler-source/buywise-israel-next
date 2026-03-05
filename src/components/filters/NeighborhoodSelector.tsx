@@ -40,7 +40,7 @@ export function NeighborhoodSelector({
   return (
     <div className="space-y-2">
       <Label className="text-sm font-medium">Neighborhoods</Label>
-      {neighborhoods.length > 6 && (
+      {!hasExternalSearch && neighborhoods.length > 6 && (
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
