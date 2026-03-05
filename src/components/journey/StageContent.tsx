@@ -92,6 +92,3 @@ export function StageContent({ stage }: StageContentProps) {
     </div>
   );
 }
-
-// Need cn import
-import { cn } from '@/lib/utils';
