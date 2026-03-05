@@ -644,31 +644,6 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                       <span className="text-xs">{daysLabel}</span>
                     </div>
                   )}
-                  {/* Agency Logo */}
-                  {property.agent?.agency?.logo_url && (
-                    <TooltipProvider delayDuration={200}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              if (property.agent?.agency) {
-                                navigate(`/agencies/${property.agent.agency.name.toLowerCase().replace(/\s+/g, '-')}`);
-                              }
-                            }}
-                            className="ml-auto flex-shrink-0"
-                          >
-                            <Avatar className="h-6 w-6 border border-border/50">
-                              <AvatarImage src={property.agent.agency.logo_url} alt={property.agent.agency.name} />
-                              <AvatarFallback className="bg-muted"><Building2 className="h-3 w-3 text-muted-foreground" /></AvatarFallback>
-                            </Avatar>
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent side="top" className="text-xs">{property.agent.agency.name}</TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
                 </div>
               </CardContent>
             </>
