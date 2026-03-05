@@ -6,6 +6,7 @@ interface NeighborhoodChipsProps {
   map: google.maps.Map | null;
   selectedNeighborhood: string | null;
   onSelect: (name: string | null) => void;
+  onFilterNeighborhood?: (name: string | null) => void;
 }
 
 export function NeighborhoodChips({ city, map, selectedNeighborhood, onSelect }: NeighborhoodChipsProps) {
