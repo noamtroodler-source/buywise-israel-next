@@ -29,6 +29,7 @@ function toBounds(b: any): MapBounds {
 function urlToPropertyFilters(u: MapUrlFilters): PropertyFilters {
   return {
     city: u.city ?? undefined,
+    neighborhoods: u.neighborhoods ?? undefined,
     min_price: u.minPrice ?? undefined,
     max_price: u.maxPrice ?? undefined,
     min_rooms: u.minRooms ?? undefined,
