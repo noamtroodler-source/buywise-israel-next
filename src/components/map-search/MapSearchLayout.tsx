@@ -327,6 +327,7 @@ export default function MapSearchLayout() {
           initialCenter={initialCenter}
           initialZoom={initialZoom}
           onMapMove={handleMapMove}
+          onNeighborhoodFilter={handleNeighborhoodFilter}
         />
 
         <MobileMapFilterBar
