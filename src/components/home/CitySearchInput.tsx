@@ -141,6 +141,15 @@ export function CitySearchInput({
     onSearch?.(city);
   };
 
+  const handleNeighborhoodClick = (neighborhood: string, city: string) => {
+    setInputValue(`${neighborhood}, ${city}`);
+    onValueChange(city);
+    addToSearchHistory(`${neighborhood}, ${city}`);
+    setSearchHistory(getSearchHistory());
+    setIsOpen(false);
+    onNeighborhoodSelect?.(neighborhood, city);
+  };
+
   const handleClear = (e: React.MouseEvent) => {
     e.stopPropagation();
     setInputValue('');
