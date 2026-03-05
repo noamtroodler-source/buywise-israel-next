@@ -50,6 +50,7 @@ const Pricing = lazy(() => import("./pages/Pricing"));
 const CheckoutSuccess = lazy(() => import("./pages/CheckoutSuccess"));
 const CheckoutCancel = lazy(() => import("./pages/CheckoutCancel"));
 const Profile = lazy(() => import("./pages/Profile"));
+const MyJourney = lazy(() => import("./pages/MyJourney"));
 const Favorites = lazy(() => import("./pages/Favorites"));
 const MapSearch = lazy(() => import("./pages/MapSearch"));
 
