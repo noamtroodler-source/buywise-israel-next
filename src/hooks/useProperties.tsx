@@ -180,7 +180,9 @@ export function useProperties(filters?: PropertyFilters) {
       } else if (filters?.city) {
         query = query.ilike('city', `%${filters.city}%`);
       }
-      if (filters?.neighborhood) {
+      if (filters?.neighborhoods?.length) {
+        query = query.in('neighborhood', filters.neighborhoods);
+      } else if (filters?.neighborhood) {
         query = query.ilike('neighborhood', `%${filters.neighborhood}%`);
       }
       if (filters?.property_types && filters.property_types.length > 0) {

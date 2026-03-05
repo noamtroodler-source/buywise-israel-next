@@ -47,6 +47,7 @@ export function useMapFilters() {
   const filters: MapUrlFilters = useMemo(() => ({
     status: (searchParams.get('status') as ListingType) || 'for_sale',
     city: searchParams.get('city'),
+    neighborhoods: toArray(searchParams.get('neighborhoods')),
     minPrice: toNum(searchParams.get('min_price')),
     maxPrice: toNum(searchParams.get('max_price')),
     minRooms: toNum(searchParams.get('min_rooms')),
