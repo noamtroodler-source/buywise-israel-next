@@ -115,8 +115,8 @@ export function CitySearchInput({
   // Build the list of items to show
   const showHistory = !inputValue.trim() && searchHistory.length > 0;
   const showPopular = !inputValue.trim();
-  const showFiltered = inputValue.trim() && filteredCities.length > 0;
-  const showNoResults = inputValue.trim() && filteredCities.length === 0;
+  const showFiltered = inputValue.trim() && (filteredCities.length > 0 || filteredNeighborhoods.length > 0);
+  const showNoResults = inputValue.trim() && filteredCities.length === 0 && filteredNeighborhoods.length === 0;
 
   // Get all selectable items for keyboard navigation
   const selectableItems: { type: 'history' | 'popular' | 'filtered'; city: string }[] = [];
