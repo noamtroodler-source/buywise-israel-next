@@ -339,9 +339,30 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                   <FavoriteButton propertyId={property.id} propertyPrice={property.price} />
                 </div>
 
-                {/* Agency Logo - Bottom Right of Image */}
-                {property.agent?.agency?.logo_url && (
-                  <div className="absolute bottom-2 right-2 z-10">
+              </div>
+
+              {/* Content Section BELOW Image - Clean White Area */}
+              <div className="p-3 pt-2.5 pb-3 bg-white border-t border-black/5 space-y-1">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-baseline gap-2">
+                    <p className="font-bold text-foreground text-lg">
+                      {formatPrice(property.price, property.currency || 'ILS')}
+                      {property.listing_status === 'for_rent' && (
+                        <span className="text-xs font-normal text-muted-foreground">/mo</span>
+                      )}
+                    </p>
+                    {hasPriceDrop && (
+                      <span className="text-sm text-muted-foreground line-through">
+                        {formatPrice(property.original_price!, property.currency || 'ILS')}
+                      </span>
+                    )}
+                    {hasPriceIncrease && (
+                      <span className="text-sm text-muted-foreground line-through">
+                        {formatPrice(property.original_price!, property.currency || 'ILS')}
+                      </span>
+                    )}
+                  </div>
+                  {property.agent?.agency?.logo_url && (
                     <TooltipProvider delayDuration={200}>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -355,7 +376,7 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                             }}
                             className="flex-shrink-0"
                           >
-                            <Avatar className="h-7 w-7 border-2 border-white shadow-sm">
+                            <Avatar className="h-7 w-7 border border-border/50 shadow-sm">
                               <AvatarImage src={property.agent.agency.logo_url} alt={property.agent.agency.name} />
                               <AvatarFallback className="bg-muted"><Building2 className="h-3 w-3 text-muted-foreground" /></AvatarFallback>
                             </Avatar>
@@ -364,28 +385,6 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                         <TooltipContent side="top" className="text-xs">{property.agent.agency.name}</TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
-                  </div>
-                )}
-              </div>
-
-              {/* Content Section BELOW Image - Clean White Area */}
-              <div className="p-3 pt-2.5 pb-3 bg-white border-t border-black/5 space-y-1">
-                <div className="flex items-baseline gap-2">
-                  <p className="font-bold text-foreground text-lg">
-                    {formatPrice(property.price, property.currency || 'ILS')}
-                    {property.listing_status === 'for_rent' && (
-                      <span className="text-xs font-normal text-muted-foreground">/mo</span>
-                    )}
-                  </p>
-                  {hasPriceDrop && (
-                    <span className="text-sm text-muted-foreground line-through">
-                      {formatPrice(property.original_price!, property.currency || 'ILS')}
-                    </span>
-                  )}
-                  {hasPriceIncrease && (
-                    <span className="text-sm text-muted-foreground line-through">
-                      {formatPrice(property.original_price!, property.currency || 'ILS')}
-                    </span>
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -558,38 +557,11 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                   <FavoriteButton propertyId={property.id} propertyPrice={property.price} />
                 </div>
 
-                {/* Agency Logo - Bottom Right of Image */}
-                {property.agent?.agency?.logo_url && (
-                  <div className="absolute bottom-2 right-2 z-10">
-                    <TooltipProvider delayDuration={200}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              if (property.agent?.agency) {
-                                navigate(`/agencies/${property.agent.agency.name.toLowerCase().replace(/\s+/g, '-')}`);
-                              }
-                            }}
-                            className="flex-shrink-0"
-                          >
-                            <Avatar className="h-7 w-7 border-2 border-white shadow-sm">
-                              <AvatarImage src={property.agent.agency.logo_url} alt={property.agent.agency.name} />
-                              <AvatarFallback className="bg-muted"><Building2 className="h-3 w-3 text-muted-foreground" /></AvatarFallback>
-                            </Avatar>
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent side="top" className="text-xs">{property.agent.agency.name}</TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                )}
               </div>
 
               <CardContent className="p-3 space-y-1.5">
-                {/* Price */}
-                <div className="flex items-baseline justify-between">
+                {/* Price + Agency Logo */}
+                <div className="flex items-center justify-between">
                   <div className="flex items-baseline gap-2">
                     <span className="font-bold text-foreground text-lg">
                       {formatPrice(property.price, property.currency || 'ILS')}
@@ -610,6 +582,30 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                   </div>
                   {property.listing_status === 'for_sale' && showMonthlyEstimate && (
                     <MonthlyEstimate price={property.price} />
+                  )}
+                  {property.agent?.agency?.logo_url && (
+                    <TooltipProvider delayDuration={200}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              if (property.agent?.agency) {
+                                navigate(`/agencies/${property.agent.agency.name.toLowerCase().replace(/\s+/g, '-')}`);
+                              }
+                            }}
+                            className="flex-shrink-0 ml-auto"
+                          >
+                            <Avatar className="h-7 w-7 border border-border/50 shadow-sm">
+                              <AvatarImage src={property.agent.agency.logo_url} alt={property.agent.agency.name} />
+                              <AvatarFallback className="bg-muted"><Building2 className="h-3 w-3 text-muted-foreground" /></AvatarFallback>
+                            </Avatar>
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="text-xs">{property.agent.agency.name}</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   )}
                 </div>
 
