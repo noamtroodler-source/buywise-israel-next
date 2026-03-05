@@ -353,6 +353,8 @@ Be direct, practical, and buyer-focused. Don't sugarcoat.`;
         success: true,
         result: decodedResult,
         market_context: marketContext,
+        images: extractedImages,
+        screenshot: screenshotUrl,
         usage: { used: newUsage, limit: dailyLimit },
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
