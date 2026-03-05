@@ -53,6 +53,7 @@ function urlToPropertyFilters(u: MapUrlFilters): PropertyFilters {
 function propertyFiltersToUrlParams(f: PropertyFilters): Record<string, string | number | null> {
   return {
     city: f.city ?? null,
+    neighborhoods: f.neighborhoods?.length ? f.neighborhoods.join(',') : null,
     min_price: f.min_price ?? null,
     max_price: f.max_price ?? null,
     min_rooms: f.min_rooms ?? null,
