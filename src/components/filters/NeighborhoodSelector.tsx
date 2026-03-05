@@ -38,7 +38,7 @@ export function NeighborhoodSelector({
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 border-b border-border pb-3 mb-1">
       <Label className="text-sm font-medium">Neighborhoods</Label>
       {!hasExternalSearch && neighborhoods.length > 6 && (
         <div className="relative">
@@ -51,7 +51,7 @@ export function NeighborhoodSelector({
           />
         </div>
       )}
-      <div className="max-h-[120px] overflow-y-auto space-y-0.5">
+      <div className="max-h-[168px] overflow-y-auto space-y-0.5">
         {filtered.map(name => {
           const isSelected = selectedNeighborhoods.includes(name);
           return (
