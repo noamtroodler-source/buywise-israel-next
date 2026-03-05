@@ -84,6 +84,13 @@ const allTools: Record<string, Tool> = {
     icon: ClipboardList,
     guidanceHint: 'Keep this open during the process',
   },
+  'listing-decoder': {
+    id: 'listing-decoder',
+    label: 'Listing Decoder',
+    description: 'Paste a Hebrew listing URL — get a full English breakdown, missing data flags, and questions to ask.',
+    icon: Languages,
+    guidanceHint: 'Found a listing? Start here',
+  },
 };
 
 const toolComponents: Record<string, React.ComponentType> = {
