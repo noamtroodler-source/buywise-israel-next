@@ -338,10 +338,38 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                   )}
                   <FavoriteButton propertyId={property.id} propertyPrice={property.price} />
                 </div>
+
+                {/* Agency Logo - Bottom Right of Image */}
+                {property.agent?.agency?.logo_url && (
+                  <div className="absolute bottom-2 right-2 z-10">
+                    <TooltipProvider delayDuration={200}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              if (property.agent?.agency) {
+                                navigate(`/agencies/${property.agent.agency.name.toLowerCase().replace(/\s+/g, '-')}`);
+                              }
+                            }}
+                            className="flex-shrink-0"
+                          >
+                            <Avatar className="h-7 w-7 border-2 border-white shadow-sm">
+                              <AvatarImage src={property.agent.agency.logo_url} alt={property.agent.agency.name} />
+                              <AvatarFallback className="bg-muted"><Building2 className="h-3 w-3 text-muted-foreground" /></AvatarFallback>
+                            </Avatar>
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="text-xs">{property.agent.agency.name}</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                )}
               </div>
 
               {/* Content Section BELOW Image - Clean White Area */}
-              <div className="p-3 bg-white border-t border-black/5">
+              <div className="p-3 pt-2.5 pb-3 bg-white border-t border-black/5 space-y-1">
                 <div className="flex items-baseline gap-2">
                   <p className="font-bold text-foreground text-lg">
                     {formatPrice(property.price, property.currency || 'ILS')}
@@ -361,49 +389,22 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {property.bedrooms} bd{(property as any).additional_rooms ? ` + ${(property as any).additional_rooms}` : ''} | {property.bathrooms} ba{property.size_sqm ? ` | ${formatArea(property.size_sqm)}` : ''}
+                  {property.bedrooms} bd{(property as any).additional_rooms ? ` + ${(property as any).additional_rooms}` : ''} · {property.bathrooms} ba{property.size_sqm ? ` · ${formatArea(property.size_sqm)}` : ''}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">
                   {property.neighborhood ? `${property.neighborhood}, ` : ''}{property.city}
                 </p>
-                {/* Days on Market + Agency Logo row */}
-                <div className="flex items-center justify-between pt-1">
-                  {daysLabel && (
-                    <div className={cn(
-                      "flex items-center gap-1 text-xs",
-                     freshnessTier === 'hot' ? "text-semantic-teal font-medium" :
-                      freshnessTier === 'fresh' ? "text-semantic-teal font-medium" :
-                      "text-muted-foreground"
-                    )}>
-                      {freshnessTier === 'hot' ? <Flame className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
-                      <span>{daysLabel}</span>
-                    </div>
-                  )}
-                  {property.agent?.agency?.logo_url && (
-                    <TooltipProvider delayDuration={200}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              if (property.agent?.agency) {
-                                navigate(`/agencies/${property.agent.agency.name.toLowerCase().replace(/\s+/g, '-')}`);
-                              }
-                            }}
-                            className="ml-auto flex-shrink-0"
-                          >
-                            <Avatar className="h-6 w-6 border border-border/50">
-                              <AvatarImage src={property.agent.agency.logo_url} alt={property.agent.agency.name} />
-                              <AvatarFallback className="bg-muted"><Building2 className="h-3 w-3 text-muted-foreground" /></AvatarFallback>
-                            </Avatar>
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent side="top" className="text-xs">{property.agent.agency.name}</TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
-                </div>
+                {daysLabel && (
+                  <div className={cn(
+                    "flex items-center gap-1 text-xs pt-0.5",
+                    freshnessTier === 'hot' ? "text-semantic-teal font-medium" :
+                    freshnessTier === 'fresh' ? "text-semantic-teal font-medium" :
+                    "text-muted-foreground"
+                  )}>
+                    {freshnessTier === 'hot' ? <Flame className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
+                    <span>{daysLabel}</span>
+                  </div>
+                )}
               </div>
             </>
           ) : (
@@ -556,6 +557,34 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                   )}
                   <FavoriteButton propertyId={property.id} propertyPrice={property.price} />
                 </div>
+
+                {/* Agency Logo - Bottom Right of Image */}
+                {property.agent?.agency?.logo_url && (
+                  <div className="absolute bottom-2 right-2 z-10">
+                    <TooltipProvider delayDuration={200}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              if (property.agent?.agency) {
+                                navigate(`/agencies/${property.agent.agency.name.toLowerCase().replace(/\s+/g, '-')}`);
+                              }
+                            }}
+                            className="flex-shrink-0"
+                          >
+                            <Avatar className="h-7 w-7 border-2 border-white shadow-sm">
+                              <AvatarImage src={property.agent.agency.logo_url} alt={property.agent.agency.name} />
+                              <AvatarFallback className="bg-muted"><Building2 className="h-3 w-3 text-muted-foreground" /></AvatarFallback>
+                            </Avatar>
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="text-xs">{property.agent.agency.name}</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                )}
               </div>
 
               <CardContent className="p-3 space-y-1.5">
@@ -614,31 +643,6 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                       <Clock className="h-3.5 w-3.5" />
                       <span className="text-xs">{daysLabel}</span>
                     </div>
-                  )}
-                  {/* Agency Logo */}
-                  {property.agent?.agency?.logo_url && (
-                    <TooltipProvider delayDuration={200}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              if (property.agent?.agency) {
-                                navigate(`/agencies/${property.agent.agency.name.toLowerCase().replace(/\s+/g, '-')}`);
-                              }
-                            }}
-                            className="ml-auto flex-shrink-0"
-                          >
-                            <Avatar className="h-6 w-6 border border-border/50">
-                              <AvatarImage src={property.agent.agency.logo_url} alt={property.agent.agency.name} />
-                              <AvatarFallback className="bg-muted"><Building2 className="h-3 w-3 text-muted-foreground" /></AvatarFallback>
-                            </Avatar>
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent side="top" className="text-xs">{property.agent.agency.name}</TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
                   )}
                 </div>
               </CardContent>
