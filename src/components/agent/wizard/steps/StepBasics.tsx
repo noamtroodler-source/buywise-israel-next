@@ -251,13 +251,18 @@ export function StepBasics() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="neighborhood">Neighborhood</Label>
+              <Label htmlFor="neighborhood">Neighborhood *</Label>
               <Input
                 id="neighborhood"
                 value={data.neighborhood}
                 onChange={(e) => updateData({ neighborhood: e.target.value })}
                 placeholder="Auto-filled or enter manually"
                 className="h-11 rounded-xl"
+                required
+              />
+              {!data.neighborhood && data.city && (
+                <p className="text-xs text-destructive">Neighborhood is required</p>
+              )}
               />
             </div>
           </div>
