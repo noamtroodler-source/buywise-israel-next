@@ -560,8 +560,8 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
               </div>
 
               <CardContent className="p-3 space-y-1.5">
-                {/* Price */}
-                <div className="flex items-baseline justify-between">
+                {/* Price + Agency Logo */}
+                <div className="flex items-center justify-between">
                   <div className="flex items-baseline gap-2">
                     <span className="font-bold text-foreground text-lg">
                       {formatPrice(property.price, property.currency || 'ILS')}
