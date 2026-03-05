@@ -29,6 +29,7 @@ function toBounds(b: any): MapBounds {
 function urlToPropertyFilters(u: MapUrlFilters): PropertyFilters {
   return {
     city: u.city ?? undefined,
+    neighborhoods: u.neighborhoods ?? undefined,
     min_price: u.minPrice ?? undefined,
     max_price: u.maxPrice ?? undefined,
     min_rooms: u.minRooms ?? undefined,
@@ -52,6 +53,7 @@ function urlToPropertyFilters(u: MapUrlFilters): PropertyFilters {
 function propertyFiltersToUrlParams(f: PropertyFilters): Record<string, string | number | null> {
   return {
     city: f.city ?? null,
+    neighborhoods: f.neighborhoods?.length ? f.neighborhoods.join(',') : null,
     min_price: f.min_price ?? null,
     max_price: f.max_price ?? null,
     min_rooms: f.min_rooms ?? null,
@@ -139,7 +141,7 @@ export default function MapSearchLayout() {
 
   const handleClearFilters = useCallback(() => {
     setMultipleFilters({
-      city: null, min_price: null, max_price: null, min_rooms: null, max_rooms: null,
+      city: null, neighborhoods: null, min_price: null, max_price: null, min_rooms: null, max_rooms: null,
       property_type: null, property_types: null, min_bathrooms: null,
       min_size: null, max_size: null, min_floor: null, max_floor: null,
       min_parking: null, max_days_listed: null, features: null,
@@ -226,6 +228,14 @@ export default function MapSearchLayout() {
     setFilter('sort_by', value);
   }, [setFilter]);
 
+  const handleNeighborhoodFilter = useCallback((name: string | null) => {
+    if (name) {
+      setFilter('neighborhoods', name);
+    } else {
+      setFilter('neighborhoods', null);
+    }
+  }, [setFilter]);
+
   const handleMarkerHover = useCallback((id: string | null) => {
     setHoveredPropertyId(id);
   }, []);
@@ -268,6 +278,7 @@ export default function MapSearchLayout() {
               initialCenter={initialCenter}
               initialZoom={initialZoom}
               onMapMove={handleMapMove}
+              onNeighborhoodFilter={handleNeighborhoodFilter}
             />
             <MapListPanel
               items={items}
@@ -316,6 +327,7 @@ export default function MapSearchLayout() {
           initialCenter={initialCenter}
           initialZoom={initialZoom}
           onMapMove={handleMapMove}
+          onNeighborhoodFilter={handleNeighborhoodFilter}
         />
 
         <MobileMapFilterBar

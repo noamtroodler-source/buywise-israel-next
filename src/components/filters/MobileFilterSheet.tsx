@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { MapPin, DollarSign, LayoutGrid, Building2, SlidersHorizontal, Filter, X, Loader2, Bath, Car, Layers, Clock, CalendarCheck, Cat, Dog, PawPrint, Navigation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +13,7 @@ import { getLocationIcon } from '@/types/savedLocation';
 import { PriceRangeSlider } from '@/components/filters/PriceRangeSlider';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { NeighborhoodSelector } from '@/components/filters/NeighborhoodSelector';
 
 interface MobileFilterSheetProps {
   open: boolean;
@@ -208,12 +209,29 @@ export function MobileFilterSheet({
                         ? "bg-primary text-primary-foreground" 
                         : "bg-muted hover:bg-muted/80"
                     )}
-                    onClick={() => updateFilter('city', filters.city === city.name ? undefined : city.name)}
+                    onClick={() => {
+                      if (filters.city === city.name) {
+                        onFiltersChange({ ...filters, city: undefined, neighborhoods: undefined });
+                      } else {
+                        onFiltersChange({ ...filters, city: city.name, neighborhoods: undefined });
+                      }
+                    }}
                   >
                     {city.name}
                   </button>
                 ))}
               </div>
+              {/* Neighborhood selection after city is chosen */}
+              <NeighborhoodSelector
+                cityName={filters.city}
+                selectedNeighborhoods={filters.neighborhoods || []}
+                onNeighborhoodsChange={(neighborhoods) => {
+                  onFiltersChange({
+                    ...filters,
+                    neighborhoods: neighborhoods.length > 0 ? neighborhoods : undefined,
+                  });
+                }}
+              />
             </section>
 
             {/* Price Section */}

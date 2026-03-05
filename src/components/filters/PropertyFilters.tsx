@@ -9,6 +9,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { PropertyFilters as PropertyFiltersType, PropertyType, PropertyCondition, SortOption } from '@/types/database';
 import { useCities } from '@/hooks/useCities';
+import { useNeighborhoodNames } from '@/hooks/useNeighborhoodNames';
+import { NeighborhoodSelector } from '@/components/filters/NeighborhoodSelector';
 import { cn } from '@/lib/utils';
 import { matchCities } from '@/lib/utils/cityMatcher';
 import { Link, useNavigate } from 'react-router-dom';
@@ -438,10 +440,16 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
             <PopoverTrigger asChild>
               <Button 
                 variant="outline" 
-                className={cn(filterButtonBase, filters.city && "border-primary/50", cityOpen && filterButtonActive)}
+                className={cn(filterButtonBase, (filters.city || filters.neighborhoods?.length) && "border-primary/50", cityOpen && filterButtonActive)}
               >
                 <MapPin className="h-4 w-4" />
-                <span>{filters.city || 'City'}</span>
+                <span>
+                  {filters.neighborhoods?.length === 1
+                    ? filters.neighborhoods[0]
+                    : filters.neighborhoods?.length
+                      ? `${filters.city} · ${filters.neighborhoods.length} areas`
+                      : filters.city || 'City'}
+                </span>
                 {cityOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
               </Button>
             </PopoverTrigger>
@@ -449,13 +457,14 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
               <div className="p-4 space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold text-lg">Location</h3>
-                  {filters.city && (
+                  {(filters.city || filters.neighborhoods?.length) && (
                     <button 
                       className="text-sm text-muted-foreground hover:text-foreground"
                       onClick={() => {
                         onFiltersChange({
                           ...filters,
                           city: undefined,
+                          neighborhoods: undefined,
                         });
                       }}
                     >
@@ -526,6 +535,18 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
                     ))}
                   </div>
                 </div>
+
+                {/* Neighborhood Selection - only when city is selected */}
+                <NeighborhoodSelector
+                  cityName={filters.city}
+                  selectedNeighborhoods={filters.neighborhoods || []}
+                  onNeighborhoodsChange={(neighborhoods) => {
+                    onFiltersChange({
+                      ...filters,
+                      neighborhoods: neighborhoods.length > 0 ? neighborhoods : undefined,
+                    });
+                  }}
+                />
 
 
                 <Link 

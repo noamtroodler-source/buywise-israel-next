@@ -1,14 +1,16 @@
 import * as React from 'react';
-import { useRef, useState, useEffect } from 'react';
-import { MapPin, Clock, X, Search } from 'lucide-react';
+import { useRef, useState, useEffect, useMemo } from 'react';
+import { MapPin, Clock, X, Search, Building } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCities } from '@/hooks/useCities';
+import { useAllNeighborhoods } from '@/hooks/useNeighborhoodNames';
 import { cityMatchesQuery } from '@/lib/utils/cityMatcher';
 
 interface CitySearchInputProps {
   value: string;
   onValueChange: (value: string) => void;
   onSearch?: (city: string) => void;
+  onNeighborhoodSelect?: (neighborhood: string, city: string) => void;
   placeholder?: string;
 }
 
@@ -57,6 +59,7 @@ export function CitySearchInput({
   value, 
   onValueChange, 
   onSearch,
+  onNeighborhoodSelect,
   placeholder = 'Where are you looking?' 
 }: CitySearchInputProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -68,6 +71,7 @@ export function CitySearchInput({
   const containerRef = useRef<HTMLDivElement>(null);
   
   const { data: cities = [] } = useCities();
+  const { data: allNeighborhoods = [] } = useAllNeighborhoods();
   const allCityNames = cities.map(c => c.name);
 
   // Load search history on mount
@@ -99,14 +103,23 @@ export function CitySearchInput({
     ? allCityNames.filter(city => cityMatchesQuery(city, inputValue))
     : [];
 
+  // Filter neighborhoods based on input
+  const filteredNeighborhoods = useMemo(() => {
+    if (!inputValue.trim()) return [];
+    const q = inputValue.trim().toLowerCase();
+    return allNeighborhoods
+      .filter(n => n.name.toLowerCase().includes(q))
+      .slice(0, 8);
+  }, [inputValue, allNeighborhoods]);
+
   // Build the list of items to show
   const showHistory = !inputValue.trim() && searchHistory.length > 0;
   const showPopular = !inputValue.trim();
-  const showFiltered = inputValue.trim() && filteredCities.length > 0;
-  const showNoResults = inputValue.trim() && filteredCities.length === 0;
+  const showFiltered = inputValue.trim() && (filteredCities.length > 0 || filteredNeighborhoods.length > 0);
+  const showNoResults = inputValue.trim() && filteredCities.length === 0 && filteredNeighborhoods.length === 0;
 
   // Get all selectable items for keyboard navigation
-  const selectableItems: { type: 'history' | 'popular' | 'filtered'; city: string }[] = [];
+  const selectableItems: { type: 'history' | 'popular' | 'city' | 'neighborhood'; city: string; neighborhood?: string }[] = [];
   if (showHistory) {
     searchHistory.forEach(city => selectableItems.push({ type: 'history', city }));
   }
@@ -115,7 +128,8 @@ export function CitySearchInput({
     popularToShow.forEach(city => selectableItems.push({ type: 'popular', city }));
   }
   if (showFiltered) {
-    filteredCities.forEach(city => selectableItems.push({ type: 'filtered', city }));
+    filteredCities.forEach(city => selectableItems.push({ type: 'city', city }));
+    filteredNeighborhoods.forEach(n => selectableItems.push({ type: 'neighborhood', city: n.city, neighborhood: n.name }));
   }
 
   const handleSelect = (city: string) => {
@@ -125,6 +139,15 @@ export function CitySearchInput({
     setSearchHistory(getSearchHistory());
     setIsOpen(false);
     onSearch?.(city);
+  };
+
+  const handleNeighborhoodClick = (neighborhood: string, city: string) => {
+    setInputValue(`${neighborhood}, ${city}`);
+    onValueChange(city);
+    addToSearchHistory(`${neighborhood}, ${city}`);
+    setSearchHistory(getSearchHistory());
+    setIsOpen(false);
+    onNeighborhoodSelect?.(neighborhood, city);
   };
 
   const handleClear = (e: React.MouseEvent) => {
@@ -158,9 +181,19 @@ export function CitySearchInput({
       case 'Enter':
         e.preventDefault();
         if (highlightedIndex >= 0 && selectableItems[highlightedIndex]) {
-          handleSelect(selectableItems[highlightedIndex].city);
+          const item = selectableItems[highlightedIndex];
+          if (item.type === 'neighborhood' && item.neighborhood) {
+            handleNeighborhoodClick(item.neighborhood, item.city);
+          } else {
+            handleSelect(item.city);
+          }
         } else if (selectableItems.length > 0) {
-          handleSelect(selectableItems[0].city);
+          const item = selectableItems[0];
+          if (item.type === 'neighborhood' && item.neighborhood) {
+            handleNeighborhoodClick(item.neighborhood, item.city);
+          } else {
+            handleSelect(item.city);
+          }
         }
         break;
       case 'Escape':
@@ -258,9 +291,12 @@ export function CitySearchInput({
               </div>
             )}
 
-            {/* Filtered Results */}
-            {showFiltered && (
+            {/* Filtered Results - Cities */}
+            {showFiltered && filteredCities.length > 0 && (
               <div>
+                <div className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Cities
+                </div>
                 {filteredCities.map((city, idx) => (
                   <button
                     key={`result-${city}`}
@@ -276,6 +312,35 @@ export function CitySearchInput({
                     </span>
                   </button>
                 ))}
+              </div>
+            )}
+
+            {/* Filtered Results - Neighborhoods */}
+            {showFiltered && filteredNeighborhoods.length > 0 && (
+              <div>
+                {filteredCities.length > 0 && <div className="border-t border-border my-1" />}
+                <div className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Neighborhoods
+                </div>
+                {filteredNeighborhoods.map((n, idx) => {
+                  const itemIndex = filteredCities.length + idx;
+                  return (
+                    <button
+                      key={`neighborhood-${n.city}-${n.name}`}
+                      onClick={() => handleNeighborhoodClick(n.name, n.city)}
+                      className={cn(
+                        "w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-muted transition-colors",
+                        highlightedIndex === itemIndex && "bg-muted"
+                      )}
+                    >
+                      <Building className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <span className="text-muted-foreground">
+                        {highlightMatch(n.name, inputValue)}
+                        <span className="text-xs ml-1 opacity-60">{n.city}</span>
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             )}
 

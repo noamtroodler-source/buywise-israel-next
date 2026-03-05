@@ -50,6 +50,7 @@ interface PropertyMapProps {
   initialCenter?: [number, number];
   initialZoom?: number;
   onMapMove?: (lat: number, lng: number, zoom: number) => void;
+  onNeighborhoodFilter?: (name: string | null) => void;
 }
 
 export function PropertyMap({
@@ -69,6 +70,7 @@ export function PropertyMap({
   initialCenter,
   initialZoom,
   onMapMove,
+  onNeighborhoodFilter,
 }: PropertyMapProps) {
   const { isLoaded } = useGoogleMaps();
   const [map, setMap] = useState<google.maps.Map | null>(null);
@@ -353,6 +355,7 @@ export function PropertyMap({
           map={map}
           selectedNeighborhood={selectedNeighborhood}
           onSelect={setSelectedNeighborhood}
+          onFilterNeighborhood={onNeighborhoodFilter}
         />
       )}
     </div>
