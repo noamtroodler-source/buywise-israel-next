@@ -343,22 +343,48 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
 
               {/* Content Section BELOW Image - Clean White Area */}
               <div className="p-3 pt-2.5 pb-3 bg-white border-t border-black/5 space-y-1">
-                <div className="flex items-baseline gap-2">
-                  <p className="font-bold text-foreground text-lg">
-                    {formatPrice(property.price, property.currency || 'ILS')}
-                    {property.listing_status === 'for_rent' && (
-                      <span className="text-xs font-normal text-muted-foreground">/mo</span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-baseline gap-2">
+                    <p className="font-bold text-foreground text-lg">
+                      {formatPrice(property.price, property.currency || 'ILS')}
+                      {property.listing_status === 'for_rent' && (
+                        <span className="text-xs font-normal text-muted-foreground">/mo</span>
+                      )}
+                    </p>
+                    {hasPriceDrop && (
+                      <span className="text-sm text-muted-foreground line-through">
+                        {formatPrice(property.original_price!, property.currency || 'ILS')}
+                      </span>
                     )}
-                  </p>
-                  {hasPriceDrop && (
-                    <span className="text-sm text-muted-foreground line-through">
-                      {formatPrice(property.original_price!, property.currency || 'ILS')}
-                    </span>
-                  )}
-                  {hasPriceIncrease && (
-                    <span className="text-sm text-muted-foreground line-through">
-                      {formatPrice(property.original_price!, property.currency || 'ILS')}
-                    </span>
+                    {hasPriceIncrease && (
+                      <span className="text-sm text-muted-foreground line-through">
+                        {formatPrice(property.original_price!, property.currency || 'ILS')}
+                      </span>
+                    )}
+                  </div>
+                  {property.agent?.agency?.logo_url && (
+                    <TooltipProvider delayDuration={200}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              if (property.agent?.agency) {
+                                navigate(`/agencies/${property.agent.agency.name.toLowerCase().replace(/\s+/g, '-')}`);
+                              }
+                            }}
+                            className="flex-shrink-0"
+                          >
+                            <Avatar className="h-7 w-7 border border-border/50 shadow-sm">
+                              <AvatarImage src={property.agent.agency.logo_url} alt={property.agent.agency.name} />
+                              <AvatarFallback className="bg-muted"><Building2 className="h-3 w-3 text-muted-foreground" /></AvatarFallback>
+                            </Avatar>
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="text-xs">{property.agent.agency.name}</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground">
