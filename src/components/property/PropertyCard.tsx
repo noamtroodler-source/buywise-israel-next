@@ -580,6 +580,9 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                       </span>
                     )}
                   </div>
+                  {property.listing_status === 'for_sale' && showMonthlyEstimate && (
+                    <MonthlyEstimate price={property.price} />
+                  )}
                   {property.agent?.agency?.logo_url && (
                     <TooltipProvider delayDuration={200}>
                       <Tooltip>
@@ -592,7 +595,7 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                                 navigate(`/agencies/${property.agent.agency.name.toLowerCase().replace(/\s+/g, '-')}`);
                               }
                             }}
-                            className="flex-shrink-0"
+                            className="flex-shrink-0 ml-auto"
                           >
                             <Avatar className="h-7 w-7 border border-border/50 shadow-sm">
                               <AvatarImage src={property.agent.agency.logo_url} alt={property.agent.agency.name} />
