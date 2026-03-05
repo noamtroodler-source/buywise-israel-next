@@ -59,6 +59,7 @@ export function CitySearchInput({
   value, 
   onValueChange, 
   onSearch,
+  onNeighborhoodSelect,
   placeholder = 'Where are you looking?' 
 }: CitySearchInputProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -70,6 +71,7 @@ export function CitySearchInput({
   const containerRef = useRef<HTMLDivElement>(null);
   
   const { data: cities = [] } = useCities();
+  const { data: allNeighborhoods = [] } = useAllNeighborhoods();
   const allCityNames = cities.map(c => c.name);
 
   // Load search history on mount
