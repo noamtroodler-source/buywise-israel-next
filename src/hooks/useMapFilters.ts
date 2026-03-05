@@ -6,6 +6,7 @@ export type ListingType = 'for_sale' | 'for_rent' | 'projects';
 export interface MapUrlFilters {
   status: ListingType;
   city: string | null;
+  neighborhoods: string[] | null;
   minPrice: number | null;
   maxPrice: number | null;
   minRooms: number | null;
