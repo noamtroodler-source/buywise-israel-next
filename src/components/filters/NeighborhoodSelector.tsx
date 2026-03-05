@@ -9,20 +9,24 @@ interface NeighborhoodSelectorProps {
   cityName: string | undefined;
   selectedNeighborhoods: string[];
   onNeighborhoodsChange: (neighborhoods: string[]) => void;
+  externalSearch?: string;
 }
 
 export function NeighborhoodSelector({
   cityName,
   selectedNeighborhoods,
   onNeighborhoodsChange,
+  externalSearch,
 }: NeighborhoodSelectorProps) {
   const [search, setSearch] = useState('');
   const { data: neighborhoods = [] } = useNeighborhoodNames(cityName);
+  const hasExternalSearch = externalSearch !== undefined;
+  const activeSearch = hasExternalSearch ? externalSearch : search;
 
   if (!cityName || neighborhoods.length === 0) return null;
 
-  const filtered = search
-    ? neighborhoods.filter(n => n.toLowerCase().includes(search.toLowerCase()))
+  const filtered = activeSearch
+    ? neighborhoods.filter(n => n.toLowerCase().includes(activeSearch.toLowerCase()))
     : neighborhoods;
 
   const toggleNeighborhood = (name: string) => {
@@ -36,7 +40,7 @@ export function NeighborhoodSelector({
   return (
     <div className="space-y-2">
       <Label className="text-sm font-medium">Neighborhoods</Label>
-      {neighborhoods.length > 6 && (
+      {!hasExternalSearch && neighborhoods.length > 6 && (
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input

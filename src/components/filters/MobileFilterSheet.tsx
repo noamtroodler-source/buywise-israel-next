@@ -194,11 +194,24 @@ export function MobileFilterSheet({
                 Location
               </h3>
               <Input
-                placeholder="Search city..."
+                placeholder="Search..."
                 value={citySearch}
                 onChange={(e) => setCitySearch(e.target.value)}
                 className="rounded-xl"
               />
+              {/* Neighborhood selection - shown BEFORE cities when city is selected */}
+              <NeighborhoodSelector
+                cityName={filters.city}
+                selectedNeighborhoods={filters.neighborhoods || []}
+                onNeighborhoodsChange={(neighborhoods) => {
+                  onFiltersChange({
+                    ...filters,
+                    neighborhoods: neighborhoods.length > 0 ? neighborhoods : undefined,
+                  });
+                }}
+                externalSearch={citySearch}
+              />
+              {filters.city && <Label className="text-sm font-medium text-muted-foreground">Cities</Label>}
               <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
                 {filteredCities.slice(0, 12).map(city => (
                   <button
@@ -221,17 +234,6 @@ export function MobileFilterSheet({
                   </button>
                 ))}
               </div>
-              {/* Neighborhood selection after city is chosen */}
-              <NeighborhoodSelector
-                cityName={filters.city}
-                selectedNeighborhoods={filters.neighborhoods || []}
-                onNeighborhoodsChange={(neighborhoods) => {
-                  onFiltersChange({
-                    ...filters,
-                    neighborhoods: neighborhoods.length > 0 ? neighborhoods : undefined,
-                  });
-                }}
-              />
             </section>
 
             {/* Price Section */}
