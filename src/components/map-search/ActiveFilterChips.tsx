@@ -96,6 +96,13 @@ function buildChips(filters: PropertyFilters, currency: 'ILS' | 'USD'): FilterCh
     }
   }
 
+  // Neighborhoods
+  if (filters.neighborhoods?.length) {
+    const label = filters.neighborhoods.length <= 2
+      ? filters.neighborhoods.join(', ')
+      : `${filters.neighborhoods.length} neighborhoods`;
+    chips.push({ key: 'neighborhoods', label, clearKeys: ['neighborhoods'] });
+  }
   // Commute
   if (filters.commute_destination && filters.max_commute_minutes) {
     const dest = filters.commute_destination === 'tel_aviv' ? 'Tel Aviv' : 'Jerusalem';
