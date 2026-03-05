@@ -1,8 +1,9 @@
 import * as React from 'react';
-import { useRef, useState, useEffect } from 'react';
-import { MapPin, Clock, X, Search } from 'lucide-react';
+import { useRef, useState, useEffect, useMemo } from 'react';
+import { MapPin, Clock, X, Search, Building } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCities } from '@/hooks/useCities';
+import { useAllNeighborhoods } from '@/hooks/useNeighborhoodNames';
 import { cityMatchesQuery } from '@/lib/utils/cityMatcher';
 
 interface CitySearchInputProps {
