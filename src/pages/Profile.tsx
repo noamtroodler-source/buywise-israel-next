@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Compass, ArrowRight } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
@@ -85,6 +85,22 @@ export default function Profile() {
           {/* Overview Tab */}
           <TabsContent value="overview" className="mt-6 space-y-6">
             <ProfileQuickStats />
+            {/* Journey Tracker Card */}
+            <button
+              onClick={() => navigate('/my-journey')}
+              className="w-full text-left"
+            >
+              <div className="rounded-xl border border-primary/20 bg-primary/[0.03] p-4 flex items-center gap-4 hover:shadow-md hover:border-primary/40 transition-all group">
+                <div className="w-10 h-10 rounded-lg bg-primary/15 flex items-center justify-center text-primary flex-shrink-0">
+                  <Compass className="h-5 w-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm text-foreground">My Buying Journey</p>
+                  <p className="text-xs text-muted-foreground">Track your progress and see exactly what you need at each stage</p>
+                </div>
+                <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all flex-shrink-0" />
+              </div>
+            </button>
             <ResearchJourneyCard />
             <RecentlyViewedRow />
             <SupportFooter

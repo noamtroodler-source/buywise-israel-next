@@ -13,6 +13,7 @@ export const ROUTES = {
   ABOUT: '/about',
   PROFILE: '/profile',
   FAVORITES: '/favorites',
+  MY_JOURNEY: '/my-journey',
   AUTH: '/auth',
   GET_STARTED: '/get-started',
   COMPARE: '/compare',

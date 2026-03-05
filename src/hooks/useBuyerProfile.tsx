@@ -51,6 +51,8 @@ export interface BuyerProfile {
   readiness_snapshot?: ReadinessSnapshot | null;
   // Onboarding progress tracking
   onboarding_step?: string | null;
+  // Journey stage tracking
+  journey_stage?: string | null;
   created_at: string;
   updated_at: string;
 }
