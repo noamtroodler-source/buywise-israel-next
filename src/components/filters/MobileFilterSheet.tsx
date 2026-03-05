@@ -13,6 +13,7 @@ import { getLocationIcon } from '@/types/savedLocation';
 import { PriceRangeSlider } from '@/components/filters/PriceRangeSlider';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { NeighborhoodSelector } from '@/components/filters/NeighborhoodSelector';
 
 interface MobileFilterSheetProps {
   open: boolean;
