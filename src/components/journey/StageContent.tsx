@@ -1,5 +1,6 @@
 import { ArrowRight, BookOpen, MapPin, Calculator, Heart, BarChart3, Eye, FileCheck, Shield, Users, Home, PartyPopper, ClipboardList } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { JourneyStage } from '@/hooks/useBuyerJourneyStage';
 
