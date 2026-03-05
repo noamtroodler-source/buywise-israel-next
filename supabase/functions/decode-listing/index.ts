@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         url: url.trim(),
-        formats: ["markdown"],
+        formats: ["markdown", "screenshot", "links"],
         onlyMainContent: true,
         waitFor: 3000,
       }),
@@ -89,6 +89,17 @@ Deno.serve(async (req) => {
     }
 
     const listingContent = scrapeData.data?.markdown || scrapeData.markdown || "";
+    const screenshotUrl = scrapeData.data?.screenshot || scrapeData.screenshot || null;
+    const scrapedLinks = scrapeData.data?.links || scrapeData.links || [];
+    
+    // Extract image URLs from links
+    const imageExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.avif'];
+    const extractedImages: string[] = scrapedLinks.filter((link: string) => {
+      const lower = link.toLowerCase();
+      return imageExtensions.some(ext => lower.includes(ext)) && 
+             !lower.includes('logo') && !lower.includes('icon') && !lower.includes('favicon');
+    }).slice(0, 20);
+
     if (!listingContent || listingContent.length < 50) {
       return new Response(
         JSON.stringify({ error: "Could not extract enough content from that URL. Try a different listing." }),
@@ -342,6 +353,8 @@ Be direct, practical, and buyer-focused. Don't sugarcoat.`;
         success: true,
         result: decodedResult,
         market_context: marketContext,
+        images: extractedImages,
+        screenshot: screenshotUrl,
         usage: { used: newUsage, limit: dailyLimit },
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
