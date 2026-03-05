@@ -1,0 +1,1 @@
+ALTER TABLE public.buyer_profiles ADD COLUMN journey_stage TEXT DEFAULT 'researching';
