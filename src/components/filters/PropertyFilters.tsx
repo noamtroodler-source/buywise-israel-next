@@ -535,6 +535,18 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
                   </div>
                 </div>
 
+                {/* Neighborhood Selection - only when city is selected */}
+                <NeighborhoodSelector
+                  cityName={filters.city}
+                  selectedNeighborhoods={filters.neighborhoods || []}
+                  onNeighborhoodsChange={(neighborhoods) => {
+                    onFiltersChange({
+                      ...filters,
+                      neighborhoods: neighborhoods.length > 0 ? neighborhoods : undefined,
+                    });
+                  }}
+                />
+
 
                 <Link 
                   to="/tools" 
