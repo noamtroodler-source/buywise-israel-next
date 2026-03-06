@@ -422,7 +422,7 @@ export default function TrueCostGuide() {
             <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-px bg-border md:-translate-x-px" />
             
             <div className="space-y-6">
-              {timelineStages.map((item, index) => (
+              {activeTimeline.map((item, index) => (
                 <motion.div
                   key={index}
                   initial={{ opacity: 0, x: index % 2 === 0 ? -20 : 20 }}
