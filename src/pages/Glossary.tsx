@@ -18,6 +18,7 @@ import {
 import { useGlossary, useGlossarySearch, GlossaryTerm } from '@/hooks/useGlossary';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useTrackContentVisit } from '@/hooks/useTrackContentVisit';
+import { toast } from 'sonner';
 
 // Map terms to journey stages based on category and usage context
 function getTermJourneyStage(term: GlossaryTerm): string {
