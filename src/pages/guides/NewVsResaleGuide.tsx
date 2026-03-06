@@ -370,9 +370,9 @@ export default function NewVsResaleGuide() {
                       desc: 'Closing in 60–90 days means you can plan around a real date. No construction delays, no waiting for Tofes 4 (occupancy certificate).',
                     },
                     {
-                      icon: MapPin,
-                      title: 'Location in an established neighborhood',
-                      desc: 'Schools, shops, transit, and community are already there. New developments are sometimes in areas that are still being built up around you.',
+                      icon: FileCheck,
+                      title: 'Simpler, more predictable transaction',
+                      desc: 'One negotiation, one closing, predictable timeline. No staged payments tied to construction milestones, no index linkage risk, no developer bankruptcy exposure. Lower transaction complexity overall.',
                     },
                     {
                       icon: Receipt,
