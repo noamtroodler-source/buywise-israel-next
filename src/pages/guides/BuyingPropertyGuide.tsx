@@ -82,6 +82,7 @@ const timelineStages = [
     whoInvolved: ["Buyer/Renter", "Seller/Landlord", "Agent(s)"],
     documents: "Brokerage agreement (sometimes signed); potential letters of intent",
     risks: ["Assuming the agent represents only you", "Not realizing you owe commission at signing, not at closing"],
+    guideLink: { path: "/professionals", label: "Browse vetted agents and agencies →" },
   },
   {
     number: 4,
