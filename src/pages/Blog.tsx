@@ -108,6 +108,8 @@ export default function Blog() {
             categories={categories}
             selectedCategory={categorySlug || null}
             onCategoryChange={handleCategoryFilter}
+            sortBy={sortBy}
+            onSortChange={setSortBy}
           />
 
           {/* Content Grid */}

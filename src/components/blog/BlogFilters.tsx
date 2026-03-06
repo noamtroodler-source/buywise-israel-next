@@ -52,17 +52,27 @@ export function BlogFilters({
 
   return (
     <div className="space-y-4">
-      {/* Search */}
-      <div className="flex justify-center">
+      {/* Search + Sort */}
+      <div className="flex justify-center gap-3">
         <div className="relative w-full max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search articles..."
+            placeholder="Search by title..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             className="pl-10 h-10 rounded-xl bg-background border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20"
           />
         </div>
+        <Select value={sortBy} onValueChange={(v) => onSortChange(v as BlogSortOption)}>
+          <SelectTrigger className="w-[140px] h-10 rounded-xl border-border/50 bg-background text-sm flex-shrink-0">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="newest">Newest</SelectItem>
+            <SelectItem value="most_viewed">Most Viewed</SelectItem>
+            <SelectItem value="most_saved">Most Saved</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Category Pills */}
