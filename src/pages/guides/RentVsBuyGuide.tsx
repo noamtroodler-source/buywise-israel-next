@@ -35,7 +35,7 @@ const whyLoadedReasons = [
   {
     icon: Shield,
     title: 'Weak Rental Protections',
-    description: 'No standard inventory process, 1-year leases with no renewal guarantee, and landlords can raise rent annually via Madad indexation.',
+    description: 'No standard inventory process, generally 1-year leases with no renewal guarantee, and landlords can raise rent annually via Madad indexation.',
   },
   {
     icon: Calendar,
