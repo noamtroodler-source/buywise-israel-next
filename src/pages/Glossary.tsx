@@ -185,6 +185,7 @@ export default function Glossary() {
           onSearchChange={setSearchQuery}
           onOpenFlashcards={() => setFlashcardsOpen(true)}
           savedCount={savedTerms.size}
+          onGoToSaved={() => setSelectedCategory('saved')}
         />
 
         {/* Flashcard Study Modal */}
