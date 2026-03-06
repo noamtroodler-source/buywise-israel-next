@@ -141,6 +141,7 @@ const timelineStages = [
     whoInvolved: ["Bank", "Appraiser", "Buyer", "Lawyer"],
     documents: "Mortgage approval; lien registration; insurance",
     risks: ["Approval delays vs fixed payment dates", "Bank-specific conditions or rate fluctuations"],
+    guideLink: { path: "/professionals", label: "Browse vetted mortgage brokers →" },
   },
   {
     number: 11,
