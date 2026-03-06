@@ -43,7 +43,7 @@ const costCategories = [
   {
     icon: Landmark,
     title: 'Purchase Tax (Mas Rechisha)',
-    description: 'Brackets depend on buyer status: ~3.5% effective for a first-home local buyer on a ₪2M property, up to 8–10% for foreign/investor buyers.',
+    description: 'Brackets depend on buyer status: ~3.5% effective for a first-home local buyer on a ₪2.5M property, up to 8–10% for foreign/investor buyers.',
     range: 'Varies by status',
     note: 'See our Purchase Tax Guide for exact brackets →',
     link: '/guides/purchase-tax',
@@ -53,14 +53,14 @@ const costCategories = [
     title: 'Legal Fees',
     description: 'Your lawyer handles due diligence, contract drafting, title registration and tax filing.',
     range: '0.5–1.5% + VAT',
-    example: '₪12k–35k on a ₪2M property',
+    example: '₪15k–44k on a ₪2.5M property',
   },
   {
     icon: Users,
     title: 'Agent Commission',
     description: 'Buyer pays their own agent. Seller pays theirs. Not included in the listing price.',
     range: '1–2% + VAT',
-    example: '₪24k–47k on a ₪2M property',
+    example: '₪29k–59k on a ₪2.5M property',
   },
   {
     icon: CreditCard,
@@ -86,7 +86,7 @@ const costCategories = [
     title: 'Currency Conversion',
     description: 'Bank spreads on foreign-currency transfers are typically 0.3–1.5%. Specialist services (e.g., Wise, OFX) often beat bank rates.',
     range: '0.3–1.5% spread',
-    example: '₪6k–30k on a $550k transfer',
+    example: '₪7k–37k on a $690k transfer',
   },
   {
     icon: Truck,
@@ -99,7 +99,7 @@ const costCategories = [
     title: 'Renovation / Fit-out',
     description: 'Common in resale. Repainting ~₪4k, flooring ~₪15–22k, full bathroom ~₪25–30k each.',
     range: '5–10% of purchase price',
-    example: '₪100k–200k on a ₪2M property',
+    example: '₪125k–250k on a ₪2.5M property',
   },
 ];
 
@@ -260,16 +260,16 @@ export default function TrueCostGuide() {
           {/* Cost Benchmark */}
           <div className="grid sm:grid-cols-2 gap-4 mb-8">
             <div className="p-5 rounded-xl bg-card border text-center">
-              <p className="text-sm font-medium text-muted-foreground mb-1">Local Buyer (on ~₪2M property)</p>
+              <p className="text-sm font-medium text-muted-foreground mb-1">Local Buyer (on ~₪2.5M property)</p>
               <p className="text-3xl font-bold text-primary mb-1">~6.5%</p>
               <p className="text-xs text-muted-foreground">above purchase price</p>
-              <p className="text-xs text-muted-foreground mt-2">~₪130,000 in additional costs</p>
+              <p className="text-xs text-muted-foreground mt-2">~₪162,000 in additional costs</p>
             </div>
             <div className="p-5 rounded-xl bg-card border text-center">
-              <p className="text-sm font-medium text-muted-foreground mb-1">Foreign Buyer (on ~₪2M property)</p>
+              <p className="text-sm font-medium text-muted-foreground mb-1">Foreign Buyer (on ~₪2.5M property)</p>
               <p className="text-3xl font-bold text-primary mb-1">~12%</p>
               <p className="text-xs text-muted-foreground">above purchase price</p>
-              <p className="text-xs text-muted-foreground mt-2">~₪240,000 in additional costs</p>
+              <p className="text-xs text-muted-foreground mt-2">~₪300,000 in additional costs</p>
             </div>
           </div>
 
@@ -282,7 +282,7 @@ export default function TrueCostGuide() {
               Taxes, lawyer fees, agent commission, mortgage costs, and setup expenses are all separate — and they vary by your buyer status, financing, and property type. This guide breaks down every category with specific ranges so you can budget accurately before talking to professionals.
             </p>
             <p className="text-center text-sm text-muted-foreground">
-              All examples below use a <strong className="text-foreground">₪2,000,000</strong> (~$550k) property as reference.
+              All examples below use a <strong className="text-foreground">₪2,500,000</strong> (~$690k) property as reference.
             </p>
           </div>
         </motion.div>
@@ -339,7 +339,7 @@ export default function TrueCostGuide() {
             When These Costs Appear
           </h2>
           <p className="text-muted-foreground text-center mb-8">
-            Typical sequence for a ₪2M property purchase
+            Typical sequence for a ₪2.5M property purchase
           </p>
           
           <div className="relative">
