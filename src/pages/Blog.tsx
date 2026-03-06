@@ -106,13 +106,6 @@ export default function Blog() {
             categories={categories}
             selectedCategory={categorySlug || null}
             onCategoryChange={handleCategoryFilter}
-            cities={cities}
-            selectedCity={selectedCity}
-            onCityChange={setSelectedCity}
-            selectedAudiences={selectedAudiences}
-            onAudienceChange={setSelectedAudiences}
-            sortBy={sortBy}
-            onSortChange={setSortBy}
           />
 
           {/* Content Grid */}
