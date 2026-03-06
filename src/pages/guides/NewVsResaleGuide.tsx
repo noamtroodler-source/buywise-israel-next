@@ -61,7 +61,7 @@ const comparisonRows = [
   {
     category: 'What You See',
     icon: Eye,
-    newCol: 'Floor plans, renderings, and a model apartment. The actual unit doesn't exist yet. Final details may change after permits.',
+    newCol: "Floor plans, renderings, and a model apartment. The actual unit doesn't exist yet. Final details may change after permits.",
     resaleCol: 'The actual apartment. You walk through it, check the plumbing, see the neighbors, hear the street noise.',
   },
   {
