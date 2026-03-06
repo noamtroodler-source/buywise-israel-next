@@ -41,7 +41,7 @@ const navSections = [
   { id: 'why-confusing', label: 'Why Complex' },
   { id: 'timeline', label: 'Payment Timeline' },
   { id: 'terms', label: 'Key Terms' },
-  { id: 'buyer-status', label: 'Buyer Status' },
+  
 ];
 
 const fadeInUp = {
