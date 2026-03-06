@@ -212,7 +212,7 @@ export function BlogFilters({
 
         <div 
           ref={scrollContainerRef}
-          className="flex justify-center gap-2 pb-2 overflow-x-auto scrollbar-hide"
+          className="flex justify-center gap-2 pb-2 px-1 overflow-x-auto scrollbar-hide"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           <Button
