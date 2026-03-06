@@ -259,7 +259,7 @@ export default function Guides() {
               {[
                 { icon: Calculator, title: 'Run the Numbers', description: 'Mortgage, total cost & affordability calculators built for Israel.', to: '/tools' },
                 { icon: Home, title: 'Browse Listings', description: 'Search properties with transparent data and real pricing.', to: '/listings' },
-                { icon: Users, title: 'Find Professionals', description: 'Vetted agents, lawyers & mortgage brokers who work with foreigners.', to: '/professionals' },
+                { icon: Users, title: 'Find Professionals', description: 'Vetted lawyers & mortgage brokers who work with foreigners.', to: '/professionals' },
               ].map((item) => (
                 <Link
                   key={item.to}
