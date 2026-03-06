@@ -487,7 +487,7 @@ export default function PurchaseTaxGuide() {
 
             <Card className="mt-6 p-4 bg-muted/50 border-border/50">
               <p className="text-xs text-muted-foreground text-center">
-                These are illustrative calculations based on 2025 brackets. Your lawyer will file the exact assessment. The gap between first-time buyer and investor on a ₪2.5M property is <strong>₪179,470</strong>.
+                These are illustrative calculations based on 2025 brackets. Your lawyer will file the exact assessment. The gap between a single-residence buyer and an investor on a ₪2.5M property is <strong>₪179,470</strong>.
               </p>
             </Card>
           </motion.div>
