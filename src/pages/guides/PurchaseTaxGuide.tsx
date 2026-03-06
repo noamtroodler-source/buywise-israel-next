@@ -474,6 +474,7 @@ export default function PurchaseTaxGuide() {
                 >
                   <Card className="p-6 h-full flex flex-col">
                     <h3 className="font-semibold text-foreground mb-1 text-sm">{ex.label}</h3>
+                    {ex.subtitle && <p className="text-xs text-muted-foreground mb-2">{ex.subtitle}</p>}
                     <p className="text-xs text-muted-foreground mb-4">{ex.calculation}</p>
                     <div className="mt-auto">
                       <p className={`text-3xl font-bold ${ex.color}`}>{ex.tax}</p>
