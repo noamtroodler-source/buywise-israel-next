@@ -3,12 +3,11 @@ import { motion } from 'framer-motion';
 import { BookOpen, Loader2 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { SEOHead } from '@/components/seo/SEOHead';
-import { useBlogPosts, useBlogCategories, useBlogCities } from '@/hooks/useBlog';
+import { useBlogPosts, useBlogCategories } from '@/hooks/useBlog';
 import { useSavedArticles } from '@/hooks/useSavedArticles';
 import { BlogFilters } from '@/components/blog/BlogFilters';
 import { BlogCard } from '@/components/blog/BlogCard';
 import { BlogCTA } from '@/components/blog/BlogCTA';
-import { BlogSortOption, BlogAudience } from '@/types/content';
 import { useSearchParams } from 'react-router-dom';
 import { PullToRefresh } from '@/components/shared/PullToRefresh';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -40,22 +39,15 @@ export default function Blog() {
   
   // Filter state
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCity, setSelectedCity] = useState<string | null>(null);
-  const [selectedAudiences, setSelectedAudiences] = useState<BlogAudience[]>([]);
-  const [sortBy, setSortBy] = useState<BlogSortOption>('newest');
   
   const categorySlug = searchParams.get('category') || undefined;
   const debouncedSearch = useDebounceValue(searchQuery, 300);
 
   // Data hooks
   const { data: categories = [] } = useBlogCategories();
-  const { data: cities = [] } = useBlogCities();
   const { data: posts = [], isLoading: postsLoading } = useBlogPosts({
     categorySlug,
-    city: selectedCity || undefined,
-    audiences: selectedAudiences.length > 0 ? selectedAudiences : undefined,
     search: debouncedSearch || undefined,
-    sortBy,
   });
   
   const { isArticleSaved, toggleSave } = useSavedArticles();
@@ -114,13 +106,6 @@ export default function Blog() {
             categories={categories}
             selectedCategory={categorySlug || null}
             onCategoryChange={handleCategoryFilter}
-            cities={cities}
-            selectedCity={selectedCity}
-            onCityChange={setSelectedCity}
-            selectedAudiences={selectedAudiences}
-            onAudienceChange={setSelectedAudiences}
-            sortBy={sortBy}
-            onSortChange={setSortBy}
           />
 
           {/* Content Grid */}
