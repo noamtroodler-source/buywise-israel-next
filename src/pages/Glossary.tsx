@@ -18,6 +18,7 @@ import {
 import { useGlossary, useGlossarySearch, GlossaryTerm } from '@/hooks/useGlossary';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useTrackContentVisit } from '@/hooks/useTrackContentVisit';
+import { toast } from 'sonner';
 
 // Map terms to journey stages based on category and usage context
 function getTermJourneyStage(term: GlossaryTerm): string {
@@ -137,6 +138,8 @@ export default function Glossary() {
   }, [displayTerms, debouncedSearch, selectedCategory]);
 
   const toggleSavedTerm = (termId: string) => {
+    const wasSaved = savedTerms.has(termId);
+    const term = (allTerms || []).find(t => t.id === termId);
     setSavedTerms(prev => {
       const newSet = new Set(prev);
       if (newSet.has(termId)) {
@@ -147,6 +150,11 @@ export default function Glossary() {
       localStorage.setItem('savedGlossaryTerms', JSON.stringify([...newSet]));
       return newSet;
     });
+    if (wasSaved) {
+      toast(`${term?.english_term || 'Term'} removed`, { description: 'Removed from your saved terms.' });
+    } else {
+      toast.success(`${term?.english_term || 'Term'} saved`, { description: 'Quick-access it anytime from the Saved tab.' });
+    }
   };
 
   const toggleExpanded = (termId: string) => {
