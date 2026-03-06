@@ -460,7 +460,7 @@ export default function PurchaseTaxGuide() {
               Same Apartment, Different Tax
             </h2>
             <p className="text-sm text-muted-foreground text-center mb-8">
-              Purchase price: ₪2,500,000 — here's how buyer status changes the bill
+              Purchase price: ₪2,500,000 — here's how your residency and ownership status changes the bill
             </p>
 
             <div className="grid md:grid-cols-3 gap-6">
