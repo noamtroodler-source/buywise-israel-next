@@ -120,8 +120,8 @@ const singleResidenceBrackets = [
   { range: 'Up to ₪1,978,745', rate: '0%' },
   { range: '₪1,978,745 – ₪2,347,040', rate: '3.5%' },
   { range: '₪2,347,040 – ₪6,055,070', rate: '5%' },
-  { range: '₪6,055,070 – ₪20,183,560', rate: '8%' },
-  { range: 'Above ₪20,183,560', rate: '10%' },
+  { range: '₪6,055,070 – ₪20,183,565', rate: '8%' },
+  { range: 'Above ₪20,183,565', rate: '10%' },
 ];
 
 const investorBrackets = [
