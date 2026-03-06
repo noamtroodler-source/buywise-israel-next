@@ -9,6 +9,7 @@ interface GlossaryHeroProps {
   onSearchChange: (query: string) => void;
   onOpenFlashcards: () => void;
   savedCount: number;
+  onGoToSaved?: () => void;
 }
 
 export function GlossaryHero({ 
