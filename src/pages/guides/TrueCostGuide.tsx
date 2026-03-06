@@ -384,9 +384,39 @@ export default function TrueCostGuide() {
           <h2 className="text-2xl font-bold text-foreground mb-2 text-center">
             When These Costs Appear
           </h2>
-          <p className="text-muted-foreground text-center mb-8">
+           <p className="text-muted-foreground text-center mb-6">
             Typical sequence for a ₪2.5M property purchase
           </p>
+
+          {/* Resale / New Construction Toggle */}
+          <div className="flex justify-center mb-8">
+            <div className="inline-flex items-center rounded-full border border-border/50 bg-muted/30 p-1">
+              <button
+                type="button"
+                onClick={() => setTimelineMode('resale')}
+                className={cn(
+                  "px-5 py-2 text-sm font-medium transition-all rounded-full",
+                  timelineMode === 'resale'
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Resale
+              </button>
+              <button
+                type="button"
+                onClick={() => setTimelineMode('new_construction')}
+                className={cn(
+                  "px-5 py-2 text-sm font-medium transition-all rounded-full",
+                  timelineMode === 'new_construction'
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                New Construction
+              </button>
+            </div>
+          </div>
           
           <div className="relative">
             <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-px bg-border md:-translate-x-px" />
