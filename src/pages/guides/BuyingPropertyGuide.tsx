@@ -279,6 +279,17 @@ const StageCard = ({ stage, index }: { stage: typeof timelineStages[0]; index: n
               </ul>
             </div>
           )}
+
+          {/* Guide link */}
+          {'guideLink' in stage && (stage as any).guideLink && (
+            <Link
+              to={(stage as any).guideLink.path}
+              className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline mt-1"
+            >
+              <BookOpen className="h-4 w-4" />
+              {(stage as any).guideLink.label}
+            </Link>
+          )}
         </div>
       </div>
     </Card>
