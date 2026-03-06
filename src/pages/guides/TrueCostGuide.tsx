@@ -260,16 +260,16 @@ export default function TrueCostGuide() {
           {/* Cost Benchmark */}
           <div className="grid sm:grid-cols-2 gap-4 mb-8">
             <div className="p-5 rounded-xl bg-card border text-center">
-              <p className="text-sm font-medium text-muted-foreground mb-1">Local Buyer (on ~₪2M property)</p>
+              <p className="text-sm font-medium text-muted-foreground mb-1">Local Buyer (on ~₪2.5M property)</p>
               <p className="text-3xl font-bold text-primary mb-1">~6.5%</p>
               <p className="text-xs text-muted-foreground">above purchase price</p>
-              <p className="text-xs text-muted-foreground mt-2">~₪130,000 in additional costs</p>
+              <p className="text-xs text-muted-foreground mt-2">~₪162,000 in additional costs</p>
             </div>
             <div className="p-5 rounded-xl bg-card border text-center">
-              <p className="text-sm font-medium text-muted-foreground mb-1">Foreign Buyer (on ~₪2M property)</p>
+              <p className="text-sm font-medium text-muted-foreground mb-1">Foreign Buyer (on ~₪2.5M property)</p>
               <p className="text-3xl font-bold text-primary mb-1">~12%</p>
               <p className="text-xs text-muted-foreground">above purchase price</p>
-              <p className="text-xs text-muted-foreground mt-2">~₪240,000 in additional costs</p>
+              <p className="text-xs text-muted-foreground mt-2">~₪300,000 in additional costs</p>
             </div>
           </div>
 
