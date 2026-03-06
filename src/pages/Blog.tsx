@@ -39,6 +39,7 @@ export default function Blog() {
   
   // Filter state
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<import('@/types/content').BlogSortOption>('newest');
   
   const categorySlug = searchParams.get('category') || undefined;
   const debouncedSearch = useDebounceValue(searchQuery, 300);
@@ -48,6 +49,7 @@ export default function Blog() {
   const { data: posts = [], isLoading: postsLoading } = useBlogPosts({
     categorySlug,
     search: debouncedSearch || undefined,
+    sortBy,
   });
   
   const { isArticleSaved, toggleSave } = useSavedArticles();
@@ -106,6 +108,8 @@ export default function Blog() {
             categories={categories}
             selectedCategory={categorySlug || null}
             onCategoryChange={handleCategoryFilter}
+            sortBy={sortBy}
+            onSortChange={setSortBy}
           />
 
           {/* Content Grid */}
