@@ -1,15 +1,20 @@
 
 
-## Neighborhood Search — Implemented ✅
+## Plan: Simplify Blog Filters (Option A)
 
-All changes from the plan have been implemented:
+Strip `BlogFilters` down to just **Search + Category pills**. Remove City, Audience, and Sort dropdowns.
 
-1. **`useNeighborhoodNames` hook** — Shared hook fetching neighborhood names per city + `useAllNeighborhoods` for cross-city search.
-2. **`useMapFilters`** — Added `neighborhoods` URL param (comma-separated).
-3. **`useProperties`** — Added `neighborhoods[]` array filter via `.in('neighborhood', ...)` in both count and listing queries.
-4. **`PropertyFilters` city popover** — Shows `NeighborhoodSelector` multi-select after city is chosen. Button label updates to show selected neighborhoods.
-5. **`MobileFilterSheet`** — Same `NeighborhoodSelector` in mobile Location section.
-6. **`CitySearchInput`** — Autocomplete now searches neighborhoods too, grouped under "Neighborhoods" with "Name, City" format. Selecting navigates with both city + neighborhood params.
-7. **`NeighborhoodChips`** — Map chips now trigger listing filter via `onFilterNeighborhood` callback.
-8. **`MapSearchLayout`** — Wires neighborhood filter between map chips and URL params. Includes neighborhoods in clear-all.
-9. **`ActiveFilterChips`** — Dismissible chip for active neighborhood filters.
+### Changes
+
+**`src/components/blog/BlogFilters.tsx`**
+- Remove imports: `SlidersHorizontal`, `Sparkles`, `Badge`, `ScrollArea`, `ScrollBar`, `Select*`, `Popover*`, `Checkbox`, `Label`, `BlogAudience`, `AUDIENCE_OPTIONS`
+- Remove props: `cities`, `selectedCity`, `onCityChange`, `selectedAudiences`, `onAudienceChange`, `sortBy`, `onSortChange`
+- Remove the entire filter bar container (sort, city, audience dropdowns) — keep only the search input
+- Remove the "Active Filters" section (city/audience badges) — keep only category badge dismissal inline
+- Layout: Search centered above category pills, clean and minimal
+
+**`src/pages/Blog.tsx`**
+- Remove the city/audience/sort state variables and their props passed to `BlogFilters`
+- Remove `useBlogCities` import if no longer used elsewhere
+- Keep the filtering logic for category and search only
+
