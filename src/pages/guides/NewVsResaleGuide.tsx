@@ -73,8 +73,8 @@ const comparisonRows = [
   {
     category: 'Legal Protections',
     icon: Shield,
-    newCol: 'The 7% rule: developers cannot collect more than 7% of price without providing a bank guarantee, insurance policy, first mortgage, warning notice (he\'arat azhara), or property rights transfer.',
-    resaleCol: 'No statutory safeguard mechanism. Protection comes from your lawyer\'s due diligence: title search, lien check, municipal debt verification.',
+    newCol: "The 7% rule: developers cannot collect more than 7% of price without providing a bank guarantee, insurance policy, first mortgage, warning notice (he'arat azhara), or property rights transfer.",
+    resaleCol: "No statutory safeguard mechanism. Protection comes from your lawyer's due diligence: title search, lien check, municipal debt verification.",
   },
   {
     category: 'Registration',
