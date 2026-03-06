@@ -29,8 +29,8 @@ const whyLoadedReasons = [
   },
   {
     icon: Home,
-    title: 'Cultural Ownership Norms',
-    description: 'In Israeli society, owning a דירה is a life milestone. Family and friends may ask "when are you buying?" within months of arrival.',
+    title: 'Cultural Ownership Pressure',
+    description: 'Homeownership is deeply tied to status and stability in Israel. Expect questions from family, colleagues, and even acquaintances about when you\'re buying — especially after aliyah. Renting long-term can be seen as "not settled yet."',
   },
   {
     icon: Shield,
