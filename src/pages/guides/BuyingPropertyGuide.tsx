@@ -91,6 +91,7 @@ const timelineStages = [
     whoInvolved: ["Buyer's lawyer (essential)", "Sometimes seller's lawyer"],
     documents: "Power of attorney; identity documents",
     risks: ["Involving a lawyer too late", "Assuming 'standard contracts' exist", "Not verifying land type (freehold vs leasehold)"],
+    guideLink: { path: "/professionals", label: "Browse vetted lawyers and legal professionals →" },
   },
   {
     number: 5,
