@@ -4,82 +4,43 @@ import { motion } from 'framer-motion';
 import { DualNavigation } from '@/components/shared/DualNavigation';
 import { 
   Scale, Clock, BookOpen, ChevronRight, Home, DollarSign,
-  TrendingUp, Users, Shield, FileText, Calendar, Key, Heart,
-  ArrowRightLeft, ArrowLeft, CheckCircle, Plane, Receipt, AlertCircle,
-  Building, Handshake, MapPin, Globe, Briefcase, UserCheck,
-  HelpCircle, Lightbulb, Calculator, BookMarked, Wrench
+  Building, Calendar, Shield, Handshake, HelpCircle, Wrench,
+  Plane, Globe, Briefcase, UserCheck, Calculator, BookMarked, Key
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
-import { Button } from '@/components/ui/button';
 import { useTrackContentVisit } from '@/hooks/useTrackContentVisit';
 
 import rentVsBuyHero from '@/assets/guides/rent-vs-buy-hero.jpg';
 
 const navSections = [
   { id: 'overview', label: 'Overview' },
-  { id: 'assumptions', label: 'Assumptions' },
   { id: 'why-loaded', label: 'Why It Feels Loaded' },
   { id: 'renting', label: 'How Renting Works' },
   { id: 'buying', label: 'How Buying Changes Things' },
   { id: 'buyer-status', label: 'Buyer Status' },
-  { id: 'surprises', label: 'Surprises' },
-  { id: 'not-about', label: "What This Isn't About" },
-  { id: 'buywise', label: 'BuyWise' },
   { id: 'closing', label: 'Closing' },
-];
-
-const commonAssumptions = [
-  { icon: DollarSign, text: '"Renting is throwing money away"' },
-  { icon: Home, text: '"Buying always builds wealth"' },
-  { icon: Clock, text: '"The sooner you buy, the better"' },
-  { icon: TrendingUp, text: '"Israeli property only goes up"' },
-  { icon: Users, text: '"Everyone in Israel owns"' },
-  { icon: Shield, text: '"Buying provides security"' },
-  { icon: FileText, text: '"Renting prepares you legally for buying"' },
-  { icon: Calendar, text: '"Leases work like in the US/UK"' },
-  { icon: Key, text: '"Buying simplifies life immediately"' },
-  { icon: Heart, text: '"Buying signals commitment to Israel"' },
-  { icon: ArrowRightLeft, text: '"Rent vs buy is purely financial"' },
-  { icon: CheckCircle, text: '"Once you buy, uncertainty ends"' },
-  { icon: Plane, text: '"Foreign buyers can rent first easily"' },
-  { icon: Receipt, text: '"Renting is low-commitment everywhere"' },
 ];
 
 const whyLoadedReasons = [
   {
     icon: Building,
-    title: 'Housing Scarcity and Competition',
-    description: 'Limited supply in desirable areas creates urgency and competition that can feel overwhelming.',
+    title: 'Housing Scarcity',
+    description: 'In cities like Tel Aviv and Jerusalem, demand consistently outpaces supply. Apartments sell within days, creating FOMO that pushes people to buy before they\'re ready.',
   },
   {
-    icon: Users,
-    title: 'Cultural Norms Around Ownership',
-    description: 'Israeli society often views homeownership as a milestone, which can create implicit pressure.',
-  },
-  {
-    icon: Heart,
-    title: 'Identity and Permanence Signals',
-    description: 'Buying is often perceived as "putting down roots," while renting may feel temporary.',
-  },
-  {
-    icon: Calendar,
-    title: 'Long-Term Leasing Culture Differences',
-    description: 'Israeli rental norms differ significantly from US/UK expectations around lease length and stability.',
+    icon: Home,
+    title: 'Cultural Ownership Norms',
+    description: 'In Israeli society, owning a דירה is a life milestone. Family and friends may ask "when are you buying?" within months of arrival.',
   },
   {
     icon: Shield,
-    title: 'Limited Rental Market Protections',
-    description: 'Tenant protections are less formalized than in some Western countries.',
+    title: 'Weak Rental Protections',
+    description: 'No standard inventory process, 1-year leases with no renewal guarantee, and landlords can raise rent annually via Madad indexation.',
   },
   {
-    icon: Users,
-    title: 'Social Expectations',
-    description: 'Family and community may have opinions about when and whether you should buy.',
-  },
-  {
-    icon: Clock,
-    title: 'Market Timing Anxiety',
-    description: 'Fear of missing out or buying at the wrong time adds emotional weight to the decision.',
+    icon: Calendar,
+    title: 'Lease Culture Gaps',
+    description: 'Israeli leases often exclude appliances, light fixtures, even kitchen cabinets. Early termination clauses favor landlords.',
   },
 ];
 
@@ -120,7 +81,7 @@ const rentingAspects = [
     description: 'Landlords must fix structural issues (leaks, mold, safety hazards) within a reasonable time, not later than 30 days from written notification. Tenants must repair damages caused by unreasonable use.',
   },
   {
-    icon: Handshake,
+    icon: Key,
     title: 'Brokerage Agreements',
     description: 'Brokers may ask tenants to sign a brokerage agreement before viewing an apartment. Once signed, the fee is due if the tenant proceeds with that property. Clarify who pays the fee before signing anything.',
   },
@@ -128,91 +89,24 @@ const rentingAspects = [
 
 const buyingChanges = [
   {
-    icon: FileText,
-    title: 'Legal Commitment',
-    description: 'Contractual and financial obligations that bind you to specific terms over extended periods.',
+    icon: DollarSign,
+    title: 'Currency & CPI Risk',
+    description: 'Your mortgage will be in shekels (with CPI-linked tracks). If you earn in USD/EUR/GBP, you\'re taking on exchange rate risk for 15–30 years.',
   },
-  {
-    icon: MapPin,
-    title: 'Financial Anchoring',
-    description: 'Tied to a specific currency, market, and location in ways that renting does not require.',
-  },
-  {
-    icon: Heart,
-    title: 'Emotional Signal',
-    description: 'Often perceived as "putting down roots" and signaling long-term commitment to place.',
-  },
-  {
-    icon: Building,
-    title: 'Structural Permanence',
-    description: 'Harder to reverse than renting. Selling involves its own timeline, costs, and uncertainties.',
-  },
-];
-
-const buyerStatuses = [
-  {
-    icon: Plane,
-    title: 'New Olim',
-    description: 'Balancing integration with major financial decisions. Still learning the system while facing pressure to commit.',
-  },
-  {
-    icon: Globe,
-    title: 'Foreign Residents Abroad',
-    description: 'Distance adds complexity to both options. Managing property or leases remotely creates friction.',
-  },
-  {
-    icon: Briefcase,
-    title: 'Investors',
-    description: 'Different considerations around rental income versus capital appreciation. Tax implications vary.',
-  },
-  {
-    icon: UserCheck,
-    title: 'Long-term Residents',
-    description: 'Accumulated context and relationships, but ongoing uncertainty about permanence may persist.',
-  },
-];
-
-const surprises = [
-  'Assuming renting prepares you legally for buying — the processes are distinct',
-  'Assuming leases resemble US/UK norms — Israeli rental culture differs significantly',
-  'Assuming buying simplifies life immediately — ownership brings new complexities',
-  'Underestimating emotional weight of either decision',
-  'Expecting rental market stability that may not exist',
-  'Believing ownership automatically brings belonging',
-  'Thinking the decision is purely financial when identity and lifestyle are involved',
-  'Assuming "waiting" means "losing" when it may mean "learning"',
-  'Expecting similar landlord-tenant dynamics to home country',
-  'Underestimating currency exposure implications in both scenarios',
-];
-
-const notAboutItems = [
-  { icon: Calculator, text: 'ROI math and breakeven analysis' },
-  { icon: TrendingUp, text: 'Market timing predictions' },
-  { icon: DollarSign, text: 'Interest rate comparisons' },
-  { icon: Lightbulb, text: 'Investment optimization strategies' },
-  { icon: Scale, text: 'Legal or financial advice' },
-];
-
-const buywiseHelps = [
   {
     icon: Scale,
-    title: 'Separates Pressure from Facts',
-    description: 'Distinguishes emotional urgency from system realities so you can think clearly.',
-  },
-  {
-    icon: FileText,
-    title: 'Clarifies Costs and Commitments',
-    description: 'Explains what each option involves without pushing you toward a decision.',
+    title: 'Purchase Tax Hit',
+    description: 'Foreign buyers pay 8–10% purchase tax on the full price. That\'s money you won\'t recover if you sell in a few years.',
   },
   {
     icon: Clock,
-    title: 'Helps Understand Timing',
-    description: 'Provides context on readiness factors without prescribing when you should act.',
+    title: 'Selling Is Slow and Expensive',
+    description: 'Selling takes 3–6 months minimum, involves capital gains tax (Mas Shevach), and lawyer/broker fees. Buying is not easily reversible.',
   },
   {
-    icon: BookOpen,
-    title: 'Presents Context, Not Recommendations',
-    description: 'Our role is to inform and clarify, not to tell you what to choose.',
+    icon: Building,
+    title: 'Vaad Bayit and Arnona',
+    description: 'As an owner, you\'re responsible for building maintenance fees and municipal tax — costs that don\'t exist when renting.',
   },
 ];
 
@@ -265,7 +159,6 @@ export default function RentVsBuyGuide() {
           </div>
           
           <div className="container relative h-full flex flex-col justify-end pb-12">
-            {/* Dual Navigation - Overlay style */}
             <div className="absolute top-6 left-0">
               <DualNavigation
                 parentLabel="All Guides"
@@ -298,13 +191,13 @@ export default function RentVsBuyGuide() {
               <div className="flex items-center gap-4 mt-6 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1.5">
                   <BookOpen className="h-4 w-4" />
-                  10 sections
+                  6 sections
                 </span>
                 <span className="flex items-center gap-1.5">
                   <Clock className="h-4 w-4" />
                   ~15 min read
                 </span>
-                <span>Updated 2025</span>
+                <span>Updated 2026</span>
               </div>
             </motion.div>
           </div>
@@ -345,29 +238,6 @@ export default function RentVsBuyGuide() {
               viewport={{ once: true }}
               className="space-y-8"
             >
-              {/* Pain Point Cards */}
-              <div className="grid md:grid-cols-3 gap-4">
-                <div className="p-5 rounded-xl bg-muted/30 border border-border/50">
-                  <AlertCircle className="h-5 w-5 text-primary mb-3" />
-                  <p className="text-sm text-muted-foreground">
-                    You may feel pressure—social, emotional, or financial—to buy quickly
-                  </p>
-                </div>
-                <div className="p-5 rounded-xl bg-muted/30 border border-border/50">
-                  <ArrowRightLeft className="h-5 w-5 text-primary mb-3" />
-                  <p className="text-sm text-muted-foreground">
-                    Renting and buying mean different things in Israel than they do abroad
-                  </p>
-                </div>
-                <div className="p-5 rounded-xl bg-muted/30 border border-border/50">
-                  <Heart className="h-5 w-5 text-primary mb-3" />
-                  <p className="text-sm text-muted-foreground">
-                    The decision is loaded with identity, belonging, and commitment
-                  </p>
-                </div>
-              </div>
-
-              {/* Gradient CTA Box */}
               <div className="p-8 rounded-2xl bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/10 text-center">
                 <p className="text-lg font-medium text-foreground mb-3">
                   The rent vs buy question often arrives with emotional weight.
@@ -381,7 +251,6 @@ export default function RentVsBuyGuide() {
                 </p>
               </div>
 
-              {/* One-Sentence Reality */}
               <div className="p-6 rounded-xl bg-card border">
                 <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
                   <Scale className="h-5 w-5 text-primary" />
@@ -392,35 +261,6 @@ export default function RentVsBuyGuide() {
                   implications for legal status, financial anchoring, emotional belonging, and long-term 
                   uncertainty that don't map neatly to US or UK norms.
                 </p>
-              </div>
-            </motion.div>
-          </section>
-
-          {/* Assumptions Section */}
-          <section id="assumptions" className="mb-16">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-            >
-              <h2 className="text-2xl font-bold text-foreground mb-2">
-                Common Assumptions Foreigners Bring
-              </h2>
-              <p className="text-muted-foreground mb-6">
-                These beliefs often shape how internationals approach the rent vs buy decision—but 
-                they may not hold in the Israeli context.
-              </p>
-              
-              <div className="grid sm:grid-cols-2 gap-3">
-                {commonAssumptions.map((assumption, index) => (
-                  <div 
-                    key={index}
-                    className="flex items-center gap-3 p-4 rounded-xl bg-muted/30 border border-border/50"
-                  >
-                    <assumption.icon className="h-5 w-5 text-primary shrink-0" />
-                    <span className="text-sm text-muted-foreground">{assumption.text}</span>
-                  </div>
-                ))}
               </div>
             </motion.div>
           </section>
@@ -506,11 +346,10 @@ export default function RentVsBuyGuide() {
               viewport={{ once: true }}
             >
               <h2 className="text-2xl font-bold text-foreground mb-2">
-                How Buying Changes the Relationship to Place
+                How Buying Changes Things
               </h2>
               <p className="text-muted-foreground mb-6">
-                Purchasing property in Israel shifts your relationship to the country in ways that 
-                extend beyond finances.
+                Buying in Israel comes with concrete financial realities that renters don't face.
               </p>
               
               <div className="grid sm:grid-cols-2 gap-4">
@@ -534,7 +373,7 @@ export default function RentVsBuyGuide() {
             </motion.div>
           </section>
 
-          {/* Buyer Status Section */}
+          {/* Buyer Status Section — condensed */}
           <section id="buyer-status" className="mb-16">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -542,135 +381,41 @@ export default function RentVsBuyGuide() {
               viewport={{ once: true }}
             >
               <h2 className="text-2xl font-bold text-foreground mb-2">
-                Buyer Status Reality Check
+                How Your Status Changes the Equation
               </h2>
               <p className="text-muted-foreground mb-6">
-                How rent vs buy considerations differ based on your situation and relationship to Israel.
+                The rent vs buy calculus shifts depending on who you are.
               </p>
               
-              <div className="grid sm:grid-cols-2 gap-4">
-                {buyerStatuses.map((status, index) => (
-                  <div 
-                    key={index}
-                    className="p-5 rounded-xl bg-card border"
-                  >
-                    <div className="flex items-start gap-4">
-                      <div className="p-2 rounded-lg bg-primary/10">
-                        <status.icon className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-foreground mb-1">{status.title}</h3>
-                        <p className="text-sm text-muted-foreground">{status.description}</p>
-                      </div>
-                    </div>
+              <div className="p-6 rounded-xl bg-card border space-y-4">
+                <div className="flex items-start gap-3">
+                  <Plane className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-semibold text-foreground">New Olim</span>
+                    <span className="text-muted-foreground"> — Still learning the system while facing social pressure to buy. Tax benefits exist but have time limits. Rent first to learn your city.</span>
                   </div>
-                ))}
-              </div>
-            </motion.div>
-          </section>
-
-          {/* Surprises Section */}
-          <section id="surprises" className="mb-16">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-            >
-              <h2 className="text-2xl font-bold text-foreground mb-2">
-                Where Foreigners Get Surprised
-              </h2>
-              <p className="text-muted-foreground mb-6">
-                Expectation gaps that commonly catch international buyers and renters off guard.
-              </p>
-              
-              <div className="space-y-3">
-                {surprises.map((surprise, index) => (
-                  <div 
-                    key={index}
-                    className="flex items-start gap-3 p-4 rounded-xl bg-muted/30 border border-border/50"
-                  >
-                    <AlertCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                    <span className="text-muted-foreground">{surprise}</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Globe className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-semibold text-foreground">Foreign Residents Abroad</span>
+                    <span className="text-muted-foreground"> — Managing property remotely adds friction. Higher purchase tax (8–10%). Mortgage options are limited without Israeli income.</span>
                   </div>
-                ))}
-              </div>
-            </motion.div>
-          </section>
-
-          {/* What This Isn't About Section */}
-          <section id="not-about" className="mb-16">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-            >
-              <h2 className="text-2xl font-bold text-foreground mb-2">
-                What This Decision Is NOT About
-              </h2>
-              <p className="text-muted-foreground mb-6">
-                This guide intentionally does not cover the following topics, which are addressed 
-                in other resources or require professional guidance.
-              </p>
-              
-              <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
-                {notAboutItems.map((item, index) => (
-                  <div 
-                    key={index}
-                    className="flex items-center gap-3 p-4 rounded-xl bg-muted/20 border border-border/30"
-                  >
-                    <item.icon className="h-5 w-5 text-muted-foreground shrink-0" />
-                    <span className="text-sm text-muted-foreground">{item.text}</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Briefcase className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-semibold text-foreground">Investors</span>
+                    <span className="text-muted-foreground"> — No first-apartment tax benefit. Rental yields in Israel are low (2–4%). Factor in vacancy, Arnona, and management costs.</span>
                   </div>
-                ))}
-              </div>
-              
-              <div className="mt-6 p-4 rounded-xl bg-primary/5 border border-primary/10">
-                <p className="text-sm text-muted-foreground">
-                  For financial calculations and cost breakdowns, explore our{' '}
-                  <Link to="/tools" className="text-primary hover:underline">
-                    calculators and tools
-                  </Link>
-                  . For tax specifics, see the{' '}
-                  <Link to="/guides/purchase-tax" className="text-primary hover:underline">
-                    Purchase Tax Guide
-                  </Link>
-                  .
-                </p>
-              </div>
-            </motion.div>
-          </section>
-
-          {/* BuyWise Section */}
-          <section id="buywise" className="mb-16">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-            >
-              <h2 className="text-2xl font-bold text-foreground mb-2">
-                How BuyWise Helps You Think Clearly
-              </h2>
-              <p className="text-muted-foreground mb-6">
-                Our role is to provide clarity and context—not to push you toward any particular decision.
-              </p>
-              
-              <div className="grid sm:grid-cols-2 gap-4">
-                {buywiseHelps.map((help, index) => (
-                  <div 
-                    key={index}
-                    className="p-5 rounded-xl bg-card border hover:border-primary/20 transition-colors"
-                  >
-                    <div className="flex items-start gap-4">
-                      <div className="p-2 rounded-lg bg-primary/10">
-                        <help.icon className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-foreground mb-1">{help.title}</h3>
-                        <p className="text-sm text-muted-foreground">{help.description}</p>
-                      </div>
-                    </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <UserCheck className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-semibold text-foreground">Long-term Residents</span>
+                    <span className="text-muted-foreground"> — You know the market. The question is whether your life plans are stable enough to justify the financial commitment.</span>
                   </div>
-                ))}
+                </div>
               </div>
             </motion.div>
           </section>
@@ -682,24 +427,11 @@ export default function RentVsBuyGuide() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
             >
-              <div className="p-8 rounded-2xl bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/10">
-                <h2 className="text-2xl font-bold text-foreground mb-4 text-center">
-                  Calm Reframe
-                </h2>
-                <div className="space-y-4 text-center max-w-2xl mx-auto">
-                  <p className="text-muted-foreground">
-                    Clarity comes before commitment. Renting is not failing to buy—it can be a thoughtful, 
-                    strategic choice while you orient yourself. Buying is not an escape from uncertainty—it 
-                    creates new commitments.
-                  </p>
-                  <p className="text-muted-foreground">
-                    Neither option is inherently better; each carries its own implications. With clarity and 
-                    context, you can approach this decision calmly, without the pressure of external expectations.
-                  </p>
-                  <p className="font-semibold text-primary mt-6">
-                    Take your time. Understand the system. Then decide.
-                  </p>
-                </div>
+              <div className="p-6 rounded-xl bg-muted/30 border border-border/50">
+                <p className="text-muted-foreground">
+                  Renting is not failing to buy. Buying is not escaping uncertainty. Each option carries real trade-offs 
+                  in the Israeli context — financial, legal, and personal. Understand them, then decide.
+                </p>
               </div>
             </motion.div>
           </section>
@@ -725,15 +457,15 @@ export default function RentVsBuyGuide() {
               </Link>
               
               <Link 
-                to="/guides"
+                to="/guides/purchase-tax"
                 className="p-5 rounded-xl bg-card border hover:border-primary/30 transition-colors group"
               >
                 <BookMarked className="h-6 w-6 text-primary mb-3" />
                 <h4 className="font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">
-                  More Guides
+                  Purchase Tax Guide
                 </h4>
                 <p className="text-sm text-muted-foreground">
-                  Deep dives on specific topics
+                  Understand Mas Rechisha before you buy
                 </p>
                 <ChevronRight className="h-4 w-4 text-primary mt-3" />
               </Link>
