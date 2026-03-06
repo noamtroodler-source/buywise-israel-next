@@ -339,7 +339,7 @@ export default function TrueCostGuide() {
             When These Costs Appear
           </h2>
           <p className="text-muted-foreground text-center mb-8">
-            Typical sequence for a ₪2M property purchase
+            Typical sequence for a ₪2.5M property purchase
           </p>
           
           <div className="relative">
