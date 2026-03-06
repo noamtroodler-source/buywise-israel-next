@@ -69,8 +69,8 @@ const whenToBuyReasons = [
   },
   {
     icon: DollarSign,
-    title: 'Your Income Is Stable and Primarily in Shekels',
-    description: 'If you earn abroad, every mortgage payment carries currency risk. A 10% shekel appreciation means your mortgage effectively costs 10% more in your home currency — and you have no control over when that happens. Stable shekel income removes this variable.',
+    title: 'You Understand Your Currency Exposure',
+    description: 'Many buyers successfully carry Israeli mortgages on foreign income — remote workers, retirees, investors. But mortgages are in shekels, so a 10% shekel appreciation means your payment costs 10% more in your home currency. This is manageable: convert in bulk when rates are favorable, budget for variance, or build a shekel reserve. The risk isn\'t earning abroad — it\'s not planning for the fluctuation.',
   },
   {
     icon: Wallet,
