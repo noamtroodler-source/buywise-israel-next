@@ -105,9 +105,9 @@ const costCategories = [
 
 const timelineStages = [
   {
-    stage: 'Pre-offer & Discovery',
-    costs: 'Agent meetings, market research, initial lawyer consultation.',
-    amount: '₪0–2,000',
+    stage: 'Research & Discovery on BuyWise Israel',
+    costs: 'Browse listings, compare cities, use calculators to understand true costs, and tools to connect with vetted professionals and agencies when you\'re ready.',
+    amount: '₪0 (free on BuyWise Israel)',
   },
   {
     stage: 'Offer to Contract',
