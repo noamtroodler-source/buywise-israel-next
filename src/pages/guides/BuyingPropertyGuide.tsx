@@ -264,7 +264,9 @@ const StageCard = ({ stage, index }: { stage: typeof timelineStages[0]; index: n
             <div className="p-4 rounded-lg bg-muted/50 border border-border">
               <div className="flex items-center gap-2 mb-2">
                 <AlertTriangle className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium text-foreground">What can go wrong</span>
+                <span className="text-sm font-medium text-foreground">
+                  {stage.number === 1 ? 'What can go wrong on other platforms' : 'What can go wrong'}
+                </span>
               </div>
               <ul className="space-y-1">
                 {stage.risks.map((risk, i) => (
