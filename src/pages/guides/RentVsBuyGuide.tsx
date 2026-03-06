@@ -40,7 +40,7 @@ const whyLoadedReasons = [
   {
     icon: Calendar,
     title: 'Lease Culture Gaps',
-    description: 'Israeli leases often exclude appliances, light fixtures, even kitchen cabinets. Early termination clauses favor landlords.',
+    description: 'Israeli leases often exclude appliances, light fixtures, and sometimes even kitchen cabinets — tenants are expected to bring or install their own. Early termination clauses, when they exist, typically require 60 days notice from tenants but 90 from landlords. And unlike the US/UK, there\'s no standard move-in inspection — if you don\'t document the apartment\'s condition yourself, disputes at move-out are common.',
   },
 ];
 
