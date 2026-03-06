@@ -86,7 +86,7 @@ const costCategories = [
     title: 'Currency Conversion',
     description: 'Bank spreads on foreign-currency transfers are typically 0.3–1.5%. Specialist services (e.g., Wise, OFX) often beat bank rates.',
     range: '0.3–1.5% spread',
-    example: '₪6k–30k on a $550k transfer',
+    example: '₪7k–37k on a $690k transfer',
   },
   {
     icon: Truck,
