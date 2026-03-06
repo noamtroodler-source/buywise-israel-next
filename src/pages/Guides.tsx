@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import useEmblaCarousel from 'embla-carousel-react';
-import { Calculator, Sparkles } from 'lucide-react';
+import { Calculator, Home, Users, ArrowRight } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { SEOHead } from '@/components/seo/SEOHead';
 import { GuideCard } from '@/components/guides';
@@ -246,54 +246,32 @@ export default function Guides() {
           })}
         </section>
 
-        {/* Quiz CTA */}
+        {/* What's Next */}
         <section className="container pb-10">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
-            className="max-w-xl mx-auto"
+            className="max-w-3xl mx-auto"
           >
-            <div className="p-6 rounded-xl bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/10 text-center">
-              <Sparkles className="h-8 w-8 text-primary mx-auto mb-3" />
-              <h3 className="font-semibold text-foreground mb-2">
-                Not sure where to start?
-              </h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Take our quick quiz to find which guides matter most for your situation.
-              </p>
-              <Link 
-                to="/tools" 
-                className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
-              >
-                Find My Path →
-              </Link>
-            </div>
-          </motion.div>
-        </section>
-
-        {/* Tools CTA */}
-        <section className="container pb-10">
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4 }}
-            className="max-w-2xl mx-auto text-center"
-          >
-            <div className="p-6 rounded-xl bg-muted/50">
-              <Calculator className="h-6 w-6 text-primary mx-auto mb-3" />
-              <h3 className="font-semibold text-foreground mb-2">Ready to run the numbers?</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Our calculators are built for Israel — honest ranges, not fake precision.
-              </p>
-              <div className="flex gap-4 justify-center">
-                <Link to="/tools" className="text-sm font-medium text-primary hover:underline">
-                  Explore Calculators →
+            <h2 className="text-lg font-semibold text-foreground text-center mb-5">What's Next?</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {[
+                { icon: Calculator, title: 'Run the Numbers', description: 'Mortgage, total cost & affordability calculators built for Israel.', to: '/tools' },
+                { icon: Home, title: 'Browse Listings', description: 'Search properties with transparent data and real pricing.', to: '/listings' },
+                { icon: Users, title: 'Find Professionals', description: 'Vetted agents, lawyers & mortgage brokers who work with foreigners.', to: '/professionals' },
+              ].map((item) => (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className="group flex flex-col p-4 rounded-xl border border-border/60 bg-card hover:border-primary/30 hover:shadow-sm transition-all duration-200"
+                >
+                  <item.icon className="h-5 w-5 text-primary mb-2" />
+                  <h3 className="text-sm font-semibold text-foreground mb-1">{item.title}</h3>
+                  <p className="text-xs text-muted-foreground flex-1">{item.description}</p>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all mt-3" />
                 </Link>
-                <Link to="/listings" className="text-sm font-medium text-primary hover:underline">
-                  Browse Listings →
-                </Link>
-              </div>
+              ))}
             </div>
           </motion.div>
         </section>
