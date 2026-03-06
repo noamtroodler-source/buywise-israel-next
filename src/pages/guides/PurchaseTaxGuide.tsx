@@ -138,7 +138,8 @@ const olehBrackets = [
 
 const workedExamples = [
   {
-    label: 'First-Time Buyer (Single Residence)',
+    label: 'Israeli Resident — Single Residence',
+    subtitle: 'First-time buyers or upgraders selling existing home within 18 months',
     price: '₪2,500,000',
     calculation: '₪0 on first ₪1.98M + 3.5% on ₪368K + 5% on ₪153K',
     tax: '₪20,530',
@@ -147,6 +148,7 @@ const workedExamples = [
   },
   {
     label: 'Oleh Hadash (within 7 years)',
+    subtitle: 'Applies to any purchase within the 7-year window — not just the first',
     price: '₪2,500,000',
     calculation: '₪0 on first ₪1.98M + 0.5% on ₪521K',
     tax: '₪2,606',
@@ -155,6 +157,7 @@ const workedExamples = [
   },
   {
     label: 'Investor / Foreign Buyer',
+    subtitle: 'Israeli resident with 2+ properties, or any non-resident (even if only property worldwide)',
     price: '₪2,500,000',
     calculation: '8% on entire ₪2.5M',
     tax: '₪200,000',
