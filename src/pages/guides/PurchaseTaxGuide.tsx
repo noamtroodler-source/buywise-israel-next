@@ -598,60 +598,6 @@ export default function PurchaseTaxGuide() {
           </div>
         </section>
 
-        {/* Buyer Status */}
-        <section id="buyer-status" className="container py-16">
-          <motion.div {...fadeInUp} viewport={{ once: true }} className="max-w-5xl mx-auto">
-            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-8 text-center">
-              How Your Status Changes Everything
-            </h2>
-
-            <div className="grid sm:grid-cols-2 gap-4">
-              <Card className="p-5">
-                <div className="flex items-center gap-2 mb-3">
-                  <Landmark className="h-5 w-5 text-primary" />
-                  <h3 className="font-semibold text-foreground">Israeli Resident — Single Residence</h3>
-                </div>
-                <p className="text-sm text-muted-foreground mb-2">
-                  Progressive brackets starting at 0%. First ₪1.98M is tax-free. Effective rate on a ₪2.5M purchase: ~0.8%.
-                </p>
-                <p className="text-xs text-muted-foreground">Must own only one residence (you + spouse combined).</p>
-              </Card>
-
-              <Card className="p-5">
-                <div className="flex items-center gap-2 mb-3">
-                  <Globe className="h-5 w-5 text-primary" />
-                  <h3 className="font-semibold text-foreground">Foreign Buyer / Non-Resident</h3>
-                </div>
-                <p className="text-sm text-muted-foreground mb-2">
-                  Investor rate: 8% from the first shekel. On a ₪2.5M property, that's ₪200,000 in tax alone.
-                </p>
-                <p className="text-xs text-muted-foreground">Applies even if it's your only property worldwide.</p>
-              </Card>
-
-              <Card className="p-5">
-                <div className="flex items-center gap-2 mb-3">
-                  <Users className="h-5 w-5 text-primary" />
-                  <h3 className="font-semibold text-foreground">Oleh Hadash (New Immigrant)</h3>
-                </div>
-                <p className="text-sm text-muted-foreground mb-2">
-                  Special 0.5% rate on ₪1.98M–₪6M bracket. On a ₪2.5M purchase: ~₪2,600 total tax.
-                </p>
-                <p className="text-xs text-muted-foreground">7-year window from aliyah date. Applies to all properties, not just the first.</p>
-              </Card>
-
-              <Card className="p-5">
-                <div className="flex items-center gap-2 mb-3">
-                  <Scale className="h-5 w-5 text-primary" />
-                  <h3 className="font-semibold text-foreground">Investor / Additional Property</h3>
-                </div>
-                <p className="text-sm text-muted-foreground mb-2">
-                  Same 8%+ rate as foreign buyers. Already owning one apartment in Israel triggers this rate on the second.
-                </p>
-                <p className="text-xs text-muted-foreground">Upgraders selling within 18 months can claim single-residence rates retroactively.</p>
-              </Card>
-            </div>
-          </motion.div>
-        </section>
 
         {/* Bottom CTAs */}
         <section className="container pb-16">
