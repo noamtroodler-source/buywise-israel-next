@@ -71,10 +71,10 @@ const allGuides: Record<string, Guide> = {
   'mortgages': {
     slug: 'mortgages',
     title: 'Mortgages in Israel for Foreign Buyers',
-    description: 'How Israeli mortgages actually work: pre-approval, timing, eligibility, and why the process feels opaque.',
+    description: 'LTV limits, multi-track loans, the reversed timeline, and what catches foreign buyers off guard.',
     image: mortgagesHero,
     readingTime: 15,
-    chaptersCount: 6,
+    chaptersCount: 5,
   },
   'new-vs-resale': {
     slug: 'new-vs-resale',
