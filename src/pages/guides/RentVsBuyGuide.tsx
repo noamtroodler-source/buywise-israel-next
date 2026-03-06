@@ -5,7 +5,9 @@ import { DualNavigation } from '@/components/shared/DualNavigation';
 import { 
   Scale, Clock, BookOpen, ChevronRight, Home, DollarSign,
   Building, Calendar, Shield, Handshake, HelpCircle, Wrench,
-  Plane, Globe, Briefcase, UserCheck, Calculator, BookMarked, Key
+  Plane, Globe, Briefcase, UserCheck, Calculator, BookMarked, Key,
+  TrendingUp, MapPin, Baby, Search, CheckCircle, Wallet, Timer,
+  ArrowRightLeft
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { useTrackContentVisit } from '@/hooks/useTrackContentVisit';
@@ -15,32 +17,70 @@ import rentVsBuyHero from '@/assets/guides/rent-vs-buy-hero.jpg';
 const navSections = [
   { id: 'overview', label: 'Overview' },
   { id: 'why-loaded', label: 'Why It Feels Loaded' },
+  { id: 'the-numbers', label: 'The Numbers' },
+  { id: 'why-rent-first', label: 'Why Rent First' },
   { id: 'renting', label: 'How Renting Works' },
+  { id: 'when-to-buy', label: 'When to Buy' },
   { id: 'buying', label: 'How Buying Changes Things' },
   { id: 'buyer-status', label: 'Buyer Status' },
-  { id: 'closing', label: 'Closing' },
 ];
 
 const whyLoadedReasons = [
   {
     icon: Building,
     title: 'Housing Scarcity',
-    description: 'In cities like Tel Aviv and Jerusalem, demand consistently outpaces supply. Apartments sell within days, creating FOMO that pushes people to buy before they\'re ready.',
+    description: 'In cities like Tel Aviv and Jerusalem, demand consistently outpaces supply. Apartments sell within days, creating FOMO that pushes people to buy before they\'re ready. The fear of "prices will only go up" is real — but so is the risk of overpaying under pressure.',
   },
   {
     icon: Home,
     title: 'Cultural Ownership Pressure',
-    description: 'Homeownership is deeply tied to status and stability in Israel. Expect questions from family, colleagues, and even acquaintances about when you\'re buying — especially after aliyah. Renting long-term can be seen as "not settled yet."',
+    description: 'Homeownership is deeply tied to status and stability in Israel. Expect questions from family, colleagues, and even acquaintances about when you\'re buying — especially after aliyah. Renting long-term is often seen as "not settled yet," even when it\'s the smarter financial move.',
+  },
+];
+
+const rentFirstReasons = [
+  {
+    icon: ArrowRightLeft,
+    title: 'More Space for Your Budget',
+    description: 'A ₪2.5M purchase in Tel Aviv buys roughly 60sqm — a small 2-bedroom. That same budget as rent (₪7,000–9,000/month) gets you 80–90sqm in the same area, or 100+ sqm one neighborhood over. Renters consistently get more living space per shekel.',
   },
   {
-    icon: Shield,
-    title: 'Weak Rental Protections',
-    description: 'No standard inventory process, generally 1-year leases with no renewal guarantee, and landlords can raise rent annually via Madad indexation.',
+    icon: MapPin,
+    title: 'Learn Your City Before Committing',
+    description: 'Neighborhoods change character block by block. What feels right on a pilot trip may not match daily life — the noise level, parking situation, school proximity, and community vibe only reveal themselves after months. Moving between rentals costs ₪5,000–10,000. Buying the wrong neighborhood costs ₪100,000+ in taxes and fees to undo.',
   },
   {
-    icon: Calendar,
-    title: 'Lease Culture Gaps',
-    description: 'Israeli leases often exclude appliances, light fixtures, and sometimes even kitchen cabinets — tenants are expected to bring or install their own. Early termination clauses, when they exist, typically require 60 days notice from tenants but 90 from landlords. And unlike the US/UK, there\'s no standard move-in inspection — if you don\'t document the apartment\'s condition yourself, disputes at move-out are common.',
+    icon: Baby,
+    title: 'Aliyah Adjustment Buffer',
+    description: 'Job changes, ulpan schedules, kids\' school placement, social circles — your first 1–2 years involve major life variables that are nearly impossible to predict. A mortgage adds ₪10,000+/month in fixed obligations during the most uncertain period of your transition.',
+  },
+  {
+    icon: Search,
+    title: 'Test Before You Commit',
+    description: 'A full year of rent in a good apartment costs ₪85,000–110,000. The purchase tax alone on a ₪2.5M apartment ranges from ₪20,000 (first-time buyer) to ₪200,000 (foreign buyer). Renting for a year to confirm you\'re in the right place is one of the cheapest forms of insurance in Israeli real estate.',
+  },
+];
+
+const whenToBuyReasons = [
+  {
+    icon: CheckCircle,
+    title: 'You\'ve Lived Here 2+ Years and Know Your Area',
+    description: 'You\'ve experienced the neighborhood in summer and winter, know the school options, understand the commute, and aren\'t guessing about what daily life looks like. Location confidence is the single biggest factor in a successful purchase.',
+  },
+  {
+    icon: DollarSign,
+    title: 'Your Income Is Stable and Primarily in Shekels',
+    description: 'If you earn abroad, every mortgage payment carries currency risk. A 10% shekel appreciation means your mortgage effectively costs 10% more in your home currency — and you have no control over when that happens. Stable shekel income removes this variable.',
+  },
+  {
+    icon: Wallet,
+    title: 'You Can Cover All Upfront Costs Without Draining Reserves',
+    description: 'Down payment + purchase tax + lawyer + moving/renovation. On a ₪2.5M apartment, this totals ₪700,000–900,000+ depending on your buyer status. If covering this requires emptying your savings, you\'re one emergency away from financial stress.',
+  },
+  {
+    icon: Timer,
+    title: 'You Plan to Stay at Least 7 Years',
+    description: 'Purchase tax + selling costs (broker, lawyer, capital gains) + the time-cost of selling means you typically need 5–7 years of ownership just to break even vs renting. Below that horizon, you\'re likely losing money compared to staying liquid.',
   },
 ];
 
@@ -63,7 +103,7 @@ const rentingAspects = [
   {
     icon: Handshake,
     title: 'Rent Indexation (Madad)',
-    description: 'Many Israeli leases include annual rent increases tied to the Consumer Price Index. Budget for 2-5% yearly increases. Verify if your lease is "צמוד למדד" (index-linked).',
+    description: 'Many Israeli leases include annual rent increases tied to the Consumer Price Index. Budget for 2–5% yearly increases. Verify if your lease is "צמוד למדד" (index-linked).',
   },
   {
     icon: HelpCircle,
@@ -91,22 +131,22 @@ const buyingChanges = [
   {
     icon: DollarSign,
     title: 'Currency & CPI Risk',
-    description: 'Your mortgage will be in shekels (with CPI-linked tracks). If you earn in USD/EUR/GBP, you\'re taking on exchange rate risk for 15–30 years.',
+    description: 'Your mortgage will be in shekels, often with CPI-linked tracks. If you earn in USD/EUR/GBP, you\'re taking on exchange rate risk for 15–30 years. A CPI-linked mortgage track that starts at ₪5,000/month can rise to ₪6,500/month over 10 years if inflation averages 3%.',
   },
   {
     icon: Scale,
     title: 'Purchase Tax Hit',
-    description: 'Foreign buyers pay 8–10% purchase tax on the full price. That\'s money you won\'t recover if you sell in a few years.',
+    description: 'On a ₪2.5M apartment: a first-time Israeli buyer pays roughly ₪20,000. A foreign buyer pays roughly ₪200,000. That\'s a ₪180,000 difference — money you won\'t recover if you sell in a few years.',
   },
   {
     icon: Clock,
     title: 'Selling Is Slow and Expensive',
-    description: 'Selling takes 3–6 months minimum, involves capital gains tax (Mas Shevach), and lawyer/broker fees. Buying is not easily reversible.',
+    description: 'Budget 3–6 months to sell, plus approximately 2–3% of the sale price in broker, lawyer, and capital gains tax (Mas Shevach) costs. On a ₪3M sale, that\'s ₪60,000–90,000 in exit costs alone. Buying is not easily reversible.',
   },
   {
     icon: Building,
     title: 'Vaad Bayit and Arnona',
-    description: 'As an owner, you\'re responsible for building maintenance fees and municipal tax — costs that don\'t exist when renting.',
+    description: 'As an owner, you\'re responsible for building maintenance fees (Vaad Bayit: typically ₪200–800/month depending on building age and amenities) and municipal tax (Arnona: ₪3,000–8,000/year depending on city and apartment size). These are ongoing costs that renters don\'t carry directly.',
   },
 ];
 
@@ -182,20 +222,20 @@ export default function RentVsBuyGuide() {
                 Rent vs Buy in <span className="text-primary">Israel</span>
               </h1>
               <p className="text-xl text-muted-foreground mb-2">
-                How to Think About It as a Foreigner
+                The Financial and Life Decision — Honestly Compared
               </p>
               <p className="text-muted-foreground">
-                Understanding why this decision carries different meaning in Israel
+                Real numbers, real trade-offs, and the questions that actually matter
               </p>
               
               <div className="flex items-center gap-4 mt-6 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1.5">
                   <BookOpen className="h-4 w-4" />
-                  6 sections
+                  8 sections
                 </span>
                 <span className="flex items-center gap-1.5">
                   <Clock className="h-4 w-4" />
-                  ~15 min read
+                  ~12 min read
                 </span>
                 <span>Updated 2026</span>
               </div>
@@ -240,14 +280,14 @@ export default function RentVsBuyGuide() {
             >
               <div className="p-8 rounded-2xl bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/10 text-center">
                 <p className="text-lg font-medium text-foreground mb-3">
-                  The rent vs buy question often arrives with emotional weight.
+                  This is both a financial decision and a life decision.
                 </p>
                 <p className="text-muted-foreground mb-4 max-w-2xl mx-auto">
-                  In Israel, this decision carries different meaning for foreigners. It interacts with identity, 
-                  permanence, and uncertainty in ways that may not match your home country experience.
+                  The numbers matter — but so do your timeline, your risk tolerance, and how well you 
+                  know the place you're considering calling home. This guide walks through both sides honestly.
                 </p>
                 <p className="font-semibold text-primary">
-                  This guide explains the differences—without telling you what to choose.
+                  No agenda. Just the trade-offs, with real numbers attached.
                 </p>
               </div>
 
@@ -257,9 +297,9 @@ export default function RentVsBuyGuide() {
                   The One-Sentence Reality
                 </h3>
                 <p className="text-muted-foreground">
-                  Rent vs buy feels different for foreigners in Israel because each option carries distinct 
-                  implications for legal status, financial anchoring, emotional belonging, and long-term 
-                  uncertainty that don't map neatly to US or UK norms.
+                  Neither renting nor buying is inherently better in Israel — but the right choice depends on 
+                  how long you're staying, where your income comes from, how well you know your city, 
+                  and whether you can absorb ₪700K+ in upfront costs without financial stress.
                 </p>
               </div>
             </motion.div>
@@ -276,12 +316,166 @@ export default function RentVsBuyGuide() {
                 Why the Rent vs Buy Question Feels Loaded in Israel
               </h2>
               <p className="text-muted-foreground mb-6">
-                Structural and cultural factors make this decision carry more weight than many 
-                internationals expect.
+                Two forces make this decision carry more emotional weight than the numbers alone justify.
               </p>
               
               <div className="space-y-4">
                 {whyLoadedReasons.map((reason, index) => (
+                  <div 
+                    key={index}
+                    className="p-5 rounded-xl bg-card border hover:border-primary/20 transition-colors"
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="p-2 rounded-lg bg-primary/10">
+                        <reason.icon className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-foreground mb-1">{reason.title}</h3>
+                        <p className="text-sm text-muted-foreground">{reason.description}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </section>
+
+          {/* The Numbers Section */}
+          <section id="the-numbers" className="mb-16">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+            >
+              <h2 className="text-2xl font-bold text-foreground mb-2">
+                The Numbers: What Renting vs Buying Actually Costs
+              </h2>
+              <p className="text-muted-foreground mb-6">
+                A side-by-side comparison using a ₪2.5M apartment in central Israel — the type 
+                many international buyers consider.
+              </p>
+
+              <div className="grid md:grid-cols-2 gap-4 mb-6">
+                {/* Buying Column */}
+                <div className="p-6 rounded-xl border-2 border-primary/20 bg-card">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Home className="h-5 w-5 text-primary" />
+                    <h3 className="font-bold text-foreground text-lg">Buying</h3>
+                  </div>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Down payment (25%)</span>
+                      <span className="font-semibold text-foreground">₪625,000</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Mortgage (₪1.875M, 5.25%, 25yr)</span>
+                      <span className="font-semibold text-foreground">~₪10,500/mo</span>
+                    </div>
+                    <hr className="border-border/50" />
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Purchase tax (first-time)</span>
+                      <span className="font-semibold text-foreground">~₪20,000</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Purchase tax (foreign)</span>
+                      <span className="font-semibold text-destructive">~₪200,000</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Lawyer</span>
+                      <span className="font-semibold text-foreground">₪15,000–25,000</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Renovation / appliances</span>
+                      <span className="font-semibold text-foreground">₪25,000–50,000</span>
+                    </div>
+                    <hr className="border-border/50" />
+                    <div className="flex justify-between font-bold">
+                      <span className="text-foreground">Year-one total outlay</span>
+                      <span className="text-foreground">₪700K–900K+</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Renting Column */}
+                <div className="p-6 rounded-xl border-2 border-muted bg-card">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Key className="h-5 w-5 text-primary" />
+                    <h3 className="font-bold text-foreground text-lg">Renting</h3>
+                  </div>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Monthly rent (same apartment)</span>
+                      <span className="font-semibold text-foreground">₪7,000–9,000</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Year-one rent</span>
+                      <span className="font-semibold text-foreground">₪84,000–108,000</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Security deposit</span>
+                      <span className="font-semibold text-foreground">₪14,000–27,000</span>
+                    </div>
+                    <hr className="border-border/50" />
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Capital preserved</span>
+                      <span className="font-semibold text-foreground">₪625,000</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Conservative return on capital</span>
+                      <span className="font-semibold text-foreground">₪25,000–35,000/yr</span>
+                    </div>
+                    <hr className="border-border/50" />
+                    <div className="flex justify-between font-bold">
+                      <span className="text-foreground">Year-one total outlay</span>
+                      <span className="text-foreground">₪85K–110K</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Key insight */}
+              <div className="p-5 rounded-xl bg-primary/5 border border-primary/15">
+                <div className="flex items-start gap-3">
+                  <TrendingUp className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="font-semibold text-foreground mb-1">Key Insight</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Renting the same apartment you'd buy typically costs 30–40% less per month than the 
+                      mortgage payment — and you keep your capital liquid. Buying builds equity over time, but 
+                      the break-even point is typically 5–7 years when you factor in all transaction costs.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 p-4 rounded-xl bg-muted/20 border border-border/30">
+                <p className="text-sm text-muted-foreground italic">
+                  These are illustrative ranges based on 2025–2026 market conditions, not guarantees. 
+                  Mortgage rates, rental prices, and tax brackets change. Use our{' '}
+                  <Link to="/tools" className="text-primary hover:underline">calculators</Link>{' '}
+                  for your specific situation.
+                </p>
+              </div>
+            </motion.div>
+          </section>
+
+          {/* Why Rent First Section */}
+          <section id="why-rent-first" className="mb-16">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+            >
+              <h2 className="text-2xl font-bold text-foreground mb-2">
+                The Practical Case for Renting First
+              </h2>
+              <p className="text-muted-foreground mb-6">
+                Even if you plan to buy eventually, renting first is often the financially 
+                and practically smarter sequence — especially for new arrivals.
+              </p>
+              
+              <div className="space-y-4">
+                {rentFirstReasons.map((reason, index) => (
                   <div 
                     key={index}
                     className="p-5 rounded-xl bg-card border hover:border-primary/20 transition-colors"
@@ -338,6 +532,42 @@ export default function RentVsBuyGuide() {
             </motion.div>
           </section>
 
+          {/* When to Buy Section */}
+          <section id="when-to-buy" className="mb-16">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+            >
+              <h2 className="text-2xl font-bold text-foreground mb-2">
+                When Buying Starts to Make Sense
+              </h2>
+              <p className="text-muted-foreground mb-6">
+                Buying isn't wrong — it's about timing. These four conditions, when they align, 
+                suggest the math and life factors are working in your favor.
+              </p>
+              
+              <div className="space-y-4">
+                {whenToBuyReasons.map((reason, index) => (
+                  <div 
+                    key={index}
+                    className="p-5 rounded-xl bg-card border hover:border-primary/20 transition-colors"
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="p-2 rounded-lg bg-primary/10">
+                        <reason.icon className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-foreground mb-1">{reason.title}</h3>
+                        <p className="text-sm text-muted-foreground">{reason.description}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </section>
+
           {/* How Buying Changes Things Section */}
           <section id="buying" className="mb-16">
             <motion.div
@@ -349,7 +579,8 @@ export default function RentVsBuyGuide() {
                 How Buying Changes Things
               </h2>
               <p className="text-muted-foreground mb-6">
-                Buying in Israel comes with concrete financial realities that renters don't face.
+                Once you buy, these financial realities become part of your life. None are deal-breakers — 
+                but all should be factored in before committing.
               </p>
               
               <div className="grid sm:grid-cols-2 gap-4">
@@ -373,7 +604,7 @@ export default function RentVsBuyGuide() {
             </motion.div>
           </section>
 
-          {/* Buyer Status Section — condensed */}
+          {/* Buyer Status Section */}
           <section id="buyer-status" className="mb-16">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -420,8 +651,8 @@ export default function RentVsBuyGuide() {
             </motion.div>
           </section>
 
-          {/* Closing Section */}
-          <section id="closing" className="mb-16">
+          {/* Closing */}
+          <section className="mb-16">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
