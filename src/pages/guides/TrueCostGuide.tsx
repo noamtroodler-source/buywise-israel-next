@@ -53,7 +53,7 @@ const costCategories = [
     title: 'Legal Fees',
     description: 'Your lawyer handles due diligence, contract drafting, title registration and tax filing.',
     range: '0.5–1.5% + VAT',
-    example: '₪12k–35k on a ₪2M property',
+    example: '₪15k–44k on a ₪2.5M property',
   },
   {
     icon: Users,
