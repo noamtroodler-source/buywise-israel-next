@@ -66,7 +66,7 @@ const allGuides: Record<string, Guide> = {
     description: 'Understand roles, incentives, and timing before engaging Israeli real estate professionals.',
     image: talkingToProfessionalsHero,
     readingTime: 15,
-    chaptersCount: 9,
+    chaptersCount: 4,
   },
   'mortgages': {
     slug: 'mortgages',

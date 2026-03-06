@@ -6,8 +6,6 @@ import {
   Users, 
   Clock, 
   BookOpen, 
-  AlertCircle,
-  Eye,
   MessageSquare,
   Wallet,
   TrendingUp,
@@ -15,31 +13,22 @@ import {
   Scale,
   FileText,
   Landmark,
-  Home,
-  Plane,
-  Building,
   HelpCircle,
   CheckCircle2,
   Calculator,
   Lightbulb,
-  Heart,
   ArrowLeft
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useTrackContentVisit } from '@/hooks/useTrackContentVisit';
 
 const navSections = [
   { id: 'overview', label: 'Overview' },
-  { id: 'why-pressured', label: 'Why Pressured' },
+  { id: 'why-pressured', label: 'Why It Feels Different' },
   { id: 'roles', label: 'The Roles' },
-  { id: 'buyer-status', label: 'Buyer Status' },
-  { id: 'misinterpretations', label: 'Misinterpretations' },
-  { id: 'prepared', label: 'Being Prepared' },
-  { id: 'buywise', label: 'BuyWise' },
-  { id: 'closing', label: 'Closing' },
+  { id: 'misinterpretations', label: 'Common Misreads' },
 ];
 
 const fadeInUp = {
@@ -131,64 +120,34 @@ const mortgageDetails = {
     'Mortgage discussions often begin after the contract is signed',
     'Banks require a signed contract and property appraisal before issuing final approval',
     'Pre-approval letters exist, but are indicative rather than binding',
-    'Mortgage approval for foreigners takes about 4-6 weeks'
+    'Mortgage approval for foreigners takes about 4–6 weeks'
   ],
   whyLater: [
     'No financing contingency in typical Israeli contracts',
     'Buyers commit to the purchase, then secure their loan',
     'Banks assess the property and buyer concurrently'
-  ],
-  eligibility: [
-    'Banks evaluate income, credit history and residency status',
-    'Foreign buyers may face stricter documentation requirements',
-    'Foreign buyers often have lower loan-to-value ratios',
-    'Olim sometimes receive preferential terms',
-    'Required documents include valid passport, proof of income, credit report, bank statements, and signed purchase agreement'
   ]
 };
 
-const buyerStatuses = [
-  {
-    icon: Home,
-    title: 'Israeli Residents',
-    description: 'Agents and banks assume familiarity with local norms, so explanations may be brief. Mortgages may be processed more smoothly and benefits for first homes apply.'
-  },
-  {
-    icon: Users,
-    title: 'New Olim (Recent Immigrants)',
-    description: 'You may receive patient explanations and possibly better mortgage terms, but must provide Aliyah documentation. Some benefits depend on timing relative to Aliyah.'
-  },
-  {
-    icon: Plane,
-    title: 'Foreign Buyers Living Abroad',
-    description: 'Professionals may request additional documentation and emphasize time pressure. Banks can require Israeli guarantors or higher down payments.'
-  },
-  {
-    icon: Building,
-    title: 'Investors with Multiple Properties',
-    description: 'Agents and banks treat you as experienced. Higher purchase tax and different mortgage terms apply, handled by lawyers and banks.'
-  }
-];
-
 const misinterpretations = [
   {
-    title: 'Mistaking confidence for certainty',
-    description: 'Professionals may speak decisively, but timelines and approvals still vary—expressions of assurance don\'t guarantee outcomes.'
+    title: 'Taking statements at face value',
+    description: 'Professionals may speak decisively or cite "standard practice," but timelines, approvals, and norms vary by city, property type, and bank. Confidence doesn\'t guarantee certainty.'
   },
   {
     title: 'Assuming verbal statements are informal',
     description: 'In Israel, verbal or WhatsApp agreements can carry weight and create expectations.'
   },
   {
-    title: 'Thinking professionals coordinate everything',
-    description: 'Agents, lawyers and banks operate in parallel; they do not automatically share information. You may need to relay details between them.'
+    title: 'Expecting professionals to coordinate',
+    description: 'Agents, lawyers, and banks operate in parallel with different incentives. They don\'t automatically share information or align on advice—you may need to relay details between them.'
   },
   {
     title: 'Expecting financing to be secured first',
     description: 'Unlike some countries, mortgage approval generally follows contract signing.'
   },
   {
-    title: 'Believing agents represent only them',
+    title: 'Believing agents represent only you',
     description: 'Dual or multiple representation is common and legal; agents may show the same property to several buyers.'
   },
   {
@@ -196,52 +155,8 @@ const misinterpretations = [
     description: 'Lawyers are involved from the outset to conduct due diligence and draft the contract.'
   },
   {
-    title: 'Confusing local etiquette with rudeness',
-    description: 'Direct communication and urgent tone are cultural norms, not hostility.'
-  },
-  {
-    title: 'Expecting alignment on advice',
-    description: 'Agents, lawyers and banks have different incentives; their perspectives may differ.'
-  },
-  {
-    title: 'Taking "standard practice" as law',
-    description: 'Professionals may describe common approaches, but these can vary by city, property type or bank.'
-  },
-  {
-    title: 'Assuming costs and taxes have been considered',
-    description: 'Professionals focus on their area; agents may not mention purchase tax or legal fees, which are handled by lawyers and banks.'
-  }
-];
-
-const preparednessPoints = [
-  'Understanding the sequence of a typical transaction (search, negotiation, signing, financing, registration)',
-  'Knowing that costs like taxes, legal fees and currency conversion exist',
-  'Recognizing what each professional does and does not do',
-  'Appreciating that speed and directness are norms',
-  'Understanding that commitments solidify quickly',
-  'Recognizing your status influences processes and requirements'
-];
-
-const buywiseHelps = [
-  {
-    icon: BookOpen,
-    title: 'Structured context',
-    description: 'Synthesizes information about the sequence of buying or renting'
-  },
-  {
-    icon: Calculator,
-    title: 'Cost awareness',
-    description: 'Surfaces typical cost categories for different buyer types'
-  },
-  {
-    icon: Users,
-    title: 'Role clarity',
-    description: 'Explains the roles of agents, lawyers and banks'
-  },
-  {
-    icon: FileText,
-    title: 'Listing clarity',
-    description: 'Presents listings with clarifying notes on room counts, purchase tax reference, and likely timelines'
+    title: 'Confusing directness with rudeness',
+    description: 'Direct communication and urgent tone are cultural norms, not hostility. Costs and taxes may not be mentioned by agents—those are handled by lawyers and banks.'
   }
 ];
 
@@ -311,7 +226,6 @@ export default function TalkingToProfessionalsGuide() {
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-primary/3 to-transparent" />
         <div className="container relative py-12 md:py-16">
-          {/* Dual Navigation */}
           <DualNavigation
             parentLabel="All Guides"
             parentPath="/guides"
@@ -327,10 +241,6 @@ export default function TalkingToProfessionalsGuide() {
               What to Know Before Talking to an Agent, Lawyer, or Broker
             </h1>
             
-            <p className="text-xl md:text-2xl text-foreground font-medium mb-4">
-              Preparing to Speak with <span className="text-primary">Israeli</span> Real Estate Professionals
-            </p>
-            
             <p className="text-muted-foreground text-lg mb-6">
               Understand roles, incentives, and timing before your first conversation
             </p>
@@ -338,72 +248,24 @@ export default function TalkingToProfessionalsGuide() {
             <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
               <span className="flex items-center gap-1.5">
                 <BookOpen className="h-4 w-4" />
-                9 sections
+                4 sections
               </span>
               <span className="flex items-center gap-1.5">
                 <Clock className="h-4 w-4" />
                 ~15 min read
               </span>
-              <span>Updated 2025</span>
+              <span>Updated 2026</span>
             </div>
           </motion.div>
         </div>
       </section>
 
-      {/* Opener Section */}
+      {/* Overview */}
       <section id="overview" className="container py-16">
-        <motion.div {...fadeInUp} className="max-w-4xl mx-auto">
-          {/* Pain Point Cards */}
-          <div className="grid md:grid-cols-3 gap-4 mb-8">
-            <div className="p-5 rounded-xl bg-muted/50 border">
-              <AlertCircle className="h-5 w-5 text-primary mb-3" />
-              <p className="text-sm text-muted-foreground">
-                Conversations may feel unfamiliar and, at times, hurried
-              </p>
-            </div>
-            <div className="p-5 rounded-xl bg-muted/50 border">
-              <AlertCircle className="h-5 w-5 text-primary mb-3" />
-              <p className="text-sm text-muted-foreground">
-                Professionals operate differently than what you may know
-              </p>
-            </div>
-            <div className="p-5 rounded-xl bg-muted/50 border">
-              <AlertCircle className="h-5 w-5 text-primary mb-3" />
-              <p className="text-sm text-muted-foreground">
-                Understanding roles and incentives changes the dynamic
-              </p>
-            </div>
-          </div>
-
-          {/* CTA Box */}
-          <div className="p-8 rounded-2xl bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/10">
-            <p className="text-lg font-medium text-foreground mb-3 text-center">
-              Feeling anxious about speaking to Israeli real estate agents, lawyers or bankers is natural when you're unfamiliar with the system.
-            </p>
-            <p className="text-muted-foreground text-center mb-4">
-              Understanding their roles, incentives and timing helps international buyers appreciate that conversations may feel different from what they know, but are not inherently adversarial.
-            </p>
-            <p className="text-center font-semibold text-foreground">
-              Use it to engage professionals with confidence, not confusion.
-            </p>
-          </div>
-        </motion.div>
-      </section>
-
-      {/* Core Reframe */}
-      <section className="container pb-16">
         <motion.div {...fadeInUp} className="max-w-3xl mx-auto">
-          <div className="p-6 rounded-xl bg-primary/5 border border-primary/10">
-            <div className="flex gap-4">
-              <Eye className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
-              <div>
-                <h3 className="font-semibold text-foreground mb-2">The Core Reframe</h3>
-                <p className="text-muted-foreground">
-                  Clarity about the process, costs and roles before engaging with professionals changes the dynamic: instead of reacting to unfamiliar practices, you can follow along confidently, knowing the system's structure.
-                </p>
-              </div>
-            </div>
-          </div>
+          <p className="text-lg text-muted-foreground leading-relaxed">
+            Israeli real estate professionals—agents, lawyers, and mortgage advisors—operate on different incentives and timelines than what international buyers expect. Agents are paid at contract signing, not closing. Lawyers are involved from day one, not just at the end. And mortgage approval typically comes <em>after</em> you've already committed to the purchase. None of this is adversarial—it's just how the system works. This guide maps those differences so you're not caught off guard.
+          </p>
         </motion.div>
       </section>
 
@@ -599,7 +461,7 @@ export default function TalkingToProfessionalsGuide() {
               <h3 className="text-xl font-semibold text-foreground">Mortgage Brokers / Banks</h3>
             </div>
             
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid md:grid-cols-2 gap-4">
               <div className="p-5 rounded-xl bg-muted/30 border">
                 <h4 className="font-medium text-foreground mb-3 text-sm">Where They Fit in the Timeline</h4>
                 <ul className="space-y-2">
@@ -622,53 +484,19 @@ export default function TalkingToProfessionalsGuide() {
                   ))}
                 </ul>
               </div>
-              <div className="p-5 rounded-xl bg-muted/30 border">
-                <h4 className="font-medium text-foreground mb-3 text-sm">How Eligibility Varies</h4>
-                <ul className="space-y-2">
-                  {mortgageDetails.eligibility.map((item, i) => (
-                    <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
+            </div>
+
+            <div className="mt-4 p-4 rounded-xl bg-primary/5 border border-primary/10">
+              <div className="flex gap-3 items-center">
+                <Lightbulb className="h-5 w-5 text-primary flex-shrink-0" />
+                <p className="text-sm text-muted-foreground">
+                  Eligibility rules, required documents, and terms vary significantly by residency status and bank.{' '}
+                  <Link to="/guides/mortgages" className="text-primary font-medium hover:underline">
+                    See our Mortgage Guide for full details →
+                  </Link>
+                </p>
               </div>
             </div>
-          </div>
-        </motion.div>
-      </section>
-
-      {/* Buyer Status Reality Check */}
-      <section id="buyer-status" className="container pb-16">
-        <motion.div {...fadeInUp} className="max-w-4xl mx-auto">
-          <h2 className="text-2xl font-bold text-foreground mb-2 text-center">
-            Buyer Status Reality Check
-          </h2>
-          <p className="text-muted-foreground text-center mb-8">
-            Conversations with professionals differ based on who you are
-          </p>
-          
-          <div className="grid md:grid-cols-2 gap-4">
-            {buyerStatuses.map((status, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.05 }}
-                className="p-5 rounded-xl bg-card border"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-lg bg-primary/10">
-                    <status.icon className="h-4 w-4 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-foreground mb-1">{status.title}</h3>
-                    <p className="text-sm text-muted-foreground">{status.description}</p>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
           </div>
         </motion.div>
       </section>
@@ -677,10 +505,10 @@ export default function TalkingToProfessionalsGuide() {
       <section id="misinterpretations" className="container pb-16">
         <motion.div {...fadeInUp} className="max-w-5xl mx-auto">
           <h2 className="text-2xl font-bold text-foreground mb-2 text-center">
-            Where International Buyers Often Misinterpret Conversations
+            Common Misreads by International Buyers
           </h2>
           <p className="text-muted-foreground text-center mb-8 max-w-2xl mx-auto">
-            Common assumptions that can lead to confusion or frustration
+            Assumptions that lead to confusion or frustration
           </p>
           
           <div className="grid md:grid-cols-2 gap-4">
@@ -706,95 +534,6 @@ export default function TalkingToProfessionalsGuide() {
                 </div>
               </motion.div>
             ))}
-          </div>
-        </motion.div>
-      </section>
-
-      {/* What "Prepared" Actually Means */}
-      <section id="prepared" className="container pb-16">
-        <motion.div {...fadeInUp} className="max-w-4xl mx-auto">
-          <h2 className="text-2xl font-bold text-foreground mb-2 text-center">
-            What "Prepared" Actually Means
-          </h2>
-          <p className="text-muted-foreground text-center mb-8">
-            Being prepared is about knowledge, not scripts
-          </p>
-          
-          <div className="p-8 rounded-2xl bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/10">
-            <p className="text-muted-foreground text-center mb-6">
-              Preparation is about mental framing—not memorizing questions or negotiation strategies. It means:
-            </p>
-            
-            <div className="grid md:grid-cols-2 gap-3">
-              {preparednessPoints.map((point, index) => (
-                <div key={index} className="flex items-start gap-3">
-                  <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-foreground">{point}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </motion.div>
-      </section>
-
-      {/* How BuyWise Helps */}
-      <section id="buywise" className="container pb-16">
-        <motion.div {...fadeInUp} className="max-w-4xl mx-auto">
-          <h2 className="text-2xl font-bold text-foreground mb-2 text-center">
-            How BuyWise Helps Before Any Conversation
-          </h2>
-          <p className="text-muted-foreground text-center mb-8">
-            BuyWise Israel eases pre-conversation anxiety by providing structured context
-          </p>
-          
-          <div className="grid md:grid-cols-2 gap-4">
-            {buywiseHelps.map((help, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.05 }}
-                className="p-5 rounded-xl bg-card border hover:border-primary/20 transition-colors"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-lg bg-primary/10">
-                    <help.icon className="h-4 w-4 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-foreground mb-1">{help.title}</h3>
-                    <p className="text-sm text-muted-foreground">{help.description}</p>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-          
-          <p className="text-center text-sm text-muted-foreground mt-6">
-            This neutral background allows you to engage in conversations with a clearer sense of what to expect, without replacing the professionals themselves.
-          </p>
-        </motion.div>
-      </section>
-
-      {/* Calm Closing Reframe */}
-      <section id="closing" className="container pb-16">
-        <motion.div {...fadeInUp} className="max-w-3xl mx-auto">
-          <div className="p-8 rounded-2xl bg-primary/5 border border-primary/10">
-            <div className="flex justify-center mb-4">
-              <Heart className="h-8 w-8 text-primary" />
-            </div>
-            <h2 className="text-xl font-bold text-foreground mb-4 text-center">
-              Calm Closing Reframe
-            </h2>
-            <p className="text-muted-foreground text-center mb-4">
-              Talking to agents, lawyers and bankers in Israel can feel intense, but understanding their roles and incentives makes the experience less daunting. Direct communication, quick timelines and dual representation are standard practices, not red flags.
-            </p>
-            <p className="text-muted-foreground text-center mb-4">
-              When you know that legal checks, contract signing and financing follow a particular sequence and that costs arise separately, you can approach conversations with confidence.
-            </p>
-            <p className="text-center font-semibold text-foreground text-lg">
-              Clarity transforms pressure into partnership, allowing you to benefit from professional expertise without feeling overwhelmed or confrontational.
-            </p>
           </div>
         </motion.div>
       </section>
