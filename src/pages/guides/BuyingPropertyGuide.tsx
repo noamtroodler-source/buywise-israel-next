@@ -62,10 +62,10 @@ const timelineStages = [
   {
     number: 1,
     title: "Discovery and Narrowing",
-    whatHappens: "You browse fragmented listings on portals, agency sites, and social media. Many internationals rent first to understand neighborhoods and pricing realities.",
-    whoInvolved: ["Buyer or Renter", "Possibly multiple agents informally"],
+    whatHappens: "Compare cities and neighborhoods using real market data — price per sqm, rental yields, and price trends. Filter verified listings with English details and transparent pricing. Use affordability and true cost calculators to understand your real budget before you start viewing.",
+    whoInvolved: ["Buyer", "Possibly renting first"],
     documents: "None",
-    risks: ["Assuming listings are complete or accurate", "Misinterpreting room counts and square meters"],
+    risks: ["Narrowing based on listing prices alone — without factoring in tax, legal fees, and currency costs", "Misinterpreting room counts — '4 rooms' means 3 bedrooms + living room"],
   },
   {
     number: 2,
