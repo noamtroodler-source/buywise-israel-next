@@ -45,24 +45,16 @@ const bigPictureInsights = [
    { icon: Users, text: "Agents may represent both buyer and seller." },
 ];
 
-// Data: Glossary terms (16 essential terms)
+// Data: Glossary terms (top 8 most essential for this guide)
 const glossaryTerms = [
   { hebrew: "טאבו", english: "Tabu", definition: "Israel's Land Registry; registering here provides the strongest ownership right. About 7% of Israeli land is privately owned and registered in Tabu." },
-  { hebrew: "מנהל / רמ״י", english: "Minhal / ILA", definition: "Israel Land Authority, managing ~93% of state-owned land. Most homes are on long-term leases (49+49 years), renewable and transferable. High Court decisions have secured foreign leasehold rights." },
-  { hebrew: "הערת אזהרה", english: "He'arat Azhara", definition: "A warning note registered on title to protect buyer's rights before final registration. Register immediately after contract signing to block conflicting transactions." },
-  { hebrew: "זיכרון דברים", english: "Zichron Devarim", definition: "A memorandum of understanding — WARNING: can be legally binding if it contains essential terms (price, property, parties). Courts have enforced these as contracts. Never sign without lawyer review." },
-  { hebrew: "ממ״ד", english: "MAMAD", definition: "Reinforced safe room required in apartments built after 1992. Counted as a 'room' in Israeli room counts." },
-  { hebrew: "משכנתא", english: "Mashkanta", definition: "Mortgage. Banks approve after contract signing, not before. No financing contingency exists in Israel." },
+  { hebrew: "מנהל / רמ״י", english: "Minhal / ILA", definition: "Israel Land Authority, managing ~93% of state-owned land. Most homes are on long-term leases (49+49 years), renewable and transferable." },
+  { hebrew: "הערת אזהרה", english: "He'arat Azhara", definition: "A warning note registered on title to protect buyer's rights before final registration. Register immediately after contract signing." },
+  { hebrew: "זיכרון דברים", english: "Zichron Devarim", definition: "A memorandum of understanding — can be legally binding if it contains essential terms. Courts have enforced these as contracts. Never sign without lawyer review." },
   { hebrew: "מס רכישה", english: "Mas Rechisha", definition: "Purchase tax due within 60 days of signing. Rates vary by buyer status: 0-10% for residents, 8-10% for investors/foreign buyers." },
-  { hebrew: "ועד בית", english: "Va'ad Bayit", definition: "Building committee; collects monthly fees (₪200-800 typical) for maintenance, cleaning, elevator, and building insurance." },
-  { hebrew: "ארנונה", english: "Arnona", definition: "Municipal property tax paid by the occupier. Rates vary significantly by city. Olim and certain groups may qualify for discounts." },
-  { hebrew: "טופס הרשמה", english: "Tofes Harshama", definition: "Reservation form used in new projects; accompanied by a deposit cheque. Can be binding — verify cancellation terms before signing." },
-  { hebrew: "נטו / ברוטו", english: "Net vs Gross", definition: "Net square meters are actual living space; gross includes proportional share of common areas (stairwells, lobby). Difference can be 10-20%." },
-  { hebrew: "מפרט טכני", english: "Mifrat Techni", definition: "Technical specification for new construction; lists every finish, material, and fixture. Anything not listed costs extra. Compare delivered apartment against this document." },
-  { hebrew: "היטל השבחה", english: "Hetel Hashbacha", definition: "Betterment levy due when zoning changes increase property value. Unpaid levies transfer to buyer at closing." },
+  { hebrew: "משכנתא", english: "Mashkanta", definition: "Mortgage. Banks approve after contract signing, not before. No financing contingency exists in Israel." },
+  { hebrew: "נטו / ברוטו", english: "Net vs Gross", definition: "Net square meters are actual living space; gross includes common areas. Difference can be 10-20%." },
   { hebrew: "ערבות בנקאית", english: "Bank Guarantee", definition: "In new projects, banks must guarantee all payments exceeding 7% of purchase price. Your protection if developer fails." },
-  { hebrew: "מחסן", english: "Machsan", definition: "Storage unit. Verify if included and registered separately in Tabu. Value typically ₪50K-150K depending on location." },
-  { hebrew: "טופס 4", english: "Tofes 4", definition: "Municipal occupancy permit confirming building meets safety standards. Cannot legally occupy or connect utilities without it." },
 ];
 
 // Data: Timeline stages (14 stages)
