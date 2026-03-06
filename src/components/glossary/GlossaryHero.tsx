@@ -63,10 +63,13 @@ export function GlossaryHero({
           <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground">
             <span>{termCount} terms</span>
             {savedCount > 0 && (
-              <span className="flex items-center gap-1">
+              <button 
+                onClick={onGoToSaved}
+                className="flex items-center gap-1 hover:text-primary transition-colors cursor-pointer"
+              >
                 <Star className="h-3.5 w-3.5 text-primary fill-primary" />
                 {savedCount} saved
-              </span>
+              </button>
             )}
           </div>
         </motion.div>
