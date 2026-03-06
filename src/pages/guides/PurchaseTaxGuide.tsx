@@ -19,15 +19,8 @@ import {
   Scale,
   Landmark,
   ArrowRight,
-  ArrowLeft,
-  Lightbulb,
-  Image,
-  DollarSign,
-  Home,
-  Building2,
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
-import { Button } from '@/components/ui/button';
 import { useTrackContentVisit } from '@/hooks/useTrackContentVisit';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -43,13 +36,12 @@ import {
 const navSections = [
   { id: 'overview', label: 'Overview' },
   { id: 'what-it-is', label: 'What It Is' },
-  { id: 'why-confusing', label: 'Why Confusing' },
-  { id: 'terms', label: 'Terms' },
-  { id: 'price-confusion', label: 'Price' },
+  { id: 'tax-brackets', label: '2025/26 Rates' },
+  { id: 'worked-example', label: 'Cost Examples' },
+  { id: 'why-confusing', label: 'Why Complex' },
+  { id: 'timeline', label: 'Payment Timeline' },
+  { id: 'terms', label: 'Key Terms' },
   { id: 'buyer-status', label: 'Buyer Status' },
-  { id: 'reading-tips', label: 'How to Read' },
-  { id: 'assumptions', label: 'Assumptions' },
-  { id: 'buywise', label: 'BuyWise' },
 ];
 
 const fadeInUp = {
@@ -61,38 +53,23 @@ const fadeInUp = {
 const whyConfusingReasons = [
   {
     icon: Users,
-    title: 'Buyer-Status Dependence',
-    description: 'Rates and benefits change depending on whether you are an Israeli resident, a new oleh, a foreign buyer, or an investor.',
-  },
-  {
-    icon: TrendingUp,
-    title: 'Frequent Rule Changes',
-    description: 'The Tax Authority updates brackets annually for inflation and may freeze or adjust them mid-cycle.',
-  },
-  {
-    icon: AlertCircle,
-    title: 'Informal Explanations',
-    description: 'Much information circulates through agents, friends and social media, often without context or up-to-date details.',
+    title: 'Your status changes the rate',
+    description: 'Israeli resident, oleh, foreign buyer, investor — each has a different bracket schedule. Two people buying the same apartment can pay wildly different tax.',
   },
   {
     icon: Clock,
-    title: 'Timing vs Expectation Gap',
-    description: 'Liability arises at contract signing, not at closing; payment is due within sixty days.',
+    title: 'Tax is due after signing, not closing',
+    description: 'You owe tax within 60 days of contract signing. Not at key handover, not at Tabu registration — at signing. Many buyers aren\'t financially ready for this.',
+  },
+  {
+    icon: TrendingUp,
+    title: 'Brackets shift every January',
+    description: 'Thresholds are indexed to the consumer price index and updated annually. Numbers you found online 6 months ago may already be wrong.',
   },
   {
     icon: Globe,
-    title: 'Language & Translation Gaps',
-    description: 'Official guidance is primarily in Hebrew; terms like "single residence" carry specific legal meanings.',
-  },
-  {
-    icon: FileText,
-    title: 'Purchase vs Property Taxes',
-    description: 'Many confuse Mas Rechisha with Arnona or other recurring charges; these are separate systems.',
-  },
-  {
-    icon: Scale,
-    title: 'Complex Benefits & Exceptions',
-    description: 'Eligibility for reduced rates depends on declarations and timing, which may not be clear to newcomers.',
+    title: 'Official guidance is in Hebrew',
+    description: 'The Tax Authority website, Form 1345, and bracket tables are all in Hebrew. English summaries online are often outdated or oversimplified.',
   },
 ];
 
@@ -100,125 +77,114 @@ const termsData = [
   {
     term: 'Mas Rechisha',
     assumption: 'A minor stamp duty',
-    reality: 'A graduated purchase tax payable within about sixty days; rates vary by buyer status.',
+    reality: 'A graduated purchase tax payable within ~60 days of signing. Rates range from 0% to 10% depending on buyer status.',
   },
   {
-    term: 'Single Residence',
-    assumption: 'Any home you own if you own no other property worldwide',
-    reality: 'A classification where you and your spouse/children together own only one residence in Israel.',
+    term: 'Single Residence (Dira Yechida)',
+    assumption: 'Any home if you own no other',
+    reality: 'You and your spouse/children together own only one residence in Israel. Worldwide holdings may also matter.',
   },
   {
-    term: 'Investor',
-    assumption: 'Someone who buys property professionally',
-    reality: 'A buyer who owns more than one residence or is a foreign resident without resident benefits.',
+    term: 'Investor Rate',
+    assumption: 'Only for professional investors',
+    reality: 'Applies to anyone buying a second (or additional) property, or any foreign resident. Starts at 8%.',
   },
   {
-    term: 'Aliyah Benefit',
-    assumption: 'Automatic tax break for all Jews',
-    reality: 'Reduced rates (0.5% up to ₪6M) available only within 7 years of aliyah date. First ₪1.98M may be exempt. The Zakaut mortgage eligibility window is separate — up to 15 years after aliyah.',
+    term: 'Oleh Benefit',
+    assumption: 'Automatic lifetime tax break',
+    reality: 'Reduced 0.5% rate up to ₪6M, but only within 7 years of aliyah date. Must be actively claimed.',
   },
   {
-    term: 'New Construction',
-    assumption: 'Newly built home with standard taxes',
-    reality: 'Tax is calculated on total value including VAT; payment can be deferred (interest applies).',
-  },
-  {
-    term: 'Transfer Tax',
-    assumption: 'Ongoing property tax',
-    reality: 'In Israel, Mas Rechisha is a one-time levy; ongoing taxes are separate (Arnona).',
-  },
-  {
-    term: 'Self-Assessment',
-    assumption: 'Something handled automatically by lawyers',
-    reality: "The buyer's responsibility to file Form 1345 within 40 days of signing. Payment due within 60 days.",
-  },
-  {
-    term: 'Exemption',
-    assumption: "Complete relief from tax if it's your first property",
-    reality: 'Exemptions apply only to specific brackets or statuses; they rarely eliminate tax entirely.',
+    term: 'Form 1345 (Hatzharat Rochesh)',
+    assumption: 'Something the lawyer handles automatically',
+    reality: 'The buyer\'s declaration filed within 40 days of signing. Your lawyer files it, but you\'re legally responsible.',
   },
   {
     term: 'Payment Deferral',
-    assumption: 'No need to pay tax until delivery',
-    reality: 'Only available in new constructions, and interest and inflation adjustments apply during deferral.',
+    assumption: 'Delay payment until delivery',
+    reality: 'Only for new construction. Interest + CPI linkage apply during deferral — it\'s not free.',
   },
   {
-    term: 'Capital Gains (Mas Shevach)',
-    assumption: 'Only the seller pays capital gains tax',
-    reality: 'Seller responsibility, but buyers should verify Tax Clearance Certificate before closing. Unpaid seller taxes can delay registration.',
+    term: 'Self-Assessment',
+    assumption: 'Tax Authority sends you a bill',
+    reality: 'You calculate and declare your own tax. The Authority may accept or challenge your assessment.',
   },
   {
     term: 'Late Payment Interest',
-    assumption: 'Small penalty for late payment',
-    reality: 'Interest up to 5% monthly on unpaid capital gains tax. Purchase tax also accrues significant interest if not paid within 60 days.',
-  },
-  {
-    term: 'Betterment Levy (Heitel Hashbacha)',
-    assumption: 'No tax on building rights changes',
-    reality: 'A municipal tax on value increases due to new building rights (e.g., adding floors, balconies). Must be paid before title transfer. Outstanding levies can block registration.',
+    assumption: 'Small penalty',
+    reality: 'Significant interest + CPI linkage accrues from day 61. Can add tens of thousands on expensive properties.',
   },
 ];
 
-const readingTips = [
+const singleResidenceBrackets = [
+  { range: 'Up to ₪1,978,745', rate: '0%' },
+  { range: '₪1,978,745 – ₪2,347,040', rate: '3.5%' },
+  { range: '₪2,347,040 – ₪6,055,070', rate: '5%' },
+  { range: '₪6,055,070 – ₪20,183,560', rate: '8%' },
+  { range: 'Above ₪20,183,560', rate: '10%' },
+];
+
+const investorBrackets = [
+  { range: 'Up to ₪6,055,070', rate: '8%' },
+  { range: 'Above ₪6,055,070', rate: '10%' },
+];
+
+const olehBrackets = [
+  { range: 'Up to ₪1,978,745', rate: '0%' },
+  { range: '₪1,978,745 – ₪6,055,070', rate: '0.5%' },
+  { range: '₪6,055,070 – ₪20,183,560', rate: '8%' },
+  { range: 'Above ₪20,183,560', rate: '10%' },
+];
+
+const workedExamples = [
   {
-    icon: DollarSign,
-    tip: 'When you see a price, remember it excludes tax',
-    detail: 'Purchase tax is calculated on the transaction value and paid separately.',
+    label: 'First-Time Buyer (Single Residence)',
+    price: '₪2,500,000',
+    calculation: '₪0 on first ₪1.98M + 3.5% on ₪368K + 5% on ₪153K',
+    tax: '₪20,530',
+    effectiveRate: '0.82%',
+    color: 'text-primary',
   },
   {
-    icon: Building2,
-    tip: 'When you see "off-plan" or "new project"',
-    detail: 'Anticipate different tax timing. These are taxed on total contract value including VAT.',
+    label: 'Oleh Hadash (within 7 years)',
+    price: '₪2,500,000',
+    calculation: '₪0 on first ₪1.98M + 0.5% on ₪521K',
+    tax: '₪2,606',
+    effectiveRate: '0.10%',
+    color: 'text-emerald-600',
   },
   {
-    icon: Home,
-    tip: 'When an agent calls it a "single residence"',
-    detail: 'Verify your existing property holdings. The classification depends on combined ownership.',
+    label: 'Investor / Foreign Buyer',
+    price: '₪2,500,000',
+    calculation: '8% on entire ₪2.5M',
+    tax: '₪200,000',
+    effectiveRate: '8.00%',
+    color: 'text-destructive',
+  },
+];
+
+const timelineSteps = [
+  {
+    step: '1',
+    title: 'Sign Purchase Contract',
+    description: 'Tax liability begins at contract signing. The clock starts now.',
+    deadline: 'Day 0',
+    icon: FileText,
   },
   {
-    icon: Users,
-    tip: 'When you are a new immigrant or planning Aliyah',
-    detail: 'Check timing. Benefits apply only if you meet residency conditions within set windows.',
+    step: '2',
+    title: 'File Form 1345',
+    description: 'Buyer\'s declaration of purchase (Hatzharat Rochesh). Filed by your lawyer with the Tax Authority.',
+    deadline: 'Within 40 days',
+    icon: Receipt,
   },
   {
-    icon: Globe,
-    tip: 'When you are a foreign buyer',
-    detail: 'Assume the investor rate schedule. Unless you become a resident, investor brackets apply.',
-  },
-  {
-    icon: TrendingUp,
-    tip: 'When looking at price per square meter',
-    detail: 'Tax brackets apply to the total purchase price, not area. High cost per sqm = higher brackets.',
-  },
-  {
-    icon: Scale,
-    tip: 'When the price straddles bracket thresholds',
-    detail: 'Small changes in negotiated price may move you into another band.',
-  },
-  {
-    icon: Calendar,
-    tip: 'When you hear different numbers',
-    detail: 'Consider the update cycle. Brackets adjust annually; ensure information reflects current thresholds.',
-  },
-  {
+    step: '3',
+    title: 'Pay Purchase Tax',
+    description: 'Full payment due. After this deadline, interest + CPI linkage accrues automatically.',
+    deadline: 'Within 60 days',
     icon: Calculator,
-    tip: 'When budgeting',
-    detail: 'Treat purchase tax as a major line item separate from legal fees. Often the largest non-price cost.',
   },
-];
-
-const commonAssumptions = [
-  'They believe purchase tax is included in the listing price.',
-  'They assume tax is due at closing or possession.',
-  'They expect one flat rate irrespective of residency or number of properties.',
-  'They think they automatically qualify for exemptions as first-time buyers or new immigrants.',
-  'They interpret "Mas Rechisha" as annual property tax.',
-  'They assume banks or lawyers will handle tax payment without personal involvement.',
-  'They believe rates remain constant and do not adjust for inflation.',
-  'They think off-plan and resale transactions are taxed the same way.',
-  'They consider purchase tax negotiable or waivable.',
-  'They underestimate the proportion of total cost purchase tax represents.',
-  'They underestimate late payment penalties — interest up to 5% monthly on unpaid capital gains tax.',
 ];
 
 export default function PurchaseTaxGuide() {
@@ -229,11 +195,8 @@ export default function PurchaseTaxGuide() {
   useEffect(() => {
     const handleScroll = () => {
       setShowStickyNav(window.scrollY > 300);
-
-      // Update active section based on scroll position
       const sections = navSections.map(s => document.getElementById(s.id));
       const scrollPosition = window.scrollY + 150;
-
       for (let i = sections.length - 1; i >= 0; i--) {
         const section = sections[i];
         if (section && section.offsetTop <= scrollPosition) {
@@ -242,7 +205,6 @@ export default function PurchaseTaxGuide() {
         }
       }
     };
-
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -293,7 +255,6 @@ export default function PurchaseTaxGuide() {
         <section id="overview" className="relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent" />
           <div className="container relative py-16 md:py-24">
-            {/* Dual Navigation */}
             <DualNavigation
               parentLabel="All Guides"
               parentPath="/guides"
@@ -312,30 +273,29 @@ export default function PurchaseTaxGuide() {
                 <span className="block mt-2">What Foreign Buyers Don't Realize</span>
               </h1>
               <p className="text-xl text-muted-foreground mb-6">
-                Clarity Before Payment
+                The actual numbers, brackets, and deadlines — not the buzzwords
               </p>
               <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <FileText className="h-4 w-4" />
-                  12 sections
+                  8 sections
                 </span>
                 <span className="flex items-center gap-1">
                   <Clock className="h-4 w-4" />
-                  ~15 min read
+                  ~8 min read
                 </span>
                 <span className="flex items-center gap-1">
                   <Calendar className="h-4 w-4" />
-                  Updated 2025
+                  Updated 2026
                 </span>
               </div>
             </motion.div>
           </div>
         </section>
 
-        {/* Opener Section */}
+        {/* Opener */}
         <section className="container py-12">
           <motion.div {...fadeInUp} viewport={{ once: true }} className="max-w-5xl mx-auto">
-            {/* Pain Point Cards */}
             <div className="grid md:grid-cols-3 gap-4 mb-8">
               <Card className="p-4 border-border/50 bg-muted/30">
                 <p className="text-sm text-muted-foreground text-center">
@@ -349,43 +309,20 @@ export default function PurchaseTaxGuide() {
               </Card>
               <Card className="p-4 border-border/50 bg-muted/30">
                 <p className="text-sm text-muted-foreground text-center">
-                  Bracket thresholds change annually with inflation
+                  Same apartment, different buyer = ₪180K+ difference in tax
                 </p>
               </Card>
             </div>
 
-            {/* CTA Box */}
             <div className="p-8 rounded-xl bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20">
               <p className="text-lg text-foreground font-medium mb-3">
-                For many international buyers, the idea of a tax on buying property in Israel creates anxiety and confusion.
+                Mas Rechisha (purchase tax) is a state levy on every property transaction in Israel. It's not optional, not negotiable, and not included in the listing price.
               </p>
-              <p className="text-muted-foreground mb-4">
-                Mas Rechisha (purchase tax) is not a discretionary fee; it is a predictable state levy tied to the property's value and the buyer's status. This guide does not tell you what to do—but explains what the tax is, when it applies, why it differs from expectations abroad, and where misunderstandings arise.
-              </p>
-              <p className="text-primary font-semibold">
-                Use it to understand the system before engaging professionals.
+              <p className="text-muted-foreground">
+                This guide covers the actual bracket tables, a worked calculation, payment deadlines, and the specific points where international buyers get tripped up. No buzzwords — just the mechanics.
               </p>
             </div>
           </motion.div>
-        </section>
-
-        {/* One-Sentence Reality */}
-        <section className="py-12 bg-muted/30">
-          <div className="container">
-            <motion.div {...fadeInUp} viewport={{ once: true }} className="max-w-4xl mx-auto">
-              <Card className="p-8 bg-background border-2 border-primary/20">
-                <div className="flex items-start gap-4">
-                  <Lightbulb className="h-8 w-8 text-primary flex-shrink-0 mt-1" />
-                  <div>
-                    <h2 className="text-lg font-semibold text-foreground mb-2">The One-Sentence Reality</h2>
-                    <p className="text-lg text-foreground leading-relaxed">
-                      Purchase tax surprises foreigners because it is a <strong>graduated levy</strong>, updated regularly, tied to <strong>buyer status</strong> and property type, and payable <strong>shortly after contract signing</strong>—which is very different from the simple, uniform stamp duties many expect.
-                    </p>
-                  </div>
-                </div>
-              </Card>
-            </motion.div>
-          </div>
         </section>
 
         {/* What It Is / What It Is Not */}
@@ -394,186 +331,252 @@ export default function PurchaseTaxGuide() {
             <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-8 text-center">
               What Purchase Tax Is (and What It Is Not)
             </h2>
-            
             <div className="grid md:grid-cols-2 gap-8">
-              {/* What It Is */}
               <Card className="p-6 border-primary/20 bg-primary/5">
                 <div className="flex items-center gap-2 mb-4">
                   <CheckCircle2 className="h-6 w-6 text-primary" />
                   <h3 className="text-lg font-semibold text-foreground">What It Is</h3>
                 </div>
                 <ul className="space-y-3">
-                  <li className="flex items-start gap-2 text-sm">
-                    <span className="text-primary mt-1">•</span>
-                    <span>A state tax levied when you acquire rights to real estate in Israel</span>
-                  </li>
-                  <li className="flex items-start gap-2 text-sm">
-                    <span className="text-primary mt-1">•</span>
-                    <span>Must be filed and paid within ~60 days after contract signing</span>
-                  </li>
-                  <li className="flex items-start gap-2 text-sm">
-                    <span className="text-primary mt-1">•</span>
-                    <span>A graduated tax—higher portions of price face higher brackets</span>
-                  </li>
-                  <li className="flex items-start gap-2 text-sm">
-                    <span className="text-primary mt-1">•</span>
-                    <span>Brackets indexed annually to inflation or frozen by policy</span>
-                  </li>
-                  <li className="flex items-start gap-2 text-sm">
-                    <span className="text-primary mt-1">•</span>
-                    <span>Your status (resident, oleh, foreign, investor) affects which schedule applies</span>
-                  </li>
+                  {[
+                    'A state tax on acquiring real estate rights in Israel',
+                    'Graduated — higher portions of price hit higher brackets',
+                    'Due within 60 days of contract signing',
+                    'Brackets updated annually for inflation (CPI-linked)',
+                    'Your status (resident, oleh, foreign, investor) determines which rate table applies',
+                  ].map((item, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm">
+                      <span className="text-primary mt-1">•</span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
                 </ul>
               </Card>
 
-              {/* What It Is Not */}
               <Card className="p-6 border-border bg-card">
                 <div className="flex items-center gap-2 mb-4">
                   <XCircle className="h-6 w-6 text-muted-foreground" />
                   <h3 className="text-lg font-semibold text-foreground">What It Is Not</h3>
                 </div>
                 <ul className="space-y-3">
-                  <li className="flex items-start gap-2 text-sm">
-                    <span className="text-muted-foreground mt-1">•</span>
-                    <span>Not the same as Arnona (annual municipal tax)</span>
-                  </li>
-                  <li className="flex items-start gap-2 text-sm">
-                    <span className="text-muted-foreground mt-1">•</span>
-                    <span>Not capital-gains tax on sellers</span>
-                  </li>
-                  <li className="flex items-start gap-2 text-sm">
-                    <span className="text-muted-foreground mt-1">•</span>
-                    <span>Not a negotiable fee</span>
-                  </li>
-                  <li className="flex items-start gap-2 text-sm">
-                    <span className="text-muted-foreground mt-1">•</span>
-                    <span>Not typically financed by a mortgage</span>
-                  </li>
-                  <li className="flex items-start gap-2 text-sm">
-                    <span className="text-muted-foreground mt-1">•</span>
-                    <span>Not paid at closing or possession—it's paid after signing</span>
-                  </li>
+                  {[
+                    'Not Arnona (that\'s annual municipal property tax)',
+                    'Not capital-gains tax (that\'s the seller\'s problem)',
+                    'Not negotiable or waivable',
+                    'Not typically financed by a mortgage',
+                    'Not paid at closing or key handover — it\'s paid after signing',
+                  ].map((item, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm">
+                      <span className="text-muted-foreground mt-1">•</span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
                 </ul>
               </Card>
             </div>
           </motion.div>
         </section>
 
-        {/* Why Purchase Tax Feels Confusing */}
+        {/* Tax Brackets */}
+        <section id="tax-brackets" className="py-16 bg-muted/30">
+          <div className="container">
+            <motion.div {...fadeInUp} viewport={{ once: true }} className="max-w-5xl mx-auto">
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2 text-center">
+                2025/26 Tax Brackets
+              </h2>
+              <p className="text-sm text-muted-foreground text-center mb-8">
+                Thresholds updated January 2025. These shift annually with the CPI.
+              </p>
+
+              <div className="grid lg:grid-cols-3 gap-6">
+                {/* Single Residence */}
+                <Card className="p-5 border-primary/20">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Badge variant="default" className="text-xs">Lowest Rates</Badge>
+                  </div>
+                  <h3 className="font-semibold text-foreground mb-3">Single Residence (First-Time)</h3>
+                  <div className="space-y-2">
+                    {singleResidenceBrackets.map((b, i) => (
+                      <div key={i} className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">{b.range}</span>
+                        <span className="font-medium text-foreground">{b.rate}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-3">
+                    Also applies to upgraders selling within 18 months.
+                  </p>
+                </Card>
+
+                {/* Investor / Foreign */}
+                <Card className="p-5 border-destructive/20">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Badge variant="destructive" className="text-xs">Highest Rates</Badge>
+                  </div>
+                  <h3 className="font-semibold text-foreground mb-3">Investor / Foreign / Company</h3>
+                  <div className="space-y-2">
+                    {investorBrackets.map((b, i) => (
+                      <div key={i} className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">{b.range}</span>
+                        <span className="font-medium text-foreground">{b.rate}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-3">
+                    All foreign residents pay this regardless of whether it's their first property.
+                  </p>
+                </Card>
+
+                {/* Oleh */}
+                <Card className="p-5 border-emerald-500/20">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Badge className="text-xs bg-emerald-600 hover:bg-emerald-700">Oleh Benefit</Badge>
+                  </div>
+                  <h3 className="font-semibold text-foreground mb-3">New Immigrant (within 7 years)</h3>
+                  <div className="space-y-2">
+                    {olehBrackets.map((b, i) => (
+                      <div key={i} className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">{b.range}</span>
+                        <span className="font-medium text-foreground">{b.rate}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-3">
+                    7-year window from aliyah date. Applies to first AND additional properties.
+                  </p>
+                </Card>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* Worked Example */}
+        <section id="worked-example" className="container py-16">
+          <motion.div {...fadeInUp} viewport={{ once: true }} className="max-w-5xl mx-auto">
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2 text-center">
+              Same Apartment, Different Tax
+            </h2>
+            <p className="text-sm text-muted-foreground text-center mb-8">
+              Purchase price: ₪2,500,000 — here's how buyer status changes the bill
+            </p>
+
+            <div className="grid md:grid-cols-3 gap-6">
+              {workedExamples.map((ex, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: i * 0.1 }}
+                  viewport={{ once: true }}
+                >
+                  <Card className="p-6 h-full flex flex-col">
+                    <h3 className="font-semibold text-foreground mb-1 text-sm">{ex.label}</h3>
+                    <p className="text-xs text-muted-foreground mb-4">{ex.calculation}</p>
+                    <div className="mt-auto">
+                      <p className={`text-3xl font-bold ${ex.color}`}>{ex.tax}</p>
+                      <p className="text-sm text-muted-foreground">Effective rate: {ex.effectiveRate}</p>
+                    </div>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+
+            <Card className="mt-6 p-4 bg-muted/50 border-border/50">
+              <p className="text-xs text-muted-foreground text-center">
+                These are illustrative calculations based on 2025 brackets. Your lawyer will file the exact assessment. The gap between first-time buyer and investor on a ₪2.5M property is <strong>₪179,470</strong>.
+              </p>
+            </Card>
+          </motion.div>
+        </section>
+
+        {/* Why It's Complex */}
         <section id="why-confusing" className="py-16 bg-muted/30">
           <div className="container">
             <motion.div {...fadeInUp} viewport={{ once: true }} className="max-w-5xl mx-auto">
               <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-8 text-center">
-                Why Purchase Tax in Israel Feels Confusing
+                Why This Trips Up International Buyers
               </h2>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid sm:grid-cols-2 gap-4">
                 {whyConfusingReasons.map((reason, index) => (
-                  <Card key={index} className="p-5 hover:border-primary/30 transition-colors">
-                    <reason.icon className="h-6 w-6 text-primary mb-3" />
-                    <h3 className="font-semibold text-foreground mb-2">{reason.title}</h3>
-                    <p className="text-sm text-muted-foreground">{reason.description}</p>
-                  </Card>
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, y: 15 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: index * 0.08 }}
+                    viewport={{ once: true }}
+                  >
+                    <Card className="p-5 h-full hover:border-primary/30 transition-colors">
+                      <reason.icon className="h-6 w-6 text-primary mb-3" />
+                      <h3 className="font-semibold text-foreground mb-2">{reason.title}</h3>
+                      <p className="text-sm text-muted-foreground">{reason.description}</p>
+                    </Card>
+                  </motion.div>
                 ))}
               </div>
             </motion.div>
           </div>
         </section>
 
-        {/* What Listings Emphasize / Omit */}
-        <section className="container py-16">
-          <motion.div {...fadeInUp} viewport={{ once: true }} className="max-w-5xl mx-auto">
-            <div className="grid md:grid-cols-2 gap-8">
-              {/* Emphasize */}
-              <div>
-                <h3 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
-                  <CheckCircle2 className="h-5 w-5 text-primary" />
-                  What Listings Typically Emphasize
-                </h3>
-                <Card className="p-5">
-                  <ul className="space-y-2 text-sm">
-                    <li className="flex items-start gap-2">
-                      <span className="text-primary">•</span>
-                      Rooms, outdoor space and views
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-primary">•</span>
-                      Location descriptors and proximity to amenities
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-primary">•</span>
-                      Building features (elevator, parking, MAMAD)
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-primary">•</span>
-                      Renovation or project status
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-primary">•</span>
-                      Lifestyle benefits and design quality
-                    </li>
-                  </ul>
-                  <p className="text-xs text-muted-foreground mt-4 italic">
-                    Local listings assume tax details will be handled later with a lawyer.
-                  </p>
-                </Card>
-              </div>
+        {/* Payment Timeline */}
+        <section id="timeline" className="container py-16">
+          <motion.div {...fadeInUp} viewport={{ once: true }} className="max-w-4xl mx-auto">
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-8 text-center">
+              Payment Timeline
+            </h2>
 
-              {/* Omit */}
-              <div>
-                <h3 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
-                  <XCircle className="h-5 w-5 text-muted-foreground" />
-                  What Listings Commonly Omit
-                </h3>
-                <Card className="p-5">
-                  <ul className="space-y-2 text-sm">
-                    <li className="flex items-start gap-2">
-                      <span className="text-muted-foreground">•</span>
-                      Purchase tax information or bracket schedules
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-muted-foreground">•</span>
-                      Net living space vs gross measurements
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-muted-foreground">•</span>
-                      Legal and registration status (Tabu vs Minhal)
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-muted-foreground">•</span>
-                      Other costs (legal fees, commissions, currency conversion)
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-muted-foreground">•</span>
-                      Eligibility requirements for benefits
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-muted-foreground">•</span>
-                      Timing of tax payment
-                    </li>
-                  </ul>
-                  <p className="text-xs text-muted-foreground mt-4 italic">
-                    These omissions reflect local norms, not bad faith.
-                  </p>
-                </Card>
-              </div>
+            <div className="space-y-4">
+              {timelineSteps.map((step, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, x: -20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.4, delay: i * 0.12 }}
+                  viewport={{ once: true }}
+                >
+                  <Card className="p-5 flex items-start gap-4">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <step.icon className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <h3 className="font-semibold text-foreground">{step.title}</h3>
+                        <Badge variant="outline" className="text-xs">{step.deadline}</Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">{step.description}</p>
+                    </div>
+                  </Card>
+                </motion.div>
+              ))}
             </div>
+
+            <Card className="mt-6 p-4 border-destructive/20 bg-destructive/5">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-foreground">Late payment is expensive</p>
+                  <p className="text-xs text-muted-foreground">
+                    After 60 days, interest + CPI linkage accrues automatically. On a ₪200K tax bill, even a few months' delay can add ₪10K+. The Tax Authority does not send reminders.
+                  </p>
+                </div>
+              </div>
+            </Card>
           </motion.div>
         </section>
 
-        {/* Terms Table */}
+        {/* Key Terms */}
         <section id="terms" className="py-16 bg-muted/30">
           <div className="container">
             <motion.div {...fadeInUp} viewport={{ once: true }} className="max-w-5xl mx-auto">
               <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-8 text-center">
-                Terms That Don't Translate Cleanly
+                Key Terms
               </h2>
               <Card className="overflow-hidden">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[150px] font-semibold">Term</TableHead>
-                      <TableHead className="font-semibold">What internationals often assume</TableHead>
-                      <TableHead className="font-semibold">What it commonly means locally</TableHead>
+                      <TableHead className="w-[180px] font-semibold">Term</TableHead>
+                      <TableHead className="font-semibold">What people assume</TableHead>
+                      <TableHead className="font-semibold">What it actually means</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -587,168 +590,61 @@ export default function PurchaseTaxGuide() {
                   </TableBody>
                 </Table>
               </Card>
-              <p className="text-xs text-muted-foreground mt-4 text-center italic">
-                No definition is absolute; local practice and law determine the precise meaning.
-              </p>
             </motion.div>
           </div>
         </section>
 
-        {/* Photos Section */}
-        <section className="container py-12">
-          <motion.div {...fadeInUp} viewport={{ once: true }} className="max-w-4xl mx-auto">
-            <Card className="p-6 border-l-4 border-l-primary">
-              <div className="flex items-start gap-4">
-                <Image className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
-                <div>
-                  <h3 className="font-semibold text-foreground mb-2">Why Photos Often Mislead Without Context</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Listing photographs are designed to showcase a property's appeal, not its tax implications. Wide-angle shots make rooms appear larger; staging emphasizes natural light. None of these visuals reveal whether the property is subject to different tax brackets, qualifies as a single residence, or is off-plan. <strong>Interpret photos as marketing, not as evidence of tax classification.</strong>
-                  </p>
-                </div>
-              </div>
-            </Card>
-          </motion.div>
-        </section>
-
-        {/* Price Confusion */}
-        <section id="price-confusion" className="py-16 bg-muted/30">
-          <div className="container">
-            <motion.div {...fadeInUp} viewport={{ once: true }} className="max-w-4xl mx-auto">
-              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-8 text-center">
-                Where Price Confusion Comes From
-              </h2>
-              <Card className="p-8">
-                <p className="text-foreground leading-relaxed mb-4">
-                  Purchase tax complicates the relationship between asking price and total cost. In Israel, listing prices usually reflect the seller's target price only. The tax is calculated on the purchase price at contract signing and depends on bracket thresholds that change annually.
-                </p>
-                <p className="text-foreground leading-relaxed mb-4">
-                  There are separate schedules for residents, new immigrants and investors, and non-residents are taxed at the investor rates. Because tax brackets are indexed to inflation and sometimes frozen, foreigners may hear different numbers at different times.
-                </p>
-                <p className="text-foreground leading-relaxed">
-                  Unlike some countries where stamp duty is a small flat fee, in Israel <strong>purchase tax can be a significant portion of the overall cost</strong>, and it is rarely included in advertised prices. Price confusion also arises when buyers assume new construction and resale follow the same rules.
-                </p>
-              </Card>
-            </motion.div>
-          </div>
-        </section>
-
-        {/* Buyer Status Reality Check */}
+        {/* Buyer Status */}
         <section id="buyer-status" className="container py-16">
-          <motion.div {...fadeInUp} viewport={{ once: true }} className="max-w-4xl mx-auto">
+          <motion.div {...fadeInUp} viewport={{ once: true }} className="max-w-5xl mx-auto">
             <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-8 text-center">
-              Buyer Status Reality Check
+              How Your Status Changes Everything
             </h2>
-            <Card className="p-8 bg-gradient-to-br from-primary/5 to-transparent border-primary/20">
-              <div className="flex items-start gap-4">
-                <Landmark className="h-8 w-8 text-primary flex-shrink-0" />
-                <div>
-                  <p className="text-foreground leading-relaxed mb-4">
-                    <strong>BuyWise Reality Check:</strong> The structure of the purchase tax system remains the same for everyone, but the rate schedule depends on who you are.
-                  </p>
-                  <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li>• Israeli residents buying a single residence pay progressive brackets starting at zero.</li>
-                    <li>• Foreign buyers, including non-resident citizens, are taxed under the investor schedule.</li>
-                    <li>• New immigrants can claim the Aliyah benefit, but only within specific time frames and conditions.</li>
-                    <li>• Investors or buyers of additional homes face higher flat rates.</li>
-                  </ul>
-                  <p className="text-sm text-foreground mt-4 font-medium">
-                    Understanding which profile applies to you is critical; the tax law does not adjust automatically based on intentions.
-                  </p>
+
+            <div className="grid sm:grid-cols-2 gap-4">
+              <Card className="p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <Landmark className="h-5 w-5 text-primary" />
+                  <h3 className="font-semibold text-foreground">Israeli Resident — Single Residence</h3>
                 </div>
-              </div>
-            </Card>
-          </motion.div>
-        </section>
-
-        {/* How to Read a Listing More Accurately */}
-        <section id="reading-tips" className="py-16 bg-muted/30">
-          <div className="container">
-            <motion.div {...fadeInUp} viewport={{ once: true }} className="max-w-5xl mx-auto">
-              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-8 text-center">
-                How to Read a Listing More Accurately
-              </h2>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {readingTips.map((item, index) => (
-                  <Card key={index} className="p-5 hover:border-primary/30 transition-colors">
-                    <item.icon className="h-5 w-5 text-primary mb-3" />
-                    <p className="font-medium text-foreground mb-2 text-sm">{item.tip}</p>
-                    <p className="text-xs text-muted-foreground">{item.detail}</p>
-                  </Card>
-                ))}
-              </div>
-            </motion.div>
-          </div>
-        </section>
-
-        {/* Common Assumptions */}
-        <section id="assumptions" className="container py-16">
-          <motion.div {...fadeInUp} viewport={{ once: true }} className="max-w-4xl mx-auto">
-            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-8 text-center">
-              Common Assumptions International Buyers Bring
-            </h2>
-            <Card className="p-6">
-              <div className="grid sm:grid-cols-2 gap-3">
-                {commonAssumptions.map((assumption, index) => (
-                  <div key={index} className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
-                    <span className="text-primary font-bold text-sm">{index + 1}</span>
-                    <p className="text-sm text-foreground">{assumption}</p>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          </motion.div>
-        </section>
-
-        {/* How BuyWise Adds Clarity */}
-        <section id="buywise" className="py-16 bg-muted/30">
-          <div className="container">
-            <motion.div {...fadeInUp} viewport={{ once: true }} className="max-w-4xl mx-auto">
-              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-8 text-center">
-                How BuyWise Adds Clarity
-              </h2>
-              <Card className="p-8 border-primary/20">
-                <p className="text-foreground leading-relaxed mb-4">
-                  BuyWise Israel does not calculate your tax or provide legal advice; instead, it <strong>surfaces context</strong> to help you read listings accurately.
+                <p className="text-sm text-muted-foreground mb-2">
+                  Progressive brackets starting at 0%. First ₪1.98M is tax-free. Effective rate on a ₪2.5M purchase: ~0.8%.
                 </p>
-                <ul className="space-y-3 mb-6">
-                  <li className="flex items-start gap-3">
-                    <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">Provides estimated purchase tax ranges based on current bracket schedules</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">Adjusts estimates by buyer type—resident, Oleh, foreign buyer, or investor</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">Clearly separates verified elements from variables like tax and fees</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">Plain-English explanations highlight when off-plan rules or Aliyah benefits might be relevant</span>
-                  </li>
-                </ul>
-                <p className="text-sm text-muted-foreground italic">
-                  This contextual overlay helps you grasp the true cost picture before engaging professionals.
-                </p>
+                <p className="text-xs text-muted-foreground">Must own only one residence (you + spouse combined).</p>
               </Card>
-            </motion.div>
-          </div>
-        </section>
 
-        {/* Calm Reframe */}
-        <section className="container py-16">
-          <motion.div {...fadeInUp} viewport={{ once: true }} className="max-w-4xl mx-auto">
-            <div className="p-8 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 text-center">
-              <Receipt className="h-10 w-10 text-primary mx-auto mb-4" />
-              <h2 className="text-xl font-semibold text-foreground mb-4">Calm Reframe</h2>
-              <p className="text-foreground leading-relaxed mb-4">
-                It's natural to feel anxious about purchase tax when you hear conflicting numbers and stories. The reality is that Mas Rechisha is a <strong>structured, rule-based system</strong> tied to your status and the property value.
-              </p>
-              <p className="text-muted-foreground leading-relaxed">
-                Once you understand that liability arises at contract signing, that brackets change periodically, and that residency and timing affect which schedule applies, the tax becomes predictable. Confusion often stems from mismatched expectations, not deception; <strong>clarity restores your sense of control</strong>.
-              </p>
+              <Card className="p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <Globe className="h-5 w-5 text-primary" />
+                  <h3 className="font-semibold text-foreground">Foreign Buyer / Non-Resident</h3>
+                </div>
+                <p className="text-sm text-muted-foreground mb-2">
+                  Investor rate: 8% from the first shekel. On a ₪2.5M property, that's ₪200,000 in tax alone.
+                </p>
+                <p className="text-xs text-muted-foreground">Applies even if it's your only property worldwide.</p>
+              </Card>
+
+              <Card className="p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <Users className="h-5 w-5 text-primary" />
+                  <h3 className="font-semibold text-foreground">Oleh Hadash (New Immigrant)</h3>
+                </div>
+                <p className="text-sm text-muted-foreground mb-2">
+                  Special 0.5% rate on ₪1.98M–₪6M bracket. On a ₪2.5M purchase: ~₪2,600 total tax.
+                </p>
+                <p className="text-xs text-muted-foreground">7-year window from aliyah date. Applies to all properties, not just the first.</p>
+              </Card>
+
+              <Card className="p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <Scale className="h-5 w-5 text-primary" />
+                  <h3 className="font-semibold text-foreground">Investor / Additional Property</h3>
+                </div>
+                <p className="text-sm text-muted-foreground mb-2">
+                  Same 8%+ rate as foreign buyers. Already owning one apartment in Israel triggers this rate on the second.
+                </p>
+                <p className="text-xs text-muted-foreground">Upgraders selling within 18 months can claim single-residence rates retroactively.</p>
+              </Card>
             </div>
           </motion.div>
         </section>
@@ -762,7 +658,7 @@ export default function PurchaseTaxGuide() {
                   <Calculator className="h-8 w-8 text-primary mb-4" />
                   <h3 className="font-semibold text-foreground mb-2">Purchase Tax Calculator</h3>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Estimate your purchase tax based on property price and buyer status.
+                    Run your own numbers with current brackets and buyer status.
                   </p>
                   <span className="text-sm font-medium text-primary group-hover:underline flex items-center gap-1">
                     Calculate Now <ArrowRight className="h-4 w-4" />
@@ -774,7 +670,7 @@ export default function PurchaseTaxGuide() {
                   <BookOpen className="h-8 w-8 text-primary mb-4" />
                   <h3 className="font-semibold text-foreground mb-2">More Guides</h3>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Explore our complete collection of guides for international buyers.
+                    Buying process, new vs resale, costs breakdown, and more.
                   </p>
                   <span className="text-sm font-medium text-primary group-hover:underline flex items-center gap-1">
                     Browse Guides <ArrowRight className="h-4 w-4" />
@@ -786,7 +682,7 @@ export default function PurchaseTaxGuide() {
                   <HelpCircle className="h-8 w-8 text-primary mb-4" />
                   <h3 className="font-semibold text-foreground mb-2">Full Glossary</h3>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Look up Hebrew terms and real estate jargon in plain English.
+                    Hebrew terms and real estate jargon in plain English.
                   </p>
                   <span className="text-sm font-medium text-primary group-hover:underline flex items-center gap-1">
                     View Glossary <ArrowRight className="h-4 w-4" />
