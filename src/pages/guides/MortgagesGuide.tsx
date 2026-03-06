@@ -349,37 +349,7 @@ export default function MortgagesGuide() {
         {/* Overview Section */}
         <section id="overview" className="container py-12">
           <motion.div {...fadeInUp} className="max-w-4xl mx-auto">
-            {/* Three Pain Point Cards */}
-            <div className="grid md:grid-cols-3 gap-4 mb-8">
-              <div className="p-5 rounded-xl bg-muted/50 border">
-                <p className="text-sm text-muted-foreground">
-                  You typically know your budget upfront in your home country
-                </p>
-              </div>
-              <div className="p-5 rounded-xl bg-muted/50 border">
-                <p className="text-sm text-muted-foreground">
-                  In Israel, financing uncertainty is part of the journey
-                </p>
-              </div>
-              <div className="p-5 rounded-xl bg-muted/50 border">
-                <p className="text-sm text-muted-foreground">
-                  Banks evaluate each buyer and property according to local rules
-                </p>
-              </div>
-            </div>
-
-            {/* Gradient CTA Box */}
-            <div className="p-8 rounded-2xl bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/10 text-center">
-              <p className="text-lg font-medium text-foreground mb-3">
-                For many international buyers, securing a mortgage in Israel can feel opaque and unnerving.
-              </p>
-              <p className="text-muted-foreground mb-4">
-                In countries like the United States or the United Kingdom, you typically know your budget upfront and obtain a firm pre-approval before making an offer. In Israel, the process is different: financing uncertainty is part of the journey, and banks evaluate each buyer and property according to local rules. The result can feel unpredictable—but it is a structured system rather than a personal roadblock.
-              </p>
-              <p className="font-semibold text-foreground">
-                Use this guide to understand the system before speaking with banks.
-              </p>
-            </div>
+            {/* One-Sentence Reality */}
 
             {/* One-Sentence Reality */}
             <div className="mt-8 p-6 rounded-xl bg-primary/5 border border-primary/10">
