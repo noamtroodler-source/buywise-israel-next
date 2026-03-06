@@ -197,6 +197,9 @@ export default function TrueCostGuide() {
   useTrackContentVisit('guide');
   const [showNav, setShowNav] = useState(false);
   const [activeSection, setActiveSection] = useState('overview');
+  const [timelineMode, setTimelineMode] = useState<'resale' | 'new_construction'>('resale');
+
+  const activeTimeline = timelineMode === 'resale' ? resaleTimeline : newConstructionTimeline;
 
   useEffect(() => {
     const handleScroll = () => {
