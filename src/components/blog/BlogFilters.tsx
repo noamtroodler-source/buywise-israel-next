@@ -23,6 +23,8 @@ export function BlogFilters({
   categories,
   selectedCategory,
   onCategoryChange,
+  sortBy,
+  onSortChange,
 }: BlogFiltersProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [showLeftGradient, setShowLeftGradient] = useState(false);
