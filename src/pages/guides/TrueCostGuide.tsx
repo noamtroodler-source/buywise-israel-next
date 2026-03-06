@@ -282,7 +282,7 @@ export default function TrueCostGuide() {
               Taxes, lawyer fees, agent commission, mortgage costs, and setup expenses are all separate — and they vary by your buyer status, financing, and property type. This guide breaks down every category with specific ranges so you can budget accurately before talking to professionals.
             </p>
             <p className="text-center text-sm text-muted-foreground">
-              All examples below use a <strong className="text-foreground">₪2,000,000</strong> (~$550k) property as reference.
+              All examples below use a <strong className="text-foreground">₪2,500,000</strong> (~$690k) property as reference.
             </p>
           </div>
         </motion.div>
