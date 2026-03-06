@@ -3,11 +3,11 @@ import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { DualNavigation } from '@/components/shared/DualNavigation';
 import { 
-  MapPin, Clock, BookOpen, Users, FileText, AlertTriangle, 
-  Lightbulb, CheckCircle2, ArrowRight, ArrowLeft, Scale, Building2, 
-  Landmark, Home, Banknote, Key, ClipboardCheck, Calculator,
-  Globe, Gavel, FileWarning, Calendar, Receipt, Shield,
-  TrendingUp, DollarSign, RefreshCw
+  Clock, BookOpen, Users, FileText, AlertTriangle, 
+  CheckCircle2, ArrowRight, Building2, 
+  Landmark, Home, Banknote, Key, Calculator,
+  Globe, Gavel, FileWarning, Calendar,
+  DollarSign
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card } from '@/components/ui/card';
@@ -23,9 +23,6 @@ const navSections = [
   { id: 'buyer-status', label: 'Buyer Status' },
   { id: 'glossary', label: 'Glossary' },
   { id: 'timeline', label: 'Timeline' },
-  { id: 'surprises', label: 'Surprises' },
-  { id: 'decisions', label: 'Decisions' },
-  { id: 'exit', label: 'Exit' },
   { id: 'checklist', label: 'Checklist' },
 ];
 
@@ -36,7 +33,7 @@ const fadeInUp = {
   transition: { duration: 0.5 }
 };
 
-// Data: Big Picture insights (11 points)
+// Data: Big Picture insights
 const bigPictureInsights = [
    { icon: Home, text: "A '4-room' apartment means 3 bedrooms plus a living room." },
    { icon: Building2, text: "Gross square meters can include shared areas like stairwells." },
@@ -77,7 +74,6 @@ const timelineStages = [
     whoInvolved: ["Buyer or Renter", "Possibly multiple agents informally"],
     documents: "None",
     risks: ["Assuming listings are complete or accurate", "Misinterpreting room counts and square meters"],
-    buyWiseHelp: "How to read listings contextually and compare them cautiously; when renting is a learning strategy."
   },
   {
     number: 2,
@@ -86,7 +82,6 @@ const timelineStages = [
     whoInvolved: ["Renter", "Landlord", "Sometimes an agent"],
     documents: "Rental lease, guarantor forms, deposit",
     risks: ["Assuming rental practices mirror buying", "Misunderstanding that furnished/unfurnished distinctions, security deposits, and rental rights differ from purchase norms"],
-    buyWiseHelp: "The differences between renting and buying systems in Israel, and how rental experience informs your purchase."
   },
   {
     number: 3,
@@ -95,7 +90,6 @@ const timelineStages = [
     whoInvolved: ["Buyer/Renter", "Seller/Landlord", "Agent(s)"],
     documents: "Brokerage agreement (sometimes signed); potential letters of intent",
     risks: ["Assuming the agent represents only you", "Not realizing you owe commission at signing, not at closing"],
-    buyWiseHelp: "Representation norms: dual representation, commission timing, and how to approach or forgo agents."
   },
   {
     number: 4,
@@ -104,7 +98,6 @@ const timelineStages = [
     whoInvolved: ["Buyer's lawyer (essential)", "Sometimes seller's lawyer"],
     documents: "Power of attorney; identity documents",
     risks: ["Involving a lawyer too late", "Assuming 'standard contracts' exist", "Not verifying land type (freehold vs leasehold)"],
-    buyWiseHelp: "Why legal due diligence is the backbone of the deal and how registry type affects ownership rights."
   },
   {
     number: 5,
@@ -113,7 +106,6 @@ const timelineStages = [
     whoInvolved: ["Buyer/Renter", "Seller/Landlord", "Agent(s)"],
     documents: "Texts, emails, possibly a Zichron Devarim summarizing price and possession date",
     risks: ["Signing or sending something 'temporary' that courts treat as binding", "Paying deposits before due diligence"],
-    buyWiseHelp: "In Israeli practice, deals move quickly after verbal agreement; there is cultural momentum to sign soon.",
     pressurePoint: true
   },
   {
@@ -123,7 +115,6 @@ const timelineStages = [
     whoInvolved: ["Buyer", "Developer or seller", "Lawyers"],
     documents: "Reservation form, cheque, Zichron Devarim",
     risks: ["Assuming these are non-binding", "Essential terms may make them enforceable", "Backing out can lead to damages"],
-    buyWiseHelp: "When to politely decline or insist on full contract negotiations before any payment."
   },
   {
     number: 7,
@@ -132,7 +123,6 @@ const timelineStages = [
     whoInvolved: ["Buyer's and seller's lawyers", "Buyer", "Seller"],
     documents: "Hebrew purchase contract, Mifrat (specification)",
     risks: ["Not understanding timing dependencies", "Mortgage approval may still be pending", "Failing to confirm what is included (parking, storage, upgrades)"],
-    buyWiseHelp: "How offer-to-contract flow works, and why lawyers handle custom contracts, not agents."
   },
   {
     number: 8,
@@ -141,7 +131,6 @@ const timelineStages = [
     whoInvolved: ["Buyer", "Seller", "Bank (if financed)", "Lawyers"],
     documents: "Payment schedule in contract; bank guarantee for new projects after 7% payment",
     risks: ["Currency timing risk: international transfers take 3–5 days and incur fees", "Missing deadlines due to bank delays or exchange-rate swings", "Confusing net vs gross price when index-linked (Madad) in projects"],
-    buyWiseHelp: "When funds must be ready and how staged payments differ from single closing payments."
   },
   {
     number: 9,
@@ -150,7 +139,6 @@ const timelineStages = [
     whoInvolved: ["Buyer", "Sending bank", "Receiving bank", "Currency exchange provider"],
     documents: "Source-of-funds declarations; bank forms",
     risks: ["Underestimating transfer time", "Paying exchange markups of 1.5–3% and multiple wire fees", "Encountering regulatory delays"],
-    buyWiseHelp: "The friction around wiring money and the need to align payment dates with transfer timelines."
   },
   {
     number: 10,
@@ -159,7 +147,6 @@ const timelineStages = [
     whoInvolved: ["Bank", "Appraiser", "Buyer", "Lawyer"],
     documents: "Mortgage approval; lien registration; insurance",
     risks: ["Approval delays vs fixed payment dates", "Bank-specific conditions or rate fluctuations"],
-    buyWiseHelp: "Where the mortgage process fits in the timeline and why pre-approval may not equal final approval."
   },
   {
     number: 11,
@@ -168,7 +155,6 @@ const timelineStages = [
     whoInvolved: ["Engineer", "Buyer"],
     documents: "Inspection report",
     risks: ["Skipping inspection", "Discovering issues after signing because no contingencies exist"],
-    buyWiseHelp: "Why you should arrange your own inspection and how to interpret results."
   },
   {
     number: 12,
@@ -177,7 +163,6 @@ const timelineStages = [
     whoInvolved: ["Buyer", "Seller", "Lawyers", "Sometimes agents"],
     documents: "Closing confirmations",
     risks: ["Assuming ownership is finalized at key handover", "Overlooking outstanding taxes or liens"],
-    buyWiseHelp: "How closing works in Israel and why it's not the legal finish line."
   },
   {
     number: 13,
@@ -186,7 +171,6 @@ const timelineStages = [
     whoInvolved: ["Lawyer", "Land registry officials"],
     documents: "Registration application; tax receipts",
     risks: ["Long delays", "Missing documents", "Misunderstanding that keys = ownership"],
-    buyWiseHelp: "The difference between possession and registration and where to check status."
   },
   {
     number: 14,
@@ -195,42 +179,10 @@ const timelineStages = [
     whoInvolved: ["Municipality", "Utility providers", "Building committee"],
     documents: "Arnona transfer forms; Va'ad Bayit agreement; insurance policy",
     risks: ["Missing deadlines for Arnona discounts", "Not budgeting for Va'ad Bayit fees", "Under-insuring property"],
-    buyWiseHelp: "The practical steps after purchase and why they matter."
   },
 ];
 
-// Data: Surprises (10 detailed explanations)
-const surprises = [
-  { title: "Room counts differ", description: "Listings count total rooms (salon + bedrooms), not bedrooms alone." },
-  { title: "Square meters vary", description: "Square meters may be gross (including common areas) or net; second-hand listings often inflate size." },
-  { title: "No central MLS", description: "There is no central MLS; off-market deals never appear on public portals." },
-  { title: "Dual representation", description: "Agents get paid at signing and may represent both sides." },
-  { title: "Verbal = binding", description: "Verbal agreements and preliminary documents can be binding." },
-  { title: "Mortgages finalize late", description: "Mortgages finalize after contract; there is no financing contingency." },
-  { title: "Currency friction", description: "Currency transfers incur delays and fees." },
-  { title: "Rent ≠ Buy rules", description: "Renting and buying are governed by different laws; rental experiences do not predict purchase terms." },
-  { title: "Keys ≠ ownership", description: "Registration happens after closing; keys do not equal legal ownership." },
-  { title: "Status affects taxes", description: "Buyer status (oleh, foreigner, investor) affects taxes and bureaucracy, not the sequence." },
-];
-
-// Data: Decision points (10 tradeoffs)
-const decisionPoints = [
-   { title: "Rent first or buy now?", description: "Learn neighborhoods vs. risk price increases." },
-   { title: "New construction vs resale?", description: "Modern features vs. faster possession." },
-   { title: "Mortgage vs cash?", description: "Preserve capital vs. simpler closing." },
-    { title: "Freehold vs leasehold?", description: "Stronger rights vs. potential restrictions." },
-    { title: "Comprehensive inspection?", description: "Reveal defects vs. save time and cost." },
-];
-
-// Data: Exit considerations
-const exitConsiderations = [
-  { icon: Calendar, title: "Resale timing", description: "Selling before registration can be harder because your rights are not yet recorded." },
-  { icon: Receipt, title: "Tax treatment varies", description: "Capital gains rules differ for residents, new olim, and foreign investors." },
-  { icon: Landmark, title: "Land type matters", description: "Tabu vs Minhal affects buyer appetite; some buyers avoid leasehold properties." },
-  { icon: TrendingUp, title: "Market conditions", description: "City-specific demand determines how quickly you can sell." },
-];
-
-// Data: Readiness checklist (grouped)
+// Data: Readiness checklist (trimmed to 2 groups, actionable items only)
 const readinessChecklist = {
   "Legal & Representation": [
     "I understand who represents whom in the transaction",
@@ -240,15 +192,9 @@ const readinessChecklist = {
   ],
   "Financial & Timing": [
     "I know mortgage approval happens after contract signing",
-    "I understand staged payment schedules",
-    "I know which taxes and costs block registration",
-    "I understand what Zichron Devarim is and its risks",
-  ],
-  "Process & Registration": [
-    "I know keys ≠ legal ownership",
-    "I know where timing mismatches typically occur",
-    "I can explain the 14-stage sequence start to finish",
-    "I understand post-purchase obligations (Arnona, Va'ad Bayit)",
+    "I understand staged payment schedules and currency transfer timelines",
+    "I know which taxes and costs apply to my buyer status",
+    "I understand what Zichron Devarim is and why not to sign it casually",
   ],
 };
 
@@ -259,7 +205,6 @@ const ParticipantBadge = ({ participant }: { participant: string }) => (
   </Badge>
 );
 
-// Stage card component
 // Navigation component - used in hero
 const GuideNavigation = () => (
   <DualNavigation
@@ -337,18 +282,6 @@ const StageCard = ({ stage, index }: { stage: typeof timelineStages[0]; index: n
                   </li>
                 ))}
               </ul>
-            </div>
-          )}
-          
-          {/* BuyWise help */}
-          {stage.buyWiseHelp && (
-            <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
-              <div className="flex items-start gap-2">
-                <Lightbulb className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-                <p className="text-sm text-primary font-medium">
-                  BuyWise helps you understand: {stage.buyWiseHelp}
-                </p>
-              </div>
             </div>
           )}
         </div>
@@ -476,18 +409,6 @@ export default function BuyingPropertyGuide() {
             viewport={{ once: true }}
             className="max-w-4xl mx-auto"
           >
-            <div className="grid md:grid-cols-3 gap-4 mb-8">
-              {[
-                "Rooms are counted differently than you expect",
-                "Sizes may include or exclude shared areas",
-                "Listings are marketing snapshots, not legal documents"
-              ].map((pain, index) => (
-                <Card key={index} className="p-4 border-border/50 bg-muted/30">
-                  <p className="text-sm text-muted-foreground text-center">{pain}</p>
-                </Card>
-              ))}
-            </div>
-            
             <div className="p-6 rounded-xl bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20">
               <p className="text-foreground text-center mb-4">
                 For international buyers and renters, Israeli property listings can feel like a puzzle. 
@@ -657,132 +578,9 @@ export default function BuyingPropertyGuide() {
           </div>
         </section>
 
-        {/* Surprises Section */}
-        <section id="surprises" className="py-16 bg-muted/30">
-          <div className="container">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="text-center mb-10"
-            >
-              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-                Where International Buyers Get Surprised
-              </h2>
-              <p className="text-muted-foreground">Expectations that don't match Israeli reality</p>
-            </motion.div>
-            
-            <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4 max-w-6xl mx-auto">
-              {surprises.map((surprise, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.05 }}
-                >
-                  <Card className="p-4 border-border/50 hover:border-primary/30 transition-colors h-full">
-                    <h4 className="font-medium text-foreground text-sm mb-2">{surprise.title}</h4>
-                    <p className="text-xs text-muted-foreground">{surprise.description}</p>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Decision Points Section */}
-        <section id="decisions" className="container py-16">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-10"
-          >
-            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-              Decision Points
-            </h2>
-            <p className="text-muted-foreground">Tradeoffs to consider, not advice to follow</p>
-          </motion.div>
-          
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 max-w-6xl mx-auto">
-            {decisionPoints.map((point, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.05 }}
-              >
-                <Card className="p-5 h-full border-border/50 hover:border-primary/30 transition-colors">
-                  <div className="flex flex-col gap-3">
-                    <div className="p-2 rounded-lg bg-primary/10 w-fit">
-                      <Scale className="h-4 w-4 text-primary" />
-                    </div>
-                    <div>
-                      <h4 className="font-medium text-foreground text-sm mb-1">{point.title}</h4>
-                      <p className="text-xs text-muted-foreground">{point.description}</p>
-                    </div>
-                  </div>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
-        </section>
-
-        {/* Exit Section */}
-        <section id="exit" className="py-16 bg-muted/30">
-          <div className="container">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="max-w-4xl mx-auto"
-            >
-              <div className="text-center mb-10">
-                <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-                  Thinking Ahead to Exit
-                </h2>
-                <p className="text-muted-foreground">Awareness now helps you structure your purchase</p>
-              </div>
-              
-              <div className="grid sm:grid-cols-2 gap-4 mb-6">
-                {exitConsiderations.map((item, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: index * 0.1 }}
-                  >
-                    <Card className="p-5 h-full border-border/50">
-                      <div className="flex items-start gap-3">
-                        <div className="p-2 rounded-lg bg-primary/10 flex-shrink-0">
-                          <item.icon className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                          <h4 className="font-medium text-foreground mb-1">{item.title}</h4>
-                          <p className="text-sm text-muted-foreground">{item.description}</p>
-                        </div>
-                      </div>
-                    </Card>
-                  </motion.div>
-                ))}
-              </div>
-              
-              <Card className="p-4 border-border/50 bg-muted/50">
-                <p className="text-sm text-muted-foreground text-center">
-                  Resale timing, tax treatment, and liquidity depend on several factors. 
-                  Awareness of exit considerations helps you structure your purchase — but does not require strategy decisions now.
-                </p>
-              </Card>
-            </motion.div>
-          </div>
-        </section>
-
         {/* Readiness Checklist Section */}
         <section id="checklist" className="container py-16">
-          <div className="max-w-5xl mx-auto">
+          <div className="max-w-4xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -790,12 +588,12 @@ export default function BuyingPropertyGuide() {
               className="text-center mb-10"
             >
               <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-                BuyWise Readiness Checklist
+                Readiness Checklist
               </h2>
               <p className="text-muted-foreground">Before reaching out to professionals, ask yourself...</p>
             </motion.div>
             
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid md:grid-cols-2 gap-6">
               {Object.entries(readinessChecklist).map(([category, items], categoryIndex) => (
                 <motion.div
                   key={category}
@@ -893,13 +691,13 @@ export default function BuyingPropertyGuide() {
                 >
                   <Card className="p-6 h-full border-border/50 hover:border-primary/30 transition-colors text-center">
                     <Globe className="h-8 w-8 text-primary mx-auto mb-4" />
-                    <h3 className="font-semibold text-foreground mb-2">Full Glossary</h3>
+                    <h3 className="font-semibold text-foreground mb-2">Explore Cities</h3>
                     <p className="text-sm text-muted-foreground mb-4">
-                      Every term you'll encounter, explained
+                      Market data and neighborhood insights
                     </p>
                     <Button asChild variant="outline" size="sm">
-                      <Link to="/glossary">
-                        View Glossary <ArrowRight className="ml-2 h-4 w-4" />
+                      <Link to="/cities">
+                        Browse Cities <ArrowRight className="ml-2 h-4 w-4" />
                       </Link>
                     </Button>
                   </Card>
