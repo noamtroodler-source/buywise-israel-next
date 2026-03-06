@@ -39,22 +39,15 @@ export default function Blog() {
   
   // Filter state
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCity, setSelectedCity] = useState<string | null>(null);
-  const [selectedAudiences, setSelectedAudiences] = useState<BlogAudience[]>([]);
-  const [sortBy, setSortBy] = useState<BlogSortOption>('newest');
   
   const categorySlug = searchParams.get('category') || undefined;
   const debouncedSearch = useDebounceValue(searchQuery, 300);
 
   // Data hooks
   const { data: categories = [] } = useBlogCategories();
-  const { data: cities = [] } = useBlogCities();
   const { data: posts = [], isLoading: postsLoading } = useBlogPosts({
     categorySlug,
-    city: selectedCity || undefined,
-    audiences: selectedAudiences.length > 0 ? selectedAudiences : undefined,
     search: debouncedSearch || undefined,
-    sortBy,
   });
   
   const { isArticleSaved, toggleSave } = useSavedArticles();
