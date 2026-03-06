@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import useEmblaCarousel from 'embla-carousel-react';
-import { Calculator, Sparkles } from 'lucide-react';
+import { Calculator, Home, Users, ArrowRight } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { SEOHead } from '@/components/seo/SEOHead';
 import { GuideCard } from '@/components/guides';
