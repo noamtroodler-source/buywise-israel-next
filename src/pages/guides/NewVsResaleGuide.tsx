@@ -7,110 +7,93 @@ import {
   BookOpen, 
   Clock, 
   ChevronRight,
-  DollarSign,
-  Calendar,
-  Key,
   Shield,
-  AlertTriangle,
-  FileCheck,
+  FileText,
   Landmark,
   CreditCard,
   Receipt,
-  FileText,
   Layout,
   TrendingUp,
-  Car,
-  ClipboardCheck,
   Building,
   Home,
   Users,
   Plane,
   CheckCircle,
-  ArrowRight,
-  ArrowLeft,
   Calculator,
-  Lightbulb,
-  FileSignature,
   HardHat,
   Search,
-  BadgeCheck,
-  Wrench
+  Eye,
+  Paintbrush,
+  Calendar,
+  Banknote,
+  MapPin,
+  FileSignature,
+  ArrowRight
 } from 'lucide-react';
 import { Layout as PageLayout } from '@/components/layout/Layout';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useTrackContentVisit } from '@/hooks/useTrackContentVisit';
 
 const navSections = [
   { id: 'overview', label: 'Overview' },
-  { id: 'assumptions', label: 'Assumptions' },
-  { id: 'new-construction', label: 'New Construction' },
-  { id: 'resale', label: 'Resale' },
-  { id: 'differences', label: 'Differences' },
+  { id: 'comparison', label: 'Side-by-Side' },
+  { id: 'costs', label: 'Real Costs' },
+  { id: 'choose-new', label: 'Choose New If…' },
+  { id: 'choose-resale', label: 'Choose Resale If…' },
   { id: 'buyer-status', label: 'Buyer Status' },
-  { id: 'surprises', label: 'Surprises' },
-  { id: 'commitments', label: 'Commitments' },
-  { id: 'costs', label: 'Costs & Taxes' },
-  { id: 'buywise', label: 'BuyWise' },
-  { id: 'closing', label: 'Closing' },
+  { id: 'closing', label: 'Bottom Line' },
 ];
 
-const assumptions = [
-  { icon: DollarSign, text: '"New construction is always cheaper"' },
-  { icon: Calendar, text: '"Delivery dates are firm"' },
-  { icon: Key, text: '"New means move-in ready"' },
-  { icon: Shield, text: '"Quality is perfect in new builds"' },
-  { icon: AlertTriangle, text: '"Resale homes have no surprises"' },
-  { icon: FileCheck, text: '"Developer warranties cover everything"' },
-  { icon: Landmark, text: '"Banks treat new and resale equally"' },
-  { icon: CreditCard, text: '"Payment schedules are similar"' },
-  { icon: Receipt, text: '"Taxes and fees are identical"' },
-  { icon: FileText, text: '"Registration happens automatically"' },
-  { icon: Clock, text: '"Resale transactions close faster"' },
-  { icon: Layout, text: '"New projects come with fixed layouts"' },
-  { icon: TrendingUp, text: '"Resale homes appreciate more slowly"' },
-  { icon: Car, text: '"Parking and storage are standard in new builds"' },
-  { icon: ClipboardCheck, text: '"Resale purchases involve less paperwork"' },
-];
-
-const structuralDifferences = [
-  { title: 'Contract Structure', description: 'New construction contracts are standardized by developers with detailed technical specifications (mifrat) and statutory protections. Resale contracts are bespoke agreements negotiated between buyer and seller.', icon: FileSignature },
-  { title: 'Payment Timing', description: 'New purchases involve staged payments over months or years tied to construction milestones. Resale transactions concentrate payments around signing and closing.', icon: CreditCard },
-  { title: 'Risk Allocation', description: 'New builds carry construction and delivery risk, mitigated by bank guarantees. Resale risks are visible and can be assessed through inspections, but hidden liens may exist.', icon: Shield },
-  { title: 'Information Certainty', description: 'Off-plan purchases rely on plans, renderings, and promises—some details undefined until permits are received. Resale buyers see the finished apartment before committing.', icon: Search },
-  { title: 'Flexibility vs Predictability', description: 'New buyers may customize layouts and finishes within developer rules, but outcomes can shift. Resale buyers sacrifice customization for immediate clarity.', icon: Layout },
-  { title: 'Registration Timeline', description: 'New builds may not be registered until after a housing company transfers rights to the Land Registry. Resale registrations typically complete soon after closing.', icon: FileText },
-  { title: 'Post-Contract Obligations', description: 'New construction buyers must monitor bank guarantees, manage payments, select materials, and perform inspections. Resale buyers face fewer post-contract tasks.', icon: ClipboardCheck },
-  { title: 'Amenities & Maintenance', description: 'New buildings often include elevators, parking, and modern common areas—but higher maintenance fees. Older buildings may lack amenities but have lower ongoing costs.', icon: Building },
-];
-
-const surprises = [
-  { text: 'Assuming delivery dates are fixed', detail: 'Off-plan completion dates are aspirational; delays due to permits or construction are common.' },
-  { text: 'Believing "new" means turn-key', detail: 'New apartments require finishing selections and may lack utilities until the occupancy certificate is obtained.' },
-  { text: 'Thinking resale has no hidden issues', detail: 'Existing homes can have liens, building code violations, or pending municipal debts.' },
-  { text: 'Expecting uniform protections', detail: 'Developer contracts have consumer laws, but enforcement and warranty periods vary; resale relies more on buyer diligence.' },
-  { text: 'Confusing "price per meter" comparisons', detail: 'New and resale apartments measure space differently (gross vs net), and common areas distort comparisons.' },
-  { text: 'Assuming financing is the same', detail: 'Mortgage terms, down payments, and documentation requirements can differ for new vs resale.' },
-  { text: 'Believing registration is immediate', detail: 'In new projects, full registration may occur long after you move in.' },
-  { text: 'Expecting identical tax treatments', detail: 'VAT often applies to developer sales, whereas resale deals may not; purchase tax rates vary.' },
-  { text: 'Assuming amenities are included', detail: 'Parking, storage, and community facilities in new developments may incur extra cost.' },
-  { text: 'Trusting renderings as reality', detail: 'Marketing materials may not reflect final finishes, layouts, or neighborhood development.' },
-  { text: 'Not knowing about the 7% safeguard rule', detail: 'Developers must provide one of five legal safeguards (bank guarantee, insurance, first mortgage, warning notice, or property rights transfer) before collecting payments exceeding 7% of the price.' },
-];
-
-const buyerStatuses = [
-  { title: 'Israeli Residents', icon: Home, description: 'Navigate both paths with greater familiarity. May access local financing and understand typical contract terms. For residents, new projects may offer promotions or lotteries.' },
-  { title: 'New Olim', icon: Users, description: 'Might benefit from certain incentives on new projects, but still need to manage language and documentation hurdles.' },
-  { title: 'Foreign Buyers Abroad', icon: Plane, description: 'Face stricter mortgage conditions and may need a local representative. Being overseas makes supervising construction choices harder.' },
-  { title: 'Investors', icon: Building, description: 'Often view new projects for appreciation potential and flexible payment schedules. Resale may provide immediate rental income. Must consider purchase tax rates.' },
-];
-
-const buywiseFeatures = [
-  { title: 'Distinguishes Listing Types', description: 'Clearly marks whether a listing is resale or off-plan so you know which path you\'re considering.', icon: Search },
-  { title: 'Construction Stage Info', description: 'For new projects, highlights construction stage, estimated delivery period, and bank guarantee availability.', icon: HardHat },
-  { title: 'Title & Registration Status', description: 'Surfaces title and registration status where possible, helping you understand legal certainty.', icon: FileText },
-  { title: 'Buyer-Adjusted Estimates', description: 'Adjusts cost estimates based on your buyer profile, flagging whether VAT or other taxes apply.', icon: Calculator },
+const comparisonRows = [
+  {
+    category: 'Contract',
+    icon: FileSignature,
+    newCol: 'Standardized developer contract under Sale Law 1973. Includes a mifrat (technical spec) listing every finish and fixture.',
+    resaleCol: 'Bespoke contract negotiated between buyer and seller lawyers. No standard template.',
+  },
+  {
+    category: 'Payment',
+    icon: CreditCard,
+    newCol: 'Staged payments over 2–4 years tied to construction milestones (foundation, frame, finishes). Typically 10–20% at signing, remainder spread across stages.',
+    resaleCol: 'Concentrated: 10–20% deposit at signing, balance at closing (usually 60–90 days later).',
+  },
+  {
+    category: 'What You See',
+    icon: Eye,
+    newCol: 'Floor plans, renderings, and a model apartment. The actual unit doesn't exist yet. Final details may change after permits.',
+    resaleCol: 'The actual apartment. You walk through it, check the plumbing, see the neighbors, hear the street noise.',
+  },
+  {
+    category: 'Timeline',
+    icon: Calendar,
+    newCol: 'Contract to keys: typically 2–4 years. Delays of 6–18 months are common due to permits and construction.',
+    resaleCol: 'Contract to keys: typically 60–90 days. Faster if no mortgage needed.',
+  },
+  {
+    category: 'Legal Protections',
+    icon: Shield,
+    newCol: 'The 7% rule: developers cannot collect more than 7% of price without providing a bank guarantee, insurance policy, first mortgage, warning notice (he\'arat azhara), or property rights transfer.',
+    resaleCol: 'No statutory safeguard mechanism. Protection comes from your lawyer\'s due diligence: title search, lien check, municipal debt verification.',
+  },
+  {
+    category: 'Registration',
+    icon: FileText,
+    newCol: 'First recorded in a Housing Company ledger. Transfer to Tabu (Land Registry) can take months to years after move-in.',
+    resaleCol: 'Registered in Tabu shortly after closing, typically within a few weeks.',
+  },
+  {
+    category: 'Price Adjustments',
+    icon: TrendingUp,
+    newCol: 'Payments linked to the Construction Input Index (Madad Tsumin). If the index rises 4% on a ₪1.5M remaining balance, you owe an extra ₪60K.',
+    resaleCol: 'Price is fixed at contract signing. No index linkage.',
+  },
+  {
+    category: 'Customization',
+    icon: Paintbrush,
+    newCol: 'Choose flooring, kitchen layout, bathroom tiles, electrical outlet placement—within the developer\'s menu and timelines.',
+    resaleCol: 'What you see is what you get. Changes require renovation after purchase.',
+  },
 ];
 
 export default function NewVsResaleGuide() {
@@ -148,188 +131,399 @@ export default function NewVsResaleGuide() {
   return (
     <PageLayout>
       <div className="min-h-screen bg-background">
+        {/* Hero */}
         <section className="relative overflow-hidden bg-gradient-to-b from-primary/5 to-background">
           <div className="container py-12 md:py-16">
-            {/* Dual Navigation */}
-            <DualNavigation
-              parentLabel="All Guides"
-              parentPath="/guides"
-              className="mb-4"
-            />
+            <DualNavigation parentLabel="All Guides" parentPath="/guides" className="mb-4" />
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl mx-auto text-center">
               <Badge variant="secondary" className="mb-4"><Scale className="h-3 w-3 mr-1" />Essential Guide</Badge>
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">New Construction vs Resale in <span className="text-primary">Israel</span><span className="block mt-2">What's Really Different</span></h1>
-              <p className="text-lg text-muted-foreground mb-6">Distinct paths with their own timelines, obligations, and uncertainties</p>
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">
+                New Construction vs Resale in <span className="text-primary">Israel</span>
+                <span className="block mt-2">What's Really Different</span>
+              </h1>
+              <p className="text-lg text-muted-foreground mb-6">Two different buying processes, not just two ages of apartment</p>
               <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-muted-foreground">
-                <span className="flex items-center gap-1"><BookOpen className="h-4 w-4" />11 sections</span>
-                <span className="flex items-center gap-1"><Clock className="h-4 w-4" />~18 min read</span>
-                <span>Updated January 2025</span>
+                <span className="flex items-center gap-1"><BookOpen className="h-4 w-4" />7 sections</span>
+                <span className="flex items-center gap-1"><Clock className="h-4 w-4" />~12 min read</span>
+                <span>Updated 2026</span>
               </div>
             </motion.div>
           </div>
         </section>
 
-        <motion.nav initial={{ opacity: 0, y: -20 }} animate={{ opacity: showStickyNav ? 1 : 0, y: showStickyNav ? 0 : -20 }} className={cn("fixed top-16 left-0 right-0 z-40 bg-background/95 backdrop-blur border-b transition-all", !showStickyNav && "pointer-events-none")}>
+        {/* Sticky Nav */}
+        <motion.nav
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: showStickyNav ? 1 : 0, y: showStickyNav ? 0 : -20 }}
+          className={cn("fixed top-16 left-0 right-0 z-40 bg-background/95 backdrop-blur border-b transition-all", !showStickyNav && "pointer-events-none")}
+        >
           <div className="container py-2">
             <div className="flex gap-1 overflow-x-auto scrollbar-hide">
               {navSections.map((section) => (
-                <button key={section.id} onClick={() => scrollToSection(section.id)} className={cn("px-3 py-1.5 text-sm rounded-full whitespace-nowrap transition-colors", activeSection === section.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted")}>{section.label}</button>
+                <button key={section.id} onClick={() => scrollToSection(section.id)} className={cn("px-3 py-1.5 text-sm rounded-full whitespace-nowrap transition-colors", activeSection === section.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted")}>
+                  {section.label}
+                </button>
               ))}
             </div>
           </div>
         </motion.nav>
 
+        {/* Content */}
         <div className="container py-12">
           <div className="max-w-4xl mx-auto space-y-16">
+
+            {/* 1. Overview */}
             <section id="overview" className="scroll-mt-32">
-              <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="space-y-8">
-                <div className="grid md:grid-cols-3 gap-4">
-                  <div className="p-5 rounded-xl bg-muted/50 border"><p className="text-sm text-muted-foreground">Choosing between new and resale feels like stepping into two different worlds</p></div>
-                  <div className="p-5 rounded-xl bg-muted/50 border"><p className="text-sm text-muted-foreground">"New" and "resale" involve distinct legal structures, payment schedules, and information certainty</p></div>
-                  <div className="p-5 rounded-xl bg-muted/50 border"><p className="text-sm text-muted-foreground">In Israel these differences are sharper than many foreigners expect</p></div>
-                </div>
-                <div className="p-8 rounded-2xl bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/10 text-center">
-                  <p className="text-lg font-medium text-foreground mb-3">Choosing between a new development and a resale property in Israel often feels like stepping into two different worlds.</p>
-                  <p className="text-muted-foreground mb-4">International buyers hear mixed stories: glossy brochures promise modern comforts, while friends rave about character-filled second-hand flats. In truth, "new" and "resale" involve distinct legal structures, payment schedules, and information certainty.</p>
-                  <p className="font-semibold text-primary">Use this guide to understand which path fits your situation.</p>
-                </div>
-                <div className="p-6 rounded-xl bg-card border-l-4 border-l-primary">
-                  <p className="text-lg font-medium text-foreground">The choice between buying a new development and buying a resale property in Israel feels confusing to internationals because each path operates under different contracts, timelines, and risk allocations that do not match familiar US or UK norms.</p>
-                </div>
-              </motion.div>
-            </section>
-
-            <section id="assumptions" className="scroll-mt-32">
               <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="space-y-6">
-                <div><h2 className="text-2xl font-bold text-foreground mb-2">Common Assumptions About New vs Resale</h2><p className="text-muted-foreground">Many international buyers approach the Israeli market with preconceived ideas about "new" and "resale" homes.</p></div>
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {assumptions.map((a, i) => (<div key={i} className="flex items-start gap-3 p-4 rounded-xl bg-card border hover:border-primary/20 transition-colors"><a.icon className="h-5 w-5 text-primary shrink-0 mt-0.5" /><p className="text-sm text-muted-foreground">{a.text}</p></div>))}
+                <div className="p-8 rounded-2xl bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/10">
+                  <p className="text-lg font-medium text-foreground mb-3">
+                    In Israel, "new construction" and "resale" aren't just about the age of the building. They're two entirely different buying processes—different contracts, different payment structures, different legal protections, and different risk profiles.
+                  </p>
+                  <p className="text-muted-foreground">
+                    A new-build purchase is governed by the Sale Law (1973) with standardized developer contracts and staged payments over years. A resale purchase is a private transaction with negotiated terms and a 60–90 day close. This guide breaks down the concrete differences so you can decide which process fits your situation.
+                  </p>
                 </div>
               </motion.div>
             </section>
 
-            <section id="new-construction" className="scroll-mt-32">
+            {/* 2. Side-by-Side Comparison */}
+            <section id="comparison" className="scroll-mt-32">
               <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="space-y-6">
-                <div><h2 className="text-2xl font-bold text-foreground mb-2">What "New Construction" Means in Israel</h2><p className="text-muted-foreground">"New construction" typically refers to purchasing an apartment off-plan—before or during construction.</p></div>
-                <div className="p-6 rounded-xl bg-muted/30 border space-y-4">
-                  {[{ icon: HardHat, title: 'Developer-Issued Contract', desc: 'Buyers sign a standardized contract that includes a technical specification (mifrat) detailing promised finishes and fixtures, as required by law.' },
-                    { icon: CreditCard, title: 'Staged Payments', desc: 'Payments are made in stages tied to construction milestones or time intervals, not concentrated at closing.' },
-                    { icon: Shield, title: 'Bank Guarantee Protection', desc: 'Developers are prohibited from collecting more than 7% of the price without offering one of five legal safeguards: bank guarantee, insurance, first mortgage, warning notice in the registry, or transfer of property rights.' },
-                    { icon: CreditCard, title: 'Designated Payment Channels', desc: 'Payments must be made via vouchers issued by the financing bank into a designated project account — never directly to the developer\'s personal account.' },
-                    { icon: Layout, title: 'Customization Options', desc: 'Buyers may have options to choose materials or request design changes during construction, within developer rules.' },
-                    { icon: FileCheck, title: 'Tofes 4 Required', desc: 'Possession is only possible after the project receives a certificate of occupancy (Tofes 4).' },
-                    { icon: Clock, title: 'Delayed Registration', desc: 'Ownership registration can occur months or years after key handover, first recorded in a housing company ledger before migrating to the Land Registry.' }
-                  ].map((item, i) => (<div key={i} className="flex items-start gap-3"><item.icon className="h-5 w-5 text-primary shrink-0 mt-1" /><div><p className="font-medium text-foreground">{item.title}</p><p className="text-sm text-muted-foreground">{item.desc}</p></div></div>))}
+                <div>
+                  <h2 className="text-2xl font-bold text-foreground mb-2">Side-by-Side Comparison</h2>
+                  <p className="text-muted-foreground">Eight categories where new and resale diverge in practice.</p>
+                </div>
+                <div className="space-y-4">
+                  {comparisonRows.map((row, i) => (
+                    <motion.div
+                      key={row.category}
+                      initial={{ opacity: 0, y: 15 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: i * 0.05 }}
+                      className="rounded-xl border bg-card overflow-hidden"
+                    >
+                      <div className="flex items-center gap-2 px-5 py-3 bg-muted/50 border-b">
+                        <row.icon className="h-4 w-4 text-primary" />
+                        <h3 className="font-semibold text-foreground text-sm">{row.category}</h3>
+                      </div>
+                      <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
+                        <div className="p-4">
+                          <span className="text-xs font-medium text-primary uppercase tracking-wide">New Construction</span>
+                          <p className="text-sm text-muted-foreground mt-1.5">{row.newCol}</p>
+                        </div>
+                        <div className="p-4">
+                          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Resale</span>
+                          <p className="text-sm text-muted-foreground mt-1.5">{row.resaleCol}</p>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
                 </div>
               </motion.div>
             </section>
 
-            <section id="resale" className="scroll-mt-32">
-              <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="space-y-6">
-                <div><h2 className="text-2xl font-bold text-foreground mb-2">What "Resale" Means in Israel</h2><p className="text-muted-foreground">"Resale" refers to purchasing an existing apartment from a private seller.</p></div>
-                <div className="p-6 rounded-xl bg-muted/30 border space-y-4">
-                  {[{ icon: Search, title: 'Physical Inspection Possible', desc: 'The property physically exists—buyers can inspect its condition and layout before committing.' },
-                    { icon: FileSignature, title: 'Bespoke Contracts', desc: 'Contracts are negotiated between buyer and seller with the help of their lawyers, not standardized by developers.' },
-                    { icon: CreditCard, title: 'Concentrated Payments', desc: 'Payment is typically split between a down payment at contract signing and a final payment at closing.' },
-                    { icon: BadgeCheck, title: 'Less Uncertainty', desc: 'Less uncertainty about the physical product or the surrounding neighborhood since it\'s already built.' },
-                    { icon: FileText, title: 'Due Diligence Focus', desc: 'Legal checks focus on verifying title, checking for liens, and ensuring municipal taxes and maintenance fees are current.' },
-                    { icon: CheckCircle, title: 'Faster Registration', desc: 'Registration of ownership in the Land Registry usually occurs shortly after closing, barring any encumbrances.' }
-                  ].map((item, i) => (<div key={i} className="flex items-start gap-3"><item.icon className="h-5 w-5 text-primary shrink-0 mt-1" /><div><p className="font-medium text-foreground">{item.title}</p><p className="text-sm text-muted-foreground">{item.desc}</p></div></div>))}
-                </div>
-              </motion.div>
-            </section>
-
-            <section id="differences" className="scroll-mt-32">
-              <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="space-y-6">
-                <div><h2 className="text-2xl font-bold text-foreground mb-2">The Structural Differences That Matter</h2><p className="text-muted-foreground">These are not minor variations—they fundamentally shape your experience and obligations.</p></div>
-                <div className="grid md:grid-cols-2 gap-4">
-                  {structuralDifferences.map((d, i) => (<div key={i} className="p-5 rounded-xl bg-card border hover:border-primary/20 transition-colors"><div className="flex items-start gap-3"><d.icon className="h-5 w-5 text-primary shrink-0 mt-1" /><div><h3 className="font-semibold text-foreground mb-1">{d.title}</h3><p className="text-sm text-muted-foreground">{d.description}</p></div></div></div>))}
-                </div>
-              </motion.div>
-            </section>
-
-            <section id="buyer-status" className="scroll-mt-32">
-              <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="space-y-6">
-                <div><h2 className="text-2xl font-bold text-foreground mb-2">Buyer Status Reality Check</h2><p className="text-muted-foreground">The experience differs substantially based on who you are.</p></div>
-                <div className="grid md:grid-cols-2 gap-4">
-                  {buyerStatuses.map((s, i) => (<div key={i} className="p-5 rounded-xl bg-card border hover:border-primary/20 transition-colors"><div className="flex items-start gap-3"><div className="p-2 rounded-lg bg-primary/10"><s.icon className="h-5 w-5 text-primary" /></div><div><h3 className="font-semibold text-foreground mb-1">{s.title}</h3><p className="text-sm text-muted-foreground">{s.description}</p></div></div></div>))}
-                </div>
-              </motion.div>
-            </section>
-
-            <section id="surprises" className="scroll-mt-32">
-              <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="space-y-6">
-                <div><h2 className="text-2xl font-bold text-foreground mb-2">Where International Buyers Get Surprised</h2><p className="text-muted-foreground">These common surprises catch buyers off guard regardless of which path they choose.</p></div>
-                <div className="space-y-3">
-                  {surprises.map((s, i) => (<div key={i} className="p-4 rounded-xl bg-card border hover:border-primary/20 transition-colors"><div className="flex items-start gap-3"><AlertTriangle className="h-5 w-5 text-primary shrink-0 mt-0.5" /><div><p className="font-medium text-foreground">{s.text}</p><p className="text-sm text-muted-foreground mt-1">{s.detail}</p></div></div></div>))}
-                </div>
-              </motion.div>
-            </section>
-
-            <section id="commitments" className="scroll-mt-32">
-              <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="space-y-6">
-                <div><h2 className="text-2xl font-bold text-foreground mb-2">When Commitments and Risks Appear</h2><p className="text-muted-foreground">Understanding when you're committed—and exposed—helps you prepare for each path.</p></div>
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="p-6 rounded-xl bg-muted/30 border">
-                    <div className="flex items-center gap-2 mb-4"><HardHat className="h-5 w-5 text-primary" /><h3 className="font-semibold text-foreground">New Construction</h3></div>
-                    <div className="space-y-3">
-                      {['Commitment begins at contract signing with initial payment', 'Significant payments due over construction milestones', 'Risk exists until construction complete, Tofes 4 issued, and property registered', 'Must track bank guarantees and ensure each payment is secured', 'Developer can pass some risks (like inflation-linked adjustments) to buyer'].map((t, i) => (<div key={i} className="flex items-start gap-2"><ArrowRight className="h-4 w-4 text-primary shrink-0 mt-1" /><p className="text-sm text-muted-foreground">{t}</p></div>))}
-                    </div>
-                  </div>
-                  <div className="p-6 rounded-xl bg-muted/30 border">
-                    <div className="flex items-center gap-2 mb-4"><Home className="h-5 w-5 text-primary" /><h3 className="font-semibold text-foreground">Resale</h3></div>
-                    <div className="space-y-3">
-                      {['Commitment starts at contract signing with down payment and firm closing date', 'Risk centers on legal state (liens, encumbrances) and physical condition', 'These risks addressed through due diligence and inspections', 'After closing, risk mostly shifts to you as owner', 'Registration usually completes relatively quickly after closing'].map((t, i) => (<div key={i} className="flex items-start gap-2"><ArrowRight className="h-4 w-4 text-primary shrink-0 mt-1" /><p className="text-sm text-muted-foreground">{t}</p></div>))}
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            </section>
-
+            {/* 3. Real Costs */}
             <section id="costs" className="scroll-mt-32">
               <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="space-y-6">
-                <div><h2 className="text-2xl font-bold text-foreground mb-2">How This Choice Affects Costs, Taxes, and Financing</h2><p className="text-muted-foreground">The choice between new and resale affects several cost components in ways that may surprise you.</p></div>
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div className="p-5 rounded-xl bg-card border"><Receipt className="h-5 w-5 text-primary mb-3" /><h3 className="font-semibold text-foreground mb-1">VAT Differences</h3><p className="text-sm text-muted-foreground">New construction prices often include VAT, while resale transactions typically do not.</p></div>
-                  <div className="p-5 rounded-xl bg-card border"><TrendingUp className="h-5 w-5 text-primary mb-3" /><h3 className="font-semibold text-foreground mb-1">Index Linkage</h3><p className="text-sm text-muted-foreground">Developer contracts link payments to the building cost index, which can lead to price adjustments during construction.</p></div>
-                  <div className="p-5 rounded-xl bg-card border"><Landmark className="h-5 w-5 text-primary mb-3" /><h3 className="font-semibold text-foreground mb-1">Financing Conditions</h3><p className="text-sm text-muted-foreground">Banks may treat off-plan as higher risk, require larger down payments, or limit loan amounts until construction progresses.</p></div>
-                  <div className="p-5 rounded-xl bg-card border"><div className="flex items-center gap-2 mb-3"><DollarSign className="h-5 w-5 text-primary" /><Badge variant="outline" className="text-xs">VARIES</Badge></div><h3 className="font-semibold text-foreground mb-1">Purchase Tax Rates</h3><p className="text-sm text-muted-foreground">Rates vary by buyer status and whether the property is new or second-hand.</p></div>
-                  <div className="p-5 rounded-xl bg-card border"><Building className="h-5 w-5 text-primary mb-3" /><h3 className="font-semibold text-foreground mb-1">Ongoing Costs</h3><p className="text-sm text-muted-foreground">Maintenance fees and HOA dues can be higher in new buildings with extensive amenities.</p></div>
-                  <div className="p-5 rounded-xl bg-card border"><Wrench className="h-5 w-5 text-primary mb-3" /><h3 className="font-semibold text-foreground mb-1">Additional Expenses</h3><p className="text-sm text-muted-foreground">Resale buyers may face renovation costs, while new buyers may incur finishing expenses not in the spec.</p></div>
+                <div>
+                  <h2 className="text-2xl font-bold text-foreground mb-2">Real Costs: ₪2.5M Reference Apartment</h2>
+                  <p className="text-muted-foreground">Concrete numbers so you can compare apples to apples.</p>
+                </div>
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* New Construction Column */}
+                  <div className="rounded-xl border bg-card overflow-hidden">
+                    <div className="px-5 py-3 bg-primary/10 border-b">
+                      <div className="flex items-center gap-2">
+                        <HardHat className="h-4 w-4 text-primary" />
+                        <h3 className="font-semibold text-foreground">New Construction</h3>
+                      </div>
+                    </div>
+                    <div className="p-5 space-y-3">
+                      {[
+                        { label: 'Listed price', value: '₪2,500,000', note: 'Includes VAT' },
+                        { label: 'VAT embedded in price', value: '₪382,000', note: '18% already built into the listed price' },
+                        { label: 'Lawyer (developer\'s)', value: '₪25,000–50,000', note: '1–2% + VAT, paid to developer\'s attorney' },
+                        { label: 'Your lawyer', value: '₪12,500–25,000', note: '0.5–1% + VAT' },
+                        { label: 'Index linkage risk', value: '₪0–60,000+', note: 'If Construction Input Index rises 4% on ₪1.5M balance = ₪60K extra' },
+                        { label: 'Lost rental income', value: '~₪252,000', note: '₪7K/mo × 36 months while waiting for construction' },
+                        { label: 'Finishing extras', value: '₪20,000–80,000', note: 'Upgrades beyond base mifrat (closets, A/C, blinds)' },
+                      ].map((item, i) => (
+                        <div key={i} className="flex justify-between items-start gap-3">
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-foreground">{item.label}</p>
+                            <p className="text-xs text-muted-foreground">{item.note}</p>
+                          </div>
+                          <span className="text-sm font-semibold text-foreground whitespace-nowrap">{item.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Resale Column */}
+                  <div className="rounded-xl border bg-card overflow-hidden">
+                    <div className="px-5 py-3 bg-muted/50 border-b">
+                      <div className="flex items-center gap-2">
+                        <Home className="h-4 w-4 text-primary" />
+                        <h3 className="font-semibold text-foreground">Resale</h3>
+                      </div>
+                    </div>
+                    <div className="p-5 space-y-3">
+                      {[
+                        { label: 'Listed price', value: '₪2,500,000', note: 'No VAT on private sales' },
+                        { label: 'Your lawyer', value: '₪12,500–25,000', note: '0.5–1% + VAT' },
+                        { label: 'Agent fee', value: '₪44,250–73,750', note: '1.5–2.5% + VAT (negotiable, often buyer pays)' },
+                        { label: 'Renovation budget', value: '₪80,000–250,000', note: 'Kitchen ₪40–80K, bathroom ₪25–30K each, varies heavily by condition' },
+                        { label: 'Appraisal', value: '₪1,500–3,500', note: 'Required by bank for mortgage' },
+                        { label: 'Index linkage risk', value: '₪0', note: 'Price locked at signing' },
+                        { label: 'Rental income (if investing)', value: 'Immediate', note: 'Can rent out within weeks of closing' },
+                      ].map((item, i) => (
+                        <div key={i} className="flex justify-between items-start gap-3">
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-foreground">{item.label}</p>
+                            <p className="text-xs text-muted-foreground">{item.note}</p>
+                          </div>
+                          <span className="text-sm font-semibold text-foreground whitespace-nowrap">{item.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div className="p-4 rounded-lg bg-muted/50 border">
+                  <p className="text-xs text-muted-foreground">
+                    <strong>Note:</strong> Purchase tax (mas rechisha) applies to both paths. Rates depend on buyer status—see the Buyer Status section below. These figures use 2025/2026 rates and are estimates for illustration.
+                  </p>
                 </div>
               </motion.div>
             </section>
 
-            <section id="buywise" className="scroll-mt-32">
+            {/* 4. Choose New If… */}
+            <section id="choose-new" className="scroll-mt-32">
               <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="space-y-6">
-                <div><h2 className="text-2xl font-bold text-foreground mb-2">How BuyWise Adds Clarity</h2><p className="text-muted-foreground">BuyWise helps you understand differences without suggesting one option is superior.</p></div>
-                <div className="grid md:grid-cols-2 gap-4">
-                  {buywiseFeatures.map((f, i) => (<div key={i} className="p-5 rounded-xl bg-card border hover:border-primary/20 transition-colors"><div className="flex items-start gap-3"><div className="p-2 rounded-lg bg-primary/10"><f.icon className="h-5 w-5 text-primary" /></div><div><h3 className="font-semibold text-foreground mb-1">{f.title}</h3><p className="text-sm text-muted-foreground">{f.description}</p></div></div></div>))}
+                <div>
+                  <h2 className="text-2xl font-bold text-foreground mb-2">Choose New Construction If…</h2>
+                </div>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  {[
+                    {
+                      icon: Calendar,
+                      title: 'You\'re not in a rush',
+                      desc: 'You have 2–4 years before you need to move in, and you\'re okay with potential delays. You have stable housing in the meantime.',
+                    },
+                    {
+                      icon: Banknote,
+                      title: 'Staged payments help your cash flow',
+                      desc: 'Spreading payments over construction milestones means you don\'t need the full amount upfront. Useful if you\'re selling another asset or accumulating savings.',
+                    },
+                    {
+                      icon: Paintbrush,
+                      title: 'Finishes matter to you',
+                      desc: 'You want to pick your flooring, kitchen layout, and bathroom tiles rather than renovating after purchase. The mifrat lets you choose within the developer\'s menu.',
+                    },
+                    {
+                      icon: Building,
+                      title: 'You want modern building standards',
+                      desc: 'New builds comply with Teken 413 (insulation standard), have elevators, structured parking, and mamad (safe room). Older buildings often lack these.',
+                    },
+                  ].map((card, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, y: 15 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: i * 0.08 }}
+                      className="p-5 rounded-xl bg-card border hover:border-primary/20 transition-colors"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 rounded-lg bg-primary/10 shrink-0">
+                          <card.icon className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-foreground mb-1">{card.title}</h3>
+                          <p className="text-sm text-muted-foreground">{card.desc}</p>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
                 </div>
               </motion.div>
             </section>
 
+            {/* 5. Choose Resale If… */}
+            <section id="choose-resale" className="scroll-mt-32">
+              <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="space-y-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-foreground mb-2">Choose Resale If…</h2>
+                </div>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  {[
+                    {
+                      icon: Eye,
+                      title: 'You want to see what you\'re buying',
+                      desc: 'Walk through the apartment, check water pressure, hear the street noise, meet the neighbors. No surprises about what the finished product looks like.',
+                    },
+                    {
+                      icon: Clock,
+                      title: 'You need to move in soon',
+                      desc: 'Closing in 60–90 days means you can plan around a real date. No construction delays, no waiting for Tofes 4 (occupancy certificate).',
+                    },
+                    {
+                      icon: MapPin,
+                      title: 'Location in an established neighborhood',
+                      desc: 'Schools, shops, transit, and community are already there. New developments are sometimes in areas that are still being built up around you.',
+                    },
+                    {
+                      icon: Receipt,
+                      title: 'You want immediate rental income',
+                      desc: 'If you\'re buying as an investment, a resale apartment can be rented out within weeks. A new build sits empty for 2–4 years during construction.',
+                    },
+                  ].map((card, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, y: 15 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: i * 0.08 }}
+                      className="p-5 rounded-xl bg-card border hover:border-primary/20 transition-colors"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 rounded-lg bg-muted shrink-0">
+                          <card.icon className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-foreground mb-1">{card.title}</h3>
+                          <p className="text-sm text-muted-foreground">{card.desc}</p>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+            </section>
+
+            {/* 6. Buyer Status */}
+            <section id="buyer-status" className="scroll-mt-32">
+              <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="space-y-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-foreground mb-2">How Your Buyer Status Changes the Equation</h2>
+                  <p className="text-muted-foreground">The same apartment at the same price costs different amounts depending on who you are.</p>
+                </div>
+                <div className="grid md:grid-cols-2 gap-4">
+                  {[
+                    {
+                      icon: Home,
+                      title: 'Israeli Residents (First Apartment)',
+                      points: [
+                        'Purchase tax: 0% on first ₪1.978M, then 3.5–5% on remainder',
+                        'LTV: up to 75% mortgage',
+                        'May access Mechir L\'Mishtaken (gov\'t price-capped lotteries) for new projects',
+                        'Language advantage for navigating developer contracts and municipal offices',
+                      ],
+                    },
+                    {
+                      icon: Users,
+                      title: 'Olim (New Immigrants)',
+                      points: [
+                        'Same tax brackets as first-time buyers if buying sole property',
+                        'LTV: up to 75%',
+                        'Zakaut eligibility: various benefits within first 15 years of aliyah',
+                        'Contracts and mifrat are in Hebrew—budget for translation or bilingual lawyer',
+                      ],
+                    },
+                    {
+                      icon: Plane,
+                      title: 'Foreign Buyers (Non-Residents)',
+                      points: [
+                        'Purchase tax: 8% from first shekel, 10% above ~₪6M',
+                        'LTV: typically capped at 50%',
+                        'New construction: need Power of Attorney (POA) for someone in Israel to manage milestone inspections and payment confirmations',
+                        'Can\'t access Mechir L\'Mishtaken lotteries',
+                      ],
+                    },
+                    {
+                      icon: Building,
+                      title: 'Investors (Own Another Property)',
+                      points: [
+                        'Purchase tax: 8% from first shekel (same as foreign buyers)',
+                        'LTV: up to 50% for investment property',
+                        'New construction: appreciation potential but no rental income for years',
+                        'Resale: immediate rental income, typically ₪5–8K/mo for a 3-room in central areas',
+                      ],
+                    },
+                  ].map((status, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, y: 15 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: i * 0.08 }}
+                      className="p-5 rounded-xl bg-card border"
+                    >
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="p-2 rounded-lg bg-primary/10">
+                          <status.icon className="h-5 w-5 text-primary" />
+                        </div>
+                        <h3 className="font-semibold text-foreground">{status.title}</h3>
+                      </div>
+                      <div className="space-y-2">
+                        {status.points.map((point, j) => (
+                          <div key={j} className="flex items-start gap-2">
+                            <ArrowRight className="h-3.5 w-3.5 text-primary shrink-0 mt-1" />
+                            <p className="text-sm text-muted-foreground">{point}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+            </section>
+
+            {/* 7. Bottom Line */}
             <section id="closing" className="scroll-mt-32">
               <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="space-y-6">
                 <div className="p-8 rounded-2xl bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/10">
-                  <Lightbulb className="h-8 w-8 text-primary mb-4" />
-                  <h2 className="text-2xl font-bold text-foreground mb-4">Calm Reframe</h2>
+                  <Scale className="h-8 w-8 text-primary mb-4" />
+                  <h2 className="text-2xl font-bold text-foreground mb-4">Bottom Line</h2>
                   <div className="space-y-4 text-muted-foreground">
-                    <p>New construction and resale properties in Israel are not two versions of the same process; they are distinct paths with their own timelines, obligations, and uncertainties.</p>
-                    <p>Once you understand that off-plan purchases involve staged commitments, evolving specifications, and delayed registration, while resale purchases offer immediate physical certainty but still require thorough legal checks, the choice becomes a matter of personal fit rather than guesswork.</p>
-                    <p className="font-medium text-foreground">Neither option is inherently better; each carries its own set of expectations and adjustments. With clarity and context, you can approach either path with calm confidence instead of confusion.</p>
+                    <p>
+                      <strong className="text-foreground">New construction</strong> trades time and certainty for staged payments, customization, and modern standards. You're committing to a process that takes years, carries index-linkage and delay risk, and won't produce rental income until it's done.
+                    </p>
+                    <p>
+                      <strong className="text-foreground">Resale</strong> trades customization for immediacy and visibility. You see exactly what you're buying, close in months, and can generate income right away—but you may need to renovate, and you lose the staged-payment flexibility.
+                    </p>
+                    <p className="font-medium text-foreground">
+                      Neither is inherently better. The right choice depends on your timeline, cash flow, tolerance for uncertainty, and whether you need the apartment now or in three years.
+                    </p>
                   </div>
                 </div>
               </motion.div>
             </section>
 
+            {/* CTA Footer */}
             <section className="pt-8 border-t">
               <div className="grid md:grid-cols-3 gap-4">
-                <Link to="/tools" className="p-5 rounded-xl bg-card border hover:border-primary/20 transition-colors group"><Calculator className="h-5 w-5 text-primary mb-3" /><h3 className="font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">True Cost Calculator</h3><p className="text-sm text-muted-foreground">Estimate total costs for new or resale purchases</p><ChevronRight className="h-4 w-4 text-primary mt-2" /></Link>
-                <Link to="/guides" className="p-5 rounded-xl bg-card border hover:border-primary/20 transition-colors group"><BookOpen className="h-5 w-5 text-primary mb-3" /><h3 className="font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">More Guides</h3><p className="text-sm text-muted-foreground">Explore our complete guide collection</p><ChevronRight className="h-4 w-4 text-primary mt-2" /></Link>
-                <Link to="/guides/mortgages" className="p-5 rounded-xl bg-card border hover:border-primary/20 transition-colors group"><Landmark className="h-5 w-5 text-primary mb-3" /><h3 className="font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">Mortgages Guide</h3><p className="text-sm text-muted-foreground">Understand financing for either path</p><ChevronRight className="h-4 w-4 text-primary mt-2" /></Link>
+                <Link to="/tools" className="p-5 rounded-xl bg-card border hover:border-primary/20 transition-colors group">
+                  <Calculator className="h-5 w-5 text-primary mb-3" />
+                  <h3 className="font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">True Cost Calculator</h3>
+                  <p className="text-sm text-muted-foreground">Estimate total costs for new or resale purchases</p>
+                  <ChevronRight className="h-4 w-4 text-primary mt-2" />
+                </Link>
+                <Link to="/guides" className="p-5 rounded-xl bg-card border hover:border-primary/20 transition-colors group">
+                  <BookOpen className="h-5 w-5 text-primary mb-3" />
+                  <h3 className="font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">More Guides</h3>
+                  <p className="text-sm text-muted-foreground">Explore our complete guide collection</p>
+                  <ChevronRight className="h-4 w-4 text-primary mt-2" />
+                </Link>
+                <Link to="/guides/mortgages" className="p-5 rounded-xl bg-card border hover:border-primary/20 transition-colors group">
+                  <Landmark className="h-5 w-5 text-primary mb-3" />
+                  <h3 className="font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">Mortgages Guide</h3>
+                  <p className="text-sm text-muted-foreground">Understand financing for either path</p>
+                  <ChevronRight className="h-4 w-4 text-primary mt-2" />
+                </Link>
               </div>
             </section>
+
           </div>
         </div>
       </div>
