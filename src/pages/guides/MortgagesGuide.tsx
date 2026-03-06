@@ -336,9 +336,9 @@ export default function MortgagesGuide() {
                         <TableCell>
                           <span className={cn(
                             'text-xs font-medium px-2 py-0.5 rounded-full',
-                            row.risk === 'Low' && 'bg-emerald-500/10 text-emerald-600',
-                            row.risk === 'Medium' && 'bg-amber-500/10 text-amber-600',
-                            row.risk === 'High' && 'bg-red-500/10 text-red-600',
+                            row.risk === 'Low' && 'bg-green-500/15 text-green-700 dark:text-green-400',
+                            row.risk === 'Medium' && 'bg-yellow-500/15 text-yellow-700 dark:text-yellow-400',
+                            row.risk === 'High' && 'bg-red-500/15 text-red-700 dark:text-red-400',
                           )}>
                             {row.risk}
                           </span>
