@@ -28,6 +28,8 @@ import {
   Banknote,
   MapPin,
   FileSignature,
+  FileCheck,
+  AlertTriangle,
   ArrowRight
 } from 'lucide-react';
 import { Layout as PageLayout } from '@/components/layout/Layout';
