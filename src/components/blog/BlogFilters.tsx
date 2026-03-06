@@ -3,7 +3,8 @@ import { Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { BlogCategory } from '@/types/content';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { BlogCategory, BlogSortOption } from '@/types/content';
 import { cn } from '@/lib/utils';
 
 interface BlogFiltersProps {
@@ -12,6 +13,8 @@ interface BlogFiltersProps {
   categories: BlogCategory[];
   selectedCategory: string | null;
   onCategoryChange: (slug: string | null) => void;
+  sortBy: BlogSortOption;
+  onSortChange: (value: BlogSortOption) => void;
 }
 
 export function BlogFilters({
