@@ -106,7 +106,7 @@ const costCategories = [
 const timelineStages = [
   {
     stage: 'Research & Discovery',
-    costs: 'Browse listings, compare cities, use calculators to understand true costs, and tools to connect with vetted professionals and agencies when you\'re ready.',
+    costs: 'Browse listings, compare cities, use calculators to understand true costs, assess your readiness, and connect with vetted professionals when you\'re ready.',
     amount: '₪0 (free on BuyWise Israel)',
   },
   {
