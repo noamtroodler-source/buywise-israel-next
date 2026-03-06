@@ -35,7 +35,7 @@ const fadeInUp = {
 
 // Data: Big Picture insights
 const bigPictureInsights = [
-   { icon: Home, text: "A '4-room' apartment means 3 bedrooms plus a living room." },
+   { icon: Home, text: "Israeli listings count total rooms (bedrooms + living room), not bedrooms alone. A '4-room' listing typically has 3 bedrooms." },
    { icon: Building2, text: "Gross square meters can include shared areas like stairwells." },
    { icon: Gavel, text: "Lawyers draft contracts — agents do not." },
    { icon: FileWarning, text: "Verbal agreements can be legally binding." },
