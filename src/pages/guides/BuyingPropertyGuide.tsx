@@ -394,7 +394,7 @@ export default function BuyingPropertyGuide() {
                 </span>
                 <span className="flex items-center gap-1.5">
                   <Calendar className="h-4 w-4" />
-                  Updated 2025
+                  Updated 2026
                 </span>
               </div>
             </motion.div>
