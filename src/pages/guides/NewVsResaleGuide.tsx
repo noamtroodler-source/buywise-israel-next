@@ -351,6 +351,49 @@ export default function NewVsResaleGuide() {
               </motion.div>
             </section>
 
+            {/* Developer Risk Callout */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="rounded-xl border border-warning/30 bg-warning/5 p-6 md:p-8"
+            >
+              <div className="flex items-start gap-3 mb-5">
+                <div className="p-2 rounded-lg bg-warning/10 shrink-0">
+                  <AlertTriangle className="h-5 w-5 text-warning-foreground" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">The other side of new construction</h3>
+                  <p className="text-sm text-muted-foreground mt-1">These apply even with reputable developers. They're not reasons to avoid new construction — they're reasons to go in with open eyes.</p>
+                </div>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-4">
+                {[
+                  {
+                    title: 'Punch list battles (Tekufat Bedek)',
+                    desc: 'Getting defects fixed — plumbing, tiling, electrical — can drag on for months. Developers aren\'t always responsive, even reputable ones.',
+                  },
+                  {
+                    title: 'Sales agency ≠ developer',
+                    desc: 'The agency that sold you the apartment often has no power over the developer. When something goes wrong, you may not know who to call — or who\'s actually responsible.',
+                  },
+                  {
+                    title: 'Flipping restrictions',
+                    desc: 'Many developer contracts include clauses that limit resale before completion, or charge transfer fees. Read the fine print before assuming you can sell early.',
+                  },
+                  {
+                    title: 'Power imbalance',
+                    desc: 'You\'re one buyer with one lawyer against a company with a legal department. Disputes over finishes, delays, or spec changes rarely end quickly.',
+                  },
+                ].map((item, i) => (
+                  <div key={i} className="p-4 rounded-lg bg-background/60 border border-border/50">
+                    <h4 className="text-sm font-semibold text-foreground mb-1">{item.title}</h4>
+                    <p className="text-sm text-muted-foreground">{item.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+
             {/* 5. Choose Resale If… */}
             <section id="choose-resale" className="scroll-mt-32">
               <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="space-y-6">
