@@ -138,7 +138,8 @@ const olehBrackets = [
 
 const workedExamples = [
   {
-    label: 'First-Time Buyer (Single Residence)',
+    label: 'Israeli Resident — Single Residence',
+    subtitle: 'First-time buyers or upgraders selling existing home within 18 months',
     price: '₪2,500,000',
     calculation: '₪0 on first ₪1.98M + 3.5% on ₪368K + 5% on ₪153K',
     tax: '₪20,530',
@@ -147,6 +148,7 @@ const workedExamples = [
   },
   {
     label: 'Oleh Hadash (within 7 years)',
+    subtitle: 'Applies to any purchase within the 7-year window — not just the first',
     price: '₪2,500,000',
     calculation: '₪0 on first ₪1.98M + 0.5% on ₪521K',
     tax: '₪2,606',
@@ -155,6 +157,7 @@ const workedExamples = [
   },
   {
     label: 'Investor / Foreign Buyer',
+    subtitle: 'Israeli resident with 2+ properties, or any non-resident (even if only property worldwide)',
     price: '₪2,500,000',
     calculation: '8% on entire ₪2.5M',
     tax: '₪200,000',
@@ -457,7 +460,7 @@ export default function PurchaseTaxGuide() {
               Same Apartment, Different Tax
             </h2>
             <p className="text-sm text-muted-foreground text-center mb-8">
-              Purchase price: ₪2,500,000 — here's how buyer status changes the bill
+              Purchase price: ₪2,500,000 — here's how your residency and ownership status changes the bill
             </p>
 
             <div className="grid md:grid-cols-3 gap-6">
@@ -471,6 +474,7 @@ export default function PurchaseTaxGuide() {
                 >
                   <Card className="p-6 h-full flex flex-col">
                     <h3 className="font-semibold text-foreground mb-1 text-sm">{ex.label}</h3>
+                    {ex.subtitle && <p className="text-xs text-muted-foreground mb-2">{ex.subtitle}</p>}
                     <p className="text-xs text-muted-foreground mb-4">{ex.calculation}</p>
                     <div className="mt-auto">
                       <p className={`text-3xl font-bold ${ex.color}`}>{ex.tax}</p>
@@ -483,7 +487,7 @@ export default function PurchaseTaxGuide() {
 
             <Card className="mt-6 p-4 bg-muted/50 border-border/50">
               <p className="text-xs text-muted-foreground text-center">
-                These are illustrative calculations based on 2025 brackets. Your lawyer will file the exact assessment. The gap between first-time buyer and investor on a ₪2.5M property is <strong>₪179,470</strong>.
+                These are illustrative calculations based on 2025 brackets. Your lawyer will file the exact assessment. The gap between a single-residence buyer and an investor on a ₪2.5M property is <strong>₪179,470</strong>.
               </p>
             </Card>
           </motion.div>
