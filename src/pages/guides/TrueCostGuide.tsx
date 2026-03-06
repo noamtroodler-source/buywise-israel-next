@@ -10,39 +10,27 @@ import {
   BookOpen, 
   ChevronRight,
   AlertCircle,
-  CheckCircle2,
-  Home,
-  Users,
   Landmark,
+  Users,
   Wallet,
   Wrench,
   ArrowRightLeft,
-  ArrowLeft,
   Truck,
   PaintBucket,
   ClipboardList,
-  HelpCircle,
-  Eye,
-  Scale,
-  Building,
-  CreditCard
+  CreditCard,
+  ArrowRight
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { useTrackContentVisit } from '@/hooks/useTrackContentVisit';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 const navSections = [
   { id: 'overview', label: 'Overview' },
-  { id: 'why-outside', label: 'Why Outside' },
   { id: 'cost-categories', label: 'Categories' },
-  { id: 'buyer-status', label: 'Buyer Status' },
   { id: 'timeline', label: 'Timeline' },
-  { id: 'surprises', label: 'Surprises' },
-  { id: 'hidden-costs', label: 'Hidden Costs' },
-  { id: 'interpretation', label: 'Interpretation' },
-  { id: 'buywise', label: 'BuyWise' },
+  { id: 'mistakes', label: 'Mistakes' },
 ];
 
 const fadeInUp = {
@@ -51,136 +39,115 @@ const fadeInUp = {
   transition: { duration: 0.5 }
 };
 
-const whyOutsideReasons = [
-  {
-    icon: Home,
-    title: 'Listings target local norms',
-    description: 'Israeli advertisements focus on property features and location, assuming buyers know that taxes and professional fees will be handled separately.'
-  },
-  {
-    icon: Users,
-    title: 'Variable obligations by buyer status',
-    description: 'The amount you pay for purchase tax, legal services and financing depends on whether you are an Israeli resident, new oleh, foreign buyer or investor.'
-  },
-  {
-    icon: Clock,
-    title: 'Timing differences',
-    description: 'Some costs are triggered at contract signing, others at loan approval, and others after possession. Sellers cannot predict your payment schedule.'
-  },
-  {
-    icon: Scale,
-    title: 'Reliance on professionals',
-    description: 'Israeli transactions are lawyer-driven; attorneys calculate taxes, register title and draft contracts. Each professional charges separately.'
-  },
-  {
-    icon: ArrowRightLeft,
-    title: 'Separate currency and financing flows',
-    description: 'International buyers often transfer funds from abroad, incurring conversion fees and fluctuating exchange rates based on personal circumstances.'
-  },
-  {
-    icon: Building,
-    title: 'Property type and condition',
-    description: 'Costs differ between new construction and resale. Off-plan purchases may involve developer fees and index-linked payments.'
-  },
-  {
-    icon: FileText,
-    title: 'Disclosure norms',
-    description: 'Local practice is to disclose core property details, not an itemized estimate of closing costs; these are assumed to be addressed with professionals.'
-  }
-];
-
 const costCategories = [
   {
     icon: Landmark,
     title: 'Purchase Tax (Mas Rechisha)',
-    description: 'A state tax on property acquisition, payable shortly after signing; brackets depend on buyer status and property value.'
+    description: 'Brackets depend on buyer status: ~3.5% effective for a first-home local buyer on a ₪2M property, up to 8–10% for foreign/investor buyers.',
+    range: 'Varies by status',
+    note: 'See our Purchase Tax Guide for exact brackets →',
+    link: '/guides/purchase-tax',
   },
   {
     icon: FileText,
     title: 'Legal Fees',
-    description: 'Israeli lawyers handle due diligence, contract drafting, title registration and tax filing. Typically a percentage of the purchase price.'
+    description: 'Your lawyer handles due diligence, contract drafting, title registration and tax filing.',
+    range: '0.5–1.5% + VAT',
+    example: '₪12k–35k on a ₪2M property',
   },
   {
     icon: Users,
-    title: 'Agent Commissions',
-    description: 'Both buyers and sellers generally pay their own agents, calculated as a percentage of the purchase price.'
+    title: 'Agent Commission',
+    description: 'Buyer pays their own agent. Seller pays theirs. Not included in the listing price.',
+    range: '1–2% + VAT',
+    example: '₪24k–47k on a ₪2M property',
   },
   {
     icon: CreditCard,
-    title: 'Mortgage-Related Costs',
-    description: 'Banks charge file-opening fees, require property appraisals, and may charge administrative and broker fees.'
+    title: 'Mortgage Costs',
+    description: 'File-opening fee is capped by law at ₪360. Appraisal is required before approval. Broker fees are optional but common.',
+    range: 'Appraisal ₪2,500–4,000 · Origination ₪360',
+    example: 'Total ₪3k–5k before broker',
   },
   {
     icon: ClipboardList,
     title: 'Engineering / Inspections',
-    description: 'Buyers often hire an engineer or surveyor to inspect a property before signing (resale) or before possession (new construction).'
+    description: 'Pre-purchase structural inspection (resale) or pre-possession check (new construction). Strongly recommended.',
+    range: '₪2,000–5,000',
   },
   {
     icon: Landmark,
     title: 'Registration & Administrative',
-    description: 'Expenses for power of attorney, notarizing documents, registering at Tabu or Israel Land Authority, and obtaining extracts.'
+    description: 'Tabu registration, caveat (הערת אזהרה), power of attorney notarization, and document extracts.',
+    range: '₪500–1,500 total',
   },
   {
     icon: ArrowRightLeft,
-    title: 'Currency Conversion & Transfers',
-    description: 'When purchasing with foreign currency, banks and transfer services charge conversion fees and apply exchange-rate spreads.'
+    title: 'Currency Conversion',
+    description: 'Bank spreads on foreign-currency transfers are typically 0.3–1.5%. Specialist services (e.g., Wise, OFX) often beat bank rates.',
+    range: '0.3–1.5% spread',
+    example: '₪6k–30k on a $550k transfer',
   },
   {
     icon: Truck,
-    title: 'Moving & Setup Costs',
-    description: 'Utility connections (Arnona, water, electricity), moving services, and overlapping rent or mortgage payments.'
+    title: 'Moving & Setup',
+    description: 'Utility connections (Arnona, water, electricity), movers, overlapping rent/mortgage during the transition.',
+    range: '₪3,000–8,000',
   },
   {
     icon: PaintBucket,
-    title: 'Renovation or Fit-out',
-    description: 'Common in resale purchases. Typical benchmarks: repainting (~₪4,000), flooring (~₪15-22k), full bathroom (~₪25-30k each). Budget 5-10% of purchase price for renovations.'
-  }
+    title: 'Renovation / Fit-out',
+    description: 'Common in resale. Repainting ~₪4k, flooring ~₪15–22k, full bathroom ~₪25–30k each.',
+    range: '5–10% of purchase price',
+    example: '₪100k–200k on a ₪2M property',
+  },
 ];
 
 const timelineStages = [
   {
     stage: 'Pre-offer & Discovery',
-    costs: 'Market research tools and initial consultations with agents or lawyers; usually modest or free.'
+    costs: 'Agent meetings, market research, initial lawyer consultation.',
+    amount: '₪0–2,000',
   },
   {
     stage: 'Offer to Contract',
-    costs: "Legal and negotiation work begins. Lawyer's retainer and, in new projects, a reservation fee may be due."
+    costs: 'Lawyer retainer begins. New construction may require a reservation deposit (usually refundable).',
+    amount: '₪3,000–5,000',
   },
   {
     stage: 'Contract Signing',
-    costs: "Purchase tax liability calculated and payable within statutory window. Lawyer's fees, partial agent commissions."
+    costs: 'Purchase tax due within 50 days. Lawyer fees, partial agent commission.',
+    amount: '₪70k–200k+ (tax-dependent)',
   },
   {
     stage: 'Mortgage Process',
-    costs: 'Appraisal fees, file-opening fees and broker fees incurred before final approval.'
+    costs: 'Appraisal, file-opening fee, optional broker fee.',
+    amount: '₪3,000–10,000',
   },
   {
     stage: 'Prior to Possession',
-    costs: 'In new construction, payments may be staged and index-linked. Engineering inspections conducted.'
+    costs: 'New construction: staged index-linked payments. Engineering inspection.',
+    amount: '₪2,000–5,000 (inspection)',
   },
   {
     stage: 'Closing & Key Handover',
-    costs: 'Remaining agent commissions, deferred legal fees, final tax adjustments, registration filings.'
+    costs: 'Remaining agent commission, deferred legal fees, registration filings.',
+    amount: '₪5,000–15,000',
   },
   {
     stage: 'Post-Closing',
-    costs: 'Utility transfers, Arnona registration, movers, overlap payments, renovation or furnishing costs.'
-  }
+    costs: 'Arnona registration, movers, overlap payments, renovation.',
+    amount: '₪3,000–200,000+',
+  },
 ];
 
-const surprises = [
-  'Believing costs are optional when they are standard and often critical',
-  'Assuming all costs are included in the listing price',
-  'Discovering fees after agreeing on the purchase price',
-  'Underestimating non-purchase expenses like currency conversions and renovations',
-  'Thinking agent commissions are unnecessary or paid by seller only',
-  'Expecting mortgage fees to be minimal',
-  'Assuming new construction has fewer costs than resale',
-  'Confusing purchase tax with annual Arnona property tax',
-  'Believing Olim benefits or single-residence benefits apply automatically',
-  'Overlooking registration and administrative fees',
-  'Ignoring currency risks when taking foreign-currency mortgages — exchange-rate shifts can offset any tax savings',
-  'Failing to budget for renovation and furnishing, which can add tens of thousands of shekels to the total'
+const commonMistakes = [
+  'Assuming the listing price is the total cost — it never is',
+  'Confusing purchase tax (one-time, Mas Rechisha) with annual property tax (Arnona)',
+  'Thinking Olim or first-home tax benefits apply automatically — they require filing and proof',
+  'Ignoring currency-conversion costs, which can exceed ₪20k on a typical purchase',
+  'Skipping the engineering inspection to save ₪3k — then discovering ₪50k+ in problems',
+  'Assuming new construction is cheaper than resale — developer lawyer fees, index linkage, and bank guarantees add up',
 ];
 
 export default function TrueCostGuide() {
@@ -192,7 +159,6 @@ export default function TrueCostGuide() {
     const handleScroll = () => {
       setShowNav(window.scrollY > 300);
       
-      // Find active section
       const sections = navSections.map(s => document.getElementById(s.id));
       const scrollPos = window.scrollY + 150;
       
@@ -250,7 +216,6 @@ export default function TrueCostGuide() {
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-primary/3 to-transparent" />
         <div className="container relative py-12 md:py-16">
-          {/* Dual Navigation */}
           <DualNavigation
             parentLabel="All Guides"
             parentPath="/guides"
@@ -271,122 +236,54 @@ export default function TrueCostGuide() {
             </p>
             
             <p className="text-muted-foreground text-lg mb-6">
-              What the advertised price doesn't include—and why
+              Every cost outside the listing price, with real numbers
             </p>
             
             <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
               <span className="flex items-center gap-1.5">
                 <BookOpen className="h-4 w-4" />
-                11 sections
+                4 sections
               </span>
               <span className="flex items-center gap-1.5">
                 <Clock className="h-4 w-4" />
-                ~18 min read
+                ~8 min read
               </span>
-              <span>Updated 2025</span>
+              <span>Updated 2026</span>
             </div>
           </motion.div>
         </div>
       </section>
 
-      {/* Opener Section */}
+      {/* Overview / Bottom Line */}
       <section id="overview" className="container py-16">
         <motion.div {...fadeInUp} className="max-w-4xl mx-auto">
-          {/* Pain Point Cards */}
-          <div className="grid md:grid-cols-3 gap-4 mb-8">
-            <div className="p-5 rounded-xl bg-muted/50 border">
-              <AlertCircle className="h-5 w-5 text-primary mb-3" />
-              <p className="text-sm text-muted-foreground">
-                The listing price reflects only the negotiated sum for the property itself
-              </p>
-            </div>
-            <div className="p-5 rounded-xl bg-muted/50 border">
-              <AlertCircle className="h-5 w-5 text-primary mb-3" />
-              <p className="text-sm text-muted-foreground">
-                Taxes, professional fees, and financing costs are all separate
-              </p>
-            </div>
-            <div className="p-5 rounded-xl bg-muted/50 border">
-              <AlertCircle className="h-5 w-5 text-primary mb-3" />
-              <p className="text-sm text-muted-foreground">
-                Additional costs vary by buyer status and transaction type
-              </p>
-            </div>
-          </div>
-
           {/* Cost Benchmark */}
           <div className="grid sm:grid-cols-2 gap-4 mb-8">
             <div className="p-5 rounded-xl bg-card border text-center">
-              <p className="text-sm font-medium text-muted-foreground mb-1">Local Buyer (on ~$1M property)</p>
+              <p className="text-sm font-medium text-muted-foreground mb-1">Local Buyer (on ~₪2M property)</p>
               <p className="text-3xl font-bold text-primary mb-1">~6.5%</p>
               <p className="text-xs text-muted-foreground">above purchase price</p>
-              <p className="text-xs text-muted-foreground mt-2">2.5% tax · 2% agent · 1% lawyer · 1% other</p>
+              <p className="text-xs text-muted-foreground mt-2">~₪130,000 in additional costs</p>
             </div>
             <div className="p-5 rounded-xl bg-card border text-center">
-              <p className="text-sm font-medium text-muted-foreground mb-1">Foreign Buyer (on ~$1M property)</p>
+              <p className="text-sm font-medium text-muted-foreground mb-1">Foreign Buyer (on ~₪2M property)</p>
               <p className="text-3xl font-bold text-primary mb-1">~12%</p>
               <p className="text-xs text-muted-foreground">above purchase price</p>
-              <p className="text-xs text-muted-foreground mt-2">8% tax · 2% agent · 1% lawyer · 1% other</p>
+              <p className="text-xs text-muted-foreground mt-2">~₪240,000 in additional costs</p>
             </div>
           </div>
 
-          {/* CTA Box */}
+          {/* Intro */}
           <div className="p-8 rounded-2xl bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/10">
             <p className="text-lg font-medium text-foreground mb-3 text-center">
-              If you've browsed Israeli property listings and wondered why the advertised price feels incomplete, you're not imagining it.
+              The listing price in Israel covers only the property itself.
             </p>
             <p className="text-muted-foreground text-center mb-4">
-              Understanding this structure upfront helps you interpret prices calmly and reduces the fear of unexpected fees. This guide explains what costs exist, when they appear, and why they sit outside the listing price.
+              Taxes, lawyer fees, agent commission, mortgage costs, and setup expenses are all separate — and they vary by your buyer status, financing, and property type. This guide breaks down every category with specific ranges so you can budget accurately before talking to professionals.
             </p>
-            <p className="text-center font-semibold text-foreground">
-              Use it to budget realistically before engaging professionals.
+            <p className="text-center text-sm text-muted-foreground">
+              All examples below use a <strong className="text-foreground">₪2,000,000</strong> (~$550k) property as reference.
             </p>
-          </div>
-        </motion.div>
-      </section>
-
-      {/* One-Sentence Reality */}
-      <section className="container pb-16">
-        <motion.div {...fadeInUp} className="max-w-3xl mx-auto">
-          <div className="p-6 rounded-xl bg-primary/5 border border-primary/10">
-            <div className="flex gap-4">
-              <Eye className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
-              <div>
-                <h3 className="font-semibold text-foreground mb-2">The One-Sentence Reality</h3>
-                <p className="text-muted-foreground">
-                  The listing price in Israel does not include taxes, professional fees, financing costs or post-purchase expenses, and these additional costs vary by buyer status and transaction type, which is why the true cost often exceeds the advertised number.
-                </p>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      </section>
-
-      {/* Why Costs Sit Outside */}
-      <section id="why-outside" className="container pb-16">
-        <motion.div {...fadeInUp} className="max-w-5xl mx-auto">
-          <h2 className="text-2xl font-bold text-foreground mb-2 text-center">
-            Why So Many Costs Sit Outside the Listing Price
-          </h2>
-          <p className="text-muted-foreground text-center mb-8 max-w-2xl mx-auto">
-            Understanding the structure helps explain why the advertised price is just the starting point
-          </p>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {whyOutsideReasons.map((reason, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.05 }}
-                className="p-5 rounded-xl bg-card border hover:border-primary/20 transition-colors"
-              >
-                <reason.icon className="h-5 w-5 text-primary mb-3" />
-                <h3 className="font-semibold text-foreground mb-2 text-sm">{reason.title}</h3>
-                <p className="text-sm text-muted-foreground">{reason.description}</p>
-              </motion.div>
-            ))}
           </div>
         </motion.div>
       </section>
@@ -398,7 +295,7 @@ export default function TrueCostGuide() {
             The Major Cost Categories
           </h2>
           <p className="text-muted-foreground text-center mb-8 max-w-2xl mx-auto">
-            A conceptual overview of what sits outside the listing price
+            What sits outside the listing price — with typical ranges
           </p>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -412,12 +309,21 @@ export default function TrueCostGuide() {
                 className="p-5 rounded-xl bg-muted/30 border"
               >
                 <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-lg bg-primary/10">
+                  <div className="p-2 rounded-lg bg-primary/10 flex-shrink-0">
                     <category.icon className="h-4 w-4 text-primary" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <h3 className="font-semibold text-foreground mb-1 text-sm">{category.title}</h3>
-                    <p className="text-sm text-muted-foreground">{category.description}</p>
+                    <p className="text-sm text-muted-foreground mb-2">{category.description}</p>
+                    <p className="text-xs font-semibold text-primary">{category.range}</p>
+                    {category.example && (
+                      <p className="text-xs text-muted-foreground mt-0.5">{category.example}</p>
+                    )}
+                    {category.link && (
+                      <Link to={category.link} className="text-xs text-primary hover:underline mt-1 inline-flex items-center gap-1">
+                        {category.note} <ArrowRight className="h-3 w-3" />
+                      </Link>
+                    )}
                   </div>
                 </div>
               </motion.div>
@@ -426,92 +332,17 @@ export default function TrueCostGuide() {
         </motion.div>
       </section>
 
-      {/* Buyer Status Reality Check */}
-      <section id="buyer-status" className="container pb-16">
-        <motion.div {...fadeInUp} className="max-w-4xl mx-auto">
-          <h2 className="text-2xl font-bold text-foreground mb-2 text-center">
-            Buyer Status Reality Check
-          </h2>
-          <p className="text-muted-foreground text-center mb-8">
-            The total cost of buying property depends heavily on who you are and what you own
-          </p>
-          
-          <div className="space-y-4">
-            <div className="p-5 rounded-xl bg-card border">
-              <div className="flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-primary/10">
-                  <Home className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground mb-1">Israeli Residents (Single Home)</h3>
-                  <p className="text-sm text-muted-foreground">Typically pay lower purchase tax brackets and may face less scrutiny on mortgage documentation.</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="p-5 rounded-xl bg-card border">
-              <div className="flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-primary/10">
-                  <Users className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground mb-1">New Olim (New Immigrants)</h3>
-                  <p className="text-sm text-muted-foreground">May qualify for certain tax reductions or benefits within defined time frames; these benefits require meeting residency conditions.</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="p-5 rounded-xl bg-card border">
-              <div className="flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-primary/10">
-                  <Wallet className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground mb-1">Foreign Buyers</h3>
-                  <p className="text-sm text-muted-foreground">Generally taxed under the investor schedule with additional documentation requirements; often pay higher purchase tax rates.</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="p-5 rounded-xl bg-card border">
-              <div className="flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-primary/10">
-                  <Building className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground mb-1">Investors / Additional-Home Buyers</h3>
-                  <p className="text-sm text-muted-foreground">Pay higher purchase tax rates and may be subject to different mortgage policies.</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="p-5 rounded-xl bg-card border">
-              <div className="flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-primary/10">
-                  <CreditCard className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground mb-1">Financed vs Cash Buyers</h3>
-                  <p className="text-sm text-muted-foreground">Those taking a mortgage incur bank fees, appraisals and broker costs, whereas cash buyers avoid some of these but still pay legal and registration fees.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      </section>
-
       {/* Timeline */}
       <section id="timeline" className="container pb-16">
         <motion.div {...fadeInUp} className="max-w-4xl mx-auto">
           <h2 className="text-2xl font-bold text-foreground mb-2 text-center">
-            When These Costs Typically Appear
+            When These Costs Appear
           </h2>
           <p className="text-muted-foreground text-center mb-8">
-            Understanding the sequence of costs helps manage expectations
+            Typical sequence for a ₪2M property purchase
           </p>
           
           <div className="relative">
-            {/* Timeline line */}
             <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-px bg-border md:-translate-x-px" />
             
             <div className="space-y-6">
@@ -527,7 +358,6 @@ export default function TrueCostGuide() {
                     index % 2 === 0 ? "md:pr-8 md:text-right" : "md:ml-auto md:pl-8"
                   )}
                 >
-                  {/* Timeline dot */}
                   <div className={cn(
                     "absolute top-2 w-3 h-3 rounded-full bg-primary border-2 border-background",
                     "left-2.5 md:left-auto",
@@ -535,7 +365,10 @@ export default function TrueCostGuide() {
                   )} />
                   
                   <div className="p-4 rounded-xl bg-card border">
-                    <h3 className="font-semibold text-foreground mb-1 text-sm">{item.stage}</h3>
+                    <div className="flex items-center justify-between mb-1 gap-2">
+                      <h3 className="font-semibold text-foreground text-sm">{item.stage}</h3>
+                      <span className="text-xs font-semibold text-primary whitespace-nowrap">{item.amount}</span>
+                    </div>
                     <p className="text-sm text-muted-foreground">{item.costs}</p>
                   </div>
                 </motion.div>
@@ -545,135 +378,30 @@ export default function TrueCostGuide() {
         </motion.div>
       </section>
 
-      {/* Surprises */}
-      <section id="surprises" className="container pb-16">
+      {/* Common Mistakes */}
+      <section id="mistakes" className="container pb-16">
         <motion.div {...fadeInUp} className="max-w-4xl mx-auto">
           <h2 className="text-2xl font-bold text-foreground mb-2 text-center">
-            Where International Buyers Get Surprised
+            Common Mistakes
           </h2>
           <p className="text-muted-foreground text-center mb-8">
-            Common assumptions that lead to unexpected costs
+            Assumptions that cost buyers real money
           </p>
           
           <div className="grid md:grid-cols-2 gap-3">
-            {surprises.map((surprise, index) => (
+            {commonMistakes.map((mistake, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 10 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: index * 0.03 }}
+                transition={{ delay: index * 0.05 }}
                 className="flex items-start gap-3 p-4 rounded-lg bg-muted/30"
               >
                 <AlertCircle className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-muted-foreground">{surprise}</p>
+                <p className="text-sm text-muted-foreground">{mistake}</p>
               </motion.div>
             ))}
-          </div>
-        </motion.div>
-      </section>
-
-      {/* Hidden Costs */}
-      <section id="hidden-costs" className="container pb-16">
-        <motion.div {...fadeInUp} className="max-w-3xl mx-auto">
-          <h2 className="text-2xl font-bold text-foreground mb-6 text-center">
-            What Costs Often Feel "Hidden" — and Why They're Not
-          </h2>
-          
-          <div className="p-6 rounded-xl bg-muted/30 border">
-            <p className="text-muted-foreground mb-4">
-              Foreign buyers sometimes talk about "hidden fees," but most of these costs are part of Israel's standard property buying structure. They feel hidden because they arise later in the timeline, depend on buyer status and property type, and are handled by professionals rather than disclosed by sellers.
-            </p>
-            <p className="text-muted-foreground mb-4">
-              For example, you will not see agent commission or legal fees in a listing because their amounts vary by price and complexity. Purchase tax is calculated after the price is set and depends on buyer classification. Registration and administrative fees appear after the contract is signed.
-            </p>
-            <p className="text-foreground font-medium">
-              These costs are structural, not arbitrary, and understanding them early prevents them from feeling like surprises.
-            </p>
-          </div>
-        </motion.div>
-      </section>
-
-      {/* Interpretation */}
-      <section id="interpretation" className="container pb-16">
-        <motion.div {...fadeInUp} className="max-w-3xl mx-auto">
-          <h2 className="text-2xl font-bold text-foreground mb-6 text-center">
-            How the True Cost Changes How Prices Should Be Interpreted
-          </h2>
-          
-          <div className="p-6 rounded-xl bg-primary/5 border border-primary/10">
-            <div className="space-y-4">
-              <p className="text-muted-foreground">
-                When comparing properties, focusing solely on the listing price can mislead. A lower asking price may sit in a higher purchase tax bracket or require substantial renovations, while a higher price may come with fewer additional costs.
-              </p>
-              <p className="text-muted-foreground">
-                Mortgage-related fees can differ based on loan size and terms. Currency fluctuations can change the effective cost for foreign buyers.
-              </p>
-              <p className="text-foreground font-medium">
-                The key is to view the price as one component of a broader cost equation, not the final figure.
-              </p>
-            </div>
-          </div>
-        </motion.div>
-      </section>
-
-      {/* BuyWise Section */}
-      <section id="buywise" className="container pb-16">
-        <motion.div {...fadeInUp} className="max-w-4xl mx-auto">
-          <h2 className="text-2xl font-bold text-foreground mb-6 text-center">
-            How BuyWise Adds Cost Clarity
-          </h2>
-          
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="p-5 rounded-xl bg-card border">
-              <CheckCircle2 className="h-5 w-5 text-primary mb-3" />
-              <h3 className="font-semibold text-foreground mb-2">Cost Categories Surfaced</h3>
-              <p className="text-sm text-muted-foreground">
-                The platform surfaces typical cost categories alongside each listing, so you know what to consider beyond the price.
-              </p>
-            </div>
-            <div className="p-5 rounded-xl bg-card border">
-              <CheckCircle2 className="h-5 w-5 text-primary mb-3" />
-              <h3 className="font-semibold text-foreground mb-2">Status-Adjusted Estimates</h3>
-              <p className="text-sm text-muted-foreground">
-                Cost ranges are adjusted based on whether you are an Israeli resident, new oleh, foreign buyer or investor.
-              </p>
-            </div>
-            <div className="p-5 rounded-xl bg-card border">
-              <CheckCircle2 className="h-5 w-5 text-primary mb-3" />
-              <h3 className="font-semibold text-foreground mb-2">Verified vs Variable</h3>
-              <p className="text-sm text-muted-foreground">
-                Items are separated into verified elements (e.g., purchase price) and variable estimates (e.g., taxes and currency fees).
-              </p>
-            </div>
-            <div className="p-5 rounded-xl bg-card border">
-              <CheckCircle2 className="h-5 w-5 text-primary mb-3" />
-              <h3 className="font-semibold text-foreground mb-2">Plain-English Explanations</h3>
-              <p className="text-sm text-muted-foreground">
-                Explanations accompany estimates, helping you understand the nature of each cost and when it arises.
-              </p>
-            </div>
-          </div>
-        </motion.div>
-      </section>
-
-      {/* Calm Reframe */}
-      <section className="container pb-16">
-        <motion.div {...fadeInUp} className="max-w-3xl mx-auto">
-          <div className="p-8 rounded-2xl bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/10 text-center">
-            <HelpCircle className="h-8 w-8 text-primary mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-foreground mb-4">
-              Clarity Before Commitment
-            </h3>
-            <p className="text-muted-foreground mb-4">
-              Feeling unsure about hidden costs is normal when entering a new market. In Israel, the listing price is just the starting point; the full cost includes taxes, professional services, financing and post-purchase expenses.
-            </p>
-            <p className="text-muted-foreground mb-4">
-              These aren't tricks or traps; they reflect a system where buyers and their representatives handle costs that are personal and variable.
-            </p>
-            <p className="text-foreground font-medium">
-              By learning the categories and timing of expenses and understanding how your status affects them, you gain confidence and can plan accordingly.
-            </p>
           </div>
         </motion.div>
       </section>
@@ -699,18 +427,18 @@ export default function TrueCostGuide() {
             </Link>
             
             <Link 
-              to="/guides"
+              to="/guides/purchase-tax"
               className="p-6 rounded-xl bg-card border hover:border-primary/30 transition-colors group"
             >
-              <BookOpen className="h-6 w-6 text-primary mb-3" />
+              <Landmark className="h-6 w-6 text-primary mb-3" />
               <h3 className="font-semibold text-foreground mb-2 group-hover:text-primary transition-colors">
-                More Guides
+                Purchase Tax Guide
               </h3>
               <p className="text-sm text-muted-foreground mb-3">
-                Explore our collection of buyer education resources.
+                Exact brackets by buyer status, with worked examples.
               </p>
               <span className="text-sm font-medium text-primary flex items-center gap-1">
-                Browse Guides <ChevronRight className="h-4 w-4" />
+                View Guide <ChevronRight className="h-4 w-4" />
               </span>
             </Link>
             
