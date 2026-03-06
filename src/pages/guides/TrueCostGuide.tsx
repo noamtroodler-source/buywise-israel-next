@@ -103,7 +103,7 @@ const costCategories = [
   },
 ];
 
-const timelineStages = [
+const resaleTimeline = [
   {
     stage: 'Research & Discovery',
     costs: 'Browse listings, compare cities, use calculators to understand true costs, assess your readiness, and connect with vetted professionals when you\'re ready.',
@@ -111,12 +111,12 @@ const timelineStages = [
   },
   {
     stage: 'Offer to Contract',
-    costs: 'Lawyer retainer begins. New construction may require a reservation deposit (usually refundable).',
+    costs: 'Lawyer retainer begins. Verbal offer, negotiation, due diligence on title (Tabu extract, zoning).',
     amount: '₪3,000–5,000',
   },
   {
     stage: 'Contract Signing',
-    costs: 'Purchase tax due within 50 days. Lawyer fees, partial agent commission.',
+    costs: 'Purchase tax due within 50 days. Lawyer fees, partial agent commission. Typically 10–20% deposit paid.',
     amount: '₪70k–200k+ (tax-dependent)',
   },
   {
@@ -125,19 +125,62 @@ const timelineStages = [
     amount: '₪3,000–10,000',
   },
   {
-    stage: 'Prior to Possession',
-    costs: 'New construction: staged index-linked payments. Engineering inspection.',
-    amount: '₪2,000–5,000 (inspection)',
+    stage: 'Engineering Inspection',
+    costs: 'Pre-purchase structural inspection. Strongly recommended before final payment.',
+    amount: '₪2,000–5,000',
   },
   {
     stage: 'Closing & Key Handover',
-    costs: 'Remaining agent commission, deferred legal fees, registration filings.',
+    costs: 'Remaining balance paid. Agent commission balance, deferred legal fees, Tabu registration.',
     amount: '₪5,000–15,000',
   },
   {
     stage: 'Post-Closing',
     costs: 'Arnona registration, movers, overlap payments, renovation.',
-    amount: '₪3,000–200,000+',
+    amount: '₪3,000–250,000+',
+  },
+];
+
+const newConstructionTimeline = [
+  {
+    stage: 'Research & Discovery',
+    costs: 'Browse listings, compare cities, use calculators to understand true costs, assess your readiness, and connect with vetted professionals when you\'re ready.',
+    amount: '₪0 (free on BuyWise Israel)',
+  },
+  {
+    stage: 'Reservation & Sales Office',
+    costs: 'Reservation deposit to hold the unit (usually deducted from purchase price).',
+    amount: '₪20k–50k (refundable/deductible)',
+  },
+  {
+    stage: 'Contract Signing',
+    costs: 'Developer\'s lawyer fees (0.5–1.5% + VAT, paid by buyer). Your own lawyer fees. Purchase tax filed. First payment tranche (10–20%).',
+    amount: '₪40k–90k+ (legal + tax)',
+  },
+  {
+    stage: 'Construction-Linked Payments',
+    costs: 'Staged payments tied to milestones (foundation, structure, finishing). Linked to Construction Input Index (Madad).',
+    amount: 'Per schedule (index-linked)',
+  },
+  {
+    stage: 'Mortgage Process',
+    costs: 'Appraisal on the planned unit. File-opening fee. Often arranged closer to delivery.',
+    amount: '₪3,000–10,000',
+  },
+  {
+    stage: 'Pre-Delivery Inspection',
+    costs: 'Engineer checks the finished unit against specs. Punch list (Tekufat Bedek) begins.',
+    amount: '₪2,000–5,000',
+  },
+  {
+    stage: 'Key Handover',
+    costs: 'Final payment tranche. Agent commission if applicable. Registration with developer\'s lawyer.',
+    amount: '₪5,000–15,000',
+  },
+  {
+    stage: 'Post-Delivery',
+    costs: 'Arnona registration, fit-out (new construction often delivered "bare" — no flooring, minimal kitchen).',
+    amount: '₪30,000–250,000+',
   },
 ];
 
