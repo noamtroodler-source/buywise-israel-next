@@ -43,7 +43,7 @@ const costCategories = [
   {
     icon: Landmark,
     title: 'Purchase Tax (Mas Rechisha)',
-    description: 'Brackets depend on buyer status: ~3.5% effective for a first-home local buyer on a ₪2M property, up to 8–10% for foreign/investor buyers.',
+    description: 'Brackets depend on buyer status: ~3.5% effective for a first-home local buyer on a ₪2.5M property, up to 8–10% for foreign/investor buyers.',
     range: 'Varies by status',
     note: 'See our Purchase Tax Guide for exact brackets →',
     link: '/guides/purchase-tax',
