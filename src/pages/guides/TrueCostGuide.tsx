@@ -60,7 +60,7 @@ const costCategories = [
     title: 'Agent Commission',
     description: 'Buyer pays their own agent. Seller pays theirs. Not included in the listing price.',
     range: '1–2% + VAT',
-    example: '₪24k–47k on a ₪2M property',
+    example: '₪29k–59k on a ₪2.5M property',
   },
   {
     icon: CreditCard,
