@@ -65,7 +65,7 @@ const timelineStages = [
     whatHappens: "On BuyWise Israel, compare cities, neighborhoods, and properties using real market data — price per sqm, rental yields, and price trends. Filter verified listings with English details and transparent pricing. Use affordability and true cost calculators to understand your real budget before you start viewing.",
     whoInvolved: ["Buyer", "Possibly renting first"],
     documents: "None",
-    risks: ["Narrowing based on listing prices alone — without factoring in tax, legal fees, and currency costs", "Misinterpreting room counts — '4 rooms' means 3 bedrooms + living room"],
+    risks: ["Hebrew-only listings with auto-translated descriptions that miss critical details like land tenure or building age", "No context on whether a price is fair or what the final price would actually end up being — local portals don't show price per sqm or area averages", "Unvetted listings — duplicate posts, outdated prices, and properties already under contract", "Agents showing only their own inventory — you see what they want to sell, not what's best for you"],
   },
   {
     number: 2,
