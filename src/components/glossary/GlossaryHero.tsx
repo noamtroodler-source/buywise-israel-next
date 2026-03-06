@@ -17,7 +17,8 @@ export function GlossaryHero({
   searchQuery, 
   onSearchChange, 
   onOpenFlashcards,
-  savedCount 
+  savedCount,
+  onGoToSaved,
 }: GlossaryHeroProps) {
   return (
     <section className="relative overflow-hidden">
