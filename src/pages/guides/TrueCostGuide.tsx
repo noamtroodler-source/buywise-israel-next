@@ -99,7 +99,7 @@ const costCategories = [
     title: 'Renovation / Fit-out',
     description: 'Common in resale. Repainting ~₪4k, flooring ~₪15–22k, full bathroom ~₪25–30k each.',
     range: '5–10% of purchase price',
-    example: '₪100k–200k on a ₪2M property',
+    example: '₪125k–250k on a ₪2.5M property',
   },
 ];
 
