@@ -21,6 +21,7 @@ import { InsightCard } from './shared/InsightCard';
 import { CTACard } from './shared/CTACard';
 import { ToolFeedback } from './shared/ToolFeedback';
 import { SourceAttribution } from './shared/SourceAttribution';
+import { SaveResultsPrompt } from './shared/SaveResultsPrompt';
 
 import { usePreferences, useFormatPrice, useFormatArea, useCurrencySymbol, useAreaUnitLabel } from '@/contexts/PreferencesContext';
 

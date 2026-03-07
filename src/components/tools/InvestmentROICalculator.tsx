@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { TrendingUp, Percent, PiggyBank, Info, Building2, AlertTriangle } from 'lucide-react';
+import { SaveResultsPrompt } from './shared/SaveResultsPrompt';
 import { 
   calculateGrossYield, 
   calculateNetYield, 

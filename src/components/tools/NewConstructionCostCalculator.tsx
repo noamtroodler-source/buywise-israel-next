@@ -22,6 +22,7 @@ import { ToolDisclaimer } from './shared/ToolDisclaimer';
 import { ToolFeedback } from './shared/ToolFeedback';
 import { InsightCard } from './shared/InsightCard';
 import { SourceAttribution } from './shared/SourceAttribution';
+import { SaveResultsPrompt } from './shared/SaveResultsPrompt';
 
 interface PaymentSchedule {
   stage: string;
