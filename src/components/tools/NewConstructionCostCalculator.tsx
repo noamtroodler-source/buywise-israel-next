@@ -413,7 +413,61 @@ export function NewConstructionCostCalculator() {
     </Card>
   );
 
-  const bottomSection = <InsightCard insights={insights} />;
+  const bottomSection = (
+    <div className="space-y-6">
+      {/* 1. Interpret */}
+      <InsightCard insights={insights} />
+      
+      {/* 3. Explore - Navigation Cards */}
+      <div className="grid sm:grid-cols-3 gap-4">
+        <Link
+          to="/tools?tool=totalcost"
+          className="group p-5 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-md transition-all"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-primary/10 text-primary">
+              <Receipt className="h-5 w-5" />
+            </div>
+            <p className="font-semibold">True Cost Calculator</p>
+          </div>
+          <p className="text-sm text-muted-foreground">See all purchase costs together</p>
+        </Link>
+        <Link
+          to="/tools?tool=mortgage"
+          className="group p-5 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-md transition-all"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-primary/10 text-primary">
+              <Banknote className="h-5 w-5" />
+            </div>
+            <p className="font-semibold">Mortgage Calculator</p>
+          </div>
+          <p className="text-sm text-muted-foreground">Calculate monthly payments</p>
+        </Link>
+        <Link
+          to="/guides/new-construction"
+          className="group p-5 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-md transition-all"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-primary/10 text-primary">
+              <Info className="h-5 w-5" />
+            </div>
+            <p className="font-semibold">New Construction Guide</p>
+          </div>
+          <p className="text-sm text-muted-foreground">Understand index linkage & timelines</p>
+        </Link>
+      </div>
+
+      {/* 5. Trust */}
+      <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground py-2">
+        <BadgeCheck className="h-4 w-4 text-primary" />
+        <span>Calculated for Israel — using CBS construction cost index data</span>
+      </div>
+
+      {/* 6. Engage */}
+      <ToolFeedback toolName="new-construction-calculator" variant="inline" />
+    </div>
+  );
 
   return (
     <ToolLayout

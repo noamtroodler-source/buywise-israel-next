@@ -896,7 +896,69 @@ export function TrueCostCalculator() {
   // Bottom section
   const bottomSection = (
     <div className="space-y-6">
-      {/* Educational Section */}
+      {/* 1. Interpret */}
+      {trueCostInsights.length > 0 && (
+        <InsightCard insights={trueCostInsights} />
+      )}
+
+      {/* 2. Act */}
+      <ToolPropertySuggestions
+        title="Properties at This Price"
+        subtitle="Real listings matching your total cost estimate"
+        minPrice={Math.round(calculations.price * 0.8)}
+        maxPrice={Math.round(calculations.price * 1.2)}
+        enabled={propertyPrice !== '2750000'}
+      />
+
+      {/* 3. Explore - Next Steps Grid */}
+      <div className="grid sm:grid-cols-3 gap-4">
+        <Link 
+          to="/tools?tool=mortgage"
+          className="group p-5 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-md transition-all"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-primary/10 text-primary">
+              <Calculator className="h-5 w-5" />
+            </div>
+            <p className="font-semibold">Plan Your Financing</p>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Calculate monthly mortgage payments
+          </p>
+        </Link>
+
+        <Link 
+          to="/guides/true-cost"
+          className="group p-5 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-md transition-all"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-primary/10 text-primary">
+              <BookOpen className="h-5 w-5" />
+            </div>
+            <p className="font-semibold">Full Cost Guide</p>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Understand every cost in detail
+          </p>
+        </Link>
+
+        <Link 
+          to="/listings"
+          className="group p-5 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-md transition-all"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-primary/10 text-primary">
+              <MapPin className="h-5 w-5" />
+            </div>
+            <p className="font-semibold">Browse Properties</p>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Find properties in your range
+          </p>
+        </Link>
+      </div>
+
+      {/* 4. Understand - Educational Section */}
       <Collapsible open={isCostsInfoOpen} onOpenChange={setIsCostsInfoOpen}>
         <Card className="overflow-hidden">
           <CollapsibleTrigger className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors">
@@ -947,18 +1009,11 @@ export function TrueCostCalculator() {
         </Card>
       </Collapsible>
 
-      {/* Insight Card */}
-      {trueCostInsights.length > 0 && (
-        <InsightCard insights={trueCostInsights} />
-      )}
-
-      {/* Life Insurance Hint for Non-Israelis */}
+      {/* 5. Trust */}
       <ToolGuidanceHint
         variant="expert-tip"
         message="Non-Israeli residents are typically required to hold a life insurance policy as a condition of mortgage approval in Israel."
       />
-
-      {/* Calculated for Israel Badge */}
       <div className="flex items-start gap-3 p-4 rounded-xl bg-muted/30 border border-border">
         <BadgeCheck className="h-5 w-5 text-primary mt-0.5 shrink-0" />
         <div>
@@ -969,62 +1024,7 @@ export function TrueCostCalculator() {
         </div>
       </div>
 
-      {/* Next Steps Grid */}
-      <div className="grid sm:grid-cols-3 gap-4">
-        <Link 
-          to="/tools?tool=mortgage"
-          className="group p-5 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-md transition-all"
-        >
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 rounded-lg bg-primary/10 text-primary">
-              <Calculator className="h-5 w-5" />
-            </div>
-            <p className="font-semibold">Plan Your Financing</p>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Calculate monthly mortgage payments
-          </p>
-        </Link>
-
-        <Link 
-          to="/guides/true-cost"
-          className="group p-5 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-md transition-all"
-        >
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 rounded-lg bg-primary/10 text-primary">
-              <BookOpen className="h-5 w-5" />
-            </div>
-            <p className="font-semibold">Full Cost Guide</p>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Understand every cost in detail
-          </p>
-        </Link>
-
-        <Link 
-          to="/listings"
-          className="group p-5 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-md transition-all"
-        >
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 rounded-lg bg-primary/10 text-primary">
-              <MapPin className="h-5 w-5" />
-            </div>
-            <p className="font-semibold">Browse Properties</p>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Find properties in your range
-          </p>
-        </Link>
-      </div>
-
-      {/* Feedback */}
-      <ToolPropertySuggestions
-        title="Properties at This Price"
-        subtitle="Real listings matching your total cost estimate"
-        minPrice={Math.round(calculations.price * 0.8)}
-        maxPrice={Math.round(calculations.price * 1.2)}
-        enabled={propertyPrice !== '2750000'}
-      />
+      {/* 6. Engage */}
       <ToolFeedback toolName="True Cost Calculator" variant="inline" />
     </div>
   );

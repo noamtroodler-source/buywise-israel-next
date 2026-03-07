@@ -1009,11 +1009,51 @@ export function RentVsBuyCalculator() {
   // Bottom section - Collapsible breakdown, Pros/Cons, and navigation
   const bottomSection = calculations && (
     <div className="space-y-8">
-      {/* Insight Card */}
+      {/* 1. Interpret */}
       {insights.length > 0 && (
         <InsightCard insights={insights} />
       )}
       
+      {/* 2. Act */}
+      {calculations && (
+        <ToolPropertySuggestions
+          title="Properties at This Price"
+          subtitle="See what's available at the price you're comparing"
+          minPrice={Math.round(parseFormattedNumber(propertyPrice) * 0.8)}
+          maxPrice={Math.round(parseFormattedNumber(propertyPrice) * 1.2)}
+          enabled={propertyPrice !== formatNumber(DEFAULTS.propertyPrice)}
+        />
+      )}
+
+      {/* 3. Explore - Navigation Cards */}
+      <div className="grid md:grid-cols-3 gap-4">
+        <CTACard
+          title="Calculate Your Mortgage"
+          description="Get detailed monthly payment breakdown"
+          buttonText="Mortgage Calculator"
+          buttonLink="/tools?tool=mortgage"
+          icon={<Wallet className="h-5 w-5" />}
+          variant="muted"
+        />
+        <CTACard
+          title="Full Purchase Costs"
+          description="See all one-time and closing costs"
+          buttonText="True Cost Calculator"
+          buttonLink="/tools?tool=totalcost"
+          icon={<Calculator className="h-5 w-5" />}
+          variant="muted"
+        />
+        <CTACard
+          title="Understand the Decision"
+          description="Read our complete rent vs buy guide"
+          buttonText="Read Guide"
+          buttonLink="/guides/rent-vs-buy"
+          icon={<BookOpen className="h-5 w-5" />}
+          variant="muted"
+        />
+      </div>
+      
+      {/* 4. Understand */}
       {/* Educational Collapsible - Understanding Rent vs Buy in Israel */}
       <Collapsible>
         <div className="rounded-lg border border-border/50 bg-muted/20">
@@ -1053,7 +1093,7 @@ export function RentVsBuyCalculator() {
         </div>
       </Collapsible>
       
-      {/* Pros & Cons Section - Cleaner without heavy cards */}
+      {/* Pros & Cons Section */}
       <div>
         <h3 className="text-lg font-semibold mb-5">Beyond the Numbers</h3>
         
@@ -1104,7 +1144,7 @@ export function RentVsBuyCalculator() {
         </div>
       </div>
       
-      {/* Detailed Breakdown - Lighter styling, no heavy card */}
+      {/* Detailed Breakdown */}
       <Collapsible>
         <div className="rounded-lg border border-border/50 bg-muted/20">
           <CollapsibleTrigger className="w-full px-5 py-4">
@@ -1189,47 +1229,8 @@ export function RentVsBuyCalculator() {
           </CollapsibleContent>
         </div>
       </Collapsible>
-      
-      {/* Navigation Cards */}
-      <div className="grid md:grid-cols-3 gap-4">
-        <CTACard
-          title="Calculate Your Mortgage"
-          description="Get detailed monthly payment breakdown"
-          buttonText="Mortgage Calculator"
-          buttonLink="/tools?tool=mortgage"
-          icon={<Wallet className="h-5 w-5" />}
-          variant="muted"
-        />
-        <CTACard
-          title="Full Purchase Costs"
-          description="See all one-time and closing costs"
-          buttonText="True Cost Calculator"
-          buttonLink="/tools?tool=totalcost"
-          icon={<Calculator className="h-5 w-5" />}
-          variant="muted"
-        />
-        <CTACard
-          title="Understand the Decision"
-          description="Read our complete rent vs buy guide"
-          buttonText="Read Guide"
-          buttonLink="/guides/rent-vs-buy"
-          icon={<BookOpen className="h-5 w-5" />}
-          variant="muted"
-        />
-      </div>
-      
-      {/* Property Suggestions */}
-      {calculations && (
-        <ToolPropertySuggestions
-          title="Properties at This Price"
-          subtitle="See what's available at the price you're comparing"
-          minPrice={Math.round(parseFormattedNumber(propertyPrice) * 0.8)}
-          maxPrice={Math.round(parseFormattedNumber(propertyPrice) * 1.2)}
-          enabled={propertyPrice !== formatNumber(DEFAULTS.propertyPrice)}
-        />
-      )}
 
-      {/* Feedback */}
+      {/* 6. Engage */}
       <div className="text-center">
         <ToolFeedback 
           toolName="rent-vs-buy-calculator" 
