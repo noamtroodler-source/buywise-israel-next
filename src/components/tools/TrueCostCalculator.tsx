@@ -134,6 +134,7 @@ export function TrueCostCalculator() {
   const areaUnitLabel = useAreaUnitLabel();
   const { user } = useAuth();
   const saveToProfile = useSaveCalculatorResult();
+  const { showPrompt: showSavePrompt, dismissPrompt: dismissSavePrompt, trackChange } = useSavePromptTrigger();
 
   // Core inputs
   const [propertyPrice, setPropertyPrice] = useState('2750000');
