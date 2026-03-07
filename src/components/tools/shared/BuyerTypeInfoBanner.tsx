@@ -84,7 +84,9 @@ export function BuyerTypeInfoBanner({
 
   const handleSelect = (value: BuyerCategory) => {
     onTypeChange(value);
-    setIsOpen(false);
+    if (value !== 'oleh' || !onOlehFirstPropertyChange) {
+      setIsOpen(false);
+    }
   };
 
   const handleResetToProfile = () => {
