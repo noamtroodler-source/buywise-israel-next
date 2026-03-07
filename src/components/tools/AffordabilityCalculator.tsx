@@ -169,6 +169,7 @@ function AffordabilityCalculatorContent() {
   const [educationOpen, setEducationOpen] = useState(false);
   
   const [selectedBuyerType, setSelectedBuyerType] = useState<BuyerCategory>('first_time');
+  const [olehIsFirstProperty, setOlehIsFirstProperty] = useState(true);
   const [showSavePrompt, setShowSavePrompt] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
 
