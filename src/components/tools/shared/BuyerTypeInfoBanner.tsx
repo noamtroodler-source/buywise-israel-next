@@ -45,6 +45,10 @@ interface BuyerTypeInfoBannerProps {
   className?: string;
   /** Use extended options including upgrader, investor, foreign, company */
   extended?: boolean;
+  /** Callback when Oleh first-property status changes. true = first property (75% LTV), false = owns property (50% LTV) */
+  onOlehFirstPropertyChange?: (isFirstProperty: boolean) => void;
+  /** Current value of the Oleh first-property toggle */
+  olehIsFirstProperty?: boolean;
 }
 
 /**
