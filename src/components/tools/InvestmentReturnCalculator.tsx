@@ -1103,10 +1103,6 @@ function InvestmentCalculatorContent() {
   );
 
 
-                  <p className="text-xs text-muted-foreground">Compare the 3 tax methods for your rent level</p>
-                </div>
-              </div>
-              <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", isTaxInfoOpen && "rotate-180")} />
             </CollapsibleTrigger>
             <CollapsibleContent>
               <div className="px-4 pb-4 space-y-3 border-t border-border pt-4">
