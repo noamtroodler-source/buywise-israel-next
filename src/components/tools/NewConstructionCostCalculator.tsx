@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { useSavePromptTrigger } from '@/hooks/useSavePromptTrigger';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -21,6 +22,7 @@ import { ToolDisclaimer } from './shared/ToolDisclaimer';
 import { ToolFeedback } from './shared/ToolFeedback';
 import { InsightCard } from './shared/InsightCard';
 import { SourceAttribution } from './shared/SourceAttribution';
+import { SaveResultsPrompt } from './shared/SaveResultsPrompt';
 
 interface PaymentSchedule {
   stage: string;
@@ -45,6 +47,7 @@ export function NewConstructionCostCalculator() {
   const formatCurrency = useFormatPrice();
   const currencySymbol = useCurrencySymbol();
   const { data: buyerProfile } = useBuyerProfile();
+  const { showPrompt: showSavePrompt, dismissPrompt: dismissSavePrompt, trackChange } = useSavePromptTrigger();
   
   const [contractPrice, setContractPrice] = useState(2750000);
   const [buyerType, setBuyerType] = useState<BuyerType>('first_time');
@@ -54,6 +57,11 @@ export function NewConstructionCostCalculator() {
   const [includeMortgage, setIncludeMortgage] = useState(true);
   const [loanAmount, setLoanAmount] = useState(contractPrice * 0.5);
   const [contractDate, setContractDate] = useState(new Date());
+
+  // Track input changes for save prompt
+  useEffect(() => {
+    trackChange();
+  }, [contractPrice, constructionMonths, annualIndexRate, buyerType, trackChange]);
 
   // Set buyer type from profile on load
   useEffect(() => {
@@ -468,6 +476,7 @@ export function NewConstructionCostCalculator() {
   );
 
   return (
+    <>
     <ToolLayout
       title="New Construction Cost Calculator"
       subtitle="Calculate building index (מדד תשומות הבנייה), payment schedule, and total costs for buying from a developer"
@@ -488,5 +497,12 @@ export function NewConstructionCostCalculator() {
       sourceAttribution={<SourceAttribution toolType="newConstruction" />}
       disclaimer={<ToolDisclaimer />}
     />
+    <SaveResultsPrompt
+      show={showSavePrompt}
+      calculatorName="new construction"
+      onDismiss={dismissSavePrompt}
+      resultSummary={`Total with linkage: ${formatCurrency(totalWithLinkage)}`}
+    />
+    </>
   );
 }

@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Receipt, Calendar, TrendingDown, Check, Calculator, Wallet, BookOpen, RotateCcw, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
+import { useSavePromptTrigger } from '@/hooks/useSavePromptTrigger';
 import { useSaveCalculatorResult } from '@/hooks/useSavedCalculatorResults';
 import { 
   calculatePurchaseTax, 
@@ -27,6 +28,7 @@ import { InsightCard } from './shared/InsightCard';
 import { SourceAttribution } from './shared/SourceAttribution';
 import { ToolFeedback } from './shared/ToolFeedback';
 import { ExampleValuesHint } from './shared/ExampleValuesHint';
+import { SaveResultsPrompt } from './shared/SaveResultsPrompt';
 
 const STORAGE_KEY = 'purchase-tax-calculator-inputs';
 
@@ -43,6 +45,7 @@ export function PurchaseTaxCalculator() {
   const currencySymbol = useCurrencySymbol();
   const { data: buyerProfile } = useBuyerProfile();
   const saveResult = useSaveCalculatorResult();
+  const { showPrompt: showSavePrompt, dismissPrompt: dismissSavePrompt, trackChange } = useSavePromptTrigger();
   
   const [propertyPrice, setPropertyPrice] = useState(DEFAULTS.propertyPrice);
   const [buyerType, setBuyerType] = useState<BuyerType>(DEFAULTS.buyerType);
@@ -50,7 +53,10 @@ export function PurchaseTaxCalculator() {
   const [aliyahYear, setAliyahYear] = useState<number | undefined>(DEFAULTS.aliyahYear);
   const [purchaseDate, setPurchaseDate] = useState<Date>(DEFAULTS.purchaseDate);
 
-  // Load from sessionStorage on mount
+  // Track input changes for save prompt
+  useEffect(() => {
+    trackChange();
+  }, [propertyPrice, buyerType, aliyahYear, trackChange]);
   useEffect(() => {
     const saved = sessionStorage.getItem(STORAGE_KEY);
     if (saved) {
@@ -509,6 +515,7 @@ export function PurchaseTaxCalculator() {
   );
 
   return (
+    <>
     <ToolLayout
       title="Purchase Tax Calculator"
       subtitle="Calculate your מס רכישה based on 2024 rates with visual bracket breakdown"
@@ -530,5 +537,12 @@ export function PurchaseTaxCalculator() {
       sourceAttribution={<SourceAttribution toolType="purchaseTax" />}
       disclaimer={<ToolDisclaimer />}
     />
+    <SaveResultsPrompt
+      show={showSavePrompt}
+      calculatorName="purchase tax"
+      onDismiss={dismissSavePrompt}
+      resultSummary={`Tax: ${formatCurrency(taxResult.totalTax)}`}
+    />
+    </>
   );
 }

@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useSavePromptTrigger } from '@/hooks/useSavePromptTrigger';
 import { 
   Scale, 
   Home, 
@@ -46,6 +47,7 @@ import {
   SourceAttribution,
   ExampleValuesHint,
   ToolPropertySuggestions,
+  SaveResultsPrompt,
   type BuyerCategory as SharedBuyerCategory,
 } from './shared';
 import { BookOpen } from 'lucide-react';
@@ -176,6 +178,7 @@ export function RentVsBuyCalculator() {
   const currencySymbol = useCurrencySymbol();
   const { user } = useAuth();
   const saveToProfile = useSaveCalculatorResult();
+  const { showPrompt: showSavePrompt, dismissPrompt: dismissSavePrompt, trackChange } = useSavePromptTrigger();
   
   // Form state - initialized with defaults for immediate results
   const [selectedCity, setSelectedCity] = useState('');
@@ -190,7 +193,12 @@ export function RentVsBuyCalculator() {
   const [appreciation, setAppreciation] = useState(DEFAULTS.appreciation);
   const [rentIncrease, setRentIncrease] = useState(DEFAULTS.rentIncrease);
   const [investmentReturn, setInvestmentReturn] = useState(DEFAULTS.investmentReturn);
-  
+
+  // Track input changes for save prompt
+  useEffect(() => {
+    trackChange();
+  }, [propertyPrice, monthlyRent, downPaymentPercent, timeHorizon, buyerType, trackChange]);
+
   // Get canonical metrics for selected city
   const { data: cityMetrics } = useCanonicalMetrics(selectedCity);
   
@@ -1234,6 +1242,7 @@ export function RentVsBuyCalculator() {
   );
   
   return (
+    <>
     <ToolLayout
       title="Rent vs Buy Calculator"
       subtitle="Compare renting versus buying in Israel — financially and practically."
@@ -1247,5 +1256,12 @@ export function RentVsBuyCalculator() {
       sourceAttribution={<SourceAttribution toolType="rentVsBuy" />}
       disclaimer={disclaimer}
     />
+    <SaveResultsPrompt
+      show={showSavePrompt}
+      calculatorName="rent vs buy"
+      onDismiss={dismissSavePrompt}
+      resultSummary={calculations ? (calculations.buyingIsBetter ? 'Verdict: Buying is better' : 'Verdict: Renting is better') : undefined}
+    />
+    </>
   );
 }

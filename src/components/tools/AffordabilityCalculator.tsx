@@ -58,6 +58,7 @@ import { formatCurrencyRange } from './shared/ResultRange';
 import { SourceAttribution } from './shared/SourceAttribution';
 import { ExampleValuesHint } from './shared/ExampleValuesHint';
 import { useAuth } from '@/hooks/useAuth';
+import { useSavePromptTrigger } from '@/hooks/useSavePromptTrigger';
 import { useBuyerProfile } from '@/hooks/useBuyerProfile';
 import { useSaveCalculatorResult } from '@/hooks/useSavedCalculatorResults';
 import { usePreferences } from '@/contexts/PreferencesContext';
@@ -170,7 +171,7 @@ function AffordabilityCalculatorContent() {
   
   const [selectedBuyerType, setSelectedBuyerType] = useState<BuyerCategory>('first_time');
   const [olehIsFirstProperty, setOlehIsFirstProperty] = useState(true);
-  const [showSavePrompt, setShowSavePrompt] = useState(false);
+  const { showPrompt: showSavePrompt, dismissPrompt: dismissSavePrompt, trackChange } = useSavePromptTrigger();
   const [hasInteracted, setHasInteracted] = useState(false);
 
   // Convert down payment input to ILS whenever currency or amount changes
@@ -191,8 +192,9 @@ function AffordabilityCalculatorContent() {
   useEffect(() => {
     if (monthlyIncome !== DEFAULTS.monthlyIncome || downPayment !== DEFAULTS.downPayment) {
       setHasInteracted(true);
+      trackChange();
     }
-  }, [monthlyIncome, downPayment]);
+  }, [monthlyIncome, downPayment, trackChange]);
 
   useEffect(() => {
     const saved = sessionStorage.getItem(STORAGE_KEY);
@@ -308,13 +310,10 @@ function AffordabilityCalculatorContent() {
     };
   }, [monthlyIncome, spouseIncome, monthlyDebts, downPayment, interestRate, loanTermYears, employmentType, hasForeignIncome, foreignIncomePercent, selectedBuyerType, olehIsFirstProperty]);
 
-  // Show save prompt after user has interacted and changed values
+  // Track additional field changes for save prompt
   useEffect(() => {
-    if (hasInteracted && !user && calculations.maxPropertyPrice > 0) {
-      const timer = setTimeout(() => setShowSavePrompt(true), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [hasInteracted, user, calculations.maxPropertyPrice]);
+    trackChange();
+  }, [spouseIncome, monthlyDebts, interestRate, loanTermYears, employmentType, trackChange]);
 
   const handleReset = () => {
     setMonthlyIncome(DEFAULTS.monthlyIncome); setSpouseIncome(DEFAULTS.spouseIncome);
@@ -577,7 +576,7 @@ function AffordabilityCalculatorContent() {
       <SaveResultsPrompt
         show={showSavePrompt}
         calculatorName="affordability"
-        onDismiss={() => setShowSavePrompt(false)}
+        onDismiss={dismissSavePrompt}
         resultSummary={`Max budget: ${formatCurrencyRange(calculations.maxPropertyLow, calculations.maxPropertyHigh, currencySymbol)}`}
       />
     </>

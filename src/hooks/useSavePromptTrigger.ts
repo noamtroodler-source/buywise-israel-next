@@ -1,0 +1,69 @@
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+
+interface UseSavePromptTriggerOptions {
+  /** Minimum number of distinct field changes before triggering */
+  minChanges?: number;
+  /** Milliseconds of inactivity after last change before showing prompt */
+  idleMs?: number;
+}
+
+/**
+ * Reusable hook for triggering the "Save Results" prompt.
+ * Shows the prompt only when:
+ *  - User is NOT logged in
+ *  - User has made ≥ minChanges distinct field changes
+ *  - User has been idle for idleMs after the last change
+ */
+export function useSavePromptTrigger({
+  minChanges = 2,
+  idleMs = 5000,
+}: UseSavePromptTriggerOptions = {}) {
+  const { user } = useAuth();
+  const [showPrompt, setShowPrompt] = useState(false);
+  const changeCountRef = useRef(0);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  }, []);
+
+  const trackChange = useCallback(() => {
+    // Don't track if user is logged in or prompt already shown
+    if (user) return;
+
+    changeCountRef.current += 1;
+    clearTimer();
+
+    if (changeCountRef.current >= minChanges) {
+      timerRef.current = setTimeout(() => {
+        setShowPrompt(true);
+      }, idleMs);
+    }
+  }, [user, minChanges, idleMs, clearTimer]);
+
+  const dismissPrompt = useCallback(() => {
+    setShowPrompt(false);
+    // Reset so it doesn't re-trigger after dismiss
+    changeCountRef.current = 0;
+    clearTimer();
+  }, [clearTimer]);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => clearTimer();
+  }, [clearTimer]);
+
+  // Hide prompt if user logs in
+  useEffect(() => {
+    if (user) {
+      setShowPrompt(false);
+      clearTimer();
+    }
+  }, [user, clearTimer]);
+
+  return { showPrompt, dismissPrompt, trackChange };
+}

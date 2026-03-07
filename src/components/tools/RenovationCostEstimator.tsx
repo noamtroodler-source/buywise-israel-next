@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useSavePromptTrigger } from '@/hooks/useSavePromptTrigger';
 import { motion } from 'framer-motion';
 import { Hammer, ChefHat, Bath, PaintBucket, Zap, Droplets, Wind, Square, Shield, Home, AlertTriangle, Calendar, HelpCircle, Check, ChevronDown, Calculator, FileText, TrendingUp, BookOpen, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -20,6 +21,7 @@ import { InsightCard } from './shared/InsightCard';
 import { CTACard } from './shared/CTACard';
 import { ToolFeedback } from './shared/ToolFeedback';
 import { SourceAttribution } from './shared/SourceAttribution';
+import { SaveResultsPrompt } from './shared/SaveResultsPrompt';
 
 import { usePreferences, useFormatPrice, useFormatArea, useCurrencySymbol, useAreaUnitLabel } from '@/contexts/PreferencesContext';
 
@@ -202,6 +204,7 @@ export function RenovationCostEstimator() {
   const formatArea = useFormatArea();
   const currencySymbol = useCurrencySymbol();
   const areaUnitLabel = useAreaUnitLabel();
+  const { showPrompt: showSavePrompt, dismissPrompt: dismissSavePrompt, trackChange } = useSavePromptTrigger();
   
   // Get quality examples with dynamic currency symbol
   const qualityExamples = useMemo(() => getQualityExamples(currencySymbol), [currencySymbol]);
@@ -215,6 +218,11 @@ export function RenovationCostEstimator() {
   // Renovation scope
   const [selectedCategories, setSelectedCategories] = useState<string[]>(['painting', 'flooring']);
   const [qualityLevel, setQualityLevel] = useState<QualityLevel>('standard');
+
+  // Track input changes for save prompt
+  useEffect(() => {
+    trackChange();
+  }, [propertySize, buildingYear, propertyType, qualityLevel, selectedCategories, trackChange]);
 
   // Advanced options
   const [includePermits, setIncludePermits] = useState(true);
@@ -984,6 +992,7 @@ export function RenovationCostEstimator() {
   );
 
   return (
+    <>
     <ToolLayout
       title="Renovation Cost Estimator"
       subtitle="Estimate renovation costs for Israeli properties — clearly and realistically."
@@ -1004,5 +1013,12 @@ export function RenovationCostEstimator() {
         />
       }
     />
+    <SaveResultsPrompt
+      show={showSavePrompt}
+      calculatorName="renovation"
+      onDismiss={dismissSavePrompt}
+      resultSummary={`Estimated cost: ${formatCurrency(calculations.totalMin)}–${formatCurrency(calculations.totalMax)}`}
+    />
+    </>
   );
 }

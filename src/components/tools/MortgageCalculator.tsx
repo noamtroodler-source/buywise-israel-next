@@ -20,7 +20,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useSaveCalculatorResult } from '@/hooks/useSavedCalculatorResults';
 import { Link } from 'react-router-dom';
-import { ToolLayout, ToolDisclaimer, ToolFeedback, InsightCard, ResultRange, formatCurrencyRange, SourceAttribution, ExampleValuesHint, ToolPropertySuggestions, ToolGuidanceHint } from './shared';
+import { ToolLayout, ToolDisclaimer, ToolFeedback, InsightCard, ResultRange, formatCurrencyRange, SourceAttribution, ExampleValuesHint, ToolPropertySuggestions, ToolGuidanceHint, SaveResultsPrompt } from './shared';
+import { useSavePromptTrigger } from '@/hooks/useSavePromptTrigger';
 import { useFormatPrice, useCurrencySymbol } from '@/contexts/PreferencesContext';
 import { toast } from 'sonner';
 import { MORTGAGE_RATE_RANGES } from '@/lib/utils/formatRange';
@@ -98,6 +99,13 @@ function MortgageCalculatorContent() {
   // UI state
   const [isTracksOpen, setIsTracksOpen] = useState(false);
   const [isStressTestOpen, setIsStressTestOpen] = useState(false);
+  
+  const { showPrompt: showSavePrompt, dismissPrompt: dismissSavePrompt, trackChange } = useSavePromptTrigger();
+  
+  // Track input changes for save prompt
+  useEffect(() => {
+    trackChange();
+  }, [propertyPrice, downPaymentPercent, interestRate, loanTermYears, buyerType, trackChange]);
 
   // Set buyer type from profile
   useEffect(() => {
@@ -782,17 +790,25 @@ function MortgageCalculatorContent() {
   );
 
   return (
-    <ToolLayout
-      title="Mortgage Calculator"
-      subtitle="See what a mortgage in Israel actually costs — before talking to a bank."
-      icon={<Calculator className="h-6 w-6" />}
-      headerActions={headerActions}
-      leftColumn={leftColumn}
-      rightColumn={rightColumn}
-      bottomSection={bottomSection}
-      sourceAttribution={<SourceAttribution toolType="mortgage" />}
-      disclaimer={disclaimer}
-    />
+    <>
+      <ToolLayout
+        title="Mortgage Calculator"
+        subtitle="See what a mortgage in Israel actually costs — before talking to a bank."
+        icon={<Calculator className="h-6 w-6" />}
+        headerActions={headerActions}
+        leftColumn={leftColumn}
+        rightColumn={rightColumn}
+        bottomSection={bottomSection}
+        sourceAttribution={<SourceAttribution toolType="mortgage" />}
+        disclaimer={disclaimer}
+      />
+      <SaveResultsPrompt
+        show={showSavePrompt}
+        calculatorName="mortgage"
+        onDismiss={dismissSavePrompt}
+        resultSummary={`Monthly payment: ${formatCurrencyRange(paymentRange.low, paymentRange.high, currencySymbol)}`}
+      />
+    </>
   );
 }
 

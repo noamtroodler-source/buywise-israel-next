@@ -28,6 +28,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useSavePromptTrigger } from '@/hooks/useSavePromptTrigger';
 import { useSaveCalculatorResult } from '@/hooks/useSavedCalculatorResults';
 import { 
   ToolLayout, 
@@ -39,6 +40,7 @@ import {
   ExampleValuesHint,
   ToolPropertySuggestions,
   ToolGuidanceHint,
+  SaveResultsPrompt,
   type BuyerCategory as SharedBuyerCategory,
 } from './shared';
 
@@ -133,11 +135,17 @@ export function TrueCostCalculator() {
   const areaUnitLabel = useAreaUnitLabel();
   const { user } = useAuth();
   const saveToProfile = useSaveCalculatorResult();
+  const { showPrompt: showSavePrompt, dismissPrompt: dismissSavePrompt, trackChange } = useSavePromptTrigger();
 
   // Core inputs
   const [propertyPrice, setPropertyPrice] = useState('2750000');
   const [propertySize, setPropertySize] = useState('80');
   const [selectedCity, setSelectedCity] = useState('');
+
+  // Track input changes for save prompt
+  useEffect(() => {
+    trackChange();
+  }, [propertyPrice, propertySize, selectedCity, trackChange]);
   
   // Fetch canonical metrics for selected city
   const { data: cityMetrics } = useCanonicalMetrics(selectedCity);
@@ -1027,6 +1035,7 @@ export function TrueCostCalculator() {
   );
 
   return (
+    <>
     <ToolLayout
       title="True Cost Calculator"
       subtitle="See the true cost of buying property in Israel — beyond the list price."
@@ -1049,6 +1058,13 @@ export function TrueCostCalculator() {
       sourceAttribution={<SourceAttribution toolType="trueCost" />}
       disclaimer={disclaimer}
     />
+    <SaveResultsPrompt
+      show={showSavePrompt}
+      calculatorName="true cost"
+      onDismiss={dismissSavePrompt}
+      resultSummary={`Total cost: ${formatPrice(Math.round(calculations.totalOneTime))}`}
+    />
+    </>
   );
 }
 

@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useSavePromptTrigger } from '@/hooks/useSavePromptTrigger';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
@@ -8,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { TrendingUp, Percent, PiggyBank, Info, Building2, AlertTriangle } from 'lucide-react';
+import { SaveResultsPrompt } from './shared/SaveResultsPrompt';
 import { 
   calculateGrossYield, 
   calculateNetYield, 
@@ -19,12 +21,19 @@ import { calculateMortgagePayment } from '@/lib/calculations/mortgage';
 import { useCities } from '@/hooks/useCities';
 
 export function InvestmentROICalculator() {
+  const { showPrompt: showSavePrompt, dismissPrompt: dismissSavePrompt, trackChange } = useSavePromptTrigger();
+  
   const [purchasePrice, setPurchasePrice] = useState(2000000);
   const [monthlyRent, setMonthlyRent] = useState(7000);
   const [selectedCity, setSelectedCity] = useState<string>('');
   const [downPaymentPercent, setDownPaymentPercent] = useState(50); // Investors need 50%
   const [appreciation, setAppreciation] = useState(4);
   const [holdingYears, setHoldingYears] = useState(10);
+
+  // Track input changes for save prompt
+  useEffect(() => {
+    trackChange();
+  }, [purchasePrice, monthlyRent, downPaymentPercent, appreciation, holdingYears, trackChange]);
   
   // Vacancy & Maintenance
   const [vacancyRate, setVacancyRate] = useState(5);
@@ -161,6 +170,7 @@ export function InvestmentROICalculator() {
   };
 
   return (
+    <>
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
@@ -542,5 +552,12 @@ export function InvestmentROICalculator() {
         </div>
       </CardContent>
     </Card>
+    <SaveResultsPrompt
+      show={showSavePrompt}
+      calculatorName="investment"
+      onDismiss={dismissSavePrompt}
+      resultSummary={`Net yield: ${calculations.netYield.toFixed(1)}% · Cash-on-cash: ${calculations.cashOnCash.toFixed(1)}%`}
+    />
+    </>
   );
 }
