@@ -31,10 +31,8 @@ import { InsightCard } from '@/components/tools/shared/InsightCard';
 import { ToolPropertySuggestions } from '@/components/tools/shared/ToolPropertySuggestions';
 import { ToolFeedback } from '@/components/tools/shared/ToolFeedback';
 import { ToolGuidanceHint } from '@/components/tools/shared/ToolGuidanceHint';
-import { NavigationCard } from '@/components/ui/navigation-card';
-import { CalculatedForIsraelBadge } from '@/components/ui/calculated-for-israel-badge';
-import { Shekel } from '@/components/ui/shekel';
-import { Percent } from '@/components/ui/percent';
+import { Link } from 'react-router-dom';
+import { BadgeCheck, Calculator, Home, TrendingUp } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -228,16 +226,14 @@ export function InvestmentReturnCalculator() {
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <NavigationCard
-          title="Mortgage Calculator"
-          description="Estimate your monthly mortgage payments."
-          link="/tools/mortgage-calculator"
-        />
-        <NavigationCard
-          title="Affordability Calculator"
-          description="Find out what property price you can afford."
-          link="/tools/affordability-calculator"
-        />
+        <Link to="/tools?tool=mortgage" className="group p-4 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-md transition-all">
+          <div className="flex items-center gap-2 mb-1"><Calculator className="h-4 w-4 text-primary" /><p className="font-semibold group-hover:text-primary transition-colors">Mortgage Calculator</p></div>
+          <p className="text-sm text-muted-foreground">Estimate your monthly mortgage payments.</p>
+        </Link>
+        <Link to="/tools?tool=affordability" className="group p-4 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-md transition-all">
+          <div className="flex items-center gap-2 mb-1"><Home className="h-4 w-4 text-primary" /><p className="font-semibold group-hover:text-primary transition-colors">Affordability Calculator</p></div>
+          <p className="text-sm text-muted-foreground">Find out what property price you can afford.</p>
+        </Link>
       </div>
 
       <Accordion type="single" collapsible className="w-full">
@@ -273,7 +269,7 @@ export function InvestmentReturnCalculator() {
       </Accordion>
 
       <div className="flex items-center gap-3">
-        <CalculatedForIsraelBadge />
+        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground py-2"><BadgeCheck className="h-4 w-4 text-primary" /><span>Calculated for Israel — using Bank of Israel regulations</span></div>
         <ToolGuidanceHint variant="expert-tip" message="Adjust the holding period to see long-term potential." />
       </div>
 
@@ -520,19 +516,19 @@ export function InvestmentReturnCalculator() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label>Total Investment</Label>
-                    <p className="font-semibold"><Shekel>{results.totalInvestment.toLocaleString()}</Shekel></p>
+                    <p className="font-semibold">₪{results.totalInvestment.toLocaleString()}</p>
                   </div>
                   <div>
                     <Label>Total Revenue</Label>
-                    <p className="font-semibold"><Shekel>{results.totalRevenue.toLocaleString()}</Shekel></p>
+                    <p className="font-semibold">₪{results.totalRevenue.toLocaleString()}</p>
                   </div>
                   <div>
                     <Label>Net Profit</Label>
-                    <p className="font-semibold"><Shekel>{results.netProfit.toLocaleString()}</Shekel></p>
+                    <p className="font-semibold">₪{results.netProfit.toLocaleString()}</p>
                   </div>
                   <div>
                     <Label>Annual Return</Label>
-                    <p className="font-semibold"><Percent>{(results.annualReturn * 100).toFixed(2)}</Percent></p>
+                    <p className="font-semibold">{(results.annualReturn * 100).toFixed(2)}%</p>
                   </div>
                 </div>
               </CardContent>
@@ -547,15 +543,15 @@ export function InvestmentReturnCalculator() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label>Purchase Tax</Label>
-                      <p className="font-semibold"><Shekel>{results.purchaseTax.toLocaleString()}</Shekel></p>
+                      <p className="font-semibold">₪{results.purchaseTax.toLocaleString()}</p>
                     </div>
                     <div>
                       <Label>Agent Fees</Label>
-                      <p className="font-semibold"><Shekel>{results.agentFees.toLocaleString()}</Shekel></p>
+                      <p className="font-semibold">₪{results.agentFees.toLocaleString()}</p>
                     </div>
                     <div>
                       <Label>Lawyer Fees</Label>
-                      <p className="font-semibold"><Shekel>{results.lawyerFees.toLocaleString()}</Shekel></p>
+                      <p className="font-semibold">₪{results.lawyerFees.toLocaleString()}</p>
                     </div>
                   </div>
                 </div>
@@ -565,7 +561,7 @@ export function InvestmentReturnCalculator() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label>Total Appreciation</Label>
-                      <p className="font-semibold"><Shekel>{results.totalAppreciation.toLocaleString()}</Shekel></p>
+                      <p className="font-semibold">₪{results.totalAppreciation.toLocaleString()}</p>
                     </div>
                   </div>
                 </div>
@@ -575,7 +571,7 @@ export function InvestmentReturnCalculator() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label>Total Expenses</Label>
-                      <p className="font-semibold"><Shekel>{results.totalExpenses.toLocaleString()}</Shekel></p>
+                      <p className="font-semibold">₪{results.totalExpenses.toLocaleString()}</p>
                     </div>
                   </div>
                 </div>
