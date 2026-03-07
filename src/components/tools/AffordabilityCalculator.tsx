@@ -336,12 +336,49 @@ function AffordabilityCalculatorContent() {
 
   const insight = useMemo(() => {
     const tips: string[] = [];
-    if (calculations.limitingFactor === 'LTV') tips.push(`Your down payment of ${formatPrice(downPayment)} limits your buying power. Saving more could unlock higher-priced properties.`);
-    else tips.push(`Your monthly income is the limiting factor. Reducing existing debts would increase your maximum property price.`);
-    if (calculations.employmentMultiplier < 1) tips.push(`As a ${employmentType === 'self_employed' ? 'self-employed' : 'mixed income'} buyer, banks discount your income.`);
-    if (hasForeignIncome && foreignIncomePercent > 30) tips.push(`Foreign income is typically discounted 30-40% by Israeli banks.`);
-    return tips.slice(0, 2).join(' ');
-  }, [calculations, downPayment, employmentType, hasForeignIncome, foreignIncomePercent, formatPrice]);
+    
+    // Tone shift based on affordability score
+    if (calculations.affordabilityScore <= 40) {
+      tips.push(`This is a stretched budget — your total debt burden is above 40% of income. Banks may still approve, but you'll feel the squeeze monthly.`);
+    } else if (calculations.affordabilityScore >= 80) {
+      tips.push(`Comfortable position — your debt-to-income ratio leaves room for unexpected expenses. You're in a strong negotiating spot with banks.`);
+    } else if (calculations.limitingFactor === 'LTV') {
+      tips.push(`Your down payment of ${formatPrice(downPayment)} limits your buying power. Saving more could unlock higher-priced properties.`);
+    } else {
+      tips.push(`Your monthly income is the limiting factor right now.`);
+    }
+    
+    // Specific debt-clearing insight with real numbers
+    if (monthlyDebts > 0 && calculations.limitingFactor === 'PTI') {
+      const monthlyRate = interestRate / 100 / 12;
+      const numPayments = loanTermYears * 12;
+      const maxLTV = LTV_BY_CATEGORY[selectedBuyerType] ?? 0.75;
+      let extraLoan = 0;
+      if (monthlyRate > 0) {
+        extraLoan = monthlyDebts * (1 - Math.pow(1 + monthlyRate, -numPayments)) / monthlyRate;
+      }
+      const extraBudget = Math.min(extraLoan + downPayment, extraLoan / maxLTV) - calculations.maxPropertyPrice + calculations.maxPropertyPrice;
+      const budgetIncrease = Math.round(extraLoan);
+      if (budgetIncrease > 50000) {
+        tips.push(`Clearing your ${formatPrice(monthlyDebts)}/month in debts would raise your max property price by ~${formatPrice(budgetIncrease)}.`);
+      }
+    }
+    
+    // Rate sensitivity with specific number
+    if (calculations.stressedReduction > 50000) {
+      tips.push(`If rates rise 2%, your budget drops by ${formatPrice(calculations.stressedReduction)} — consider locking a fixed-rate track for stability.`);
+    }
+    
+    // Employment/foreign income (only if not already at 3 tips)
+    if (tips.length < 3 && calculations.employmentMultiplier < 1) {
+      tips.push(`As a ${employmentType === 'self_employed' ? 'self-employed' : 'mixed income'} buyer, banks discount your income to ${Math.round(calculations.employmentMultiplier * 100)}% — your actual earning power is higher than what they count.`);
+    }
+    if (tips.length < 3 && hasForeignIncome && foreignIncomePercent > 30) {
+      tips.push(`${foreignIncomePercent}% of your income is foreign — banks discount this 30-40%, significantly reducing your borrowing capacity.`);
+    }
+    
+    return tips.slice(0, 3).join(' ');
+  }, [calculations, downPayment, monthlyDebts, interestRate, loanTermYears, selectedBuyerType, employmentType, hasForeignIncome, foreignIncomePercent, formatPrice]);
 
   const headerActions = (
     <>

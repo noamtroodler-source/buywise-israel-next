@@ -274,6 +274,7 @@ function InvestmentCalculatorContent() {
     const cashOnCash = calculations.cashOnCash;
     const monthlyCashFlow = calculations.monthlyCashFlow;
     
+    // Grade commentary
     if (grade === 'A+' || grade === 'A') {
       messages.push(`This looks like a strong investment on paper. The numbers work well—now do your due diligence on the specific property and tenant market.`);
     } else if (grade === 'B+' || grade === 'B') {
@@ -284,19 +285,27 @@ function InvestmentCalculatorContent() {
       messages.push(`The numbers are weak on paper. Consider whether emotional factors or future potential justify this over alternatives.`);
     }
     
-    if (monthlyCashFlow < 0 && useLeverage) {
-      messages.push(`This property will cost you ${formatCurrency(Math.abs(Math.round(monthlyCashFlow)))}/month beyond the mortgage. You're betting on appreciation, not income.`);
-    } else if (cashOnCash > 6) {
-      messages.push(`Your annual return on cash invested is healthy at ${cashOnCash.toFixed(1)}%. You're making your money work.`);
+    // Stock market benchmark comparison
+    const stockBenchmark = 7.5; // Long-term average index fund return
+    if (cashOnCash > stockBenchmark) {
+      messages.push(`Your ${cashOnCash.toFixed(1)}% cash-on-cash return beats the ~7-8% average from index funds — plus you get leverage and a tangible asset.`);
+    } else if (cashOnCash > 0 && cashOnCash < stockBenchmark - 2) {
+      messages.push(`At ${cashOnCash.toFixed(1)}% cash-on-cash, index funds (~7-8% avg) would outperform with less hassle. The property bet here is on appreciation.`);
+    } else if (monthlyCashFlow < 0 && useLeverage) {
+      messages.push(`This property costs you ${formatCurrency(Math.abs(Math.round(monthlyCashFlow)))}/month beyond the mortgage — you're betting on appreciation, not income.`);
     }
     
-    if (calculations.taxComparison.recommended !== taxMethod) {
+    // Vacancy impact callout
+    if (vacancyRate > 5) {
+      const annualVacancyCost = Math.round(monthlyRent * (vacancyRate / 100) * 12);
+      messages.push(`At ${vacancyRate}% vacancy, you lose ~${formatCurrency(annualVacancyCost)}/year in potential rent. Each empty month costs ${formatCurrency(monthlyRent)}.`);
+    } else if (calculations.taxComparison.recommended !== taxMethod) {
       const savings = calculations.taxComparison.savings;
       messages.push(`Consider the ${calculations.taxComparison.recommended.replace('_', ' ')} tax method—you could save ${formatCurrency(savings)}/year.`);
     }
     
-    return messages;
-  }, [calculations, useLeverage, formatCurrency, taxMethod]);
+    return messages.slice(0, 3);
+  }, [calculations, useLeverage, formatCurrency, taxMethod, vacancyRate, monthlyRent]);
   
   // Handlers
   const handlePurchasePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -429,29 +429,42 @@ export function RenovationCostEstimator() {
   const renovationInsights = useMemo(() => {
     const messages: string[] = [];
     const totalMax = calculations.totalMax;
+    const totalMin = calculations.totalMin;
     const timelineMax = calculations.timelineMax;
     
+    // No insights if nothing selected
+    if (selectedCategories.length === 0) return messages;
+    
+    // Per-sqm context when property size is available
+    if (propertySize > 0 && totalMax > 0) {
+      const avgTotal = (totalMin + totalMax) / 2;
+      const perSqm = Math.round(avgTotal / propertySize);
+      const level = perSqm < 1500 ? 'light' : perSqm < 3500 ? 'moderate' : 'heavy';
+      messages.push(`At ₪${perSqm.toLocaleString()}/sqm, this is a ${level} renovation by Israeli standards.`);
+    }
+    
+    // Scale-based insight
     if (totalMax > 200000) {
-      messages.push(`This is a significant renovation. Consider living elsewhere during the work—it's worth the sanity and often speeds up the project.`);
-    } else if (selectedCategories.length > 0 && totalMax < 80000) {
-      messages.push(`This is a manageable project. Most contractors can handle this scope without major disruption to your life.`);
+      messages.push(`This is a significant renovation. Consider living elsewhere during the work — it often speeds up the project by 20-30%.`);
     }
     
-    if (timelineMax > 8) {
-      messages.push(`Expect some delays. Israeli holidays, material delays, and contractor schedules can push timelines. Budget time as carefully as money.`);
+    // Get 3 quotes for large projects
+    if (totalMax > 150000) {
+      messages.push(`Get at least 3 written quotes — price variation of 20-30% is normal in Israel for projects this size.`);
     }
     
-    if (qualityLevel === 'premium') {
-      messages.push(`Premium finishes look great, but consider where they matter most. A premium kitchen has more resale impact than premium painting.`);
+    // Timeline warning
+    if (messages.length < 3 && timelineMax > 8) {
+      messages.push(`Budget time as carefully as money — Israeli holidays, material delays, and contractor schedules can push your ${timelineMax}-week timeline.`);
     }
     
     // Age-based alerts
-    if (ageAlerts.length > 0) {
+    if (messages.length < 3 && ageAlerts.length > 0) {
       messages.push(`Your building's age may require additional upgrades. Check the alerts above for mandatory considerations.`);
     }
     
-    return messages;
-  }, [calculations, selectedCategories.length, qualityLevel, ageAlerts]);
+    return messages.slice(0, 3);
+  }, [calculations, selectedCategories.length, propertySize, ageAlerts]);
   
   // Visual breakdown bar percentages
   const breakdownBarData = useMemo(() => {

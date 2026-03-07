@@ -502,27 +502,32 @@ export function RentVsBuyCalculator() {
     if (!calculations) return [];
     const messages: string[] = [];
     
-    if (calculations.breakEvenYear && calculations.breakEvenYear <= timeHorizon) {
-      if (timeHorizon >= 10) {
-        messages.push(`With a ${timeHorizon}-year horizon, buying builds significant equity. After break-even at ~${calculations.breakEvenYear} years, you're growing wealth faster.`);
-      } else {
-        messages.push(`You reach break-even in ~${calculations.breakEvenYear} years. If staying that long, buying is likely the stronger path.`);
-      }
-    } else if (calculations.breakEvenYear && calculations.breakEvenYear > timeHorizon) {
-      messages.push(`At ${timeHorizon} years, renting still wins financially. Consider buying if you'll stay ${calculations.breakEvenYear}+ years.`);
-    } else if (calculations.buyingIsBetter) {
-      messages.push(`Given your inputs, buying builds more wealth at every point. Strong financial choice if you have the down payment.`);
+    // Monthly cost comparison — concrete numbers
+    const monthlyDiff = calculations.totalMonthlyBuying - calculations.currentMonthlyRent;
+    if (monthlyDiff > 0) {
+      messages.push(`Buying costs ${formatPrice(Math.round(calculations.totalMonthlyBuying))}/month vs ${formatPrice(Math.round(calculations.currentMonthlyRent))}/month renting — a difference of ${formatPrice(Math.round(monthlyDiff))}.`);
     } else {
-      messages.push(`Renting provides flexibility here. Invest your would-be down payment and still come out ahead over ${timeHorizon} years.`);
+      messages.push(`Buying is actually cheaper monthly: ${formatPrice(Math.round(calculations.totalMonthlyBuying))}/month vs ${formatPrice(Math.round(calculations.currentMonthlyRent))}/month renting.`);
     }
     
-    // Add lifestyle insight
-    if (calculations.spaceAdvantagePercent > 20) {
-      messages.push(`For the same monthly budget, renting gets you roughly ${calculations.spaceAdvantagePercent}% more space than buying. That's a lifestyle tradeoff worth considering.`);
+    // Break-even context
+    if (calculations.breakEvenYear && calculations.breakEvenYear <= timeHorizon) {
+      messages.push(`You reach break-even in ~${calculations.breakEvenYear} years. After that, buying pulls ahead in wealth building.`);
+    } else if (calculations.breakEvenYear && calculations.breakEvenYear > timeHorizon) {
+      messages.push(`At ${timeHorizon} years, renting still wins financially. You'd need to stay ${calculations.breakEvenYear}+ years for buying to break even.`);
+    } else if (calculations.buyingIsBetter) {
+      messages.push(`Buying builds more wealth at every point in your timeline — strong financial case if you have the down payment.`);
     }
     
-    return messages;
-  }, [calculations, timeHorizon]);
+    // Down payment opportunity cost
+    if (calculations.totalCashNotSpent > 100000) {
+      const returnRate = typeof investmentReturn === 'string' ? parseFloat(investmentReturn) : investmentReturn;
+      const annualReturn = Math.round(calculations.totalCashNotSpent * (returnRate / 100));
+      messages.push(`Your ${formatPrice(Math.round(calculations.totalCashNotSpent))} down payment could earn ~${formatPrice(annualReturn)}/year invested elsewhere at ${returnRate}% return.`);
+    }
+    
+    return messages.slice(0, 3);
+  }, [calculations, timeHorizon, investmentReturn, formatPrice]);
 
   // Save inputs (defined after calculations to use its values)
   const handleSave = () => {
