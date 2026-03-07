@@ -790,17 +790,25 @@ function MortgageCalculatorContent() {
   );
 
   return (
-    <ToolLayout
-      title="Mortgage Calculator"
-      subtitle="See what a mortgage in Israel actually costs — before talking to a bank."
-      icon={<Calculator className="h-6 w-6" />}
-      headerActions={headerActions}
-      leftColumn={leftColumn}
-      rightColumn={rightColumn}
-      bottomSection={bottomSection}
-      sourceAttribution={<SourceAttribution toolType="mortgage" />}
-      disclaimer={disclaimer}
-    />
+    <>
+      <ToolLayout
+        title="Mortgage Calculator"
+        subtitle="See what a mortgage in Israel actually costs — before talking to a bank."
+        icon={<Calculator className="h-6 w-6" />}
+        headerActions={headerActions}
+        leftColumn={leftColumn}
+        rightColumn={rightColumn}
+        bottomSection={bottomSection}
+        sourceAttribution={<SourceAttribution toolType="mortgage" />}
+        disclaimer={disclaimer}
+      />
+      <SaveResultsPrompt
+        show={showSavePrompt}
+        calculatorName="mortgage"
+        onDismiss={dismissSavePrompt}
+        resultSummary={`Monthly payment: ${formatCurrencyRange(paymentRange.low, paymentRange.high, currencySymbol)}`}
+      />
+    </>
   );
 }
 
