@@ -571,7 +571,7 @@ export function InvestmentReturnCalculator() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label>Total Expenses</Label>
-                      <p className="font-semibold"><Shekel>{results.totalExpenses.toLocaleString()}</Shekel></p>
+                      <p className="font-semibold">₪{results.totalExpenses.toLocaleString()}</p>
                     </div>
                   </div>
                 </div>
