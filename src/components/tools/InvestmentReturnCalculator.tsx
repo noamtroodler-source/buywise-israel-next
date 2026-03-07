@@ -1037,21 +1037,19 @@ function InvestmentCalculatorContent() {
         </Collapsible>
       </div>
 
-      {/* Insight Card */}
+      {/* 1. Interpret */}
       {insights.length > 0 && <InsightCard insights={insights} />}
 
-      {/* Calculated for Israel Badge */}
-      <div className="flex items-start gap-3 p-4 rounded-xl bg-muted/30 border border-border">
-        <BadgeCheck className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-        <div>
-          <p className="text-sm font-medium">Calculated for Israel</p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Includes Israeli investor tax rates (8% purchase tax), rental income tax options, and Mas Shevach (capital gains) calculations with inflation adjustment. Consult a tax advisor for personalized guidance.
-          </p>
-        </div>
-      </div>
+      {/* 2. Act - Property Suggestions */}
+      <ToolPropertySuggestions
+        title="Investment Properties at This Price"
+        subtitle="Browse listings that match your investment scenario"
+        minPrice={Math.round(propertyPrice * 0.8)}
+        maxPrice={Math.round(propertyPrice * 1.2)}
+        enabled={propertyPrice !== 2000000}
+      />
 
-      {/* Next Steps Grid */}
+      {/* 3. Explore - Next Steps Grid */}
       <div className="grid sm:grid-cols-3 gap-4">
         <Link 
           to="/guides/rent-vs-buy"
@@ -1093,7 +1091,18 @@ function InvestmentCalculatorContent() {
         </Link>
       </div>
 
-      {/* Feedback */}
+      {/* 5. Trust */}
+      <div className="flex items-start gap-3 p-4 rounded-xl bg-muted/30 border border-border">
+        <BadgeCheck className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+        <div>
+          <p className="text-sm font-medium">Calculated for Israel</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Includes Israeli investor tax rates (8% purchase tax), rental income tax options, and Mas Shevach (capital gains) calculations with inflation adjustment. Consult a tax advisor for personalized guidance.
+          </p>
+        </div>
+      </div>
+
+      {/* 6. Engage */}
       <ToolFeedback toolName="investment-return-calculator" variant="inline" />
     </div>
   );
