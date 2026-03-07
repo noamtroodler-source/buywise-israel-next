@@ -460,11 +460,6 @@ export function NewConstructionCostCalculator() {
         </Link>
       </div>
 
-      {/* 5. Trust */}
-      <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground py-2">
-        <BadgeCheck className="h-4 w-4 text-primary" />
-        <span>Calculated for Israel — using CBS construction cost index data</span>
-      </div>
 
       {/* 6. Engage */}
       <ToolFeedback toolName="new-construction-calculator" variant="inline" />
