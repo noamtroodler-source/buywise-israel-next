@@ -192,8 +192,9 @@ function AffordabilityCalculatorContent() {
   useEffect(() => {
     if (monthlyIncome !== DEFAULTS.monthlyIncome || downPayment !== DEFAULTS.downPayment) {
       setHasInteracted(true);
+      trackChange();
     }
-  }, [monthlyIncome, downPayment]);
+  }, [monthlyIncome, downPayment, trackChange]);
 
   useEffect(() => {
     const saved = sessionStorage.getItem(STORAGE_KEY);
