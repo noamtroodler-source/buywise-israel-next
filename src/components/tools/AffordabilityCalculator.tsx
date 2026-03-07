@@ -86,11 +86,18 @@ const EMPLOYMENT_OPTIONS = [
   { value: 'mixed', label: 'Mixed Income', multiplier: 0.85 },
 ];
 
-// Bank of Israel Directive 329 v11 - Max 50% PTI for all buyers
-const MAX_PTI_FIRST_HOME = 0.50;
-const MAX_PTI_ADDITIONAL = 0.50;
-const MAX_LTV_FIRST_HOME = 0.75;
-const MAX_LTV_ADDITIONAL = 0.50;
+// Bank of Israel Directive 329 v11 - LTV & PTI limits by buyer category
+const MAX_PTI = 0.50; // 50% PTI cap for all buyers
+const LTV_BY_CATEGORY: Record<string, number> = {
+  first_time: 0.75,
+  oleh: 0.75,
+  additional: 0.70,  // Upgrader: selling existing to buy new
+  upgrader: 0.70,
+  investor: 0.50,
+  foreign: 0.50,
+  non_resident: 0.50,
+  company: 0.50,
+};
 
 // Maximum realistic property price display ceiling
 const MAX_DISPLAY_PROPERTY_PRICE = 99900000; // ₪99.9M
