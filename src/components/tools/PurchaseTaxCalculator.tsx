@@ -53,7 +53,10 @@ export function PurchaseTaxCalculator() {
   const [aliyahYear, setAliyahYear] = useState<number | undefined>(DEFAULTS.aliyahYear);
   const [purchaseDate, setPurchaseDate] = useState<Date>(DEFAULTS.purchaseDate);
 
-  // Load from sessionStorage on mount
+  // Track input changes for save prompt
+  useEffect(() => {
+    trackChange();
+  }, [propertyPrice, buyerType, aliyahYear, trackChange]);
   useEffect(() => {
     const saved = sessionStorage.getItem(STORAGE_KEY);
     if (saved) {
