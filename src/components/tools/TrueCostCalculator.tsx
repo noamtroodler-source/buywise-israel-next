@@ -344,26 +344,36 @@ export function TrueCostCalculator() {
     const messages: string[] = [];
     const overheadPercent = calculations.percentAbovePrice;
     const taxSavings = calculations.taxSavings;
+    const price = calculations.price;
     
+    // Day-one cash summary — the most important number
+    const dayOneCash = calculations.allCostsAbovePrice + (price * (1 - (buyerCategory === 'investor' || buyerCategory === 'non_resident' ? 0.50 : buyerCategory === 'additional' ? 0.70 : 0.75)));
+    messages.push(`You'll need roughly ${formatPrice(Math.round(dayOneCash))} in cash before getting the keys — that's your down payment plus all closing costs.`);
+    
+    // Overhead context
     if (overheadPercent > 10) {
-      messages.push(`Budget for about ${overheadPercent.toFixed(0)}% above the listing price in additional costs. This is typical in Israel, but surprises people coming from other markets.`);
+      messages.push(`Costs above the listing price total ${overheadPercent.toFixed(0)}% — higher than average. Review each line item for savings.`);
     } else if (overheadPercent < 7) {
-      messages.push(`Your total costs are relatively lean for an Israeli purchase—you've minimized the extras. Nice work.`);
-    } else {
-      messages.push(`Expect roughly ${overheadPercent.toFixed(0)}% in costs beyond the property price—that's standard for Israeli transactions.`);
+      messages.push(`At ${overheadPercent.toFixed(0)}% overhead, your costs are lean for an Israeli purchase.`);
     }
     
-    if (taxSavings > 50000 && (buyerCategory === 'first_time' || buyerCategory === 'oleh')) {
-      const formattedSavings = formatPrice(Math.round(taxSavings));
-      messages.push(`As a ${buyerCategory === 'oleh' ? 'new Oleh' : 'first-time buyer'}, you're saving ${formattedSavings} in purchase tax compared to investor rates. That's real money you get to keep.`);
+    // Agent fee negotiation tip (only when agent fee is significant)
+    if (calculations.agentFee > 30000) {
+      const halfPercentSaving = Math.round(price * 0.005 * 1.18);
+      messages.push(`Agent fees are negotiable — even 0.5% less saves you ${formatPrice(halfPercentSaving)}.`);
     }
     
-    if (isNewConstruction && calculations.madadCost > 0) {
-      const madadFormatted = formatPrice(Math.round(calculations.madadCost));
-      messages.push(`With construction index linkage, expect the final price to be ${madadFormatted} higher than the contract price. Factor this into your budget now.`);
+    // Tax savings (only if not already at 3)
+    if (messages.length < 3 && taxSavings > 50000 && (buyerCategory === 'first_time' || buyerCategory === 'oleh')) {
+      messages.push(`As a ${buyerCategory === 'oleh' ? 'new Oleh' : 'first-time buyer'}, you're saving ${formatPrice(Math.round(taxSavings))} in purchase tax vs. investor rates.`);
     }
     
-    return messages;
+    // Madad (only if not already at 3)
+    if (messages.length < 3 && isNewConstruction && calculations.madadCost > 0) {
+      messages.push(`Construction index linkage adds ${formatPrice(Math.round(calculations.madadCost))} to your final price — factor this into your budget now.`);
+    }
+    
+    return messages.slice(0, 3);
   }, [calculations, buyerCategory, isNewConstruction, formatPrice]);
 
   // Save inputs

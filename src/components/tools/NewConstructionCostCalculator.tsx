@@ -147,6 +147,8 @@ export function NewConstructionCostCalculator() {
     
     if (linkagePercent > 5) {
       items.push(`Index linkage could add ${formatCurrency(indexLinkage.linkageAmount)} (${linkagePercent.toFixed(1)}%) to your final price — consider negotiating a cap with the developer.`);
+    } else if (linkagePercent < 2 && linkagePercent > 0) {
+      items.push(`Low index exposure (${linkagePercent.toFixed(1)}%) — your final price should be close to the contract price.`);
     }
     
     if (constructionMonths > 36) {
@@ -157,9 +159,7 @@ export function NewConstructionCostCalculator() {
       items.push(`At ${annualIndexRate}% annual index rate, your costs may rise significantly — ask about fixed-price contract options.`);
     }
 
-    items.push(`Budget an extra 5-10% for upgrades and changes to the standard specification.`);
-
-    return items;
+    return items.slice(0, 3);
   }, [totalWithLinkage, contractPrice, indexLinkage, constructionMonths, annualIndexRate, formatCurrency]);
 
   const leftColumn = (

@@ -192,18 +192,19 @@ function MortgageCalculatorContent() {
   const insights = useMemo(() => {
     const messages: string[] = [];
     
+    // Interest cost context — always useful
+    const interestPercentOfPrice = propertyPrice > 0 ? (mortgageResult.totalInterest / propertyPrice) * 100 : 0;
+    if (interestPercentOfPrice > 50) {
+      messages.push(`Interest adds ${formatCurrency(mortgageResult.totalInterest)} over ${loanTermYears} years — that's ${interestPercentOfPrice.toFixed(0)}% of the property price. Prepaying even ${formatCurrency(Math.round(mortgageResult.monthlyPayment * 0.1))}/month extra could save significantly.`);
+    } else if (mortgageResult.totalInterest > 100000) {
+      messages.push(`Total interest: ${formatCurrency(mortgageResult.totalInterest)} (${interestPercentOfPrice.toFixed(0)}% of property price). Prime-track loans in Israel allow penalty-free prepayment.`);
+    }
+    
     // LTV-based insights
     if (ltv >= maxLtv - 2) {
       messages.push(`At ${ltv.toFixed(0)}% LTV, you're at the Bank of Israel maximum for ${currentBuyerType?.label || 'your buyer type'}. This is common in Israel, but leaves less equity cushion if prices dip.`);
     } else if (ltv <= 50) {
       messages.push(`At ${ltv.toFixed(0)}% LTV, you have significant equity from day one. Israeli banks may offer better rates with this strong position.`);
-    }
-    
-    // Term-based insights
-    if (loanTermYears >= 28) {
-      messages.push(`Over ${loanTermYears} years, interest adds ${formatCurrency(mortgageResult.totalInterest)} to your cost. In Israel, Prime-track loans allow penalty-free prepayment—consider paying extra when possible.`);
-    } else if (loanTermYears <= 15) {
-      messages.push(`A ${loanTermYears}-year mortgage is aggressive but builds equity fast. Israeli banks structure mortgages in "tracks"—a shorter term lets you take more risk on Prime rates.`);
     }
     
     // Buyer type specific insights
@@ -213,8 +214,8 @@ function MortgageCalculatorContent() {
       messages.push(`As an Oleh, you qualify for the same LTV limits as first-time buyers. Some banks offer special Oleh mortgage packages—worth comparing.`);
     }
     
-    return messages;
-  }, [ltv, loanTermYears, mortgageResult.totalInterest, formatCurrency, currentBuyerType, maxLtv, buyerType]);
+    return messages.slice(0, 3);
+  }, [ltv, loanTermYears, mortgageResult.totalInterest, mortgageResult.monthlyPayment, propertyPrice, formatCurrency, currentBuyerType, maxLtv, buyerType]);
 
   // Handlers
   const handleBuyerTypeChange = (value: BuyerType) => {

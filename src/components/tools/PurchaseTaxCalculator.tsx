@@ -136,6 +136,13 @@ export function PurchaseTaxCalculator() {
     
     if (buyerType === 'first_time' && taxResult.savings?.vsInvestor) {
       items.push(`As a first-time buyer, you save ${formatCurrency(taxResult.savings.vsInvestor)} compared to investor rates.`);
+    } else if (buyerType !== 'first_time' && buyerType !== 'oleh') {
+      // Show what a first-time buyer would pay
+      const firstTimeTax = calculatePurchaseTax(propertyPrice, 'first_time', false).totalTax;
+      const difference = taxResult.totalTax - firstTimeTax;
+      if (difference > 10000) {
+        items.push(`A first-time buyer would pay ${formatCurrency(difference)} less in tax on this property.`);
+      }
     }
     
     if (buyerType === 'oleh' && olehBenefitInfo?.eligible) {
@@ -146,14 +153,26 @@ export function PurchaseTaxCalculator() {
       items.push(`You have ${upgraderTimeline.daysRemaining} days to sell your existing property to qualify for reduced rates.`);
     }
     
-    if (taxResult.effectiveRate > 6) {
+    // Bracket proximity warning
+    const brackets = taxResult.breakdown;
+    if (brackets.length > 0) {
+      const lastBracket = brackets[brackets.length - 1];
+      if (lastBracket.bracketMax && lastBracket.bracketMax !== Infinity) {
+        const distanceToNext = lastBracket.bracketMax - propertyPrice;
+        if (distanceToNext > 0 && distanceToNext < propertyPrice * 0.10) {
+          items.push(`You're ${formatCurrency(distanceToNext)} below the next tax bracket — small price increases here jump to a higher marginal rate.`);
+        }
+      }
+    }
+    
+    if (items.length < 3 && taxResult.effectiveRate > 6) {
       items.push(`Your effective rate of ${formatPercent(taxResult.effectiveRate)} is high — explore if you qualify for any exemptions.`);
-    } else if (taxResult.effectiveRate < 2) {
+    } else if (items.length < 3 && taxResult.effectiveRate < 2) {
       items.push(`Your effective tax rate of ${formatPercent(taxResult.effectiveRate)} is quite favorable compared to investors.`);
     }
 
-    return items;
-  }, [buyerType, taxResult, olehBenefitInfo, upgraderTimeline, formatCurrency]);
+    return items.slice(0, 3);
+  }, [buyerType, taxResult, olehBenefitInfo, upgraderTimeline, propertyPrice, formatCurrency]);
 
   // Map BuyerCategory to BuyerType
   const handleBuyerTypeChange = (category: BuyerCategory) => {
