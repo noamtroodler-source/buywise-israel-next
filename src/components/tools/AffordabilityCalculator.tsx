@@ -65,6 +65,18 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { MORTGAGE_RATE_RANGES } from '@/lib/utils/formatRange';
+import { toolUrl, TOOL_IDS } from '@/lib/routes';
+
+const STORAGE_KEY = 'affordability-calculator-inputs';
+
+type DownPaymentCurrency = 'ILS' | 'USD' | 'EUR' | 'GBP';
+
+const CURRENCY_CONFIG: Record<DownPaymentCurrency, { symbol: string; label: string; toILS: number }> = {
+  ILS: { symbol: '₪', label: '₪ ILS', toILS: 1 },
+  USD: { symbol: '$', label: '$ USD', toILS: 3.6 },
+  EUR: { symbol: '€', label: '€ EUR', toILS: 3.95 },
+  GBP: { symbol: '£', label: '£ GBP', toILS: 4.60 },
+};
 
 const STORAGE_KEY = 'affordability-calculator-inputs';
 
