@@ -505,9 +505,9 @@ export function RentVsBuyCalculator() {
     // Monthly cost comparison — concrete numbers
     const monthlyDiff = calculations.totalMonthlyBuying - calculations.currentMonthlyRent;
     if (monthlyDiff > 0) {
-      messages.push(`Buying costs ${formatCurrency(Math.round(calculations.totalMonthlyBuying))}/month vs ${formatCurrency(Math.round(calculations.currentMonthlyRent))}/month renting — a difference of ${formatCurrency(Math.round(monthlyDiff))}.`);
+      messages.push(`Buying costs ${formatPrice(Math.round(calculations.totalMonthlyBuying))}/month vs ${formatPrice(Math.round(calculations.currentMonthlyRent))}/month renting — a difference of ${formatPrice(Math.round(monthlyDiff))}.`);
     } else {
-      messages.push(`Buying is actually cheaper monthly: ${formatCurrency(Math.round(calculations.totalMonthlyBuying))}/month vs ${formatCurrency(Math.round(calculations.currentMonthlyRent))}/month renting.`);
+      messages.push(`Buying is actually cheaper monthly: ${formatPrice(Math.round(calculations.totalMonthlyBuying))}/month vs ${formatPrice(Math.round(calculations.currentMonthlyRent))}/month renting.`);
     }
     
     // Break-even context
@@ -521,12 +521,13 @@ export function RentVsBuyCalculator() {
     
     // Down payment opportunity cost
     if (calculations.totalCashNotSpent > 100000) {
-      const annualReturn = Math.round(calculations.totalCashNotSpent * (investmentReturn / 100));
-      messages.push(`Your ${formatCurrency(Math.round(calculations.totalCashNotSpent))} down payment could earn ~${formatCurrency(annualReturn)}/year invested elsewhere at ${investmentReturn}% return.`);
+      const returnRate = typeof investmentReturn === 'string' ? parseFloat(investmentReturn) : investmentReturn;
+      const annualReturn = Math.round(calculations.totalCashNotSpent * (returnRate / 100));
+      messages.push(`Your ${formatPrice(Math.round(calculations.totalCashNotSpent))} down payment could earn ~${formatPrice(annualReturn)}/year invested elsewhere at ${returnRate}% return.`);
     }
     
     return messages.slice(0, 3);
-  }, [calculations, timeHorizon, investmentReturn, formatCurrency]);
+  }, [calculations, timeHorizon, investmentReturn, formatPrice]);
 
   // Save inputs (defined after calculations to use its values)
   const handleSave = () => {

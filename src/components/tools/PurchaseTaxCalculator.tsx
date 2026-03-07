@@ -157,8 +157,9 @@ export function PurchaseTaxCalculator() {
     const brackets = taxResult.breakdown;
     if (brackets.length > 0) {
       const lastBracket = brackets[brackets.length - 1];
-      if (lastBracket.bracketMax && lastBracket.bracketMax !== Infinity) {
-        const distanceToNext = lastBracket.bracketMax - propertyPrice;
+      const bracketMax = lastBracket.bracket.max;
+      if (bracketMax && bracketMax !== Infinity) {
+        const distanceToNext = bracketMax - propertyPrice;
         if (distanceToNext > 0 && distanceToNext < propertyPrice * 0.10) {
           items.push(`You're ${formatCurrency(distanceToNext)} below the next tax bracket — small price increases here jump to a higher marginal rate.`);
         }

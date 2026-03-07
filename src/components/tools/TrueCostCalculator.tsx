@@ -347,7 +347,8 @@ export function TrueCostCalculator() {
     const price = calculations.price;
     
     // Day-one cash summary — the most important number
-    const dayOneCash = calculations.allCostsAbovePrice + (price * (1 - (buyerCategory === 'investor' || buyerCategory === 'non_resident' ? 0.50 : buyerCategory === 'additional' ? 0.70 : 0.75)));
+    const ltvRate = buyerCategory === 'non_resident' ? 0.50 : buyerCategory === 'additional' ? 0.70 : 0.75;
+    const dayOneCash = calculations.allCostsAbovePrice + (price * (1 - ltvRate));
     messages.push(`You'll need roughly ${formatPrice(Math.round(dayOneCash))} in cash before getting the keys — that's your down payment plus all closing costs.`);
     
     // Overhead context
