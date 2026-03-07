@@ -130,14 +130,14 @@ export function BuyerTypeInfoBanner({
                       olehIsFirstProperty && "bg-muted"
                     )}>
                       <RadioGroupItem value="yes" id="oleh-first-yes" />
-                      <span>Yes, first property <span className="text-xs text-muted-foreground">(75% LTV)</span></span>
+                      <span>Yes, first property</span>
                     </Label>
                     <Label htmlFor="oleh-first-no" className={cn(
                       "flex items-center gap-2 rounded-md p-2 cursor-pointer transition-colors hover:bg-muted/50 text-sm",
                       !olehIsFirstProperty && "bg-muted"
                     )}>
                       <RadioGroupItem value="no" id="oleh-first-no" />
-                      <span>No, I own property <span className="text-xs text-muted-foreground">(50% LTV)</span></span>
+                      <span>No, I own property</span>
                     </Label>
                   </RadioGroup>
                 </div>
