@@ -1102,18 +1102,6 @@ function InvestmentCalculatorContent() {
     </div>
   );
 
-
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <div className="px-4 pb-4 space-y-3 border-t border-border pt-4">
-                <div className="grid sm:grid-cols-3 gap-3">
-                  {(['exemption', 'flat_10', 'progressive'] as const).map((method) => {
-                    const result = calculations.taxComparison.comparison[method];
-                    const isRecommended = calculations.taxComparison.recommended === method;
-                    return (
-                      <div key={method} className={cn("p-3 rounded-lg border", isRecommended ? "border-primary/30 bg-primary/5" : "border-border bg-muted/30")}>
-                        <div className="flex items-center gap-2 mb-2">
-                          <p className="font-medium text-sm capitalize">{method.replace('_', ' ')}</p>
                           {isRecommended && <Badge variant="secondary" className="text-xs">Best</Badge>}
                         </div>
                         <p className="text-xl font-bold">{formatCurrency(result.annualTax)}/yr</p>
