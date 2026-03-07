@@ -1102,12 +1102,8 @@ function InvestmentCalculatorContent() {
     </div>
   );
 
-                          {isRecommended && <Badge variant="secondary" className="text-xs">Best</Badge>}
-                        </div>
-                        <p className="text-xl font-bold">{formatCurrency(result.annualTax)}/yr</p>
-                        <p className="text-xs text-muted-foreground mt-1">{result.effectiveRate.toFixed(1)}% effective</p>
-                      </div>
-                    );
+
+
                   })}
                 </div>
                 <p className="text-xs text-muted-foreground">
