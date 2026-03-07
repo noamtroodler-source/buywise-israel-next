@@ -31,10 +31,8 @@ import { InsightCard } from '@/components/tools/shared/InsightCard';
 import { ToolPropertySuggestions } from '@/components/tools/shared/ToolPropertySuggestions';
 import { ToolFeedback } from '@/components/tools/shared/ToolFeedback';
 import { ToolGuidanceHint } from '@/components/tools/shared/ToolGuidanceHint';
-import { NavigationCard } from '@/components/ui/navigation-card';
-import { CalculatedForIsraelBadge } from '@/components/ui/calculated-for-israel-badge';
-import { Shekel } from '@/components/ui/shekel';
-import { Percent } from '@/components/ui/percent';
+import { Link } from 'react-router-dom';
+import { BadgeCheck, Calculator, Home, TrendingUp } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
 
