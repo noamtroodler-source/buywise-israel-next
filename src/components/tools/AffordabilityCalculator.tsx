@@ -171,7 +171,7 @@ function AffordabilityCalculatorContent() {
   
   const [selectedBuyerType, setSelectedBuyerType] = useState<BuyerCategory>('first_time');
   const [olehIsFirstProperty, setOlehIsFirstProperty] = useState(true);
-  const [showSavePrompt, setShowSavePrompt] = useState(false);
+  const { showPrompt: showSavePrompt, dismissPrompt: dismissSavePrompt, trackChange } = useSavePromptTrigger();
   const [hasInteracted, setHasInteracted] = useState(false);
 
   // Convert down payment input to ILS whenever currency or amount changes
