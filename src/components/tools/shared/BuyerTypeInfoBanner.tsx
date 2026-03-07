@@ -124,25 +124,39 @@ export function BuyerTypeInfoBanner({
               className="space-y-1"
             >
               {options.map((option) => (
-                <Label
-                  key={option.value}
-                  htmlFor={option.value}
-                  className={cn(
-                    "flex items-start gap-3 rounded-md p-2.5 cursor-pointer transition-colors",
-                    "hover:bg-muted/50",
-                    selectedType === option.value && "bg-muted"
+                <div key={option.value}>
+                  <Label
+                    htmlFor={option.value}
+                    className={cn(
+                      "flex items-start gap-3 rounded-md p-2.5 cursor-pointer transition-colors",
+                      "hover:bg-muted/50",
+                      selectedType === option.value && "bg-muted"
+                    )}
+                  >
+                    <RadioGroupItem
+                      value={option.value}
+                      id={option.value}
+                      className="mt-0.5"
+                    />
+                    <div className="flex-1 space-y-0.5">
+                      <div className="font-medium text-sm">{option.label}</div>
+                      <div className="text-xs text-muted-foreground">{option.description}</div>
+                    </div>
+                  </Label>
+                  {option.value === 'oleh' && selectedType === 'oleh' && onOlehFirstPropertyChange && (
+                    <label
+                      className="flex items-center gap-2 ml-9 mt-1 mb-1 cursor-pointer select-none"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Checkbox
+                        checked={olehIsFirstProperty}
+                        onCheckedChange={(checked) => onOlehFirstPropertyChange(!!checked)}
+                        className="h-3.5 w-3.5"
+                      />
+                      <span className="text-xs text-muted-foreground">First property in Israel</span>
+                    </label>
                   )}
-                >
-                  <RadioGroupItem
-                    value={option.value}
-                    id={option.value}
-                    className="mt-0.5"
-                  />
-                  <div className="flex-1 space-y-0.5">
-                    <div className="font-medium text-sm">{option.label}</div>
-                    <div className="text-xs text-muted-foreground">{option.description}</div>
-                  </div>
-                </Label>
+                </div>
               ))}
             </RadioGroup>
 
