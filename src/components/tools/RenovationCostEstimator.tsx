@@ -992,6 +992,7 @@ export function RenovationCostEstimator() {
   );
 
   return (
+    <>
     <ToolLayout
       title="Renovation Cost Estimator"
       subtitle="Estimate renovation costs for Israeli properties — clearly and realistically."
@@ -1012,5 +1013,12 @@ export function RenovationCostEstimator() {
         />
       }
     />
+    <SaveResultsPrompt
+      show={showSavePrompt}
+      calculatorName="renovation"
+      onDismiss={dismissSavePrompt}
+      resultSummary={`Estimated cost: ${formatCurrency(calculations.totalMin)}–${formatCurrency(calculations.totalMax)}`}
+    />
+    </>
   );
 }

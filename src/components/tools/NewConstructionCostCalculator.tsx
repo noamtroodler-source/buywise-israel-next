@@ -476,6 +476,7 @@ export function NewConstructionCostCalculator() {
   );
 
   return (
+    <>
     <ToolLayout
       title="New Construction Cost Calculator"
       subtitle="Calculate building index (מדד תשומות הבנייה), payment schedule, and total costs for buying from a developer"
@@ -496,5 +497,12 @@ export function NewConstructionCostCalculator() {
       sourceAttribution={<SourceAttribution toolType="newConstruction" />}
       disclaimer={<ToolDisclaimer />}
     />
+    <SaveResultsPrompt
+      show={showSavePrompt}
+      calculatorName="new construction"
+      onDismiss={dismissSavePrompt}
+      resultSummary={`Total with linkage: ${formatCurrency(totalWithLinkage)}`}
+    />
+    </>
   );
 }

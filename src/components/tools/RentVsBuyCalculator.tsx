@@ -1250,5 +1250,12 @@ export function RentVsBuyCalculator() {
       sourceAttribution={<SourceAttribution toolType="rentVsBuy" />}
       disclaimer={disclaimer}
     />
+    <SaveResultsPrompt
+      show={showSavePrompt}
+      calculatorName="rent vs buy"
+      onDismiss={dismissSavePrompt}
+      resultSummary={calculations ? (calculations.buyingIsBetter ? 'Verdict: Buying is better' : 'Verdict: Renting is better') : undefined}
+    />
+    </>
   );
 }
