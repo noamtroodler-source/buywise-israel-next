@@ -1103,19 +1103,7 @@ function InvestmentCalculatorContent() {
   );
 
 
-
-                  })}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  <strong>Exemption:</strong> First ₪5,471/month tax-free, but you lose all expense deductions. <strong>10% Flat:</strong> Simple, no deductions allowed. <strong>Progressive:</strong> Taxed at your marginal rate, but you can deduct all expenses.
-                </p>
-              </div>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
-
-        {/* Exit Analysis */}
-        <Collapsible open={isExitOpen} onOpenChange={setIsExitOpen}>
+  const disclaimer = (
           <Card className="overflow-hidden">
             <CollapsibleTrigger className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors">
               <div className="flex items-center gap-3">
