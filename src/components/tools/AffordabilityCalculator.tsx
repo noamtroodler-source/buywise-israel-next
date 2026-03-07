@@ -355,7 +355,9 @@ function AffordabilityCalculatorContent() {
     if (monthlyDebts > 0 && calculations.limitingFactor === 'PTI') {
       const monthlyRate = interestRate / 100 / 12;
       const numPayments = loanTermYears * 12;
-      const maxLTV = LTV_BY_CATEGORY[selectedBuyerType] ?? 0.75;
+      const maxLTV = (selectedBuyerType === 'oleh' && !olehIsFirstProperty) 
+        ? (LTV_BY_CATEGORY['investor'] ?? 0.50) 
+        : (LTV_BY_CATEGORY[selectedBuyerType] ?? 0.75);
       let extraLoan = 0;
       if (monthlyRate > 0) {
         extraLoan = monthlyDebts * (1 - Math.pow(1 + monthlyRate, -numPayments)) / monthlyRate;
