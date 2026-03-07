@@ -576,7 +576,7 @@ function AffordabilityCalculatorContent() {
       <SaveResultsPrompt
         show={showSavePrompt}
         calculatorName="affordability"
-        onDismiss={() => setShowSavePrompt(false)}
+        onDismiss={dismissSavePrompt}
         resultSummary={`Max budget: ${formatCurrencyRange(calculations.maxPropertyLow, calculations.maxPropertyHigh, currencySymbol)}`}
       />
     </>
