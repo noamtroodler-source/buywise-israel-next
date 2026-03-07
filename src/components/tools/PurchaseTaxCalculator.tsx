@@ -44,6 +44,7 @@ export function PurchaseTaxCalculator() {
   const currencySymbol = useCurrencySymbol();
   const { data: buyerProfile } = useBuyerProfile();
   const saveResult = useSaveCalculatorResult();
+  const { showPrompt: showSavePrompt, dismissPrompt: dismissSavePrompt, trackChange } = useSavePromptTrigger();
   
   const [propertyPrice, setPropertyPrice] = useState(DEFAULTS.propertyPrice);
   const [buyerType, setBuyerType] = useState<BuyerType>(DEFAULTS.buyerType);
