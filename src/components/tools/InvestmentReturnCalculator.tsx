@@ -516,19 +516,19 @@ export function InvestmentReturnCalculator() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label>Total Investment</Label>
-                    <p className="font-semibold"><Shekel>{results.totalInvestment.toLocaleString()}</Shekel></p>
+                    <p className="font-semibold">₪{results.totalInvestment.toLocaleString()}</p>
                   </div>
                   <div>
                     <Label>Total Revenue</Label>
-                    <p className="font-semibold"><Shekel>{results.totalRevenue.toLocaleString()}</Shekel></p>
+                    <p className="font-semibold">₪{results.totalRevenue.toLocaleString()}</p>
                   </div>
                   <div>
                     <Label>Net Profit</Label>
-                    <p className="font-semibold"><Shekel>{results.netProfit.toLocaleString()}</Shekel></p>
+                    <p className="font-semibold">₪{results.netProfit.toLocaleString()}</p>
                   </div>
                   <div>
                     <Label>Annual Return</Label>
-                    <p className="font-semibold"><Percent>{(results.annualReturn * 100).toFixed(2)}</Percent></p>
+                    <p className="font-semibold">{(results.annualReturn * 100).toFixed(2)}%</p>
                   </div>
                 </div>
               </CardContent>
