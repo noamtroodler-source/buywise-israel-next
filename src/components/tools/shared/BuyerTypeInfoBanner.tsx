@@ -5,7 +5,7 @@
  * New implementations should use BuyerProfileSelector directly for full multi-dimensional support.
  */
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { ChevronDown, RotateCcw, Info } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
