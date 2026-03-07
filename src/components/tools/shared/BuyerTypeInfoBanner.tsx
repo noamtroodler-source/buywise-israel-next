@@ -5,7 +5,7 @@
  * New implementations should use BuyerProfileSelector directly for full multi-dimensional support.
  */
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { ChevronDown, RotateCcw, Info } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -23,17 +23,17 @@ export interface BuyerTypeOption {
 }
 
 const DEFAULT_BUYER_TYPE_OPTIONS: BuyerTypeOption[] = [
-  { value: 'first_time', label: 'First-Time Buyer', description: 'Israeli resident, first property' },
-  { value: 'oleh', label: 'Oleh Hadash', description: 'New immigrant (within 7 years)' },
+  { value: 'first_time', label: 'First-Time Buyer', description: 'No property in Israel, not a new Oleh' },
+  { value: 'oleh', label: 'Oleh Hadash', description: 'Made aliyah within 7 years' },
   { value: 'additional', label: 'Additional Property', description: 'Already own property in Israel' },
   { value: 'non_resident', label: 'Non-Resident / Foreign', description: 'Not an Israeli tax resident' },
 ];
 
 const EXTENDED_BUYER_TYPE_OPTIONS: BuyerTypeOption[] = [
-  { value: 'first_time', label: 'First-Time Buyer', description: 'Israeli resident, first property' },
-  { value: 'oleh', label: 'Oleh Hadash', description: 'New immigrant (within 7 years)' },
-  { value: 'upgrader', label: 'Upgrader', description: 'Selling existing home within 18 months' },
-  { value: 'investor', label: 'Investor', description: 'Additional property in Israel' },
+  { value: 'first_time', label: 'First-Time Buyer', description: 'No property in Israel, not a new Oleh' },
+  { value: 'oleh', label: 'Oleh Hadash', description: 'Made aliyah within 7 years' },
+  { value: 'upgrader', label: 'Upgrader', description: 'Selling current home within 18 months' },
+  { value: 'investor', label: 'Investor', description: 'Already own property in Israel' },
   { value: 'foreign', label: 'Foreign Resident', description: 'Not an Israeli tax resident' },
   { value: 'company', label: 'Corporate Buyer', description: 'Purchasing as a company' },
 ];
@@ -45,6 +45,10 @@ interface BuyerTypeInfoBannerProps {
   className?: string;
   /** Use extended options including upgrader, investor, foreign, company */
   extended?: boolean;
+  /** Callback when Oleh first-property status changes. true = first property (75% LTV), false = owns property (50% LTV) */
+  onOlehFirstPropertyChange?: (isFirstProperty: boolean) => void;
+  /** Current value of the Oleh first-property toggle */
+  olehIsFirstProperty?: boolean;
 }
 
 /**
@@ -68,6 +72,8 @@ export function BuyerTypeInfoBanner({
   profileType,
   className,
   extended = false,
+  onOlehFirstPropertyChange,
+  olehIsFirstProperty = true,
 }: BuyerTypeInfoBannerProps) {
   const [isOpen, setIsOpen] = useState(false);
   
@@ -138,6 +144,35 @@ export function BuyerTypeInfoBanner({
               ))}
             </RadioGroup>
             
+            {selectedType === 'oleh' && onOlehFirstPropertyChange && (
+              <>
+                <div className="border-t my-2" />
+                <div className="px-1 space-y-1.5">
+                  <p className="text-xs font-medium text-foreground">Is this your first property in Israel?</p>
+                  <RadioGroup
+                    value={olehIsFirstProperty ? 'yes' : 'no'}
+                    onValueChange={(v) => onOlehFirstPropertyChange(v === 'yes')}
+                    className="space-y-0.5"
+                  >
+                    <Label htmlFor="oleh-first-yes" className={cn(
+                      "flex items-center gap-2 rounded-md p-2 cursor-pointer transition-colors hover:bg-muted/50 text-sm",
+                      olehIsFirstProperty && "bg-muted"
+                    )}>
+                      <RadioGroupItem value="yes" id="oleh-first-yes" />
+                      <span>Yes, first property <span className="text-xs text-muted-foreground">(75% LTV)</span></span>
+                    </Label>
+                    <Label htmlFor="oleh-first-no" className={cn(
+                      "flex items-center gap-2 rounded-md p-2 cursor-pointer transition-colors hover:bg-muted/50 text-sm",
+                      !olehIsFirstProperty && "bg-muted"
+                    )}>
+                      <RadioGroupItem value="no" id="oleh-first-no" />
+                      <span>No, I own property <span className="text-xs text-muted-foreground">(50% LTV)</span></span>
+                    </Label>
+                  </RadioGroup>
+                </div>
+              </>
+            )}
+
             {isOverridden && profileType && (
               <>
                 <div className="border-t my-2" />

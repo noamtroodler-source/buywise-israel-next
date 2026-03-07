@@ -169,6 +169,7 @@ function AffordabilityCalculatorContent() {
   const [educationOpen, setEducationOpen] = useState(false);
   
   const [selectedBuyerType, setSelectedBuyerType] = useState<BuyerCategory>('first_time');
+  const [olehIsFirstProperty, setOlehIsFirstProperty] = useState(true);
   const [showSavePrompt, setShowSavePrompt] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
 
@@ -242,7 +243,9 @@ function AffordabilityCalculatorContent() {
     }
     const effectiveIncome = grossIncome;
     const maxPTI = MAX_PTI;
-    const maxLTV = LTV_BY_CATEGORY[selectedBuyerType] ?? 0.75;
+    const maxLTV = (selectedBuyerType === 'oleh' && !olehIsFirstProperty) 
+      ? (LTV_BY_CATEGORY['investor'] ?? 0.50) 
+      : (LTV_BY_CATEGORY[selectedBuyerType] ?? 0.75);
     const availableForMortgage = Math.max(0, effectiveIncome * maxPTI - monthlyDebts);
     const monthlyRate = interestRate / 100 / 12;
     const numPayments = loanTermYears * 12;
@@ -303,7 +306,7 @@ function AffordabilityCalculatorContent() {
       maxPropertyLow: Math.round(Math.min(maxPropertyAtHighRate, MAX_DISPLAY_PROPERTY_PRICE)),
       maxPropertyHigh: Math.round(Math.min(maxPropertyAtLowRate, MAX_DISPLAY_PROPERTY_PRICE)),
     };
-  }, [monthlyIncome, spouseIncome, monthlyDebts, downPayment, interestRate, loanTermYears, employmentType, hasForeignIncome, foreignIncomePercent, selectedBuyerType]);
+  }, [monthlyIncome, spouseIncome, monthlyDebts, downPayment, interestRate, loanTermYears, employmentType, hasForeignIncome, foreignIncomePercent, selectedBuyerType, olehIsFirstProperty]);
 
   // Show save prompt after user has interacted and changed values
   useEffect(() => {
@@ -352,7 +355,9 @@ function AffordabilityCalculatorContent() {
     if (monthlyDebts > 0 && calculations.limitingFactor === 'PTI') {
       const monthlyRate = interestRate / 100 / 12;
       const numPayments = loanTermYears * 12;
-      const maxLTV = LTV_BY_CATEGORY[selectedBuyerType] ?? 0.75;
+      const maxLTV = (selectedBuyerType === 'oleh' && !olehIsFirstProperty) 
+        ? (LTV_BY_CATEGORY['investor'] ?? 0.50) 
+        : (LTV_BY_CATEGORY[selectedBuyerType] ?? 0.75);
       let extraLoan = 0;
       if (monthlyRate > 0) {
         extraLoan = monthlyDebts * (1 - Math.pow(1 + monthlyRate, -numPayments)) / monthlyRate;
@@ -400,7 +405,7 @@ function AffordabilityCalculatorContent() {
         icon={<Calculator className="h-6 w-6" />}
         headerActions={headerActions}
         
-        infoBanner={<BuyerTypeInfoBanner selectedType={selectedBuyerType} onTypeChange={setSelectedBuyerType} extended />}
+        infoBanner={<BuyerTypeInfoBanner selectedType={selectedBuyerType} onTypeChange={setSelectedBuyerType} extended onOlehFirstPropertyChange={setOlehIsFirstProperty} olehIsFirstProperty={olehIsFirstProperty} />}
         leftColumn={
           <div className="space-y-4">
             <ExampleValuesHint />

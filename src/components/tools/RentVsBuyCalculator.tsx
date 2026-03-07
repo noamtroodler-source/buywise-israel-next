@@ -183,6 +183,7 @@ export function RentVsBuyCalculator() {
   const [propertyPrice, setPropertyPrice] = useState(formatNumber(DEFAULTS.propertyPrice));
   const [monthlyRent, setMonthlyRent] = useState(formatNumber(DEFAULTS.monthlyRent));
   const [buyerType, setBuyerType] = useState<BuyerCategory>('first_time');
+  const [olehIsFirstProperty, setOlehIsFirstProperty] = useState(true);
   const [downPaymentPercent, setDownPaymentPercent] = useState(DEFAULTS.downPaymentPercent);
   const [interestRate, setInterestRate] = useState(DEFAULTS.interestRate);
   const [timeHorizon, setTimeHorizon] = useState(DEFAULTS.timeHorizon);
@@ -588,6 +589,8 @@ export function RentVsBuyCalculator() {
         selectedType={buyerType as SharedBuyerCategory}
         onTypeChange={(type) => setBuyerType(type as BuyerCategory)}
         profileType={profileBuyerCategory}
+        onOlehFirstPropertyChange={setOlehIsFirstProperty}
+        olehIsFirstProperty={olehIsFirstProperty}
       />
        <InfoBanner variant="info">
         Both paths have real advantages. This tool helps you see what each offers—financially and in daily life—so you can decide what fits your priorities.
