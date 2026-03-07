@@ -46,6 +46,7 @@ export function PurchaseTaxCalculator() {
   
   const [propertyPrice, setPropertyPrice] = useState(DEFAULTS.propertyPrice);
   const [buyerType, setBuyerType] = useState<BuyerType>(DEFAULTS.buyerType);
+  const [olehIsFirstProperty, setOlehIsFirstProperty] = useState(true);
   const [aliyahYear, setAliyahYear] = useState<number | undefined>(DEFAULTS.aliyahYear);
   const [purchaseDate, setPurchaseDate] = useState<Date>(DEFAULTS.purchaseDate);
 
