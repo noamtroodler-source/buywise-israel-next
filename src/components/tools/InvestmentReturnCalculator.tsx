@@ -895,7 +895,9 @@ function InvestmentCalculatorContent() {
   );
 
   // Bottom Section
-  const bottomSection = (
+  const educationalSections = (
+    <div className="space-y-4">
+
     <div className="space-y-6">
       {/* Educational Sections */}
       <div className="space-y-4">
