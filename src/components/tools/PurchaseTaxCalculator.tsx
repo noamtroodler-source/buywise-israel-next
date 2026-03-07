@@ -515,6 +515,7 @@ export function PurchaseTaxCalculator() {
   );
 
   return (
+    <>
     <ToolLayout
       title="Purchase Tax Calculator"
       subtitle="Calculate your מס רכישה based on 2024 rates with visual bracket breakdown"
@@ -536,5 +537,12 @@ export function PurchaseTaxCalculator() {
       sourceAttribution={<SourceAttribution toolType="purchaseTax" />}
       disclaimer={<ToolDisclaimer />}
     />
+    <SaveResultsPrompt
+      show={showSavePrompt}
+      calculatorName="purchase tax"
+      onDismiss={dismissSavePrompt}
+      resultSummary={`Tax: ${formatCurrency(taxResult.totalTax)}`}
+    />
+    </>
   );
 }

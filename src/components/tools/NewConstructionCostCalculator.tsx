@@ -47,6 +47,7 @@ export function NewConstructionCostCalculator() {
   const formatCurrency = useFormatPrice();
   const currencySymbol = useCurrencySymbol();
   const { data: buyerProfile } = useBuyerProfile();
+  const { showPrompt: showSavePrompt, dismissPrompt: dismissSavePrompt, trackChange } = useSavePromptTrigger();
   
   const [contractPrice, setContractPrice] = useState(2750000);
   const [buyerType, setBuyerType] = useState<BuyerType>('first_time');
@@ -56,6 +57,11 @@ export function NewConstructionCostCalculator() {
   const [includeMortgage, setIncludeMortgage] = useState(true);
   const [loanAmount, setLoanAmount] = useState(contractPrice * 0.5);
   const [contractDate, setContractDate] = useState(new Date());
+
+  // Track input changes for save prompt
+  useEffect(() => {
+    trackChange();
+  }, [contractPrice, constructionMonths, annualIndexRate, buyerType, trackChange]);
 
   // Set buyer type from profile on load
   useEffect(() => {

@@ -177,6 +177,7 @@ export function RentVsBuyCalculator() {
   const currencySymbol = useCurrencySymbol();
   const { user } = useAuth();
   const saveToProfile = useSaveCalculatorResult();
+  const { showPrompt: showSavePrompt, dismissPrompt: dismissSavePrompt, trackChange } = useSavePromptTrigger();
   
   // Form state - initialized with defaults for immediate results
   const [selectedCity, setSelectedCity] = useState('');

@@ -551,5 +551,12 @@ export function InvestmentROICalculator() {
         </div>
       </CardContent>
     </Card>
+    <SaveResultsPrompt
+      show={showSavePrompt}
+      calculatorName="investment"
+      onDismiss={dismissSavePrompt}
+      resultSummary={`Net yield: ${calculations.netYield.toFixed(1)}% · Cash-on-cash: ${calculations.cashOnCash.toFixed(1)}%`}
+    />
+    </>
   );
 }

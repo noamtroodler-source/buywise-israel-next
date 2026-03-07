@@ -1057,6 +1057,13 @@ export function TrueCostCalculator() {
       sourceAttribution={<SourceAttribution toolType="trueCost" />}
       disclaimer={disclaimer}
     />
+    <SaveResultsPrompt
+      show={showSavePrompt}
+      calculatorName="true cost"
+      onDismiss={dismissSavePrompt}
+      resultSummary={`Total cost: ${formatPrice(Math.round(calculations.totalOneTime))}`}
+    />
+    </>
   );
 }
 

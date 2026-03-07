@@ -204,6 +204,7 @@ export function RenovationCostEstimator() {
   const formatArea = useFormatArea();
   const currencySymbol = useCurrencySymbol();
   const areaUnitLabel = useAreaUnitLabel();
+  const { showPrompt: showSavePrompt, dismissPrompt: dismissSavePrompt, trackChange } = useSavePromptTrigger();
   
   // Get quality examples with dynamic currency symbol
   const qualityExamples = useMemo(() => getQualityExamples(currencySymbol), [currencySymbol]);
@@ -213,6 +214,11 @@ export function RenovationCostEstimator() {
   const [buildingYear, setBuildingYear] = useState(1995);
   const [propertyType, setPropertyType] = useState<PropertyType>('apartment');
   const [bathroomCount, setBathroomCount] = useState(2);
+
+  // Track input changes for save prompt
+  useEffect(() => {
+    trackChange();
+  }, [propertySize, buildingYear, propertyType, qualityLevel, selectedCategories, trackChange]);
 
   // Renovation scope
   const [selectedCategories, setSelectedCategories] = useState<string[]>(['painting', 'flooring']);
