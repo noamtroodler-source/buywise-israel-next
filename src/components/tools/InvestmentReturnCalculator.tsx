@@ -1044,9 +1044,9 @@ function InvestmentCalculatorContent() {
       <ToolPropertySuggestions
         title="Investment Properties at This Price"
         subtitle="Browse listings that match your investment scenario"
-        minPrice={Math.round(propertyPrice * 0.8)}
-        maxPrice={Math.round(propertyPrice * 1.2)}
-        enabled={propertyPrice !== 2000000}
+        minPrice={Math.round(purchasePrice * 0.8)}
+        maxPrice={Math.round(purchasePrice * 1.2)}
+        enabled={purchasePrice !== DEFAULTS.purchasePrice}
       />
 
       {/* 3. Explore - Next Steps Grid */}
