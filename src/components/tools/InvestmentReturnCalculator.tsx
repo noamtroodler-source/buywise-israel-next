@@ -895,14 +895,212 @@ function InvestmentCalculatorContent() {
   );
 
   // Bottom Section
-  const educationalSections = (
-    <div className="space-y-4">
-
+  const bottomSection = (
     <div className="space-y-6">
-      {/* Educational Sections */}
+      {/* 1. Interpret */}
+      {insights.length > 0 && <InsightCard insights={insights} />}
+
+      {/* 2. Act - Property Suggestions */}
+      <ToolPropertySuggestions
+        title="Investment Properties at This Price"
+        subtitle="Browse listings that match your investment scenario"
+        minPrice={Math.round(purchasePrice * 0.8)}
+        maxPrice={Math.round(purchasePrice * 1.2)}
+        enabled={purchasePrice !== DEFAULTS.purchasePrice}
+      />
+
+      {/* 3. Explore - Next Steps Grid */}
+      <div className="grid sm:grid-cols-3 gap-4">
+        <Link 
+          to="/guides/rent-vs-buy"
+          className="group p-5 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-md transition-all"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-primary/10 text-primary">
+              <BookOpen className="h-5 w-5" />
+            </div>
+            <p className="font-semibold">Rent vs Buy Guide</p>
+          </div>
+          <p className="text-sm text-muted-foreground">Understand ownership tradeoffs</p>
+        </Link>
+        <Link 
+          to="/tools?tool=totalcost"
+          className="group p-5 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-md transition-all"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-primary/10 text-primary">
+              <Calculator className="h-5 w-5" />
+            </div>
+            <p className="font-semibold">True Cost</p>
+          </div>
+          <p className="text-sm text-muted-foreground">Total cash needed to close</p>
+        </Link>
+        <Link 
+          to="/listings?listing_status=for_sale"
+          className="group p-5 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-md transition-all"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-primary/10 text-primary">
+              <Home className="h-5 w-5" />
+            </div>
+            <p className="font-semibold">Browse Properties</p>
+          </div>
+          <p className="text-sm text-muted-foreground">Find investment properties</p>
+        </Link>
+      </div>
+
+      {/* 4. Understand - Educational Sections */}
       <div className="space-y-4">
-        {/* Tax Methods Info */}
         <Collapsible open={isTaxInfoOpen} onOpenChange={setIsTaxInfoOpen}>
+          <Card className="overflow-hidden">
+            <CollapsibleTrigger className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                  <Wallet className="h-4 w-4" />
+                </div>
+                <div className="text-left">
+                  <p className="font-semibold text-sm">Israeli Rental Tax Options</p>
+                  <p className="text-xs text-muted-foreground">Compare the 3 tax methods for your rent level</p>
+                </div>
+              </div>
+              <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", isTaxInfoOpen && "rotate-180")} />
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="px-4 pb-4 space-y-3 border-t border-border pt-4">
+                <div className="grid sm:grid-cols-3 gap-3">
+                  {(['exemption', 'flat_10', 'progressive'] as const).map((method) => {
+                    const result = calculations.taxComparison.comparison[method];
+                    const isRecommended = calculations.taxComparison.recommended === method;
+                    return (
+                      <div key={method} className={cn("p-3 rounded-lg border", isRecommended ? "border-primary/30 bg-primary/5" : "border-border bg-muted/30")}>
+                        <div className="flex items-center gap-2 mb-2">
+                          <p className="font-medium text-sm capitalize">{method.replace('_', ' ')}</p>
+                          {isRecommended && <Badge variant="secondary" className="text-xs">Best</Badge>}
+                        </div>
+                        <p className="text-xl font-bold">{formatCurrency(result.annualTax)}/yr</p>
+                        <p className="text-xs text-muted-foreground mt-1">{result.effectiveRate.toFixed(1)}% effective</p>
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  <strong>Exemption:</strong> First ₪5,471/month tax-free, but you lose all expense deductions. <strong>10% Flat:</strong> Simple, no deductions allowed. <strong>Progressive:</strong> Taxed at your marginal rate, but you can deduct all expenses.
+                </p>
+              </div>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+
+        <Collapsible open={isExitOpen} onOpenChange={setIsExitOpen}>
+          <Card className="overflow-hidden">
+            <CollapsibleTrigger className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                  <ArrowRight className="h-4 w-4" />
+                </div>
+                <div className="text-left">
+                  <p className="font-semibold text-sm">Exit After {holdingPeriod} Years</p>
+                  <p className="text-xs text-muted-foreground">Net proceeds: {formatCurrency(Math.round(calculations.netProceedsAtExit))}</p>
+                </div>
+              </div>
+              <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", isExitOpen && "rotate-180")} />
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="px-4 pb-4 space-y-2 text-sm border-t border-border pt-4">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Property Value</span>
+                  <span>{formatCurrency(Math.round(calculations.futurePropertyValue))}</span>
+                </div>
+                {useLeverage && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Less: Remaining Mortgage</span>
+                    <span className="text-muted-foreground">-{formatCurrency(Math.round(calculations.remainingMortgageAtExit))}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Less: Selling Costs (~3%)</span>
+                  <span className="text-muted-foreground">-{formatCurrency(Math.round(calculations.sellingCostsAtExit))}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground flex items-center">
+                    Less: Capital Gains Tax (Mas Shevach)
+                    <InfoTooltip content={`25% on real gain. After ${holdingPeriod} years, ~₪${(calculations.inflationAdjustment / 1000).toFixed(0)}K deductible as inflation adjustment.`} />
+                  </span>
+                  <span className="text-muted-foreground">-{formatCurrency(Math.round(calculations.capitalGainsTax))}</span>
+                </div>
+                <Separator className="my-2" />
+                <div className="flex justify-between font-semibold">
+                  <span>Net Proceeds at Exit</span>
+                  <span className="text-primary">{formatCurrency(Math.round(calculations.netProceedsAtExit))}</span>
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+
+        <Collapsible open={isProjectionOpen} onOpenChange={setIsProjectionOpen}>
+          <Card className="overflow-hidden">
+            <CollapsibleTrigger className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                  <LineChart className="h-4 w-4" />
+                </div>
+                <div className="text-left">
+                  <p className="font-semibold text-sm">Year-by-Year Projection</p>
+                  <p className="text-xs text-muted-foreground">{holdingPeriod} year breakdown</p>
+                </div>
+              </div>
+              <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", isProjectionOpen && "rotate-180")} />
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="px-4 pb-4 border-t border-border pt-4 overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b text-left">
+                      <th className="pb-3 font-medium">Year</th>
+                      <th className="pb-3 font-medium text-right">Property Value</th>
+                      <th className="pb-3 font-medium text-right">Net Cash Flow</th>
+                      <th className="pb-3 font-medium text-right">Cumulative</th>
+                      <th className="pb-3 font-medium text-right">ROI</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {calculations.projection.map((year) => (
+                      <tr key={year.year} className="border-b last:border-0">
+                        <td className="py-3">{year.year}</td>
+                        <td className="py-3 text-right">{formatCurrency(year.propertyValue)}</td>
+                        <td className={cn("py-3 text-right", year.netCashFlow >= 0 ? "text-primary" : "text-muted-foreground")}>
+                          {year.netCashFlow >= 0 ? '+' : ''}{formatCurrency(year.netCashFlow)}
+                        </td>
+                        <td className={cn("py-3 text-right", year.cumulativeCashFlow >= 0 ? "text-primary" : "text-muted-foreground")}>
+                          {year.cumulativeCashFlow >= 0 ? '+' : ''}{formatCurrency(year.cumulativeCashFlow)}
+                        </td>
+                        <td className="py-3 text-right font-medium text-primary">{year.roi.toFixed(1)}%</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+      </div>
+
+      {/* 5. Trust */}
+      <div className="flex items-start gap-3 p-4 rounded-xl bg-muted/30 border border-border">
+        <BadgeCheck className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+        <div>
+          <p className="text-sm font-medium">Calculated for Israel</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Includes Israeli investor tax rates (8% purchase tax), rental income tax options, and Mas Shevach (capital gains) calculations with inflation adjustment. Consult a tax advisor for personalized guidance.
+          </p>
+        </div>
+      </div>
+
+      {/* 6. Engage */}
+      <ToolFeedback toolName="investment-return-calculator" variant="inline" />
+    </div>
+  );
           <Card className="overflow-hidden">
             <CollapsibleTrigger className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors">
               <div className="flex items-center gap-3">
