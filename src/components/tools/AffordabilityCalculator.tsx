@@ -556,16 +556,16 @@ function AffordabilityCalculatorContent() {
               maxPrice={calculations.maxPropertyPrice}
               enabled={hasInteracted && calculations.maxPropertyPrice > 0}
             />
-            {/* 4. Explore */}
+            {/* 4. Engage */}
+            <ToolFeedback toolName="affordability-calculator" variant="inline" />
+            <SourceAttribution toolType="affordability" />
+            <ToolDisclaimer variant="affordability" />
+            {/* 5. Explore (exit points — always last) */}
             <div className="grid sm:grid-cols-3 gap-4">
               <Card className="p-4 cursor-pointer hover:border-primary/50 transition-colors group" onClick={() => navigate('/tools?tool=mortgage')}><Calculator className="h-5 w-5 text-primary mb-2" /><h4 className="font-medium text-sm group-hover:text-primary transition-colors">Mortgage Calculator</h4><p className="text-xs text-muted-foreground mt-1">See monthly payments for your max budget</p></Card>
               <Card className="p-4 cursor-pointer hover:border-primary/50 transition-colors group" onClick={() => navigate('/listings')}><Building2 className="h-5 w-5 text-primary mb-2" /><h4 className="font-medium text-sm group-hover:text-primary transition-colors">Browse Properties</h4><p className="text-xs text-muted-foreground mt-1">Find homes in your price range</p></Card>
               <Card className="p-4 cursor-pointer hover:border-primary/50 transition-colors group" onClick={() => navigate('/guides/buying-in-israel')}><BookOpen className="h-5 w-5 text-primary mb-2" /><h4 className="font-medium text-sm group-hover:text-primary transition-colors">Complete Buyer's Guide</h4><p className="text-xs text-muted-foreground mt-1">Everything you need to know</p></Card>
             </div>
-            {/* 6. Engage */}
-            <ToolFeedback toolName="affordability-calculator" variant="inline" />
-            <SourceAttribution toolType="affordability" />
-            <ToolDisclaimer variant="affordability" />
           </div>
         }
       />
