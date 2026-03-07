@@ -17,7 +17,9 @@ import {
   Clock,
   Building2,
   Lightbulb,
-  BookOpen
+  BookOpen,
+  ArrowRight,
+  Receipt
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -63,8 +65,19 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { MORTGAGE_RATE_RANGES } from '@/lib/utils/formatRange';
+import { toolUrl, TOOL_IDS } from '@/lib/routes';
 
 const STORAGE_KEY = 'affordability-calculator-inputs';
+
+type DownPaymentCurrency = 'ILS' | 'USD' | 'EUR' | 'GBP';
+
+const CURRENCY_CONFIG: Record<DownPaymentCurrency, { symbol: string; label: string; toILS: number }> = {
+  ILS: { symbol: '₪', label: '₪ ILS', toILS: 1 },
+  USD: { symbol: '$', label: '$ USD', toILS: 3.6 },
+  EUR: { symbol: '€', label: '€ EUR', toILS: 3.95 },
+  GBP: { symbol: '£', label: '£ GBP', toILS: 4.60 },
+};
+
 
 const DEFAULTS = {
   monthlyIncome: 25000,
@@ -145,6 +158,8 @@ function AffordabilityCalculatorContent() {
   const [spouseIncome, setSpouseIncome] = useState(DEFAULTS.spouseIncome);
   const [monthlyDebts, setMonthlyDebts] = useState(DEFAULTS.monthlyDebts);
   const [downPayment, setDownPayment] = useState(DEFAULTS.downPayment);
+  const [downPaymentCurrency, setDownPaymentCurrency] = useState<DownPaymentCurrency>('USD');
+  const [downPaymentInput, setDownPaymentInput] = useState(DEFAULTS.downPayment); // raw input in selected currency
   const [interestRate, setInterestRate] = useState(DEFAULTS.interestRate);
   const [loanTermYears, setLoanTermYears] = useState(DEFAULTS.loanTermYears);
   const [employmentType, setEmploymentType] = useState<string>(DEFAULTS.employmentType);
@@ -156,6 +171,20 @@ function AffordabilityCalculatorContent() {
   const [selectedBuyerType, setSelectedBuyerType] = useState<BuyerCategory>('first_time');
   const [showSavePrompt, setShowSavePrompt] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
+
+  // Convert down payment input to ILS whenever currency or amount changes
+  useEffect(() => {
+    const rate = CURRENCY_CONFIG[downPaymentCurrency].toILS;
+    setDownPayment(Math.round(downPaymentInput * rate));
+  }, [downPaymentInput, downPaymentCurrency]);
+
+  const handleDownPaymentCurrencyChange = (newCurrency: DownPaymentCurrency) => {
+    // Convert existing input value to new currency
+    const currentILS = downPaymentInput * CURRENCY_CONFIG[downPaymentCurrency].toILS;
+    const newRate = CURRENCY_CONFIG[newCurrency].toILS;
+    setDownPaymentInput(Math.round(currentILS / newRate));
+    setDownPaymentCurrency(newCurrency);
+  };
 
   // Track user interaction
   useEffect(() => {
@@ -172,7 +201,8 @@ function AffordabilityCalculatorContent() {
         if (parsed.monthlyIncome) setMonthlyIncome(parsed.monthlyIncome);
         if (parsed.spouseIncome) setSpouseIncome(parsed.spouseIncome);
         if (parsed.monthlyDebts !== undefined) setMonthlyDebts(parsed.monthlyDebts);
-        if (parsed.downPayment) setDownPayment(parsed.downPayment);
+        if (parsed.downPaymentInput) setDownPaymentInput(parsed.downPaymentInput);
+        if (parsed.downPaymentCurrency) setDownPaymentCurrency(parsed.downPaymentCurrency);
         if (parsed.interestRate) setInterestRate(parsed.interestRate);
         if (parsed.loanTermYears) setLoanTermYears(parsed.loanTermYears);
         if (parsed.employmentType) setEmploymentType(parsed.employmentType);
@@ -186,11 +216,11 @@ function AffordabilityCalculatorContent() {
 
   useEffect(() => {
     const data = {
-      monthlyIncome, spouseIncome, monthlyDebts, downPayment, interestRate,
+      monthlyIncome, spouseIncome, monthlyDebts, downPaymentInput, downPaymentCurrency, interestRate,
       loanTermYears, employmentType, hasForeignIncome, foreignIncomePercent,
     };
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  }, [monthlyIncome, spouseIncome, monthlyDebts, downPayment, interestRate, loanTermYears, employmentType, hasForeignIncome, foreignIncomePercent]);
+  }, [monthlyIncome, spouseIncome, monthlyDebts, downPaymentInput, downPaymentCurrency, interestRate, loanTermYears, employmentType, hasForeignIncome, foreignIncomePercent]);
 
   useEffect(() => {
     if (buyerProfile) {
@@ -285,7 +315,8 @@ function AffordabilityCalculatorContent() {
 
   const handleReset = () => {
     setMonthlyIncome(DEFAULTS.monthlyIncome); setSpouseIncome(DEFAULTS.spouseIncome);
-    setMonthlyDebts(DEFAULTS.monthlyDebts); setDownPayment(DEFAULTS.downPayment);
+    setMonthlyDebts(DEFAULTS.monthlyDebts); setDownPaymentInput(DEFAULTS.downPayment);
+    setDownPaymentCurrency('USD');
     setInterestRate(DEFAULTS.interestRate); setLoanTermYears(DEFAULTS.loanTermYears);
     setEmploymentType(DEFAULTS.employmentType); setHasForeignIncome(DEFAULTS.hasForeignIncome);
     setForeignIncomePercent(DEFAULTS.foreignIncomePercent);
@@ -367,7 +398,28 @@ function AffordabilityCalculatorContent() {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-medium flex items-center">Down Payment Available<InfoTooltip content={`Cash you have for down payment. ${selectedBuyerType === 'first_time' || selectedBuyerType === 'oleh' ? 'First-time buyers/Olim need at least 25% down.' : selectedBuyerType === 'additional' || selectedBuyerType === 'upgrader' ? 'Upgraders need at least 30% down.' : 'Investors/foreign buyers need at least 50% down.'}`} /></Label>
-                  <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{currencySymbol}</span><Input type="text" value={formatNumber(downPayment)} onChange={(e) => setDownPayment(parseFormattedNumber(e.target.value))} className="h-11 pl-8" /></div>
+                  <div className="flex gap-2">
+                    <Select value={downPaymentCurrency} onValueChange={(v) => handleDownPaymentCurrencyChange(v as DownPaymentCurrency)}>
+                      <SelectTrigger className="h-11 w-[90px] shrink-0">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ILS">₪ ILS</SelectItem>
+                        <SelectItem value="USD">$ USD</SelectItem>
+                        <SelectItem value="EUR">€ EUR</SelectItem>
+                        <SelectItem value="GBP">£ GBP</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <div className="relative flex-1">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{CURRENCY_CONFIG[downPaymentCurrency].symbol}</span>
+                      <Input type="text" value={formatNumber(downPaymentInput)} onChange={(e) => setDownPaymentInput(parseFormattedNumber(e.target.value))} className="h-11 pl-8" />
+                    </div>
+                  </div>
+                  {downPaymentCurrency !== 'ILS' && (
+                    <p className="text-xs text-muted-foreground">
+                      ≈ ₪{formatNumber(downPayment)} at today's rate ({CURRENCY_CONFIG[downPaymentCurrency].symbol}1 = ₪{CURRENCY_CONFIG[downPaymentCurrency].toILS})
+                    </p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -430,6 +482,22 @@ function AffordabilityCalculatorContent() {
                 </p>
               </div>
               {calculations.limitingFactor === 'LTV' ? <div className="flex items-start gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20"><AlertTriangle className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" /><p className="text-xs text-primary">Your down payment limits your budget. With more cash down, you could afford a higher-priced property.</p></div> : <div className="flex items-start gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20"><BadgeCheck className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" /><p className="text-xs text-primary">Your income is the limiting factor. Paying off existing debts would increase your buying power.</p></div>}
+              {hasInteracted && calculations.maxPropertyPrice > 0 && (
+                <div
+                  className="p-3 rounded-lg bg-muted/50 border border-border/50 cursor-pointer hover:border-primary/30 hover:bg-muted/80 transition-colors group"
+                  onClick={() => navigate(toolUrl(TOOL_IDS.TOTAL_COST, { price: calculations.maxPropertyPrice }))}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Receipt className="h-4 w-4 text-primary shrink-0" />
+                      <p className="text-xs text-muted-foreground">
+                        <span className="font-medium text-foreground">Budget: {formatPrice(calculations.maxPropertyPrice)}</span> — see total cash needed with taxes & fees
+                      </p>
+                    </div>
+                    <ArrowRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         }
