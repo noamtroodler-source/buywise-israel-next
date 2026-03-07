@@ -58,6 +58,7 @@ import { formatCurrencyRange } from './shared/ResultRange';
 import { SourceAttribution } from './shared/SourceAttribution';
 import { ExampleValuesHint } from './shared/ExampleValuesHint';
 import { useAuth } from '@/hooks/useAuth';
+import { useSavePromptTrigger } from '@/hooks/useSavePromptTrigger';
 import { useBuyerProfile } from '@/hooks/useBuyerProfile';
 import { useSaveCalculatorResult } from '@/hooks/useSavedCalculatorResults';
 import { usePreferences } from '@/contexts/PreferencesContext';
