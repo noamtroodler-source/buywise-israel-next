@@ -345,7 +345,7 @@ function AffordabilityCalculatorContent() {
                   {employmentType !== 'employed' && <p className="text-xs text-muted-foreground">Banks count {Math.round(calculations.employmentMultiplier * 100)}% of your income</p>}
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium flex items-center">Your Monthly Net Income<InfoTooltip content="Your take-home pay after taxes." /></Label>
+                  <Label className="text-sm font-medium flex items-center">Your Monthly Gross Income<InfoTooltip content="Your salary before taxes and deductions. Israeli banks use gross income for debt-to-income (PTI) calculations." /></Label>
                   <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{currencySymbol}</span><Input type="text" value={formatNumber(monthlyIncome)} onChange={(e) => setMonthlyIncome(parseFormattedNumber(e.target.value))} className="h-11 pl-8" /></div>
                 </div>
                 <div className="space-y-2">
