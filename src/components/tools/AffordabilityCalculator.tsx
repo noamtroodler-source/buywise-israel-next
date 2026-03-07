@@ -310,13 +310,10 @@ function AffordabilityCalculatorContent() {
     };
   }, [monthlyIncome, spouseIncome, monthlyDebts, downPayment, interestRate, loanTermYears, employmentType, hasForeignIncome, foreignIncomePercent, selectedBuyerType, olehIsFirstProperty]);
 
-  // Show save prompt after user has interacted and changed values
+  // Track additional field changes for save prompt
   useEffect(() => {
-    if (hasInteracted && !user && calculations.maxPropertyPrice > 0) {
-      const timer = setTimeout(() => setShowSavePrompt(true), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [hasInteracted, user, calculations.maxPropertyPrice]);
+    trackChange();
+  }, [spouseIncome, monthlyDebts, interestRate, loanTermYears, employmentType, trackChange]);
 
   const handleReset = () => {
     setMonthlyIncome(DEFAULTS.monthlyIncome); setSpouseIncome(DEFAULTS.spouseIncome);
