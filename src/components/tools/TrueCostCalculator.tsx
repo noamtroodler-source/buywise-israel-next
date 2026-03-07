@@ -1035,6 +1035,7 @@ export function TrueCostCalculator() {
   );
 
   return (
+    <>
     <ToolLayout
       title="True Cost Calculator"
       subtitle="See the true cost of buying property in Israel — beyond the list price."
