@@ -167,7 +167,7 @@ function AffordabilityCalculatorContent() {
   const [foreignIncomePercent, setForeignIncomePercent] = useState(DEFAULTS.foreignIncomePercent);
   
   const [educationOpen, setEducationOpen] = useState(false);
-  const [stressTestOpen, setStressTestOpen] = useState(false);
+  
   const [selectedBuyerType, setSelectedBuyerType] = useState<BuyerCategory>('first_time');
   const [showSavePrompt, setShowSavePrompt] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
