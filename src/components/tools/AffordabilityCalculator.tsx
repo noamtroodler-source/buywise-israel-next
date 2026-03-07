@@ -243,7 +243,9 @@ function AffordabilityCalculatorContent() {
     }
     const effectiveIncome = grossIncome;
     const maxPTI = MAX_PTI;
-    const maxLTV = LTV_BY_CATEGORY[selectedBuyerType] ?? 0.75;
+    const maxLTV = (selectedBuyerType === 'oleh' && !olehIsFirstProperty) 
+      ? (LTV_BY_CATEGORY['investor'] ?? 0.50) 
+      : (LTV_BY_CATEGORY[selectedBuyerType] ?? 0.75);
     const availableForMortgage = Math.max(0, effectiveIncome * maxPTI - monthlyDebts);
     const monthlyRate = interestRate / 100 / 12;
     const numPayments = loanTermYears * 12;
