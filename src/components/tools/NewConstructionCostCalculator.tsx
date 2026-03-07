@@ -48,6 +48,7 @@ export function NewConstructionCostCalculator() {
   
   const [contractPrice, setContractPrice] = useState(2750000);
   const [buyerType, setBuyerType] = useState<BuyerType>('first_time');
+  const [olehIsFirstProperty, setOlehIsFirstProperty] = useState(true);
   const [constructionMonths, setConstructionMonths] = useState(36);
   const [annualIndexRate, setAnnualIndexRate] = useState(2.5);
   const [includeMortgage, setIncludeMortgage] = useState(true);
