@@ -86,11 +86,18 @@ const EMPLOYMENT_OPTIONS = [
   { value: 'mixed', label: 'Mixed Income', multiplier: 0.85 },
 ];
 
-// Bank of Israel Directive 329 v11 - Max 50% PTI for all buyers
-const MAX_PTI_FIRST_HOME = 0.50;
-const MAX_PTI_ADDITIONAL = 0.50;
-const MAX_LTV_FIRST_HOME = 0.75;
-const MAX_LTV_ADDITIONAL = 0.50;
+// Bank of Israel Directive 329 v11 - LTV & PTI limits by buyer category
+const MAX_PTI = 0.50; // 50% PTI cap for all buyers
+const LTV_BY_CATEGORY: Record<string, number> = {
+  first_time: 0.75,
+  oleh: 0.75,
+  additional: 0.70,  // Upgrader: selling existing to buy new
+  upgrader: 0.70,
+  investor: 0.50,
+  foreign: 0.50,
+  non_resident: 0.50,
+  company: 0.50,
+};
 
 // Maximum realistic property price display ceiling
 const MAX_DISPLAY_PROPERTY_PRICE = 99900000; // ₪99.9M
@@ -204,9 +211,8 @@ function AffordabilityCalculatorContent() {
       grossIncome = (grossIncome - foreignPortion) + (foreignPortion * 0.6);
     }
     const effectiveIncome = grossIncome;
-    const isFirstHome = selectedBuyerType === 'first_time' || selectedBuyerType === 'oleh';
-    const maxPTI = isFirstHome ? MAX_PTI_FIRST_HOME : MAX_PTI_ADDITIONAL;
-    const maxLTV = isFirstHome ? MAX_LTV_FIRST_HOME : MAX_LTV_ADDITIONAL;
+    const maxPTI = MAX_PTI;
+    const maxLTV = LTV_BY_CATEGORY[selectedBuyerType] ?? 0.75;
     const availableForMortgage = Math.max(0, effectiveIncome * maxPTI - monthlyDebts);
     const monthlyRate = interestRate / 100 / 12;
     const numPayments = loanTermYears * 12;
@@ -339,11 +345,11 @@ function AffordabilityCalculatorContent() {
                   {employmentType !== 'employed' && <p className="text-xs text-muted-foreground">Banks count {Math.round(calculations.employmentMultiplier * 100)}% of your income</p>}
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium flex items-center">Your Monthly Net Income<InfoTooltip content="Your take-home pay after taxes." /></Label>
+                  <Label className="text-sm font-medium flex items-center">Your Monthly Gross Income<InfoTooltip content="Your salary before taxes and deductions. Israeli banks use gross income for debt-to-income (PTI) calculations." /></Label>
                   <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{currencySymbol}</span><Input type="text" value={formatNumber(monthlyIncome)} onChange={(e) => setMonthlyIncome(parseFormattedNumber(e.target.value))} className="h-11 pl-8" /></div>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium flex items-center">Spouse/Partner Income<InfoTooltip content="Combined household income increases buying power." /></Label>
+                  <Label className="text-sm font-medium flex items-center">Spouse/Partner Gross Income<InfoTooltip content="Combined gross household income increases buying power. Banks use pre-tax figures." /></Label>
                   <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{currencySymbol}</span><Input type="text" value={formatNumber(spouseIncome)} onChange={(e) => setSpouseIncome(parseFormattedNumber(e.target.value))} className="h-11 pl-8" /></div>
                 </div>
                 <div className="space-y-3">
@@ -360,7 +366,7 @@ function AffordabilityCalculatorContent() {
                   <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{currencySymbol}</span><Input type="text" value={formatNumber(monthlyDebts)} onChange={(e) => setMonthlyDebts(parseFormattedNumber(e.target.value))} className="h-11 pl-8" /></div>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium flex items-center">Down Payment Available<InfoTooltip content="Cash you have for down payment. First-time buyers need 25% minimum." /></Label>
+                  <Label className="text-sm font-medium flex items-center">Down Payment Available<InfoTooltip content={`Cash you have for down payment. ${selectedBuyerType === 'first_time' || selectedBuyerType === 'oleh' ? 'First-time buyers/Olim need at least 25% down.' : selectedBuyerType === 'additional' || selectedBuyerType === 'upgrader' ? 'Upgraders need at least 30% down.' : 'Investors/foreign buyers need at least 50% down.'}`} /></Label>
                   <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{currencySymbol}</span><Input type="text" value={formatNumber(downPayment)} onChange={(e) => setDownPayment(parseFormattedNumber(e.target.value))} className="h-11 pl-8" /></div>
                 </div>
               </CardContent>
@@ -430,7 +436,7 @@ function AffordabilityCalculatorContent() {
         bottomSection={
           <div className="space-y-6">
             <Collapsible open={educationOpen} onOpenChange={setEducationOpen}>
-              <Card><CollapsibleTrigger asChild><CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors"><div className="flex items-center justify-between"><CardTitle className="text-base">How Israeli Banks Calculate Your Budget</CardTitle><ChevronDown className={cn("h-5 w-5 text-muted-foreground transition-transform", educationOpen && "rotate-180")} /></div></CardHeader></CollapsibleTrigger><CollapsibleContent><CardContent className="pt-0 grid md:grid-cols-2 gap-4"><div className="space-y-2"><h4 className="font-medium text-sm">PTI Ratio</h4><p className="text-sm text-muted-foreground">Bank of Israel limits debt payments to 50% of income for all buyers (Directive 329 v11, April 2025).</p></div><div className="space-y-2"><h4 className="font-medium text-sm">LTV Limits</h4><p className="text-sm text-muted-foreground">First-time buyers can borrow up to 75% (25% down). Investors need 50% down.</p></div><div className="space-y-2"><h4 className="font-medium text-sm">Self-Employed Discount</h4><p className="text-sm text-muted-foreground">Banks count only 70% of self-employed income. You'll need 2+ years of tax returns.</p></div><div className="space-y-2"><h4 className="font-medium text-sm">Foreign Income Rules</h4><p className="text-sm text-muted-foreground">Income earned abroad is discounted 30-40% and requires extensive documentation.</p></div></CardContent></CollapsibleContent></Card>
+              <Card><CollapsibleTrigger asChild><CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors"><div className="flex items-center justify-between"><CardTitle className="text-base">How Israeli Banks Calculate Your Budget</CardTitle><ChevronDown className={cn("h-5 w-5 text-muted-foreground transition-transform", educationOpen && "rotate-180")} /></div></CardHeader></CollapsibleTrigger><CollapsibleContent><CardContent className="pt-0 grid md:grid-cols-2 gap-4"><div className="space-y-2"><h4 className="font-medium text-sm">PTI Ratio</h4><p className="text-sm text-muted-foreground">Bank of Israel limits debt payments to 50% of income for all buyers (Directive 329 v11, April 2025).</p></div><div className="space-y-2"><h4 className="font-medium text-sm">LTV Limits</h4><p className="text-sm text-muted-foreground">First-time buyers/Olim can borrow up to 75% (25% down). Upgraders can borrow up to 70% (30% down). Investors and foreign buyers need 50% down.</p></div><div className="space-y-2"><h4 className="font-medium text-sm">Self-Employed Discount</h4><p className="text-sm text-muted-foreground">Banks count only 70% of self-employed income. You'll need 2+ years of tax returns.</p></div><div className="space-y-2"><h4 className="font-medium text-sm">Foreign Income Rules</h4><p className="text-sm text-muted-foreground">Income earned abroad is discounted 30-40% and requires extensive documentation.</p></div></CardContent></CollapsibleContent></Card>
             </Collapsible>
             <Collapsible open={stressTestOpen} onOpenChange={setStressTestOpen}>
               <Card><CollapsibleTrigger asChild><CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors"><div className="flex items-center justify-between"><CardTitle className="text-base">What If Rates Rise?</CardTitle><ChevronDown className={cn("h-5 w-5 text-muted-foreground transition-transform", stressTestOpen && "rotate-180")} /></div></CardHeader></CollapsibleTrigger><CollapsibleContent><CardContent className="pt-0"><div className="grid sm:grid-cols-2 gap-4"><div className="p-4 rounded-lg bg-muted border border-border"><p className="text-sm font-medium text-muted-foreground">+1% Rate Increase</p><p className="text-2xl font-bold mt-1">{formatPrice(Math.round(calculations.maxPropertyPrice - (calculations.stressedReduction / 2)))}</p></div><div className="p-4 rounded-lg bg-muted border border-border"><p className="text-sm font-medium text-muted-foreground">+2% Rate Increase</p><p className="text-2xl font-bold mt-1">{formatPrice(calculations.stressedMaxProperty)}</p></div></div></CardContent></CollapsibleContent></Card>
