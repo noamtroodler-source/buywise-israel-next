@@ -226,16 +226,14 @@ export function InvestmentReturnCalculator() {
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <NavigationCard
-          title="Mortgage Calculator"
-          description="Estimate your monthly mortgage payments."
-          link="/tools/mortgage-calculator"
-        />
-        <NavigationCard
-          title="Affordability Calculator"
-          description="Find out what property price you can afford."
-          link="/tools/affordability-calculator"
-        />
+        <Link to="/tools?tool=mortgage" className="group p-4 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-md transition-all">
+          <div className="flex items-center gap-2 mb-1"><Calculator className="h-4 w-4 text-primary" /><p className="font-semibold group-hover:text-primary transition-colors">Mortgage Calculator</p></div>
+          <p className="text-sm text-muted-foreground">Estimate your monthly mortgage payments.</p>
+        </Link>
+        <Link to="/tools?tool=affordability" className="group p-4 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-md transition-all">
+          <div className="flex items-center gap-2 mb-1"><Home className="h-4 w-4 text-primary" /><p className="font-semibold group-hover:text-primary transition-colors">Affordability Calculator</p></div>
+          <p className="text-sm text-muted-foreground">Find out what property price you can afford.</p>
+        </Link>
       </div>
 
       <Accordion type="single" collapsible className="w-full">
