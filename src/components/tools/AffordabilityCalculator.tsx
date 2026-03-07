@@ -211,9 +211,8 @@ function AffordabilityCalculatorContent() {
       grossIncome = (grossIncome - foreignPortion) + (foreignPortion * 0.6);
     }
     const effectiveIncome = grossIncome;
-    const isFirstHome = selectedBuyerType === 'first_time' || selectedBuyerType === 'oleh';
-    const maxPTI = isFirstHome ? MAX_PTI_FIRST_HOME : MAX_PTI_ADDITIONAL;
-    const maxLTV = isFirstHome ? MAX_LTV_FIRST_HOME : MAX_LTV_ADDITIONAL;
+    const maxPTI = MAX_PTI;
+    const maxLTV = LTV_BY_CATEGORY[selectedBuyerType] ?? 0.75;
     const availableForMortgage = Math.max(0, effectiveIncome * maxPTI - monthlyDebts);
     const monthlyRate = interestRate / 100 / 12;
     const numPayments = loanTermYears * 12;
