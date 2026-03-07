@@ -158,6 +158,8 @@ function AffordabilityCalculatorContent() {
   const [spouseIncome, setSpouseIncome] = useState(DEFAULTS.spouseIncome);
   const [monthlyDebts, setMonthlyDebts] = useState(DEFAULTS.monthlyDebts);
   const [downPayment, setDownPayment] = useState(DEFAULTS.downPayment);
+  const [downPaymentCurrency, setDownPaymentCurrency] = useState<DownPaymentCurrency>('USD');
+  const [downPaymentInput, setDownPaymentInput] = useState(DEFAULTS.downPayment); // raw input in selected currency
   const [interestRate, setInterestRate] = useState(DEFAULTS.interestRate);
   const [loanTermYears, setLoanTermYears] = useState(DEFAULTS.loanTermYears);
   const [employmentType, setEmploymentType] = useState<string>(DEFAULTS.employmentType);
@@ -169,6 +171,20 @@ function AffordabilityCalculatorContent() {
   const [selectedBuyerType, setSelectedBuyerType] = useState<BuyerCategory>('first_time');
   const [showSavePrompt, setShowSavePrompt] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
+
+  // Convert down payment input to ILS whenever currency or amount changes
+  useEffect(() => {
+    const rate = CURRENCY_CONFIG[downPaymentCurrency].toILS;
+    setDownPayment(Math.round(downPaymentInput * rate));
+  }, [downPaymentInput, downPaymentCurrency]);
+
+  const handleDownPaymentCurrencyChange = (newCurrency: DownPaymentCurrency) => {
+    // Convert existing input value to new currency
+    const currentILS = downPaymentInput * CURRENCY_CONFIG[downPaymentCurrency].toILS;
+    const newRate = CURRENCY_CONFIG[newCurrency].toILS;
+    setDownPaymentInput(Math.round(currentILS / newRate));
+    setDownPaymentCurrency(newCurrency);
+  };
 
   // Track user interaction
   useEffect(() => {
