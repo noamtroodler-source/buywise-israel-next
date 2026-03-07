@@ -8,8 +8,9 @@ import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { 
   Building2, Info, Calendar, TrendingUp, 
-  AlertTriangle, Receipt, Banknote 
+  AlertTriangle, Receipt, Banknote, BadgeCheck
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { calculateNewConstructionLinkage, calculateTotalPurchaseCosts } from '@/lib/calculations/purchaseCosts';
 import { calculatePurchaseTax, type BuyerType, getBuyerTypeLabel } from '@/lib/calculations/purchaseTax';
 import { useFormatPrice, useCurrencySymbol } from '@/contexts/PreferencesContext';
@@ -17,6 +18,7 @@ import { useBuyerProfile, getBuyerTaxCategory } from '@/hooks/useBuyerProfile';
 import { ToolLayout } from './shared/ToolLayout';
 import { BuyerTypeInfoBanner, type BuyerCategory } from './shared/BuyerTypeInfoBanner';
 import { ToolDisclaimer } from './shared/ToolDisclaimer';
+import { ToolFeedback } from './shared/ToolFeedback';
 import { InsightCard } from './shared/InsightCard';
 import { SourceAttribution } from './shared/SourceAttribution';
 
