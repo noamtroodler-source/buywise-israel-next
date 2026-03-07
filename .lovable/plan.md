@@ -1,19 +1,15 @@
 
 
-# Fix PTI Discrepancy & Make Education Section Dynamic
+## Neighborhood Search — Implemented ✅
 
-## Problem
-The "How Israeli Banks Calculate Your Budget" education section hardcodes "50% of income" for the PTI ratio. The actual system uses **40%** (from `MAX_PTI: 0.40` in `constants.ts`, per BoI Directive 329). This is a factual error.
+All changes from the plan have been implemented:
 
-Additionally, the LTV limits are hardcoded text that could drift from the database values.
-
-## Changes
-
-**File:** `src/components/tools/AffordabilityCalculator.tsx` (line 544)
-
-1. **Fix PTI text:** Change "50%" → dynamically read from `getMaxPti(constants)` and display as `${Math.round(maxPti * 100)}%`
-2. **Make LTV text dynamic:** Read LTV limits from constants and display actual values (75%/70%/50%)
-3. The `constants` data is already available in this component via `useCalculatorConstants()`
-
-The education section's 4 grid items stay the same layout — just the numbers become dynamic instead of hardcoded strings.
-
+1. **`useNeighborhoodNames` hook** — Shared hook fetching neighborhood names per city + `useAllNeighborhoods` for cross-city search.
+2. **`useMapFilters`** — Added `neighborhoods` URL param (comma-separated).
+3. **`useProperties`** — Added `neighborhoods[]` array filter via `.in('neighborhood', ...)` in both count and listing queries.
+4. **`PropertyFilters` city popover** — Shows `NeighborhoodSelector` multi-select after city is chosen. Button label updates to show selected neighborhoods.
+5. **`MobileFilterSheet`** — Same `NeighborhoodSelector` in mobile Location section.
+6. **`CitySearchInput`** — Autocomplete now searches neighborhoods too, grouped under "Neighborhoods" with "Name, City" format. Selecting navigates with both city + neighborhood params.
+7. **`NeighborhoodChips`** — Map chips now trigger listing filter via `onFilterNeighborhood` callback.
+8. **`MapSearchLayout`** — Wires neighborhood filter between map chips and URL params. Includes neighborhoods in clear-all.
+9. **`ActiveFilterChips`** — Dismissible chip for active neighborhood filters.
