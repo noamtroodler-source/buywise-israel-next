@@ -6,9 +6,10 @@
  */
 
 import { useState } from 'react';
-import { ChevronDown, RotateCcw, Info } from 'lucide-react';
+import { ChevronDown, RotateCcw, Info, Check } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -116,34 +117,6 @@ export function BuyerTypeInfoBanner({
             align="start" 
             sideOffset={8}
           >
-            {selectedType === 'oleh' && onOlehFirstPropertyChange && (
-              <>
-                <div className="px-1 space-y-1.5 mb-2">
-                  <p className="text-xs font-medium text-foreground">Is this your first property in Israel?</p>
-                  <RadioGroup
-                    value={olehIsFirstProperty ? 'yes' : 'no'}
-                    onValueChange={(v) => onOlehFirstPropertyChange(v === 'yes')}
-                    className="space-y-0.5"
-                  >
-                    <Label htmlFor="oleh-first-yes" className={cn(
-                      "flex items-center gap-2 rounded-md p-2 cursor-pointer transition-colors hover:bg-muted/50 text-sm",
-                      olehIsFirstProperty && "bg-muted"
-                    )}>
-                      <RadioGroupItem value="yes" id="oleh-first-yes" />
-                      <span>Yes, first property</span>
-                    </Label>
-                    <Label htmlFor="oleh-first-no" className={cn(
-                      "flex items-center gap-2 rounded-md p-2 cursor-pointer transition-colors hover:bg-muted/50 text-sm",
-                      !olehIsFirstProperty && "bg-muted"
-                    )}>
-                      <RadioGroupItem value="no" id="oleh-first-no" />
-                      <span>No, I own property</span>
-                    </Label>
-                  </RadioGroup>
-                </div>
-                <div className="border-t mb-2" />
-              </>
-            )}
 
             <RadioGroup
               value={selectedType}
@@ -151,25 +124,39 @@ export function BuyerTypeInfoBanner({
               className="space-y-1"
             >
               {options.map((option) => (
-                <Label
-                  key={option.value}
-                  htmlFor={option.value}
-                  className={cn(
-                    "flex items-start gap-3 rounded-md p-2.5 cursor-pointer transition-colors",
-                    "hover:bg-muted/50",
-                    selectedType === option.value && "bg-muted"
+                <div key={option.value}>
+                  <Label
+                    htmlFor={option.value}
+                    className={cn(
+                      "flex items-start gap-3 rounded-md p-2.5 cursor-pointer transition-colors",
+                      "hover:bg-muted/50",
+                      selectedType === option.value && "bg-muted"
+                    )}
+                  >
+                    <RadioGroupItem
+                      value={option.value}
+                      id={option.value}
+                      className="mt-0.5"
+                    />
+                    <div className="flex-1 space-y-0.5">
+                      <div className="font-medium text-sm">{option.label}</div>
+                      <div className="text-xs text-muted-foreground">{option.description}</div>
+                    </div>
+                  </Label>
+                  {option.value === 'oleh' && selectedType === 'oleh' && onOlehFirstPropertyChange && (
+                    <label
+                      className="flex items-center gap-2 ml-9 mt-1 mb-1 cursor-pointer select-none"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Checkbox
+                        checked={olehIsFirstProperty}
+                        onCheckedChange={(checked) => onOlehFirstPropertyChange(!!checked)}
+                        className="h-3.5 w-3.5"
+                      />
+                      <span className="text-xs text-muted-foreground">First property in Israel</span>
+                    </label>
                   )}
-                >
-                  <RadioGroupItem
-                    value={option.value}
-                    id={option.value}
-                    className="mt-0.5"
-                  />
-                  <div className="flex-1 space-y-0.5">
-                    <div className="font-medium text-sm">{option.label}</div>
-                    <div className="text-xs text-muted-foreground">{option.description}</div>
-                  </div>
-                </Label>
+                </div>
               ))}
             </RadioGroup>
 
