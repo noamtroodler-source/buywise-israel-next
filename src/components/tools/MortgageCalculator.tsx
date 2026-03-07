@@ -1,7 +1,7 @@
 // Mortgage Calculator - Unified Side-by-Side Layout for BuyWise Israel
 import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Calculator, RotateCcw, Save, ChevronDown, ArrowRight, Loader2, MapPin, Home, Info, TrendingUp, AlertTriangle, BadgeCheck, HelpCircle, Share2, BookOpen } from 'lucide-react';
+import { Calculator, RotateCcw, Save, ChevronDown, ArrowRight, Loader2, MapPin, Home, Info, TrendingUp, AlertTriangle, HelpCircle, Share2, BookOpen } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -771,15 +771,6 @@ function MortgageCalculatorContent() {
         variant="expert-tip"
         message="Non-Israeli residents are typically required to hold a life insurance policy as a condition of mortgage approval in Israel."
       />
-      <div className="flex items-start gap-3 p-4 rounded-xl bg-muted/30 border border-border">
-        <BadgeCheck className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-        <div>
-          <p className="text-sm font-medium">Calculated for Israel</p>
-          <p className="text-xs text-muted-foreground mt-1">
-            This calculator reflects Bank of Israel lending regulations including LTV limits by buyer type, PTI constraints, and the multi-track mortgage structure. For personalized advice, consult a licensed mortgage advisor (יועץ משכנתאות).
-          </p>
-        </div>
-      </div>
 
       {/* 6. Engage */}
       <ToolFeedback toolName="mortgage-calculator" variant="inline" />

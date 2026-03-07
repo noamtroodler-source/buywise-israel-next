@@ -32,7 +32,7 @@ import { ToolPropertySuggestions } from '@/components/tools/shared/ToolPropertyS
 import { ToolFeedback } from '@/components/tools/shared/ToolFeedback';
 import { ToolGuidanceHint } from '@/components/tools/shared/ToolGuidanceHint';
 import { Link } from 'react-router-dom';
-import { BadgeCheck, Calculator, Home, TrendingUp } from 'lucide-react';
+import { Calculator, Home, TrendingUp } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -268,10 +268,7 @@ export function InvestmentReturnCalculator() {
         </AccordionItem>
       </Accordion>
 
-      <div className="flex items-center gap-3">
-        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground py-2"><BadgeCheck className="h-4 w-4 text-primary" /><span>Calculated for Israel — using Bank of Israel regulations</span></div>
-        <ToolGuidanceHint variant="expert-tip" message="Adjust the holding period to see long-term potential." />
-      </div>
+      <ToolGuidanceHint variant="expert-tip" message="Adjust the holding period to see long-term potential." />
 
       <ToolFeedback toolName="Investment Return Calculator" variant="inline" />
     </>

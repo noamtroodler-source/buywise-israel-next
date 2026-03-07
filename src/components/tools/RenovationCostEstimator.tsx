@@ -808,17 +808,6 @@ export function RenovationCostEstimator() {
           </div>
         )}
         
-        {/* Calculated for Israel Badge */}
-        {selectedCategories.length > 0 && (
-          <div className="px-6 pb-6 pt-0">
-            <div className="flex items-center justify-center gap-2 py-2 px-3 bg-muted/50 rounded-lg">
-              <Shield className="h-3.5 w-3.5 text-primary" />
-              <span className="text-xs text-muted-foreground">
-                Calculated for Israel • CBS Index • 30/40/30 Payment Norm
-              </span>
-            </div>
-          </div>
-        )}
       </Card>
 
       {/* Cost Breakdown - Collapsible */}

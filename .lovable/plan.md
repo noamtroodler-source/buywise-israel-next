@@ -1,22 +1,15 @@
 
 
-# Remove "Calculated for Israel" Badge from All Calculators
+## Neighborhood Search — Implemented ✅
 
-The "Data Sources & Verification" dropdown (SourceAttribution) already communicates the same trust signal with more specificity. The inline badge is redundant.
+All changes from the plan have been implemented:
 
-## Changes
-
-Remove the "Calculated for Israel" inline badge from these 7 files:
-
-1. **AffordabilityCalculator.tsx** — Remove the `BadgeCheck` line (~line 566)
-2. **MortgageCalculator.tsx** — Remove the `BadgeCheck` block (~lines 774-780)
-3. **TrueCostCalculator.tsx** — Remove the `BadgeCheck` block (~lines 1017-1023)
-4. **RentVsBuyCalculator.tsx** — Remove the badge div (~lines 968-970)
-5. **InvestmentReturnCalculator.tsx** — Remove the badge from the flex container (~lines 271-273)
-6. **NewConstructionCostCalculator.tsx** — Remove the badge div (~lines 464-467)
-7. **RenovationCostEstimator.tsx** — Remove the badge block (~lines 811-819)
-
-Also remove any now-unused `BadgeCheck` imports where it was the only usage.
-
-No new components. Just deletions.
-
+1. **`useNeighborhoodNames` hook** — Shared hook fetching neighborhood names per city + `useAllNeighborhoods` for cross-city search.
+2. **`useMapFilters`** — Added `neighborhoods` URL param (comma-separated).
+3. **`useProperties`** — Added `neighborhoods[]` array filter via `.in('neighborhood', ...)` in both count and listing queries.
+4. **`PropertyFilters` city popover** — Shows `NeighborhoodSelector` multi-select after city is chosen. Button label updates to show selected neighborhoods.
+5. **`MobileFilterSheet`** — Same `NeighborhoodSelector` in mobile Location section.
+6. **`CitySearchInput`** — Autocomplete now searches neighborhoods too, grouped under "Neighborhoods" with "Name, City" format. Selecting navigates with both city + neighborhood params.
+7. **`NeighborhoodChips`** — Map chips now trigger listing filter via `onFilterNeighborhood` callback.
+8. **`MapSearchLayout`** — Wires neighborhood filter between map chips and URL params. Includes neighborhoods in clear-all.
+9. **`ActiveFilterChips`** — Dismissible chip for active neighborhood filters.

@@ -8,7 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { 
   Building2, Info, Calendar, TrendingUp, 
-  AlertTriangle, Receipt, Banknote, BadgeCheck
+  AlertTriangle, Receipt, Banknote
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { calculateNewConstructionLinkage, calculateTotalPurchaseCosts } from '@/lib/calculations/purchaseCosts';
@@ -460,11 +460,6 @@ export function NewConstructionCostCalculator() {
         </Link>
       </div>
 
-      {/* 5. Trust */}
-      <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground py-2">
-        <BadgeCheck className="h-4 w-4 text-primary" />
-        <span>Calculated for Israel — using CBS construction cost index data</span>
-      </div>
 
       {/* 6. Engage */}
       <ToolFeedback toolName="new-construction-calculator" variant="inline" />
