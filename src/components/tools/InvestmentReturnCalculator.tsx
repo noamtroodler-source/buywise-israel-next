@@ -543,15 +543,15 @@ export function InvestmentReturnCalculator() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label>Purchase Tax</Label>
-                      <p className="font-semibold"><Shekel>{results.purchaseTax.toLocaleString()}</Shekel></p>
+                      <p className="font-semibold">₪{results.purchaseTax.toLocaleString()}</p>
                     </div>
                     <div>
                       <Label>Agent Fees</Label>
-                      <p className="font-semibold"><Shekel>{results.agentFees.toLocaleString()}</Shekel></p>
+                      <p className="font-semibold">₪{results.agentFees.toLocaleString()}</p>
                     </div>
                     <div>
                       <Label>Lawyer Fees</Label>
-                      <p className="font-semibold"><Shekel>{results.lawyerFees.toLocaleString()}</Shekel></p>
+                      <p className="font-semibold">₪{results.lawyerFees.toLocaleString()}</p>
                     </div>
                   </div>
                 </div>
