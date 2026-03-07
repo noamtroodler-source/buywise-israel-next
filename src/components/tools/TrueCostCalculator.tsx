@@ -1014,15 +1014,6 @@ export function TrueCostCalculator() {
         variant="expert-tip"
         message="Non-Israeli residents are typically required to hold a life insurance policy as a condition of mortgage approval in Israel."
       />
-      <div className="flex items-start gap-3 p-4 rounded-xl bg-muted/30 border border-border">
-        <BadgeCheck className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-        <div>
-          <p className="text-sm font-medium">Calculated for Israel</p>
-          <p className="text-xs text-muted-foreground mt-1">
-            This calculator reflects current Israeli tax brackets, VAT rates, and market fee structures. Tax brackets are updated annually by the Israel Tax Authority. Consult a lawyer and accountant for precise figures.
-          </p>
-        </div>
-      </div>
 
       {/* 6. Engage */}
       <ToolFeedback toolName="True Cost Calculator" variant="inline" />
