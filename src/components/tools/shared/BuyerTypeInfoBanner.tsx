@@ -144,6 +144,35 @@ export function BuyerTypeInfoBanner({
               ))}
             </RadioGroup>
             
+            {selectedType === 'oleh' && onOlehFirstPropertyChange && (
+              <>
+                <div className="border-t my-2" />
+                <div className="px-1 space-y-1.5">
+                  <p className="text-xs font-medium text-foreground">Is this your first property in Israel?</p>
+                  <RadioGroup
+                    value={olehIsFirstProperty ? 'yes' : 'no'}
+                    onValueChange={(v) => onOlehFirstPropertyChange(v === 'yes')}
+                    className="space-y-0.5"
+                  >
+                    <Label htmlFor="oleh-first-yes" className={cn(
+                      "flex items-center gap-2 rounded-md p-2 cursor-pointer transition-colors hover:bg-muted/50 text-sm",
+                      olehIsFirstProperty && "bg-muted"
+                    )}>
+                      <RadioGroupItem value="yes" id="oleh-first-yes" />
+                      <span>Yes, first property <span className="text-xs text-muted-foreground">(75% LTV)</span></span>
+                    </Label>
+                    <Label htmlFor="oleh-first-no" className={cn(
+                      "flex items-center gap-2 rounded-md p-2 cursor-pointer transition-colors hover:bg-muted/50 text-sm",
+                      !olehIsFirstProperty && "bg-muted"
+                    )}>
+                      <RadioGroupItem value="no" id="oleh-first-no" />
+                      <span>No, I own property <span className="text-xs text-muted-foreground">(50% LTV)</span></span>
+                    </Label>
+                  </RadioGroup>
+                </div>
+              </>
+            )}
+
             {isOverridden && profileType && (
               <>
                 <div className="border-t my-2" />
