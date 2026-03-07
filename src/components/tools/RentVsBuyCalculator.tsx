@@ -1237,6 +1237,7 @@ export function RentVsBuyCalculator() {
   );
   
   return (
+    <>
     <ToolLayout
       title="Rent vs Buy Calculator"
       subtitle="Compare renting versus buying in Israel — financially and practically."
