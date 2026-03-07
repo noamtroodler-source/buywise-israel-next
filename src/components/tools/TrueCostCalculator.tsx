@@ -179,6 +179,7 @@ export function TrueCostCalculator() {
   
   // Buyer profile
   const [buyerCategory, setBuyerCategory] = useState<BuyerCategory>('first_time');
+  const [olehIsFirstProperty, setOlehIsFirstProperty] = useState(true);
   const [aliyahYear, setAliyahYear] = useState('');
   
   // Purchase type
