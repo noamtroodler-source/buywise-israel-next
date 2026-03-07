@@ -366,7 +366,7 @@ function AffordabilityCalculatorContent() {
                   <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{currencySymbol}</span><Input type="text" value={formatNumber(monthlyDebts)} onChange={(e) => setMonthlyDebts(parseFormattedNumber(e.target.value))} className="h-11 pl-8" /></div>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium flex items-center">Down Payment Available<InfoTooltip content="Cash you have for down payment. First-time buyers need 25% minimum." /></Label>
+                  <Label className="text-sm font-medium flex items-center">Down Payment Available<InfoTooltip content={`Cash you have for down payment. ${selectedBuyerType === 'first_time' || selectedBuyerType === 'oleh' ? 'First-time buyers/Olim need at least 25% down.' : selectedBuyerType === 'additional' || selectedBuyerType === 'upgrader' ? 'Upgraders need at least 30% down.' : 'Investors/foreign buyers need at least 50% down.'}`} /></Label>
                   <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{currencySymbol}</span><Input type="text" value={formatNumber(downPayment)} onChange={(e) => setDownPayment(parseFormattedNumber(e.target.value))} className="h-11 pl-8" /></div>
                 </div>
               </CardContent>
