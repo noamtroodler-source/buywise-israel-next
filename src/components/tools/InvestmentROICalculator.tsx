@@ -21,12 +21,19 @@ import { calculateMortgagePayment } from '@/lib/calculations/mortgage';
 import { useCities } from '@/hooks/useCities';
 
 export function InvestmentROICalculator() {
+  const { showPrompt: showSavePrompt, dismissPrompt: dismissSavePrompt, trackChange } = useSavePromptTrigger();
+  
   const [purchasePrice, setPurchasePrice] = useState(2000000);
   const [monthlyRent, setMonthlyRent] = useState(7000);
   const [selectedCity, setSelectedCity] = useState<string>('');
   const [downPaymentPercent, setDownPaymentPercent] = useState(50); // Investors need 50%
   const [appreciation, setAppreciation] = useState(4);
   const [holdingYears, setHoldingYears] = useState(10);
+
+  // Track input changes for save prompt
+  useEffect(() => {
+    trackChange();
+  }, [purchasePrice, monthlyRent, downPaymentPercent, appreciation, holdingYears, trackChange]);
   
   // Vacancy & Maintenance
   const [vacancyRate, setVacancyRate] = useState(5);
