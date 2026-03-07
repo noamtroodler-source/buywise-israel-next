@@ -215,14 +215,14 @@ export function RenovationCostEstimator() {
   const [propertyType, setPropertyType] = useState<PropertyType>('apartment');
   const [bathroomCount, setBathroomCount] = useState(2);
 
+  // Renovation scope
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(['painting', 'flooring']);
+  const [qualityLevel, setQualityLevel] = useState<QualityLevel>('standard');
+
   // Track input changes for save prompt
   useEffect(() => {
     trackChange();
   }, [propertySize, buildingYear, propertyType, qualityLevel, selectedCategories, trackChange]);
-
-  // Renovation scope
-  const [selectedCategories, setSelectedCategories] = useState<string[]>(['painting', 'flooring']);
-  const [qualityLevel, setQualityLevel] = useState<QualityLevel>('standard');
 
   // Advanced options
   const [includePermits, setIncludePermits] = useState(true);
