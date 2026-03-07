@@ -1101,14 +1101,8 @@ function InvestmentCalculatorContent() {
       <ToolFeedback toolName="investment-return-calculator" variant="inline" />
     </div>
   );
-          <Card className="overflow-hidden">
-            <CollapsibleTrigger className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                  <Wallet className="h-4 w-4" />
-                </div>
-                <div className="text-left">
-                  <p className="font-semibold text-sm">Israeli Rental Tax Options</p>
+
+
                   <p className="text-xs text-muted-foreground">Compare the 3 tax methods for your rent level</p>
                 </div>
               </div>
