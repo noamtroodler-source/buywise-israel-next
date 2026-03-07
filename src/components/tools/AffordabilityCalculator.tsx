@@ -400,7 +400,7 @@ function AffordabilityCalculatorContent() {
     <>
       <ToolLayout
         title="Affordability Calculator"
-        subtitle="Find your realistic budget — based on your income, savings, and Bank of Israel rules"
+        subtitle="Your realistic buying budget — based on income, savings, and bank rules"
         icon={<Calculator className="h-6 w-6" />}
         headerActions={headerActions}
         
