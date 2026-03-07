@@ -480,6 +480,22 @@ function AffordabilityCalculatorContent() {
                 </p>
               </div>
               {calculations.limitingFactor === 'LTV' ? <div className="flex items-start gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20"><AlertTriangle className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" /><p className="text-xs text-primary">Your down payment limits your budget. With more cash down, you could afford a higher-priced property.</p></div> : <div className="flex items-start gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20"><BadgeCheck className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" /><p className="text-xs text-primary">Your income is the limiting factor. Paying off existing debts would increase your buying power.</p></div>}
+              {hasInteracted && calculations.maxPropertyPrice > 0 && (
+                <div
+                  className="p-3 rounded-lg bg-muted/50 border border-border/50 cursor-pointer hover:border-primary/30 hover:bg-muted/80 transition-colors group"
+                  onClick={() => navigate(toolUrl(TOOL_IDS.TOTAL_COST, { price: calculations.maxPropertyPrice }))}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Receipt className="h-4 w-4 text-primary shrink-0" />
+                      <p className="text-xs text-muted-foreground">
+                        <span className="font-medium text-foreground">Budget: {formatPrice(calculations.maxPropertyPrice)}</span> — see total cash needed with taxes & fees
+                      </p>
+                    </div>
+                    <ArrowRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         }
