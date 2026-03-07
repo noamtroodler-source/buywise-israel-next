@@ -23,17 +23,17 @@ export interface BuyerTypeOption {
 }
 
 const DEFAULT_BUYER_TYPE_OPTIONS: BuyerTypeOption[] = [
-  { value: 'first_time', label: 'First-Time Buyer', description: 'Israeli resident, first property' },
-  { value: 'oleh', label: 'Oleh Hadash', description: 'New immigrant (within 7 years)' },
+  { value: 'first_time', label: 'First-Time Buyer', description: 'No property in Israel, not a new Oleh' },
+  { value: 'oleh', label: 'Oleh Hadash', description: 'Made aliyah within 7 years' },
   { value: 'additional', label: 'Additional Property', description: 'Already own property in Israel' },
   { value: 'non_resident', label: 'Non-Resident / Foreign', description: 'Not an Israeli tax resident' },
 ];
 
 const EXTENDED_BUYER_TYPE_OPTIONS: BuyerTypeOption[] = [
-  { value: 'first_time', label: 'First-Time Buyer', description: 'Israeli resident, first property' },
-  { value: 'oleh', label: 'Oleh Hadash', description: 'New immigrant (within 7 years)' },
-  { value: 'upgrader', label: 'Upgrader', description: 'Selling existing home within 18 months' },
-  { value: 'investor', label: 'Investor', description: 'Additional property in Israel' },
+  { value: 'first_time', label: 'First-Time Buyer', description: 'No property in Israel, not a new Oleh' },
+  { value: 'oleh', label: 'Oleh Hadash', description: 'Made aliyah within 7 years' },
+  { value: 'upgrader', label: 'Upgrader', description: 'Selling current home within 18 months' },
+  { value: 'investor', label: 'Investor', description: 'Already own property in Israel' },
   { value: 'foreign', label: 'Foreign Resident', description: 'Not an Israeli tax resident' },
   { value: 'company', label: 'Corporate Buyer', description: 'Purchasing as a company' },
 ];
