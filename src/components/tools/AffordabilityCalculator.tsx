@@ -491,7 +491,7 @@ function AffordabilityCalculatorContent() {
                     <div className="flex items-center gap-2 min-w-0">
                       <Receipt className="h-4 w-4 text-primary shrink-0" />
                       <p className="text-xs text-muted-foreground">
-                        <span className="font-medium text-foreground">Budget: {formatPrice(calculations.maxPropertyPrice)}</span> — see total cash needed with taxes & fees
+                        <span className="font-medium text-foreground">Next step:</span> See what buying at {formatPrice(calculations.maxPropertyPrice)} actually costs, all-in
                       </p>
                     </div>
                     <ArrowRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
