@@ -268,10 +268,7 @@ export function InvestmentReturnCalculator() {
         </AccordionItem>
       </Accordion>
 
-      <div className="flex items-center gap-3">
-        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground py-2"><BadgeCheck className="h-4 w-4 text-primary" /><span>Calculated for Israel — using Bank of Israel regulations</span></div>
-        <ToolGuidanceHint variant="expert-tip" message="Adjust the holding period to see long-term potential." />
-      </div>
+      <ToolGuidanceHint variant="expert-tip" message="Adjust the holding period to see long-term potential." />
 
       <ToolFeedback toolName="Investment Return Calculator" variant="inline" />
     </>
