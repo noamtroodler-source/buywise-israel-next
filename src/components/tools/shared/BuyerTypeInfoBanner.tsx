@@ -72,6 +72,8 @@ export function BuyerTypeInfoBanner({
   profileType,
   className,
   extended = false,
+  onOlehFirstPropertyChange,
+  olehIsFirstProperty = true,
 }: BuyerTypeInfoBannerProps) {
   const [isOpen, setIsOpen] = useState(false);
   
