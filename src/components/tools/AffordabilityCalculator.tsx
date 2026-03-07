@@ -78,7 +78,6 @@ const CURRENCY_CONFIG: Record<DownPaymentCurrency, { symbol: string; label: stri
   GBP: { symbol: '£', label: '£ GBP', toILS: 4.60 },
 };
 
-const STORAGE_KEY = 'affordability-calculator-inputs';
 
 const DEFAULTS = {
   monthlyIncome: 25000,
