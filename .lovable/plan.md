@@ -1,46 +1,15 @@
 
 
-# Standardize Bottom Section Order Across All Calculators
+## Neighborhood Search — Implemented ✅
 
-## Target Order (Interpret → Act → Explore → Understand → Trust → Engage)
+All changes from the plan have been implemented:
 
-Every calculator's `bottomSection` should follow this consistent order:
-
-1. **InsightCard** — "What This Means For You" (immediate interpretation)
-2. **ToolPropertySuggestions** — Properties matching the scenario (conversion/action)
-3. **Navigation Cards** — Links to related tools/guides (explore)
-4. **Education Collapsible(s)** — "How it works" deep-dives (understand)
-5. **"Calculated for Israel" badge** + any ToolGuidanceHint (trust)
-6. **ToolFeedback** — inline feedback link (engage)
-
-Then via ToolLayout slots (already in correct order):
-- `sourceAttribution` (trust)
-- `disclaimer` (trust)
-
-## Current vs Target State Per Calculator
-
-| Calculator | Current Order | Changes Needed |
-|---|---|---|
-| **Affordability** | Education → Insight → Badge → NavCards → Properties → Feedback → Source → Disclaimer | Move Insight to top, Properties after Insight, Education after NavCards |
-| **Mortgage** | Education(2x) → Insight → GuidanceHint → Badge → NavCards → Properties → Feedback | Move Insight to top, Properties after Insight |
-| **True Cost** | Education → Insight → GuidanceHint → Badge → NavCards → Properties → Feedback | Move Insight to top, Properties after Insight |
-| **Purchase Tax** | Insight → NavCards → Feedback | Add Feedback at end (already mostly correct, just missing Properties — N/A for tax calc) |
-| **Rent vs Buy** | Insight → Education → Pros/Cons → Breakdown → NavCards → Properties → Feedback | Already close, move Properties up after Insight |
-| **Investment** | Education(2x) → Insight → Badge → NavCards → Feedback | Move Insight to top, add Properties |
-| **Renovation** | Insight → Education → CTAs → Feedback | Already close — good order |
-| **New Construction** | Just InsightCard | Add NavCards, Feedback, Badge |
-
-## Implementation
-
-Reorder the JSX within each calculator's `bottomSection` variable. No new components needed — just moving existing blocks into the standard order. For calculators missing elements (like New Construction missing NavCards/Feedback), add them.
-
-### Files to modify:
-1. `src/components/tools/AffordabilityCalculator.tsx` — reorder bottomSection
-2. `src/components/tools/MortgageCalculator.tsx` — reorder bottomSection
-3. `src/components/tools/TrueCostCalculator.tsx` — reorder bottomSection
-4. `src/components/tools/RentVsBuyCalculator.tsx` — move Properties up
-5. `src/components/tools/InvestmentReturnCalculator.tsx` — reorder + add Properties
-6. `src/components/tools/NewConstructionCostCalculator.tsx` — expand bottomSection with NavCards, Badge, Feedback
-7. `src/components/tools/PurchaseTaxCalculator.tsx` — minor: already good order
-8. `src/components/tools/RenovationCostEstimator.tsx` — already good order
-
+1. **`useNeighborhoodNames` hook** — Shared hook fetching neighborhood names per city + `useAllNeighborhoods` for cross-city search.
+2. **`useMapFilters`** — Added `neighborhoods` URL param (comma-separated).
+3. **`useProperties`** — Added `neighborhoods[]` array filter via `.in('neighborhood', ...)` in both count and listing queries.
+4. **`PropertyFilters` city popover** — Shows `NeighborhoodSelector` multi-select after city is chosen. Button label updates to show selected neighborhoods.
+5. **`MobileFilterSheet`** — Same `NeighborhoodSelector` in mobile Location section.
+6. **`CitySearchInput`** — Autocomplete now searches neighborhoods too, grouped under "Neighborhoods" with "Name, City" format. Selecting navigates with both city + neighborhood params.
+7. **`NeighborhoodChips`** — Map chips now trigger listing filter via `onFilterNeighborhood` callback.
+8. **`MapSearchLayout`** — Wires neighborhood filter between map chips and URL params. Includes neighborhoods in clear-all.
+9. **`ActiveFilterChips`** — Dismissible chip for active neighborhood filters.
