@@ -216,11 +216,11 @@ function AffordabilityCalculatorContent() {
 
   useEffect(() => {
     const data = {
-      monthlyIncome, spouseIncome, monthlyDebts, downPayment, interestRate,
+      monthlyIncome, spouseIncome, monthlyDebts, downPaymentInput, downPaymentCurrency, interestRate,
       loanTermYears, employmentType, hasForeignIncome, foreignIncomePercent,
     };
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  }, [monthlyIncome, spouseIncome, monthlyDebts, downPayment, interestRate, loanTermYears, employmentType, hasForeignIncome, foreignIncomePercent]);
+  }, [monthlyIncome, spouseIncome, monthlyDebts, downPaymentInput, downPaymentCurrency, interestRate, loanTermYears, employmentType, hasForeignIncome, foreignIncomePercent]);
 
   useEffect(() => {
     if (buyerProfile) {
