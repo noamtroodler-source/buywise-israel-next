@@ -589,6 +589,8 @@ export function RentVsBuyCalculator() {
         selectedType={buyerType as SharedBuyerCategory}
         onTypeChange={(type) => setBuyerType(type as BuyerCategory)}
         profileType={profileBuyerCategory}
+        onOlehFirstPropertyChange={setOlehIsFirstProperty}
+        olehIsFirstProperty={olehIsFirstProperty}
       />
        <InfoBanner variant="info">
         Both paths have real advantages. This tool helps you see what each offers—financially and in daily life—so you can decide what fits your priorities.

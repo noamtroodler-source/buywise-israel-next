@@ -474,11 +474,13 @@ export function NewConstructionCostCalculator() {
       icon={<Building2 className="h-6 w-6" />}
       infoBanner={
         <BuyerTypeInfoBanner
-          selectedType={buyerType as BuyerCategory}
-          onTypeChange={handleBuyerTypeChange}
-          profileType={buyerProfile ? (getBuyerTaxCategory(buyerProfile) as BuyerCategory) : undefined}
-          extended
-        />
+           selectedType={buyerType as BuyerCategory}
+           onTypeChange={handleBuyerTypeChange}
+           profileType={buyerProfile ? (getBuyerTaxCategory(buyerProfile) as BuyerCategory) : undefined}
+           extended
+           onOlehFirstPropertyChange={setOlehIsFirstProperty}
+           olehIsFirstProperty={olehIsFirstProperty}
+         />
       }
       leftColumn={leftColumn}
       rightColumn={rightColumn}

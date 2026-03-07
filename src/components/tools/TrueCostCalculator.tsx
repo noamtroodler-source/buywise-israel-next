@@ -1039,6 +1039,8 @@ export function TrueCostCalculator() {
           profileType={buyerProfile ? (
             getBuyerTaxCategory(buyerProfile) as SharedBuyerCategory
           ) : undefined}
+          onOlehFirstPropertyChange={setOlehIsFirstProperty}
+          olehIsFirstProperty={olehIsFirstProperty}
         />
       }
       leftColumn={leftColumn}

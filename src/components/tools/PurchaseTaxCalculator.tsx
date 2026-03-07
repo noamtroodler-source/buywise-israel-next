@@ -515,12 +515,14 @@ export function PurchaseTaxCalculator() {
       icon={<Receipt className="h-6 w-6" />}
       headerActions={headerActions}
       infoBanner={
-        <BuyerTypeInfoBanner
-          selectedType={buyerType as BuyerCategory}
-          onTypeChange={handleBuyerTypeChange}
-          profileType={buyerProfile ? (getBuyerTaxCategory(buyerProfile) as BuyerCategory) : undefined}
-          extended
-        />
+         <BuyerTypeInfoBanner
+           selectedType={buyerType as BuyerCategory}
+           onTypeChange={handleBuyerTypeChange}
+           profileType={buyerProfile ? (getBuyerTaxCategory(buyerProfile) as BuyerCategory) : undefined}
+           extended
+           onOlehFirstPropertyChange={setOlehIsFirstProperty}
+           olehIsFirstProperty={olehIsFirstProperty}
+         />
       }
       leftColumn={leftColumn}
       rightColumn={rightColumn}
