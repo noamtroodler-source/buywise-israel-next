@@ -201,7 +201,8 @@ function AffordabilityCalculatorContent() {
         if (parsed.monthlyIncome) setMonthlyIncome(parsed.monthlyIncome);
         if (parsed.spouseIncome) setSpouseIncome(parsed.spouseIncome);
         if (parsed.monthlyDebts !== undefined) setMonthlyDebts(parsed.monthlyDebts);
-        if (parsed.downPayment) setDownPayment(parsed.downPayment);
+        if (parsed.downPaymentInput) setDownPaymentInput(parsed.downPaymentInput);
+        if (parsed.downPaymentCurrency) setDownPaymentCurrency(parsed.downPaymentCurrency);
         if (parsed.interestRate) setInterestRate(parsed.interestRate);
         if (parsed.loanTermYears) setLoanTermYears(parsed.loanTermYears);
         if (parsed.employmentType) setEmploymentType(parsed.employmentType);
