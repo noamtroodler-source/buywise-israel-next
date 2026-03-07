@@ -99,6 +99,13 @@ function MortgageCalculatorContent() {
   // UI state
   const [isTracksOpen, setIsTracksOpen] = useState(false);
   const [isStressTestOpen, setIsStressTestOpen] = useState(false);
+  
+  const { showPrompt: showSavePrompt, dismissPrompt: dismissSavePrompt, trackChange } = useSavePromptTrigger();
+  
+  // Track input changes for save prompt
+  useEffect(() => {
+    trackChange();
+  }, [propertyPrice, downPaymentPercent, interestRate, loanTermYears, buyerType, trackChange]);
 
   // Set buyer type from profile
   useEffect(() => {
