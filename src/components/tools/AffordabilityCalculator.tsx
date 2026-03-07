@@ -405,7 +405,7 @@ function AffordabilityCalculatorContent() {
         icon={<Calculator className="h-6 w-6" />}
         headerActions={headerActions}
         
-        infoBanner={<BuyerTypeInfoBanner selectedType={selectedBuyerType} onTypeChange={setSelectedBuyerType} extended />}
+        infoBanner={<BuyerTypeInfoBanner selectedType={selectedBuyerType} onTypeChange={setSelectedBuyerType} extended onOlehFirstPropertyChange={setOlehIsFirstProperty} olehIsFirstProperty={olehIsFirstProperty} />}
         leftColumn={
           <div className="space-y-4">
             <ExampleValuesHint />
