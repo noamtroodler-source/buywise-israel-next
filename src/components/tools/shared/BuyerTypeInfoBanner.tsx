@@ -153,7 +153,7 @@ export function BuyerTypeInfoBanner({
                       <Checkbox
                         checked={olehIsFirstProperty}
                         onCheckedChange={(checked) => onOlehFirstPropertyChange(!!checked)}
-                        className="h-3.5 w-3.5"
+                        className="h-4 w-4 rounded-[3px]"
                       />
                       <span className="text-xs text-muted-foreground">First property in Israel</span>
                     </label>
