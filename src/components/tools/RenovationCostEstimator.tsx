@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useSavePromptTrigger } from '@/hooks/useSavePromptTrigger';
 import { motion } from 'framer-motion';
 import { Hammer, ChefHat, Bath, PaintBucket, Zap, Droplets, Wind, Square, Shield, Home, AlertTriangle, Calendar, HelpCircle, Check, ChevronDown, Calculator, FileText, TrendingUp, BookOpen, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';

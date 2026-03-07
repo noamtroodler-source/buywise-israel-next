@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Receipt, Calendar, TrendingDown, Check, Calculator, Wallet, BookOpen, RotateCcw, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
+import { useSavePromptTrigger } from '@/hooks/useSavePromptTrigger';
 import { useSaveCalculatorResult } from '@/hooks/useSavedCalculatorResults';
 import { 
   calculatePurchaseTax, 
