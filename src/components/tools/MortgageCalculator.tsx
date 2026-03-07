@@ -1,7 +1,7 @@
 // Mortgage Calculator - Unified Side-by-Side Layout for BuyWise Israel
 import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Calculator, RotateCcw, Save, ChevronDown, ArrowRight, Loader2, MapPin, Home, Info, TrendingUp, AlertTriangle, BadgeCheck, HelpCircle, Share2, BookOpen } from 'lucide-react';
+import { Calculator, RotateCcw, Save, ChevronDown, ArrowRight, Loader2, MapPin, Home, Info, TrendingUp, AlertTriangle, HelpCircle, Share2, BookOpen } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';

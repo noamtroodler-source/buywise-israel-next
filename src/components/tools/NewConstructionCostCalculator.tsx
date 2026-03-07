@@ -8,7 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { 
   Building2, Info, Calendar, TrendingUp, 
-  AlertTriangle, Receipt, Banknote, BadgeCheck
+  AlertTriangle, Receipt, Banknote
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { calculateNewConstructionLinkage, calculateTotalPurchaseCosts } from '@/lib/calculations/purchaseCosts';

@@ -14,7 +14,6 @@ import {
   Loader2,
   ChevronDown,
   HelpCircle,
-  BadgeCheck,
   BookOpen,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';

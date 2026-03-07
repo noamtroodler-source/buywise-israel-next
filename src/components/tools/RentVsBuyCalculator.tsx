@@ -965,23 +965,6 @@ export function RentVsBuyCalculator() {
             </p>
           </div>
           
-          {/* Calculated for Israel Badge */}
-          <div className="px-4 py-3 bg-muted/30 border-t flex items-center justify-center gap-4 text-[11px] text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <CheckCircle2 className="h-3 w-3 text-primary" />
-              Mas Rechisha ({buyerType === 'first_time' ? 'First-Time' : buyerType === 'oleh' ? 'Oleh' : buyerType === 'additional' ? 'Upgrader' : 'Non-Resident'})
-            </span>
-            <span className="flex items-center gap-1">
-              <CheckCircle2 className="h-3 w-3 text-primary" />
-              {selectedCity ? 'City Arnona' : 'Arnona'}
-            </span>
-            {calculations.capitalGainsTax > 0 && (
-              <span className="flex items-center gap-1">
-                <CheckCircle2 className="h-3 w-3 text-primary" />
-                Mas Shevach
-              </span>
-            )}
-          </div>
           
           {/* Exit costs note - Israel-specific */}
           <div className="px-6 py-3 border-t">

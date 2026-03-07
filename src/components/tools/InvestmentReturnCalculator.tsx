@@ -32,7 +32,7 @@ import { ToolPropertySuggestions } from '@/components/tools/shared/ToolPropertyS
 import { ToolFeedback } from '@/components/tools/shared/ToolFeedback';
 import { ToolGuidanceHint } from '@/components/tools/shared/ToolGuidanceHint';
 import { Link } from 'react-router-dom';
-import { BadgeCheck, Calculator, Home, TrendingUp } from 'lucide-react';
+import { Calculator, Home, TrendingUp } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
 
