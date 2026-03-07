@@ -141,6 +141,11 @@ export function TrueCostCalculator() {
   const [propertyPrice, setPropertyPrice] = useState('2750000');
   const [propertySize, setPropertySize] = useState('80');
   const [selectedCity, setSelectedCity] = useState('');
+
+  // Track input changes for save prompt
+  useEffect(() => {
+    trackChange();
+  }, [propertyPrice, propertySize, selectedCity, trackChange]);
   
   // Fetch canonical metrics for selected city
   const { data: cityMetrics } = useCanonicalMetrics(selectedCity);
