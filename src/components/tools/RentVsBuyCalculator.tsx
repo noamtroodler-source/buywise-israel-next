@@ -193,7 +193,12 @@ export function RentVsBuyCalculator() {
   const [appreciation, setAppreciation] = useState(DEFAULTS.appreciation);
   const [rentIncrease, setRentIncrease] = useState(DEFAULTS.rentIncrease);
   const [investmentReturn, setInvestmentReturn] = useState(DEFAULTS.investmentReturn);
-  
+
+  // Track input changes for save prompt
+  useEffect(() => {
+    trackChange();
+  }, [propertyPrice, monthlyRent, downPaymentPercent, timeHorizon, buyerType, trackChange]);
+
   // Get canonical metrics for selected city
   const { data: cityMetrics } = useCanonicalMetrics(selectedCity);
   
