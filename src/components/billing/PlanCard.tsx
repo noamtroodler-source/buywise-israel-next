@@ -71,15 +71,17 @@ export function PlanCard({
     pro: 'Go Pro Annual',
   };
 
-  const ctaLabel = isCurrentPlan
-    ? 'Current Plan'
-    : loading
-      ? 'Loading...'
-      : hasTrialPromo
-        ? `Start ${trialDays}-Day Free Trial`
-        : billingCycle === 'annual'
-          ? (ANNUAL_CTA[tier] ?? 'Get Annual Plan')
-          : (MONTHLY_CTA[tier] ?? 'Subscribe');
+  const ctaLabel = ctaLabelOverride
+    ? (isCurrentPlan ? 'Current Plan' : loading ? 'Loading...' : ctaLabelOverride)
+    : isCurrentPlan
+      ? 'Current Plan'
+      : loading
+        ? 'Loading...'
+        : hasTrialPromo
+          ? `Start ${trialDays}-Day Free Trial`
+          : billingCycle === 'annual'
+            ? (ANNUAL_CTA[tier] ?? 'Get Annual Plan')
+            : (MONTHLY_CTA[tier] ?? 'Subscribe');
 
   const handleSubscribeClick = () => {
     if (billingCycle === 'annual') {
