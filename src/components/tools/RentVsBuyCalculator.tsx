@@ -984,91 +984,7 @@ export function RentVsBuyCalculator() {
   // Bottom section - Collapsible breakdown, Pros/Cons, and navigation
   const bottomSection = calculations && (
     <div className="space-y-8">
-      {/* 1. Interpret */}
-      {insights.length > 0 && (
-        <InsightCard insights={insights} />
-      )}
-      
-      {/* 2. Act */}
-      {calculations && (
-        <ToolPropertySuggestions
-          title="Properties at This Price"
-          subtitle="See what's available at the price you're comparing"
-          minPrice={Math.round(parseFormattedNumber(propertyPrice) * 0.8)}
-          maxPrice={Math.round(parseFormattedNumber(propertyPrice) * 1.2)}
-          enabled={propertyPrice !== formatNumber(DEFAULTS.propertyPrice)}
-        />
-      )}
-
-      {/* 3. Explore - Navigation Cards */}
-      <div className="grid md:grid-cols-3 gap-4">
-        <CTACard
-          title="Calculate Your Mortgage"
-          description="Get detailed monthly payment breakdown"
-          buttonText="Mortgage Calculator"
-          buttonLink="/tools?tool=mortgage"
-          icon={<Wallet className="h-5 w-5" />}
-          variant="muted"
-        />
-        <CTACard
-          title="Full Purchase Costs"
-          description="See all one-time and closing costs"
-          buttonText="True Cost Calculator"
-          buttonLink="/tools?tool=totalcost"
-          icon={<Calculator className="h-5 w-5" />}
-          variant="muted"
-        />
-        <CTACard
-          title="Understand the Decision"
-          description="Read our complete rent vs buy guide"
-          buttonText="Read Guide"
-          buttonLink="/guides/rent-vs-buy"
-          icon={<BookOpen className="h-5 w-5" />}
-          variant="muted"
-        />
-      </div>
-      
-      {/* 4. Understand */}
-      {/* Educational Collapsible - Understanding Rent vs Buy in Israel */}
-      <Collapsible>
-        <div className="rounded-lg border border-border/50 bg-muted/20">
-          <CollapsibleTrigger className="w-full px-5 py-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-medium flex items-center gap-2">
-                <Lightbulb className="h-4 w-4 text-primary" />
-                Understanding Rent vs Buy in Israel
-              </h3>
-              <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 [[data-state=open]_&]:rotate-180" />
-            </div>
-          </CollapsibleTrigger>
-          
-          <CollapsibleContent>
-            <div className="px-5 pb-5 space-y-4 text-sm text-muted-foreground">
-              <div>
-                <h4 className="font-medium text-foreground mb-1">Price-to-Rent Ratios</h4>
-                <p>Israeli markets typically show ratios of 250-350 (property price / annual rent). Higher ratios favor renting; lower ratios favor buying. Your ratio: <span className="font-medium text-foreground">{calculations.priceToRentRatio.toFixed(0)}</span>.</p>
-              </div>
-              
-              <div>
-                <h4 className="font-medium text-foreground mb-1">Break-Even Reality</h4>
-                <p>In Israeli cities, break-even often takes 7-12 years due to high prices and significant upfront costs (Mas Rechisha, agent fees). This calculator accounts for all exit costs including potential Mas Shevach.</p>
-              </div>
-              
-              <div>
-                <h4 className="font-medium text-foreground mb-1">Mas Shevach (Capital Gains Tax)</h4>
-                <p>Primary residence sales are typically exempt. Investment properties face 25% tax on inflation-adjusted gains. This matters for your exit calculation.</p>
-              </div>
-              
-              <div>
-                <h4 className="font-medium text-foreground mb-1">Israeli Rental Market</h4>
-                <p>Most rentals use 1-2 year contracts with annual increases tied to the CPI or fixed percentages (3-5%). Long-term renting is viable but requires budgeting for rising costs.</p>
-              </div>
-            </div>
-          </CollapsibleContent>
-        </div>
-      </Collapsible>
-      
-      {/* Pros & Cons Section */}
+      {/* 1. Beyond the Numbers - Qualitative factors */}
       <div>
         <h3 className="text-lg font-semibold mb-5">Beyond the Numbers</h3>
         
@@ -1118,8 +1034,8 @@ export function RentVsBuyCalculator() {
           </div>
         </div>
       </div>
-      
-      {/* Detailed Breakdown */}
+
+      {/* 2. Detailed Breakdown */}
       <Collapsible>
         <div className="rounded-lg border border-border/50 bg-muted/20">
           <CollapsibleTrigger className="w-full px-5 py-4">
@@ -1143,29 +1059,27 @@ export function RentVsBuyCalculator() {
                   <span className="tabular-nums">{formatPrice(Math.round(calculations.purchaseTax))}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Legal & agent fees</span>
-                  <span className="tabular-nums">{formatPrice(Math.round(calculations.lawyerFee + calculations.agentFee))}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Mortgage payments</span>
+                  <span className="text-muted-foreground">Total mortgage payments</span>
                   <span className="tabular-nums">{formatPrice(Math.round(calculations.totalMortgagePayments))}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Running costs</span>
-                  <span className="tabular-nums">{formatPrice(Math.round(calculations.totalOwnershipCosts))}</span>
+                  <span className="text-muted-foreground">Other buying costs</span>
+                  <span className="tabular-nums">{formatPrice(Math.round(calculations.totalBuyingCost - calculations.downPayment - calculations.purchaseTax - calculations.totalMortgagePayments))}</span>
                 </div>
-                <Separator className="my-2" />
+                <Separator className="my-1" />
                 <div className="flex justify-between">
-                  <span>Total spent</span>
-                  <span className="tabular-nums font-medium">{formatPrice(Math.round(calculations.totalBuyingCost))}</span>
+                  <span className="text-muted-foreground">Property value at end</span>
+                  <span className="tabular-nums text-primary">{formatPrice(Math.round(calculations.futurePropertyValue))}</span>
                 </div>
-                <div className="flex justify-between text-primary">
-                  <span>Appreciation gain</span>
-                  <span className="tabular-nums">+{formatPrice(Math.round(calculations.appreciation))}</span>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Equity built</span>
+                  <span className="tabular-nums text-primary">{formatPrice(Math.round(calculations.equityBuilt))}</span>
                 </div>
                 <div className="flex justify-between font-semibold pt-2 border-t border-border/50">
-                  <span>Net equity</span>
-                  <span className="text-primary tabular-nums">{formatPrice(Math.round(calculations.equityBuilt))}</span>
+                  <span>Net position</span>
+                  <span className="tabular-nums">
+                    {calculations.netBuyingWealth >= 0 ? formatPrice(Math.round(calculations.netBuyingWealth)) : `-${formatPrice(Math.abs(Math.round(calculations.netBuyingWealth)))}`}
+                  </span>
                 </div>
               </div>
               
@@ -1173,25 +1087,29 @@ export function RentVsBuyCalculator() {
               <div className="space-y-2 text-sm">
                 <h4 className="font-medium text-muted-foreground text-xs uppercase tracking-wide mb-2">If You Rent</h4>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Rent (Year 1)</span>
-                  <span className="tabular-nums">{formatPrice(Math.round(calculations.currentMonthlyRent))}/mo</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Rent (Year {timeHorizon})</span>
-                  <span className="tabular-nums">{formatPrice(Math.round(calculations.finalYearRent))}/mo</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Total housing cost</span>
+                  <span className="text-muted-foreground">Total rent paid</span>
                   <span className="tabular-nums">{formatPrice(Math.round(calculations.totalRentPaid))}</span>
                 </div>
-                <Separator className="my-2" />
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Cash kept</span>
+                  <span className="text-muted-foreground">Other renting costs</span>
+                  <span className="tabular-nums">{formatPrice(Math.round(calculations.totalRentPaid * 0.02))}</span>
+                </div>
+                <Separator className="my-1" />
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Down payment invested</span>
+                  <span className="tabular-nums">{formatPrice(Math.round(calculations.downPayment))}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Savings invested</span>
                   <span className="tabular-nums">{formatPrice(Math.round(calculations.totalCashNotSpent))}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Investment growth</span>
-                  <span className="tabular-nums">+{formatPrice(Math.round(calculations.investmentGains))}</span>
+                  <span className="text-muted-foreground">Investment gains</span>
+                  <span className="tabular-nums text-primary">{formatPrice(Math.round(calculations.investmentGains))}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Total portfolio value</span>
+                  <span className="tabular-nums text-primary">{formatPrice(Math.round(calculations.investedSavingsValue))}</span>
                 </div>
                 <div className="flex justify-between font-semibold pt-2 border-t border-border/50">
                   <span>Net position</span>
@@ -1205,7 +1123,90 @@ export function RentVsBuyCalculator() {
         </div>
       </Collapsible>
 
-      {/* 6. Engage */}
+      {/* 3. Interpret - What This Means For You */}
+      {insights.length > 0 && (
+        <InsightCard insights={insights} />
+      )}
+
+      {/* 4. Understand - Educational */}
+      <Collapsible>
+        <div className="rounded-lg border border-border/50 bg-muted/20">
+          <CollapsibleTrigger className="w-full px-5 py-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-medium flex items-center gap-2">
+                <Lightbulb className="h-4 w-4 text-primary" />
+                Understanding Rent vs Buy in Israel
+              </h3>
+              <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 [[data-state=open]_&]:rotate-180" />
+            </div>
+          </CollapsibleTrigger>
+          
+          <CollapsibleContent>
+            <div className="px-5 pb-5 space-y-4 text-sm text-muted-foreground">
+              <div>
+                <h4 className="font-medium text-foreground mb-1">Price-to-Rent Ratios</h4>
+                <p>Israeli markets typically show ratios of 250-350 (property price / annual rent). Higher ratios favor renting; lower ratios favor buying. Your ratio: <span className="font-medium text-foreground">{calculations.priceToRentRatio.toFixed(0)}</span>.</p>
+              </div>
+              
+              <div>
+                <h4 className="font-medium text-foreground mb-1">Break-Even Reality</h4>
+                <p>In Israeli cities, break-even often takes 7-12 years due to high prices and significant upfront costs (Mas Rechisha, agent fees). This calculator accounts for all exit costs including potential Mas Shevach.</p>
+              </div>
+              
+              <div>
+                <h4 className="font-medium text-foreground mb-1">Mas Shevach (Capital Gains Tax)</h4>
+                <p>Primary residence sales are typically exempt. Investment properties face 25% tax on inflation-adjusted gains. This matters for your exit calculation.</p>
+              </div>
+              
+              <div>
+                <h4 className="font-medium text-foreground mb-1">Israeli Rental Market</h4>
+                <p>Most rentals use 1-2 year contracts with annual increases tied to the CPI or fixed percentages (3-5%). Long-term renting is viable but requires budgeting for rising costs.</p>
+              </div>
+            </div>
+          </CollapsibleContent>
+        </div>
+      </Collapsible>
+      
+      {/* 5. Act - Property Suggestions */}
+      {calculations && (
+        <ToolPropertySuggestions
+          title="Properties at This Price"
+          subtitle="See what's available at the price you're comparing"
+          minPrice={Math.round(parseFormattedNumber(propertyPrice) * 0.8)}
+          maxPrice={Math.round(parseFormattedNumber(propertyPrice) * 1.2)}
+          enabled={propertyPrice !== formatNumber(DEFAULTS.propertyPrice)}
+        />
+      )}
+
+      {/* 6. Explore - Navigation Cards */}
+      <div className="grid md:grid-cols-3 gap-4">
+        <CTACard
+          title="Calculate Your Mortgage"
+          description="Get detailed monthly payment breakdown"
+          buttonText="Mortgage Calculator"
+          buttonLink="/tools?tool=mortgage"
+          icon={<Wallet className="h-5 w-5" />}
+          variant="muted"
+        />
+        <CTACard
+          title="Full Purchase Costs"
+          description="See all one-time and closing costs"
+          buttonText="True Cost Calculator"
+          buttonLink="/tools?tool=totalcost"
+          icon={<Calculator className="h-5 w-5" />}
+          variant="muted"
+        />
+        <CTACard
+          title="Check Your Budget"
+          description="See how much you can afford"
+          buttonText="Affordability Calculator"
+          buttonLink="/tools?tool=affordability"
+          icon={<Wallet className="h-5 w-5" />}
+          variant="muted"
+        />
+      </div>
+
+      {/* 7. Engage */}
       <div className="text-center">
         <ToolFeedback 
           toolName="rent-vs-buy-calculator" 
