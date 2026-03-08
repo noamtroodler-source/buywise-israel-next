@@ -307,6 +307,8 @@ function AffordabilityCalculatorContent() {
       monthlyPaymentHigh: Math.round(highRateMonthly),
       maxPropertyLow: Math.round(Math.min(maxPropertyAtHighRate, MAX_DISPLAY_PROPERTY_PRICE)),
       maxPropertyHigh: Math.round(Math.min(maxPropertyAtLowRate, MAX_DISPLAY_PROPERTY_PRICE)),
+      maxLoanLow: Math.round(maxLoanAtHighRate),
+      maxLoanHigh: Math.round(maxLoanAtLowRate),
     };
   }, [monthlyIncome, spouseIncome, monthlyDebts, downPayment, interestRate, loanTermYears, employmentType, hasForeignIncome, foreignIncomePercent, selectedBuyerType, olehIsFirstProperty]);
 
