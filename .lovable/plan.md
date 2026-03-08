@@ -1,15 +1,23 @@
 
 
-## Neighborhood Search — Implemented ✅
+## Fix: Remove shared occupant costs from rent-vs-buy comparison
 
-All changes from the plan have been implemented:
+### The Bug
+Arnona (~₪400/mo) and Vaad Bayit (~₪350/mo) are included in buying costs but not renting costs. Both renters and buyers pay these, so they cancel out and should be excluded from the differential calculation.
 
-1. **`useNeighborhoodNames` hook** — Shared hook fetching neighborhood names per city + `useAllNeighborhoods` for cross-city search.
-2. **`useMapFilters`** — Added `neighborhoods` URL param (comma-separated).
-3. **`useProperties`** — Added `neighborhoods[]` array filter via `.in('neighborhood', ...)` in both count and listing queries.
-4. **`PropertyFilters` city popover** — Shows `NeighborhoodSelector` multi-select after city is chosen. Button label updates to show selected neighborhoods.
-5. **`MobileFilterSheet`** — Same `NeighborhoodSelector` in mobile Location section.
-6. **`CitySearchInput`** — Autocomplete now searches neighborhoods too, grouped under "Neighborhoods" with "Name, City" format. Selecting navigates with both city + neighborhood params.
-7. **`NeighborhoodChips`** — Map chips now trigger listing filter via `onFilterNeighborhood` callback.
-8. **`MapSearchLayout`** — Wires neighborhood filter between map chips and URL params. Includes neighborhoods in clear-all.
-9. **`ActiveFilterChips`** — Dismissible chip for active neighborhood filters.
+### Changes (single file: `src/components/tools/RentVsBuyCalculator.tsx`)
+
+1. **Split ownership costs into two categories:**
+   - `getSharedOccupantCost()` — arnona + vaad bayit (paid by both renters and buyers)
+   - `getOwnerOnlyCost(year)` — insurance + maintenance (buyer-only, maintenance grows with appreciation)
+
+2. **Update `getMonthlyBuyingCost(year)`** to use only owner-specific costs: `mortgage + insurance + maintenance` (no arnona/vaad)
+
+3. **Update `totalMonthlyBuying` display** to exclude shared costs, so the "Monthly if Buying" vs "Monthly if Renting" comparison is apples-to-apples
+
+4. **Update the monthly savings loop** — the saving = `(mortgage + owner-only costs) - rent` instead of `(mortgage + all costs) - rent`
+
+5. **Add a note/line in the output section** clarifying that arnona and vaad bayit apply to both scenarios and are excluded from the comparison
+
+This will make buying look relatively better (which is more accurate), since ~₪750/month is removed from the buying-only column.
+
