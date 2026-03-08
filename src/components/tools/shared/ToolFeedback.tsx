@@ -89,24 +89,22 @@ export function ToolFeedback({ toolName, className, variant = 'default' }: ToolF
     </div>
   );
 
-  // Inline variant - link to contact page
+  // Inline variant - subtle card matching navigation cards
   if (variant === 'inline') {
     return (
       <Link
         to="/contact"
         className={cn(
-          "group flex items-center justify-center gap-3 py-4 px-6 rounded-xl bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/15 transition-all duration-300",
+          "group flex items-center gap-3 p-4 rounded-lg border border-border hover:border-primary/50 transition-colors",
           className
         )}
       >
-        <div className="p-2 rounded-lg bg-primary/15 group-hover:bg-primary/25 transition-colors">
-          <MessageSquare className="h-4 w-4 text-primary" />
+        <MessageSquare className="h-5 w-5 text-primary shrink-0" />
+        <div className="flex-1 text-left">
+          <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">Help us improve this tool</p>
+          <p className="text-xs text-muted-foreground">Share your thoughts or suggest features</p>
         </div>
-        <div className="text-left">
-          <p className="text-sm font-semibold text-foreground">Your feedback shapes what we build next</p>
-          <p className="text-xs text-muted-foreground">Tell us how to make this tool better for you</p>
-        </div>
-        <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all ml-2" />
+        <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
       </Link>
     );
   }
