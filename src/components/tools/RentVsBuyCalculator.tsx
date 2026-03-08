@@ -1103,7 +1103,10 @@ export function RentVsBuyCalculator() {
                 </div>
                 <Separator className="my-1" />
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Property value at end</span>
+                  <span className="text-muted-foreground flex items-center">
+                    Property value at end
+                    <InfoTooltip content={`Based on ${appreciation}% annual appreciation applied over ${timeHorizon} years. ${cityMetrics?.yoy_price_change ? `The ${appreciation}% rate is pre-filled from this city's recent year-over-year price change.` : 'You can adjust the appreciation rate in the assumptions section.'}`} />
+                  </span>
                   <span className="tabular-nums text-primary">{formatPrice(Math.round(calculations.futurePropertyValue))}</span>
                 </div>
                 <div className="flex justify-between">
