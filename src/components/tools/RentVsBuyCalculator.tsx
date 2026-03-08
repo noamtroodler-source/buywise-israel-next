@@ -318,7 +318,8 @@ export function RentVsBuyCalculator() {
     const rent = parseFormattedNumber(monthlyRent);
     const downPaymentPct = parseFloat(downPaymentPercent) || 25;
     const rate = parseFloat(interestRate) || 5.0;
-    const years = timeHorizon;
+    const years = timeHorizon; // comparison snapshot period
+    const mortgageTermYears = parseInt(mortgageTerm) || 25; // actual loan term
     const appreciationRate = parseFloat(appreciation) || 3.0;
     const rentIncreaseRate = parseFloat(rentIncrease) || 3.0;
     const investmentReturnRate = parseFloat(investmentReturn) || 5.0;
@@ -329,13 +330,13 @@ export function RentVsBuyCalculator() {
     const downPayment = price * (downPaymentPct / 100);
     const loanAmount = price - downPayment;
     const monthlyRate = rate / 100 / 12;
-    const numPayments = years * 12;
+    const totalMortgagePayments_count = mortgageTermYears * 12; // mortgage term, NOT time horizon
     
-    // Monthly mortgage payment (P&I)
+    // Monthly mortgage payment (P&I) based on actual mortgage term
     const monthlyMortgage = monthlyRate > 0
-      ? (loanAmount * monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / 
-        (Math.pow(1 + monthlyRate, numPayments) - 1)
-      : loanAmount / numPayments;
+      ? (loanAmount * monthlyRate * Math.pow(1 + monthlyRate, totalMortgagePayments_count)) / 
+        (Math.pow(1 + monthlyRate, totalMortgagePayments_count) - 1)
+      : loanAmount / totalMortgagePayments_count;
     
     // One-time purchase costs
     const purchaseTax = calculateTaxAmount(price, mapCategoryToBuyerType(buyerType));
@@ -343,38 +344,54 @@ export function RentVsBuyCalculator() {
     const agentFee = price * FEES.agentRate * (1 + FEES.vatRate);
     const totalPurchaseCosts = purchaseTax + lawyerFee + agentFee;
     
-    // Monthly ownership costs (beyond mortgage)
+    // Monthly ownership costs (beyond mortgage) — at purchase time
     const monthlyArnona = cityMetrics?.arnona_monthly_avg || FEES.arnonaDefault;
     const monthlyVaadBayit = FEES.vaadBayitDefault;
     const monthlyInsurance = FEES.homeInsurance;
-    const monthlyMaintenance = (price * FEES.maintenanceRate) / 12;
-    const totalMonthlyOwnershipCosts = monthlyArnona + monthlyVaadBayit + monthlyInsurance + monthlyMaintenance;
+    const monthlyMaintenanceYear0 = (price * FEES.maintenanceRate) / 12;
     
-    // Total monthly if buying
-    const totalMonthlyBuying = monthlyMortgage + totalMonthlyOwnershipCosts;
+    // Helper: get monthly ownership cost for a given year (maintenance grows with appreciation)
+    const getMonthlyOwnershipCost = (year: number) => {
+      const maintenanceAtYear = monthlyMaintenanceYear0 * Math.pow(1 + appreciationRate / 100, year);
+      return monthlyArnona + monthlyVaadBayit + monthlyInsurance + maintenanceAtYear;
+    };
+    
+    // Helper: get total monthly buying cost for a given year
+    const getMonthlyBuyingCost = (year: number) => {
+      const mortgagePayment = year < mortgageTermYears ? monthlyMortgage : 0;
+      return mortgagePayment + getMonthlyOwnershipCost(year);
+    };
+    
+    // Year-0 values for display
+    const totalMonthlyOwnershipCosts = getMonthlyOwnershipCost(0);
+    const totalMonthlyBuying = getMonthlyBuyingCost(0);
+    const monthlyMaintenance = monthlyMaintenanceYear0;
     
     // Property value at end of period
     const futurePropertyValue = price * Math.pow(1 + appreciationRate / 100, years);
     const appreciation$ = futurePropertyValue - price;
     
-    // Calculate remaining loan balance after X years
-    const remainingBalance = loanAmount * 
-      (Math.pow(1 + monthlyRate, numPayments) - Math.pow(1 + monthlyRate, years * 12)) /
-      (Math.pow(1 + monthlyRate, numPayments) - 1);
+    // Calculate remaining loan balance after timeHorizon years on a mortgageTerm-year mortgage
+    let remainingBalance: number;
+    if (years >= mortgageTermYears) {
+      remainingBalance = 0; // mortgage fully paid
+    } else {
+      remainingBalance = monthlyRate > 0
+        ? loanAmount * 
+          (Math.pow(1 + monthlyRate, totalMortgagePayments_count) - Math.pow(1 + monthlyRate, years * 12)) /
+          (Math.pow(1 + monthlyRate, totalMortgagePayments_count) - 1)
+        : loanAmount * (1 - (years * 12) / totalMortgagePayments_count);
+    }
     
     // Equity built (before exit costs)
     const equityBuiltGross = futurePropertyValue - remainingBalance;
     
     // EXIT COSTS: Selling costs (~3%) and Capital Gains Tax (Mas Shevach)
-    const sellingCosts = futurePropertyValue * 0.03; // Agent 2% + legal 1%
-    
-    // Calculate capital gains tax for investors
+    const sellingCosts = futurePropertyValue * 0.03;
     const purchaseYear = new Date().getFullYear();
     const sellerCategory = buyerType === 'first_time' || buyerType === 'oleh' ? 'primary_residence' : 'investor';
     const capitalGainsResult = calculateMasShevach(
-      price, 
-      futurePropertyValue, 
-      purchaseYear, 
+      price, futurePropertyValue, purchaseYear,
       sellerCategory as 'primary_residence' | 'investor',
       { ownedMonths: years * 12 }
     );
@@ -383,29 +400,32 @@ export function RentVsBuyCalculator() {
     // Net equity after exit costs
     const equityBuilt = equityBuiltGross - sellingCosts - capitalGainsTax;
     
-    // Total cost of buying over period
-    const totalMortgagePayments = monthlyMortgage * years * 12;
-    const totalOwnershipCosts = totalMonthlyOwnershipCosts * years * 12;
+    // Total cost of buying over period (with growing maintenance)
+    let totalMortgagePayments = 0;
+    let totalOwnershipCosts = 0;
+    for (let year = 0; year < years; year++) {
+      const mortgageThisYear = year < mortgageTermYears ? monthlyMortgage * 12 : 0;
+      totalMortgagePayments += mortgageThisYear;
+      totalOwnershipCosts += getMonthlyOwnershipCost(year) * 12;
+    }
     const totalBuyingCost = downPayment + totalPurchaseCosts + totalMortgagePayments + totalOwnershipCosts;
     
-    // Net wealth from buying (equity after exit costs)
+    // Net wealth from buying
     const netBuyingWealth = equityBuilt;
     
-    // Renting calculations
-    // Total rent paid with annual increases + monthly savings invested
+    // Renting calculations with year-varying buying costs
     let totalRentPaid = 0;
     let currentRent = rent;
     const monthlyInvestmentRate = investmentReturnRate / 100 / 12;
-    let monthlySavingsPortfolio = 0; // compounded monthly savings
-    let totalMonthlySavingsRaw = 0; // raw sum of monthly savings
+    let monthlySavingsPortfolio = 0;
+    let totalMonthlySavingsRaw = 0;
     
     for (let year = 0; year < years; year++) {
-      const yearlyOwnershipCost = totalMonthlyBuying; // what buying costs per month this year
+      const yearlyBuyingCost = getMonthlyBuyingCost(year);
       for (let month = 0; month < 12; month++) {
         totalRentPaid += currentRent;
-        const monthlySaving = Math.max(0, yearlyOwnershipCost - currentRent);
+        const monthlySaving = Math.max(0, yearlyBuyingCost - currentRent);
         totalMonthlySavingsRaw += monthlySaving;
-        // Compound existing portfolio + add new savings
         monthlySavingsPortfolio = (monthlySavingsPortfolio + monthlySaving) * (1 + monthlyInvestmentRate);
       }
       currentRent *= (1 + rentIncreaseRate / 100);
@@ -417,131 +437,88 @@ export function RentVsBuyCalculator() {
     const lumpSumInvestedValue = totalCashNotSpent * Math.pow(1 + investmentReturnRate / 100, years);
     const lumpSumGains = lumpSumInvestedValue - totalCashNotSpent;
     
-    // Total renting portfolio = lump sum investment + compounded monthly savings
+    // Total renting portfolio
     const investedSavingsValue = lumpSumInvestedValue + monthlySavingsPortfolio;
-    const investmentGains = lumpSumGains + monthlySavingsPortfolio;
+    // Pure investment gains = total portfolio - total cash deposited
+    const totalCashDeposited = totalCashNotSpent + totalMonthlySavingsRaw;
+    const investmentGains = investedSavingsValue - totalCashDeposited;
     
-    // Net wealth: "what assets do you walk away with?"
-    // Buying: equity after selling (already accounts for all cash spent)
-    // Renting: total portfolio value (rent is cost of living, same as mortgage+ownership for buyer)
     const netRentingWealth = investedSavingsValue;
     
     // Comparison
     const buyingIsBetter = netBuyingWealth > netRentingWealth;
     const wealthDifference = Math.abs(netBuyingWealth - netRentingWealth);
     
-    // Calculate break-even year (now accounting for exit costs)
+    // Break-even year (with year-varying buying costs)
     let breakEvenYear = null;
-    for (let year = 1; year <= 30; year++) {
-      const propertyValueAtYear = price * Math.pow(1 + appreciationRate / 100, year);
-      const remainingLoanAtYear = year >= years ? 0 : loanAmount * 
-        (Math.pow(1 + monthlyRate, numPayments) - Math.pow(1 + monthlyRate, year * 12)) /
-        (Math.pow(1 + monthlyRate, numPayments) - 1);
+    for (let checkYear = 1; checkYear <= 30; checkYear++) {
+      const propertyValueAtYear = price * Math.pow(1 + appreciationRate / 100, checkYear);
+      let remainingLoanAtYear: number;
+      if (checkYear >= mortgageTermYears) {
+        remainingLoanAtYear = 0;
+      } else {
+        remainingLoanAtYear = monthlyRate > 0
+          ? loanAmount * 
+            (Math.pow(1 + monthlyRate, totalMortgagePayments_count) - Math.pow(1 + monthlyRate, checkYear * 12)) /
+            (Math.pow(1 + monthlyRate, totalMortgagePayments_count) - 1)
+          : loanAmount * (1 - (checkYear * 12) / totalMortgagePayments_count);
+      }
       
-      // Exit costs at that year
       const sellingCostsAtYear = propertyValueAtYear * 0.03;
-      const cgResult = calculateMasShevach(price, propertyValueAtYear, purchaseYear, sellerCategory as 'primary_residence' | 'investor', { ownedMonths: year * 12 });
+      const cgResult = calculateMasShevach(price, propertyValueAtYear, purchaseYear, sellerCategory as 'primary_residence' | 'investor', { ownedMonths: checkYear * 12 });
       const cgTaxAtYear = cgResult.taxAmount;
-      
       const buyingEquityAtYear = propertyValueAtYear - remainingLoanAtYear - sellingCostsAtYear - cgTaxAtYear;
       
-      let rentPaidAtYear = 0;
       let rentAtYear = rent;
       let savingsPortfolioAtYear = 0;
-      for (let y = 0; y < year; y++) {
+      for (let y = 0; y < checkYear; y++) {
+        const buyingCostThisYear = getMonthlyBuyingCost(y);
         for (let m = 0; m < 12; m++) {
-          rentPaidAtYear += rentAtYear;
-          const saving = Math.max(0, totalMonthlyBuying - rentAtYear);
+          const saving = Math.max(0, buyingCostThisYear - rentAtYear);
           savingsPortfolioAtYear = (savingsPortfolioAtYear + saving) * (1 + monthlyInvestmentRate);
         }
         rentAtYear *= (1 + rentIncreaseRate / 100);
       }
-      const investedValueAtYear = totalCashNotSpent * Math.pow(1 + investmentReturnRate / 100, year);
+      const investedValueAtYear = totalCashNotSpent * Math.pow(1 + investmentReturnRate / 100, checkYear);
       const rentingWealthAtYear = investedValueAtYear + savingsPortfolioAtYear;
       
       if (buyingEquityAtYear > rentingWealthAtYear) {
-        breakEvenYear = year;
+        breakEvenYear = checkYear;
         break;
       }
     }
     
-    // Lifestyle comparison calculations
+    // Lifestyle comparison
     const avgPricePerSqm = cityMetrics?.average_price_sqm || (price / (SQM_BY_ROOMS[rooms] || 75));
-    
-    // What size property can you BUY with this budget?
     const buyingSqm = price / avgPricePerSqm;
-    
-    // What size property can you RENT with the same monthly budget?
-    // If buying costs X/month, what size rental does X/month get you?
-    const rentPricePerSqm = rent / (SQM_BY_ROOMS[rooms] || 75); // estimate rent per sqm
+    const rentPricePerSqm = rent / (SQM_BY_ROOMS[rooms] || 75);
     const rentingSqmForBuyingBudget = totalMonthlyBuying / rentPricePerSqm;
-    
-    // Space advantage for renters
     const spaceAdvantagePercent = Math.round(((rentingSqmForBuyingBudget - buyingSqm) / buyingSqm) * 100);
     
-    // Monthly equity being built (principal portion of mortgage - rough estimate)
-    const monthlyEquityBuilding = monthlyMortgage * 0.3; // Rough estimate, early years are mostly interest
+    // Monthly equity building: actual principal portion of first payment
+    // Principal = Payment - Interest, where Interest = balance * monthlyRate
+    const firstMonthInterest = loanAmount * monthlyRate;
+    const monthlyEquityBuilding = monthlyMortgage - firstMonthInterest;
     
-    // Price to rent ratio (common metric - lower favors buying)
     const priceToRentRatio = price / (rent * 12);
     
     return {
-      // Core comparison
-      buyingIsBetter,
-      wealthDifference,
-      breakEvenYear,
-      
-      // Monthly comparison
-      monthlyMortgage,
-      totalMonthlyBuying,
-      totalMonthlyOwnershipCosts,
-      currentMonthlyRent: rent,
-      finalYearRent,
-      
-      // Buying details
-      downPayment,
-      loanAmount,
-      purchaseTax,
-      lawyerFee,
-      agentFee,
-      totalPurchaseCosts,
-      totalMortgagePayments,
-      totalOwnershipCosts,
-      futurePropertyValue,
-      appreciation: appreciation$,
-      equityBuilt,
-      netBuyingWealth,
-      totalBuyingCost,
-      
-      // Renting details
-      totalRentPaid,
-      investedSavingsValue,
-      investmentGains,
-      netRentingWealth,
-      totalCashNotSpent,
-      lumpSumInvestedValue,
-      monthlySavingsPortfolio,
-      totalMonthlySavingsRaw,
-      
-      // Monthly costs breakdown
-      monthlyArnona,
-      monthlyVaadBayit,
-      monthlyInsurance,
-      monthlyMaintenance,
-      
-      // Lifestyle comparison
-      buyingSqm,
-      rentingSqmForBuyingBudget,
-      spaceAdvantagePercent,
-      monthlyEquityBuilding,
-      priceToRentRatio,
-      
-      // Exit costs (new)
-      sellingCosts,
-      capitalGainsTax,
-      equityBuiltGross,
+      buyingIsBetter, wealthDifference, breakEvenYear,
+      monthlyMortgage, totalMonthlyBuying, totalMonthlyOwnershipCosts,
+      currentMonthlyRent: rent, finalYearRent,
+      downPayment, loanAmount, purchaseTax, lawyerFee, agentFee,
+      totalPurchaseCosts, totalMortgagePayments, totalOwnershipCosts,
+      futurePropertyValue, appreciation: appreciation$, equityBuilt,
+      netBuyingWealth, totalBuyingCost,
+      totalRentPaid, investedSavingsValue, investmentGains,
+      netRentingWealth, totalCashNotSpent, lumpSumInvestedValue,
+      monthlySavingsPortfolio, totalMonthlySavingsRaw,
+      monthlyArnona, monthlyVaadBayit, monthlyInsurance, monthlyMaintenance,
+      buyingSqm, rentingSqmForBuyingBudget, spaceAdvantagePercent,
+      monthlyEquityBuilding, priceToRentRatio,
+      sellingCosts, capitalGainsTax, equityBuiltGross,
     };
-  }, [propertyPrice, monthlyRent, downPaymentPercent, interestRate, timeHorizon, appreciation, rentIncrease, investmentReturn, buyerType, cityMetrics, rooms]);
+  }, [propertyPrice, monthlyRent, downPaymentPercent, interestRate, mortgageTerm, timeHorizon, appreciation, rentIncrease, investmentReturn, buyerType, cityMetrics, rooms]);
 
   // Generate personalized insights
   const insights = useMemo(() => {
