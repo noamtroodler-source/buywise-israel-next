@@ -5,6 +5,7 @@ import type { Property } from '@/types/database';
 interface UseToolPropertySuggestionsOptions {
   minPrice: number;
   maxPrice: number;
+  city?: string;
   listingStatus?: 'for_sale' | 'for_rent';
   enabled?: boolean;
 }
