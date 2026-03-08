@@ -984,7 +984,7 @@ export function TrueCostCalculator() {
       show={showSavePrompt}
       calculatorName="true cost"
       onDismiss={dismissSavePrompt}
-      resultSummary={`Total cost: ${formatPrice(Math.round(calculations.totalOneTimeMin))}–${formatPrice(Math.round(calculations.totalOneTimeMax))}`}
+      resultSummary={`Total cost: ${formatPrice(Math.round(calculations.totalCashNeededMin))}–${formatPrice(Math.round(calculations.totalCashNeededMax))}`}
     />
     </>
   );
