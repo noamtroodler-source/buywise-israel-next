@@ -409,7 +409,7 @@ export function TrueCostCalculator() {
       constructionMonths,
       includeAgentFee,
       includeMortgageCosts,
-      loanAmount,
+      downPaymentPercent: calculations.effectiveDownPaymentPercent,
       includeMoving,
       includeFurniture,
       furnitureLevel,
