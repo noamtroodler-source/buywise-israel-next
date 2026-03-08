@@ -352,21 +352,35 @@ export function RentVsBuyCalculator() {
     const monthlyInsurance = FEES.homeInsurance;
     const monthlyMaintenanceYear0 = (price * FEES.maintenanceRate) / 12;
     
-    // Helper: get monthly ownership cost for a given year (maintenance grows with appreciation)
-    const getMonthlyOwnershipCost = (year: number) => {
+    // Shared costs: paid by BOTH renters and buyers — excluded from comparison
+    const monthlySharedCosts = monthlyArnona + monthlyVaadBayit;
+    
+    // Owner-only costs: insurance + maintenance (maintenance grows with appreciation)
+    const getOwnerOnlyCost = (year: number) => {
       const maintenanceAtYear = monthlyMaintenanceYear0 * Math.pow(1 + appreciationRate / 100, year);
-      return monthlyArnona + monthlyVaadBayit + monthlyInsurance + maintenanceAtYear;
+      return monthlyInsurance + maintenanceAtYear;
     };
     
-    // Helper: get total monthly buying cost for a given year
+    // Full ownership costs (for detailed breakdown display)
+    const getMonthlyOwnershipCost = (year: number) => {
+      return monthlySharedCosts + getOwnerOnlyCost(year);
+    };
+    
+    // Comparable buying cost (excludes shared costs for apples-to-apples comparison)
+    const getComparableBuyingCost = (year: number) => {
+      const mortgagePayment = year < mortgageTermYears ? monthlyMortgage : 0;
+      return mortgagePayment + getOwnerOnlyCost(year);
+    };
+    
+    // Full buying cost (for total cost tracking)
     const getMonthlyBuyingCost = (year: number) => {
       const mortgagePayment = year < mortgageTermYears ? monthlyMortgage : 0;
       return mortgagePayment + getMonthlyOwnershipCost(year);
     };
     
-    // Year-0 values for display
-    const totalMonthlyOwnershipCosts = getMonthlyOwnershipCost(0);
-    const totalMonthlyBuying = getMonthlyBuyingCost(0);
+    // Year-0 values for display — comparable (excluding shared costs)
+    const totalMonthlyOwnershipCosts = getOwnerOnlyCost(0);
+    const totalMonthlyBuying = getComparableBuyingCost(0);
     const monthlyMaintenance = monthlyMaintenanceYear0;
     
     // Property value at end of period
