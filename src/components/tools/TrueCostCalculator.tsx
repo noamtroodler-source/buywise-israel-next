@@ -87,13 +87,16 @@ const FURNITURE_COSTS = {
 
 const MOVING_COST_ESTIMATE = 8000;
 
-// Fee estimates (as percentages or fixed amounts)
+// Fee estimates (as percentages or fixed amounts) — ranges for honest estimates
 const FEES = {
-  lawyerRate: 0.005, // 0.5% of price
+  lawyerRateMin: 0.005, // 0.5% of price
+  lawyerRateMax: 0.01,  // 1.0% of price
   lawyerMinimum: 5000,
-  agentRate: 0.02, // 2% + VAT
+  agentRateMin: 0.015, // 1.5% + VAT
+  agentRateMax: 0.025, // 2.5% + VAT
   vatRate: 0.18, // Updated to 18% as of Jan 2025
-  developerLawyerRate: 0.015, // 1.5%
+  developerLawyerRateMin: 0.01, // 1%
+  developerLawyerRateMax: 0.02, // 2%
   bankGuaranteeRate: 0.005, // 0.5%
   appraisalFee: 2500,
   mortgageRegistration: 1500,
