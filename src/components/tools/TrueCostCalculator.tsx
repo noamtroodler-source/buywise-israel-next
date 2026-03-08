@@ -842,7 +842,7 @@ export function TrueCostCalculator() {
       )}
 
       {/* New Construction Extras */}
-      {isNewConstruction && (calculations.madadCostMin > 0 || calculations.developerLawyerFeeMin > 0) && (
+      {isNewConstruction && (calculations.madadCostMin > 0 || calculations.developerLawyerFeeMin > 0 || calculations.bankGuaranteeFee > 0) && (
         <div className="px-4 py-3 bg-semantic-amber/10 border-t border-semantic-amber">
           <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wide font-medium">New Construction Costs</p>
           <div className="flex justify-between text-sm">
@@ -853,6 +853,12 @@ export function TrueCostCalculator() {
             <div className="flex justify-between text-sm mt-1">
               <span className="text-muted-foreground">Developer Lawyer</span>
               <span className="font-medium">{formatPrice(Math.round(calculations.developerLawyerFeeMin))} – {formatPrice(Math.round(calculations.developerLawyerFeeMax))}</span>
+            </div>
+          )}
+          {calculations.bankGuaranteeFee > 0 && (
+            <div className="flex justify-between text-sm mt-1">
+              <span className="text-muted-foreground flex items-center gap-1">Bank Guarantee<InfoTooltip content="Required for new construction purchases with a mortgage. Protects your payments during construction (0.5% of price)." /></span>
+              <span className="font-medium">{formatPrice(Math.round(calculations.bankGuaranteeFee))}</span>
             </div>
           )}
         </div>
