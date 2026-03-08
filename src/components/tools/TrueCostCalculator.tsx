@@ -133,7 +133,7 @@ function InfoTooltip({ content }: { content: string }) {
 export function TrueCostCalculator() {
   const { data: buyerProfile } = useBuyerProfile();
   const { data: cities } = useCities();
-  const { areaUnit } = usePreferences();
+  const { areaUnit, currency, exchangeRate } = usePreferences();
   const formatPrice = useFormatPrice();
   const currencySymbol = useCurrencySymbol();
   const areaUnitLabel = useAreaUnitLabel();
