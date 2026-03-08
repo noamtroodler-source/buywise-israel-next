@@ -1105,7 +1105,19 @@ export function RentVsBuyCalculator() {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground flex items-center">
                     Property value at end
-                    <InfoTooltip content={`Based on ${appreciation}% annual appreciation applied over ${timeHorizon} years. ${cityMetrics?.yoy_price_change ? `The ${appreciation}% rate is pre-filled from this city's recent year-over-year price change.` : 'You can adjust the appreciation rate in the assumptions section.'}`} />
+                    <InfoTooltip content={(() => {
+                      const rate = parseFloat(appreciation) || 3.0;
+                      const cityRate = cityMetrics?.yoy_price_change;
+                      let context = `Projected at ${rate}% annual appreciation compounded over ${timeHorizon} years.`;
+                      if (cityRate) {
+                        context += ` This rate is based on ${selectedCity ? 'this city\'s' : 'the selected city\'s'} recent year-over-year price change of ${cityRate.toFixed(1)}%.`;
+                      }
+                      if (rate <= 2) context += ' This is a conservative estimate — below Israel\'s long-term average of ~4-6%.';
+                      else if (rate <= 4) context += ' This is a moderate estimate — in line with Israel\'s long-term average.';
+                      else if (rate <= 6) context += ' This is an optimistic estimate — at the high end of Israel\'s long-term average.';
+                      else context += ' This is an aggressive estimate — above Israel\'s historical norms. Consider stress-testing with a lower rate.';
+                      return context;
+                    })()} />
                   </span>
                   <span className="tabular-nums text-primary">{formatPrice(Math.round(calculations.futurePropertyValue))}</span>
                 </div>
