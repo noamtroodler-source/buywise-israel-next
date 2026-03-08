@@ -502,6 +502,9 @@ export function RentVsBuyCalculator() {
       investmentGains,
       netRentingWealth,
       totalCashNotSpent,
+      lumpSumInvestedValue,
+      monthlySavingsPortfolio,
+      totalMonthlySavingsRaw,
       
       // Monthly costs breakdown
       monthlyArnona,
