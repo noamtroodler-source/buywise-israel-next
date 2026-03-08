@@ -78,6 +78,7 @@ export function ToolPropertySuggestions({
   const searchParams = new URLSearchParams();
   searchParams.set('min_price', String(Math.round(minPrice)));
   searchParams.set('max_price', String(Math.round(maxPrice)));
+  if (city) searchParams.set('city', city);
 
   return (
     <motion.div
