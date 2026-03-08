@@ -302,6 +302,12 @@ export function TrueCostCalculator() {
       madadCost = linkageResult.linkageAmount;
     }
 
+    // Mortgage / down payment calculation
+    const minDownPaymentPercent = buyerCategory === 'non_resident' ? 50 : buyerCategory === 'additional' ? 30 : 25;
+    const effectiveDownPaymentPercent = downPaymentPercent ?? minDownPaymentPercent;
+    const downPaymentAmount = Math.round(price * (effectiveDownPaymentPercent / 100));
+    const derivedLoanAmount = price - downPaymentAmount;
+
     // Mortgage costs
     const mortgageCosts = includeMortgageCosts 
       ? FEES.appraisalFee + FEES.mortgageRegistration + FEES.bankFees 
