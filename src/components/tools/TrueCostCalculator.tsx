@@ -771,13 +771,15 @@ export function TrueCostCalculator() {
         </div>
         <div className="p-4">
           <p className="text-xs text-muted-foreground">Lawyer Fees</p>
-          <p className="text-lg font-semibold mt-0.5">{formatPrice(Math.round(calculations.lawyerFee))}</p>
+          <p className="text-lg font-semibold mt-0.5">{formatPrice(Math.round(calculations.lawyerFeeMin))} – {formatPrice(Math.round(calculations.lawyerFeeMax))}</p>
+          <p className="text-[10px] text-muted-foreground">0.5–1% + VAT</p>
         </div>
         <div className="p-4">
           <p className="text-xs text-muted-foreground">Agent Fees</p>
           <p className="text-lg font-semibold mt-0.5">
-            {calculations.agentFee > 0 ? formatPrice(Math.round(calculations.agentFee)) : 'N/A'}
+            {calculations.agentFeeMin > 0 ? `${formatPrice(Math.round(calculations.agentFeeMin))} – ${formatPrice(Math.round(calculations.agentFeeMax))}` : 'N/A'}
           </p>
+          {calculations.agentFeeMin > 0 && <p className="text-[10px] text-muted-foreground">1.5–2.5% + VAT</p>}
         </div>
         <div className="p-4">
           <div className="flex items-center gap-1">
