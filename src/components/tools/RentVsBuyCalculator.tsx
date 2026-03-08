@@ -13,7 +13,7 @@ import {
   Clock,
   Calculator,
   CheckCircle2,
-  Lightbulb,
+  
   Users,
   Shield,
   Paintbrush,
