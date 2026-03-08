@@ -198,7 +198,7 @@ export function TrueCostCalculator() {
   // Advanced options
   const [includeAgentFee, setIncludeAgentFee] = useState(true);
   const [includeMortgageCosts, setIncludeMortgageCosts] = useState(false);
-  const [loanAmount, setLoanAmount] = useState('1500000');
+  const [downPaymentPercent, setDownPaymentPercent] = useState<number | null>(null);
   const [includeMoving, setIncludeMoving] = useState(false);
   const [includeFurniture, setIncludeFurniture] = useState(false);
   const [furnitureLevel, setFurnitureLevel] = useState<'basic' | 'standard' | 'premium'>('standard');
