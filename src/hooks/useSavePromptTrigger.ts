@@ -23,6 +23,7 @@ export function useSavePromptTrigger({
   const [showPrompt, setShowPrompt] = useState(false);
   const changeCountRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const firedRef = useRef(false);
 
   const clearTimer = useCallback(() => {
     if (timerRef.current) {
