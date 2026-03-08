@@ -6,7 +6,7 @@ const ACCENT_COLORS: Record<string, string> = {
   'adv-sarah-goldstein': '#6B4C9A',
   'shapira-legal-group': '#2C5F3F',
   'ben-david-associates': '#8B5A2B',
-  'israel-mortgage-advisors': '#0E6B5C',
+  'first-israel-mortgages': '#1B3A5C',
   'firsthome-finance': '#D4761C',
   'global-lending-il': '#2A5CAA',
   'aliyah-mortgage-solutions': '#1A7A4F',
