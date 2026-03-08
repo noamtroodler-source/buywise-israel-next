@@ -171,6 +171,7 @@ const DEFAULTS = {
   rooms: '3',
   downPaymentPercent: '25',
   interestRate: '5.25',
+  mortgageTerm: '25',
   timeHorizon: 10,
   appreciation: '3.0',
   rentIncrease: '3.0',
