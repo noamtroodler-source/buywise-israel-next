@@ -530,34 +530,22 @@ export function TrueCostCalculator() {
           </div>
 
           {isNewConstruction && (
-            <div className="space-y-3 pl-4 border-l-2 border-primary/20">
-              <div className="space-y-2">
-                <div className="flex items-center">
-                  <Label className="text-sm font-medium">Construction Period (months)</Label>
-                  <InfoTooltip content="Estimated time until delivery. Affects index linkage calculation." />
-                </div>
+            <div className="space-y-2 pl-4 border-l-2 border-primary/20">
+              <div className="flex items-center gap-2">
+                <Label className="text-xs text-muted-foreground whitespace-nowrap">Construction period</Label>
                 <Input
                   type="number"
                   value={constructionMonths}
                   onChange={(e) => setConstructionMonths(e.target.value)}
                   min={6}
                   max={60}
-                  className="h-11"
+                  className="h-8 w-20 text-sm"
                 />
+                <span className="text-xs text-muted-foreground">months</span>
               </div>
-              
-              <Alert className="bg-blue-500/10 border-blue-500/30">
-                <Info className="h-4 w-4 text-blue-600" />
-                <AlertDescription className="text-sm text-blue-700 dark:text-blue-400">
-                  <strong>VAT is included:</strong> Israeli developer prices already include 18% VAT.
-                </AlertDescription>
-              </Alert>
-              <Alert className="bg-semantic-amber border-semantic-amber">
-                <Building2 className="h-4 w-4 text-semantic-amber-foreground" />
-                <AlertDescription className="text-sm text-semantic-amber-foreground">
-                  Prices are linked to the building cost index (מדד). Final price may be 3-8% higher.
-                </AlertDescription>
-              </Alert>
+              <p className="text-xs text-muted-foreground">
+                Prices include 18% VAT. Final cost may rise 3–8% due to building index (מדד).
+              </p>
             </div>
           )}
         </CardContent>
