@@ -929,10 +929,10 @@ export function RentVsBuyCalculator() {
             </motion.p>
             <p className="text-sm text-muted-foreground mt-2">
               {calculations.breakEvenYear && calculations.breakEvenYear <= 7 
-                ? <span className="text-semantic-green">"Buying wins relatively quickly"</span> :
+                ? <span className="text-primary">"Buying wins relatively quickly"</span> :
                calculations.breakEvenYear && calculations.breakEvenYear <= 12 
-                ? <span className="text-semantic-amber">"Consider your timeline carefully"</span> :
-               <span className="text-semantic-red">"Long horizon needed for buying to pay off"</span>}
+                ? <span className="text-primary">"Consider your timeline carefully"</span> :
+               <span className="text-primary">"Long horizon needed for buying to pay off"</span>}
             </p>
           </div>
           
@@ -978,7 +978,7 @@ export function RentVsBuyCalculator() {
             {/* Verdict */}
             <p className={cn(
               "text-center text-sm font-medium mt-4 p-2 rounded-lg",
-              calculations.buyingIsBetter ? "text-semantic-green-foreground bg-semantic-green" : "text-semantic-amber-foreground bg-semantic-amber"
+              "text-primary-foreground bg-primary"
             )}>
               {calculations.buyingIsBetter 
                 ? `Buying builds ${formatPrice(Math.round(calculations.wealthDifference))} more wealth`
