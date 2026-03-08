@@ -769,7 +769,10 @@ export function TrueCostCalculator() {
         >
           {formatPrice(Math.round(calculations.totalCashNeededMin))} – {formatPrice(Math.round(calculations.totalCashNeededMax))}
         </motion.p>
-        <p className="text-sm text-muted-foreground text-center mt-2">
+        <p className="text-xs text-muted-foreground text-center mt-1">
+          ~{formatPrice(Math.round((calculations.totalCashNeededMin + calculations.totalCashNeededMax) / 2))} most likely
+        </p>
+        <p className="text-sm text-muted-foreground text-center mt-1">
           +{formatPrice(Math.round(calculations.allCostsAbovePriceMin))}–{formatPrice(Math.round(calculations.allCostsAbovePriceMax))} ({calculations.percentAbovePriceMin.toFixed(1)}–{calculations.percentAbovePriceMax.toFixed(1)}%) above list price
         </p>
       </div>
@@ -798,13 +801,13 @@ export function TrueCostCalculator() {
         </div>
         <div className="p-4">
           <div className="flex items-center gap-1">
-            <p className="text-xs text-muted-foreground">{includeMortgageCosts ? 'Fees & Registration' : 'Registration'}</p>
+            <p className="text-xs text-muted-foreground">{includeMortgageCosts ? 'Fees & Gov.' : 'Registration'}</p>
             <InfoTooltip content={includeMortgageCosts 
               ? `Tabu registration (${formatPrice(calculations.tabuRegistration)}) + Appraisal (${formatPrice(calculations.appraisalFee)}) + Mortgage reg. (${formatPrice(calculations.mortgageRegistrationFee)}) + Bank fees (${formatPrice(calculations.bankFees)})`
               : "Tabu (land registry) registration fees"} />
           </div>
           <p className="text-lg font-semibold mt-0.5">{formatPrice(calculations.tabuRegistration + calculations.mortgageCosts)}</p>
-          {includeMortgageCosts && <p className="text-[10px] text-muted-foreground">Tabu + Appraisal + Bank</p>}
+          {includeMortgageCosts && <p className="text-[10px] text-muted-foreground">incl. mortgage fees</p>}
         </div>
       </div>
 
@@ -854,7 +857,10 @@ export function TrueCostCalculator() {
 
       {/* Monthly Costs Preview */}
       <div className="p-4 border-t border-border bg-muted/30">
-        <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium mb-2">Est. Monthly Costs</p>
+        <div className="flex items-center gap-1 mb-2">
+          <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Est. Monthly Costs</p>
+          <InfoTooltip content="Arnona (property tax), Va'ad Bayit (building maintenance), Home Insurance" />
+        </div>
         <div className="flex justify-between items-center">
           <div>
             <span className="text-lg font-semibold">
@@ -862,13 +868,10 @@ export function TrueCostCalculator() {
             </span>
             <span className="text-sm text-muted-foreground">/mo</span>
           </div>
-          <div className="text-xs text-muted-foreground text-right">
-            <p>Arnona, Va'ad Bayit, Insurance</p>
-          </div>
+          {!selectedCity && (
+            <span className="text-xs text-muted-foreground">Select a city for accuracy</span>
+          )}
         </div>
-        {!selectedCity && (
-          <p className="text-xs text-muted-foreground mt-1">Select a city for accurate estimates</p>
-        )}
       </div>
     </Card>
   );
