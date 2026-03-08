@@ -514,7 +514,7 @@ function AffordabilityCalculatorContent() {
                 <div className="flex justify-between text-xs text-muted-foreground">
                   <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-primary" />Mortgage {calculations.mortgagePercent.toFixed(0)}%</span>
                   <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-muted-foreground/40" />Debts {calculations.debtsPercent.toFixed(0)}%</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-muted border border-border" />Free {calculations.remainingPercent.toFixed(0)}%</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-muted border border-border" />Remaining Income {calculations.remainingPercent.toFixed(0)}%</span>
                 </div>
               </div>
               <div className="p-3 rounded-lg bg-muted/50 border border-border/50">
