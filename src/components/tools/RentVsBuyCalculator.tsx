@@ -939,7 +939,10 @@ export function RentVsBuyCalculator() {
           {/* Visual Breakdown Bar - Monthly Costs Allocation */}
           {calculations.totalMonthlyBuying > 0 && (
             <div className="px-6 py-4 border-t">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Monthly Cost Breakdown (Buying)</p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+                Monthly Cost Breakdown (Buyer-Only)
+                <InfoTooltip content="Arnona and Vaad Bayit are excluded — renters pay these too, so they cancel out in the comparison." />
+              </p>
               <div className="flex h-3 rounded-full overflow-hidden bg-muted/30">
                 <div 
                   className="bg-primary transition-all" 
@@ -949,7 +952,7 @@ export function RentVsBuyCalculator() {
                 <div 
                   className="bg-primary/50 transition-all" 
                   style={{ width: `${(calculations.totalMonthlyOwnershipCosts / calculations.totalMonthlyBuying) * 100}%` }}
-                  title={`Ownership: ${formatPrice(Math.round(calculations.totalMonthlyOwnershipCosts))}`}
+                  title={`Insurance + Maintenance: ${formatPrice(Math.round(calculations.totalMonthlyOwnershipCosts))}`}
                 />
               </div>
               <div className="flex items-center gap-4 mt-2 text-[10px] text-muted-foreground">
@@ -959,7 +962,7 @@ export function RentVsBuyCalculator() {
                 </span>
                 <span className="flex items-center gap-1">
                   <span className="h-2 w-2 rounded-full bg-primary/50" />
-                  Ownership Costs
+                  Insurance + Maintenance
                 </span>
               </div>
             </div>
