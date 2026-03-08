@@ -70,46 +70,29 @@ export function SourceAttribution({
     );
   }
 
-  // Full variant - always visible with collapsible details
+  // Full variant - compact collapsible
   return (
-    <div className={cn(
-      "rounded-lg border border-border/50 bg-muted/20 overflow-hidden",
-      className
-    )}>
+    <div className={cn("rounded-lg border border-border/50 overflow-hidden", className)}>
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <CollapsibleTrigger asChild>
-          <button className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-full bg-primary/10">
-                <Shield className="h-4 w-4 text-primary" />
-              </div>
-              <div className="text-left">
-                <p className="text-sm font-medium">Data Sources & Verification</p>
-                <p className="text-xs text-muted-foreground">
-                  {config.primarySources.length} official source{config.primarySources.length > 1 ? 's' : ''} · Last verified {config.lastVerified}
-                </p>
-              </div>
+          <button className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Shield className="h-3.5 w-3.5 text-primary/70" />
+              <span>
+                Sources: {config.primarySources.map(s => s.name.split('(')[0].trim()).join(', ')} · Verified {config.lastVerified}
+              </span>
             </div>
             <ChevronDown className={cn(
-              "h-5 w-5 text-muted-foreground transition-transform",
+              "h-4 w-4 text-muted-foreground transition-transform",
               isOpen && "rotate-180"
             )} />
           </button>
         </CollapsibleTrigger>
         
         <CollapsibleContent>
-          <div className="px-4 pb-4 space-y-4">
+          <div className="px-4 pb-3 space-y-3">
             <div className="h-px bg-border/50" />
-            
-            {/* Source List */}
-            <div className="space-y-2">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                Official Sources
-              </p>
-              <SourceList sources={config.primarySources} />
-            </div>
-            
-            {/* Verification Badge */}
+            <SourceList sources={config.primarySources} />
             <VerificationBadge 
               lastVerified={config.lastVerified} 
               categories={config.categories} 
