@@ -459,8 +459,8 @@ export function TrueCostCalculator() {
         calculatorType: 'truecost',
         inputs: data,
         results: {
-          totalCostMin: calculations.totalOneTimeMin,
-          totalCostMax: calculations.totalOneTimeMax,
+          totalCostMin: calculations.totalTrueCostMin,
+          totalCostMax: calculations.totalTrueCostMax,
           purchaseTax: calculations.purchaseTax,
           allCostsAbovePriceMin: calculations.allCostsAbovePriceMin,
           allCostsAbovePriceMax: calculations.allCostsAbovePriceMax,
