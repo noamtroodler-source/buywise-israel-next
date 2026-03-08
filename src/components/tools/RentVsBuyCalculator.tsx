@@ -435,12 +435,17 @@ export function RentVsBuyCalculator() {
       
       let rentPaidAtYear = 0;
       let rentAtYear = rent;
+      let savingsPortfolioAtYear = 0;
       for (let y = 0; y < year; y++) {
-        rentPaidAtYear += rentAtYear * 12;
+        for (let m = 0; m < 12; m++) {
+          rentPaidAtYear += rentAtYear;
+          const saving = Math.max(0, totalMonthlyBuying - rentAtYear);
+          savingsPortfolioAtYear = (savingsPortfolioAtYear + saving) * (1 + monthlyInvestmentRate);
+        }
         rentAtYear *= (1 + rentIncreaseRate / 100);
       }
       const investedValueAtYear = totalCashNotSpent * Math.pow(1 + investmentReturnRate / 100, year);
-      const rentingWealthAtYear = investedValueAtYear - rentPaidAtYear;
+      const rentingWealthAtYear = investedValueAtYear + savingsPortfolioAtYear;
       
       if (buyingEquityAtYear > rentingWealthAtYear) {
         breakEvenYear = year;
