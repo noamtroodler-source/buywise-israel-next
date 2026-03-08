@@ -769,9 +769,15 @@ export function TrueCostCalculator() {
         >
           {formatPrice(Math.round(calculations.totalCashNeededMin))} – {formatPrice(Math.round(calculations.totalCashNeededMax))}
         </motion.p>
-        <p className="text-xs text-muted-foreground text-center mt-1">
-          ~{formatPrice(Math.round((calculations.totalCashNeededMin + calculations.totalCashNeededMax) / 2000) * 1000)} most likely
-        </p>
+        {(() => {
+          const midpointILS = (calculations.totalCashNeededMin + calculations.totalCashNeededMax) / 2;
+          const roundedMidpoint = Math.round(midpointILS / 1000) * 1000;
+          return (
+            <p className="text-xs text-muted-foreground text-center mt-1">
+              ~{formatPrice(roundedMidpoint)} most likely
+            </p>
+          );
+        })()}
       </div>
 
 
