@@ -380,22 +380,39 @@ export function RentVsBuyCalculator() {
     const netBuyingWealth = equityBuilt;
     
     // Renting calculations
-    // Total rent paid with annual increases
+    // Total rent paid with annual increases + monthly savings invested
     let totalRentPaid = 0;
     let currentRent = rent;
+    const monthlyInvestmentRate = investmentReturnRate / 100 / 12;
+    let monthlySavingsPortfolio = 0; // compounded monthly savings
+    let totalMonthlySavingsRaw = 0; // raw sum of monthly savings
+    
     for (let year = 0; year < years; year++) {
-      totalRentPaid += currentRent * 12;
+      const yearlyOwnershipCost = totalMonthlyBuying; // what buying costs per month this year
+      for (let month = 0; month < 12; month++) {
+        totalRentPaid += currentRent;
+        const monthlySaving = Math.max(0, yearlyOwnershipCost - currentRent);
+        totalMonthlySavingsRaw += monthlySaving;
+        // Compound existing portfolio + add new savings
+        monthlySavingsPortfolio = (monthlySavingsPortfolio + monthlySaving) * (1 + monthlyInvestmentRate);
+      }
       currentRent *= (1 + rentIncreaseRate / 100);
     }
     const finalYearRent = rent * Math.pow(1 + rentIncreaseRate / 100, years - 1);
     
-    // Opportunity cost: what if down payment + purchase costs were invested?
+    // Lump sum: down payment + purchase costs invested
     const totalCashNotSpent = downPayment + totalPurchaseCosts;
-    const investedSavingsValue = totalCashNotSpent * Math.pow(1 + investmentReturnRate / 100, years);
-    const investmentGains = investedSavingsValue - totalCashNotSpent;
+    const lumpSumInvestedValue = totalCashNotSpent * Math.pow(1 + investmentReturnRate / 100, years);
+    const lumpSumGains = lumpSumInvestedValue - totalCashNotSpent;
     
-    // Net wealth from renting (invested savings - rent paid)
-    const netRentingWealth = investedSavingsValue - totalRentPaid;
+    // Total renting portfolio = lump sum investment + compounded monthly savings
+    const investedSavingsValue = lumpSumInvestedValue + monthlySavingsPortfolio;
+    const investmentGains = lumpSumGains + monthlySavingsPortfolio;
+    
+    // Net wealth: "what assets do you walk away with?"
+    // Buying: equity after selling (already accounts for all cash spent)
+    // Renting: total portfolio value (rent is cost of living, same as mortgage+ownership for buyer)
+    const netRentingWealth = investedSavingsValue;
     
     // Comparison
     const buyingIsBetter = netBuyingWealth > netRentingWealth;
@@ -418,12 +435,17 @@ export function RentVsBuyCalculator() {
       
       let rentPaidAtYear = 0;
       let rentAtYear = rent;
+      let savingsPortfolioAtYear = 0;
       for (let y = 0; y < year; y++) {
-        rentPaidAtYear += rentAtYear * 12;
+        for (let m = 0; m < 12; m++) {
+          rentPaidAtYear += rentAtYear;
+          const saving = Math.max(0, totalMonthlyBuying - rentAtYear);
+          savingsPortfolioAtYear = (savingsPortfolioAtYear + saving) * (1 + monthlyInvestmentRate);
+        }
         rentAtYear *= (1 + rentIncreaseRate / 100);
       }
       const investedValueAtYear = totalCashNotSpent * Math.pow(1 + investmentReturnRate / 100, year);
-      const rentingWealthAtYear = investedValueAtYear - rentPaidAtYear;
+      const rentingWealthAtYear = investedValueAtYear + savingsPortfolioAtYear;
       
       if (buyingEquityAtYear > rentingWealthAtYear) {
         breakEvenYear = year;
@@ -485,6 +507,9 @@ export function RentVsBuyCalculator() {
       investmentGains,
       netRentingWealth,
       totalCashNotSpent,
+      lumpSumInvestedValue,
+      monthlySavingsPortfolio,
+      totalMonthlySavingsRaw,
       
       // Monthly costs breakdown
       monthlyArnona,
@@ -1076,7 +1101,7 @@ export function RentVsBuyCalculator() {
                   <span className="tabular-nums text-primary">{formatPrice(Math.round(calculations.equityBuilt))}</span>
                 </div>
                 <div className="flex justify-between font-semibold pt-2 border-t border-border/50">
-                  <span>Net position</span>
+                  <span className="flex items-center gap-1">Net position <InfoTooltip content="Cash you'd walk away with if you sold — property value minus remaining mortgage, selling costs (~3%), and capital gains tax." /></span>
                   <span className="tabular-nums">
                     {calculations.netBuyingWealth >= 0 ? formatPrice(Math.round(calculations.netBuyingWealth)) : `-${formatPrice(Math.abs(Math.round(calculations.netBuyingWealth)))}`}
                   </span>
@@ -1090,29 +1115,27 @@ export function RentVsBuyCalculator() {
                   <span className="text-muted-foreground">Total rent paid</span>
                   <span className="tabular-nums">{formatPrice(Math.round(calculations.totalRentPaid))}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Other renting costs</span>
-                  <span className="tabular-nums">{formatPrice(Math.round(calculations.totalRentPaid * 0.02))}</span>
-                </div>
                 <Separator className="my-1" />
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Down payment invested</span>
-                  <span className="tabular-nums">{formatPrice(Math.round(calculations.downPayment))}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Savings invested</span>
+                  <span className="text-muted-foreground">Lump sum invested <InfoTooltip content="Down payment + purchase costs you didn't spend, invested instead." /></span>
                   <span className="tabular-nums">{formatPrice(Math.round(calculations.totalCashNotSpent))}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Investment gains <InfoTooltip content={`Assuming ${investmentReturn}% annual return (compounded). Includes gains on both the down payment you didn't spend and the monthly savings from lower rent vs. ownership costs.`} /></span>
-                  <span className="tabular-nums text-primary">{formatPrice(Math.round(calculations.investmentGains))}</span>
+                  <span className="text-muted-foreground">Lump sum growth</span>
+                  <span className="tabular-nums text-primary">{formatPrice(Math.round(calculations.lumpSumInvestedValue - calculations.totalCashNotSpent))}</span>
                 </div>
+                {calculations.monthlySavingsPortfolio > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Monthly savings invested <InfoTooltip content={`Each month buying costs more than renting, the difference is invested at ${investmentReturn}% annual return. This is the compounded value of those monthly savings.`} /></span>
+                    <span className="tabular-nums text-primary">{formatPrice(Math.round(calculations.monthlySavingsPortfolio))}</span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Total portfolio value</span>
                   <span className="tabular-nums text-primary">{formatPrice(Math.round(calculations.investedSavingsValue))}</span>
                 </div>
                 <div className="flex justify-between font-semibold pt-2 border-t border-border/50">
-                  <span>Net position</span>
+                  <span className="flex items-center gap-1">Net position <InfoTooltip content={`Your total investment portfolio — the down payment + purchase costs you invested instead of buying, plus monthly savings (ownership costs minus rent) compounded at ${investmentReturn}% annual return.`} /></span>
                   <span className="tabular-nums">
                     {calculations.netRentingWealth >= 0 ? formatPrice(Math.round(calculations.netRentingWealth)) : `-${formatPrice(Math.abs(Math.round(calculations.netRentingWealth)))}`}
                   </span>
