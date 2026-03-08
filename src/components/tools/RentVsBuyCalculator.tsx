@@ -94,6 +94,14 @@ const FEES = {
 // Time horizon options
 const TIME_HORIZONS = [5, 10, 15, 20, 25];
 
+// Mortgage term options (years)
+const MORTGAGE_TERM_OPTIONS = [
+  { value: '15', label: '15 years' },
+  { value: '20', label: '20 years' },
+  { value: '25', label: '25 years' },
+  { value: '30', label: '30 years' },
+];
+
 // Room options for rental matching
 const ROOM_OPTIONS = [
   { value: '2', label: '2 Bedrooms' },
