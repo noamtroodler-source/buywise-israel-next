@@ -746,16 +746,16 @@ export function TrueCostCalculator() {
       <div className="p-6 bg-gradient-to-br from-primary/5 via-background to-background border-b border-border">
         <p className="text-sm text-muted-foreground text-center mb-1">Total Cash Needed</p>
         <motion.p 
-          className="text-4xl md:text-5xl font-bold text-center bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent tracking-tight"
+          className="text-3xl md:text-4xl font-bold text-center bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent tracking-tight"
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          key={calculations.totalOneTime}
+          key={`${calculations.totalOneTimeMin}-${calculations.totalOneTimeMax}`}
           transition={{ duration: 0.3 }}
         >
-          {formatPrice(Math.round(calculations.totalOneTime))}
+          {formatPrice(Math.round(calculations.totalOneTimeMin))} – {formatPrice(Math.round(calculations.totalOneTimeMax))}
         </motion.p>
         <p className="text-sm text-muted-foreground text-center mt-2">
-          +{formatPrice(Math.round(calculations.allCostsAbovePrice))} ({calculations.percentAbovePrice.toFixed(1)}%) above list price
+          +{formatPrice(Math.round(calculations.allCostsAbovePriceMin))}–{formatPrice(Math.round(calculations.allCostsAbovePriceMax))} ({calculations.percentAbovePriceMin.toFixed(1)}–{calculations.percentAbovePriceMax.toFixed(1)}%) above list price
         </p>
       </div>
 
