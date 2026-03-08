@@ -237,7 +237,9 @@ export function RentVsBuyCalculator() {
   // Auto-suggest appreciation from city data
   useEffect(() => {
     if (cityMetrics?.yoy_price_change) {
-      setAppreciation(cityMetrics.yoy_price_change.toFixed(1));
+      // Cap at 4% to keep projections moderate — city's actual rate shown in tooltip for context
+      const moderateRate = Math.min(cityMetrics.yoy_price_change, 4.0);
+      setAppreciation(moderateRate.toFixed(1));
     }
   }, [cityMetrics]);
   
