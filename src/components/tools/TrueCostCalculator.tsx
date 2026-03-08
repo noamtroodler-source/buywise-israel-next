@@ -530,9 +530,9 @@ export function TrueCostCalculator() {
           </div>
 
           {isNewConstruction && (
-            <div className="space-y-2 pl-4 border-l-2 border-primary/20">
+            <div className="space-y-1.5 pl-4 border-l-2 border-primary/20">
               <div className="flex items-center gap-2">
-                <Label className="text-xs text-muted-foreground whitespace-nowrap">Construction period</Label>
+                <Label className="text-xs text-muted-foreground whitespace-nowrap">Time until delivery</Label>
                 <Input
                   type="number"
                   value={constructionMonths}
@@ -544,7 +544,7 @@ export function TrueCostCalculator() {
                 <span className="text-xs text-muted-foreground">months</span>
               </div>
               <p className="text-xs text-muted-foreground">
-                Prices include 18% VAT. Final cost may rise 3–8% due to building index (מדד).
+                VAT included in price. Expect 3–8% increase from building cost index (מדד) by delivery.
               </p>
             </div>
           )}
