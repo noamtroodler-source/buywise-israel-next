@@ -46,6 +46,7 @@ export function PlanCard({
   onSubscribe,
   loading,
   promoResult,
+  ctaLabel: ctaLabelOverride,
 }: PlanCardProps) {
   const [salesDialogOpen, setSalesDialogOpen] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
