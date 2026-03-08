@@ -1072,10 +1072,6 @@ export function RentVsBuyCalculator() {
                   <span className="tabular-nums text-primary">{formatPrice(Math.round(calculations.futurePropertyValue))}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Remaining mortgage</span>
-                  <span className="tabular-nums">-{formatPrice(Math.round(calculations.remainingMortgage))}</span>
-                </div>
-                <div className="flex justify-between">
                   <span className="text-muted-foreground">Equity built</span>
                   <span className="tabular-nums text-primary">{formatPrice(Math.round(calculations.equityBuilt))}</span>
                 </div>
