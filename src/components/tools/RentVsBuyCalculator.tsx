@@ -1064,7 +1064,7 @@ export function RentVsBuyCalculator() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Other buying costs</span>
-                  <span className="tabular-nums">{formatPrice(Math.round(calculations.totalBuyingCosts - calculations.downPayment - calculations.purchaseTax - calculations.totalMortgagePayments))}</span>
+                  <span className="tabular-nums">{formatPrice(Math.round(calculations.totalBuyingCost - calculations.downPayment - calculations.purchaseTax - calculations.totalMortgagePayments))}</span>
                 </div>
                 <Separator className="my-1" />
                 <div className="flex justify-between">
