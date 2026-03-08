@@ -770,7 +770,7 @@ export function TrueCostCalculator() {
           {formatPrice(Math.round(calculations.totalCashNeededMin))} – {formatPrice(Math.round(calculations.totalCashNeededMax))}
         </motion.p>
         <p className="text-xs text-muted-foreground text-center mt-1">
-          ~{formatPrice(Math.round((calculations.totalCashNeededMin + calculations.totalCashNeededMax) / 2))} most likely
+          ~{formatPrice(Math.round((calculations.totalCashNeededMin + calculations.totalCashNeededMax) / 2000) * 1000)} most likely
         </p>
       </div>
 
@@ -845,10 +845,6 @@ export function TrueCostCalculator() {
             transition={{ duration: 0.5, ease: "easeOut" }}
           />
           <div className="bg-muted-foreground/30 h-full flex-1" />
-        </div>
-        <div className="flex items-center justify-between text-xs mt-1.5">
-          <span className="font-medium">{formatPrice(calculations.price)}</span>
-          <span className="font-medium">{formatPrice(Math.round(calculations.allCostsAbovePriceMin))}–{formatPrice(Math.round(calculations.allCostsAbovePriceMax))}</span>
         </div>
       </div>
 
