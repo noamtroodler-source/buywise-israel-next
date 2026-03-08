@@ -1,15 +1,19 @@
 
 
-## Neighborhood Search — Implemented ✅
+## Fix: Affordability Calculator Property Suggestions Range
 
-All changes from the plan have been implemented:
+**Problem:** `minPrice={0}` means it fetches properties from ₪0 up to the max budget, returning cheap irrelevant listings.
 
-1. **`useNeighborhoodNames` hook** — Shared hook fetching neighborhood names per city + `useAllNeighborhoods` for cross-city search.
-2. **`useMapFilters`** — Added `neighborhoods` URL param (comma-separated).
-3. **`useProperties`** — Added `neighborhoods[]` array filter via `.in('neighborhood', ...)` in both count and listing queries.
-4. **`PropertyFilters` city popover** — Shows `NeighborhoodSelector` multi-select after city is chosen. Button label updates to show selected neighborhoods.
-5. **`MobileFilterSheet`** — Same `NeighborhoodSelector` in mobile Location section.
-6. **`CitySearchInput`** — Autocomplete now searches neighborhoods too, grouped under "Neighborhoods" with "Name, City" format. Selecting navigates with both city + neighborhood params.
-7. **`NeighborhoodChips`** — Map chips now trigger listing filter via `onFilterNeighborhood` callback.
-8. **`MapSearchLayout`** — Wires neighborhood filter between map chips and URL params. Includes neighborhoods in clear-all.
-9. **`ActiveFilterChips`** — Dismissible chip for active neighborhood filters.
+**Fix:** In `src/components/tools/AffordabilityCalculator.tsx` line 560, change:
+```
+minPrice={0}
+```
+to:
+```
+minPrice={Math.round(calculations.maxPropertyPrice * 0.7)}
+```
+
+This shows properties in the top 30% of their budget range (e.g., ₪10.5M–15M for a ₪15M budget), consistent with how other calculators (TrueCost, Mortgage, RentVsBuy) already use `* 0.8` ranges.
+
+Single line change, one file.
+
