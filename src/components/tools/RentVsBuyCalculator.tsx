@@ -1174,15 +1174,19 @@ export function RentVsBuyCalculator() {
       <SourceAttribution toolType="rentVsBuy" />
 
 
-      {calculations && (
-        <ToolPropertySuggestions
-          title="Properties at This Price"
-          subtitle="See what's available at the price you're comparing"
-          minPrice={Math.round(parseFormattedNumber(propertyPrice) * 0.8)}
-          maxPrice={Math.round(parseFormattedNumber(propertyPrice) * 1.2)}
-          enabled={propertyPrice !== formatNumber(DEFAULTS.propertyPrice)}
-        />
-      )}
+      {calculations && (() => {
+        const cityName = cities?.find(c => c.slug === selectedCity)?.name;
+        return (
+          <ToolPropertySuggestions
+            title={cityName ? `Properties in ${cityName} near ${formatPrice(parseFormattedNumber(propertyPrice))}` : `Properties near ${formatPrice(parseFormattedNumber(propertyPrice))}`}
+            subtitle={cityName ? `Homes matching your search in ${cityName}` : "See what's available at this price point"}
+            minPrice={Math.round(parseFormattedNumber(propertyPrice) * 0.8)}
+            maxPrice={Math.round(parseFormattedNumber(propertyPrice) * 1.2)}
+            city={cityName || undefined}
+            enabled={propertyPrice !== formatNumber(DEFAULTS.propertyPrice)}
+          />
+        );
+      })()}
 
       {/* 6. Explore - Navigation Cards */}
       <div className="grid sm:grid-cols-3 gap-4">
