@@ -1189,13 +1189,6 @@ export function RentVsBuyCalculator() {
         <Link to="/tools?tool=affordability"><Card className="p-4 cursor-pointer hover:border-primary/50 transition-colors group h-full"><Wallet className="h-5 w-5 text-primary mb-2" /><h4 className="font-medium text-sm group-hover:text-primary transition-colors">Affordability Calculator</h4><p className="text-xs text-muted-foreground mt-1">See how much you can afford</p></Card></Link>
       </div>
 
-      {/* 7. Engage */}
-      <div className="text-center">
-        <ToolFeedback 
-          toolName="rent-vs-buy-calculator" 
-          variant="inline" 
-        />
-      </div>
     </div>
   );
   
