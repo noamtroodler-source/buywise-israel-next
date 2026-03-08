@@ -28,6 +28,7 @@ interface PlanCardProps {
   onSubscribe: () => void;
   loading?: boolean;
   promoResult?: PromoResult | null;
+  ctaLabel?: string;
 }
 
 export function PlanCard({
