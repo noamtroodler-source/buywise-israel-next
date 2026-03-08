@@ -529,7 +529,7 @@ export function RentVsBuyCalculator() {
       totalRentPaid, investedSavingsValue, investmentGains,
       netRentingWealth, totalCashNotSpent, lumpSumInvestedValue,
       monthlySavingsPortfolio, totalMonthlySavingsRaw,
-      monthlyArnona, monthlyVaadBayit, monthlyInsurance, monthlyMaintenance,
+      monthlyArnona, monthlyVaadBayit, monthlySharedCosts, monthlyInsurance, monthlyMaintenance,
       buyingSqm, rentingSqmForBuyingBudget, spaceAdvantagePercent,
       monthlyEquityBuilding, priceToRentRatio,
       sellingCosts, capitalGainsTax, equityBuiltGross,
