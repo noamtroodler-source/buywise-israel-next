@@ -33,14 +33,14 @@ export function useSavePromptTrigger({
   }, []);
 
   const trackChange = useCallback(() => {
-    // Don't track if user is logged in or prompt already shown
-    if (user) return;
+    if (user || firedRef.current) return;
 
     changeCountRef.current += 1;
     clearTimer();
 
     if (changeCountRef.current >= minChanges) {
       timerRef.current = setTimeout(() => {
+        firedRef.current = true;
         setShowPrompt(true);
       }, idleMs);
     }
