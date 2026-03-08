@@ -465,11 +465,12 @@ export function TrueCostCalculator() {
     }
   };
 
-  // Calculate visual breakdown percentages
+  // Calculate visual breakdown percentages (use midpoint for bar)
   const propertyPercent = useMemo(() => {
-    if (calculations.totalOneTime <= 0) return 80;
-    return Math.round((calculations.price / calculations.totalOneTime) * 100);
-  }, [calculations.price, calculations.totalOneTime]);
+    const midTotal = (calculations.totalOneTimeMin + calculations.totalOneTimeMax) / 2;
+    if (midTotal <= 0) return 80;
+    return Math.round((calculations.price / midTotal) * 100);
+  }, [calculations.price, calculations.totalOneTimeMin, calculations.totalOneTimeMax]);
   
   const costsPercent = 100 - propertyPercent;
 
