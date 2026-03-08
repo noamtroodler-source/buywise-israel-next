@@ -662,6 +662,7 @@ export function RentVsBuyCalculator() {
               <InfoTooltip content="Full purchase price of the property you're considering." />
             </Label>
             <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">{currencySymbol}</span>
               <Input
                 id="propertyPrice"
                 type="text"
@@ -673,7 +674,7 @@ export function RentVsBuyCalculator() {
                   }
                 }}
                 placeholder="2,500,000"
-                className="h-11 text-lg"
+                className="h-11 text-lg pl-8"
               />
             </div>
             {suggestedPrice && !propertyPrice && (
@@ -693,6 +694,7 @@ export function RentVsBuyCalculator() {
               <InfoTooltip content="Your current or expected monthly rent payment. This will be compared against ownership costs." />
             </Label>
             <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">{currencySymbol}</span>
               <Input
                 id="monthlyRent"
                 type="text"
@@ -704,7 +706,7 @@ export function RentVsBuyCalculator() {
                   }
                 }}
                 placeholder="6,000"
-                className="h-11 text-lg"
+                className="h-11 text-lg pl-8"
               />
             </div>
             {suggestedRent && !monthlyRent && selectedCity && (
