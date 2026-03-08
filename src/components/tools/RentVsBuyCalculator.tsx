@@ -1194,9 +1194,14 @@ export function RentVsBuyCalculator() {
   
   // Disclaimer
   const disclaimer = (
-    <ToolDisclaimer 
-      text="This calculator provides estimates for educational purposes. Actual costs vary based on specific properties, lender terms, and market conditions. Consult with local professionals for personalized advice."
-    />
+    <div className="space-y-4">
+      <ToolDisclaimer 
+        text="This calculator provides estimates for educational purposes. Actual costs vary based on specific properties, lender terms, and market conditions. Consult with local professionals for personalized advice."
+      />
+      <div className="text-center">
+        <ToolFeedback toolName="rent-vs-buy-calculator" variant="inline" />
+      </div>
+    </div>
   );
   
   return (
