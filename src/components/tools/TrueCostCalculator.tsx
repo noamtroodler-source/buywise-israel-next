@@ -87,13 +87,16 @@ const FURNITURE_COSTS = {
 
 const MOVING_COST_ESTIMATE = 8000;
 
-// Fee estimates (as percentages or fixed amounts)
+// Fee estimates (as percentages or fixed amounts) — ranges for honest estimates
 const FEES = {
-  lawyerRate: 0.005, // 0.5% of price
+  lawyerRateMin: 0.005, // 0.5% of price
+  lawyerRateMax: 0.01,  // 1.0% of price
   lawyerMinimum: 5000,
-  agentRate: 0.02, // 2% + VAT
+  agentRateMin: 0.015, // 1.5% + VAT
+  agentRateMax: 0.025, // 2.5% + VAT
   vatRate: 0.18, // Updated to 18% as of Jan 2025
-  developerLawyerRate: 0.015, // 1.5%
+  developerLawyerRateMin: 0.01, // 1%
+  developerLawyerRateMax: 0.02, // 2%
   bankGuaranteeRate: 0.005, // 0.5%
   appraisalFee: 2500,
   mortgageRegistration: 1500,
@@ -287,19 +290,23 @@ export function TrueCostCalculator() {
     const investorTax = calculateTaxAmount(price, 'investor');
     const taxSavings = investorTax - purchaseTax;
 
-    // Calculate individual fees
-    const lawyerFee = Math.max(price * FEES.lawyerRate, FEES.lawyerMinimum) * (1 + FEES.vatRate);
-    const agentFee = includeAgentFee && !isNewConstruction 
-      ? price * FEES.agentRate * (1 + FEES.vatRate) 
-      : 0;
-    const developerLawyerFee = isNewConstruction ? price * FEES.developerLawyerRate * (1 + FEES.vatRate) : 0;
+    // Calculate individual fees as ranges
+    const lawyerFeeMin = Math.max(price * FEES.lawyerRateMin, FEES.lawyerMinimum) * (1 + FEES.vatRate);
+    const lawyerFeeMax = Math.max(price * FEES.lawyerRateMax, FEES.lawyerMinimum) * (1 + FEES.vatRate);
+    const agentFeeMin = includeAgentFee ? price * FEES.agentRateMin * (1 + FEES.vatRate) : 0;
+    const agentFeeMax = includeAgentFee ? price * FEES.agentRateMax * (1 + FEES.vatRate) : 0;
+    const developerLawyerFeeMin = isNewConstruction ? price * FEES.developerLawyerRateMin * (1 + FEES.vatRate) : 0;
+    const developerLawyerFeeMax = isNewConstruction ? price * FEES.developerLawyerRateMax * (1 + FEES.vatRate) : 0;
     const bankGuaranteeFee = isNewConstruction ? price * FEES.bankGuaranteeRate : 0;
 
-    // New construction linkage (Madad)
-    let madadCost = 0;
+    // New construction linkage (Madad) — range with low/high annual rates
+    let madadCostMin = 0;
+    let madadCostMax = 0;
     if (isNewConstruction && months > 0) {
-      const linkageResult = calculateNewConstructionLinkage(price, months, 0.03);
-      madadCost = linkageResult.linkageAmount;
+      const linkageLow = calculateNewConstructionLinkage(price, months, 0.02);
+      const linkageHigh = calculateNewConstructionLinkage(price, months, 0.04);
+      madadCostMin = linkageLow.linkageAmount;
+      madadCostMax = linkageHigh.linkageAmount;
     }
 
     // Mortgage / down payment calculation
@@ -318,16 +325,23 @@ export function TrueCostCalculator() {
     const furnitureCost = includeFurniture ? FURNITURE_COSTS[furnitureLevel] : 0;
     const renovationCost = includeRenovation ? parseFormattedNumber(renovationAmount) : 0;
 
-    // Monthly costs
+    // Monthly costs — ranges for arnona and vaad bayit
     const cityData = cities?.find(c => c.slug === selectedCity);
     const monthlyCosts = calculateMonthlyCosts(size, cityData?.name);
+    // Monthly range: arnona ±15%, vaad bayit ₪200-500, insurance ₪100-200
+    const monthlyMin = Math.round(monthlyCosts.arnona * 0.85 + 200 + 100);
+    const monthlyMax = Math.round(monthlyCosts.arnona * 1.15 + 500 + 200);
 
-    // Sum all costs above property price
-    const allCostsAbovePrice = purchaseTax + lawyerFee + agentFee + developerLawyerFee + 
-      bankGuaranteeFee + madadCost + mortgageCosts + FEES.tabuRegistration + movingCost + furnitureCost + renovationCost;
+    // Sum all costs above property price — min and max
+    const allCostsAbovePriceMin = purchaseTax + lawyerFeeMin + agentFeeMin + developerLawyerFeeMin + 
+      bankGuaranteeFee + madadCostMin + mortgageCosts + FEES.tabuRegistration + movingCost + furnitureCost + renovationCost;
+    const allCostsAbovePriceMax = purchaseTax + lawyerFeeMax + agentFeeMax + developerLawyerFeeMax + 
+      bankGuaranteeFee + madadCostMax + mortgageCosts + FEES.tabuRegistration + movingCost + furnitureCost + renovationCost;
     
-    const totalOneTime = price + allCostsAbovePrice;
-    const percentAbovePrice = price > 0 ? (allCostsAbovePrice / price) * 100 : 0;
+    const totalOneTimeMin = price + allCostsAbovePriceMin;
+    const totalOneTimeMax = price + allCostsAbovePriceMax;
+    const percentAbovePriceMin = price > 0 ? (allCostsAbovePriceMin / price) * 100 : 0;
+    const percentAbovePriceMax = price > 0 ? (allCostsAbovePriceMax / price) * 100 : 0;
 
     return {
       price,
@@ -335,20 +349,29 @@ export function TrueCostCalculator() {
       purchaseTax,
       effectiveTaxRate,
       taxSavings,
-      lawyerFee,
-      agentFee,
-      developerLawyerFee,
+      lawyerFeeMin,
+      lawyerFeeMax,
+      agentFeeMin,
+      agentFeeMax,
+      developerLawyerFeeMin,
+      developerLawyerFeeMax,
       bankGuaranteeFee,
-      madadCost,
+      madadCostMin,
+      madadCostMax,
       mortgageCosts,
       tabuRegistration: FEES.tabuRegistration,
       movingCost,
       furnitureCost,
       renovationCost,
       monthlyCosts,
-      totalOneTime,
-      allCostsAbovePrice,
-      percentAbovePrice,
+      monthlyMin,
+      monthlyMax,
+      totalOneTimeMin,
+      totalOneTimeMax,
+      allCostsAbovePriceMin,
+      allCostsAbovePriceMax,
+      percentAbovePriceMin,
+      percentAbovePriceMax,
       cityName: cities?.find(c => c.slug === selectedCity)?.name,
       isNewConstruction,
       minDownPaymentPercent,
@@ -361,41 +384,44 @@ export function TrueCostCalculator() {
   // Generate personalized insights
   const trueCostInsights = useMemo(() => {
     const messages: string[] = [];
-    const overheadPercent = calculations.percentAbovePrice;
+    const overheadPercent = calculations.percentAbovePriceMin;
     const taxSavings = calculations.taxSavings;
     const price = calculations.price;
     
-    // Day-one cash summary — uses actual down payment if mortgage enabled, else LTV default
-    const dayOneCash = includeMortgageCosts
-      ? calculations.allCostsAbovePrice + calculations.downPaymentAmount
-      : calculations.allCostsAbovePrice + (price * (1 - (buyerCategory === 'non_resident' ? 0.50 : buyerCategory === 'additional' ? 0.70 : 0.75)));
-    messages.push(`You'll need roughly ${formatPrice(Math.round(dayOneCash))} in cash before getting the keys — that's your down payment plus all closing costs.`);
+    // Day-one cash summary — range
+    const dayOneCashMin = includeMortgageCosts
+      ? calculations.allCostsAbovePriceMin + calculations.downPaymentAmount
+      : calculations.allCostsAbovePriceMin + (price * (1 - (buyerCategory === 'non_resident' ? 0.50 : buyerCategory === 'additional' ? 0.70 : 0.75)));
+    const dayOneCashMax = includeMortgageCosts
+      ? calculations.allCostsAbovePriceMax + calculations.downPaymentAmount
+      : calculations.allCostsAbovePriceMax + (price * (1 - (buyerCategory === 'non_resident' ? 0.50 : buyerCategory === 'additional' ? 0.70 : 0.75)));
+    messages.push(`You'll need roughly ${formatPrice(Math.round(dayOneCashMin))}–${formatPrice(Math.round(dayOneCashMax))} in cash before getting the keys — that's your down payment plus all closing costs.`);
     
     // Overhead context
     if (overheadPercent > 10) {
-      messages.push(`Costs above the listing price total ${overheadPercent.toFixed(0)}% — higher than average. Review each line item for savings.`);
+      messages.push(`Costs above the listing price total ${overheadPercent.toFixed(0)}–${calculations.percentAbovePriceMax.toFixed(0)}% — higher than average. Review each line item for savings.`);
     } else if (overheadPercent < 7) {
-      messages.push(`At ${overheadPercent.toFixed(0)}% overhead, your costs are lean for an Israeli purchase.`);
+      messages.push(`At ${overheadPercent.toFixed(0)}–${calculations.percentAbovePriceMax.toFixed(0)}% overhead, your costs are lean for an Israeli purchase.`);
     }
     
-    // Agent fee negotiation tip (only when agent fee is significant)
-    if (calculations.agentFee > 30000) {
+    // Agent fee negotiation tip
+    if (calculations.agentFeeMin > 30000) {
       const halfPercentSaving = Math.round(price * 0.005 * 1.18);
       messages.push(`Agent fees are negotiable — even 0.5% less saves you ${formatPrice(halfPercentSaving)}.`);
     }
     
-    // Tax savings (only if not already at 3)
+    // Tax savings
     if (messages.length < 3 && taxSavings > 50000 && (buyerCategory === 'first_time' || buyerCategory === 'oleh')) {
       messages.push(`As a ${buyerCategory === 'oleh' ? 'new Oleh' : 'first-time buyer'}, you're saving ${formatPrice(Math.round(taxSavings))} in purchase tax vs. investor rates.`);
     }
     
-    // Madad (only if not already at 3)
-    if (messages.length < 3 && isNewConstruction && calculations.madadCost > 0) {
-      messages.push(`Construction index linkage adds ${formatPrice(Math.round(calculations.madadCost))} to your final price — factor this into your budget now.`);
+    // Madad
+    if (messages.length < 3 && isNewConstruction && calculations.madadCostMin > 0) {
+      messages.push(`Construction index linkage could add ${formatPrice(Math.round(calculations.madadCostMin))}–${formatPrice(Math.round(calculations.madadCostMax))} to your final price — factor this into your budget now.`);
     }
     
     return messages.slice(0, 3);
-  }, [calculations, buyerCategory, isNewConstruction, formatPrice]);
+  }, [calculations, buyerCategory, isNewConstruction, formatPrice, includeMortgageCosts]);
 
   // Save inputs
   const handleSave = () => {
@@ -421,12 +447,17 @@ export function TrueCostCalculator() {
         calculatorType: 'truecost',
         inputs: data,
         results: {
-          totalCost: calculations.totalOneTime,
+          totalCostMin: calculations.totalOneTimeMin,
+          totalCostMax: calculations.totalOneTimeMax,
           purchaseTax: calculations.purchaseTax,
-          allCostsAbovePrice: calculations.allCostsAbovePrice,
-          percentAbovePrice: calculations.percentAbovePrice,
-          lawyerFee: calculations.lawyerFee,
-          agentFee: calculations.agentFee,
+          allCostsAbovePriceMin: calculations.allCostsAbovePriceMin,
+          allCostsAbovePriceMax: calculations.allCostsAbovePriceMax,
+          percentAbovePriceMin: calculations.percentAbovePriceMin,
+          percentAbovePriceMax: calculations.percentAbovePriceMax,
+          lawyerFeeMin: calculations.lawyerFeeMin,
+          lawyerFeeMax: calculations.lawyerFeeMax,
+          agentFeeMin: calculations.agentFeeMin,
+          agentFeeMax: calculations.agentFeeMax,
         },
       });
     } else {
@@ -434,11 +465,12 @@ export function TrueCostCalculator() {
     }
   };
 
-  // Calculate visual breakdown percentages
+  // Calculate visual breakdown percentages (use midpoint for bar)
   const propertyPercent = useMemo(() => {
-    if (calculations.totalOneTime <= 0) return 80;
-    return Math.round((calculations.price / calculations.totalOneTime) * 100);
-  }, [calculations.price, calculations.totalOneTime]);
+    const midTotal = (calculations.totalOneTimeMin + calculations.totalOneTimeMax) / 2;
+    if (midTotal <= 0) return 80;
+    return Math.round((calculations.price / midTotal) * 100);
+  }, [calculations.price, calculations.totalOneTimeMin, calculations.totalOneTimeMax]);
   
   const costsPercent = 100 - propertyPercent;
 
@@ -568,17 +600,15 @@ export function TrueCostCalculator() {
         <CardContent className="p-5 space-y-4">
           <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Advanced Options</h3>
           
-          {!isNewConstruction && (
-            <div className="rounded-lg border border-border/50 bg-muted/20">
-              <div className="flex items-center justify-between px-4 py-3">
-                <span className="text-sm font-medium">Include Agent Fee</span>
-                <Switch
-                  checked={includeAgentFee}
-                  onCheckedChange={setIncludeAgentFee}
-                />
-              </div>
+          <div className="rounded-lg border border-border/50 bg-muted/20">
+            <div className="flex items-center justify-between px-4 py-3">
+              <span className="text-sm font-medium">Include Agent Fee</span>
+              <Switch
+                checked={includeAgentFee}
+                onCheckedChange={setIncludeAgentFee}
+              />
             </div>
-          )}
+          </div>
 
           <div className="rounded-lg border border-border/50 bg-muted/20">
             <div className="flex items-center justify-between px-4 py-3">
@@ -716,16 +746,16 @@ export function TrueCostCalculator() {
       <div className="p-6 bg-gradient-to-br from-primary/5 via-background to-background border-b border-border">
         <p className="text-sm text-muted-foreground text-center mb-1">Total Cash Needed</p>
         <motion.p 
-          className="text-4xl md:text-5xl font-bold text-center bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent tracking-tight"
+          className="text-3xl md:text-4xl font-bold text-center bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent tracking-tight"
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          key={calculations.totalOneTime}
+          key={`${calculations.totalOneTimeMin}-${calculations.totalOneTimeMax}`}
           transition={{ duration: 0.3 }}
         >
-          {formatPrice(Math.round(calculations.totalOneTime))}
+          {formatPrice(Math.round(calculations.totalOneTimeMin))} – {formatPrice(Math.round(calculations.totalOneTimeMax))}
         </motion.p>
         <p className="text-sm text-muted-foreground text-center mt-2">
-          +{formatPrice(Math.round(calculations.allCostsAbovePrice))} ({calculations.percentAbovePrice.toFixed(1)}%) above list price
+          +{formatPrice(Math.round(calculations.allCostsAbovePriceMin))}–{formatPrice(Math.round(calculations.allCostsAbovePriceMax))} ({calculations.percentAbovePriceMin.toFixed(1)}–{calculations.percentAbovePriceMax.toFixed(1)}%) above list price
         </p>
       </div>
 
@@ -741,13 +771,15 @@ export function TrueCostCalculator() {
         </div>
         <div className="p-4">
           <p className="text-xs text-muted-foreground">Lawyer Fees</p>
-          <p className="text-lg font-semibold mt-0.5">{formatPrice(Math.round(calculations.lawyerFee))}</p>
+          <p className="text-lg font-semibold mt-0.5">{formatPrice(Math.round(calculations.lawyerFeeMin))} – {formatPrice(Math.round(calculations.lawyerFeeMax))}</p>
+          <p className="text-[10px] text-muted-foreground">0.5–1% + VAT</p>
         </div>
         <div className="p-4">
           <p className="text-xs text-muted-foreground">Agent Fees</p>
           <p className="text-lg font-semibold mt-0.5">
-            {calculations.agentFee > 0 ? formatPrice(Math.round(calculations.agentFee)) : 'N/A'}
+            {calculations.agentFeeMin > 0 ? `${formatPrice(Math.round(calculations.agentFeeMin))} – ${formatPrice(Math.round(calculations.agentFeeMax))}` : 'N/A'}
           </p>
+          {calculations.agentFeeMin > 0 && <p className="text-[10px] text-muted-foreground">1.5–2.5% + VAT</p>}
         </div>
         <div className="p-4">
           <div className="flex items-center gap-1">
@@ -759,17 +791,17 @@ export function TrueCostCalculator() {
       </div>
 
       {/* New Construction Extras */}
-      {isNewConstruction && (calculations.madadCost > 0 || calculations.developerLawyerFee > 0) && (
+      {isNewConstruction && (calculations.madadCostMin > 0 || calculations.developerLawyerFeeMin > 0) && (
         <div className="px-4 py-3 bg-semantic-amber/10 border-t border-semantic-amber">
           <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wide font-medium">New Construction Costs</p>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground flex items-center gap-1">Index Linkage (Madad)<InfoTooltip content="New construction prices are linked to the building cost index. Typical increase is 3–8% over 2–3 years of construction." /></span>
-            <span className="font-medium text-semantic-amber-foreground">{formatPrice(Math.round(calculations.madadCost))}</span>
+            <span className="font-medium text-semantic-amber-foreground">{formatPrice(Math.round(calculations.madadCostMin))} – {formatPrice(Math.round(calculations.madadCostMax))}</span>
           </div>
-          {calculations.developerLawyerFee > 0 && (
+          {calculations.developerLawyerFeeMin > 0 && (
             <div className="flex justify-between text-sm mt-1">
               <span className="text-muted-foreground">Developer Lawyer</span>
-              <span className="font-medium">{formatPrice(Math.round(calculations.developerLawyerFee))}</span>
+              <span className="font-medium">{formatPrice(Math.round(calculations.developerLawyerFeeMin))} – {formatPrice(Math.round(calculations.developerLawyerFeeMax))}</span>
             </div>
           )}
         </div>
@@ -792,7 +824,7 @@ export function TrueCostCalculator() {
         </div>
         <div className="flex items-center justify-between text-xs mt-1.5">
           <span className="font-medium">{formatPrice(calculations.price)}</span>
-          <span className="font-medium">{formatPrice(Math.round(calculations.allCostsAbovePrice))}</span>
+          <span className="font-medium">{formatPrice(Math.round(calculations.allCostsAbovePriceMin))}–{formatPrice(Math.round(calculations.allCostsAbovePriceMax))}</span>
         </div>
       </div>
 
@@ -802,13 +834,12 @@ export function TrueCostCalculator() {
         <div className="flex justify-between items-center">
           <div>
             <span className="text-lg font-semibold">
-              {formatPrice(Math.round(calculations.monthlyCosts.arnona + calculations.monthlyCosts.vaadBayit + 150))}
+              {formatPrice(calculations.monthlyMin)} – {formatPrice(calculations.monthlyMax)}
             </span>
             <span className="text-sm text-muted-foreground">/mo</span>
           </div>
           <div className="text-xs text-muted-foreground text-right">
-            <p>Arnona: {formatPrice(Math.round(calculations.monthlyCosts.arnona))}</p>
-            <p>Va'ad: {formatPrice(Math.round(calculations.monthlyCosts.vaadBayit))}</p>
+            <p>Arnona, Va'ad Bayit, Insurance</p>
           </div>
         </div>
         {!selectedCity && (
@@ -941,7 +972,7 @@ export function TrueCostCalculator() {
       show={showSavePrompt}
       calculatorName="true cost"
       onDismiss={dismissSavePrompt}
-      resultSummary={`Total cost: ${formatPrice(Math.round(calculations.totalOneTime))}`}
+      resultSummary={`Total cost: ${formatPrice(Math.round(calculations.totalOneTimeMin))}–${formatPrice(Math.round(calculations.totalOneTimeMax))}`}
     />
     </>
   );
