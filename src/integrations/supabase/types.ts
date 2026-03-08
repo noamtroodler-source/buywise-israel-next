@@ -2017,6 +2017,7 @@ export type Database = {
           id: string
           is_active: boolean
           is_free_credit: boolean
+          payplus_subscription_id: string | null
           property_id: string
           started_at: string
         }
@@ -2027,6 +2028,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_free_credit?: boolean
+          payplus_subscription_id?: string | null
           property_id: string
           started_at?: string
         }
@@ -2037,6 +2039,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_free_credit?: boolean
+          payplus_subscription_id?: string | null
           property_id?: string
           started_at?: string
         }
@@ -5001,6 +5004,9 @@ export type Database = {
           entity_id: string
           entity_type: string
           id: string
+          is_founding_partner: boolean | null
+          payplus_customer_id: string | null
+          payplus_subscription_id: string | null
           plan_id: string
           status: string
           stripe_customer_id: string | null
@@ -5019,6 +5025,9 @@ export type Database = {
           entity_id: string
           entity_type: string
           id?: string
+          is_founding_partner?: boolean | null
+          payplus_customer_id?: string | null
+          payplus_subscription_id?: string | null
           plan_id: string
           status?: string
           stripe_customer_id?: string | null
@@ -5037,6 +5046,9 @@ export type Database = {
           entity_id?: string
           entity_type?: string
           id?: string
+          is_founding_partner?: boolean | null
+          payplus_customer_id?: string | null
+          payplus_subscription_id?: string | null
           plan_id?: string
           status?: string
           stripe_customer_id?: string | null

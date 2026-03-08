@@ -28,6 +28,7 @@ interface PlanCardProps {
   onSubscribe: () => void;
   loading?: boolean;
   promoResult?: PromoResult | null;
+  ctaLabel?: string;
 }
 
 export function PlanCard({
@@ -45,6 +46,7 @@ export function PlanCard({
   onSubscribe,
   loading,
   promoResult,
+  ctaLabel: ctaLabelOverride,
 }: PlanCardProps) {
   const [salesDialogOpen, setSalesDialogOpen] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
@@ -69,15 +71,17 @@ export function PlanCard({
     pro: 'Go Pro Annual',
   };
 
-  const ctaLabel = isCurrentPlan
-    ? 'Current Plan'
-    : loading
-      ? 'Loading...'
-      : hasTrialPromo
-        ? `Start ${trialDays}-Day Free Trial`
-        : billingCycle === 'annual'
-          ? (ANNUAL_CTA[tier] ?? 'Get Annual Plan')
-          : (MONTHLY_CTA[tier] ?? 'Subscribe');
+  const ctaLabel = ctaLabelOverride
+    ? (isCurrentPlan ? 'Current Plan' : loading ? 'Loading...' : ctaLabelOverride)
+    : isCurrentPlan
+      ? 'Current Plan'
+      : loading
+        ? 'Loading...'
+        : hasTrialPromo
+          ? `Start ${trialDays}-Day Free Trial`
+          : billingCycle === 'annual'
+            ? (ANNUAL_CTA[tier] ?? 'Get Annual Plan')
+            : (MONTHLY_CTA[tier] ?? 'Subscribe');
 
   const handleSubscribeClick = () => {
     if (billingCycle === 'annual') {
