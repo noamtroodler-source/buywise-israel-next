@@ -338,8 +338,18 @@ export function TrueCostCalculator() {
     const allCostsAbovePriceMax = purchaseTax + lawyerFeeMax + agentFeeMax + developerLawyerFeeMax + 
       bankGuaranteeFee + madadCostMax + mortgageCosts + FEES.tabuRegistration + movingCost + furnitureCost + renovationCost;
     
-    const totalOneTimeMin = price + allCostsAbovePriceMin;
-    const totalOneTimeMax = price + allCostsAbovePriceMax;
+    // Total true cost (full price + all fees)
+    const totalTrueCostMin = price + allCostsAbovePriceMin;
+    const totalTrueCostMax = price + allCostsAbovePriceMax;
+    
+    // Total cash needed: if mortgage enabled, cash = down payment + closing costs; otherwise full price + costs
+    const totalCashNeededMin = includeMortgageCosts 
+      ? downPaymentAmount + allCostsAbovePriceMin 
+      : totalTrueCostMin;
+    const totalCashNeededMax = includeMortgageCosts 
+      ? downPaymentAmount + allCostsAbovePriceMax 
+      : totalTrueCostMax;
+    
     const percentAbovePriceMin = price > 0 ? (allCostsAbovePriceMin / price) * 100 : 0;
     const percentAbovePriceMax = price > 0 ? (allCostsAbovePriceMax / price) * 100 : 0;
 
