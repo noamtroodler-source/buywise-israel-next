@@ -1170,10 +1170,10 @@ export function RentVsBuyCalculator() {
         <InsightCard insights={insights} />
       )}
 
-      {/* Source Attribution */}
+      {/* 4. Sources */}
       <SourceAttribution toolType="rentVsBuy" />
 
-
+      {/* 5. Property Carousel */}
       {calculations && (() => {
         const cityName = cities?.find(c => c.slug === selectedCity)?.name;
         return (
@@ -1188,7 +1188,7 @@ export function RentVsBuyCalculator() {
         );
       })()}
 
-      {/* 6. Explore - Navigation Cards */}
+      {/* 6. Continue Exploring */}
       <div className="space-y-3 pt-2">
         <div className="flex items-center gap-2">
           <div className="h-px flex-1 bg-border/60" />
@@ -1202,15 +1202,12 @@ export function RentVsBuyCalculator() {
         </div>
       </div>
 
-    </div>
-  );
-  
-  // Disclaimer
-  const disclaimer = (
-    <div className="space-y-4">
+      {/* 7. Disclaimer */}
       <ToolDisclaimer 
         text="This calculator provides estimates for educational purposes. Actual costs vary based on specific properties, lender terms, and market conditions. Consult with local professionals for personalized advice."
       />
+
+      {/* 8. Feedback */}
       <div className="text-center">
         <ToolFeedback toolName="rent-vs-buy-calculator" variant="inline" />
       </div>
