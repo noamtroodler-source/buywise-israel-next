@@ -254,6 +254,7 @@ export function RentVsBuyCalculator() {
         if (data.buyerType) setBuyerType(data.buyerType);
         if (data.downPaymentPercent) setDownPaymentPercent(data.downPaymentPercent);
         if (data.interestRate) setInterestRate(data.interestRate);
+        if (data.mortgageTerm) setMortgageTerm(data.mortgageTerm);
         if (data.timeHorizon) setTimeHorizon(data.timeHorizon);
         if (data.appreciation) setAppreciation(data.appreciation);
         if (data.rentIncrease) setRentIncrease(data.rentIncrease);
