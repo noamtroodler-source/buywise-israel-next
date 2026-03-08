@@ -13,6 +13,7 @@ interface ToolPropertySuggestionsProps {
   subtitle?: string;
   minPrice: number;
   maxPrice: number;
+  city?: string;
   listingStatus?: 'for_sale' | 'for_rent';
   enabled?: boolean;
 }
@@ -22,12 +23,14 @@ export function ToolPropertySuggestions({
   subtitle,
   minPrice,
   maxPrice,
+  city,
   listingStatus = 'for_sale',
   enabled = true,
 }: ToolPropertySuggestionsProps) {
   const { data: properties, isLoading } = useToolPropertySuggestions({
     minPrice,
     maxPrice,
+    city,
     listingStatus,
     enabled,
   });
