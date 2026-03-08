@@ -225,7 +225,7 @@ export function TrueCostCalculator() {
         setIsNewConstruction(data.isNewConstruction || false);
         setConstructionMonths(data.constructionMonths || '24');
         setIncludeAgentFee(data.includeAgentFee ?? true);
-        setIncludeMortgageCosts(data.includeMortgageCosts || false);
+        setIncludeMortgageCosts(data.includeMortgageCosts ?? true);
         if (data.downPaymentPercent != null) setDownPaymentPercent(data.downPaymentPercent);
         setIncludeMoving(data.includeMoving || false);
         setIncludeFurniture(data.includeFurniture || false);
