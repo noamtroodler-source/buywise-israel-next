@@ -223,7 +223,7 @@ export function TrueCostCalculator() {
         setConstructionMonths(data.constructionMonths || '24');
         setIncludeAgentFee(data.includeAgentFee ?? true);
         setIncludeMortgageCosts(data.includeMortgageCosts || false);
-        setLoanAmount(data.loanAmount || '1500000');
+        if (data.downPaymentPercent != null) setDownPaymentPercent(data.downPaymentPercent);
         setIncludeMoving(data.includeMoving || false);
         setIncludeFurniture(data.includeFurniture || false);
         setFurnitureLevel(data.furnitureLevel || 'standard');
