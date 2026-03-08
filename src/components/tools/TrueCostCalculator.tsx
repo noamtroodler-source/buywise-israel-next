@@ -605,17 +605,26 @@ export function TrueCostCalculator() {
                     </div>
                     
                     {includeMortgageCosts && (
-                      <div className="flex items-center gap-2 pl-4 border-l-2 border-primary/20">
-                        <Label className="text-xs text-muted-foreground whitespace-nowrap">Loan amount</Label>
-                        <div className="relative flex-1 max-w-[180px]">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{currencySymbol}</span>
-                          <Input
-                            type="text"
-                            value={formatNumber(parseFormattedNumber(loanAmount))}
-                            onChange={(e) => setLoanAmount(e.target.value.replace(/[^\d]/g, ''))}
-                            className="pl-7 h-8 text-sm"
-                          />
+                      <div className="space-y-2.5 pl-4 border-l-2 border-primary/20">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-xs text-muted-foreground">Down payment</Label>
+                          <span className="text-sm font-semibold text-foreground">{calculations.effectiveDownPaymentPercent}%</span>
                         </div>
+                        <Slider
+                          value={[calculations.effectiveDownPaymentPercent]}
+                          onValueChange={([v]) => setDownPaymentPercent(v)}
+                          min={calculations.minDownPaymentPercent}
+                          max={80}
+                          step={5}
+                          className="w-full"
+                        />
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>Down: {formatPrice(calculations.downPaymentAmount)}</span>
+                          <span>Loan: {formatPrice(calculations.derivedLoanAmount)}</span>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground/70">
+                          Min {calculations.minDownPaymentPercent}% required for your buyer type
+                        </p>
                       </div>
                     )}
                   </div>
