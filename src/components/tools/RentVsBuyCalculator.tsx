@@ -1218,7 +1218,6 @@ export function RentVsBuyCalculator() {
       leftColumn={leftColumn}
       rightColumn={rightColumn}
       bottomSection={bottomSection}
-      sourceAttribution={<SourceAttribution toolType="rentVsBuy" />}
       disclaimer={disclaimer}
     />
     <SaveResultsPrompt
