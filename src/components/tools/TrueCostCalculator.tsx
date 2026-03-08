@@ -477,12 +477,12 @@ export function TrueCostCalculator() {
     }
   };
 
-  // Calculate visual breakdown percentages (use midpoint for bar)
+  // Calculate visual breakdown percentages (use true cost midpoint for bar)
   const propertyPercent = useMemo(() => {
-    const midTotal = (calculations.totalOneTimeMin + calculations.totalOneTimeMax) / 2;
+    const midTotal = (calculations.totalTrueCostMin + calculations.totalTrueCostMax) / 2;
     if (midTotal <= 0) return 80;
     return Math.round((calculations.price / midTotal) * 100);
-  }, [calculations.price, calculations.totalOneTimeMin, calculations.totalOneTimeMax]);
+  }, [calculations.price, calculations.totalTrueCostMin, calculations.totalTrueCostMax]);
   
   const costsPercent = 100 - propertyPercent;
 
