@@ -901,31 +901,31 @@ export function TrueCostCalculator() {
           <CollapsibleContent>
             <div className="px-4 pb-4 space-y-4">
               <p className="text-sm text-muted-foreground">
-                Israeli property purchases typically add 8-12% on top of the listing price. Here's what to expect:
+                Israeli property purchases typically add 8–15% on top of the listing price. Here's what to expect:
               </p>
               <div className="grid sm:grid-cols-2 gap-3">
                 <div className="p-3 rounded-lg bg-muted/50 border">
                   <p className="font-medium text-sm mb-1">Purchase Tax (מס רכישה)</p>
                   <p className="text-xs text-muted-foreground">
-                    Progressive tax on all property purchases. First-time buyers and Olim get significant exemptions on properties under ~₪1.8M.
+                    Progressive tax on all purchases. First-time buyers and Olim get significant exemptions on properties under ~₪2M. Investors pay from the first shekel (3.5–10%).
                   </p>
                 </div>
                 <div className="p-3 rounded-lg bg-muted/50 border">
                   <p className="font-medium text-sm mb-1">Agent Fees (תיווך)</p>
                   <p className="text-xs text-muted-foreground">
-                    2% + VAT is standard for resale. New construction is typically sold direct by developers (no agent fee).
+                    1.5–2.5% + VAT is typical. International buyers often use agents for both resale and new construction.
                   </p>
                 </div>
                 <div className="p-3 rounded-lg bg-muted/50 border">
                   <p className="font-medium text-sm mb-1">Legal Fees (שכ"ט עו"ד)</p>
                   <p className="text-xs text-muted-foreground">
-                    0.5% + VAT to your lawyer. New construction adds ~1.5% for the developer's lawyer.
+                    0.5–1% + VAT to your lawyer. New construction adds 1–2% for the developer's lawyer (mandatory).
                   </p>
                 </div>
                 <div className="p-3 rounded-lg bg-muted/50 border">
                   <p className="font-medium text-sm mb-1">Index Linkage (הצמדה)</p>
                   <p className="text-xs text-muted-foreground">
-                    New construction prices rise with the building cost index during construction—typically 3-8% over 2-3 years.
+                    New construction prices are linked to the building cost index during construction—typically 3–8% over 2–3 years.
                   </p>
                 </div>
               </div>
