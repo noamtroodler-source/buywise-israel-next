@@ -801,13 +801,13 @@ export function TrueCostCalculator() {
         </div>
         <div className="p-4">
           <div className="flex items-center gap-1">
-            <p className="text-xs text-muted-foreground">{includeMortgageCosts ? 'Fees & Registration' : 'Registration'}</p>
+            <p className="text-xs text-muted-foreground">{includeMortgageCosts ? 'Fees & Gov.' : 'Registration'}</p>
             <InfoTooltip content={includeMortgageCosts 
               ? `Tabu registration (${formatPrice(calculations.tabuRegistration)}) + Appraisal (${formatPrice(calculations.appraisalFee)}) + Mortgage reg. (${formatPrice(calculations.mortgageRegistrationFee)}) + Bank fees (${formatPrice(calculations.bankFees)})`
               : "Tabu (land registry) registration fees"} />
           </div>
           <p className="text-lg font-semibold mt-0.5">{formatPrice(calculations.tabuRegistration + calculations.mortgageCosts)}</p>
-          {includeMortgageCosts && <p className="text-[10px] text-muted-foreground">Tabu + Appraisal + Bank</p>}
+          {includeMortgageCosts && <p className="text-[10px] text-muted-foreground">incl. mortgage fees</p>}
         </div>
       </div>
 
