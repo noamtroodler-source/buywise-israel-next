@@ -1151,44 +1151,6 @@ export function RentVsBuyCalculator() {
         <InsightCard insights={insights} />
       )}
 
-      {/* 4. Understand - Educational */}
-      <Collapsible>
-        <div className="rounded-lg border border-border/50 bg-muted/20">
-          <CollapsibleTrigger className="w-full px-5 py-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-medium flex items-center gap-2">
-                <Lightbulb className="h-4 w-4 text-primary" />
-                Understanding Rent vs Buy in Israel
-              </h3>
-              <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 [[data-state=open]_&]:rotate-180" />
-            </div>
-          </CollapsibleTrigger>
-          
-          <CollapsibleContent>
-            <div className="px-5 pb-5 space-y-4 text-sm text-muted-foreground">
-              <div>
-                <h4 className="font-medium text-foreground mb-1">Price-to-Rent Ratios</h4>
-                <p>Israeli markets typically show ratios of 250-350 (property price / annual rent). Higher ratios favor renting; lower ratios favor buying. Your ratio: <span className="font-medium text-foreground">{calculations.priceToRentRatio.toFixed(0)}</span>.</p>
-              </div>
-              
-              <div>
-                <h4 className="font-medium text-foreground mb-1">Break-Even Reality</h4>
-                <p>In Israeli cities, break-even often takes 7-12 years due to high prices and significant upfront costs (Mas Rechisha, agent fees). This calculator accounts for all exit costs including potential Mas Shevach.</p>
-              </div>
-              
-              <div>
-                <h4 className="font-medium text-foreground mb-1">Mas Shevach (Capital Gains Tax)</h4>
-                <p>Primary residence sales are typically exempt. Investment properties face 25% tax on inflation-adjusted gains. This matters for your exit calculation.</p>
-              </div>
-              
-              <div>
-                <h4 className="font-medium text-foreground mb-1">Israeli Rental Market</h4>
-                <p>Most rentals use 1-2 year contracts with annual increases tied to the CPI or fixed percentages (3-5%). Long-term renting is viable but requires budgeting for rising costs.</p>
-              </div>
-            </div>
-          </CollapsibleContent>
-        </div>
-      </Collapsible>
       
       {/* 5. Act - Property Suggestions */}
       {calculations && (
