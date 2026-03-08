@@ -595,64 +595,7 @@ function MortgageCalculatorContent() {
         <InsightCard insights={insights} />
       )}
 
-      {/* 2. Act */}
-      <ToolPropertySuggestions
-        title="Homes at This Price Point"
-        subtitle="Browse listings that match your mortgage scenario"
-        minPrice={Math.round(propertyPrice * 0.8)}
-        maxPrice={Math.round(propertyPrice * 1.2)}
-        enabled={propertyPrice !== DEFAULTS.propertyPrice}
-      />
-
-      {/* 3. Explore - Next Steps Grid */}
-      <div className="grid sm:grid-cols-3 gap-4">
-        <Link 
-          to="/tools?tool=affordability"
-          className="group p-5 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-md transition-all"
-        >
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 rounded-lg bg-primary/10 text-primary">
-              <Calculator className="h-5 w-5" />
-            </div>
-            <p className="font-semibold">Affordability</p>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            See how much home you can afford
-          </p>
-        </Link>
-
-        <Link 
-          to={`/listings?max_price=${Math.round(propertyPrice * 1.1)}`}
-          className="group p-5 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-md transition-all"
-        >
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 rounded-lg bg-primary/10 text-primary">
-              <Home className="h-5 w-5" />
-            </div>
-            <p className="font-semibold">Browse Properties</p>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Find listings in your budget
-          </p>
-        </Link>
-
-        <Link 
-          to="/guides/mortgages"
-          className="group p-5 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-md transition-all"
-        >
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 rounded-lg bg-primary/10 text-primary">
-              <BookOpen className="h-5 w-5" />
-            </div>
-            <p className="font-semibold">Mortgages Guide</p>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Understand Israeli mortgage rules
-          </p>
-        </Link>
-      </div>
-
-      {/* 4. Understand - Educational Sections */}
+      {/* 2. Understand - Educational Sections */}
       <div className="space-y-4">
         {/* Israeli Mortgage Tracks Section */}
         <Collapsible open={isTracksOpen} onOpenChange={setIsTracksOpen}>
@@ -774,19 +717,40 @@ function MortgageCalculatorContent() {
         </Collapsible>
       </div>
 
-      {/* 5. Trust */}
-      <ToolGuidanceHint
-        variant="expert-tip"
-        message="Non-Israeli residents are typically required to hold a life insurance policy as a condition of mortgage approval in Israel."
+      {/* 3. Sources */}
+      <SourceAttribution toolType="mortgage" />
+
+      {/* 4. Property Carousel */}
+      <ToolPropertySuggestions
+        title="Homes at This Price Point"
+        subtitle="Browse listings that match your mortgage scenario"
+        minPrice={Math.round(propertyPrice * 0.8)}
+        maxPrice={Math.round(propertyPrice * 1.2)}
+        enabled={propertyPrice !== DEFAULTS.propertyPrice}
       />
 
-      {/* 6. Engage */}
-      <ToolFeedback toolName="mortgage-calculator" variant="inline" />
-    </div>
-  );
+      {/* 5. Continue Exploring */}
+      <div className="space-y-3 pt-2">
+        <div className="flex items-center gap-2">
+          <div className="h-px flex-1 bg-border/60" />
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Continue exploring</span>
+          <div className="h-px flex-1 bg-border/60" />
+        </div>
+        <div className="grid sm:grid-cols-3 gap-4">
+          <Link to="/tools?tool=affordability"><Card className="p-4 cursor-pointer hover:border-primary/50 transition-colors group h-full"><Calculator className="h-5 w-5 text-primary mb-2" /><h4 className="font-medium text-sm group-hover:text-primary transition-colors">Affordability</h4><p className="text-xs text-muted-foreground mt-1">See how much home you can afford</p></Card></Link>
+          <Link to={`/listings?max_price=${Math.round(propertyPrice * 1.1)}`}><Card className="p-4 cursor-pointer hover:border-primary/50 transition-colors group h-full"><Home className="h-5 w-5 text-primary mb-2" /><h4 className="font-medium text-sm group-hover:text-primary transition-colors">Browse Properties</h4><p className="text-xs text-muted-foreground mt-1">Find listings in your budget</p></Card></Link>
+          <Link to="/guides/mortgages"><Card className="p-4 cursor-pointer hover:border-primary/50 transition-colors group h-full"><BookOpen className="h-5 w-5 text-primary mb-2" /><h4 className="font-medium text-sm group-hover:text-primary transition-colors">Mortgages Guide</h4><p className="text-xs text-muted-foreground mt-1">Understand Israeli mortgage rules</p></Card></Link>
+        </div>
+      </div>
 
-  const disclaimer = (
-    <ToolDisclaimer variant="mortgage" />
+      {/* 6. Disclaimer */}
+      <ToolDisclaimer variant="mortgage" />
+
+      {/* 7. Feedback */}
+      <div className="text-center">
+        <ToolFeedback toolName="mortgage-calculator" variant="inline" />
+      </div>
+    </div>
   );
 
   return (
@@ -799,8 +763,6 @@ function MortgageCalculatorContent() {
         leftColumn={leftColumn}
         rightColumn={rightColumn}
         bottomSection={bottomSection}
-        sourceAttribution={<SourceAttribution toolType="mortgage" />}
-        disclaimer={disclaimer}
       />
       <SaveResultsPrompt
         show={showSavePrompt}

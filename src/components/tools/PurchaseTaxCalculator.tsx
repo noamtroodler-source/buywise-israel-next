@@ -459,58 +459,33 @@ export function PurchaseTaxCalculator() {
 
   const bottomSection = (
     <div className="space-y-6">
+      {/* 1. Interpret */}
       {insights.length > 0 && <InsightCard insights={insights} />}
       
-      {/* Next Steps Grid */}
-      <div className="grid sm:grid-cols-3 gap-4">
-        <Link 
-          to="/tools?tool=totalcost"
-          className="group p-5 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-md transition-all"
-        >
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 rounded-lg bg-primary/10 text-primary">
-              <Calculator className="h-5 w-5" />
-            </div>
-            <p className="font-semibold">True Cost Calculator</p>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            See all purchase costs together
-          </p>
-        </Link>
+      {/* 2. Sources */}
+      <SourceAttribution toolType="purchaseTax" />
 
-        <Link 
-          to="/tools?tool=mortgage"
-          className="group p-5 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-md transition-all"
-        >
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 rounded-lg bg-primary/10 text-primary">
-              <Wallet className="h-5 w-5" />
-            </div>
-            <p className="font-semibold">Mortgage Calculator</p>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Calculate monthly payments
-          </p>
-        </Link>
-
-        <Link 
-          to="/guides/purchase-tax"
-          className="group p-5 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-md transition-all"
-        >
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 rounded-lg bg-primary/10 text-primary">
-              <BookOpen className="h-5 w-5" />
-            </div>
-            <p className="font-semibold">Purchase Tax Guide</p>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Buyer types, brackets, exemptions
-          </p>
-        </Link>
+      {/* 3. Continue Exploring */}
+      <div className="space-y-3 pt-2">
+        <div className="flex items-center gap-2">
+          <div className="h-px flex-1 bg-border/60" />
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Continue exploring</span>
+          <div className="h-px flex-1 bg-border/60" />
+        </div>
+        <div className="grid sm:grid-cols-3 gap-4">
+          <Link to="/tools?tool=totalcost"><Card className="p-4 cursor-pointer hover:border-primary/50 transition-colors group h-full"><Calculator className="h-5 w-5 text-primary mb-2" /><h4 className="font-medium text-sm group-hover:text-primary transition-colors">True Cost Calculator</h4><p className="text-xs text-muted-foreground mt-1">See all purchase costs together</p></Card></Link>
+          <Link to="/tools?tool=mortgage"><Card className="p-4 cursor-pointer hover:border-primary/50 transition-colors group h-full"><Wallet className="h-5 w-5 text-primary mb-2" /><h4 className="font-medium text-sm group-hover:text-primary transition-colors">Mortgage Calculator</h4><p className="text-xs text-muted-foreground mt-1">Calculate monthly payments</p></Card></Link>
+          <Link to="/guides/purchase-tax"><Card className="p-4 cursor-pointer hover:border-primary/50 transition-colors group h-full"><BookOpen className="h-5 w-5 text-primary mb-2" /><h4 className="font-medium text-sm group-hover:text-primary transition-colors">Purchase Tax Guide</h4><p className="text-xs text-muted-foreground mt-1">Buyer types, brackets, exemptions</p></Card></Link>
+        </div>
       </div>
-      
-      {/* Feedback */}
-      <ToolFeedback toolName="purchase-tax-calculator" variant="inline" />
+
+      {/* 4. Disclaimer */}
+      <ToolDisclaimer />
+
+      {/* 5. Feedback */}
+      <div className="text-center">
+        <ToolFeedback toolName="purchase-tax-calculator" variant="inline" />
+      </div>
     </div>
   );
 
@@ -534,8 +509,6 @@ export function PurchaseTaxCalculator() {
       leftColumn={leftColumn}
       rightColumn={rightColumn}
       bottomSection={bottomSection}
-      sourceAttribution={<SourceAttribution toolType="purchaseTax" />}
-      disclaimer={<ToolDisclaimer />}
     />
     <SaveResultsPrompt
       show={showSavePrompt}

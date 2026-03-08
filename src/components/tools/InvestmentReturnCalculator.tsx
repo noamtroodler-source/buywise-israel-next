@@ -30,6 +30,7 @@ import { ToolLayout } from '@/components/tools/shared/ToolLayout';
 import { InsightCard } from '@/components/tools/shared/InsightCard';
 import { ToolPropertySuggestions } from '@/components/tools/shared/ToolPropertySuggestions';
 import { ToolFeedback } from '@/components/tools/shared/ToolFeedback';
+import { ToolDisclaimer } from '@/components/tools/shared/ToolDisclaimer';
 import { ToolGuidanceHint } from '@/components/tools/shared/ToolGuidanceHint';
 import { Link } from 'react-router-dom';
 import { Calculator, Home, TrendingUp } from 'lucide-react';
@@ -215,27 +216,11 @@ export function InvestmentReturnCalculator() {
   ];
 
   const bottomSection = (
-    <>
+    <div className="space-y-6">
+      {/* 1. Interpret */}
       <InsightCard insights={insightCardContent} />
 
-      <ToolPropertySuggestions
-        title="Properties That Fit This Scenario"
-        subtitle="Explore listings that match your investment criteria."
-        minPrice={form.getValues("purchasePrice") * 0.8}
-        maxPrice={form.getValues("purchasePrice") * 1.2}
-      />
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Link to="/tools?tool=mortgage" className="group p-4 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-md transition-all">
-          <div className="flex items-center gap-2 mb-1"><Calculator className="h-4 w-4 text-primary" /><p className="font-semibold group-hover:text-primary transition-colors">Mortgage Calculator</p></div>
-          <p className="text-sm text-muted-foreground">Estimate your monthly mortgage payments.</p>
-        </Link>
-        <Link to="/tools?tool=affordability" className="group p-4 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-md transition-all">
-          <div className="flex items-center gap-2 mb-1"><Home className="h-4 w-4 text-primary" /><p className="font-semibold group-hover:text-primary transition-colors">Affordability Calculator</p></div>
-          <p className="text-sm text-muted-foreground">Find out what property price you can afford.</p>
-        </Link>
-      </div>
-
+      {/* 2. Understand */}
       <Accordion type="single" collapsible className="w-full">
         <AccordionItem value="how-it-works">
           <AccordionTrigger>How the Investment Return Calculator Works</AccordionTrigger>
@@ -255,23 +240,38 @@ export function InvestmentReturnCalculator() {
             </ul>
           </AccordionContent>
         </AccordionItem>
-        <AccordionItem value="disclaimer">
-          <AccordionTrigger>Disclaimer</AccordionTrigger>
-          <AccordionContent>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              This calculator provides estimates for informational purposes only and should not be
-              considered financial advice. Actual investment returns may vary based on market
-              conditions, property-specific factors, and individual circumstances. Consult with a
-              qualified financial advisor before making any investment decisions.
-            </p>
-          </AccordionContent>
-        </AccordionItem>
       </Accordion>
 
-      <ToolGuidanceHint variant="expert-tip" message="Adjust the holding period to see long-term potential." />
+      {/* 3. Property Carousel */}
+      <ToolPropertySuggestions
+        title="Properties That Fit This Scenario"
+        subtitle="Explore listings that match your investment criteria."
+        minPrice={form.getValues("purchasePrice") * 0.8}
+        maxPrice={form.getValues("purchasePrice") * 1.2}
+      />
 
-      <ToolFeedback toolName="Investment Return Calculator" variant="inline" />
-    </>
+      {/* 4. Continue Exploring */}
+      <div className="space-y-3 pt-2">
+        <div className="flex items-center gap-2">
+          <div className="h-px flex-1 bg-border/60" />
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Continue exploring</span>
+          <div className="h-px flex-1 bg-border/60" />
+        </div>
+        <div className="grid sm:grid-cols-3 gap-4">
+          <Link to="/tools?tool=mortgage"><Card className="p-4 cursor-pointer hover:border-primary/50 transition-colors group h-full"><Calculator className="h-4 w-4 text-primary mb-2" /><h4 className="font-medium text-sm group-hover:text-primary transition-colors">Mortgage Calculator</h4><p className="text-xs text-muted-foreground mt-1">Estimate your monthly mortgage payments</p></Card></Link>
+          <Link to="/tools?tool=affordability"><Card className="p-4 cursor-pointer hover:border-primary/50 transition-colors group h-full"><Home className="h-4 w-4 text-primary mb-2" /><h4 className="font-medium text-sm group-hover:text-primary transition-colors">Affordability Calculator</h4><p className="text-xs text-muted-foreground mt-1">Find out what property price you can afford</p></Card></Link>
+          <Link to="/listings"><Card className="p-4 cursor-pointer hover:border-primary/50 transition-colors group h-full"><TrendingUp className="h-4 w-4 text-primary mb-2" /><h4 className="font-medium text-sm group-hover:text-primary transition-colors">Browse Properties</h4><p className="text-xs text-muted-foreground mt-1">Find investment opportunities</p></Card></Link>
+        </div>
+      </div>
+
+      {/* 5. Disclaimer */}
+      <ToolDisclaimer text="This calculator provides estimates for informational purposes only. Actual investment returns may vary based on market conditions, property-specific factors, and individual circumstances. Consult with a qualified financial advisor before making any investment decisions." />
+
+      {/* 6. Feedback */}
+      <div className="text-center">
+        <ToolFeedback toolName="Investment Return Calculator" variant="inline" />
+      </div>
+    </div>
   );
 
   return (
@@ -584,7 +584,6 @@ export function InvestmentReturnCalculator() {
         )
       }
       bottomSection={bottomSection}
-      disclaimer="This calculator provides estimates for informational purposes only. Consult with a financial advisor for personalized advice."
     />
   );
 }
