@@ -21,6 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
+import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -197,7 +198,7 @@ export function TrueCostCalculator() {
   // Advanced options
   const [includeAgentFee, setIncludeAgentFee] = useState(true);
   const [includeMortgageCosts, setIncludeMortgageCosts] = useState(false);
-  const [loanAmount, setLoanAmount] = useState('1500000');
+  const [downPaymentPercent, setDownPaymentPercent] = useState<number | null>(null);
   const [includeMoving, setIncludeMoving] = useState(false);
   const [includeFurniture, setIncludeFurniture] = useState(false);
   const [furnitureLevel, setFurnitureLevel] = useState<'basic' | 'standard' | 'premium'>('standard');
@@ -222,7 +223,7 @@ export function TrueCostCalculator() {
         setConstructionMonths(data.constructionMonths || '24');
         setIncludeAgentFee(data.includeAgentFee ?? true);
         setIncludeMortgageCosts(data.includeMortgageCosts || false);
-        setLoanAmount(data.loanAmount || '1500000');
+        if (data.downPaymentPercent != null) setDownPaymentPercent(data.downPaymentPercent);
         setIncludeMoving(data.includeMoving || false);
         setIncludeFurniture(data.includeFurniture || false);
         setFurnitureLevel(data.furnitureLevel || 'standard');
@@ -262,7 +263,7 @@ export function TrueCostCalculator() {
     setConstructionMonths('24');
     setIncludeAgentFee(true);
     setIncludeMortgageCosts(false);
-    setLoanAmount('1500000');
+    setDownPaymentPercent(null);
     setIncludeMoving(false);
     setIncludeFurniture(false);
     setFurnitureLevel('standard');
@@ -300,6 +301,12 @@ export function TrueCostCalculator() {
       const linkageResult = calculateNewConstructionLinkage(price, months, 0.03);
       madadCost = linkageResult.linkageAmount;
     }
+
+    // Mortgage / down payment calculation
+    const minDownPaymentPercent = buyerCategory === 'non_resident' ? 50 : buyerCategory === 'additional' ? 30 : 25;
+    const effectiveDownPaymentPercent = downPaymentPercent ?? minDownPaymentPercent;
+    const downPaymentAmount = Math.round(price * (effectiveDownPaymentPercent / 100));
+    const derivedLoanAmount = price - downPaymentAmount;
 
     // Mortgage costs
     const mortgageCosts = includeMortgageCosts 
@@ -344,8 +351,12 @@ export function TrueCostCalculator() {
       percentAbovePrice,
       cityName: cities?.find(c => c.slug === selectedCity)?.name,
       isNewConstruction,
+      minDownPaymentPercent,
+      effectiveDownPaymentPercent,
+      downPaymentAmount,
+      derivedLoanAmount,
     };
-  }, [propertyPrice, propertySize, selectedCity, buyerCategory, isNewConstruction, constructionMonths, includeAgentFee, includeMortgageCosts, loanAmount, includeMoving, includeFurniture, furnitureLevel, includeRenovation, renovationAmount, cities]);
+  }, [propertyPrice, propertySize, selectedCity, buyerCategory, isNewConstruction, constructionMonths, includeAgentFee, includeMortgageCosts, downPaymentPercent, includeMoving, includeFurniture, furnitureLevel, includeRenovation, renovationAmount, cities]);
 
   // Generate personalized insights
   const trueCostInsights = useMemo(() => {
@@ -354,9 +365,10 @@ export function TrueCostCalculator() {
     const taxSavings = calculations.taxSavings;
     const price = calculations.price;
     
-    // Day-one cash summary — the most important number
-    const ltvRate = buyerCategory === 'non_resident' ? 0.50 : buyerCategory === 'additional' ? 0.70 : 0.75;
-    const dayOneCash = calculations.allCostsAbovePrice + (price * (1 - ltvRate));
+    // Day-one cash summary — uses actual down payment if mortgage enabled, else LTV default
+    const dayOneCash = includeMortgageCosts
+      ? calculations.allCostsAbovePrice + calculations.downPaymentAmount
+      : calculations.allCostsAbovePrice + (price * (1 - (buyerCategory === 'non_resident' ? 0.50 : buyerCategory === 'additional' ? 0.70 : 0.75)));
     messages.push(`You'll need roughly ${formatPrice(Math.round(dayOneCash))} in cash before getting the keys — that's your down payment plus all closing costs.`);
     
     // Overhead context
@@ -397,7 +409,7 @@ export function TrueCostCalculator() {
       constructionMonths,
       includeAgentFee,
       includeMortgageCosts,
-      loanAmount,
+      downPaymentPercent: calculations.effectiveDownPaymentPercent,
       includeMoving,
       includeFurniture,
       furnitureLevel,
@@ -593,17 +605,26 @@ export function TrueCostCalculator() {
                     </div>
                     
                     {includeMortgageCosts && (
-                      <div className="flex items-center gap-2 pl-4 border-l-2 border-primary/20">
-                        <Label className="text-xs text-muted-foreground whitespace-nowrap">Loan amount</Label>
-                        <div className="relative flex-1 max-w-[180px]">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{currencySymbol}</span>
-                          <Input
-                            type="text"
-                            value={formatNumber(parseFormattedNumber(loanAmount))}
-                            onChange={(e) => setLoanAmount(e.target.value.replace(/[^\d]/g, ''))}
-                            className="pl-7 h-8 text-sm"
-                          />
+                      <div className="space-y-2.5 pl-4 border-l-2 border-primary/20">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-xs text-muted-foreground">Down payment</Label>
+                          <span className="text-sm font-semibold text-foreground">{calculations.effectiveDownPaymentPercent}%</span>
                         </div>
+                        <Slider
+                          value={[calculations.effectiveDownPaymentPercent]}
+                          onValueChange={([v]) => setDownPaymentPercent(v)}
+                          min={calculations.minDownPaymentPercent}
+                          max={80}
+                          step={5}
+                          className="w-full"
+                        />
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>Down: {formatPrice(calculations.downPaymentAmount)}</span>
+                          <span>Loan: {formatPrice(calculations.derivedLoanAmount)}</span>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground/70">
+                          Min {calculations.minDownPaymentPercent}% required for your buyer type
+                        </p>
                       </div>
                     )}
                   </div>
