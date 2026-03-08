@@ -761,7 +761,7 @@ export function TrueCostCalculator() {
         <div className="px-4 py-3 bg-semantic-amber/10 border-t border-semantic-amber">
           <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wide font-medium">New Construction Costs</p>
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Index Linkage (Madad)</span>
+            <span className="text-muted-foreground flex items-center gap-1">Index Linkage (Madad)<InfoTooltip content="New construction prices are linked to the building cost index. Typical increase is 3–8% over 2–3 years of construction." /></span>
             <span className="font-medium text-semantic-amber-foreground">{formatPrice(Math.round(calculations.madadCost))}</span>
           </div>
           {calculations.developerLawyerFee > 0 && (
