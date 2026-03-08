@@ -263,7 +263,7 @@ export function TrueCostCalculator() {
     setConstructionMonths('24');
     setIncludeAgentFee(true);
     setIncludeMortgageCosts(false);
-    setLoanAmount('1500000');
+    setDownPaymentPercent(null);
     setIncludeMoving(false);
     setIncludeFurniture(false);
     setFurnitureLevel('standard');
