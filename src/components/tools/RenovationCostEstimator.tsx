@@ -900,12 +900,12 @@ export function RenovationCostEstimator() {
   // Bottom section with insight card, educational content, CTAs, and feedback
   const bottomSection = (
     <div className="space-y-8">
-      {/* Insight Card */}
+      {/* 1. Interpret */}
       {renovationInsights.length > 0 && selectedCategories.length > 0 && (
         <InsightCard insights={renovationInsights} />
       )}
       
-      {/* Educational Collapsible */}
+      {/* 2. Understand - Educational Collapsible */}
       <Collapsible open={isTipsOpen} onOpenChange={setIsTipsOpen}>
         <Card>
           <CollapsibleTrigger asChild>
@@ -960,34 +960,33 @@ export function RenovationCostEstimator() {
           </CollapsibleContent>
         </Card>
       </Collapsible>
-      
-      {/* CTA Grid */}
-      <div className="grid md:grid-cols-3 gap-4">
-        <CTACard
-          icon={<Calculator className="h-5 w-5" />}
-          title="True Cost Calculator"
-          description="Include renovation in your total purchase cost"
-          buttonLink="/tools?tool=totalcost"
-          buttonText="Calculate Total Cost"
-        />
-        <CTACard
-          icon={<TrendingUp className="h-5 w-5" />}
-          title="Affordability Calculator"
-          description="See how much you can borrow for purchase + renovation"
-          buttonLink="/tools?tool=affordability"
-          buttonText="Check Affordability"
-        />
-        <CTACard
-          icon={<BookOpen className="h-5 w-5" />}
-          title="New vs Resale Guide"
-          description="Understand renovation implications"
-          buttonLink="/guides/new-vs-resale"
-          buttonText="Read Guide"
-        />
+
+      {/* 3. Sources */}
+      <SourceAttribution toolType="renovation" />
+
+      {/* 4. Continue Exploring */}
+      <div className="space-y-3 pt-2">
+        <div className="flex items-center gap-2">
+          <div className="h-px flex-1 bg-border/60" />
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Continue exploring</span>
+          <div className="h-px flex-1 bg-border/60" />
+        </div>
+        <div className="grid sm:grid-cols-3 gap-4">
+          <Link to="/tools?tool=totalcost"><Card className="p-4 cursor-pointer hover:border-primary/50 transition-colors group h-full"><Calculator className="h-5 w-5 text-primary mb-2" /><h4 className="font-medium text-sm group-hover:text-primary transition-colors">True Cost Calculator</h4><p className="text-xs text-muted-foreground mt-1">Include renovation in your total purchase cost</p></Card></Link>
+          <Link to="/tools?tool=affordability"><Card className="p-4 cursor-pointer hover:border-primary/50 transition-colors group h-full"><TrendingUp className="h-5 w-5 text-primary mb-2" /><h4 className="font-medium text-sm group-hover:text-primary transition-colors">Affordability Calculator</h4><p className="text-xs text-muted-foreground mt-1">See how much you can borrow for purchase + renovation</p></Card></Link>
+          <Link to="/guides/new-vs-resale"><Card className="p-4 cursor-pointer hover:border-primary/50 transition-colors group h-full"><BookOpen className="h-5 w-5 text-primary mb-2" /><h4 className="font-medium text-sm group-hover:text-primary transition-colors">New vs Resale Guide</h4><p className="text-xs text-muted-foreground mt-1">Understand renovation implications</p></Card></Link>
+        </div>
       </div>
-      
-      {/* Feedback */}
-      <ToolFeedback toolName="renovation-estimator" variant="inline" />
+
+      {/* 5. Disclaimer */}
+      <ToolDisclaimer
+        text="Cost estimates are for planning purposes only and based on average Israeli market rates. Always get multiple quotes from licensed contractors. Prices vary significantly by location (Tel Aviv typically 20-30% higher than peripheral areas), building age, and specific requirements."
+      />
+
+      {/* 6. Feedback */}
+      <div className="text-center">
+        <ToolFeedback toolName="renovation-estimator" variant="inline" />
+      </div>
     </div>
   );
 
@@ -1006,12 +1005,6 @@ export function RenovationCostEstimator() {
       leftColumn={leftColumn}
       rightColumn={rightColumn}
       bottomSection={bottomSection}
-      sourceAttribution={<SourceAttribution toolType="renovation" />}
-      disclaimer={
-        <ToolDisclaimer
-          text="Cost estimates are for planning purposes only and based on average Israeli market rates. Always get multiple quotes from licensed contractors. Prices vary significantly by location (Tel Aviv typically 20-30% higher than peripheral areas), building age, and specific requirements."
-        />
-      }
     />
     <SaveResultsPrompt
       show={showSavePrompt}

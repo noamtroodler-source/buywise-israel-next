@@ -583,7 +583,6 @@ export function InvestmentReturnCalculator() {
         )
       }
       bottomSection={bottomSection}
-      disclaimer="This calculator provides estimates for informational purposes only. Consult with a financial advisor for personalized advice."
     />
   );
 }

@@ -552,8 +552,9 @@ function AffordabilityCalculatorContent() {
               <Card><CollapsibleTrigger asChild><CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors"><div className="flex items-center justify-between"><CardTitle className="text-base">How Israeli Banks Calculate Your Budget</CardTitle><ChevronDown className={cn("h-5 w-5 text-muted-foreground transition-transform", educationOpen && "rotate-180")} /></div></CardHeader></CollapsibleTrigger><CollapsibleContent><CardContent className="pt-0 grid md:grid-cols-2 gap-4"><div className="space-y-2"><h4 className="font-medium text-sm">PTI Ratio</h4><p className="text-sm text-muted-foreground">Bank of Israel limits debt payments to {Math.round(MAX_PTI * 100)}% of income for all buyers (Directive 329 v11, April 2025).</p></div><div className="space-y-2"><h4 className="font-medium text-sm">LTV Limits</h4><p className="text-sm text-muted-foreground">First-time buyers/Olim can borrow up to {Math.round(LTV_BY_CATEGORY.first_time * 100)}% ({Math.round((1 - LTV_BY_CATEGORY.first_time) * 100)}% down). Upgraders can borrow up to {Math.round(LTV_BY_CATEGORY.upgrader * 100)}% ({Math.round((1 - LTV_BY_CATEGORY.upgrader) * 100)}% down). Investors and foreign buyers need {Math.round((1 - LTV_BY_CATEGORY.investor) * 100)}% down.</p></div><div className="space-y-2"><h4 className="font-medium text-sm">Self-Employed Discount</h4><p className="text-sm text-muted-foreground">Banks count only 70% of self-employed income. You'll need 2+ years of tax returns.</p></div><div className="space-y-2"><h4 className="font-medium text-sm">Foreign Income Rules</h4><p className="text-sm text-muted-foreground">Income earned abroad is discounted 30-40% and requires extensive documentation.</p></div></CardContent></CollapsibleContent></Card>
             </Collapsible>
             )}
+            {/* 3. Sources */}
             <SourceAttribution toolType="affordability" />
-            {/* 3. Act */}
+            {/* 4. Property Carousel */}
             <ToolPropertySuggestions
               title="Properties in Your Budget"
               subtitle="Based on your income, savings, and current rates"
@@ -561,14 +562,24 @@ function AffordabilityCalculatorContent() {
               maxPrice={Math.round(calculations.maxPropertyHigh * exchangeRate)}
               enabled={hasInteracted && calculations.maxPropertyPrice > 0}
             />
-            {/* 4. Engage */}
-            <ToolFeedback toolName="affordability-calculator" variant="inline" />
-            
-            {/* 5. Explore (exit points — always last) */}
-            <div className="grid sm:grid-cols-3 gap-4">
-              <Card className="p-4 cursor-pointer hover:border-primary/50 transition-colors group" onClick={() => navigate('/tools?tool=mortgage')}><Calculator className="h-5 w-5 text-primary mb-2" /><h4 className="font-medium text-sm group-hover:text-primary transition-colors">Mortgage Calculator</h4><p className="text-xs text-muted-foreground mt-1">See monthly payments for your max budget</p></Card>
-              <Card className="p-4 cursor-pointer hover:border-primary/50 transition-colors group" onClick={() => navigate('/listings')}><Building2 className="h-5 w-5 text-primary mb-2" /><h4 className="font-medium text-sm group-hover:text-primary transition-colors">Browse Properties</h4><p className="text-xs text-muted-foreground mt-1">Find homes in your price range</p></Card>
-              <Card className="p-4 cursor-pointer hover:border-primary/50 transition-colors group" onClick={() => navigate('/guides/buying-in-israel')}><BookOpen className="h-5 w-5 text-primary mb-2" /><h4 className="font-medium text-sm group-hover:text-primary transition-colors">Complete Buyer's Guide</h4><p className="text-xs text-muted-foreground mt-1">Everything you need to know</p></Card>
+            {/* 5. Continue Exploring */}
+            <div className="space-y-3 pt-2">
+              <div className="flex items-center gap-2">
+                <div className="h-px flex-1 bg-border/60" />
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Continue exploring</span>
+                <div className="h-px flex-1 bg-border/60" />
+              </div>
+              <div className="grid sm:grid-cols-3 gap-4">
+                <Card className="p-4 cursor-pointer hover:border-primary/50 transition-colors group" onClick={() => navigate('/tools?tool=mortgage')}><Calculator className="h-5 w-5 text-primary mb-2" /><h4 className="font-medium text-sm group-hover:text-primary transition-colors">Mortgage Calculator</h4><p className="text-xs text-muted-foreground mt-1">See monthly payments for your max budget</p></Card>
+                <Card className="p-4 cursor-pointer hover:border-primary/50 transition-colors group" onClick={() => navigate('/listings')}><Building2 className="h-5 w-5 text-primary mb-2" /><h4 className="font-medium text-sm group-hover:text-primary transition-colors">Browse Properties</h4><p className="text-xs text-muted-foreground mt-1">Find homes in your price range</p></Card>
+                <Card className="p-4 cursor-pointer hover:border-primary/50 transition-colors group" onClick={() => navigate('/guides/buying-in-israel')}><BookOpen className="h-5 w-5 text-primary mb-2" /><h4 className="font-medium text-sm group-hover:text-primary transition-colors">Complete Buyer's Guide</h4><p className="text-xs text-muted-foreground mt-1">Everything you need to know</p></Card>
+              </div>
+            </div>
+            {/* 6. Disclaimer */}
+            <ToolDisclaimer variant="affordability" />
+            {/* 7. Feedback */}
+            <div className="text-center">
+              <ToolFeedback toolName="affordability-calculator" variant="inline" />
             </div>
           </div>
         }

@@ -256,21 +256,43 @@ export function DocumentChecklistTool() {
 
   const bottomSection = (
     <div className="space-y-6">
+      {/* 1. Understand */}
       <div className="grid md:grid-cols-2 gap-4">
         <Collapsible><Card><CollapsibleTrigger asChild><CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors"><CardTitle className="text-sm font-medium flex items-center justify-between"><span className="flex items-center gap-2"><HelpCircle className="h-4 w-4 text-primary" />Understanding the Process</span><ChevronDown className="h-4 w-4 text-muted-foreground" /></CardTitle></CardHeader></CollapsibleTrigger><CollapsibleContent><CardContent className="pt-0 text-sm text-muted-foreground space-y-2"><p>The {transactionType === 'buy' ? 'property purchase' : 'rental'} process in Israel typically takes {transactionType === 'buy' ? '2-4 months' : '1-3 weeks'} from start to finish.</p><p>Having documents ready beforehand speeds up the process significantly.</p><p>Critical documents (marked with a border) should be prioritized.</p></CardContent></CollapsibleContent></Card></Collapsible>
         <Collapsible><Card><CollapsibleTrigger asChild><CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors"><CardTitle className="text-sm font-medium flex items-center justify-between"><span className="flex items-center gap-2"><FileText className="h-4 w-4 text-primary" />Key Hebrew Terms</span><ChevronDown className="h-4 w-4 text-muted-foreground" /></CardTitle></CardHeader></CollapsibleTrigger><CollapsibleContent><CardContent className="pt-0 text-sm space-y-2"><div className="flex justify-between"><span className="text-muted-foreground">Nesach Tabu</span><span>Land Registry Extract</span></div><div className="flex justify-between"><span className="text-muted-foreground">Ishur Ikroni</span><span>Pre-Approval Letter</span></div><div className="flex justify-between"><span className="text-muted-foreground">Mas Rechisha</span><span>Purchase Tax</span></div><div className="flex justify-between"><span className="text-muted-foreground">Teudat Zehut</span><span>ID Card</span></div></CardContent></CollapsibleContent></Card></Collapsible>
       </div>
+
+      {/* 2. Interpret */}
       <InsightCard insights={[getInsightText()]} />
-      <div className="grid sm:grid-cols-3 gap-4">
-        <CTACard title="True Cost Calculator" description="Calculate all costs including professional fees" icon={<Calculator className="h-5 w-5" />} buttonText="Calculate Costs" buttonLink="/tools?tool=totalcost" />
-        <CTACard title="Mortgage Calculator" description="Plan your financing strategy" icon={<Landmark className="h-5 w-5" />} buttonText="Plan Financing" buttonLink="/tools?tool=mortgage" />
-        <CTACard title="Talking to Professionals" description="What to ask lawyers and agents" icon={<BookOpen className="h-5 w-5" />} buttonText="Read Guide" buttonLink="/guides/talking-to-professionals" />
+
+      {/* 3. Sources */}
+      <SourceAttribution toolType="documents" />
+
+      {/* 4. Continue Exploring */}
+      <div className="space-y-3 pt-2">
+        <div className="flex items-center gap-2">
+          <div className="h-px flex-1 bg-border/60" />
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Continue exploring</span>
+          <div className="h-px flex-1 bg-border/60" />
+        </div>
+        <div className="grid sm:grid-cols-3 gap-4">
+          <Link to="/tools?tool=totalcost"><Card className="p-4 cursor-pointer hover:border-primary/50 transition-colors group h-full"><Calculator className="h-5 w-5 text-primary mb-2" /><h4 className="font-medium text-sm group-hover:text-primary transition-colors">True Cost Calculator</h4><p className="text-xs text-muted-foreground mt-1">Calculate all costs including professional fees</p></Card></Link>
+          <Link to="/tools?tool=mortgage"><Card className="p-4 cursor-pointer hover:border-primary/50 transition-colors group h-full"><Landmark className="h-5 w-5 text-primary mb-2" /><h4 className="font-medium text-sm group-hover:text-primary transition-colors">Mortgage Calculator</h4><p className="text-xs text-muted-foreground mt-1">Plan your financing strategy</p></Card></Link>
+          <Link to="/guides/talking-to-professionals"><Card className="p-4 cursor-pointer hover:border-primary/50 transition-colors group h-full"><BookOpen className="h-5 w-5 text-primary mb-2" /><h4 className="font-medium text-sm group-hover:text-primary transition-colors">Talking to Professionals</h4><p className="text-xs text-muted-foreground mt-1">What to ask lawyers and agents</p></Card></Link>
+        </div>
       </div>
-      <ToolFeedback toolName="Document Checklist" variant="inline" />
+
+      {/* 5. Disclaimer */}
+      <ToolDisclaimer />
+
+      {/* 6. Feedback */}
+      <div className="text-center">
+        <ToolFeedback toolName="Document Checklist" variant="inline" />
+      </div>
     </div>
   );
 
-  return <ToolLayout title="Document Checklist" subtitle={`Track the documents you need for ${transactionType === 'buy' ? 'buying' : 'renting'} property in Israel`} icon={<FileText className="h-6 w-6" />} leftColumn={leftColumn} rightColumn={rightColumn} bottomSection={bottomSection} sourceAttribution={<SourceAttribution toolType="documents" />} disclaimer={<ToolDisclaimer />} />;
+  return <ToolLayout title="Document Checklist" subtitle={`Track the documents you need for ${transactionType === 'buy' ? 'buying' : 'renting'} property in Israel`} icon={<FileText className="h-6 w-6" />} leftColumn={leftColumn} rightColumn={rightColumn} bottomSection={bottomSection} />;
 }
 
 interface DocumentItemRowProps { doc: DocumentChecklistItem; isChecked: boolean; onToggle: () => void; }
