@@ -1201,7 +1201,7 @@ export function RentVsBuyCalculator() {
           description="See how much you can afford"
           buttonText="Affordability Calculator"
           buttonLink="/tools?tool=affordability"
-          icon={<PiggyBank className="h-5 w-5" />}
+          icon={<Wallet className="h-5 w-5" />}
           variant="muted"
         />
       </div>
