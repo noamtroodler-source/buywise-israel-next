@@ -780,8 +780,28 @@ export function RentVsBuyCalculator() {
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
               </div>
-            </div>
           </div>
+          
+          {/* Mortgage Term */}
+          <div className="space-y-2">
+            <Label htmlFor="mortgageTerm" className="flex items-center text-sm font-medium">
+              Mortgage Term
+              <InfoTooltip content="Length of your mortgage loan. Standard in Israel is 25-30 years. This is separate from your comparison time horizon." />
+            </Label>
+            <Select value={mortgageTerm} onValueChange={setMortgageTerm}>
+              <SelectTrigger className="h-11">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {MORTGAGE_TERM_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
         </div>
       </Card>
       
