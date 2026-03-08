@@ -569,24 +569,20 @@ export function TrueCostCalculator() {
           <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Advanced Options</h3>
           
           {!isNewConstruction && (
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-sm font-medium">Include Agent Fee</Label>
-                <p className="text-xs text-muted-foreground">2% + VAT commission</p>
+            <div className="rounded-lg border border-border/50 bg-muted/20">
+              <div className="flex items-center justify-between px-4 py-3">
+                <span className="text-sm font-medium">Include Agent Fee</span>
+                <Switch
+                  checked={includeAgentFee}
+                  onCheckedChange={setIncludeAgentFee}
+                />
               </div>
-              <Switch
-                checked={includeAgentFee}
-                onCheckedChange={setIncludeAgentFee}
-              />
             </div>
           )}
 
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-sm font-medium">Include Mortgage Costs</Label>
-                <p className="text-xs text-muted-foreground">Appraisal & registration fees</p>
-              </div>
+          <div className="rounded-lg border border-border/50 bg-muted/20">
+            <div className="flex items-center justify-between px-4 py-3">
+              <span className="text-sm font-medium">Include Mortgage Costs</span>
               <Switch
                 checked={includeMortgageCosts}
                 onCheckedChange={setIncludeMortgageCosts}
@@ -594,8 +590,8 @@ export function TrueCostCalculator() {
             </div>
             
             {includeMortgageCosts && (
-              <div className="space-y-2.5 pl-4 border-l-2 border-primary/20">
-                <div className="flex items-center justify-between">
+              <div className="px-4 pb-3 space-y-2.5 border-t border-border/30">
+                <div className="flex items-center justify-between pt-3">
                   <Label className="text-xs text-muted-foreground">Down payment</Label>
                   <span className="text-sm font-semibold text-foreground">{calculations.effectiveDownPaymentPercent}%</span>
                 </div>
