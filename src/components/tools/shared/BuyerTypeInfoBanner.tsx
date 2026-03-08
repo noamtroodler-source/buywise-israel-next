@@ -33,7 +33,7 @@ const DEFAULT_BUYER_TYPE_OPTIONS: BuyerTypeOption[] = [
 const EXTENDED_BUYER_TYPE_OPTIONS: BuyerTypeOption[] = [
   { value: 'first_time', label: 'First-Time Buyer', description: 'No property in Israel, not a new Oleh' },
   { value: 'oleh', label: 'Oleh Hadash', description: 'Made aliyah within 7 years' },
-  { value: 'upgrader', label: 'Upgrader', description: 'Selling current home within 18 months' },
+  { value: 'upgrader', label: 'Upgrader', description: 'Buying a new home & selling your current one within 18 months' },
   { value: 'investor', label: 'Investor', description: 'Already own property in Israel' },
   { value: 'foreign', label: 'Foreign Resident', description: 'Not an Israeli tax resident' },
   { value: 'company', label: 'Corporate Buyer', description: 'Purchasing as a company' },
