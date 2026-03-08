@@ -769,7 +769,10 @@ export function TrueCostCalculator() {
         >
           {formatPrice(Math.round(calculations.totalCashNeededMin))} – {formatPrice(Math.round(calculations.totalCashNeededMax))}
         </motion.p>
-        <p className="text-sm text-muted-foreground text-center mt-2">
+        <p className="text-xs text-muted-foreground text-center mt-1">
+          ~{formatPrice(Math.round((calculations.totalCashNeededMin + calculations.totalCashNeededMax) / 2))} most likely
+        </p>
+        <p className="text-sm text-muted-foreground text-center mt-1">
           +{formatPrice(Math.round(calculations.allCostsAbovePriceMin))}–{formatPrice(Math.round(calculations.allCostsAbovePriceMax))} ({calculations.percentAbovePriceMin.toFixed(1)}–{calculations.percentAbovePriceMax.toFixed(1)}%) above list price
         </p>
       </div>
