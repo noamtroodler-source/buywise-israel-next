@@ -352,21 +352,35 @@ export function RentVsBuyCalculator() {
     const monthlyInsurance = FEES.homeInsurance;
     const monthlyMaintenanceYear0 = (price * FEES.maintenanceRate) / 12;
     
-    // Helper: get monthly ownership cost for a given year (maintenance grows with appreciation)
-    const getMonthlyOwnershipCost = (year: number) => {
+    // Shared costs: paid by BOTH renters and buyers — excluded from comparison
+    const monthlySharedCosts = monthlyArnona + monthlyVaadBayit;
+    
+    // Owner-only costs: insurance + maintenance (maintenance grows with appreciation)
+    const getOwnerOnlyCost = (year: number) => {
       const maintenanceAtYear = monthlyMaintenanceYear0 * Math.pow(1 + appreciationRate / 100, year);
-      return monthlyArnona + monthlyVaadBayit + monthlyInsurance + maintenanceAtYear;
+      return monthlyInsurance + maintenanceAtYear;
     };
     
-    // Helper: get total monthly buying cost for a given year
+    // Full ownership costs (for detailed breakdown display)
+    const getMonthlyOwnershipCost = (year: number) => {
+      return monthlySharedCosts + getOwnerOnlyCost(year);
+    };
+    
+    // Comparable buying cost (excludes shared costs for apples-to-apples comparison)
+    const getComparableBuyingCost = (year: number) => {
+      const mortgagePayment = year < mortgageTermYears ? monthlyMortgage : 0;
+      return mortgagePayment + getOwnerOnlyCost(year);
+    };
+    
+    // Full buying cost (for total cost tracking)
     const getMonthlyBuyingCost = (year: number) => {
       const mortgagePayment = year < mortgageTermYears ? monthlyMortgage : 0;
       return mortgagePayment + getMonthlyOwnershipCost(year);
     };
     
-    // Year-0 values for display
-    const totalMonthlyOwnershipCosts = getMonthlyOwnershipCost(0);
-    const totalMonthlyBuying = getMonthlyBuyingCost(0);
+    // Year-0 values for display — comparable (excluding shared costs)
+    const totalMonthlyOwnershipCosts = getOwnerOnlyCost(0);
+    const totalMonthlyBuying = getComparableBuyingCost(0);
     const monthlyMaintenance = monthlyMaintenanceYear0;
     
     // Property value at end of period
@@ -423,10 +437,10 @@ export function RentVsBuyCalculator() {
     let totalMonthlySavingsRaw = 0;
     
     for (let year = 0; year < years; year++) {
-      const yearlyBuyingCost = getMonthlyBuyingCost(year);
+      const comparableBuyingCost = getComparableBuyingCost(year);
       for (let month = 0; month < 12; month++) {
         totalRentPaid += currentRent;
-        const monthlySaving = Math.max(0, yearlyBuyingCost - currentRent);
+        const monthlySaving = Math.max(0, comparableBuyingCost - currentRent);
         totalMonthlySavingsRaw += monthlySaving;
         monthlySavingsPortfolio = (monthlySavingsPortfolio + monthlySaving) * (1 + monthlyInvestmentRate);
       }
@@ -474,9 +488,9 @@ export function RentVsBuyCalculator() {
       let rentAtYear = rent;
       let savingsPortfolioAtYear = 0;
       for (let y = 0; y < checkYear; y++) {
-        const buyingCostThisYear = getMonthlyBuyingCost(y);
+        const comparableCostThisYear = getComparableBuyingCost(y);
         for (let m = 0; m < 12; m++) {
-          const saving = Math.max(0, buyingCostThisYear - rentAtYear);
+          const saving = Math.max(0, comparableCostThisYear - rentAtYear);
           savingsPortfolioAtYear = (savingsPortfolioAtYear + saving) * (1 + monthlyInvestmentRate);
         }
         rentAtYear *= (1 + rentIncreaseRate / 100);
@@ -515,7 +529,7 @@ export function RentVsBuyCalculator() {
       totalRentPaid, investedSavingsValue, investmentGains,
       netRentingWealth, totalCashNotSpent, lumpSumInvestedValue,
       monthlySavingsPortfolio, totalMonthlySavingsRaw,
-      monthlyArnona, monthlyVaadBayit, monthlyInsurance, monthlyMaintenance,
+      monthlyArnona, monthlyVaadBayit, monthlySharedCosts, monthlyInsurance, monthlyMaintenance,
       buyingSqm, rentingSqmForBuyingBudget, spaceAdvantagePercent,
       monthlyEquityBuilding, priceToRentRatio,
       sellingCosts, capitalGainsTax, equityBuiltGross,
@@ -925,7 +939,10 @@ export function RentVsBuyCalculator() {
           {/* Visual Breakdown Bar - Monthly Costs Allocation */}
           {calculations.totalMonthlyBuying > 0 && (
             <div className="px-6 py-4 border-t">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Monthly Cost Breakdown (Buying)</p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+                Monthly Cost Breakdown (Buyer-Only)
+                <InfoTooltip content="Arnona and Vaad Bayit are excluded — renters pay these too, so they cancel out in the comparison." />
+              </p>
               <div className="flex h-3 rounded-full overflow-hidden bg-muted/30">
                 <div 
                   className="bg-primary transition-all" 
@@ -935,7 +952,7 @@ export function RentVsBuyCalculator() {
                 <div 
                   className="bg-primary/50 transition-all" 
                   style={{ width: `${(calculations.totalMonthlyOwnershipCosts / calculations.totalMonthlyBuying) * 100}%` }}
-                  title={`Ownership: ${formatPrice(Math.round(calculations.totalMonthlyOwnershipCosts))}`}
+                  title={`Insurance + Maintenance: ${formatPrice(Math.round(calculations.totalMonthlyOwnershipCosts))}`}
                 />
               </div>
               <div className="flex items-center gap-4 mt-2 text-[10px] text-muted-foreground">
@@ -945,7 +962,7 @@ export function RentVsBuyCalculator() {
                 </span>
                 <span className="flex items-center gap-1">
                   <span className="h-2 w-2 rounded-full bg-primary/50" />
-                  Ownership Costs
+                  Insurance + Maintenance
                 </span>
               </div>
             </div>
@@ -956,7 +973,10 @@ export function RentVsBuyCalculator() {
             <div className="grid grid-cols-2 gap-4">
               {/* Monthly if Buying */}
               <div className="p-3 bg-muted/30 rounded-lg text-center">
-                <p className="text-xs text-muted-foreground mb-1">Monthly if Buying</p>
+                <p className="text-xs text-muted-foreground mb-1 flex items-center justify-center">
+                  Monthly if Buying
+                  <InfoTooltip content={`Mortgage + insurance + maintenance only. Excludes ₪${formatNumber(Math.round(calculations.monthlySharedCosts))}/mo shared costs (Arnona + Vaad) since renters pay those too.`} />
+                </p>
                 <p className="text-lg font-bold tabular-nums">{formatPrice(Math.round(calculations.totalMonthlyBuying))}</p>
               </div>
               
@@ -995,8 +1015,11 @@ export function RentVsBuyCalculator() {
           </div>
           
           
-          {/* Exit costs note - Israel-specific */}
-          <div className="px-6 py-3 border-t">
+          {/* Notes */}
+          <div className="px-6 py-3 border-t space-y-1">
+            <p className="text-[10px] text-muted-foreground text-center">
+              Arnona & Vaad Bayit (~{formatPrice(Math.round(calculations.monthlySharedCosts))}/mo) excluded — paid by both renters and buyers
+            </p>
             <p className="text-[10px] text-muted-foreground text-center">
               Exit factored: 3% selling fees {calculations.capitalGainsTax > 0 
                 ? `+ ₪${Math.round(calculations.capitalGainsTax / 1000)}K Mas Shevach` 
