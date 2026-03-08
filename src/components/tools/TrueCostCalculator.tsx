@@ -290,19 +290,23 @@ export function TrueCostCalculator() {
     const investorTax = calculateTaxAmount(price, 'investor');
     const taxSavings = investorTax - purchaseTax;
 
-    // Calculate individual fees
-    const lawyerFee = Math.max(price * FEES.lawyerRate, FEES.lawyerMinimum) * (1 + FEES.vatRate);
-    const agentFee = includeAgentFee && !isNewConstruction 
-      ? price * FEES.agentRate * (1 + FEES.vatRate) 
-      : 0;
-    const developerLawyerFee = isNewConstruction ? price * FEES.developerLawyerRate * (1 + FEES.vatRate) : 0;
+    // Calculate individual fees as ranges
+    const lawyerFeeMin = Math.max(price * FEES.lawyerRateMin, FEES.lawyerMinimum) * (1 + FEES.vatRate);
+    const lawyerFeeMax = Math.max(price * FEES.lawyerRateMax, FEES.lawyerMinimum) * (1 + FEES.vatRate);
+    const agentFeeMin = includeAgentFee ? price * FEES.agentRateMin * (1 + FEES.vatRate) : 0;
+    const agentFeeMax = includeAgentFee ? price * FEES.agentRateMax * (1 + FEES.vatRate) : 0;
+    const developerLawyerFeeMin = isNewConstruction ? price * FEES.developerLawyerRateMin * (1 + FEES.vatRate) : 0;
+    const developerLawyerFeeMax = isNewConstruction ? price * FEES.developerLawyerRateMax * (1 + FEES.vatRate) : 0;
     const bankGuaranteeFee = isNewConstruction ? price * FEES.bankGuaranteeRate : 0;
 
-    // New construction linkage (Madad)
-    let madadCost = 0;
+    // New construction linkage (Madad) — range with low/high annual rates
+    let madadCostMin = 0;
+    let madadCostMax = 0;
     if (isNewConstruction && months > 0) {
-      const linkageResult = calculateNewConstructionLinkage(price, months, 0.03);
-      madadCost = linkageResult.linkageAmount;
+      const linkageLow = calculateNewConstructionLinkage(price, months, 0.02);
+      const linkageHigh = calculateNewConstructionLinkage(price, months, 0.04);
+      madadCostMin = linkageLow.linkageAmount;
+      madadCostMax = linkageHigh.linkageAmount;
     }
 
     // Mortgage / down payment calculation
