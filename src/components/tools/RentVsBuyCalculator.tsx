@@ -929,10 +929,10 @@ export function RentVsBuyCalculator() {
             </motion.p>
             <p className="text-sm text-muted-foreground mt-2">
               {calculations.breakEvenYear && calculations.breakEvenYear <= 7 
-                ? <span className="text-semantic-green">"Buying wins relatively quickly"</span> :
+                ? <span className="text-primary">"Buying wins relatively quickly"</span> :
                calculations.breakEvenYear && calculations.breakEvenYear <= 12 
-                ? <span className="text-semantic-amber">"Consider your timeline carefully"</span> :
-               <span className="text-semantic-red">"Long horizon needed for buying to pay off"</span>}
+                ? <span className="text-primary">"Consider your timeline carefully"</span> :
+               <span className="text-primary">"Long horizon needed for buying to pay off"</span>}
             </p>
           </div>
           
