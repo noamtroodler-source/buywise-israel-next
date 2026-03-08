@@ -568,70 +568,55 @@ export function TrueCostCalculator() {
         <CardContent className="p-5 space-y-4">
           <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Advanced Options</h3>
           
-          {/* Transaction Costs */}
-          <Collapsible defaultOpen={includeMortgageCosts || (includeAgentFee && !isNewConstruction)}>
-            <div className="rounded-lg border border-border/50 bg-muted/20">
-              <CollapsibleTrigger className="w-full px-4 py-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Transaction Costs</span>
-                  <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 [[data-state=open]_&]:rotate-180" />
-                </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <div className="px-4 pb-4 space-y-4">
-                  {!isNewConstruction && (
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label className="text-sm font-medium">Include Agent Fee</Label>
-                        <p className="text-xs text-muted-foreground">2% + VAT commission</p>
-                      </div>
-                      <Switch
-                        checked={includeAgentFee}
-                        onCheckedChange={setIncludeAgentFee}
-                      />
-                    </div>
-                  )}
-
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label className="text-sm font-medium">Include Mortgage Costs</Label>
-                        <p className="text-xs text-muted-foreground">Appraisal & registration fees</p>
-                      </div>
-                      <Switch
-                        checked={includeMortgageCosts}
-                        onCheckedChange={setIncludeMortgageCosts}
-                      />
-                    </div>
-                    
-                    {includeMortgageCosts && (
-                      <div className="space-y-2.5 pl-4 border-l-2 border-primary/20">
-                        <div className="flex items-center justify-between">
-                          <Label className="text-xs text-muted-foreground">Down payment</Label>
-                          <span className="text-sm font-semibold text-foreground">{calculations.effectiveDownPaymentPercent}%</span>
-                        </div>
-                        <Slider
-                          value={[calculations.effectiveDownPaymentPercent]}
-                          onValueChange={([v]) => setDownPaymentPercent(v)}
-                          min={calculations.minDownPaymentPercent}
-                          max={80}
-                          step={5}
-                          className="w-full"
-                        />
-                        <div className="flex justify-between text-xs text-muted-foreground">
-                          <span>Down: {formatPrice(calculations.downPaymentAmount)}</span>
-                          <span>Loan: {formatPrice(calculations.derivedLoanAmount)}</span>
-                        </div>
-                        <p className="text-[11px] text-muted-foreground/70">
-                          Min {calculations.minDownPaymentPercent}% required for your buyer type
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </CollapsibleContent>
+          {!isNewConstruction && (
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-sm font-medium">Include Agent Fee</Label>
+                <p className="text-xs text-muted-foreground">2% + VAT commission</p>
+              </div>
+              <Switch
+                checked={includeAgentFee}
+                onCheckedChange={setIncludeAgentFee}
+              />
             </div>
-          </Collapsible>
+          )}
+
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-sm font-medium">Include Mortgage Costs</Label>
+                <p className="text-xs text-muted-foreground">Appraisal & registration fees</p>
+              </div>
+              <Switch
+                checked={includeMortgageCosts}
+                onCheckedChange={setIncludeMortgageCosts}
+              />
+            </div>
+            
+            {includeMortgageCosts && (
+              <div className="space-y-2.5 pl-4 border-l-2 border-primary/20">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs text-muted-foreground">Down payment</Label>
+                  <span className="text-sm font-semibold text-foreground">{calculations.effectiveDownPaymentPercent}%</span>
+                </div>
+                <Slider
+                  value={[calculations.effectiveDownPaymentPercent]}
+                  onValueChange={([v]) => setDownPaymentPercent(v)}
+                  min={calculations.minDownPaymentPercent}
+                  max={80}
+                  step={5}
+                  className="w-full"
+                />
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Down: {formatPrice(calculations.downPaymentAmount)}</span>
+                  <span>Loan: {formatPrice(calculations.derivedLoanAmount)}</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground/70">
+                  Min {calculations.minDownPaymentPercent}% required for your buyer type
+                </p>
+              </div>
+            )}
+          </div>
           
           {/* Moving & Setup */}
           <Collapsible defaultOpen={includeMoving || includeFurniture || includeRenovation}>
