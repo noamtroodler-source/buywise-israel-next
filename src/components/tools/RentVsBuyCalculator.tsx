@@ -437,10 +437,10 @@ export function RentVsBuyCalculator() {
     let totalMonthlySavingsRaw = 0;
     
     for (let year = 0; year < years; year++) {
-      const yearlyBuyingCost = getMonthlyBuyingCost(year);
+      const comparableBuyingCost = getComparableBuyingCost(year);
       for (let month = 0; month < 12; month++) {
         totalRentPaid += currentRent;
-        const monthlySaving = Math.max(0, yearlyBuyingCost - currentRent);
+        const monthlySaving = Math.max(0, comparableBuyingCost - currentRent);
         totalMonthlySavingsRaw += monthlySaving;
         monthlySavingsPortfolio = (monthlySavingsPortfolio + monthlySaving) * (1 + monthlyInvestmentRate);
       }
