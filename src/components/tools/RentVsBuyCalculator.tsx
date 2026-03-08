@@ -1100,16 +1100,16 @@ export function RentVsBuyCalculator() {
                   <span className="tabular-nums">{formatPrice(Math.round(calculations.downPayment))}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Monthly savings invested</span>
-                  <span className="tabular-nums">{formatPrice(Math.round(calculations.monthlySavings * timeHorizon * 12))}</span>
+                  <span className="text-muted-foreground">Savings invested</span>
+                  <span className="tabular-nums">{formatPrice(Math.round(calculations.totalCashNotSpent))}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Investment returns</span>
-                  <span className="tabular-nums text-primary">{formatPrice(Math.round(calculations.investmentReturns))}</span>
+                  <span className="text-muted-foreground">Investment gains</span>
+                  <span className="tabular-nums text-primary">{formatPrice(Math.round(calculations.investmentGains))}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Total portfolio value</span>
-                  <span className="tabular-nums text-primary">{formatPrice(Math.round(calculations.investmentPortfolio))}</span>
+                  <span className="tabular-nums text-primary">{formatPrice(Math.round(calculations.investedSavingsValue))}</span>
                 </div>
                 <div className="flex justify-between font-semibold pt-2 border-t border-border/50">
                   <span>Net position</span>
