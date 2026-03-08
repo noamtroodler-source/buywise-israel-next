@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Sparkles, Clock, Percent, Coins, BookOpen, Copy, CheckCircle, X, ArrowRight } from 'lucide-react';
+import { Sparkles, Calendar, Star, Zap, BookOpen, X, ArrowRight } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useFoundingSpots } from '@/hooks/useFoundingSpots';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -12,15 +13,13 @@ import {
   DrawerContent,
   DrawerClose,
 } from '@/components/ui/drawer';
-import { toast } from 'sonner';
 
 const MODAL_SEEN_KEY = 'founding_modal_seen';
-const PROMO_CODE = 'FOUNDING2026';
 
 const BENEFITS = [
-  { icon: Clock, text: '60-day free trial on any plan' },
-  { icon: Percent, text: '25% off for 10 months after trial' },
-  { icon: Coins, text: '800 visibility credits (~₪16,000 value)' },
+  { icon: Calendar, text: '2 months completely free on any plan' },
+  { icon: Star, text: '3 free featured listings per month' },
+  { icon: Zap, text: 'Exclusive early access for your listings' },
   { icon: BookOpen, text: 'Featured case study on launch' },
 ];
 
@@ -29,18 +28,11 @@ interface FoundingProgramModalProps {
 }
 
 function ModalBody({ onActivate, onClose }: { onActivate: (code: string) => void; onClose: () => void }) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(PROMO_CODE);
-    setCopied(true);
-    toast.success('Promo code copied!');
-    setTimeout(() => setCopied(false), 2000);
-  };
+  const { data: spots } = useFoundingSpots();
 
   const handleActivate = () => {
     localStorage.setItem(MODAL_SEEN_KEY, '1');
-    onActivate(PROMO_CODE);
+    onActivate('FOUNDING2026');
     onClose();
     setTimeout(() => {
       document.getElementById('founding')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -54,16 +46,21 @@ function ModalBody({ onActivate, onClose }: { onActivate: (code: string) => void
 
   return (
     <div className="px-6 pb-6 pt-2 flex flex-col items-center text-center">
-      {/* Icon */}
       <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
         <Sparkles className="h-8 w-8 text-primary" />
       </div>
 
-      {/* Headline */}
-      <h2 className="text-xl font-bold text-foreground mb-1">Founding Program</h2>
-      <p className="text-sm text-muted-foreground mb-6">Limited Time — Early Access</p>
+      <h2 className="text-xl font-bold text-foreground mb-1">Founding Partner Program</h2>
+      <p className="text-sm text-muted-foreground mb-2">Limited to 15 Agencies — Early Access</p>
 
-      {/* Benefits */}
+      {spots && spots.remaining > 0 && (
+        <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 mb-4">
+          <span className="text-xs font-semibold text-primary">
+            {spots.remaining} spot{spots.remaining !== 1 ? 's' : ''} left
+          </span>
+        </div>
+      )}
+
       <ul className="w-full space-y-2.5 mb-6 text-left">
         {BENEFITS.map(({ icon: Icon, text }) => (
           <li key={text} className="flex items-center gap-3">
@@ -75,22 +72,6 @@ function ModalBody({ onActivate, onClose }: { onActivate: (code: string) => void
         ))}
       </ul>
 
-      {/* Code chip */}
-      <div className="w-full mb-6">
-        <p className="text-xs text-muted-foreground mb-2">Your promo code:</p>
-        <button
-          onClick={handleCopy}
-          className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-primary/5 border border-primary/20 hover:bg-primary/10 transition-colors group"
-        >
-          <span className="font-mono font-bold text-base text-primary tracking-widest">{PROMO_CODE}</span>
-          <span className="flex items-center gap-1.5 text-xs text-muted-foreground group-hover:text-primary transition-colors">
-            {copied ? <CheckCircle className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
-            {copied ? 'Copied!' : 'Copy'}
-          </span>
-        </button>
-      </div>
-
-      {/* CTAs */}
       <div className="w-full flex flex-col sm:flex-row gap-2">
         <Button className="flex-1 gap-2" onClick={handleActivate}>
           Activate Now
@@ -111,7 +92,6 @@ export function FoundingProgramModal({ onActivate }: FoundingProgramModalProps) 
   useEffect(() => {
     const seen = localStorage.getItem(MODAL_SEEN_KEY);
     if (seen) return;
-
     const timer = setTimeout(() => setOpen(true), 1200);
     return () => clearTimeout(timer);
   }, []);
@@ -127,11 +107,7 @@ export function FoundingProgramModal({ onActivate }: FoundingProgramModalProps) 
         <DrawerContent className="pb-safe">
           <div className="relative pt-2">
             <DrawerClose asChild>
-              <button
-                onClick={handleClose}
-                className="absolute right-4 top-2 rounded-sm opacity-70 hover:opacity-100 transition-opacity"
-                aria-label="Close"
-              >
+              <button onClick={handleClose} className="absolute right-4 top-2 rounded-sm opacity-70 hover:opacity-100 transition-opacity" aria-label="Close">
                 <X className="h-4 w-4" />
               </button>
             </DrawerClose>
@@ -147,11 +123,7 @@ export function FoundingProgramModal({ onActivate }: FoundingProgramModalProps) 
       <DialogContent className="sm:max-w-md p-0 overflow-hidden">
         <div className="relative pt-6">
           <DialogClose asChild>
-            <button
-              onClick={handleClose}
-              className="absolute right-4 top-4 rounded-sm opacity-70 hover:opacity-100 transition-opacity z-10"
-              aria-label="Close"
-            >
+            <button onClick={handleClose} className="absolute right-4 top-4 rounded-sm opacity-70 hover:opacity-100 transition-opacity z-10" aria-label="Close">
               <X className="h-4 w-4" />
             </button>
           </DialogClose>

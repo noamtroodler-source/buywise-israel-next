@@ -8,6 +8,7 @@ import { PlanCard } from '@/components/billing/PlanCard';
 import { BillingCycleToggle } from '@/components/billing/BillingCycleToggle';
 import { PromoCodeInput } from '@/components/billing/PromoCodeInput';
 import { PricingFAQ } from '@/components/billing/PricingFAQ';
+import { FoundingProgramSection } from '@/components/billing/FoundingProgramSection';
 import { EnterpriseSalesDialog } from '@/components/billing/EnterpriseSalesDialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -61,7 +62,8 @@ export default function Pricing() {
   const { data: subscription } = useSubscription();
   const navigate = useNavigate();
 
-  // Redirect unauthenticated visitors to the public advertise page
+  const isFoundingCode = promoCode.toUpperCase() === 'FOUNDING2026' && promoResult?.valid;
+
   useEffect(() => {
     if (user === null) {
       navigate('/advertise#pricing', { replace: true });
@@ -87,7 +89,33 @@ export default function Pricing() {
 
   const filteredPlans = plans.filter((p: any) => p.entity_type === entityTab);
 
+  const handleFoundingEnroll = async (planId: string) => {
+    if (!user) {
+      navigate('/auth?tab=signup&redirect=/pricing');
+      return;
+    }
+    setCheckoutLoading(planId);
+    try {
+      const { data, error } = await supabase.functions.invoke('enroll-founding-partner', {
+        body: { plan_id: planId, billing_cycle: billingCycle },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast.success('Welcome to the Founding Partner Program!');
+      navigate(`/checkout/success?founding=true&trial_end=${encodeURIComponent(data.trial_end)}`);
+    } catch (err: any) {
+      toast.error(err.message || 'Enrollment failed');
+    } finally {
+      setCheckoutLoading(null);
+    }
+  };
+
   const handleSubscribe = async (planId: string) => {
+    if (isFoundingCode) {
+      return handleFoundingEnroll(planId);
+    }
+
     if (!user) {
       navigate('/auth?tab=signup&redirect=/pricing');
       return;
@@ -112,7 +140,6 @@ export default function Pricing() {
     }
   };
 
-  // Don't render the page content while redirect is pending
   if (!user) return null;
 
   return (
@@ -129,10 +156,16 @@ export default function Pricing() {
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">
                 Upgrade, downgrade, or apply a promo code. Changes take effect immediately or at your next renewal.
               </p>
-
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <PromoCodeInput value={promoCode} onChange={setPromoCode} onValidated={setPromoResult} />
               </div>
+              {isFoundingCode && (
+                <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-4 py-2">
+                  <span className="text-sm font-medium text-primary">
+                    🎉 Founding Partner code active — select a plan to start your 60-day free trial
+                  </span>
+                </div>
+              )}
             </motion.div>
           </div>
         </div>
@@ -160,11 +193,9 @@ export default function Pricing() {
                 Developer Plans
               </button>
             </div>
-
             <BillingCycleToggle cycle={billingCycle} onChange={setBillingCycle} />
           </div>
 
-          {/* Annual billing context banner */}
           {billingCycle === 'annual' && (
             <Alert className="max-w-2xl mx-auto border-warning/30 bg-warning/5 [&>svg]:text-warning">
               <Info className="h-4 w-4" />
@@ -198,6 +229,7 @@ export default function Pricing() {
                   onSubscribe={() => handleSubscribe(plan.id)}
                   loading={checkoutLoading === plan.id}
                   promoResult={promoResult}
+                  ctaLabel={isFoundingCode ? 'Activate Founding Program' : undefined}
                 />
               </motion.div>
             ))}
@@ -211,7 +243,7 @@ export default function Pricing() {
             </div>
             <div className="flex items-center gap-2">
               <Lock className="h-4 w-4 text-primary" />
-              <span>SSL-encrypted checkout via Stripe</span>
+              <span>SSL-encrypted secure checkout</span>
             </div>
             <div className="flex items-center gap-2">
               <Shield className="h-4 w-4 text-primary" />
@@ -219,7 +251,10 @@ export default function Pricing() {
             </div>
           </div>
 
-          {/* Enterprise CTA Section */}
+          {/* Founding Program Section */}
+          <FoundingProgramSection />
+
+          {/* Enterprise CTA */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -236,42 +271,22 @@ export default function Pricing() {
               Our enterprise plans are fully custom — more listings, dedicated support, white-label options, and volume pricing. Let's talk.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Button
-                size="lg"
-                onClick={() => { setCtaEntityType('agency'); setCtaDialogOpen(true); }}
-                className="gap-2 w-full sm:w-auto"
-              >
-                <Building2 className="h-4 w-4" />
-                Contact Agency Sales
-                <ArrowRight className="h-4 w-4" />
+              <Button size="lg" onClick={() => { setCtaEntityType('agency'); setCtaDialogOpen(true); }} className="gap-2 w-full sm:w-auto">
+                <Building2 className="h-4 w-4" /> Contact Agency Sales <ArrowRight className="h-4 w-4" />
               </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                onClick={() => { setCtaEntityType('developer'); setCtaDialogOpen(true); }}
-                className="gap-2 w-full sm:w-auto"
-              >
-                <Building2 className="h-4 w-4" />
-                Contact Developer Sales
-                <ArrowRight className="h-4 w-4" />
+              <Button size="lg" variant="outline" onClick={() => { setCtaEntityType('developer'); setCtaDialogOpen(true); }} className="gap-2 w-full sm:w-auto">
+                <Building2 className="h-4 w-4" /> Contact Developer Sales <ArrowRight className="h-4 w-4" />
               </Button>
             </div>
           </motion.div>
 
-          {/* Enterprise Sales Dialog */}
-          <EnterpriseSalesDialog
-            open={ctaDialogOpen}
-            onOpenChange={setCtaDialogOpen}
-            entityType={ctaEntityType}
-          />
+          <EnterpriseSalesDialog open={ctaDialogOpen} onOpenChange={setCtaDialogOpen} entityType={ctaEntityType} />
 
-          {/* Security note */}
           <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
             <Shield className="h-4 w-4" />
             <span>Secure payments · All prices in ILS (₪)</span>
           </div>
 
-          {/* FAQ */}
           <PricingFAQ />
         </div>
       </div>

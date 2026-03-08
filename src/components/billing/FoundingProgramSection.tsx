@@ -1,55 +1,49 @@
-import { Sparkles, Calendar, Percent, Zap, BookOpen } from 'lucide-react';
+import { Sparkles, Calendar, Star, Zap, BookOpen } from 'lucide-react';
+import { useFoundingSpots } from '@/hooks/useFoundingSpots';
 
 const BENEFITS = [
   {
     icon: Calendar,
-    title: '60-Day Free Trial',
-    description: 'Try any plan completely risk-free. No charge for 60 days, cancel anytime.',
+    title: '2 Months Completely Free',
+    description: 'Try any plan risk-free for 60 days. No payment required until your trial ends.',
   },
   {
-    icon: Percent,
-    title: '25% Off for 10 Months',
-    description: 'After your trial, save 25% on your plan price for the next 10 months.',
+    icon: Star,
+    title: '3 Free Featured Listings/mo',
+    description: 'Get 3 featured listing slots each month during your trial — your properties appear first.',
   },
   {
     icon: Zap,
-    title: 'Priority Credits',
-    description: 'Receive 150 visibility credits/month for your first 2 months, then 50/month for 10 months. ~₪16,000 in free platform value.',
+    title: 'Exclusive Early Access',
+    description: 'Your listings go live before anyone else\'s. Be the first agency buyers see on the platform.',
   },
   {
     icon: BookOpen,
     title: 'Case Study Feature',
-    description: 'Get featured on our blog and social channels as a launch partner — free exposure to our buyer and investor audience.',
+    description: 'Get featured on our blog and social channels as a launch partner — free exposure to our buyer audience.',
   },
 ];
 
-// credit_schedule: [150, 150, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50]
-const CREDIT_TIMELINE = [
-  { label: 'Trial M1', credits: 150 },
-  { label: 'Trial M2', credits: 150 },
-  { label: 'M 1', credits: 50 },
-  { label: 'M 2', credits: 50 },
-  { label: 'M 3', credits: 50 },
-  { label: 'M 4', credits: 50 },
-  { label: 'M 5', credits: 50 },
-  { label: 'M 6', credits: 50 },
-  { label: 'M 7', credits: 50 },
-  { label: 'M 8', credits: 50 },
-  { label: 'M 9', credits: 50 },
-  { label: 'M 10', credits: 50 },
-];
-
 export function FoundingProgramSection() {
+  const { data: spots } = useFoundingSpots();
+
   return (
     <div id="founding" className="max-w-5xl mx-auto scroll-mt-20">
       <div className="text-center mb-8">
         <div className="inline-flex items-center gap-2 mb-3">
           <Sparkles className="h-5 w-5 text-primary" />
-          <h2 className="text-2xl md:text-3xl font-bold text-foreground">Founding Program</h2>
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground">Founding Partner Program</h2>
         </div>
-        <p className="text-muted-foreground max-w-xl mx-auto">
-          Be an early adopter and unlock exclusive benefits that reward your commitment.
+        <p className="text-muted-foreground max-w-xl mx-auto mb-4">
+          Be one of the first 15 agencies on the platform and unlock exclusive early-adopter benefits.
         </p>
+        {spots && (
+          <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-4 py-1.5">
+            <span className="text-sm font-semibold text-primary">
+              {spots.remaining} of {spots.cap} spots remaining
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -67,39 +61,9 @@ export function FoundingProgramSection() {
         ))}
       </div>
 
-      {/* Credit timeline */}
-      <div className="mt-8 rounded-2xl border border-primary/20 bg-primary/5 p-6">
-        <p className="text-center text-sm font-semibold text-foreground mb-4">
-          Your Credit Grant Timeline <span className="text-muted-foreground font-normal">(800 credits total · ~₪16,000 value)</span>
-        </p>
-        <div className="overflow-x-auto">
-          <div className="flex gap-1.5 min-w-max mx-auto justify-center">
-            {CREDIT_TIMELINE.map((item, i) => (
-              <div key={i} className="flex flex-col items-center gap-1">
-                <div
-                  className={`rounded-lg px-2 py-2 text-center min-w-[52px] ${
-                    i < 2
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-primary/20 text-primary'
-                  }`}
-                >
-                  <div className="text-xs font-bold">{item.credits}</div>
-                  <div className="text-[10px] opacity-80">credits</div>
-                </div>
-                <div className="text-[10px] text-muted-foreground whitespace-nowrap">{item.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-        <p className="text-center text-xs text-muted-foreground mt-3">
-          Months 1–2 during trial · Months 1–10 after trial starts
-        </p>
-      </div>
-
-      <p className="text-center text-sm text-muted-foreground mt-4">
-        Use code <strong className="text-primary">FOUNDING2026</strong> at checkout to activate
+      <p className="text-center text-sm text-muted-foreground mt-6">
+        Use code <strong className="text-primary">FOUNDING2026</strong> at checkout to activate your founding partner benefits.
       </p>
     </div>
   );
 }
-
