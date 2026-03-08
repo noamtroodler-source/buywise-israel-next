@@ -1183,31 +1183,10 @@ export function RentVsBuyCalculator() {
       )}
 
       {/* 6. Explore - Navigation Cards */}
-      <div className="grid md:grid-cols-3 gap-4">
-        <CTACard
-          title="Calculate Your Mortgage"
-          description="Get detailed monthly payment breakdown"
-          buttonText="Mortgage Calculator"
-          buttonLink="/tools?tool=mortgage"
-          icon={<Wallet className="h-5 w-5" />}
-          variant="muted"
-        />
-        <CTACard
-          title="Full Purchase Costs"
-          description="See all one-time and closing costs"
-          buttonText="True Cost Calculator"
-          buttonLink="/tools?tool=totalcost"
-          icon={<Calculator className="h-5 w-5" />}
-          variant="muted"
-        />
-        <CTACard
-          title="Check Your Budget"
-          description="See how much you can afford"
-          buttonText="Affordability Calculator"
-          buttonLink="/tools?tool=affordability"
-          icon={<Wallet className="h-5 w-5" />}
-          variant="muted"
-        />
+      <div className="grid sm:grid-cols-3 gap-4">
+        <Card className="p-4 cursor-pointer hover:border-primary/50 transition-colors group" onClick={() => navigate('/tools?tool=mortgage')}><Calculator className="h-5 w-5 text-primary mb-2" /><h4 className="font-medium text-sm group-hover:text-primary transition-colors">Mortgage Calculator</h4><p className="text-xs text-muted-foreground mt-1">Get detailed monthly payment breakdown</p></Card>
+        <Card className="p-4 cursor-pointer hover:border-primary/50 transition-colors group" onClick={() => navigate('/tools?tool=totalcost')}><Calculator className="h-5 w-5 text-primary mb-2" /><h4 className="font-medium text-sm group-hover:text-primary transition-colors">True Cost Calculator</h4><p className="text-xs text-muted-foreground mt-1">See all one-time and closing costs</p></Card>
+        <Card className="p-4 cursor-pointer hover:border-primary/50 transition-colors group" onClick={() => navigate('/tools?tool=affordability')}><Wallet className="h-5 w-5 text-primary mb-2" /><h4 className="font-medium text-sm group-hover:text-primary transition-colors">Affordability Calculator</h4><p className="text-xs text-muted-foreground mt-1">See how much you can afford</p></Card>
       </div>
 
       {/* 7. Engage */}
