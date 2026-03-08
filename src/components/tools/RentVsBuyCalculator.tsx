@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useSavePromptTrigger } from '@/hooks/useSavePromptTrigger';
 import { 
   Scale, 
