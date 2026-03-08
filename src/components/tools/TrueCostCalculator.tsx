@@ -325,16 +325,23 @@ export function TrueCostCalculator() {
     const furnitureCost = includeFurniture ? FURNITURE_COSTS[furnitureLevel] : 0;
     const renovationCost = includeRenovation ? parseFormattedNumber(renovationAmount) : 0;
 
-    // Monthly costs
+    // Monthly costs — ranges for arnona and vaad bayit
     const cityData = cities?.find(c => c.slug === selectedCity);
     const monthlyCosts = calculateMonthlyCosts(size, cityData?.name);
+    // Monthly range: arnona ±15%, vaad bayit ₪200-500, insurance ₪100-200
+    const monthlyMin = Math.round(monthlyCosts.arnona * 0.85 + 200 + 100);
+    const monthlyMax = Math.round(monthlyCosts.arnona * 1.15 + 500 + 200);
 
-    // Sum all costs above property price
-    const allCostsAbovePrice = purchaseTax + lawyerFee + agentFee + developerLawyerFee + 
-      bankGuaranteeFee + madadCost + mortgageCosts + FEES.tabuRegistration + movingCost + furnitureCost + renovationCost;
+    // Sum all costs above property price — min and max
+    const allCostsAbovePriceMin = purchaseTax + lawyerFeeMin + agentFeeMin + developerLawyerFeeMin + 
+      bankGuaranteeFee + madadCostMin + mortgageCosts + FEES.tabuRegistration + movingCost + furnitureCost + renovationCost;
+    const allCostsAbovePriceMax = purchaseTax + lawyerFeeMax + agentFeeMax + developerLawyerFeeMax + 
+      bankGuaranteeFee + madadCostMax + mortgageCosts + FEES.tabuRegistration + movingCost + furnitureCost + renovationCost;
     
-    const totalOneTime = price + allCostsAbovePrice;
-    const percentAbovePrice = price > 0 ? (allCostsAbovePrice / price) * 100 : 0;
+    const totalOneTimeMin = price + allCostsAbovePriceMin;
+    const totalOneTimeMax = price + allCostsAbovePriceMax;
+    const percentAbovePriceMin = price > 0 ? (allCostsAbovePriceMin / price) * 100 : 0;
+    const percentAbovePriceMax = price > 0 ? (allCostsAbovePriceMax / price) * 100 : 0;
 
     return {
       price,
@@ -342,20 +349,29 @@ export function TrueCostCalculator() {
       purchaseTax,
       effectiveTaxRate,
       taxSavings,
-      lawyerFee,
-      agentFee,
-      developerLawyerFee,
+      lawyerFeeMin,
+      lawyerFeeMax,
+      agentFeeMin,
+      agentFeeMax,
+      developerLawyerFeeMin,
+      developerLawyerFeeMax,
       bankGuaranteeFee,
-      madadCost,
+      madadCostMin,
+      madadCostMax,
       mortgageCosts,
       tabuRegistration: FEES.tabuRegistration,
       movingCost,
       furnitureCost,
       renovationCost,
       monthlyCosts,
-      totalOneTime,
-      allCostsAbovePrice,
-      percentAbovePrice,
+      monthlyMin,
+      monthlyMax,
+      totalOneTimeMin,
+      totalOneTimeMax,
+      allCostsAbovePriceMin,
+      allCostsAbovePriceMax,
+      percentAbovePriceMin,
+      percentAbovePriceMax,
       cityName: cities?.find(c => c.slug === selectedCity)?.name,
       isNewConstruction,
       minDownPaymentPercent,
