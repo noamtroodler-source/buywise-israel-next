@@ -447,12 +447,17 @@ export function TrueCostCalculator() {
         calculatorType: 'truecost',
         inputs: data,
         results: {
-          totalCost: calculations.totalOneTime,
+          totalCostMin: calculations.totalOneTimeMin,
+          totalCostMax: calculations.totalOneTimeMax,
           purchaseTax: calculations.purchaseTax,
-          allCostsAbovePrice: calculations.allCostsAbovePrice,
-          percentAbovePrice: calculations.percentAbovePrice,
-          lawyerFee: calculations.lawyerFee,
-          agentFee: calculations.agentFee,
+          allCostsAbovePriceMin: calculations.allCostsAbovePriceMin,
+          allCostsAbovePriceMax: calculations.allCostsAbovePriceMax,
+          percentAbovePriceMin: calculations.percentAbovePriceMin,
+          percentAbovePriceMax: calculations.percentAbovePriceMax,
+          lawyerFeeMin: calculations.lawyerFeeMin,
+          lawyerFeeMax: calculations.lawyerFeeMax,
+          agentFeeMin: calculations.agentFeeMin,
+          agentFeeMax: calculations.agentFeeMax,
         },
       });
     } else {
