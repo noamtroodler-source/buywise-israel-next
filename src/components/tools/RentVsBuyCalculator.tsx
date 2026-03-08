@@ -729,24 +729,6 @@ export function RentVsBuyCalculator() {
         </div>
         
         <div className="space-y-4">
-          {/* Buyer Type */}
-          <div className="space-y-2">
-            <Label htmlFor="buyerType" className="flex items-center text-sm font-medium">
-              Buyer Status
-              <InfoTooltip content="Your buyer status determines Purchase Tax (Mas Rechisha) rates and maximum mortgage LTV." />
-            </Label>
-            <Select value={buyerType} onValueChange={(v) => setBuyerType(v as BuyerCategory)}>
-              <SelectTrigger className="h-11">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="first_time">First-Time Buyer</SelectItem>
-                <SelectItem value="oleh">Oleh Hadash (within 7 years)</SelectItem>
-                <SelectItem value="additional">Upgrader / Additional Property</SelectItem>
-                <SelectItem value="non_resident">Non-Resident</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
           
           <div className="grid grid-cols-2 gap-4">
             {/* Down Payment */}
