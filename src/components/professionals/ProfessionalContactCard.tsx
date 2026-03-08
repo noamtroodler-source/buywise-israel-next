@@ -26,8 +26,9 @@ export function ProfessionalContactCard({ professional, accentColor }: Professio
 
         {whatsappUrl && (
           <Button
-            className="w-full gap-2 text-white font-semibold"
-            style={accentColor ? { backgroundColor: accentColor } : undefined}
+            variant="outline"
+            className="w-full gap-2"
+            style={accentColor ? { borderColor: `${accentColor}30`, color: accentColor } : undefined}
             onClick={() => openWhatsApp(whatsappUrl)}
           >
             <MessageCircle className="h-4 w-4" />
