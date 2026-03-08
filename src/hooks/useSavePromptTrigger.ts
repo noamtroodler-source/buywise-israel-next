@@ -48,8 +48,7 @@ export function useSavePromptTrigger({
 
   const dismissPrompt = useCallback(() => {
     setShowPrompt(false);
-    // Reset so it doesn't re-trigger after dismiss
-    changeCountRef.current = 0;
+    firedRef.current = true;
     clearTimer();
   }, [clearTimer]);
 
