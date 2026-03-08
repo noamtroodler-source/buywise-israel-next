@@ -930,7 +930,7 @@ export function TrueCostCalculator() {
                 <div className="p-3 rounded-lg bg-muted/50 border">
                   <p className="font-medium text-sm mb-1">Index Linkage (הצמדה)</p>
                   <p className="text-xs text-muted-foreground">
-                    New construction prices are linked to the building cost index during construction—typically 3–8% over 2–3 years.
+                    New construction prices are linked to the building cost index during construction—typically 3–8% over 2–3 years. Ask your developer about a Madad cap clause.
                   </p>
                 </div>
               </div>
