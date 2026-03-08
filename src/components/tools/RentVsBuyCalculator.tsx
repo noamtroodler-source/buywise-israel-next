@@ -198,6 +198,7 @@ export function RentVsBuyCalculator() {
   const [olehIsFirstProperty, setOlehIsFirstProperty] = useState(true);
   const [downPaymentPercent, setDownPaymentPercent] = useState(DEFAULTS.downPaymentPercent);
   const [interestRate, setInterestRate] = useState(DEFAULTS.interestRate);
+  const [mortgageTerm, setMortgageTerm] = useState(DEFAULTS.mortgageTerm);
   const [timeHorizon, setTimeHorizon] = useState(DEFAULTS.timeHorizon);
   const [appreciation, setAppreciation] = useState(DEFAULTS.appreciation);
   const [rentIncrease, setRentIncrease] = useState(DEFAULTS.rentIncrease);
