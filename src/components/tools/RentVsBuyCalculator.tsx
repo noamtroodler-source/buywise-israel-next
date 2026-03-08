@@ -1183,7 +1183,7 @@ export function RentVsBuyCalculator() {
             minPrice={Math.round(parseFormattedNumber(propertyPrice) * 0.8)}
             maxPrice={Math.round(parseFormattedNumber(propertyPrice) * 1.2)}
             city={cityName || undefined}
-            enabled={propertyPrice !== formatNumber(DEFAULTS.propertyPrice)}
+            enabled={!!calculations}
           />
         );
       })()}
