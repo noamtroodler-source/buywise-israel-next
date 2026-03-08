@@ -1015,8 +1015,11 @@ export function RentVsBuyCalculator() {
           </div>
           
           
-          {/* Exit costs note - Israel-specific */}
-          <div className="px-6 py-3 border-t">
+          {/* Notes */}
+          <div className="px-6 py-3 border-t space-y-1">
+            <p className="text-[10px] text-muted-foreground text-center">
+              Arnona & Vaad Bayit (~{formatPrice(Math.round(calculations.monthlySharedCosts))}/mo) excluded — paid by both renters and buyers
+            </p>
             <p className="text-[10px] text-muted-foreground text-center">
               Exit factored: 3% selling fees {calculations.capitalGainsTax > 0 
                 ? `+ ₪${Math.round(calculations.capitalGainsTax / 1000)}K Mas Shevach` 
