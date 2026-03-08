@@ -539,50 +539,6 @@ export function TrueCostCalculator() {
         </CardContent>
       </Card>
 
-      {/* Buyer Profile Card */}
-      <Card>
-        <CardContent className="p-5 space-y-5">
-          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Buyer Profile</h3>
-          
-          <div className="space-y-2">
-            <div className="flex items-center">
-              <Label className="text-sm font-medium">Buyer Type</Label>
-              <InfoTooltip content="Your buyer status determines your purchase tax rate. First-time buyers and Olim pay significantly less." />
-            </div>
-            <Select value={buyerCategory} onValueChange={(v) => setBuyerCategory(v as BuyerCategory)}>
-              <SelectTrigger className="h-11">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="first_time">First-Time Buyer (דירה יחידה)</SelectItem>
-                <SelectItem value="oleh">Oleh Hadash (עולה חדש)</SelectItem>
-                <SelectItem value="additional">Additional Property (דירה נוספת)</SelectItem>
-                <SelectItem value="non_resident">Foreign Resident (תושב חוץ)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {buyerCategory === 'oleh' && (
-            <div className="space-y-2 pl-4 border-l-2 border-primary/20">
-              <Label className="text-sm font-medium">Year of Aliyah</Label>
-              <Input
-                type="number"
-                value={aliyahYear}
-                onChange={(e) => setAliyahYear(e.target.value)}
-                placeholder="e.g., 2022"
-                min={2000}
-                max={new Date().getFullYear()}
-                className="h-11"
-              />
-              {aliyahYear && !calculateOlehEligibility(parseInt(aliyahYear)) && (
-                <p className="text-xs text-destructive">
-                  Oleh benefits expire 7 years after Aliyah
-                </p>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
       {/* Purchase Type Card */}
       <Card>
