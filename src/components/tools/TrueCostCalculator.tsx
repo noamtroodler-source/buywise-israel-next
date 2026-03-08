@@ -918,7 +918,7 @@ export function TrueCostCalculator() {
                 <div className="p-3 rounded-lg bg-muted/50 border">
                   <p className="font-medium text-sm mb-1">Agent Fees (תיווך)</p>
                   <p className="text-xs text-muted-foreground">
-                    1.5–2.5% + VAT is typical. International buyers often use agents for both resale and new construction.
+                    1.5–2.5% + VAT is typical. International buyers often use agents for both resale and new construction. Fees are negotiable—always confirm the rate upfront.
                   </p>
                 </div>
                 <div className="p-3 rounded-lg bg-muted/50 border">
