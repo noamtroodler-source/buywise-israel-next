@@ -200,7 +200,7 @@ export function TrueCostCalculator() {
   
   // Advanced options
   const [includeAgentFee, setIncludeAgentFee] = useState(true);
-  const [includeMortgageCosts, setIncludeMortgageCosts] = useState(false);
+  const [includeMortgageCosts, setIncludeMortgageCosts] = useState(true);
   const [downPaymentPercent, setDownPaymentPercent] = useState<number | null>(null);
   const [includeMoving, setIncludeMoving] = useState(false);
   const [includeFurniture, setIncludeFurniture] = useState(false);
