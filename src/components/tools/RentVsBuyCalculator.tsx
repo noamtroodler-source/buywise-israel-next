@@ -380,22 +380,39 @@ export function RentVsBuyCalculator() {
     const netBuyingWealth = equityBuilt;
     
     // Renting calculations
-    // Total rent paid with annual increases
+    // Total rent paid with annual increases + monthly savings invested
     let totalRentPaid = 0;
     let currentRent = rent;
+    const monthlyInvestmentRate = investmentReturnRate / 100 / 12;
+    let monthlySavingsPortfolio = 0; // compounded monthly savings
+    let totalMonthlySavingsRaw = 0; // raw sum of monthly savings
+    
     for (let year = 0; year < years; year++) {
-      totalRentPaid += currentRent * 12;
+      const yearlyOwnershipCost = totalMonthlyBuying; // what buying costs per month this year
+      for (let month = 0; month < 12; month++) {
+        totalRentPaid += currentRent;
+        const monthlySaving = Math.max(0, yearlyOwnershipCost - currentRent);
+        totalMonthlySavingsRaw += monthlySaving;
+        // Compound existing portfolio + add new savings
+        monthlySavingsPortfolio = (monthlySavingsPortfolio + monthlySaving) * (1 + monthlyInvestmentRate);
+      }
       currentRent *= (1 + rentIncreaseRate / 100);
     }
     const finalYearRent = rent * Math.pow(1 + rentIncreaseRate / 100, years - 1);
     
-    // Opportunity cost: what if down payment + purchase costs were invested?
+    // Lump sum: down payment + purchase costs invested
     const totalCashNotSpent = downPayment + totalPurchaseCosts;
-    const investedSavingsValue = totalCashNotSpent * Math.pow(1 + investmentReturnRate / 100, years);
-    const investmentGains = investedSavingsValue - totalCashNotSpent;
+    const lumpSumInvestedValue = totalCashNotSpent * Math.pow(1 + investmentReturnRate / 100, years);
+    const lumpSumGains = lumpSumInvestedValue - totalCashNotSpent;
     
-    // Net wealth from renting (invested savings - rent paid)
-    const netRentingWealth = investedSavingsValue - totalRentPaid;
+    // Total renting portfolio = lump sum investment + compounded monthly savings
+    const investedSavingsValue = lumpSumInvestedValue + monthlySavingsPortfolio;
+    const investmentGains = lumpSumGains + monthlySavingsPortfolio;
+    
+    // Net wealth: "what assets do you walk away with?"
+    // Buying: equity after selling (already accounts for all cash spent)
+    // Renting: total portfolio value (rent is cost of living, same as mortgage+ownership for buyer)
+    const netRentingWealth = investedSavingsValue;
     
     // Comparison
     const buyingIsBetter = netBuyingWealth > netRentingWealth;
