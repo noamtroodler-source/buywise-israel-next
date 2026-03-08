@@ -1091,8 +1091,8 @@ export function RentVsBuyCalculator() {
                   <span className="tabular-nums">{formatPrice(Math.round(calculations.totalRentPaid))}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Renter's insurance</span>
-                  <span className="tabular-nums">{formatPrice(Math.round(calculations.totalRentingCosts - calculations.totalRentPaid))}</span>
+                  <span className="text-muted-foreground">Other renting costs</span>
+                  <span className="tabular-nums">{formatPrice(Math.round(calculations.totalRentPaid * 0.02))}</span>
                 </div>
                 <Separator className="my-1" />
                 <div className="flex justify-between">
