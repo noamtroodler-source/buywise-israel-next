@@ -471,35 +471,6 @@ export function TrueCostCalculator() {
               />
             </div>
             
-            {/* City-based price intelligence */}
-            {selectedCity && cityMetrics && (
-              <div className="space-y-1.5">
-                {suggestedPrice && (
-                  <div className="flex items-center justify-between text-xs text-muted-foreground bg-muted/50 rounded-md px-2.5 py-1.5">
-                    <span>
-                      {cities?.find(c => c.slug === selectedCity)?.name} avg: {formatPrice(cityMetrics.average_price_sqm || 0)}/{areaUnit === 'sqft' ? 'sqft' : 'sqm'} → {formatPrice(suggestedPrice)}
-                    </span>
-                    <Button 
-                      variant="link" 
-                      size="sm" 
-                      className="h-auto p-0 text-xs text-primary hover:no-underline"
-                      onClick={handleUseEstimate}
-                    >
-                      Use estimate
-                    </Button>
-                  </div>
-                )}
-                
-                {priceComparison && Math.abs(parseFloat(priceComparison.percentDiff)) > 5 && (
-                  <p className={cn(
-                    "text-xs px-2.5",
-                    priceComparison.isAbove ? "text-semantic-amber-foreground" : "text-primary"
-                  )}>
-                    {priceComparison.percentDiff}% {priceComparison.isAbove ? 'above' : 'below'} city median ({formatPrice(priceComparison.median)})
-                  </p>
-                )}
-              </div>
-            )}
           </div>
           
           {/* Size and City */}
