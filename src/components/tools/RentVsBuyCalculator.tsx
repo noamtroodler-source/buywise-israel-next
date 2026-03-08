@@ -303,6 +303,7 @@ export function RentVsBuyCalculator() {
     setBuyerType('first_time');
     setDownPaymentPercent(DEFAULTS.downPaymentPercent);
     setInterestRate(DEFAULTS.interestRate);
+    setMortgageTerm(DEFAULTS.mortgageTerm);
     setTimeHorizon(DEFAULTS.timeHorizon);
     setAppreciation(DEFAULTS.appreciation);
     setRentIncrease(DEFAULTS.rentIncrease);
