@@ -307,6 +307,8 @@ function AffordabilityCalculatorContent() {
       monthlyPaymentHigh: Math.round(highRateMonthly),
       maxPropertyLow: Math.round(Math.min(maxPropertyAtHighRate, MAX_DISPLAY_PROPERTY_PRICE)),
       maxPropertyHigh: Math.round(Math.min(maxPropertyAtLowRate, MAX_DISPLAY_PROPERTY_PRICE)),
+      maxLoanLow: Math.round(maxLoanAtHighRate),
+      maxLoanHigh: Math.round(maxLoanAtLowRate),
     };
   }, [monthlyIncome, spouseIncome, monthlyDebts, downPayment, interestRate, loanTermYears, employmentType, hasForeignIncome, foreignIncomePercent, selectedBuyerType, olehIsFirstProperty]);
 
@@ -492,7 +494,7 @@ function AffordabilityCalculatorContent() {
                 <p className="text-sm text-muted-foreground mt-2">Maximum property price range</p>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-3 rounded-lg bg-muted/60"><p className="text-xs text-muted-foreground">Maximum Loan</p><p className="text-lg font-semibold">{formatPrice(calculations.maxLoanAmount)}</p></div>
+                <div className="p-3 rounded-lg bg-muted/60"><p className="text-xs text-muted-foreground">Maximum Loan</p><p className="text-lg font-semibold">{formatCurrencyRange(calculations.maxLoanLow, calculations.maxLoanHigh, currencySymbol)}</p></div>
                 <div className="p-3 rounded-lg bg-muted/60">
                   <p className="text-xs text-muted-foreground">Monthly Payment</p>
                   <p className="text-lg font-semibold">
