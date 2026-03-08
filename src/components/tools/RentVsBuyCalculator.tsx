@@ -1016,58 +1016,7 @@ export function RentVsBuyCalculator() {
   // Bottom section - Collapsible breakdown, Pros/Cons, and navigation
   const bottomSection = calculations && (
     <div className="space-y-8">
-      {/* 1. Beyond the Numbers - Qualitative factors */}
-      <div>
-        <h3 className="text-lg font-semibold mb-5">Beyond the Numbers</h3>
-        
-        <div className="grid md:grid-cols-2 gap-5">
-          {/* Buying Pros */}
-          <div className="p-5 rounded-lg bg-muted/30 border border-border/50">
-            <h4 className="font-medium flex items-center gap-2 mb-3 text-sm">
-              <Home className="h-4 w-4 text-muted-foreground" />
-              Why People Buy
-            </h4>
-            
-            <ul className="space-y-2">
-              {BUYING_PROS.map((pro, idx) => (
-                <li key={idx} className="flex items-start gap-2">
-                  <CheckCircle2 className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
-                  <div>
-                    <span className="text-sm">{pro.text}</span>
-                    <p className="text-xs text-muted-foreground">{pro.detail}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-          
-          {/* Renting Pros */}
-          <div className="p-5 rounded-lg bg-muted/30 border border-border/50">
-            <h4 className="font-medium flex items-center gap-2 mb-3 text-sm">
-              <Building2 className="h-4 w-4 text-muted-foreground" />
-              Why People Rent
-            </h4>
-            
-            <ul className="space-y-2">
-              {RENTING_PROS.map((pro, idx) => (
-                <li key={idx} className="flex items-start gap-2">
-                  <CheckCircle2 className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
-                  <div>
-                    <span className="text-sm">{pro.text}</span>
-                    <p className="text-xs text-muted-foreground">{pro.detail}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-            
-            <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border/50">
-              <span className="font-medium">Note:</span> Most Israeli rentals are 1-2 year contracts.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* 2. Detailed Breakdown */}
+      {/* 1. Detailed Breakdown */}
       <Collapsible>
         <div className="rounded-lg border border-border/50 bg-muted/20">
           <CollapsibleTrigger className="w-full px-5 py-4">
@@ -1164,6 +1113,57 @@ export function RentVsBuyCalculator() {
           </CollapsibleContent>
         </div>
       </Collapsible>
+
+      {/* 2. Beyond the Numbers - Qualitative factors */}
+      <div>
+        <h3 className="text-lg font-semibold mb-5">Beyond the Numbers</h3>
+        
+        <div className="grid md:grid-cols-2 gap-5">
+          {/* Buying Pros */}
+          <div className="p-5 rounded-lg bg-muted/30 border border-border/50">
+            <h4 className="font-medium flex items-center gap-2 mb-3 text-sm">
+              <Home className="h-4 w-4 text-muted-foreground" />
+              Why People Buy
+            </h4>
+            
+            <ul className="space-y-2">
+              {BUYING_PROS.map((pro, idx) => (
+                <li key={idx} className="flex items-start gap-2">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
+                  <div>
+                    <span className="text-sm">{pro.text}</span>
+                    <p className="text-xs text-muted-foreground">{pro.detail}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+          
+          {/* Renting Pros */}
+          <div className="p-5 rounded-lg bg-muted/30 border border-border/50">
+            <h4 className="font-medium flex items-center gap-2 mb-3 text-sm">
+              <Building2 className="h-4 w-4 text-muted-foreground" />
+              Why People Rent
+            </h4>
+            
+            <ul className="space-y-2">
+              {RENTING_PROS.map((pro, idx) => (
+                <li key={idx} className="flex items-start gap-2">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
+                  <div>
+                    <span className="text-sm">{pro.text}</span>
+                    <p className="text-xs text-muted-foreground">{pro.detail}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            
+            <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border/50">
+              <span className="font-medium">Note:</span> Most Israeli rentals are 1-2 year contracts.
+            </p>
+          </div>
+        </div>
+      </div>
 
       {/* 3. Interpret - What This Means For You */}
       {insights.length > 0 && (
