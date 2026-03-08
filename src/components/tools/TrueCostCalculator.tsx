@@ -857,7 +857,10 @@ export function TrueCostCalculator() {
 
       {/* Monthly Costs Preview */}
       <div className="p-4 border-t border-border bg-muted/30">
-        <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium mb-2">Est. Monthly Costs</p>
+        <div className="flex items-center gap-1 mb-2">
+          <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Est. Monthly Costs</p>
+          <InfoTooltip content="Arnona (property tax), Va'ad Bayit (building maintenance), Home Insurance" />
+        </div>
         <div className="flex justify-between items-center">
           <div>
             <span className="text-lg font-semibold">
@@ -865,13 +868,10 @@ export function TrueCostCalculator() {
             </span>
             <span className="text-sm text-muted-foreground">/mo</span>
           </div>
-          <div className="text-xs text-muted-foreground text-right">
-            <p>Arnona, Va'ad Bayit, Insurance</p>
-          </div>
+          {!selectedCity && (
+            <span className="text-xs text-muted-foreground">Select a city for accuracy</span>
+          )}
         </div>
-        {!selectedCity && (
-          <p className="text-xs text-muted-foreground mt-1">Select a city for accurate estimates</p>
-        )}
       </div>
     </Card>
   );
