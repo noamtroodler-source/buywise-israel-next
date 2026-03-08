@@ -338,8 +338,18 @@ export function TrueCostCalculator() {
     const allCostsAbovePriceMax = purchaseTax + lawyerFeeMax + agentFeeMax + developerLawyerFeeMax + 
       bankGuaranteeFee + madadCostMax + mortgageCosts + FEES.tabuRegistration + movingCost + furnitureCost + renovationCost;
     
-    const totalOneTimeMin = price + allCostsAbovePriceMin;
-    const totalOneTimeMax = price + allCostsAbovePriceMax;
+    // Total true cost (full price + all fees)
+    const totalTrueCostMin = price + allCostsAbovePriceMin;
+    const totalTrueCostMax = price + allCostsAbovePriceMax;
+    
+    // Total cash needed: if mortgage enabled, cash = down payment + closing costs; otherwise full price + costs
+    const totalCashNeededMin = includeMortgageCosts 
+      ? downPaymentAmount + allCostsAbovePriceMin 
+      : totalTrueCostMin;
+    const totalCashNeededMax = includeMortgageCosts 
+      ? downPaymentAmount + allCostsAbovePriceMax 
+      : totalTrueCostMax;
+    
     const percentAbovePriceMin = price > 0 ? (allCostsAbovePriceMin / price) * 100 : 0;
     const percentAbovePriceMax = price > 0 ? (allCostsAbovePriceMax / price) * 100 : 0;
 
@@ -366,8 +376,10 @@ export function TrueCostCalculator() {
       monthlyCosts,
       monthlyMin,
       monthlyMax,
-      totalOneTimeMin,
-      totalOneTimeMax,
+      totalTrueCostMin,
+      totalTrueCostMax,
+      totalCashNeededMin,
+      totalCashNeededMax,
       allCostsAbovePriceMin,
       allCostsAbovePriceMax,
       percentAbovePriceMin,
@@ -447,8 +459,8 @@ export function TrueCostCalculator() {
         calculatorType: 'truecost',
         inputs: data,
         results: {
-          totalCostMin: calculations.totalOneTimeMin,
-          totalCostMax: calculations.totalOneTimeMax,
+          totalCostMin: calculations.totalTrueCostMin,
+          totalCostMax: calculations.totalTrueCostMax,
           purchaseTax: calculations.purchaseTax,
           allCostsAbovePriceMin: calculations.allCostsAbovePriceMin,
           allCostsAbovePriceMax: calculations.allCostsAbovePriceMax,
@@ -465,12 +477,12 @@ export function TrueCostCalculator() {
     }
   };
 
-  // Calculate visual breakdown percentages (use midpoint for bar)
+  // Calculate visual breakdown percentages (use true cost midpoint for bar)
   const propertyPercent = useMemo(() => {
-    const midTotal = (calculations.totalOneTimeMin + calculations.totalOneTimeMax) / 2;
+    const midTotal = (calculations.totalTrueCostMin + calculations.totalTrueCostMax) / 2;
     if (midTotal <= 0) return 80;
     return Math.round((calculations.price / midTotal) * 100);
-  }, [calculations.price, calculations.totalOneTimeMin, calculations.totalOneTimeMax]);
+  }, [calculations.price, calculations.totalTrueCostMin, calculations.totalTrueCostMax]);
   
   const costsPercent = 100 - propertyPercent;
 
@@ -749,10 +761,10 @@ export function TrueCostCalculator() {
           className="text-3xl md:text-4xl font-bold text-center bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent tracking-tight"
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          key={`${calculations.totalOneTimeMin}-${calculations.totalOneTimeMax}`}
+          key={`${calculations.totalCashNeededMin}-${calculations.totalCashNeededMax}`}
           transition={{ duration: 0.3 }}
         >
-          {formatPrice(Math.round(calculations.totalOneTimeMin))} – {formatPrice(Math.round(calculations.totalOneTimeMax))}
+          {formatPrice(Math.round(calculations.totalCashNeededMin))} – {formatPrice(Math.round(calculations.totalCashNeededMax))}
         </motion.p>
         <p className="text-sm text-muted-foreground text-center mt-2">
           +{formatPrice(Math.round(calculations.allCostsAbovePriceMin))}–{formatPrice(Math.round(calculations.allCostsAbovePriceMax))} ({calculations.percentAbovePriceMin.toFixed(1)}–{calculations.percentAbovePriceMax.toFixed(1)}%) above list price
@@ -972,7 +984,7 @@ export function TrueCostCalculator() {
       show={showSavePrompt}
       calculatorName="true cost"
       onDismiss={dismissSavePrompt}
-      resultSummary={`Total cost: ${formatPrice(Math.round(calculations.totalOneTimeMin))}–${formatPrice(Math.round(calculations.totalOneTimeMax))}`}
+      resultSummary={`Total cost: ${formatPrice(Math.round(calculations.totalCashNeededMin))}–${formatPrice(Math.round(calculations.totalCashNeededMax))}`}
     />
     </>
   );
