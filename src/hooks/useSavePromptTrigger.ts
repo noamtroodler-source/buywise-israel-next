@@ -23,6 +23,7 @@ export function useSavePromptTrigger({
   const [showPrompt, setShowPrompt] = useState(false);
   const changeCountRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const firedRef = useRef(false);
 
   const clearTimer = useCallback(() => {
     if (timerRef.current) {
@@ -32,14 +33,14 @@ export function useSavePromptTrigger({
   }, []);
 
   const trackChange = useCallback(() => {
-    // Don't track if user is logged in or prompt already shown
-    if (user) return;
+    if (user || firedRef.current) return;
 
     changeCountRef.current += 1;
     clearTimer();
 
     if (changeCountRef.current >= minChanges) {
       timerRef.current = setTimeout(() => {
+        firedRef.current = true;
         setShowPrompt(true);
       }, idleMs);
     }
@@ -47,8 +48,7 @@ export function useSavePromptTrigger({
 
   const dismissPrompt = useCallback(() => {
     setShowPrompt(false);
-    // Reset so it doesn't re-trigger after dismiss
-    changeCountRef.current = 0;
+    firedRef.current = true;
     clearTimer();
   }, [clearTimer]);
 
