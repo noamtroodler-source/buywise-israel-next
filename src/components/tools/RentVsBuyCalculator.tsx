@@ -937,36 +937,8 @@ export function RentVsBuyCalculator() {
           </div>
           
           {/* Visual Breakdown Bar - Monthly Costs Allocation */}
-          {calculations.totalMonthlyBuying > 0 && (
-            <div className="px-6 py-4 border-t">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
-                Monthly Cost Breakdown (Buyer-Only)
-                <InfoTooltip content="Arnona and Vaad Bayit are excluded — renters pay these too, so they cancel out in the comparison." />
-              </p>
-              <div className="flex h-3 rounded-full overflow-hidden bg-muted/30">
-                <div 
-                  className="bg-primary transition-all" 
-                  style={{ width: `${(calculations.monthlyMortgage / calculations.totalMonthlyBuying) * 100}%` }}
-                  title={`Mortgage: ${formatPrice(Math.round(calculations.monthlyMortgage))}`}
-                />
-                <div 
-                  className="bg-primary/50 transition-all" 
-                  style={{ width: `${(calculations.totalMonthlyOwnershipCosts / calculations.totalMonthlyBuying) * 100}%` }}
-                  title={`Insurance + Maintenance: ${formatPrice(Math.round(calculations.totalMonthlyOwnershipCosts))}`}
-                />
-              </div>
-              <div className="flex items-center gap-4 mt-2 text-[10px] text-muted-foreground">
-                <span className="flex items-center gap-1">
-                  <span className="h-2 w-2 rounded-full bg-primary" />
-                  Mortgage
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="h-2 w-2 rounded-full bg-primary/50" />
-                  Insurance + Maintenance
-                </span>
-              </div>
-            </div>
-          )}
+          
+
           
           {/* Quick Stats Grid - 2x2 with dividers */}
           <div className="p-6 border-t">
