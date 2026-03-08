@@ -654,57 +654,7 @@ async function handleDiscover(body: any) {
   const mapData = await mapRes.json();
   if (!mapRes.ok) throw new Error(`Firecrawl MAP failed: ${JSON.stringify(mapData)}`);
 
-  let rawUrls: string[] = mapData.links || mapData.data || [];
-  console.log(`Firecrawl map returned ${rawUrls.length} URLs`);
-
-  // Fallback: if map returned very few URLs, scrape the provided page and extract links
-  const MAP_LOW_YIELD_THRESHOLD = 5;
-  if (rawUrls.length < MAP_LOW_YIELD_THRESHOLD) {
-    console.log(`Low yield from map (${rawUrls.length} < ${MAP_LOW_YIELD_THRESHOLD}), using scrape fallback to extract links from ${formattedUrl}`);
-    try {
-      const scrapeRes = await fetch("https://api.firecrawl.dev/v1/scrape", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${FIRECRAWL_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          url: formattedUrl,
-          formats: ["links"],
-          onlyMainContent: false,
-        }),
-      });
-      const scrapeData = await scrapeRes.json();
-      if (scrapeRes.ok) {
-        const scrapedLinks: string[] = scrapeData?.data?.links || scrapeData?.links || [];
-        // Filter to same domain only
-        const baseDomain = getDomainFromUrl(formattedUrl).replace(/^www\./, "");
-        const sameDomainLinks = scrapedLinks.filter(link => {
-          try {
-            const linkDomain = new URL(link).hostname.replace(/^www\./, "").toLowerCase();
-            return linkDomain === baseDomain || linkDomain.endsWith(`.${baseDomain}`);
-          } catch { return false; }
-        });
-        // Merge with map results (dedup)
-        const existingSet = new Set(rawUrls.map(u => normalizeUrl(u)));
-        let added = 0;
-        for (const link of sameDomainLinks) {
-          const norm = normalizeUrl(link);
-          if (!existingSet.has(norm)) {
-            rawUrls.push(link);
-            existingSet.add(norm);
-            added++;
-          }
-        }
-        console.log(`Scrape fallback: found ${sameDomainLinks.length} same-domain links, added ${added} new URLs (total: ${rawUrls.length})`);
-      } else {
-        console.warn(`Scrape fallback failed: ${JSON.stringify(scrapeData)}`);
-      }
-    } catch (err) {
-      console.warn(`Scrape fallback error (non-blocking): ${err}`);
-    }
-  }
-
+  const rawUrls: string[] = mapData.links || mapData.data || [];
   if (rawUrls.length === 0) throw new Error("No URLs discovered on this website");
 
   console.log(`Discovered ${rawUrls.length} total URLs`);
