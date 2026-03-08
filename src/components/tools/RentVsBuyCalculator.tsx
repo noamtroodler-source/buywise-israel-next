@@ -1104,7 +1104,7 @@ export function RentVsBuyCalculator() {
                   <span className="tabular-nums">{formatPrice(Math.round(calculations.totalCashNotSpent))}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Investment gains</span>
+                  <span className="text-muted-foreground">Investment gains <InfoTooltip content={`Assuming ${investmentReturn}% annual return (compounded). Includes gains on both the down payment you didn't spend and the monthly savings from lower rent vs. ownership costs.`} /></span>
                   <span className="tabular-nums text-primary">{formatPrice(Math.round(calculations.investmentGains))}</span>
                 </div>
                 <div className="flex justify-between">
