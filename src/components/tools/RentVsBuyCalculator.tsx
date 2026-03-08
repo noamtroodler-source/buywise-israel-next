@@ -488,9 +488,9 @@ export function RentVsBuyCalculator() {
       let rentAtYear = rent;
       let savingsPortfolioAtYear = 0;
       for (let y = 0; y < checkYear; y++) {
-        const buyingCostThisYear = getMonthlyBuyingCost(y);
+        const comparableCostThisYear = getComparableBuyingCost(y);
         for (let m = 0; m < 12; m++) {
-          const saving = Math.max(0, buyingCostThisYear - rentAtYear);
+          const saving = Math.max(0, comparableCostThisYear - rentAtYear);
           savingsPortfolioAtYear = (savingsPortfolioAtYear + saving) * (1 + monthlyInvestmentRate);
         }
         rentAtYear *= (1 + rentIncreaseRate / 100);
