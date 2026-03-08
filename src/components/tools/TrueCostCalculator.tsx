@@ -303,7 +303,7 @@ export function TrueCostCalculator() {
     }
 
     // Mortgage / down payment calculation
-    const minDownPaymentPercent = buyerCategory === 'non_resident' ? 50 : buyerCategory === 'additional' ? 30 : 25;
+    const minDownPaymentPercent = buyerCategory === 'non_resident' ? 50 : buyerCategory === 'additional' ? 30 : 20;
     const effectiveDownPaymentPercent = downPaymentPercent ?? minDownPaymentPercent;
     const downPaymentAmount = Math.round(price * (effectiveDownPaymentPercent / 100));
     const derivedLoanAmount = price - downPaymentAmount;
