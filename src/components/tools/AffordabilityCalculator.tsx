@@ -557,8 +557,8 @@ function AffordabilityCalculatorContent() {
             <ToolPropertySuggestions
               title="Properties in Your Budget"
               subtitle="Based on your income, savings, and current rates"
-              minPrice={calculations.maxPropertyLow}
-              maxPrice={calculations.maxPropertyHigh}
+              minPrice={Math.round(calculations.maxPropertyLow * exchangeRate)}
+              maxPrice={Math.round(calculations.maxPropertyHigh * exchangeRate)}
               enabled={hasInteracted && calculations.maxPropertyPrice > 0}
             />
             {/* 4. Engage */}
