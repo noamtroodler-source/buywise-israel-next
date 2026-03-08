@@ -846,10 +846,6 @@ export function TrueCostCalculator() {
           />
           <div className="bg-muted-foreground/30 h-full flex-1" />
         </div>
-        <div className="flex items-center justify-between text-xs mt-1.5">
-          <span className="font-medium">{formatPrice(calculations.price)}</span>
-          <span className="font-medium">{formatPrice(Math.round(calculations.allCostsAbovePriceMin))}–{formatPrice(Math.round(calculations.allCostsAbovePriceMax))}</span>
-        </div>
       </div>
 
       {/* Monthly Costs Preview */}
