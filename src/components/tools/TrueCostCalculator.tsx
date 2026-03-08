@@ -600,17 +600,15 @@ export function TrueCostCalculator() {
         <CardContent className="p-5 space-y-4">
           <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Advanced Options</h3>
           
-          {!isNewConstruction && (
-            <div className="rounded-lg border border-border/50 bg-muted/20">
-              <div className="flex items-center justify-between px-4 py-3">
-                <span className="text-sm font-medium">Include Agent Fee</span>
-                <Switch
-                  checked={includeAgentFee}
-                  onCheckedChange={setIncludeAgentFee}
-                />
-              </div>
+          <div className="rounded-lg border border-border/50 bg-muted/20">
+            <div className="flex items-center justify-between px-4 py-3">
+              <span className="text-sm font-medium">Include Agent Fee</span>
+              <Switch
+                checked={includeAgentFee}
+                onCheckedChange={setIncludeAgentFee}
+              />
             </div>
-          )}
+          </div>
 
           <div className="rounded-lg border border-border/50 bg-muted/20">
             <div className="flex items-center justify-between px-4 py-3">
