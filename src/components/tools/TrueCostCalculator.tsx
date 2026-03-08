@@ -351,8 +351,12 @@ export function TrueCostCalculator() {
       percentAbovePrice,
       cityName: cities?.find(c => c.slug === selectedCity)?.name,
       isNewConstruction,
+      minDownPaymentPercent,
+      effectiveDownPaymentPercent,
+      downPaymentAmount,
+      derivedLoanAmount,
     };
-  }, [propertyPrice, propertySize, selectedCity, buyerCategory, isNewConstruction, constructionMonths, includeAgentFee, includeMortgageCosts, loanAmount, includeMoving, includeFurniture, furnitureLevel, includeRenovation, renovationAmount, cities]);
+  }, [propertyPrice, propertySize, selectedCity, buyerCategory, isNewConstruction, constructionMonths, includeAgentFee, includeMortgageCosts, downPaymentPercent, includeMoving, includeFurniture, furnitureLevel, includeRenovation, renovationAmount, cities]);
 
   // Generate personalized insights
   const trueCostInsights = useMemo(() => {
