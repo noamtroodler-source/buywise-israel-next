@@ -1226,7 +1226,6 @@ export function RentVsBuyCalculator() {
       leftColumn={leftColumn}
       rightColumn={rightColumn}
       bottomSection={bottomSection}
-      disclaimer={disclaimer}
     />
     <SaveResultsPrompt
       show={showSavePrompt}
