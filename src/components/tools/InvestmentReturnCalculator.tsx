@@ -30,6 +30,7 @@ import { ToolLayout } from '@/components/tools/shared/ToolLayout';
 import { InsightCard } from '@/components/tools/shared/InsightCard';
 import { ToolPropertySuggestions } from '@/components/tools/shared/ToolPropertySuggestions';
 import { ToolFeedback } from '@/components/tools/shared/ToolFeedback';
+import { ToolDisclaimer } from '@/components/tools/shared/ToolDisclaimer';
 import { ToolGuidanceHint } from '@/components/tools/shared/ToolGuidanceHint';
 import { Link } from 'react-router-dom';
 import { Calculator, Home, TrendingUp } from 'lucide-react';
