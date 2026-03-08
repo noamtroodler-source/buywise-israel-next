@@ -689,7 +689,7 @@ export function RentVsBuyCalculator() {
           {/* Monthly Rent */}
           <div className="space-y-2">
             <Label htmlFor="monthlyRent" className="flex items-center text-sm font-medium">
-              Current Monthly Rent
+              Current / Expected Monthly Rent
               <InfoTooltip content="Your current or expected monthly rent payment. This will be compared against ownership costs." />
             </Label>
             <div className="relative">
