@@ -1101,7 +1101,7 @@ export function RentVsBuyCalculator() {
                   <span className="tabular-nums text-primary">{formatPrice(Math.round(calculations.equityBuilt))}</span>
                 </div>
                 <div className="flex justify-between font-semibold pt-2 border-t border-border/50">
-                  <span>Net position</span>
+                  <span className="flex items-center gap-1">Net position <InfoTooltip content="Cash you'd walk away with if you sold — property value minus remaining mortgage, selling costs (~3%), and capital gains tax." /></span>
                   <span className="tabular-nums">
                     {calculations.netBuyingWealth >= 0 ? formatPrice(Math.round(calculations.netBuyingWealth)) : `-${formatPrice(Math.abs(Math.round(calculations.netBuyingWealth)))}`}
                   </span>
@@ -1115,29 +1115,27 @@ export function RentVsBuyCalculator() {
                   <span className="text-muted-foreground">Total rent paid</span>
                   <span className="tabular-nums">{formatPrice(Math.round(calculations.totalRentPaid))}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Other renting costs</span>
-                  <span className="tabular-nums">{formatPrice(Math.round(calculations.totalRentPaid * 0.02))}</span>
-                </div>
                 <Separator className="my-1" />
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Down payment invested</span>
-                  <span className="tabular-nums">{formatPrice(Math.round(calculations.downPayment))}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Savings invested</span>
+                  <span className="text-muted-foreground">Lump sum invested <InfoTooltip content="Down payment + purchase costs you didn't spend, invested instead." /></span>
                   <span className="tabular-nums">{formatPrice(Math.round(calculations.totalCashNotSpent))}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Investment gains <InfoTooltip content={`Assuming ${investmentReturn}% annual return (compounded). Includes gains on both the down payment you didn't spend and the monthly savings from lower rent vs. ownership costs.`} /></span>
-                  <span className="tabular-nums text-primary">{formatPrice(Math.round(calculations.investmentGains))}</span>
+                  <span className="text-muted-foreground">Lump sum growth</span>
+                  <span className="tabular-nums text-primary">{formatPrice(Math.round(calculations.lumpSumInvestedValue - calculations.totalCashNotSpent))}</span>
                 </div>
+                {calculations.monthlySavingsPortfolio > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Monthly savings invested <InfoTooltip content={`Each month buying costs more than renting, the difference is invested at ${investmentReturn}% annual return. This is the compounded value of those monthly savings.`} /></span>
+                    <span className="tabular-nums text-primary">{formatPrice(Math.round(calculations.monthlySavingsPortfolio))}</span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Total portfolio value</span>
                   <span className="tabular-nums text-primary">{formatPrice(Math.round(calculations.investedSavingsValue))}</span>
                 </div>
                 <div className="flex justify-between font-semibold pt-2 border-t border-border/50">
-                  <span>Net position</span>
+                  <span className="flex items-center gap-1">Net position <InfoTooltip content={`Your total investment portfolio — the down payment + purchase costs you invested instead of buying, plus monthly savings (ownership costs minus rent) compounded at ${investmentReturn}% annual return.`} /></span>
                   <span className="tabular-nums">
                     {calculations.netRentingWealth >= 0 ? formatPrice(Math.round(calculations.netRentingWealth)) : `-${formatPrice(Math.abs(Math.round(calculations.netRentingWealth)))}`}
                   </span>
