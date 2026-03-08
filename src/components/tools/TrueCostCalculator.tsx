@@ -834,13 +834,12 @@ export function TrueCostCalculator() {
         <div className="flex justify-between items-center">
           <div>
             <span className="text-lg font-semibold">
-              {formatPrice(Math.round(calculations.monthlyCosts.arnona + calculations.monthlyCosts.vaadBayit + 150))}
+              {formatPrice(calculations.monthlyMin)} – {formatPrice(calculations.monthlyMax)}
             </span>
             <span className="text-sm text-muted-foreground">/mo</span>
           </div>
           <div className="text-xs text-muted-foreground text-right">
-            <p>Arnona: {formatPrice(Math.round(calculations.monthlyCosts.arnona))}</p>
-            <p>Va'ad: {formatPrice(Math.round(calculations.monthlyCosts.vaadBayit))}</p>
+            <p>Arnona, Va'ad Bayit, Insurance</p>
           </div>
         </div>
         {!selectedCity && (
