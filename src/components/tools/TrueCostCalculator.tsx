@@ -593,15 +593,15 @@ export function TrueCostCalculator() {
                     </div>
                     
                     {includeMortgageCosts && (
-                      <div className="space-y-2 pl-4 border-l-2 border-primary/20">
-                        <Label className="text-sm font-medium">Loan Amount</Label>
-                        <div className="relative">
-                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">{currencySymbol}</span>
+                      <div className="flex items-center gap-2 pl-4 border-l-2 border-primary/20">
+                        <Label className="text-xs text-muted-foreground whitespace-nowrap">Loan amount</Label>
+                        <div className="relative flex-1 max-w-[180px]">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{currencySymbol}</span>
                           <Input
                             type="text"
                             value={formatNumber(parseFormattedNumber(loanAmount))}
                             onChange={(e) => setLoanAmount(e.target.value.replace(/[^\d]/g, ''))}
-                            className="pl-10 h-11"
+                            className="pl-7 h-8 text-sm"
                           />
                         </div>
                       </div>
