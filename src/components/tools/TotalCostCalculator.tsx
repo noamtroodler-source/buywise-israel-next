@@ -143,56 +143,6 @@ export function TotalCostCalculator() {
               />
             </div>
 
-            <div className="space-y-2">
-              <div className="flex items-center gap-1">
-                <Label>Buyer Type (סוג רוכש)</Label>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <Info className="h-3.5 w-3.5 text-muted-foreground" />
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs">
-                    Your buyer category significantly affects purchase tax rates. First-time buyers and Olim get reduced rates.
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <Select value={buyerType} onValueChange={(v) => setBuyerType(v as BuyerType)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="first_time">First-Time Buyer (רוכש דירה יחידה)</SelectItem>
-                  <SelectItem value="oleh">New Immigrant - Oleh (עולה חדש)</SelectItem>
-                  <SelectItem value="upgrader">Upgrader - Selling within 18mo (משפר דיור)</SelectItem>
-                  <SelectItem value="investor">Investor / Additional Property (משקיע)</SelectItem>
-                  <SelectItem value="foreign">Foreign Resident (תושב חוץ)</SelectItem>
-                  <SelectItem value="company">Corporate Buyer (חברה)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {buyerType === 'oleh' && (
-              <div className="space-y-2">
-                <Label>Year of Aliyah</Label>
-                <Input
-                  type="number"
-                  value={aliyahYear || ''}
-                  onChange={(e) => setAliyahYear(e.target.value ? Number(e.target.value) : undefined)}
-                  placeholder="e.g., 2020"
-                  min={2000}
-                  max={new Date().getFullYear()}
-                />
-                {isOlehEligible && (
-                  <Badge variant="secondary" className="text-primary bg-primary/10">
-                    ✓ Eligible for Oleh tax benefits ({7 - (new Date().getFullYear() - aliyahYear!)} years remaining)
-                  </Badge>
-                )}
-                {aliyahYear && !isOlehEligible && (
-                  <Badge variant="secondary" className="text-muted-foreground bg-muted">
-                    ⚠ 7-year benefit period expired
-                  </Badge>
-                )}
-              </div>
-            )}
 
             <div className="space-y-2">
               <Label>City</Label>
