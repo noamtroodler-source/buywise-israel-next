@@ -225,7 +225,7 @@ export function TrueCostCalculator() {
         setIsNewConstruction(data.isNewConstruction || false);
         setConstructionMonths(data.constructionMonths || '24');
         setIncludeAgentFee(data.includeAgentFee ?? true);
-        setIncludeMortgageCosts(data.includeMortgageCosts || false);
+        setIncludeMortgageCosts(data.includeMortgageCosts ?? true);
         if (data.downPaymentPercent != null) setDownPaymentPercent(data.downPaymentPercent);
         setIncludeMoving(data.includeMoving || false);
         setIncludeFurniture(data.includeFurniture || false);
@@ -265,7 +265,7 @@ export function TrueCostCalculator() {
     setIsNewConstruction(false);
     setConstructionMonths('24');
     setIncludeAgentFee(true);
-    setIncludeMortgageCosts(false);
+    setIncludeMortgageCosts(true);
     setDownPaymentPercent(null);
     setIncludeMoving(false);
     setIncludeFurniture(false);
@@ -369,6 +369,9 @@ export function TrueCostCalculator() {
       madadCostMin,
       madadCostMax,
       mortgageCosts,
+      appraisalFee: includeMortgageCosts ? FEES.appraisalFee : 0,
+      mortgageRegistrationFee: includeMortgageCosts ? FEES.mortgageRegistration : 0,
+      bankFees: includeMortgageCosts ? FEES.bankFees : 0,
       tabuRegistration: FEES.tabuRegistration,
       movingCost,
       furnitureCost,
@@ -772,7 +775,7 @@ export function TrueCostCalculator() {
       </div>
 
 
-      {/* Quick Stats Grid - 2x2 with dividers */}
+      {/* Quick Stats Grid - 2x3 with dividers */}
       <div className="grid grid-cols-2 divide-x divide-y divide-border">
         <div className="p-4">
           <div className="flex items-center gap-1">
@@ -800,10 +803,46 @@ export function TrueCostCalculator() {
           </div>
           <p className="text-lg font-semibold mt-0.5">{formatPrice(calculations.tabuRegistration)}</p>
         </div>
+        {includeMortgageCosts && (
+          <div className="p-4">
+            <div className="flex items-center gap-1">
+              <p className="text-xs text-muted-foreground">Mortgage Costs</p>
+              <InfoTooltip content="Appraisal, mortgage registration, and bank processing fees" />
+            </div>
+            <p className="text-lg font-semibold mt-0.5">{formatPrice(calculations.mortgageCosts)}</p>
+            <p className="text-[10px] text-muted-foreground">Appraisal + Reg. + Bank</p>
+          </div>
+        )}
+        {includeMortgageCosts && (
+          <div className="p-4">
+            <p className="text-xs text-muted-foreground">Down Payment</p>
+            <p className="text-lg font-semibold mt-0.5">{formatPrice(calculations.downPaymentAmount)}</p>
+            <p className="text-[10px] text-muted-foreground">{calculations.effectiveDownPaymentPercent}% of price</p>
+          </div>
+        )}
       </div>
 
+      {/* Mortgage Cost Breakdown */}
+      {includeMortgageCosts && (
+        <div className="px-4 py-3 bg-primary/5 border-t border-primary/20">
+          <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wide font-medium">Mortgage Cost Breakdown</p>
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">Property Appraisal</span>
+            <span className="font-medium">{formatPrice(calculations.appraisalFee)}</span>
+          </div>
+          <div className="flex justify-between text-sm mt-1">
+            <span className="text-muted-foreground">Mortgage Registration</span>
+            <span className="font-medium">{formatPrice(calculations.mortgageRegistrationFee)}</span>
+          </div>
+          <div className="flex justify-between text-sm mt-1">
+            <span className="text-muted-foreground">Bank Processing Fees</span>
+            <span className="font-medium">{formatPrice(calculations.bankFees)}</span>
+          </div>
+        </div>
+      )}
+
       {/* New Construction Extras */}
-      {isNewConstruction && (calculations.madadCostMin > 0 || calculations.developerLawyerFeeMin > 0) && (
+      {isNewConstruction && (calculations.madadCostMin > 0 || calculations.developerLawyerFeeMin > 0 || calculations.bankGuaranteeFee > 0) && (
         <div className="px-4 py-3 bg-semantic-amber/10 border-t border-semantic-amber">
           <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wide font-medium">New Construction Costs</p>
           <div className="flex justify-between text-sm">
@@ -814,6 +853,12 @@ export function TrueCostCalculator() {
             <div className="flex justify-between text-sm mt-1">
               <span className="text-muted-foreground">Developer Lawyer</span>
               <span className="font-medium">{formatPrice(Math.round(calculations.developerLawyerFeeMin))} – {formatPrice(Math.round(calculations.developerLawyerFeeMax))}</span>
+            </div>
+          )}
+          {calculations.bankGuaranteeFee > 0 && (
+            <div className="flex justify-between text-sm mt-1">
+              <span className="text-muted-foreground flex items-center gap-1">Bank Guarantee<InfoTooltip content="Required for new construction purchases with a mortgage. Protects your payments during construction (0.5% of price)." /></span>
+              <span className="font-medium">{formatPrice(Math.round(calculations.bankGuaranteeFee))}</span>
             </div>
           )}
         </div>
@@ -948,7 +993,7 @@ export function TrueCostCalculator() {
 
       {/* 6. Disclaimer */}
       <ToolDisclaimer 
-        text="Estimates based on current Israeli tax brackets and market rates (2024). Consult a lawyer and accountant for precise figures."
+        text="Estimates based on current Israeli tax brackets and market rates (2025). Consult a lawyer and accountant for precise figures."
       />
 
       {/* 7. Feedback */}
