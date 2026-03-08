@@ -948,7 +948,7 @@ export function TrueCostCalculator() {
 
       {/* 6. Disclaimer */}
       <ToolDisclaimer 
-        text="Estimates based on current Israeli tax brackets and market rates (2024). Consult a lawyer and accountant for precise figures."
+        text="Estimates based on current Israeli tax brackets and market rates (2025). Consult a lawyer and accountant for precise figures."
       />
 
       {/* 7. Feedback */}
