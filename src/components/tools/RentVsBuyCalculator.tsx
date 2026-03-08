@@ -600,9 +600,6 @@ export function RentVsBuyCalculator() {
         onOlehFirstPropertyChange={setOlehIsFirstProperty}
         olehIsFirstProperty={olehIsFirstProperty}
       />
-       <InfoBanner variant="info">
-        Both paths have real advantages. This tool helps you see what each offers—financially and in daily life—so you can decide what fits your priorities.
-      </InfoBanner>
     </div>
   );
   
