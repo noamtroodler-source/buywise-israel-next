@@ -16,7 +16,7 @@ export const PROFESSIONAL_LOGOS: Record<string, string> = {
   'adv-sarah-goldstein': advSarahGoldstein,
   'shapira-legal-group': shapiraLegalGroup,
   'ben-david-associates': benDavidAssociates,
-  'israel-mortgage-advisors': israelMortgageAdvisors,
+  'first-israel-mortgages': firstIsraelMortgages,
   'firsthome-finance': firstHomeFinance,
   'global-lending-il': globalLendingIl,
   'aliyah-mortgage-solutions': aliyahMortgageSolutions,
