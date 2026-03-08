@@ -1110,12 +1110,9 @@ export function RentVsBuyCalculator() {
                       const cityRate = cityMetrics?.yoy_price_change;
                       let context = `Projected at ${rate}% annual appreciation compounded over ${timeHorizon} years.`;
                       if (cityRate) {
-                        context += ` This rate is based on ${selectedCity ? 'this city\'s' : 'the selected city\'s'} recent year-over-year price change of ${cityRate.toFixed(1)}%.`;
+                        context += ` Based on this city's recent data (${cityRate.toFixed(1)}% YoY), tempered to a moderate long-term estimate.`;
                       }
-                      if (rate <= 2) context += ' This is a conservative estimate — below Israel\'s long-term average of ~4-6%.';
-                      else if (rate <= 4) context += ' This is a moderate estimate — in line with Israel\'s long-term average.';
-                      else if (rate <= 6) context += ' This is an optimistic estimate — at the high end of Israel\'s long-term average.';
-                      else context += ' This is an aggressive estimate — above Israel\'s historical norms. Consider stress-testing with a lower rate.';
+                      context += ' Israel\'s long-term national average is ~4-6% annually.';
                       return context;
                     })()} />
                   </span>
