@@ -1170,8 +1170,10 @@ export function RentVsBuyCalculator() {
         <InsightCard insights={insights} />
       )}
 
-      
-      {/* 5. Act - Property Suggestions */}
+      {/* Source Attribution */}
+      <SourceAttribution toolType="rentVsBuy" />
+
+
       {calculations && (
         <ToolPropertySuggestions
           title="Properties at This Price"
