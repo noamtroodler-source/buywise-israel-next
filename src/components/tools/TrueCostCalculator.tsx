@@ -265,7 +265,7 @@ export function TrueCostCalculator() {
     setIsNewConstruction(false);
     setConstructionMonths('24');
     setIncludeAgentFee(true);
-    setIncludeMortgageCosts(false);
+    setIncludeMortgageCosts(true);
     setDownPaymentPercent(null);
     setIncludeMoving(false);
     setIncludeFurniture(false);
