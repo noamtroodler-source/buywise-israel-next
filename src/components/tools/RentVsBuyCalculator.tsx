@@ -562,6 +562,7 @@ export function RentVsBuyCalculator() {
       buyerType,
       downPaymentPercent,
       interestRate,
+      mortgageTerm,
       timeHorizon,
       appreciation,
       rentIncrease,
