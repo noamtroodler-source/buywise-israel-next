@@ -384,41 +384,44 @@ export function TrueCostCalculator() {
   // Generate personalized insights
   const trueCostInsights = useMemo(() => {
     const messages: string[] = [];
-    const overheadPercent = calculations.percentAbovePrice;
+    const overheadPercent = calculations.percentAbovePriceMin;
     const taxSavings = calculations.taxSavings;
     const price = calculations.price;
     
-    // Day-one cash summary — uses actual down payment if mortgage enabled, else LTV default
-    const dayOneCash = includeMortgageCosts
-      ? calculations.allCostsAbovePrice + calculations.downPaymentAmount
-      : calculations.allCostsAbovePrice + (price * (1 - (buyerCategory === 'non_resident' ? 0.50 : buyerCategory === 'additional' ? 0.70 : 0.75)));
-    messages.push(`You'll need roughly ${formatPrice(Math.round(dayOneCash))} in cash before getting the keys — that's your down payment plus all closing costs.`);
+    // Day-one cash summary — range
+    const dayOneCashMin = includeMortgageCosts
+      ? calculations.allCostsAbovePriceMin + calculations.downPaymentAmount
+      : calculations.allCostsAbovePriceMin + (price * (1 - (buyerCategory === 'non_resident' ? 0.50 : buyerCategory === 'additional' ? 0.70 : 0.75)));
+    const dayOneCashMax = includeMortgageCosts
+      ? calculations.allCostsAbovePriceMax + calculations.downPaymentAmount
+      : calculations.allCostsAbovePriceMax + (price * (1 - (buyerCategory === 'non_resident' ? 0.50 : buyerCategory === 'additional' ? 0.70 : 0.75)));
+    messages.push(`You'll need roughly ${formatPrice(Math.round(dayOneCashMin))}–${formatPrice(Math.round(dayOneCashMax))} in cash before getting the keys — that's your down payment plus all closing costs.`);
     
     // Overhead context
     if (overheadPercent > 10) {
-      messages.push(`Costs above the listing price total ${overheadPercent.toFixed(0)}% — higher than average. Review each line item for savings.`);
+      messages.push(`Costs above the listing price total ${overheadPercent.toFixed(0)}–${calculations.percentAbovePriceMax.toFixed(0)}% — higher than average. Review each line item for savings.`);
     } else if (overheadPercent < 7) {
-      messages.push(`At ${overheadPercent.toFixed(0)}% overhead, your costs are lean for an Israeli purchase.`);
+      messages.push(`At ${overheadPercent.toFixed(0)}–${calculations.percentAbovePriceMax.toFixed(0)}% overhead, your costs are lean for an Israeli purchase.`);
     }
     
-    // Agent fee negotiation tip (only when agent fee is significant)
-    if (calculations.agentFee > 30000) {
+    // Agent fee negotiation tip
+    if (calculations.agentFeeMin > 30000) {
       const halfPercentSaving = Math.round(price * 0.005 * 1.18);
       messages.push(`Agent fees are negotiable — even 0.5% less saves you ${formatPrice(halfPercentSaving)}.`);
     }
     
-    // Tax savings (only if not already at 3)
+    // Tax savings
     if (messages.length < 3 && taxSavings > 50000 && (buyerCategory === 'first_time' || buyerCategory === 'oleh')) {
       messages.push(`As a ${buyerCategory === 'oleh' ? 'new Oleh' : 'first-time buyer'}, you're saving ${formatPrice(Math.round(taxSavings))} in purchase tax vs. investor rates.`);
     }
     
-    // Madad (only if not already at 3)
-    if (messages.length < 3 && isNewConstruction && calculations.madadCost > 0) {
-      messages.push(`Construction index linkage adds ${formatPrice(Math.round(calculations.madadCost))} to your final price — factor this into your budget now.`);
+    // Madad
+    if (messages.length < 3 && isNewConstruction && calculations.madadCostMin > 0) {
+      messages.push(`Construction index linkage could add ${formatPrice(Math.round(calculations.madadCostMin))}–${formatPrice(Math.round(calculations.madadCostMax))} to your final price — factor this into your budget now.`);
     }
     
     return messages.slice(0, 3);
-  }, [calculations, buyerCategory, isNewConstruction, formatPrice]);
+  }, [calculations, buyerCategory, isNewConstruction, formatPrice, includeMortgageCosts]);
 
   // Save inputs
   const handleSave = () => {
