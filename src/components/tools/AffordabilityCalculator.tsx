@@ -425,8 +425,8 @@ function AffordabilityCalculatorContent() {
                   <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{currencySymbol}</span><Input type="text" value={formatNumber(spouseIncome)} onChange={(e) => setSpouseIncome(parseFormattedNumber(e.target.value))} className="h-11 pl-8" /></div>
                 </div>
                 <div className="space-y-3">
-                   <div className="flex items-center justify-between"><Label className="text-sm font-medium flex items-center">Income Earned Abroad<InfoTooltip content="If part of your salary comes from a foreign employer or overseas work, Israeli banks discount it 30-40% because it's harder to verify. This reduces your borrowing power." /></Label><Switch checked={hasForeignIncome} onCheckedChange={setHasForeignIncome} /></div>
-                   {hasForeignIncome && <div className="space-y-2"><Label className="text-xs text-muted-foreground">What percentage of your income is from abroad?</Label><Slider value={[foreignIncomePercent]} onValueChange={([v]) => setForeignIncomePercent(v)} min={0} max={100} step={5} /><p className="text-xs text-muted-foreground text-right">{foreignIncomePercent}%</p></div>}
+                   <Label className="text-sm font-medium flex items-center">Income Earned Abroad<InfoTooltip content="If part of your salary comes from a foreign employer or overseas work, Israeli banks discount it 30-40% because it's harder to verify. This reduces your borrowing power." /></Label>
+                   <div className="space-y-2"><Label className="text-xs text-muted-foreground">What percentage of your income is from abroad?</Label><Slider value={[foreignIncomePercent]} onValueChange={([v]) => setForeignIncomePercent(v)} min={0} max={100} step={5} /><p className="text-xs text-muted-foreground text-right">{foreignIncomePercent}%</p></div>
                 </div>
               </CardContent>
             </Card>
