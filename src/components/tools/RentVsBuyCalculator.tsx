@@ -973,7 +973,10 @@ export function RentVsBuyCalculator() {
             <div className="grid grid-cols-2 gap-4">
               {/* Monthly if Buying */}
               <div className="p-3 bg-muted/30 rounded-lg text-center">
-                <p className="text-xs text-muted-foreground mb-1">Monthly if Buying</p>
+                <p className="text-xs text-muted-foreground mb-1 flex items-center justify-center">
+                  Monthly if Buying
+                  <InfoTooltip content={`Mortgage + insurance + maintenance only. Excludes ₪${formatNumber(Math.round(calculations.monthlySharedCosts))}/mo shared costs (Arnona + Vaad) since renters pay those too.`} />
+                </p>
                 <p className="text-lg font-bold tabular-nums">{formatPrice(Math.round(calculations.totalMonthlyBuying))}</p>
               </div>
               
