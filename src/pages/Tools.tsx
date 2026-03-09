@@ -34,6 +34,7 @@ interface Tool {
   icon: React.ComponentType<{ className?: string }>;
   /** Warm, professional hint to guide users */
   guidanceHint?: string;
+  badge?: string;
 }
 
 // All tools with their metadata and contextual guidance hints
