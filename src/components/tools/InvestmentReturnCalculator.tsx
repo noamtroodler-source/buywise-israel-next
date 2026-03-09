@@ -301,7 +301,7 @@ export function InvestmentReturnCalculator() {
                       <FormItem>
                         <FormLabel>Purchase Price</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="2000000" {...field} />
+                          <FormattedNumberInput placeholder="2,000,000" value={field.value} onChange={field.onChange} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
