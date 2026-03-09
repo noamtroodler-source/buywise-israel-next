@@ -407,4 +407,3 @@ export function AgencyAnnouncements({ agencyId, compact = false }: AgencyAnnounc
     );
   }
 }
-}
