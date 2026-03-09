@@ -12,9 +12,11 @@ interface MetricCardProps {
   previousValue: number;
   icon: React.ElementType;
   suffix?: string;
+  iconBg?: string;
+  iconColor?: string;
 }
 
-function MetricCard({ title, value, previousValue, icon: Icon, suffix = '' }: MetricCardProps) {
+function MetricCard({ title, value, previousValue, icon: Icon, suffix = '', iconBg = 'bg-primary/10', iconColor = 'text-primary' }: MetricCardProps) {
   const change = previousValue > 0 
     ? ((value - previousValue) / previousValue) * 100 
     : value > 0 ? 100 : 0;
@@ -30,8 +32,8 @@ function MetricCard({ title, value, previousValue, icon: Icon, suffix = '' }: Me
         <CardContent className="p-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-primary/10">
-                <Icon className="h-5 w-5 text-primary" />
+              <div className={`p-2.5 rounded-xl ${iconBg}`}>
+                <Icon className={`h-5 w-5 ${iconColor}`} />
               </div>
               <div>
                 <p className="text-2xl font-bold text-foreground">
