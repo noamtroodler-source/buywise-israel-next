@@ -145,7 +145,17 @@ export function AgencyPerformanceInsights() {
     ? (lastWeekInquiries / lastWeekViews) * 100 
     : 0;
 
-  const allZero = thisWeekViews === 0 && thisWeekInquiries === 0 && conversionRate === 0;
+  // Demo mode — flip to false for production
+  const DEMO_MODE = true;
+
+  const displayViews = DEMO_MODE ? 847 : thisWeekViews;
+  const displayPrevViews = DEMO_MODE ? 612 : lastWeekViews;
+  const displayInquiries = DEMO_MODE ? 23 : thisWeekInquiries;
+  const displayPrevInquiries = DEMO_MODE ? 19 : lastWeekInquiries;
+  const displayConversion = DEMO_MODE ? 2.7 : Number(conversionRate.toFixed(1));
+  const displayPrevConversion = DEMO_MODE ? 3.1 : Number(lastWeekConversionRate.toFixed(1));
+
+  const allZero = !DEMO_MODE && thisWeekViews === 0 && thisWeekInquiries === 0 && conversionRate === 0;
 
   return (
     <Card className="rounded-2xl border-border/50">
@@ -170,20 +180,20 @@ export function AgencyPerformanceInsights() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <MetricCard
               title="Team Views"
-              value={thisWeekViews}
-              previousValue={lastWeekViews}
+              value={displayViews}
+              previousValue={displayPrevViews}
               icon={Eye}
             />
             <MetricCard
               title="Team Inquiries"
-              value={thisWeekInquiries}
-              previousValue={lastWeekInquiries}
+              value={displayInquiries}
+              previousValue={displayPrevInquiries}
               icon={MessageSquare}
             />
             <MetricCard
               title="Conversion Rate"
-              value={Number(conversionRate.toFixed(1))}
-              previousValue={Number(lastWeekConversionRate.toFixed(1))}
+              value={displayConversion}
+              previousValue={displayPrevConversion}
               icon={Users}
               suffix="%"
             />
