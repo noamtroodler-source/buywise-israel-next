@@ -366,7 +366,7 @@ export function AdvertisePricingSection() {
           </div>
           <div className="flex items-center gap-2">
             <Lock className="h-4 w-4 text-primary" />
-            <span>Secure SSL-encrypted checkout</span>
+            <span>Secure ILS checkout</span>
           </div>
           <div className="flex items-center gap-2">
             <Shield className="h-4 w-4 text-primary" />
