@@ -38,34 +38,7 @@ export function AdminSettings() {
     general: true,
     fees: true,
   });
-  const [syncResult, setSyncResult] = useState<null | {
-    synced: number;
-    created_products: number;
-    created_prices: number;
-    skipped: number;
-  }>(null);
-  const [isSyncing, setIsSyncing] = useState(false);
 
-
-  const handleSyncStripePlans = async () => {
-    setIsSyncing(true);
-    setSyncResult(null);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const { data, error } = await supabase.functions.invoke('sync-stripe-plans', {
-        headers: { Authorization: `Bearer ${session?.access_token}` },
-      });
-      if (error) throw error;
-      setSyncResult(data);
-      toast.success(
-        `Stripe sync complete — ${data.synced} plan(s) synced, ${data.created_prices} price(s) created`
-      );
-    } catch (err: any) {
-      toast.error('Stripe sync failed: ' + (err.message || 'Unknown error'));
-    } finally {
-      setIsSyncing(false);
-    }
-  };
 
   const { data: constants, isLoading } = useQuery({
     queryKey: ['admin-calculator-constants'],
