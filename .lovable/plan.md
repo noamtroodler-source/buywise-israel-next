@@ -1,49 +1,22 @@
 
 
-# About Page Overhaul
+## Phase 1: Founding Partner Enrollment — Implemented ✅
 
-## Problem
-The current page is repetitive (mission statement appears 3 times in nearly identical wording), lacks the investor pitch's clarity about *the problem we solve*, has no human/trust signals, no SEO metadata, and uses a monotonous card-grid layout throughout.
+All changes from the plan have been implemented:
 
-## Changes
+1. **DB Migration** — Added `is_founding_partner`, `payplus_customer_id`, `payplus_subscription_id` to `subscriptions`; `payplus_subscription_id` to `featured_listings`. Updated FOUNDING2026 promo code (max_redemptions=15, cleared old discount/credit data).
+2. **`enroll-founding-partner` edge function** — 15-cap enforcement, trial creation (60 days), founding_partners insert, first month credit grant, promo redemption tracking.
+3. **`check-trial-expirations` edge function** — Daily cron (6 AM UTC) expires trialing subscriptions past trial_end.
+4. **`useFoundingSpots` hook** — Live spots remaining counter querying founding_partners.
+5. **`FoundingProgramSection`** — Updated benefits (2mo free, 3 featured/mo, early access, case study), spots counter badge.
+6. **`FoundingProgramModal`** — Updated benefits, spots counter, activates enrollment flow.
+7. **`Pricing.tsx`** — FOUNDING2026 code routes to `enroll-founding-partner` instead of Stripe; CTA changes to "Activate Founding Program".
+8. **`CheckoutSuccess.tsx`** — Founding partner variant with trial end date and featured listings CTA.
+9. **`grant-monthly-featured-credits`** — Already has 2-month duration cap logic.
+10. **`PlanCard`** — Added `ctaLabel` prop for custom CTA text.
 
-### 1. Add SEOHead
-Add `<SEOHead>` with proper title/description/canonical for the About page.
-
-### 2. Rewrite Hero — Lead with the Problem
-Replace the current hero subtitle with language derived from the investor pitch: "Every international buyer faces the same problem: the only way in is through an agency. There's no trusted, neutral starting point." Then position BuyWise as the answer. Remove the duplicated mission statement.
-
-### 3. Replace "If This Sounds Familiar" with "The Problem We Solve"
-Reframe from emotional/therapy-speak to a clear problem statement. Use a single bold paragraph (like the investor pitch) instead of 3 italic quote cards. More direct, less hand-holding.
-
-### 4. Add "We Are / We Are Not" Comparison Section
-A two-column layout replacing the current "What BuyWise Actually Is" card grid (which repeats the mission *again*). Left column: what we are (neutral entry point, clarity layer, pro-agent). Right column: what we're not (brokerage, commission-based, replacement for professionals). Clear, scannable, no fluff.
-
-### 5. Keep "What We Believe" Principles — Tighten Copy
-The 4 principles are good. Keep them but remove redundant language that echoes earlier sections.
-
-### 6. Rework Pro-Agent Section — Add Concrete Value
-Keep the pro-agent positioning but add the investor pitch angle: "We do the lifting so agencies don't have to change how they operate — enhancing their listings, elevating their presentation, and ensuring buyers arrive informed and ready."
-
-### 7. Remove "The Promise" Quote Section
-It repeats the "six months" line already in the principles section and the "no pressure" message already in the CTA. Cut it entirely — the page is stronger without the repetition.
-
-### 8. Add Social Proof / Traction Numbers
-A small horizontal stats bar (e.g., "X calculations run", "X properties tracked", "X guides published"). Even placeholder numbers signal credibility. Place between principles and pro-agent sections.
-
-### 9. Improve CTA — Add Guide Link
-Add a third CTA button: "Read a Guide" linking to `/guides`, matching the editorial standard of guiding users toward education first.
-
-### 10. Visual Variety
-Break the card-grid monotony:
-- Problem section: full-width text block, no cards
-- "We Are / We Are Not": two-column list with check/X icons
-- Stats: horizontal inline row
-- Principles: keep existing 2x2 grid (it works here)
-
-## File to Edit
-- `src/pages/Principles.tsx` — full rewrite of content and layout structure
-
-## No Breaking Changes
-Same route, same component export, same Layout wrapper. Pure content and visual restructure.
-
+### Deferred (PayPlus not yet set up):
+- `payplus-checkout`, `payplus-webhook`, `manage-billing` edge functions
+- `list-invoices` PayPlus integration
+- Featured listing ₪299/mo PayPlus recurring charge
+- Trial-to-paid automatic charge initiation
