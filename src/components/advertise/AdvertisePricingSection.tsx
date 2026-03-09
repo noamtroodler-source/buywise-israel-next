@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Check, Star, Building2, ArrowRight, Shield, RefreshCcw, Lock, Zap } from "lucide-react";
+import { Check, Star, Building2, ArrowRight, Shield, RefreshCcw, Lock, Zap, Clock, Home, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { EnterpriseSalesDialog } from "@/components/billing/EnterpriseSalesDialog";
+import { useFoundingSpots } from "@/hooks/useFoundingSpots";
 
 type EntityTab = "agency" | "developer";
 
