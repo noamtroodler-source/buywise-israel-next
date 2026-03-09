@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Check, Star, Building2, ArrowRight, Shield, RefreshCcw, Lock, Zap } from "lucide-react";
+import { Check, Star, Building2, ArrowRight, Shield, RefreshCcw, Lock, Zap, Clock, Home, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { EnterpriseSalesDialog } from "@/components/billing/EnterpriseSalesDialog";
+import { useFoundingSpots } from "@/hooks/useFoundingSpots";
 
 type EntityTab = "agency" | "developer";
 
@@ -164,6 +165,59 @@ function EnterpriseBanner({
         <ArrowRight className="ml-1.5 h-4 w-4" />
       </Button>
     </div>
+  );
+}
+
+function FoundingProgramCallout() {
+  const { data, isLoading } = useFoundingSpots();
+  const remaining = data?.remaining ?? 0;
+  const navigate = useNavigate();
+
+  if (isLoading || remaining <= 0) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.4, delay: 0.2 }}
+      className="max-w-3xl mx-auto mb-10"
+    >
+      <div className="relative overflow-hidden rounded-2xl border border-amber-200/60 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/30 dark:to-yellow-950/30 dark:border-amber-800/40 p-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-2">
+              <Star className="h-5 w-5 text-amber-600 fill-amber-500" />
+              <h3 className="font-bold text-foreground">Founding Partner Program</h3>
+              <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700 text-[10px]">
+                {remaining} of 15 spots left
+              </Badge>
+            </div>
+            <p className="text-sm text-muted-foreground mb-3">
+              Be one of our first 15 launch partners and get exclusive benefits.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-200 dark:border-amber-700">
+                <Clock className="h-3 w-3" /> 60-day free trial
+              </span>
+              <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-200 dark:border-amber-700">
+                <Home className="h-3 w-3" /> 3 free featured listings/mo
+              </span>
+              <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-200 dark:border-amber-700">
+                <Sparkles className="h-3 w-3" /> Featured case study
+              </span>
+            </div>
+          </div>
+          <Button
+            onClick={() => navigate("/auth?tab=signup&role=agency&promo=FOUNDING2026")}
+            className="shrink-0 bg-amber-600 hover:bg-amber-700 text-white"
+          >
+            Claim Your Spot
+            <ArrowRight className="ml-1.5 h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    </motion.div>
   );
 }
 
@@ -348,6 +402,9 @@ export function AdvertisePricingSection() {
           </motion.div>
         )}
 
+        {/* Founding Program Callout */}
+        <FoundingProgramCallout />
+
         {/* Trust signals */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -362,7 +419,7 @@ export function AdvertisePricingSection() {
           </div>
           <div className="flex items-center gap-2">
             <Lock className="h-4 w-4 text-primary" />
-            <span>Secure SSL-encrypted checkout</span>
+            <span>Secure ILS checkout</span>
           </div>
           <div className="flex items-center gap-2">
             <Shield className="h-4 w-4 text-primary" />
