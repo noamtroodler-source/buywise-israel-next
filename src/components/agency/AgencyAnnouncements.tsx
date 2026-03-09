@@ -39,9 +39,10 @@ import {
 
 interface AgencyAnnouncementsProps {
   agencyId: string;
+  compact?: boolean;
 }
 
-export function AgencyAnnouncements({ agencyId }: AgencyAnnouncementsProps) {
+export function AgencyAnnouncements({ agencyId, compact = false }: AgencyAnnouncementsProps) {
   const { data: announcements = [] } = useAgencyAnnouncements(agencyId);
   const createAnnouncement = useCreateAnnouncement();
   const updateAnnouncement = useUpdateAnnouncement();
