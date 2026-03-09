@@ -374,6 +374,11 @@ const App = () => (
                             <AgencyImport />
                           </ProtectedRoute>
                         } />
+                        <Route path="/agency/team" element={
+                          <ProtectedRoute>
+                            <AgencyTeam />
+                          </ProtectedRoute>
+                        } />
                         
                         {/* Developer routes */}
                         <Route path="/developer/register" element={
