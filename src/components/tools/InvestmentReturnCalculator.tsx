@@ -13,6 +13,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { FormattedNumberInput } from "@/components/ui/formatted-number-input"
 import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
 import { Switch } from "@/components/ui/switch"
@@ -301,7 +302,7 @@ export function InvestmentReturnCalculator() {
                       <FormItem>
                         <FormLabel>Purchase Price</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="2000000" {...field} />
+                          <FormattedNumberInput placeholder="2,000,000" value={field.value} onChange={field.onChange} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -330,7 +331,7 @@ export function InvestmentReturnCalculator() {
                       <FormItem>
                         <FormLabel>Annual Rent</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="80000" {...field} />
+                          <FormattedNumberInput placeholder="80,000" value={field.value} onChange={field.onChange} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -489,7 +490,7 @@ export function InvestmentReturnCalculator() {
                       <FormItem>
                         <FormLabel>Renovation Costs</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="100000" {...field} />
+                          <FormattedNumberInput placeholder="100,000" value={field.value} onChange={field.onChange} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
