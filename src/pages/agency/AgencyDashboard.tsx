@@ -257,17 +257,21 @@ export default function AgencyDashboard() {
                   </CardContent>
                 </Card>
               ) : (
-                <div className="flex items-center justify-between px-1 py-3 border-b border-border/30">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Megaphone className="h-4 w-4" />
-                    <span>No announcements</span>
-                  </div>
-                  <Button variant="ghost" size="sm" className="rounded-xl text-xs h-7 px-3 hover:bg-primary/10" asChild>
-                    <Link to="#" onClick={(e) => { e.preventDefault(); /* AgencyAnnouncements handles creation */ }}>
-                      Create
-                    </Link>
-                  </Button>
-                </div>
+                <Card className="rounded-2xl border-border/50">
+                  <CardContent className="p-4 flex flex-col items-center text-center gap-3">
+                    <div className="p-3 rounded-2xl bg-muted/50">
+                      <Megaphone className="h-6 w-6 text-muted-foreground/60" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-foreground mb-1">No announcements yet</p>
+                      <p className="text-xs text-muted-foreground">Keep your team aligned — share updates, wins, or reminders</p>
+                    </div>
+                    <Button variant="outline" size="sm" className="rounded-xl text-xs border-primary/20 hover:bg-primary/5">
+                      <Plus className="h-3.5 w-3.5 mr-1.5" />
+                      New Announcement
+                    </Button>
+                  </CardContent>
+                </Card>
               )}
 
               {/* Latest Blog Post */}

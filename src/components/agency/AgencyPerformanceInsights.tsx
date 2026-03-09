@@ -185,12 +185,16 @@ export function AgencyPerformanceInsights() {
               value={displayViews}
               previousValue={displayPrevViews}
               icon={Eye}
+              iconBg="bg-blue-500/10"
+              iconColor="text-blue-600 dark:text-blue-400"
             />
             <MetricCard
               title="Team Inquiries"
               value={displayInquiries}
               previousValue={displayPrevInquiries}
               icon={MessageSquare}
+              iconBg="bg-emerald-500/10"
+              iconColor="text-emerald-600 dark:text-emerald-400"
             />
             <MetricCard
               title="Conversion Rate"
@@ -198,6 +202,8 @@ export function AgencyPerformanceInsights() {
               previousValue={displayPrevConversion}
               icon={Users}
               suffix="%"
+              iconBg="bg-amber-500/10"
+              iconColor="text-amber-600 dark:text-amber-400"
             />
           </div>
         )}
