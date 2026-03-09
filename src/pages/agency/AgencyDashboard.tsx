@@ -150,7 +150,7 @@ export default function AgencyDashboard() {
           >
             {snapshotItems.map((item, i) => (
               <span key={item.label} className="flex items-center gap-1.5 text-sm">
-                {i > 0 && <span className="text-muted-foreground/40 mr-1.5">·</span>}
+                {i > 0 && <span className="w-px h-3.5 bg-border mr-1.5" />}
                 <span className="font-semibold text-foreground">{item.value.toLocaleString()}</span>
                 <span className="text-muted-foreground">{item.label}</span>
               </span>
