@@ -1,0 +1,1 @@
+UPDATE public.agents SET name = 'Ido' WHERE id = 'a03b37ba-9c03-4b9a-bb8e-08eb5a5de731' AND name = 'Gary';
