@@ -99,6 +99,7 @@ const AgencyBlogWizard = lazy(() => import("./pages/agency/AgencyBlogWizard"));
 const AgencyBilling = lazy(() => import("./pages/agency/AgencyBilling"));
 const AgencyFeatured = lazy(() => import("./pages/agency/AgencyFeatured"));
 const AgencyImport = lazy(() => import("./pages/agency/AgencyImport"));
+const AgencyTeam = lazy(() => import("./pages/agency/AgencyTeam"));
 
 // Developer dashboard - lazy load
 const DeveloperRegister = lazy(() => import("./pages/developer/DeveloperRegister"));

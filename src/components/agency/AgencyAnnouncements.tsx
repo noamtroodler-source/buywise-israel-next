@@ -237,165 +237,174 @@ export function AgencyAnnouncements({ agencyId, compact = false }: AgencyAnnounc
         )}
       </CardContent>
 
-      {/* Create Dialog */}
-      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="rounded-2xl sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Create Announcement</DialogTitle>
-            <DialogDescription>
-              Post an announcement to your team
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="create-title">Title</Label>
-              <Input
-                id="create-title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Announcement title"
-                className="rounded-xl"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="create-content">Message</Label>
-              <Textarea
-                id="create-content"
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="Write your announcement..."
-                rows={4}
-                className="rounded-xl resize-none"
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Pin Announcement</Label>
-                <p className="text-xs text-muted-foreground">
-                  Pinned announcements appear at the top
-                </p>
-              </div>
-              <Switch checked={isPinned} onCheckedChange={setIsPinned} />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                resetForm();
-                setCreateDialogOpen(false);
-              }}
-              className="rounded-xl"
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleCreate}
-              disabled={!title.trim() || !content.trim() || createAnnouncement.isPending}
-              className="rounded-xl"
-            >
-              {createAnnouncement.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Creating...
-                </>
-              ) : (
-                'Create'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Dialog */}
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="rounded-2xl sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Edit Announcement</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-title">Title</Label>
-              <Input
-                id="edit-title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="rounded-xl"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-content">Message</Label>
-              <Textarea
-                id="edit-content"
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                rows={4}
-                className="rounded-xl resize-none"
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <Label>Pin Announcement</Label>
-              <Switch checked={isPinned} onCheckedChange={setIsPinned} />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                resetForm();
-                setSelectedAnnouncement(null);
-                setEditDialogOpen(false);
-              }}
-              className="rounded-xl"
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleUpdate}
-              disabled={!title.trim() || !content.trim() || updateAnnouncement.isPending}
-              className="rounded-xl"
-            >
-              {updateAnnouncement.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                'Save Changes'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent className="rounded-2xl">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Announcement?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. The announcement will be permanently deleted.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={deleteAnnouncement.isPending}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl"
-            >
-              {deleteAnnouncement.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Deleting...
-                </>
-              ) : (
-                'Delete'
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {renderDialogs()}
     </Card>
   );
+
+  function renderDialogs() {
+    return (
+      <>
+        {/* Create Dialog */}
+        <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+          <DialogContent className="rounded-2xl sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Create Announcement</DialogTitle>
+              <DialogDescription>
+                Post an announcement to your team
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="create-title">Title</Label>
+                <Input
+                  id="create-title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Announcement title"
+                  className="rounded-xl"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="create-content">Message</Label>
+                <Textarea
+                  id="create-content"
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  placeholder="Write your announcement..."
+                  rows={4}
+                  className="rounded-xl resize-none"
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Pin Announcement</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Pinned announcements appear at the top
+                  </p>
+                </div>
+                <Switch checked={isPinned} onCheckedChange={setIsPinned} />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  resetForm();
+                  setCreateDialogOpen(false);
+                }}
+                className="rounded-xl"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleCreate}
+                disabled={!title.trim() || !content.trim() || createAnnouncement.isPending}
+                className="rounded-xl"
+              >
+                {createAnnouncement.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  'Create'
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Dialog */}
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+          <DialogContent className="rounded-2xl sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Edit Announcement</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-title">Title</Label>
+                <Input
+                  id="edit-title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="rounded-xl"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-content">Message</Label>
+                <Textarea
+                  id="edit-content"
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  rows={4}
+                  className="rounded-xl resize-none"
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label>Pin Announcement</Label>
+                <Switch checked={isPinned} onCheckedChange={setIsPinned} />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  resetForm();
+                  setSelectedAnnouncement(null);
+                  setEditDialogOpen(false);
+                }}
+                className="rounded-xl"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleUpdate}
+                disabled={!title.trim() || !content.trim() || updateAnnouncement.isPending}
+                className="rounded-xl"
+              >
+                {updateAnnouncement.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  'Save Changes'
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent className="rounded-2xl">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Announcement?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. The announcement will be permanently deleted.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDelete}
+                disabled={deleteAnnouncement.isPending}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl"
+              >
+                {deleteAnnouncement.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  'Delete'
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </>
+    );
+  }
+}
 }
