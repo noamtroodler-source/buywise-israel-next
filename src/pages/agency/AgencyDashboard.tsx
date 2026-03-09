@@ -108,15 +108,9 @@ export default function AgencyDashboard() {
                   <ArrowLeft className="h-4 w-4" />
                 </Link>
               </Button>
-              {agency.logo_url ? (
-                <img src={agency.logo_url} alt={agency.name} className="h-12 w-12 rounded-2xl object-cover" />
-              ) : (
-                <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
-                  <span className="text-lg font-bold text-primary-foreground">
-                    {agency.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
-                  </span>
-                </div>
-              )}
+              <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <Building2 className="h-6 w-6 text-primary" />
+              </div>
               <div>
                 <div className="flex items-center gap-2">
                   <h1 className="text-xl font-bold text-foreground">{agency.name}</h1>
@@ -150,7 +144,7 @@ export default function AgencyDashboard() {
           >
             {snapshotItems.map((item, i) => (
               <span key={item.label} className="flex items-center gap-1.5 text-sm">
-                {i > 0 && <span className="w-px h-3.5 bg-border mr-1.5" />}
+                {i > 0 && <span className="text-muted-foreground/40 mr-1.5">·</span>}
                 <span className="font-semibold text-foreground">{item.value.toLocaleString()}</span>
                 <span className="text-muted-foreground">{item.label}</span>
               </span>
@@ -178,8 +172,8 @@ export default function AgencyDashboard() {
                     to={action.disabled ? '#' : action.href}
                     className={`group relative flex flex-col items-center gap-2 p-4 rounded-2xl border border-border/50 bg-card ${action.hoverBg} hover:border-primary/30 transition-all text-center ${action.disabled ? 'opacity-50 pointer-events-none' : ''}`}
                   >
-                    <div className={`p-3 rounded-xl ${action.bg} transition-colors`}>
-                      <action.icon className={`h-6 w-6 ${action.color}`} />
+                    <div className={`p-2.5 rounded-xl ${action.bg} transition-colors`}>
+                      <action.icon className={`h-5 w-5 ${action.color}`} />
                     </div>
                     <span className="text-xs font-medium text-foreground">{action.label}</span>
                     {action.count !== undefined && action.count > 0 && (
@@ -210,17 +204,17 @@ export default function AgencyDashboard() {
           </div>
 
           {/* Two-Column Layout: Performance + Activity */}
-          <div className="grid lg:grid-cols-3 gap-6">
+          <div className="grid lg:grid-cols-5 gap-6">
             {/* Left Column — wider */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="lg:col-span-3 space-y-6">
               {/* Performance Insights — subtle bg wrap */}
-              <div className="bg-muted/30 rounded-2xl p-4 border border-border/30">
+              <div className="bg-muted/30 rounded-2xl p-4">
                 <AgencyPerformanceInsights />
               </div>
             </div>
 
             {/* Right Column — narrower */}
-            <div className="lg:col-span-1 space-y-6">
+            <div className="lg:col-span-2 space-y-6">
               {/* Pending Join Requests (if any) */}
               {pendingRequests > 0 && (
                 <Card className="rounded-2xl border-primary/20 bg-primary/5">
@@ -257,21 +251,17 @@ export default function AgencyDashboard() {
                   </CardContent>
                 </Card>
               ) : (
-                <Card className="rounded-2xl border-border/50">
-                  <CardContent className="p-4 flex flex-col items-center text-center gap-3">
-                    <div className="p-3 rounded-2xl bg-muted/50">
-                      <Megaphone className="h-6 w-6 text-muted-foreground/60" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-foreground mb-1">No announcements yet</p>
-                      <p className="text-xs text-muted-foreground">Keep your team aligned — share updates, wins, or reminders</p>
-                    </div>
-                    <Button variant="outline" size="sm" className="rounded-xl text-xs border-primary/20 hover:bg-primary/5">
-                      <Plus className="h-3.5 w-3.5 mr-1.5" />
-                      New Announcement
-                    </Button>
-                  </CardContent>
-                </Card>
+                <div className="flex items-center justify-between px-1 py-3 border-b border-border/30">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Megaphone className="h-4 w-4" />
+                    <span>No announcements</span>
+                  </div>
+                  <Button variant="ghost" size="sm" className="rounded-xl text-xs h-7 px-3 hover:bg-primary/10" asChild>
+                    <Link to="#" onClick={(e) => { e.preventDefault(); /* AgencyAnnouncements handles creation */ }}>
+                      Create
+                    </Link>
+                  </Button>
+                </div>
               )}
 
               {/* Latest Blog Post */}

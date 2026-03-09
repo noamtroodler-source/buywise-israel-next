@@ -12,11 +12,9 @@ interface MetricCardProps {
   previousValue: number;
   icon: React.ElementType;
   suffix?: string;
-  iconBg?: string;
-  iconColor?: string;
 }
 
-function MetricCard({ title, value, previousValue, icon: Icon, suffix = '', iconBg = 'bg-primary/10', iconColor = 'text-primary' }: MetricCardProps) {
+function MetricCard({ title, value, previousValue, icon: Icon, suffix = '' }: MetricCardProps) {
   const change = previousValue > 0 
     ? ((value - previousValue) / previousValue) * 100 
     : value > 0 ? 100 : 0;
@@ -32,8 +30,8 @@ function MetricCard({ title, value, previousValue, icon: Icon, suffix = '', icon
         <CardContent className="p-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className={`p-2.5 rounded-xl ${iconBg}`}>
-                <Icon className={`h-5 w-5 ${iconColor}`} />
+              <div className="p-2.5 rounded-xl bg-primary/10">
+                <Icon className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-foreground">
@@ -185,16 +183,12 @@ export function AgencyPerformanceInsights() {
               value={displayViews}
               previousValue={displayPrevViews}
               icon={Eye}
-              iconBg="bg-blue-500/10"
-              iconColor="text-blue-600 dark:text-blue-400"
             />
             <MetricCard
               title="Team Inquiries"
               value={displayInquiries}
               previousValue={displayPrevInquiries}
               icon={MessageSquare}
-              iconBg="bg-emerald-500/10"
-              iconColor="text-emerald-600 dark:text-emerald-400"
             />
             <MetricCard
               title="Conversion Rate"
@@ -202,8 +196,6 @@ export function AgencyPerformanceInsights() {
               previousValue={displayPrevConversion}
               icon={Users}
               suffix="%"
-              iconBg="bg-amber-500/10"
-              iconColor="text-amber-600 dark:text-amber-400"
             />
           </div>
         )}
