@@ -1,13 +1,12 @@
 import { Link } from 'react-router-dom';
-import { CreditCard, ArrowUpRight, ExternalLink, Loader2, Calendar } from 'lucide-react';
+import { CreditCard, ArrowUpRight, ExternalLink, Loader2, Calendar, Clock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useSubscription } from '@/hooks/useSubscription';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useState } from 'react';
-import { format } from 'date-fns';
+import { format, differenceInDays } from 'date-fns';
 
 export function BillingSection() {
   const { data: sub, isLoading } = useSubscription();
@@ -15,18 +14,17 @@ export function BillingSection() {
 
   const openBillingPortal = async () => {
     if (!sub || sub.status === 'none') return;
+
+    // Trialing users don't have a billing portal yet
+    if (sub.status === 'trialing') {
+      toast.info('Payment processing will be available soon. Your trial is still active!');
+      return;
+    }
+
     setPortalLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('manage-subscription', {
-        body: {
-          entity_type: sub.entityType,
-          entity_id: sub.entityId,
-        },
-      });
-      if (error) throw error;
-      if (data?.url) {
-        window.open(data.url, '_blank');
-      }
+      // PayPlus billing portal — placeholder until PayPlus is wired
+      toast.info('Billing management coming soon.');
     } catch (err: any) {
       toast.error(err.message || 'Failed to open billing portal');
     } finally {
@@ -47,6 +45,10 @@ export function BillingSection() {
   if (!sub) return null;
 
   const hasSubscription = sub.status !== 'none';
+  const isTrialing = sub.status === 'trialing';
+  const trialDaysLeft = isTrialing && sub.trialEnd
+    ? Math.max(0, differenceInDays(new Date(sub.trialEnd), new Date()))
+    : null;
 
   return (
     <Card className="rounded-2xl border-border hover:shadow-lg hover:border-primary/30 transition-all">
@@ -92,7 +94,14 @@ export function BillingSection() {
             </div>
           </div>
 
-          {hasSubscription && sub.currentPeriodEnd && (
+          {isTrialing && trialDaysLeft !== null && (
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              {trialDaysLeft} day{trialDaysLeft !== 1 ? 's' : ''} remaining in free trial
+            </p>
+          )}
+
+          {!isTrialing && hasSubscription && sub.currentPeriodEnd && (
             <p className="text-xs text-muted-foreground flex items-center gap-1">
               <Calendar className="h-3 w-3" />
               Next billing: {format(new Date(sub.currentPeriodEnd), 'MMMM d, yyyy')}
@@ -108,7 +117,7 @@ export function BillingSection() {
               {hasSubscription ? 'Change Plan' : 'View Plans'}
             </Link>
           </Button>
-          {hasSubscription && (
+          {hasSubscription && !isTrialing && (
             <Button
               variant="outline"
               size="sm"

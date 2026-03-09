@@ -11,8 +11,8 @@ const FAQ_ITEMS = [
     a: 'Yes! You can cancel your subscription at any time from your billing settings. Your plan will remain active until the end of your current billing period.',
   },
   {
-    q: 'How do credits work?',
-    a: 'Credits power visibility boosts — homepage features, city-level priority, search ranking, and more. Credits from monthly plan grants expire at the end of the month they\'re issued. Purchased credit packages also expire at end of the month of purchase. Spend them before month-end to get full value — your balance is always visible in your billing hub.',
+    q: 'How do featured listings work?',
+    a: 'Featured listings give your properties premium placement — homepage features, city-level priority, and higher search rankings. Founding Partners receive 3 free featured listings per month during their trial period.',
   },
   {
     q: 'What happens when I hit my listing limit?',
@@ -20,7 +20,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'What\'s the Founding Program?',
-    a: 'Our Founding Program rewards early adopters with a 60-day free trial, 25% off for 10 months after the trial, and monthly visibility credits. Use code FOUNDING2026 at checkout to activate it.',
+    a: 'Our Founding Program rewards early adopters with a 60-day free trial and 3 free featured listings per month during the trial. Limited to 15 agencies — use code FOUNDING2026 at checkout to activate it.',
   },
   {
     q: 'Can I switch plans later?',
@@ -28,7 +28,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'What payment methods do you accept?',
-    a: 'We accept all major credit and debit cards (Visa, Mastercard, Amex) through our secure Stripe payment processor. All prices are in ILS (₪).',
+    a: 'We accept all major credit and debit cards (Visa, Mastercard, Amex) through our secure payment processor. All prices are in ILS (₪).',
   },
 ];
 

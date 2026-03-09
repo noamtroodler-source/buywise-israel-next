@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { differenceInDays, differenceInHours } from 'date-fns';
-import { Clock, X, ArrowRight } from 'lucide-react';
+import { Clock, X, ArrowRight, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -23,6 +23,7 @@ export function TrialCountdownBanner() {
   const progressPercent = Math.min(100, Math.round((elapsed / totalDays) * 100));
 
   const timeLabel = daysLeft > 0 ? `${daysLeft} day${daysLeft !== 1 ? 's' : ''}` : `${hoursLeft} hour${hoursLeft !== 1 ? 's' : ''}`;
+  const showPaymentCta = daysLeft <= 7;
 
   return (
     <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary to-primary/80 text-primary-foreground p-5">
@@ -49,17 +50,32 @@ export function TrialCountdownBanner() {
           <Progress value={progressPercent} className="h-2 bg-primary-foreground/20" indicatorClassName="bg-primary-foreground" />
         </div>
 
-        <Button
-          variant="secondary"
-          size="sm"
-          asChild
-          className="rounded-xl"
-        >
-          <Link to="/pricing">
-            Choose a plan before your trial ends
-            <ArrowRight className="h-4 w-4 ml-1.5" />
-          </Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            asChild
+            className="rounded-xl"
+          >
+            <Link to="/pricing">
+              Choose a plan before your trial ends
+              <ArrowRight className="h-4 w-4 ml-1.5" />
+            </Link>
+          </Button>
+          {showPaymentCta && (
+            <Button
+              variant="outline"
+              size="sm"
+              asChild
+              className="rounded-xl bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/20"
+            >
+              <Link to="/pricing">
+                <CreditCard className="h-4 w-4 mr-1.5" />
+                Add payment method
+              </Link>
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -520,7 +520,7 @@ export function AdminSettings() {
         ))}
       </div>
 
-      {/* Stripe Sync Section */}
+      {/* Payment Provider Section */}
       <Card className="border-dashed">
         <CardHeader>
           <div className="flex items-center gap-3">
@@ -528,59 +528,22 @@ export function AdminSettings() {
               <Zap className="h-5 w-5" />
             </div>
             <div>
-              <CardTitle className="text-lg">Stripe Products & Prices</CardTitle>
+              <CardTitle className="text-lg">Payment Configuration</CardTitle>
               <CardDescription>
-                Pre-sync all membership plans to Stripe. Idempotent — safe to run multiple times.
+                PayPlus payment integration — configure once API keys are available.
               </CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Creates Stripe Products and monthly/annual Prices for all active non-Enterprise membership plans.
-            Once synced, the first checkout for each plan hits the fast path with no lazy creation.
-          </p>
-
-          {syncResult && (
-            <div className="rounded-lg border bg-muted/40 p-4 space-y-2">
-              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                <CheckCircle2 className="h-4 w-4 text-green-600" />
-                Sync complete
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-                <div className="rounded-md bg-background border p-3 text-center">
-                  <p className="text-2xl font-bold text-foreground">{syncResult.synced}</p>
-                  <p className="text-xs text-muted-foreground">Plans synced</p>
-                </div>
-                <div className="rounded-md bg-background border p-3 text-center">
-                  <p className="text-2xl font-bold text-foreground">{syncResult.created_products}</p>
-                  <p className="text-xs text-muted-foreground">Products created</p>
-                </div>
-                <div className="rounded-md bg-background border p-3 text-center">
-                  <p className="text-2xl font-bold text-foreground">{syncResult.created_prices}</p>
-                  <p className="text-xs text-muted-foreground">Prices created</p>
-                </div>
-                <div className="rounded-md bg-background border p-3 text-center">
-                  <p className="text-2xl font-bold text-foreground">{syncResult.skipped}</p>
-                  <p className="text-xs text-muted-foreground">Already synced</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <Button onClick={handleSyncStripePlans} disabled={isSyncing}>
-            {isSyncing ? (
-              <>
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                Syncing…
-              </>
-            ) : (
-              <>
-                <Zap className="h-4 w-4 mr-2" />
-                Sync Stripe Prices
-              </>
-            )}
-          </Button>
+          <div className="rounded-lg border border-dashed bg-muted/30 p-6 text-center space-y-2">
+            <AlertCircle className="h-8 w-8 mx-auto text-muted-foreground opacity-50" />
+            <p className="text-sm font-medium text-foreground">PayPlus integration pending</p>
+            <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+              Payment processing will be configured once PayPlus API credentials are provided. 
+              Founding Partner enrollments (free trial) work without payment processing.
+            </p>
+          </div>
         </CardContent>
       </Card>
     </div>
