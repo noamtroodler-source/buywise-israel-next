@@ -126,7 +126,7 @@ function DesktopCompsList({
           </div>
 
           {/* Comparison badge with tooltip */}
-          {comparison !== null && Math.abs(comparison) > 5 && (
+          {comparison !== null && (
             <div className="mt-2">
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -134,23 +134,29 @@ function DesktopCompsList({
                     variant="secondary"
                     className={cn(
                       "text-xs cursor-help",
-                      comparison > 0 
-                        ? "bg-semantic-red text-semantic-red-foreground hover:bg-semantic-red/90"
-                        : "bg-semantic-green text-semantic-green-foreground hover:bg-semantic-green/90"
+                      Math.abs(comparison) <= 2
+                        ? "bg-muted text-muted-foreground hover:bg-muted/90"
+                        : comparison > 0 
+                          ? "bg-semantic-red text-semantic-red-foreground hover:bg-semantic-red/90"
+                          : "bg-semantic-green text-semantic-green-foreground hover:bg-semantic-green/90"
                     )}
                   >
-                    {comparison > 0 
-                      ? `Listing is ${comparison.toFixed(0)}% above this sale`
-                      : `Listing is ${Math.abs(comparison).toFixed(0)}% below this sale`
+                    {Math.abs(comparison) <= 2
+                      ? "Similar price per m²"
+                      : comparison > 0 
+                        ? `Listing is ${comparison.toFixed(0)}% above this sale`
+                        : `Listing is ${Math.abs(comparison).toFixed(0)}% below this sale`
                     }
                   </Badge>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-xs">
                   <p className="font-medium mb-1">Price per m² Comparison</p>
                   <p className="text-xs text-muted-foreground">
-                    {comparison > 0 
-                      ? "This listing's price per sqm is higher than what this nearby property sold for. Could indicate premium features or room for negotiation."
-                      : "This listing's price per sqm is below recent comparable sales—potentially good value or motivated seller."
+                    {Math.abs(comparison) <= 2
+                      ? "This listing's price per sqm is within 2% of this sale—a closely matched comparable."
+                      : comparison > 0 
+                        ? "This listing's price per sqm is higher than what this nearby property sold for. Could indicate premium features or room for negotiation."
+                        : "This listing's price per sqm is below recent comparable sales—potentially good value or motivated seller."
                     }
                   </p>
                 </TooltipContent>
