@@ -169,7 +169,8 @@ function EnterpriseBanner({
 }
 
 function FoundingProgramCallout() {
-  const { remaining, isLoading } = useFoundingSpots();
+  const { data, isLoading } = useFoundingSpots();
+  const remaining = data?.remaining ?? 0;
   const navigate = useNavigate();
 
   if (isLoading || remaining <= 0) return null;
