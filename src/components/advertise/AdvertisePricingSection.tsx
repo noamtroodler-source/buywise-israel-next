@@ -349,6 +349,9 @@ export function AdvertisePricingSection() {
           </motion.div>
         )}
 
+        {/* Founding Program Callout */}
+        <FoundingProgramCallout />
+
         {/* Trust signals */}
         <motion.div
           initial={{ opacity: 0 }}
