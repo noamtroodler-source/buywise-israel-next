@@ -4,7 +4,7 @@ import {
   Building2, Users, Home, Eye, Plus, Loader2, 
   Settings, ExternalLink, ArrowLeft, BadgeCheck, Clock,
   FileText, Megaphone, PenLine, CreditCard, Star,
-  BarChart3, UserPlus, AlertCircle
+  BarChart3, AlertCircle
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,6 +27,7 @@ import { ImportWelcomeBanner } from '@/components/agency/ImportWelcomeBanner';
 import { AgencyAnnouncements } from '@/components/agency/AgencyAnnouncements';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useBlogQuotaCheck } from '@/hooks/useBlogQuota';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function AgencyDashboard() {
   const { data: agency, isLoading: agencyLoading } = useMyAgency();
@@ -37,6 +38,7 @@ export default function AgencyDashboard() {
   const { data: featuredListings = [] } = useFeaturedListings(agency?.id);
   const { data: blogPosts = [] } = useMyBlogPosts('agency', agency?.id);
   const { canSubmit: canSubmitBlog } = useBlogQuotaCheck('agency', agency?.id);
+  const isMobile = useIsMobile();
 
   if (agencyLoading) {
     return (
@@ -71,28 +73,28 @@ export default function AgencyDashboard() {
   }
 
   const pendingRequests = joinRequests.length;
-  const pinnedAnnouncements = announcements.filter(a => a.is_pinned);
 
   // Quick action navigation items
   const quickActions = [
-    { label: 'Listings', icon: FileText, href: '/agency/listings', count: stats?.activeListings, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-500/10' },
-    { label: 'Team', icon: Users, href: '/agency/team', count: team.length, badge: pendingRequests > 0 ? `${pendingRequests} pending` : undefined, color: 'text-violet-600 dark:text-violet-400', bg: 'bg-violet-500/10' },
-    { label: 'Analytics', icon: BarChart3, href: '/agency/analytics', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-500/10' },
-    { label: 'Blog', icon: PenLine, href: canSubmitBlog ? '/agency/blog/new' : '/agency', count: blogPosts.length, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-500/10', disabled: !canSubmitBlog, tooltip: !canSubmitBlog ? 'Blog limit reached' : undefined },
-    { label: 'Featured', icon: Star, href: '/agency/featured', count: featuredListings.length, color: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-500/10' },
-    { label: 'Billing', icon: CreditCard, href: '/agency/billing', color: 'text-pink-600 dark:text-pink-400', bg: 'bg-pink-500/10' },
+    { label: 'Listings', icon: FileText, href: '/agency/listings', count: stats?.activeListings, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-500/10', hoverBg: 'hover:bg-blue-500/5' },
+    { label: 'Team', icon: Users, href: '/agency/team', count: team.length, badge: pendingRequests > 0 ? `${pendingRequests} pending` : undefined, color: 'text-violet-600 dark:text-violet-400', bg: 'bg-violet-500/10', hoverBg: 'hover:bg-violet-500/5' },
+    { label: 'Analytics', icon: BarChart3, href: '/agency/analytics', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-500/10', hoverBg: 'hover:bg-emerald-500/5' },
+    { label: 'Blog', icon: PenLine, href: canSubmitBlog ? '/agency/blog/new' : '/agency', count: blogPosts.length, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-500/10', hoverBg: 'hover:bg-amber-500/5', disabled: !canSubmitBlog, tooltip: !canSubmitBlog ? 'Blog limit reached' : undefined },
+    { label: 'Featured', icon: Star, href: '/agency/featured', count: featuredListings.length, color: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-500/10', hoverBg: 'hover:bg-orange-500/5', subtitle: featuredListings.filter(fl => !fl.is_free_credit).length > 0 ? `₪${(featuredListings.filter(fl => !fl.is_free_credit).length * 299).toLocaleString()}/mo` : undefined },
+    { label: 'Billing', icon: CreditCard, href: '/agency/billing', color: 'text-pink-600 dark:text-pink-400', bg: 'bg-pink-500/10', hoverBg: 'hover:bg-pink-500/5' },
   ];
 
-  const statCards = [
-    { label: 'Team Members', value: stats?.totalAgents || 0, icon: Users },
-    { label: 'Active Listings', value: stats?.activeListings || 0, icon: Home },
-    { label: 'Pending Review', value: stats?.pendingListings || 0, icon: Clock },
-    { label: 'All-Time Views', value: stats?.totalViews || 0, icon: Eye },
+  // Snapshot stats for inline strip
+  const snapshotItems = [
+    { label: 'listings', value: stats?.activeListings || 0 },
+    { label: 'agents', value: stats?.totalAgents || 0 },
+    { label: 'all-time views', value: stats?.totalViews || 0 },
+    ...(stats?.pendingListings ? [{ label: 'pending', value: stats.pendingListings }] : []),
   ];
 
   return (
     <Layout>
-      <div className="container py-8">
+      <div className="container py-8 pb-24 md:pb-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -133,6 +135,22 @@ export default function AgencyDashboard() {
             </div>
           </div>
 
+          {/* Snapshot Strip */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.1 }}
+            className="flex flex-wrap items-center gap-x-4 gap-y-1 px-1"
+          >
+            {snapshotItems.map((item, i) => (
+              <span key={item.label} className="flex items-center gap-1.5 text-sm">
+                {i > 0 && <span className="text-muted-foreground/40 mr-1.5">·</span>}
+                <span className="font-semibold text-foreground">{item.value.toLocaleString()}</span>
+                <span className="text-muted-foreground">{item.label}</span>
+              </span>
+            ))}
+          </motion.div>
+
           {/* Priority Lane — only show the most urgent banner */}
           <ImportWelcomeBanner activeListings={stats?.activeListings || 0} />
           <NoPlanBanner />
@@ -152,7 +170,7 @@ export default function AgencyDashboard() {
                 >
                   <Link 
                     to={action.disabled ? '#' : action.href}
-                    className={`group relative flex flex-col items-center gap-2 p-4 rounded-2xl border border-border/50 bg-card hover:border-primary/30 hover:bg-primary/5 transition-all text-center ${action.disabled ? 'opacity-50 pointer-events-none' : ''}`}
+                    className={`group relative flex flex-col items-center gap-2 p-4 rounded-2xl border border-border/50 bg-card ${action.hoverBg} hover:border-primary/30 transition-all text-center ${action.disabled ? 'opacity-50 pointer-events-none' : ''}`}
                   >
                     <div className={`p-2.5 rounded-xl ${action.bg} transition-colors`}>
                       <action.icon className={`h-5 w-5 ${action.color}`} />
@@ -160,6 +178,9 @@ export default function AgencyDashboard() {
                     <span className="text-xs font-medium text-foreground">{action.label}</span>
                     {action.count !== undefined && action.count > 0 && (
                       <span className="text-[10px] text-muted-foreground">{action.count}</span>
+                    )}
+                    {action.subtitle && (
+                      <span className="text-[10px] text-muted-foreground">{action.subtitle}</span>
                     )}
                     {action.badge && (
                       <Badge className="absolute -top-1.5 -right-1.5 text-[10px] px-1.5 py-0 bg-primary text-primary-foreground">
@@ -182,60 +203,14 @@ export default function AgencyDashboard() {
             })}
           </div>
 
-          {/* Stats Row */}
-          <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
-            {statCards.map((stat, index) => (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.15 + index * 0.04 }}
-              >
-                <Card className="border-border/50 rounded-2xl hover:border-primary/20 transition-colors">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-xl bg-primary/10">
-                        <stat.icon className="h-4 w-4 text-primary" />
-                      </div>
-                      <div>
-                        <p className="text-xl font-bold">{stat.value}</p>
-                        <p className="text-xs text-muted-foreground">{stat.label}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
-
           {/* Two-Column Layout: Performance + Activity */}
           <div className="grid lg:grid-cols-5 gap-6">
             {/* Left Column — wider */}
             <div className="lg:col-span-3 space-y-6">
-              {/* Performance Insights */}
-              <AgencyPerformanceInsights />
-
-              {/* Featured Summary (compact) */}
-              {featuredListings.length > 0 && (
-                <Card className="rounded-2xl border-border/50">
-                  <CardContent className="p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-xl bg-orange-500/10">
-                        <Star className="h-4 w-4 text-orange-600 dark:text-orange-400" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">{featuredListings.length} Featured Listing{featuredListings.length !== 1 ? 's' : ''}</p>
-                        <p className="text-xs text-muted-foreground">
-                          ₪{(featuredListings.filter(fl => !fl.is_free_credit).length * 299).toLocaleString()}/mo
-                        </p>
-                      </div>
-                    </div>
-                    <Button variant="outline" size="sm" asChild className="rounded-xl">
-                      <Link to="/agency/featured">Manage</Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
+              {/* Performance Insights — subtle bg wrap */}
+              <div className="bg-muted/30 rounded-2xl p-4">
+                <AgencyPerformanceInsights />
+              </div>
             </div>
 
             {/* Right Column — narrower */}
@@ -246,7 +221,7 @@ export default function AgencyDashboard() {
                   <CardContent className="p-4">
                     <div className="flex items-center gap-3 mb-3">
                       <div className="p-2 rounded-xl bg-primary/10">
-                        <UserPlus className="h-4 w-4 text-primary" />
+                        <Users className="h-4 w-4 text-primary" />
                       </div>
                       <div>
                         <p className="text-sm font-medium">{pendingRequests} Join Request{pendingRequests !== 1 ? 's' : ''}</p>
@@ -262,18 +237,32 @@ export default function AgencyDashboard() {
                 </Card>
               )}
 
-              {/* Announcements (compact) */}
-              <Card className="rounded-2xl border-border/50">
-                <CardHeader className="pb-2 pt-4 px-4">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <Megaphone className="h-4 w-4 text-primary" />
-                    Announcements
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="px-4 pb-4">
-                  <AgencyAnnouncements agencyId={agency.id} compact />
-                </CardContent>
-              </Card>
+              {/* Announcements — compact when empty */}
+              {announcements.length > 0 ? (
+                <Card className="rounded-2xl border-border/50">
+                  <CardHeader className="pb-2 pt-4 px-4">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Megaphone className="h-4 w-4 text-primary" />
+                      Announcements
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-4 pb-4">
+                    <AgencyAnnouncements agencyId={agency.id} compact />
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="flex items-center justify-between px-1 py-3 border-b border-border/30">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Megaphone className="h-4 w-4" />
+                    <span>No announcements</span>
+                  </div>
+                  <Button variant="ghost" size="sm" className="rounded-xl text-xs h-7 px-3 hover:bg-primary/10" asChild>
+                    <Link to="#" onClick={(e) => { e.preventDefault(); /* AgencyAnnouncements handles creation */ }}>
+                      Create
+                    </Link>
+                  </Button>
+                </div>
+              )}
 
               {/* Latest Blog Post */}
               {blogPosts.length > 0 && (
@@ -302,6 +291,26 @@ export default function AgencyDashboard() {
             </div>
           </div>
         </motion.div>
+
+        {/* Mobile FAB — New Listing */}
+        {isMobile && (
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.4, type: 'spring', stiffness: 260, damping: 20 }}
+            className="fixed bottom-20 right-4 z-40"
+          >
+            <Button
+              asChild
+              size="lg"
+              className="rounded-full h-14 w-14 shadow-lg shadow-primary/25 p-0"
+            >
+              <Link to="/agency/listings/new">
+                <Plus className="h-6 w-6" />
+              </Link>
+            </Button>
+          </motion.div>
+        )}
       </div>
     </Layout>
   );

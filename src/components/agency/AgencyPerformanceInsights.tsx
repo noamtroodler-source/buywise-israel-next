@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Eye, MessageSquare, Home, TrendingUp, TrendingDown, Users } from 'lucide-react';
+import { Eye, MessageSquare, TrendingUp, TrendingDown, Users, BarChart3 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -59,132 +59,93 @@ export function AgencyPerformanceInsights() {
   const { data: agency } = useMyAgency();
   const { data: team = [] } = useAgencyTeam(agency?.id);
 
-  // Get all agent IDs in the agency
   const agentIds = team.map(member => member.id);
 
-  // This week's date range
   const thisWeekStart = startOfWeek(new Date(), { weekStartsOn: 0 });
   const thisWeekEnd = endOfWeek(new Date(), { weekStartsOn: 0 });
-  
-  // Last week's date range
   const lastWeekStart = startOfWeek(subWeeks(new Date(), 1), { weekStartsOn: 0 });
   const lastWeekEnd = endOfWeek(subWeeks(new Date(), 1), { weekStartsOn: 0 });
 
-  // Fetch this week's property views for all team properties
   const { data: thisWeekViews = 0 } = useQuery({
     queryKey: ['agency-views-this-week', agency?.id],
     queryFn: async () => {
       if (agentIds.length === 0) return 0;
-      
-      // First get all properties owned by agency agents
       const { data: properties } = await supabase
         .from('properties')
         .select('id')
         .in('agent_id', agentIds);
-      
       if (!properties?.length) return 0;
-      
       const propertyIds = properties.map(p => p.id);
-      
       const { count } = await supabase
         .from('property_views')
         .select('*', { count: 'exact', head: true })
         .in('property_id', propertyIds)
         .gte('created_at', format(thisWeekStart, 'yyyy-MM-dd'))
         .lte('created_at', format(thisWeekEnd, 'yyyy-MM-dd'));
-      
       return count ?? 0;
     },
     enabled: !!agency?.id && agentIds.length > 0,
   });
 
-  // Fetch last week's views
   const { data: lastWeekViews = 0 } = useQuery({
     queryKey: ['agency-views-last-week', agency?.id],
     queryFn: async () => {
       if (agentIds.length === 0) return 0;
-      
       const { data: properties } = await supabase
         .from('properties')
         .select('id')
         .in('agent_id', agentIds);
-      
       if (!properties?.length) return 0;
-      
       const propertyIds = properties.map(p => p.id);
-      
       const { count } = await supabase
         .from('property_views')
         .select('*', { count: 'exact', head: true })
         .in('property_id', propertyIds)
         .gte('created_at', format(lastWeekStart, 'yyyy-MM-dd'))
         .lte('created_at', format(lastWeekEnd, 'yyyy-MM-dd'));
-      
       return count ?? 0;
     },
     enabled: !!agency?.id && agentIds.length > 0,
   });
 
-  // Fetch this week's inquiries
   const { data: thisWeekInquiries = 0 } = useQuery({
     queryKey: ['agency-inquiries-this-week', agency?.id],
     queryFn: async () => {
       if (!agency?.id) return 0;
-      
       const { count } = await supabase
         .from('property_inquiries')
         .select('*', { count: 'exact', head: true })
         .eq('agency_id', agency.id)
         .gte('created_at', format(thisWeekStart, 'yyyy-MM-dd'))
         .lte('created_at', format(thisWeekEnd, 'yyyy-MM-dd'));
-      
       return count ?? 0;
     },
     enabled: !!agency?.id,
   });
 
-  // Fetch last week's inquiries
   const { data: lastWeekInquiries = 0 } = useQuery({
     queryKey: ['agency-inquiries-last-week', agency?.id],
     queryFn: async () => {
       if (!agency?.id) return 0;
-      
       const { count } = await supabase
         .from('property_inquiries')
         .select('*', { count: 'exact', head: true })
         .eq('agency_id', agency.id)
         .gte('created_at', format(lastWeekStart, 'yyyy-MM-dd'))
         .lte('created_at', format(lastWeekEnd, 'yyyy-MM-dd'));
-      
       return count ?? 0;
     },
     enabled: !!agency?.id,
   });
 
-  // Fetch active listings count
-  const { data: activeListings = 0 } = useQuery({
-    queryKey: ['agency-active-listings', agency?.id],
-    queryFn: async () => {
-      if (agentIds.length === 0) return 0;
-      
-      const { count } = await supabase
-        .from('properties')
-        .select('*', { count: 'exact', head: true })
-        .in('agent_id', agentIds)
-        .eq('verification_status', 'approved');
-      
-      return count ?? 0;
-    },
-    enabled: !!agency?.id && agentIds.length > 0,
-  });
-
-  // Calculate conversion rate
   const conversionRate = thisWeekViews > 0 
     ? (thisWeekInquiries / thisWeekViews) * 100 
     : 0;
   const lastWeekConversionRate = lastWeekViews > 0 
     ? (lastWeekInquiries / lastWeekViews) * 100 
     : 0;
+
+  const allZero = thisWeekViews === 0 && thisWeekInquiries === 0 && conversionRate === 0;
 
   return (
     <Card className="rounded-2xl border-border/50">
@@ -195,33 +156,39 @@ export function AgencyPerformanceInsights() {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <MetricCard
-            title="Team Views"
-            value={thisWeekViews}
-            previousValue={lastWeekViews}
-            icon={Eye}
-          />
-          <MetricCard
-            title="Team Inquiries"
-            value={thisWeekInquiries}
-            previousValue={lastWeekInquiries}
-            icon={MessageSquare}
-          />
-          <MetricCard
-            title="Active Listings"
-            value={activeListings}
-            previousValue={activeListings}
-            icon={Home}
-          />
-          <MetricCard
-            title="Conversion Rate"
-            value={Number(conversionRate.toFixed(1))}
-            previousValue={Number(lastWeekConversionRate.toFixed(1))}
-            icon={Users}
-            suffix="%"
-          />
-        </div>
+        {allZero ? (
+          <div className="flex flex-col items-center justify-center py-8 text-center">
+            <div className="p-3 rounded-2xl bg-muted/50 mb-4">
+              <BarChart3 className="h-8 w-8 text-muted-foreground/50" />
+            </div>
+            <p className="text-sm font-medium text-foreground mb-1">No activity this week yet</p>
+            <p className="text-xs text-muted-foreground max-w-[280px]">
+              Views and inquiries will appear here as buyers discover your listings.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <MetricCard
+              title="Team Views"
+              value={thisWeekViews}
+              previousValue={lastWeekViews}
+              icon={Eye}
+            />
+            <MetricCard
+              title="Team Inquiries"
+              value={thisWeekInquiries}
+              previousValue={lastWeekInquiries}
+              icon={MessageSquare}
+            />
+            <MetricCard
+              title="Conversion Rate"
+              value={Number(conversionRate.toFixed(1))}
+              previousValue={Number(lastWeekConversionRate.toFixed(1))}
+              icon={Users}
+              suffix="%"
+            />
+          </div>
+        )}
       </CardContent>
     </Card>
   );
