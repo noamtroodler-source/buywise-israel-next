@@ -108,9 +108,15 @@ export default function AgencyDashboard() {
                   <ArrowLeft className="h-4 w-4" />
                 </Link>
               </Button>
-              <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center">
-                <Building2 className="h-6 w-6 text-primary" />
-              </div>
+              {agency.logo_url ? (
+                <img src={agency.logo_url} alt={agency.name} className="h-12 w-12 rounded-2xl object-cover" />
+              ) : (
+                <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
+                  <span className="text-lg font-bold text-primary-foreground">
+                    {agency.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+                  </span>
+                </div>
+              )}
               <div>
                 <div className="flex items-center gap-2">
                   <h1 className="text-xl font-bold text-foreground">{agency.name}</h1>
