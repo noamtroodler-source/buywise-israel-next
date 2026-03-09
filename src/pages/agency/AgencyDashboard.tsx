@@ -210,17 +210,17 @@ export default function AgencyDashboard() {
           </div>
 
           {/* Two-Column Layout: Performance + Activity */}
-          <div className="grid lg:grid-cols-5 gap-6">
+          <div className="grid lg:grid-cols-3 gap-6">
             {/* Left Column — wider */}
-            <div className="lg:col-span-3 space-y-6">
+            <div className="lg:col-span-2 space-y-6">
               {/* Performance Insights — subtle bg wrap */}
-              <div className="bg-muted/30 rounded-2xl p-4">
+              <div className="bg-muted/30 rounded-2xl p-4 border border-border/30">
                 <AgencyPerformanceInsights />
               </div>
             </div>
 
             {/* Right Column — narrower */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="lg:col-span-1 space-y-6">
               {/* Pending Join Requests (if any) */}
               {pendingRequests > 0 && (
                 <Card className="rounded-2xl border-primary/20 bg-primary/5">
