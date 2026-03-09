@@ -138,8 +138,13 @@ function ToolCard({ tool, onClick }: { tool: Tool; onClick: () => void }) {
         )}
       </div>
       
-      <h3 className="font-semibold text-foreground mb-2">
+      <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
         {tool.label}
+        {tool.badge && (
+          <span className="text-[10px] font-semibold uppercase tracking-wider bg-accent/15 text-accent-foreground px-1.5 py-0.5 rounded">
+            {tool.badge}
+          </span>
+        )}
       </h3>
       
       <p className="text-muted-foreground text-sm leading-relaxed flex-1">
