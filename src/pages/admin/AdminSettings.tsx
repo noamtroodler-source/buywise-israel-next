@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 import { 
   Save, ExternalLink, RefreshCw, DollarSign, Percent, Calculator, 
   Building, Home, Megaphone, Tag, ChevronDown, Check, Pencil, X,
-  Clock, AlertCircle, Zap, CheckCircle2
+  Clock, AlertCircle, Zap
 } from 'lucide-react';
 import { CalculatorConstant } from '@/hooks/useCalculatorConstants';
 import { cn } from '@/lib/utils';
