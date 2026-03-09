@@ -1,22 +1,49 @@
 
 
-## Phase 1: Founding Partner Enrollment — Implemented ✅
+# Agency Dashboard Polish — Implementation Plan
 
-All changes from the plan have been implemented:
+## Changes Overview
 
-1. **DB Migration** — Added `is_founding_partner`, `payplus_customer_id`, `payplus_subscription_id` to `subscriptions`; `payplus_subscription_id` to `featured_listings`. Updated FOUNDING2026 promo code (max_redemptions=15, cleared old discount/credit data).
-2. **`enroll-founding-partner` edge function** — 15-cap enforcement, trial creation (60 days), founding_partners insert, first month credit grant, promo redemption tracking.
-3. **`check-trial-expirations` edge function** — Daily cron (6 AM UTC) expires trialing subscriptions past trial_end.
-4. **`useFoundingSpots` hook** — Live spots remaining counter querying founding_partners.
-5. **`FoundingProgramSection`** — Updated benefits (2mo free, 3 featured/mo, early access, case study), spots counter badge.
-6. **`FoundingProgramModal`** — Updated benefits, spots counter, activates enrollment flow.
-7. **`Pricing.tsx`** — FOUNDING2026 code routes to `enroll-founding-partner` instead of Stripe; CTA changes to "Activate Founding Program".
-8. **`CheckoutSuccess.tsx`** — Founding partner variant with trial end date and featured listings CTA.
-9. **`grant-monthly-featured-credits`** — Already has 2-month duration cap logic.
-10. **`PlanCard`** — Added `ctaLabel` prop for custom CTA text.
+### 1. Replace Stats Row with Inline Snapshot Strip
+**File:** `src/pages/agency/AgencyDashboard.tsx`
 
-### Deferred (PayPlus not yet set up):
-- `payplus-checkout`, `payplus-webhook`, `manage-billing` edge functions
-- `list-invoices` PayPlus integration
-- Featured listing ₪299/mo PayPlus recurring charge
-- Trial-to-paid automatic charge initiation
+Remove the 4-card stats row (lines 186-209) which duplicates data from quick actions and performance. Replace with a single-line horizontal strip under the header showing `122 listings · 5 agents · 30,191 all-time views · 3 pending` — compact, no cards, just text with dot separators.
+
+### 2. Remove "Active Listings" from Performance Insights
+**File:** `src/components/agency/AgencyPerformanceInsights.tsx`
+
+Remove the "Active Listings" metric card (it's a static number, not a weekly trend — it doesn't belong in "This Week's Performance"). Keep Views, Inquiries, and Conversion Rate as a 3-column grid.
+
+### 3. Smart Empty State for Performance
+**File:** `src/components/agency/AgencyPerformanceInsights.tsx`
+
+When all three metrics (views, inquiries, conversion) are zero, show a friendly empty state message instead of a wall of zeros: "No activity this week yet — views and inquiries will appear here as buyers discover your listings."
+
+### 4. Compact Empty Announcements
+**File:** `src/pages/agency/AgencyDashboard.tsx`
+
+When there are no announcements, reduce to a minimal single-line display with inline "Create" button instead of a full card with header.
+
+### 5. Move Featured Count into Quick Actions Badge
+**File:** `src/pages/agency/AgencyDashboard.tsx`
+
+The Featured quick action already shows a count. Remove the separate "Featured Summary" card from the left column (lines 219-238) since it duplicates info. If there's active spend, show it as a subtitle in the quick action card instead.
+
+### 6. Add Subtle Visual Differentiation
+**File:** `src/pages/agency/AgencyDashboard.tsx`
+
+- Performance section: wrap in a subtle `bg-muted/30 rounded-2xl p-4` container to visually separate from quick actions
+- Quick actions: add each action's `bg` color as a very subtle hover background
+
+### 7. Mobile "New Listing" FAB
+**File:** `src/pages/agency/AgencyDashboard.tsx`
+
+Add a fixed-position `+ New Listing` floating button at bottom-right, visible only on mobile (`md:hidden`), linking to the listing creation flow. Uses primary color, 44px touch target.
+
+## Files Modified
+- `src/pages/agency/AgencyDashboard.tsx` — remove stats row, remove featured card, add snapshot strip, compact announcements, add FAB
+- `src/components/agency/AgencyPerformanceInsights.tsx` — remove Active Listings metric, add empty state
+
+## No Breaking Changes
+Same routes, same data hooks, same component exports. Pure layout and presentation cleanup.
+
