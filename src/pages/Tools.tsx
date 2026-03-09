@@ -77,6 +77,7 @@ const allTools: Record<string, Tool> = {
     label: 'Renovation Cost Estimator', 
     description: 'Estimate renovation costs in Israel — beyond how a property looks.', 
     icon: Hammer,
+    badge: 'Beta',
   },
   documents: { 
     id: 'documents', 
@@ -84,6 +85,7 @@ const allTools: Record<string, Tool> = {
     description: "Stay organized through the Israeli buying process — and know what's needed at every step.", 
     icon: ClipboardList,
     guidanceHint: 'Keep this open during the process',
+    badge: 'Beta',
   },
   'listing-decoder': {
     id: 'listing-decoder',
@@ -91,6 +93,7 @@ const allTools: Record<string, Tool> = {
     description: 'Paste a Hebrew listing URL — get a full English breakdown, missing data flags, and questions to ask.',
     icon: Languages,
     guidanceHint: 'Found a listing? Start here',
+    badge: 'Beta',
   },
 };
 
