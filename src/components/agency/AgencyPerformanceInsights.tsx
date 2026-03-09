@@ -180,20 +180,20 @@ export function AgencyPerformanceInsights() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <MetricCard
               title="Team Views"
-              value={thisWeekViews}
-              previousValue={lastWeekViews}
+              value={displayViews}
+              previousValue={displayPrevViews}
               icon={Eye}
             />
             <MetricCard
               title="Team Inquiries"
-              value={thisWeekInquiries}
-              previousValue={lastWeekInquiries}
+              value={displayInquiries}
+              previousValue={displayPrevInquiries}
               icon={MessageSquare}
             />
             <MetricCard
               title="Conversion Rate"
-              value={Number(conversionRate.toFixed(1))}
-              previousValue={Number(lastWeekConversionRate.toFixed(1))}
+              value={displayConversion}
+              previousValue={displayPrevConversion}
               icon={Users}
               suffix="%"
             />
