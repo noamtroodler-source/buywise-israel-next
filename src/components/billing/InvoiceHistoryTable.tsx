@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { FileText, Download, Receipt, ExternalLink, CreditCard } from 'lucide-react';
+import { FileText, Download, Receipt, ExternalLink, CreditCard, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -64,7 +64,7 @@ function InvoiceRowSkeleton() {
 export function InvoiceHistoryTable() {
   const { data: sub } = useSubscription();
   const hasSubscription = sub && sub.status !== 'none';
-  const [portalLoading, setPortalLoading] = useState(false);
+  const isTrialing = sub?.status === 'trialing';
 
   const { data, isLoading } = useQuery({
     queryKey: ['invoices', sub?.entityType, sub?.entityId],
@@ -76,26 +76,8 @@ export function InvoiceHistoryTable() {
       if (error) throw error;
       return data?.invoices ?? [];
     },
-    enabled: !!sub?.entityId && !!hasSubscription,
+    enabled: !!sub?.entityId && !!hasSubscription && !isTrialing,
   });
-
-  const openBillingPortal = async () => {
-    if (!sub?.entityId) return;
-    setPortalLoading(true);
-    try {
-      const { data: portalData, error } = await supabase.functions.invoke('manage-subscription', {
-        body: { entity_type: sub.entityType, entity_id: sub.entityId },
-      });
-      if (error) throw error;
-      if (portalData?.url) {
-        window.open(portalData.url, '_blank');
-      }
-    } catch (err: any) {
-      toast.error('Could not open billing portal. Please try again.');
-    } finally {
-      setPortalLoading(false);
-    }
-  };
 
   return (
     <Card className="rounded-2xl border-border hover:shadow-lg hover:border-primary/30 transition-all">
@@ -126,6 +108,18 @@ export function InvoiceHistoryTable() {
               <Link to="/pricing">View Pricing</Link>
             </Button>
           </div>
+        ) : isTrialing ? (
+          <div className="text-center py-8 space-y-3">
+            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+              <Clock className="h-5 w-5 text-primary" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-foreground">Free trial active</p>
+              <p className="text-xs text-muted-foreground max-w-xs mx-auto">
+                Invoices will appear here once your trial ends and billing begins.
+              </p>
+            </div>
+          </div>
         ) : isLoading ? (
           <div className="space-y-2">
             {[1, 2, 3].map((i) => <InvoiceRowSkeleton key={i} />)}
@@ -141,16 +135,6 @@ export function InvoiceHistoryTable() {
                 Your first invoice will appear here after your first billing cycle.
               </p>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-xl gap-1.5"
-              onClick={openBillingPortal}
-              disabled={portalLoading}
-            >
-              <ExternalLink className="h-3.5 w-3.5" />
-              {portalLoading ? 'Opening…' : 'Manage Billing'}
-            </Button>
           </div>
         ) : (
           <div className="space-y-2">

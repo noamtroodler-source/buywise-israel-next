@@ -122,17 +122,8 @@ export default function Pricing() {
     }
     setCheckoutLoading(planId);
     try {
-      const { data, error } = await supabase.functions.invoke('stripe-checkout', {
-        body: {
-          plan_id: planId,
-          billing_cycle: billingCycle,
-          promo_code: promoCode || undefined,
-          success_url: `${window.location.origin}/checkout/success?cycle=${billingCycle}`,
-          cancel_url: `${window.location.origin}/checkout/cancel`,
-        },
-      });
-      if (error) throw error;
-      if (data?.url) window.open(data.url, '_blank');
+      // PayPlus checkout — placeholder until PayPlus API keys are configured
+      toast.info('Payment processing is coming soon. Use the Founding Partner code FOUNDING2026 to start your free trial today!');
     } catch (err: any) {
       toast.error(err.message || 'Failed to start checkout');
     } finally {
@@ -243,7 +234,7 @@ export default function Pricing() {
             </div>
             <div className="flex items-center gap-2">
               <Lock className="h-4 w-4 text-primary" />
-              <span>SSL-encrypted secure checkout</span>
+              <span>Secure ILS checkout</span>
             </div>
             <div className="flex items-center gap-2">
               <Shield className="h-4 w-4 text-primary" />
