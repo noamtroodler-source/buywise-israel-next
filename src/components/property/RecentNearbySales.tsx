@@ -512,15 +512,24 @@ export function RecentNearbySales({
                             )}
                           </div>
 
-                          {comparison !== null && Math.abs(comparison) > 5 && (
+                          {comparison !== null && (
                             <div className="mt-2">
                               <Badge 
                                 variant="secondary"
-                                className="text-xs bg-primary/10 text-primary"
+                                className={cn(
+                                  "text-xs",
+                                  Math.abs(comparison) <= 2
+                                    ? "bg-muted text-muted-foreground"
+                                    : comparison > 0 
+                                      ? "bg-semantic-red text-semantic-red-foreground"
+                                      : "bg-semantic-green text-semantic-green-foreground"
+                                )}
                               >
-                                {comparison > 0 
-                                  ? `Listing is ${comparison.toFixed(0)}% above this sale`
-                                  : `Listing is ${Math.abs(comparison).toFixed(0)}% below this sale`
+                                {Math.abs(comparison) <= 2
+                                  ? "Similar price per m²"
+                                  : comparison > 0 
+                                    ? `Listing is ${comparison.toFixed(0)}% above this sale`
+                                    : `Listing is ${Math.abs(comparison).toFixed(0)}% below this sale`
                                 }
                               </Badge>
                             </div>
