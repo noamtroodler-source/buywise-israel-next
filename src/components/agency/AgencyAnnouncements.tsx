@@ -120,6 +120,36 @@ export function AgencyAnnouncements({ agencyId, compact = false }: AgencyAnnounc
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
   });
 
+  const displayAnnouncements = compact ? sortedAnnouncements.slice(0, 3) : sortedAnnouncements;
+
+  if (compact) {
+    return (
+      <>
+        {displayAnnouncements.length === 0 ? (
+          <p className="text-xs text-muted-foreground py-2">No announcements yet</p>
+        ) : (
+          <div className="space-y-2">
+            {displayAnnouncements.map((a) => (
+              <div key={a.id} className={cn("p-2 rounded-lg text-xs border", a.is_pinned ? "bg-primary/5 border-primary/20" : "bg-muted/30 border-border/50")}>
+                <p className="font-medium line-clamp-1">{a.title}</p>
+                <p className="text-muted-foreground line-clamp-1">{a.content}</p>
+              </div>
+            ))}
+            {sortedAnnouncements.length > 3 && (
+              <p className="text-xs text-muted-foreground">+{sortedAnnouncements.length - 3} more</p>
+            )}
+          </div>
+        )}
+        <Button size="sm" variant="outline" className="rounded-xl w-full mt-2 text-xs" onClick={() => setCreateDialogOpen(true)}>
+          <Plus className="h-3 w-3 mr-1" /> New Announcement
+        </Button>
+
+        {/* Dialogs still need to render */}
+        {renderDialogs()}
+      </>
+    );
+  }
+
   return (
     <Card className="rounded-2xl border-primary/10">
       <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent rounded-t-2xl flex flex-row items-center justify-between">
