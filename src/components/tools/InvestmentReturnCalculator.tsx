@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -9,6 +9,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { FormattedNumberInput } from "@/components/ui/formatted-number-input";
 import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
@@ -17,17 +18,22 @@ import { Separator } from "@/components/ui/separator";
 import {
   Collapsible, CollapsibleContent, CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ToolLayout } from '@/components/tools/shared/ToolLayout';
 import { ResultCard } from '@/components/tools/shared/ResultCard';
 import { InsightCard } from '@/components/tools/shared/InsightCard';
+import { InfoBanner } from '@/components/tools/shared/InfoBanner';
+import { ExampleValuesHint } from '@/components/tools/shared/ExampleValuesHint';
+import { SaveResultsPrompt } from '@/components/tools/shared/SaveResultsPrompt';
 import { ToolPropertySuggestions } from '@/components/tools/shared/ToolPropertySuggestions';
 import { ToolFeedback } from '@/components/tools/shared/ToolFeedback';
 import { ToolDisclaimer } from '@/components/tools/shared/ToolDisclaimer';
-import { Calculator, TrendingUp, BarChart3, DollarSign, PiggyBank, Building2, ChevronDown, Settings2 } from 'lucide-react';
+import { Calculator, TrendingUp, BarChart3, DollarSign, PiggyBank, Building2, ChevronDown, Settings2, RotateCcw, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { calculateTaxAmount } from '@/lib/calculations/purchaseTax';
 import { estimateAnnualExpenses } from '@/lib/calculations/rentalYield';
 import { useFormatPrice, useCurrencySymbol } from '@/contexts/PreferencesContext';
+import { useSavePromptTrigger } from '@/hooks/useSavePromptTrigger';
 
 const STOCK_MARKET_BENCHMARK = 0.07;
 const SELLING_AGENT_PERCENT = 2;
@@ -223,34 +229,51 @@ export function InvestmentReturnCalculator() {
   const defaultExpenses = estimateAnnualExpenses(6500, 80);
   const defaultAnnualTotal = defaultExpenses.arnona + defaultExpenses.vaadBayit + defaultExpenses.insurance + (6500 * 12 * 0.05);
 
+  const defaultValues: FormValues = {
+    purchasePrice: 2000000,
+    monthlyRent: 6500,
+    downPaymentPercent: 50,
+    annualAppreciation: 3,
+    holdingPeriod: 10,
+    vacancyRate: 5,
+    mortgageInterestRate: 4.5,
+    mortgageTerm: 25,
+    annualExpenses: Math.round(defaultAnnualTotal),
+    arnona: defaultExpenses.arnona,
+    vaadBayit: defaultExpenses.vaadBayit,
+    insurance: defaultExpenses.insurance,
+    maintenancePercent: 5,
+    includePurchaseTax: true,
+    includeBuyingAgentFee: true,
+    includeLawyerFees: true,
+    includeRenovation: false,
+    renovationCosts: 100000,
+    includeSellingCosts: true,
+  };
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      purchasePrice: 2000000,
-      monthlyRent: 6500,
-      downPaymentPercent: 50,
-      annualAppreciation: 3,
-      holdingPeriod: 10,
-      vacancyRate: 5,
-      mortgageInterestRate: 4.5,
-      mortgageTerm: 25,
-      annualExpenses: Math.round(defaultAnnualTotal),
-      arnona: defaultExpenses.arnona,
-      vaadBayit: defaultExpenses.vaadBayit,
-      insurance: defaultExpenses.insurance,
-      maintenancePercent: 5,
-      includePurchaseTax: true,
-      includeBuyingAgentFee: true,
-      includeLawyerFees: true,
-      includeRenovation: false,
-      renovationCosts: 100000,
-      includeSellingCosts: true,
-    },
+    defaultValues,
     mode: "onChange",
   });
 
   const watchedValues = form.watch();
   const isLeveraged = watchedValues.downPaymentPercent < 100;
+
+  // Save prompt trigger
+  const { showPrompt, dismissPrompt, trackChange } = useSavePromptTrigger({ minChanges: 2, idleMs: 5000 });
+
+  const handleFieldChange = useCallback((fieldOnChange: (...args: unknown[]) => void, value: unknown) => {
+    fieldOnChange(value);
+    trackChange();
+  }, [trackChange]);
+
+  const handleReset = useCallback(() => {
+    form.reset(defaultValues);
+    setShowExpenseDetails(false);
+    setShowBreakdown(false);
+    setVacancyPreset('average');
+  }, [form]);
 
   const results = useMemo(() => {
     try {
@@ -268,18 +291,24 @@ export function InvestmentReturnCalculator() {
 
   const formatPercent = (val: number) => `${(val * 100).toFixed(1)}%`;
 
+  // #5 — CAGR badge uses primary brand color always
   const cagrBadge = results ? (
     results.cagr > STOCK_MARKET_BENCHMARK + 0.02
-      ? { text: 'Beats Market', variant: 'success' as const }
+      ? { text: 'Beats Market', variant: 'default' as const }
       : results.cagr >= STOCK_MARKET_BENCHMARK - 0.01
-        ? { text: 'Market-Level', variant: 'warning' as const }
-        : { text: 'Below Market', variant: 'danger' as const }
+        ? { text: 'Market-Level', variant: 'default' as const }
+        : { text: 'Below Market', variant: 'default' as const }
   ) : undefined;
 
   const handleVacancyPreset = (preset: VacancyPreset) => {
     setVacancyPreset(preset);
     form.setValue('vacancyRate', VACANCY_PRESETS[preset].value);
+    trackChange();
   };
+
+  const resultSummary = results
+    ? `CAGR: ${formatPercent(results.cagr)} · Profit: ${formatCurrency(results.netProfit)}`
+    : undefined;
 
   const bottomSection = (
     <div className="space-y-6">
@@ -341,432 +370,488 @@ export function InvestmentReturnCalculator() {
   );
 
   return (
-    <ToolLayout
-      title="Investment Return Calculator"
-      subtitle="Model a complete buy-hold-sell scenario with accurate Israeli costs and tax brackets."
-      icon={<BarChart3 className="h-6 w-6" />}
-      leftColumn={
-        <Form {...form}>
-          <form className="space-y-5">
-            {/* Property, Income & Financing — merged into one card */}
-            <Card>
-              <CardContent className="space-y-5 pt-6">
-                <FormField control={form.control} name="purchasePrice" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Purchase Price</FormLabel>
-                    <FormControl>
-                      <FormattedNumberInput prefix={currencySymbol} placeholder="2,000,000" value={field.value} onChange={field.onChange} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
+    <>
+      <ToolLayout
+        title="Investment Return Calculator"
+        subtitle="Model a complete buy-hold-sell scenario with accurate Israeli costs and tax brackets."
+        icon={<TrendingUp className="h-6 w-6" />}
+        headerActions={
+          <Button variant="ghost" size="sm" onClick={handleReset} className="gap-1.5 text-muted-foreground">
+            <RotateCcw className="h-3.5 w-3.5" />
+            Reset
+          </Button>
+        }
+        infoBanner={
+          <InfoBanner variant="info">
+            This calculator applies the <strong>8% investor purchase tax</strong> bracket.
+            First-time buyer or Oleh?{' '}
+            <Link to="/tools?tool=purchase-tax" className="underline font-medium text-primary hover:text-primary/80">
+              Use the Purchase Tax Calculator
+            </Link>{' '}
+            instead.
+          </InfoBanner>
+        }
+        leftColumn={
+          <Form {...form}>
+            <form className="space-y-5">
+              {/* #1 — Example values hint */}
+              <ExampleValuesHint />
 
-                <FormField control={form.control} name="monthlyRent" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Monthly Rent</FormLabel>
-                    <FormControl>
-                      <FormattedNumberInput prefix={currencySymbol} placeholder="6,500" value={field.value} onChange={field.onChange} />
-                    </FormControl>
-                    <FormDescription>Expected monthly rental income (escalates 3%/year)</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField control={form.control} name="annualAppreciation" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Appreciation (%/yr)</FormLabel>
-                      <FormControl>
-                        <Input type="number" step="0.5" {...field} onChange={e => field.onChange(Number(e.target.value))} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={form.control} name="holdingPeriod" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Hold Period (yrs)</FormLabel>
-                      <FormControl>
-                        <Input type="number" {...field} onChange={e => field.onChange(Number(e.target.value))} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                </div>
-
-                {/* Vacancy presets */}
-                <div className="space-y-2">
-                  <FormLabel className="text-sm font-medium">Vacancy Rate</FormLabel>
-                  <div className="flex gap-2">
-                    {(Object.entries(VACANCY_PRESETS) as [VacancyPreset, { label: string; value: number }][]).map(([key, preset]) => (
-                      <button
-                        key={key}
-                        type="button"
-                        onClick={() => handleVacancyPreset(key)}
-                        className={cn(
-                          "flex-1 px-3 py-2 rounded-lg text-sm font-medium border transition-colors",
-                          vacancyPreset === key
-                            ? "bg-primary/10 border-primary/30 text-primary"
-                            : "bg-muted/50 border-border text-muted-foreground hover:border-primary/20"
-                        )}
-                      >
-                        {preset.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Financing inline */}
-                <FormField control={form.control} name="downPaymentPercent" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Down Payment (%)</FormLabel>
-                    <FormControl>
-                      <Input type="number" {...field} onChange={e => field.onChange(Number(e.target.value))} />
-                    </FormControl>
-                    <FormDescription>
-                      {isLeveraged
-                        ? `Mortgage: ${formatCurrency(Math.round(watchedValues.purchasePrice * (1 - watchedValues.downPaymentPercent / 100)))}`
-                        : 'Cash purchase — no mortgage'}
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-
-                {isLeveraged && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField control={form.control} name="mortgageInterestRate" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Interest Rate (%)</FormLabel>
-                        <FormControl>
-                          <Input type="number" step="0.1" {...field} onChange={e => field.onChange(Number(e.target.value))} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-                    <FormField control={form.control} name="mortgageTerm" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Term (yrs)</FormLabel>
-                        <FormControl>
-                          <Input type="number" {...field} onChange={e => field.onChange(Number(e.target.value))} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Annual Expenses — smart default with expand */}
-            <Card>
-              <CardContent className="space-y-4 pt-6">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Annual Expenses</h3>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!showExpenseDetails) {
-                        // Sync itemized → total when collapsing
-                        const rent = watchedValues.monthlyRent * 12;
-                        const itemizedTotal = watchedValues.arnona + watchedValues.vaadBayit + watchedValues.insurance + (rent * watchedValues.maintenancePercent / 100);
-                        form.setValue('annualExpenses', Math.round(itemizedTotal));
-                      }
-                      setShowExpenseDetails(!showExpenseDetails);
-                    }}
-                    className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 font-medium transition-colors"
-                  >
-                    <Settings2 className="h-3 w-3" />
-                    {showExpenseDetails ? 'Use single total' : 'Customize'}
-                  </button>
-                </div>
-
-                {!showExpenseDetails ? (
-                  <FormField control={form.control} name="annualExpenses" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Total Annual Expenses (₪/yr)</FormLabel>
-                      <FormControl>
-                        <FormattedNumberInput value={field.value} onChange={(v) => field.onChange(v ?? 0)} placeholder="11,500" />
-                      </FormControl>
-                      <FormDescription>Arnona, Vaad Bayit, insurance, maintenance combined. Escalates 2%/yr.</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                ) : (
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField control={form.control} name="arnona" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Arnona (₪/yr)</FormLabel>
-                        <FormControl>
-                          <FormattedNumberInput value={field.value} onChange={(v) => field.onChange(v ?? 0)} placeholder="1,600" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-                    <FormField control={form.control} name="vaadBayit" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Vaad Bayit (₪/yr)</FormLabel>
-                        <FormControl>
-                          <FormattedNumberInput value={field.value} onChange={(v) => field.onChange(v ?? 0)} placeholder="4,200" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-                    <FormField control={form.control} name="insurance" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Insurance (₪/yr)</FormLabel>
-                        <FormControl>
-                          <FormattedNumberInput value={field.value} onChange={(v) => field.onChange(v ?? 0)} placeholder="1,800" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-                    <FormField control={form.control} name="maintenancePercent" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Maintenance (% rent)</FormLabel>
-                        <FormControl>
-                          <Input type="number" step="0.5" {...field} onChange={e => field.onChange(Number(e.target.value))} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Transaction Costs — collapsed by default, shows total */}
-            <Collapsible>
+              {/* Property, Income & Financing — merged into one card */}
               <Card>
-                <CardContent className="pt-6 pb-4">
-                  <CollapsibleTrigger className="flex items-center justify-between w-full group">
-                    <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Transaction Costs</h3>
-                    <div className="flex items-center gap-2">
-                      {results && (
-                        <span className="text-sm font-medium text-foreground">
-                          {formatCurrency(results.totalTransactionCosts + results.renovationCosts)}
-                        </span>
-                      )}
-                      <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+                <CardContent className="space-y-5 pt-6">
+                  <FormField control={form.control} name="purchasePrice" render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-center gap-1.5">
+                        <FormLabel>Purchase Price</FormLabel>
+                        <Tooltip>
+                          <TooltipTrigger type="button" tabIndex={-1}>
+                            <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">Total price including VAT if applicable</TooltipContent>
+                        </Tooltip>
+                      </div>
+                      <FormControl>
+                        <FormattedNumberInput prefix={currencySymbol} placeholder="2,000,000" value={field.value} onChange={(v) => handleFieldChange(field.onChange, v)} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+
+                  <FormField control={form.control} name="monthlyRent" render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-center gap-1.5">
+                        <FormLabel>Monthly Rent</FormLabel>
+                        <Tooltip>
+                          <TooltipTrigger type="button" tabIndex={-1}>
+                            <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">Expected gross monthly rent before expenses</TooltipContent>
+                        </Tooltip>
+                      </div>
+                      <FormControl>
+                        <FormattedNumberInput prefix={currencySymbol} placeholder="6,500" value={field.value} onChange={(v) => handleFieldChange(field.onChange, v)} />
+                      </FormControl>
+                      <FormDescription>Expected monthly rental income (escalates 3%/year)</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField control={form.control} name="annualAppreciation" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Appreciation (%/yr)</FormLabel>
+                        <FormControl>
+                          <Input type="number" step="0.5" {...field} onChange={e => handleFieldChange(field.onChange, Number(e.target.value))} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="holdingPeriod" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Hold Period (yrs)</FormLabel>
+                        <FormControl>
+                          <Input type="number" {...field} onChange={e => handleFieldChange(field.onChange, Number(e.target.value))} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
+
+                  {/* Vacancy presets */}
+                  <div className="space-y-2">
+                    <FormLabel className="text-sm font-medium">Vacancy Rate</FormLabel>
+                    <div className="flex gap-2">
+                      {(Object.entries(VACANCY_PRESETS) as [VacancyPreset, { label: string; value: number }][]).map(([key, preset]) => (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => handleVacancyPreset(key)}
+                          className={cn(
+                            "flex-1 px-3 py-2 rounded-lg text-sm font-medium border transition-colors",
+                            vacancyPreset === key
+                              ? "bg-primary/10 border-primary/30 text-primary"
+                              : "bg-muted/50 border-border text-muted-foreground hover:border-primary/20"
+                          )}
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
                     </div>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="space-y-3 pt-4">
-                    <FormField control={form.control} name="includePurchaseTax" render={({ field }) => (
-                      <FormItem className="flex items-center justify-between rounded-lg border p-3">
-                        <div>
-                          <FormLabel className="text-sm">Purchase Tax (8% investor rate)</FormLabel>
-                          {results && field.value && <p className="text-xs text-muted-foreground">{formatCurrency(results.purchaseTax)}</p>}
-                        </div>
-                        <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                      </FormItem>
-                    )} />
+                  </div>
 
-                    <FormField control={form.control} name="includeBuyingAgentFee" render={({ field }) => (
-                      <FormItem className="flex items-center justify-between rounded-lg border p-3">
-                        <div>
-                          <FormLabel className="text-sm">Buying Agent (2% + VAT)</FormLabel>
-                          {results && field.value && <p className="text-xs text-muted-foreground">{formatCurrency(results.buyingAgentFee)}</p>}
-                        </div>
-                        <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                      </FormItem>
-                    )} />
+                  <Separator />
 
-                    <FormField control={form.control} name="includeLawyerFees" render={({ field }) => (
-                      <FormItem className="flex items-center justify-between rounded-lg border p-3">
-                        <div>
-                          <FormLabel className="text-sm">Lawyer (~₪10k + VAT)</FormLabel>
-                          {results && field.value && <p className="text-xs text-muted-foreground">{formatCurrency(results.lawyerFees)}</p>}
-                        </div>
-                        <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                      </FormItem>
-                    )} />
+                  {/* Financing inline */}
+                  <FormField control={form.control} name="downPaymentPercent" render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-center gap-1.5">
+                        <FormLabel>Down Payment (%)</FormLabel>
+                        <Tooltip>
+                          <TooltipTrigger type="button" tabIndex={-1}>
+                            <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">Minimum 25% for investment properties in Israel</TooltipContent>
+                        </Tooltip>
+                      </div>
+                      <FormControl>
+                        <Input type="number" {...field} onChange={e => handleFieldChange(field.onChange, Number(e.target.value))} />
+                      </FormControl>
+                      <FormDescription>
+                        {isLeveraged
+                          ? `Mortgage: ${formatCurrency(Math.round(watchedValues.purchasePrice * (1 - watchedValues.downPaymentPercent / 100)))}`
+                          : 'Cash purchase — no mortgage'}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
 
-                    <FormField control={form.control} name="includeRenovation" render={({ field }) => (
-                      <FormItem className="flex items-center justify-between rounded-lg border p-3">
-                        <div>
-                          <FormLabel className="text-sm">Renovation</FormLabel>
-                        </div>
-                        <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                      </FormItem>
-                    )} />
-
-                    {watchedValues.includeRenovation && (
-                      <FormField control={form.control} name="renovationCosts" render={({ field }) => (
+                  {isLeveraged && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField control={form.control} name="mortgageInterestRate" render={({ field }) => (
                         <FormItem>
+                          <FormLabel>Interest Rate (%)</FormLabel>
                           <FormControl>
-                            <FormattedNumberInput prefix={currencySymbol} placeholder="100,000" value={field.value} onChange={field.onChange} />
+                            <Input type="number" step="0.1" {...field} onChange={e => handleFieldChange(field.onChange, Number(e.target.value))} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )} />
-                    )}
-
-                    <Separator />
-
-                    <FormField control={form.control} name="includeSellingCosts" render={({ field }) => (
-                      <FormItem className="flex items-center justify-between rounded-lg border p-3">
-                        <div>
-                          <FormLabel className="text-sm">Selling Costs at Exit</FormLabel>
-                          <p className="text-xs text-muted-foreground">Agent 2%+VAT + 25% capital gains tax</p>
-                        </div>
-                        <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                      </FormItem>
-                    )} />
-                  </CollapsibleContent>
+                      <FormField control={form.control} name="mortgageTerm" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Term (yrs)</FormLabel>
+                          <FormControl>
+                            <Input type="number" {...field} onChange={e => handleFieldChange(field.onChange, Number(e.target.value))} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                    </div>
+                  )}
                 </CardContent>
               </Card>
-            </Collapsible>
-          </form>
-        </Form>
-      }
-      rightColumn={
-        results ? (
-          <div className="space-y-4">
-            {/* Hero CAGR */}
-            <ResultCard
-              label="Compound Annual Growth Rate"
-              value={formatPercent(results.cagr)}
-              badge={cagrBadge}
-              variant="primary"
-              size="lg"
-              sublabel="vs. 7% stock market benchmark"
-              icon={<TrendingUp className="h-5 w-5" />}
-            />
 
-            {/* Key metrics */}
-            <div className="grid grid-cols-2 gap-3">
-              <ResultCard label="Gross Yield" value={formatPercent(results.grossYield)} size="sm" icon={<PiggyBank className="h-4 w-4" />} />
-              <ResultCard label="Net Yield" value={formatPercent(results.netYield)} size="sm" icon={<BarChart3 className="h-4 w-4" />} />
-              <ResultCard label="Cash-on-Cash (Yr 1)" value={formatPercent(results.cashOnCash)} size="sm"
-                badge={results.annualCashFlow < 0 ? { text: 'Negative', variant: 'danger' as const } : undefined}
-                icon={<DollarSign className="h-4 w-4" />} />
-              <ResultCard label="Total Net Profit" value={formatCurrency(results.netProfit)} size="sm"
-                badge={results.netProfit > 0 ? { text: 'Profit', variant: 'success' as const } : { text: 'Loss', variant: 'danger' as const }}
-                icon={<TrendingUp className="h-4 w-4" />} />
-            </div>
+              {/* Annual Expenses — smart default with expand */}
+              <Card>
+                <CardContent className="space-y-4 pt-6">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Annual Expenses</h3>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!showExpenseDetails) {
+                          const rent = watchedValues.monthlyRent * 12;
+                          const itemizedTotal = watchedValues.arnona + watchedValues.vaadBayit + watchedValues.insurance + (rent * watchedValues.maintenancePercent / 100);
+                          form.setValue('annualExpenses', Math.round(itemizedTotal));
+                        }
+                        setShowExpenseDetails(!showExpenseDetails);
+                      }}
+                      className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 font-medium transition-colors"
+                    >
+                      <Settings2 className="h-3 w-3" />
+                      {showExpenseDetails ? 'Use single total' : 'Customize'}
+                    </button>
+                  </div>
 
-            {/* Day-One — always visible */}
-            <Card>
-              <CardContent className="pt-5 space-y-3">
-                <h3 className="font-semibold text-sm flex items-center gap-2">
-                  <Building2 className="h-4 w-4 text-primary" /> Day-One Cash Required
-                </h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between"><span className="text-muted-foreground">Down Payment ({watchedValues.downPaymentPercent}%)</span><span className="font-medium">{formatCurrency(results.downPayment)}</span></div>
-                  {results.purchaseTax > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Purchase Tax</span><span className="font-medium">{formatCurrency(results.purchaseTax)}</span></div>}
-                  {results.buyingAgentFee > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Agent Fee</span><span className="font-medium">{formatCurrency(results.buyingAgentFee)}</span></div>}
-                  {results.lawyerFees > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Lawyer Fees</span><span className="font-medium">{formatCurrency(results.lawyerFees)}</span></div>}
-                  {results.renovationCosts > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Renovation</span><span className="font-medium">{formatCurrency(results.renovationCosts)}</span></div>}
-                  <Separator />
-                  <div className="flex justify-between font-semibold"><span>Total Cash Needed</span><span className="text-primary">{formatCurrency(results.totalDayOneCash)}</span></div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Collapsible detailed breakdown */}
-            <Collapsible open={showBreakdown} onOpenChange={setShowBreakdown}>
-              <CollapsibleTrigger className="flex items-center justify-between w-full px-1 py-2 group">
-                <span className="text-sm font-medium text-muted-foreground">Full Breakdown</span>
-                <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", showBreakdown && "rotate-180")} />
-              </CollapsibleTrigger>
-              <CollapsibleContent className="space-y-4 pt-1">
-                {/* Annual Cash Flow */}
-                <Card>
-                  <CardContent className="pt-5 space-y-3">
-                    <h3 className="font-semibold text-sm flex items-center gap-2">
-                      <DollarSign className="h-4 w-4 text-primary" /> Year-1 Cash Flow
-                    </h3>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between"><span className="text-muted-foreground">Rent (after vacancy)</span><span className="font-medium text-semantic-green-foreground">+{formatCurrency(Math.round(watchedValues.monthlyRent * 12 * (1 - watchedValues.vacancyRate / 100)))}</span></div>
-                      <div className="flex justify-between"><span className="text-muted-foreground">Expenses</span><span className="font-medium text-semantic-red-foreground">−{formatCurrency(Math.round(results.annualExpensesUsed))}</span></div>
-                      {isLeveraged && results.monthlyMortgagePayment > 0 && (
-                        <div className="flex justify-between"><span className="text-muted-foreground">Mortgage</span><span className="font-medium text-semantic-red-foreground">−{formatCurrency(Math.round(results.monthlyMortgagePayment * 12))}</span></div>
-                      )}
-                      <Separator />
-                      <div className="flex justify-between font-semibold">
-                        <span>Net Cash Flow</span>
-                        <span className={results.annualCashFlow >= 0 ? 'text-semantic-green-foreground' : 'text-semantic-red-foreground'}>
-                          {results.annualCashFlow >= 0 ? '+' : ''}{formatCurrency(Math.round(results.annualCashFlow))}/yr
-                        </span>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        = {results.annualCashFlow >= 0 ? '+' : ''}{formatCurrency(Math.round(results.annualCashFlow / 12))}/month
-                      </p>
+                  {!showExpenseDetails ? (
+                    <FormField control={form.control} name="annualExpenses" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Total Annual Expenses ({currencySymbol}/yr)</FormLabel>
+                        <FormControl>
+                          <FormattedNumberInput value={field.value} onChange={(v) => handleFieldChange(field.onChange, v ?? 0)} placeholder="11,500" />
+                        </FormControl>
+                        <FormDescription>Arnona, Vaad Bayit, insurance, maintenance combined. Escalates 2%/yr.</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  ) : (
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField control={form.control} name="arnona" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Arnona ({currencySymbol}/yr)</FormLabel>
+                          <FormControl>
+                            <FormattedNumberInput value={field.value} onChange={(v) => handleFieldChange(field.onChange, v ?? 0)} placeholder="1,600" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <FormField control={form.control} name="vaadBayit" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Vaad Bayit ({currencySymbol}/yr)</FormLabel>
+                          <FormControl>
+                            <FormattedNumberInput value={field.value} onChange={(v) => handleFieldChange(field.onChange, v ?? 0)} placeholder="4,200" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <FormField control={form.control} name="insurance" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Insurance ({currencySymbol}/yr)</FormLabel>
+                          <FormControl>
+                            <FormattedNumberInput value={field.value} onChange={(v) => handleFieldChange(field.onChange, v ?? 0)} placeholder="1,800" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <FormField control={form.control} name="maintenancePercent" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Maintenance (% rent)</FormLabel>
+                          <FormControl>
+                            <Input type="number" step="0.5" {...field} onChange={e => handleFieldChange(field.onChange, Number(e.target.value))} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
                     </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Transaction Costs — collapsed by default, shows total */}
+              <Collapsible>
+                <Card>
+                  <CardContent className="pt-6 pb-4">
+                    <CollapsibleTrigger className="flex items-center justify-between w-full group">
+                      <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Transaction Costs</h3>
+                      <div className="flex items-center gap-2">
+                        {results && (
+                          <span className="text-sm font-medium text-foreground">
+                            {formatCurrency(results.totalTransactionCosts + results.renovationCosts)}
+                          </span>
+                        )}
+                        <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+                      </div>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="space-y-3 pt-4">
+                      <FormField control={form.control} name="includePurchaseTax" render={({ field }) => (
+                        <FormItem className="flex items-center justify-between rounded-lg border p-3">
+                          <div>
+                            <FormLabel className="text-sm">Purchase Tax (8% investor rate)</FormLabel>
+                            {results && field.value && <p className="text-xs text-muted-foreground">{formatCurrency(results.purchaseTax)}</p>}
+                          </div>
+                          <FormControl><Switch checked={field.value} onCheckedChange={(v) => handleFieldChange(field.onChange, v)} /></FormControl>
+                        </FormItem>
+                      )} />
+
+                      <FormField control={form.control} name="includeBuyingAgentFee" render={({ field }) => (
+                        <FormItem className="flex items-center justify-between rounded-lg border p-3">
+                          <div>
+                            <FormLabel className="text-sm">Buying Agent (2% + VAT)</FormLabel>
+                            {results && field.value && <p className="text-xs text-muted-foreground">{formatCurrency(results.buyingAgentFee)}</p>}
+                          </div>
+                          <FormControl><Switch checked={field.value} onCheckedChange={(v) => handleFieldChange(field.onChange, v)} /></FormControl>
+                        </FormItem>
+                      )} />
+
+                      <FormField control={form.control} name="includeLawyerFees" render={({ field }) => (
+                        <FormItem className="flex items-center justify-between rounded-lg border p-3">
+                          <div>
+                            <FormLabel className="text-sm">Lawyer (~{currencySymbol}10k + VAT)</FormLabel>
+                            {results && field.value && <p className="text-xs text-muted-foreground">{formatCurrency(results.lawyerFees)}</p>}
+                          </div>
+                          <FormControl><Switch checked={field.value} onCheckedChange={(v) => handleFieldChange(field.onChange, v)} /></FormControl>
+                        </FormItem>
+                      )} />
+
+                      <FormField control={form.control} name="includeRenovation" render={({ field }) => (
+                        <FormItem className="flex items-center justify-between rounded-lg border p-3">
+                          <div>
+                            <FormLabel className="text-sm">Renovation</FormLabel>
+                          </div>
+                          <FormControl><Switch checked={field.value} onCheckedChange={(v) => handleFieldChange(field.onChange, v)} /></FormControl>
+                        </FormItem>
+                      )} />
+
+                      {watchedValues.includeRenovation && (
+                        <FormField control={form.control} name="renovationCosts" render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <FormattedNumberInput prefix={currencySymbol} placeholder="100,000" value={field.value} onChange={(v) => handleFieldChange(field.onChange, v)} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                      )}
+
+                      <Separator />
+
+                      <FormField control={form.control} name="includeSellingCosts" render={({ field }) => (
+                        <FormItem className="flex items-center justify-between rounded-lg border p-3">
+                          <div>
+                            <FormLabel className="text-sm">Selling Costs at Exit</FormLabel>
+                            <p className="text-xs text-muted-foreground">Agent 2%+VAT + 25% capital gains tax</p>
+                          </div>
+                          <FormControl><Switch checked={field.value} onCheckedChange={(v) => handleFieldChange(field.onChange, v)} /></FormControl>
+                        </FormItem>
+                      )} />
+                    </CollapsibleContent>
                   </CardContent>
                 </Card>
+              </Collapsible>
+            </form>
+          </Form>
+        }
+        rightColumn={
+          results ? (
+            <div className="space-y-4">
+              {/* Hero CAGR — #5 primary brand badge */}
+              <ResultCard
+                label="Compound Annual Growth Rate"
+                value={formatPercent(results.cagr)}
+                badge={cagrBadge}
+                variant="primary"
+                size="lg"
+                sublabel="vs. 7% stock market benchmark"
+                icon={<TrendingUp className="h-5 w-5" />}
+                className={cagrBadge ? '[&_.badge]:bg-primary/10 [&_.badge]:text-primary [&_.badge]:border-primary/20' : ''}
+              />
 
-                {/* Exit Summary */}
-                <Card>
-                  <CardContent className="pt-5 space-y-3">
-                    <h3 className="font-semibold text-sm flex items-center gap-2">
-                      <TrendingUp className="h-4 w-4 text-primary" /> Exit ({watchedValues.holdingPeriod} yrs)
-                    </h3>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between"><span className="text-muted-foreground">Future Value</span><span className="font-medium">{formatCurrency(Math.round(results.futurePropertyValue))}</span></div>
-                      <div className="flex justify-between"><span className="text-muted-foreground">Appreciation</span><span className="font-medium text-semantic-green-foreground">+{formatCurrency(Math.round(results.totalAppreciation))}</span></div>
-                      <div className="flex justify-between"><span className="text-muted-foreground">Total Rent</span><span className="font-medium text-semantic-green-foreground">+{formatCurrency(results.totalRentIncome)}</span></div>
-                      <div className="flex justify-between"><span className="text-muted-foreground">Total Expenses</span><span className="font-medium text-semantic-red-foreground">−{formatCurrency(results.totalExpenses)}</span></div>
-                      {isLeveraged && <div className="flex justify-between"><span className="text-muted-foreground">Mortgage Interest</span><span className="font-medium text-semantic-red-foreground">−{formatCurrency(Math.round(results.totalMortgageInterest))}</span></div>}
-                      {results.totalSellingCosts > 0 && (
-                        <>
-                          <div className="flex justify-between"><span className="text-muted-foreground">Selling Agent</span><span className="font-medium text-semantic-red-foreground">−{formatCurrency(results.sellingAgentFee)}</span></div>
-                          <div className="flex justify-between"><span className="text-muted-foreground">Capital Gains Tax</span><span className="font-medium text-semantic-red-foreground">−{formatCurrency(results.capitalGainsTax)}</span></div>
-                        </>
-                      )}
-                      <Separator />
-                      <div className="flex justify-between font-bold text-base">
-                        <span>Net Profit</span>
-                        <span className={results.netProfit >= 0 ? 'text-primary' : 'text-semantic-red-foreground'}>
-                          {formatCurrency(results.netProfit)}
-                        </span>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Total return: {(results.totalReturn * 100).toFixed(0)}% on {formatCurrency(Math.round(results.totalDayOneCash))} invested
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </CollapsibleContent>
-            </Collapsible>
+              {/* Key metrics — #9 refined spacing */}
+              <div className="grid grid-cols-2 gap-3">
+                <ResultCard label="Gross Yield" value={formatPercent(results.grossYield)} size="sm" icon={<PiggyBank className="h-4 w-4" />} />
+                <ResultCard label="Net Yield" value={formatPercent(results.netYield)} size="sm" icon={<BarChart3 className="h-4 w-4" />} />
+                <ResultCard label="Cash-on-Cash (Yr 1)" value={formatPercent(results.cashOnCash)} size="sm"
+                  badge={results.annualCashFlow < 0 ? { text: 'Negative', variant: 'danger' as const } : undefined}
+                  icon={<DollarSign className="h-4 w-4" />} />
+                <ResultCard label="Total Net Profit" value={formatCurrency(results.netProfit)} size="sm"
+                  badge={results.netProfit > 0 ? { text: 'Profit', variant: 'success' as const } : { text: 'Loss', variant: 'danger' as const }}
+                  icon={<TrendingUp className="h-4 w-4" />} />
+              </div>
 
-            {/* Stock Market Comparison */}
-            <Card className="border-primary/20 bg-primary/5">
-              <CardContent className="pt-5 space-y-2">
-                <h3 className="font-semibold text-sm">📊 vs. Stock Market (7% CAGR)</h3>
-                <div className="text-sm">
-                  {(() => {
-                    const stockReturn = results.totalDayOneCash * (Math.pow(1 + STOCK_MARKET_BENCHMARK, watchedValues.holdingPeriod) - 1);
-                    const difference = results.netProfit - stockReturn;
-                    return (
-                      <div className="space-y-1">
-                        <div className="flex justify-between text-muted-foreground">
-                          <span>Same cash in stocks</span>
-                          <span>{formatCurrency(Math.round(stockReturn))} profit</span>
-                        </div>
-                        <div className="flex justify-between font-medium">
-                          <span>Property advantage</span>
-                          <span className={difference >= 0 ? 'text-semantic-green-foreground' : 'text-semantic-red-foreground'}>
-                            {difference >= 0 ? '+' : ''}{formatCurrency(Math.round(difference))}
+              {/* #9 — Separator between metrics grid and Day-One Cash */}
+              <Separator className="my-1" />
+
+              {/* Day-One — always visible */}
+              <Card>
+                <CardContent className="pt-5 space-y-3">
+                  <h3 className="font-semibold text-sm flex items-center gap-2">
+                    <Building2 className="h-4 w-4 text-primary" /> Day-One Cash Required
+                  </h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between"><span className="text-muted-foreground">Down Payment ({watchedValues.downPaymentPercent}%)</span><span className="font-medium">{formatCurrency(results.downPayment)}</span></div>
+                    {results.purchaseTax > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Purchase Tax</span><span className="font-medium">{formatCurrency(results.purchaseTax)}</span></div>}
+                    {results.buyingAgentFee > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Agent Fee</span><span className="font-medium">{formatCurrency(results.buyingAgentFee)}</span></div>}
+                    {results.lawyerFees > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Lawyer Fees</span><span className="font-medium">{formatCurrency(results.lawyerFees)}</span></div>}
+                    {results.renovationCosts > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Renovation</span><span className="font-medium">{formatCurrency(results.renovationCosts)}</span></div>}
+                    <Separator />
+                    <div className="flex justify-between font-semibold"><span>Total Cash Needed</span><span className="text-primary">{formatCurrency(results.totalDayOneCash)}</span></div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Collapsible detailed breakdown */}
+              <Collapsible open={showBreakdown} onOpenChange={setShowBreakdown}>
+                <CollapsibleTrigger className="flex items-center justify-between w-full px-1 py-2 group">
+                  <span className="text-sm font-medium text-muted-foreground">Full Breakdown</span>
+                  <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", showBreakdown && "rotate-180")} />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-4 pt-1">
+                  {/* Annual Cash Flow */}
+                  <Card>
+                    <CardContent className="pt-5 space-y-3">
+                      <h3 className="font-semibold text-sm flex items-center gap-2">
+                        <DollarSign className="h-4 w-4 text-primary" /> Year-1 Cash Flow
+                      </h3>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between"><span className="text-muted-foreground">Rent (after vacancy)</span><span className="font-medium text-semantic-green-foreground">+{formatCurrency(Math.round(watchedValues.monthlyRent * 12 * (1 - watchedValues.vacancyRate / 100)))}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Expenses</span><span className="font-medium text-semantic-red-foreground">−{formatCurrency(Math.round(results.annualExpensesUsed))}</span></div>
+                        {isLeveraged && results.monthlyMortgagePayment > 0 && (
+                          <div className="flex justify-between"><span className="text-muted-foreground">Mortgage</span><span className="font-medium text-semantic-red-foreground">−{formatCurrency(Math.round(results.monthlyMortgagePayment * 12))}</span></div>
+                        )}
+                        <Separator />
+                        <div className="flex justify-between font-semibold">
+                          <span>Net Cash Flow</span>
+                          <span className={results.annualCashFlow >= 0 ? 'text-semantic-green-foreground' : 'text-semantic-red-foreground'}>
+                            {results.annualCashFlow >= 0 ? '+' : ''}{formatCurrency(Math.round(results.annualCashFlow))}/yr
                           </span>
                         </div>
+                        <p className="text-xs text-muted-foreground">
+                          = {results.annualCashFlow >= 0 ? '+' : ''}{formatCurrency(Math.round(results.annualCashFlow / 12))}/month
+                        </p>
                       </div>
-                    );
-                  })()}
-                </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Exit Summary */}
+                  <Card>
+                    <CardContent className="pt-5 space-y-3">
+                      <h3 className="font-semibold text-sm flex items-center gap-2">
+                        <TrendingUp className="h-4 w-4 text-primary" /> Exit ({watchedValues.holdingPeriod} yrs)
+                      </h3>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between"><span className="text-muted-foreground">Future Value</span><span className="font-medium">{formatCurrency(Math.round(results.futurePropertyValue))}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Appreciation</span><span className="font-medium text-semantic-green-foreground">+{formatCurrency(Math.round(results.totalAppreciation))}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Total Rent</span><span className="font-medium text-semantic-green-foreground">+{formatCurrency(results.totalRentIncome)}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Total Expenses</span><span className="font-medium text-semantic-red-foreground">−{formatCurrency(results.totalExpenses)}</span></div>
+                        {isLeveraged && <div className="flex justify-between"><span className="text-muted-foreground">Mortgage Interest</span><span className="font-medium text-semantic-red-foreground">−{formatCurrency(Math.round(results.totalMortgageInterest))}</span></div>}
+                        {results.totalSellingCosts > 0 && (
+                          <>
+                            <div className="flex justify-between"><span className="text-muted-foreground">Selling Agent</span><span className="font-medium text-semantic-red-foreground">−{formatCurrency(results.sellingAgentFee)}</span></div>
+                            <div className="flex justify-between"><span className="text-muted-foreground">Capital Gains Tax</span><span className="font-medium text-semantic-red-foreground">−{formatCurrency(results.capitalGainsTax)}</span></div>
+                          </>
+                        )}
+                        <Separator />
+                        <div className="flex justify-between font-bold text-base">
+                          <span>Net Profit</span>
+                          <span className={results.netProfit >= 0 ? 'text-primary' : 'text-semantic-red-foreground'}>
+                            {formatCurrency(results.netProfit)}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Total return: {(results.totalReturn * 100).toFixed(0)}% on {formatCurrency(Math.round(results.totalDayOneCash))} invested
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </CollapsibleContent>
+              </Collapsible>
+
+              {/* Stock Market Comparison */}
+              <Card className="border-primary/20 bg-primary/5">
+                <CardContent className="pt-5 space-y-2">
+                  <h3 className="font-semibold text-sm">📊 vs. Stock Market (7% CAGR)</h3>
+                  <div className="text-sm">
+                    {(() => {
+                      const stockReturn = results.totalDayOneCash * (Math.pow(1 + STOCK_MARKET_BENCHMARK, watchedValues.holdingPeriod) - 1);
+                      const difference = results.netProfit - stockReturn;
+                      return (
+                        <div className="space-y-1">
+                          <div className="flex justify-between text-muted-foreground">
+                            <span>Same cash in stocks</span>
+                            <span>{formatCurrency(Math.round(stockReturn))} profit</span>
+                          </div>
+                          <div className="flex justify-between font-medium">
+                            <span>Property advantage</span>
+                            <span className={difference >= 0 ? 'text-semantic-green-foreground' : 'text-semantic-red-foreground'}>
+                              {difference >= 0 ? '+' : ''}{formatCurrency(Math.round(difference))}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="text-center p-10">
+                <TrendingUp className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
+                <p className="text-muted-foreground">Enter property details to see your investment analysis.</p>
               </CardContent>
             </Card>
-          </div>
-        ) : (
-          <Card>
-            <CardContent className="text-center p-10">
-              <BarChart3 className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
-              <p className="text-muted-foreground">Enter property details to see your investment analysis.</p>
-            </CardContent>
-          </Card>
-        )
-      }
-      bottomSection={bottomSection}
-    />
+          )
+        }
+        bottomSection={bottomSection}
+      />
+
+      {/* #8 — Save Results Prompt */}
+      <SaveResultsPrompt
+        show={showPrompt}
+        calculatorName="investment return"
+        onDismiss={dismissPrompt}
+        resultSummary={resultSummary}
+      />
+    </>
   );
 }
