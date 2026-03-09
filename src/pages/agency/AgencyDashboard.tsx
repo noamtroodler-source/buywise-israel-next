@@ -178,8 +178,8 @@ export default function AgencyDashboard() {
                     to={action.disabled ? '#' : action.href}
                     className={`group relative flex flex-col items-center gap-2 p-4 rounded-2xl border border-border/50 bg-card ${action.hoverBg} hover:border-primary/30 transition-all text-center ${action.disabled ? 'opacity-50 pointer-events-none' : ''}`}
                   >
-                    <div className={`p-2.5 rounded-xl ${action.bg} transition-colors`}>
-                      <action.icon className={`h-5 w-5 ${action.color}`} />
+                    <div className={`p-3 rounded-xl ${action.bg} transition-colors`}>
+                      <action.icon className={`h-6 w-6 ${action.color}`} />
                     </div>
                     <span className="text-xs font-medium text-foreground">{action.label}</span>
                     {action.count !== undefined && action.count > 0 && (
