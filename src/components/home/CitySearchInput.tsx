@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { useCities } from '@/hooks/useCities';
 import { useAllNeighborhoods } from '@/hooks/useNeighborhoodNames';
 import { cityMatchesQuery } from '@/lib/utils/cityMatcher';
+import { neighborhoodMatchesQuery } from '@/lib/utils/neighborhoodMatcher';
 
 interface CitySearchInputProps {
   value: string;
