@@ -11,17 +11,12 @@ const FAQ_ITEMS = [
   {
     question: 'How does featured placement work?',
     answer:
-      'Your listing receives a "Featured" badge and priority positioning across search results, city pages, and the homepage carousel. We use session-based rotation so every featured property gets equal exposure — no fixed slots, no favoritism.',
+      'Your listing receives a "Featured" badge and priority positioning across search results, city pages, and the homepage carousel. Featured listings appear above standard results with a visual badge that catches the eye, leading to significantly more views and inquiry clicks. We use session-based rotation so every featured property gets equal exposure — no fixed slots, no favoritism.',
   },
   {
     question: 'How is rotation fair across agencies?',
     answer:
       'We use session-based rotation, meaning each visitor sees a different mix of featured listings. There are no permanent "top slots" that one agency can monopolize — every featured listing gets roughly equal screen time.',
-  },
-  {
-    question: 'How much more visibility will my listing get?',
-    answer:
-      'Featured listings appear above standard results and are highlighted with a visual badge that catches the eye. Early data shows featured listings receive significantly more views and inquiry clicks compared to non-featured ones.',
   },
   {
     question: 'Is there a limit on how many listings I can feature?',
