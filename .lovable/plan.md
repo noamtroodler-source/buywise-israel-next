@@ -1,22 +1,26 @@
 
 
-## Phase 1: Founding Partner Enrollment — Implemented ✅
+## Plan: Add FAQ Accordion to Featured Listings Page
 
-All changes from the plan have been implemented:
+**Where:** `src/components/billing/FeaturedListingsManager.tsx`
 
-1. **DB Migration** — Added `is_founding_partner`, `payplus_customer_id`, `payplus_subscription_id` to `subscriptions`; `payplus_subscription_id` to `featured_listings`. Updated FOUNDING2026 promo code (max_redemptions=15, cleared old discount/credit data).
-2. **`enroll-founding-partner` edge function** — 15-cap enforcement, trial creation (60 days), founding_partners insert, first month credit grant, promo redemption tracking.
-3. **`check-trial-expirations` edge function** — Daily cron (6 AM UTC) expires trialing subscriptions past trial_end.
-4. **`useFoundingSpots` hook** — Live spots remaining counter querying founding_partners.
-5. **`FoundingProgramSection`** — Updated benefits (2mo free, 3 featured/mo, early access, case study), spots counter badge.
-6. **`FoundingProgramModal`** — Updated benefits, spots counter, activates enrollment flow.
-7. **`Pricing.tsx`** — FOUNDING2026 code routes to `enroll-founding-partner` instead of Stripe; CTA changes to "Activate Founding Program".
-8. **`CheckoutSuccess.tsx`** — Founding partner variant with trial end date and featured listings CTA.
-9. **`grant-monthly-featured-credits`** — Already has 2-month duration cap logic.
-10. **`PlanCard`** — Added `ctaLabel` prop for custom CTA text.
+**Placement:** After the summary card (and founding partner card if present), **before** the listings table. This ensures visibility regardless of listing count.
 
-### Deferred (PayPlus not yet set up):
-- `payplus-checkout`, `payplus-webhook`, `manage-billing` edge functions
-- `list-invoices` PayPlus integration
-- Featured listing ₪299/mo PayPlus recurring charge
-- Trial-to-paid automatic charge initiation
+**Component:** Use the existing `Accordion` component from `@/components/ui/accordion` — collapsible, clean, matches branding.
+
+**6 FAQ Items:**
+
+1. **"How does featured placement work?"** — Featured badge + priority positioning in search, city pages, homepage carousel. Session-based rotation ensures equal exposure.
+
+2. **"How is rotation fair across agencies?"** — Session-based rotation, no fixed top slots, every featured listing gets roughly equal screen time.
+
+3. **"How much more visibility will my listing get?"** — Appears above standard results with visual badge. Featured listings receive significantly more views and inquiry clicks.
+
+4. **"Is there a limit on how many listings I can feature?"** — No limit. Each costs ₪299/mo.
+
+5. **"Can I turn it on and off anytime?"** — Yes, activate/deactivate instantly. No long-term commitment, no cancellation fees.
+
+6. **"When does billing start?"** — Billing begins on activation, recurs monthly. Cancel anytime.
+
+**Styling:** Wrapped in a `Card` with `rounded-2xl border-primary/10`, header with `HelpCircle` icon, accordion items with clean dividers. Matches existing card styling on the page.
+
