@@ -189,8 +189,10 @@ export function PropertyWizardProvider({ children, totalSteps = DEFAULT_TOTAL_ST
         }
         return entryValid;
       }
-      case 3: // Photos
-        return data.images.length >= 3;
+      case 3: { // Photos
+        const minPhotos = Math.max(data.bedrooms + (data.additional_rooms || 0) + data.bathrooms, 3);
+        return data.images.length >= minPhotos;
+      }
       case 4: // Description
         return data.description.length >= 100;
       case 5: // Review
