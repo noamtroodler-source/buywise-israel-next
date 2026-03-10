@@ -1,22 +1,28 @@
 
 
-## Phase 1: Founding Partner Enrollment — Implemented ✅
+# Assessment: Implementation Is Complete
 
-All changes from the plan have been implemented:
+After investigating the database policies, wizard structure, and agent properties page, all the pieces are already in place:
 
-1. **DB Migration** — Added `is_founding_partner`, `payplus_customer_id`, `payplus_subscription_id` to `subscriptions`; `payplus_subscription_id` to `featured_listings`. Updated FOUNDING2026 promo code (max_redemptions=15, cleared old discount/credit data).
-2. **`enroll-founding-partner` edge function** — 15-cap enforcement, trial creation (60 days), founding_partners insert, first month credit grant, promo redemption tracking.
-3. **`check-trial-expirations` edge function** — Daily cron (6 AM UTC) expires trialing subscriptions past trial_end.
-4. **`useFoundingSpots` hook** — Live spots remaining counter querying founding_partners.
-5. **`FoundingProgramSection`** — Updated benefits (2mo free, 3 featured/mo, early access, case study), spots counter badge.
-6. **`FoundingProgramModal`** — Updated benefits, spots counter, activates enrollment flow.
-7. **`Pricing.tsx`** — FOUNDING2026 code routes to `enroll-founding-partner` instead of Stripe; CTA changes to "Activate Founding Program".
-8. **`CheckoutSuccess.tsx`** — Founding partner variant with trial end date and featured listings CTA.
-9. **`grant-monthly-featured-credits`** — Already has 2-month duration cap logic.
-10. **`PlanCard`** — Added `ctaLabel` prop for custom CTA text.
+## What's Already Working
 
-### Deferred (PayPlus not yet set up):
-- `payplus-checkout`, `payplus-webhook`, `manage-billing` edge functions
-- `list-invoices` PayPlus integration
-- Featured listing ₪299/mo PayPlus recurring charge
-- Trial-to-paid automatic charge initiation
+1. **RLS Policies** — Agents can INSERT, UPDATE, DELETE, and SELECT their own properties. No changes needed.
+
+2. **Agent Wizard** — The agent `NewPropertyWizard` has 6 steps (Basics → Review) with no "Assign Agent" step. That Step 0 only exists in the agency wizard. No changes needed.
+
+3. **Agent Properties Page** — Already has full management: Edit, Delete, Submit for Review actions, verification status badges, tabbed filtering, and a "+ New Listing" button.
+
+4. **Routes** — Already restored in `App.tsx` to render `NewPropertyWizard` and `EditPropertyWizard` for agents.
+
+5. **Agency Admin Flow** — Agency wizard retains Step 0 (Assign Agent) for admin-created listings. Agency listings page shows all listings across agents.
+
+## No Further Changes Required
+
+The hybrid model is fully implemented:
+- **Agents** create their own listings, submit for platform review
+- **Agency admins** can also create listings and assign to agents
+- **All listings** are attributed to an agent under an agency (single source of truth)
+- **Verification pipeline** (draft → pending_review → approved) is intact
+
+The system is ready to test end-to-end.
+
