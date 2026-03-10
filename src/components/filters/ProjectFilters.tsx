@@ -295,7 +295,7 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
                       : "hover:bg-muted"
                   )}
                   onClick={() => {
-                    updateFilter('city', city.name);
+                    onFiltersChange({ ...filters, city: city.name, neighborhoods: undefined });
                     setCityOpen(false);
                     setCitySearch('');
                   }}
