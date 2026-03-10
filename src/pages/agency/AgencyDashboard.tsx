@@ -80,7 +80,7 @@ export default function AgencyDashboard() {
     { label: 'Team', icon: Users, href: '/agency/team', count: team.length, badge: pendingRequests > 0 ? `${pendingRequests} pending` : undefined, color: 'text-primary', bg: 'bg-primary/10', hoverBg: 'hover:bg-primary/5' },
     { label: 'Analytics', icon: BarChart3, href: '/agency/analytics', color: 'text-primary', bg: 'bg-primary/10', hoverBg: 'hover:bg-primary/5' },
     { label: 'Blog', icon: PenLine, href: canSubmitBlog ? '/agency/blog/new' : '/agency', count: blogPosts.length, color: 'text-primary', bg: 'bg-primary/10', hoverBg: 'hover:bg-primary/5', disabled: !canSubmitBlog, tooltip: !canSubmitBlog ? 'Blog limit reached' : undefined },
-    { label: 'Featured', icon: Star, href: '/agency/featured', count: featuredListings.length, color: 'text-primary', bg: 'bg-primary/10', hoverBg: 'hover:bg-primary/5', subtitle: featuredListings.filter(fl => !fl.is_free_credit).length > 0 ? `₪${(featuredListings.filter(fl => !fl.is_free_credit).length * 299).toLocaleString()}/mo` : undefined },
+    { label: 'Featured', icon: Star, href: '/agency/featured', color: 'text-primary', bg: 'bg-primary/10', hoverBg: 'hover:bg-primary/5' },
     { label: 'Billing', icon: CreditCard, href: '/agency/billing', color: 'text-primary', bg: 'bg-primary/10', hoverBg: 'hover:bg-primary/5' },
   ];
 
@@ -172,7 +172,7 @@ export default function AgencyDashboard() {
                 >
                   <Link 
                     to={action.disabled ? '#' : action.href}
-                    className={`group relative flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border border-border/50 bg-card ${action.hoverBg} hover:border-primary/30 transition-all text-center h-full min-h-[120px] ${action.disabled ? 'opacity-50 pointer-events-none' : ''}`}
+                    className={`group relative flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border border-border/50 bg-card ${action.hoverBg} hover:border-primary/30 transition-all text-center h-full min-h-[96px] ${action.disabled ? 'opacity-50 pointer-events-none' : ''}`}
                   >
                     <div className={`p-2.5 rounded-xl ${action.bg} transition-colors`}>
                       <action.icon className={`h-5 w-5 ${action.color}`} />
@@ -180,9 +180,6 @@ export default function AgencyDashboard() {
                     <span className="text-xs font-medium text-foreground">{action.label}</span>
                     {action.count !== undefined && action.count > 0 && (
                       <span className="text-[10px] text-muted-foreground">{action.count}</span>
-                    )}
-                    {action.subtitle && (
-                      <span className="text-[10px] text-muted-foreground">{action.subtitle}</span>
                     )}
                     {action.badge && (
                       <Badge className="absolute -top-1.5 -right-1.5 text-[10px] px-1.5 py-0 bg-primary text-primary-foreground">
