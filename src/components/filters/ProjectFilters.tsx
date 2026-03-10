@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
  import { ChevronDown, ChevronUp, MapPin, DollarSign, Building2, Calendar, ArrowUpDown, Search, Check, ArrowRight, LayoutGrid, HelpCircle, Bell, Briefcase, Loader2, RotateCcw, SlidersHorizontal, Navigation, Layers, Sparkles, Car, HardHat, Home } from 'lucide-react';
+import { NeighborhoodSelector } from '@/components/filters/NeighborhoodSelector';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
