@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft, Loader2, Home, Plus, Search, Download,
-  Eye, Clock, CheckCircle2, Building2,
+  Eye, Clock, CheckCircle2, Building2, Heart, MessageSquare,
   Edit, Trash2, Send, MoreHorizontal, Copy, Key, ArrowLeftRight,
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
@@ -273,6 +273,8 @@ export default function AgencyListings() {
                         <TableHead>Status</TableHead>
                         <TableHead className="text-right">Price</TableHead>
                         <TableHead className="text-center">Views</TableHead>
+                        <TableHead className="text-center">Saves</TableHead>
+                        <TableHead className="text-center">Inquiries</TableHead>
                         <TableHead className="text-center">Days</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
@@ -319,6 +321,12 @@ export default function AgencyListings() {
                             </TableCell>
                             <TableCell className="text-center">
                               <span className="text-sm text-muted-foreground">{listing.views_count || 0}</span>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <span className="text-sm text-muted-foreground">{listing.total_saves || 0}</span>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <span className="text-sm text-muted-foreground">{listing.inquiries_count || 0}</span>
                             </TableCell>
                             <TableCell className="text-center">
                               <span className="text-sm text-muted-foreground">{getDaysOnMarket(listing.created_at)}</span>
