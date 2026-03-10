@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { MapPin, DollarSign, LayoutGrid, Building2, Calendar, Briefcase, Loader2, Bath, Search, Layers, Sparkles, Car, Check, HardHat, Home } from 'lucide-react';
+import { NeighborhoodSelector } from '@/components/filters/NeighborhoodSelector';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
