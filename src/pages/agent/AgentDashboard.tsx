@@ -140,7 +140,8 @@ export default function AgentDashboard() {
   ];
 
   const quickActions = [
-    { title: 'My Listings', desc: 'View your assigned listings', icon: Home, href: '/agent/properties' },
+    { title: 'New Listing', desc: 'Create a new property listing', icon: Plus, href: '/agent/properties/new' },
+    { title: 'My Listings', desc: 'View and manage your listings', icon: Home, href: '/agent/properties' },
     { title: 'Analytics', desc: 'View engagement and inquiries', icon: BarChart3, href: '/agent/leads', badge: leadStats?.new },
     { title: 'Write Blog', desc: 'Share your market insights', icon: PenLine, href: '/agent/blog' },
   ];
