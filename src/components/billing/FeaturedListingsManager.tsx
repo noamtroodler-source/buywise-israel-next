@@ -230,7 +230,7 @@ export function FeaturedListingsManager({ agencyId }: FeaturedListingsManagerPro
               })}
             </div>
           )}
-
+        </CardContent>
       </Card>
 
       {/* Confirmation Dialog */}
