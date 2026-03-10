@@ -40,7 +40,7 @@ export function NeighborhoodSelector({
   // City-scoped mode
   if (cityName) {
     const filtered = search
-      ? cityNeighborhoods.filter(n => n.toLowerCase().includes(search.toLowerCase()))
+      ? cityNeighborhoods.filter(n => neighborhoodMatchesQuery(n, search))
       : cityNeighborhoods;
 
     if (cityNeighborhoods.length === 0) return null;
