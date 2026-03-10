@@ -86,21 +86,15 @@ export function StepContent() {
         </div>
         <Textarea
           id="content"
-          placeholder="Write your article here...
+          placeholder="Just write naturally in plain paragraphs — no special formatting needed.
 
-You can use markdown formatting:
-# Heading 1
-## Heading 2
-**Bold text**
-*Italic text*
-- Bullet points
-1. Numbered lists
+For example:
+When buying property in Israel for the first time, there are a few things most people overlook. First, you need to understand the difference between a lawyer and a notary...
 
-Share your expertise, insights, and practical advice for your readers."
+Once you're done writing, click 'AI Format & Polish' below and we'll automatically add headings, structure, and clean formatting for you."
           value={data.content}
           onChange={(e) => {
             updateData({ content: e.target.value });
-            // Clear formatted preview if user edits content
             if (showFormatted) {
               setShowFormatted(false);
               setFormattedContent(null);
@@ -110,7 +104,7 @@ Share your expertise, insights, and practical advice for your readers."
           className="font-mono text-sm resize-y min-h-[400px]"
         />
         <p className="text-xs text-muted-foreground">
-          Minimum 100 characters required. Markdown formatting is supported.
+          Minimum 100 characters required. Just write your thoughts — AI will handle the formatting.
         </p>
       </div>
 
