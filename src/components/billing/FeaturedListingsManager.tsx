@@ -149,6 +149,9 @@ export function FeaturedListingsManager({ agencyId }: FeaturedListingsManagerPro
         </Card>
       )}
 
+      {/* FAQ */}
+      <FeaturedFAQ />
+
       {/* Listings Table */}
       <Card className="rounded-2xl border-primary/10">
         <CardHeader className="pb-3">
