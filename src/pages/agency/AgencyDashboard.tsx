@@ -248,27 +248,29 @@ export default function AgencyDashboard() {
 
               {/* Latest Blog Post */}
               {blogPosts.length > 0 && (
-                <Card className="rounded-2xl border-border/50">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="p-2 rounded-xl bg-amber-500/10">
-                        <PenLine className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                <Link to="/agency/blog" className="block">
+                  <Card className="rounded-2xl border-border/50 hover:border-primary/20 transition-colors">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="p-2 rounded-xl bg-accent">
+                          <PenLine className="h-4 w-4 text-primary" />
+                        </div>
+                        <p className="text-sm font-medium">Latest Article</p>
                       </div>
-                      <p className="text-sm font-medium">Latest Article</p>
-                    </div>
-                    <p className="text-sm text-muted-foreground line-clamp-1 mb-2">
-                      {blogPosts[0]?.title || 'Untitled'}
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary" className="text-xs">
-                        {blogPosts[0]?.verification_status || 'draft'}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">
-                        {blogPosts.length} total article{blogPosts.length !== 1 ? 's' : ''}
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
+                      <p className="text-sm text-muted-foreground line-clamp-1 mb-2">
+                        {blogPosts[0]?.title || 'Untitled'}
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="text-xs">
+                          {blogPosts[0]?.verification_status || 'draft'}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {blogPosts.length} total article{blogPosts.length !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
               )}
             </div>
           </div>
