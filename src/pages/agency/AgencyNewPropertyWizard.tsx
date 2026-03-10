@@ -289,7 +289,7 @@ function AgencyWizardContent() {
 
 export default function AgencyNewPropertyWizard() {
   return (
-    <PropertyWizardProvider>
+    <PropertyWizardProvider totalSteps={7}>
       <AgencyWizardContent />
     </PropertyWizardProvider>
   );
