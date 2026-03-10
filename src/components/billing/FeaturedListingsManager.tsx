@@ -229,9 +229,8 @@ export function FeaturedListingsManager({ agencyId }: FeaturedListingsManagerPro
                 );
               })}
             </div>
-            </div>
           )}
-        </CardContent>
+
       </Card>
 
       {/* Confirmation Dialog */}
