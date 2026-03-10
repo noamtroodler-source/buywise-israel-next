@@ -1,33 +1,29 @@
 
 
-# Populate Comprehensive Neighborhood Names for All 25 Cities
+# Fuzzy Neighborhood Search — Alias & Typo Tolerance
 
-## Current State
-Every city has neighborhood data but it's very sparse — Jerusalem has only 4 (Old City, German Colony, Rehavia, Katamon), Tel Aviv has 5, most others have 3-5. This makes the new neighborhood filter nearly useless for real users.
+## Problem
+Currently, neighborhood search uses exact substring matching (`name.toLowerCase().includes(query)`). Users typing common transliteration variants like "Rechavia" instead of "Rehavia", "Katamon" vs "Katamonim", or "Talpiyot" vs "Talpiot" get zero results.
 
 ## Approach
-Use the existing `bulk-update-neighborhoods` edge function to update all 25 cities with comprehensive, Anglo-standard neighborhood lists. No boundary coords for now (per your request to skip that part) — empty arrays for `boundary_coords` so the text-based filter works immediately.
+Create a neighborhood alias map and fuzzy matcher (mirroring the existing `cityMatcher.ts` pattern) and use it in all three places neighborhoods are searched:
 
-## Data Source
-I'll compile neighborhood lists using internationally recognized English names — the names Anglos/internationals actually use when searching for property. Priority order: Jerusalem first (most critical), then Tel Aviv, Beit Shemesh, Ra'anana, Modi'in, Netanya, Herzliya, Haifa, and the rest.
+1. **`src/lib/utils/neighborhoodMatcher.ts`** (new file) — Contains:
+   - `neighborhoodAliases` map: canonical name → array of alternate spellings for ~40-50 neighborhoods that have common transliteration variants (focused on Jerusalem, Tel Aviv, and other key cities)
+   - `neighborhoodMatchesQuery(name, query)` function using the same strategy as `cityMatchesQuery`: normalized substring → alias check → Levenshtein distance fallback
+   - Examples: "Rehavia" → ["rechavia", "rechavya", "rekhavia"], "Nachlaot" → ["nahlaot", "nachalot", "nachlaoth"], "Talpiot" → ["talpiyot", "talpiyoth"], "Baka" → ["baq'a", "baqaa", "bakaa"], "Neve Tzedek" → ["neve tsedek", "neve zedek", "nevetzedek"]
 
-## Jerusalem (expanding from 4 → ~30+)
-Adding: Talpiot, Arnona, Baka, Abu Tor, Ein Kerem, Malha, Givat Shaul, Bayit Vegan, Ramot, Pisgat Ze'ev, Neve Ya'akov, Har Nof, Kiryat Moshe, Nachlaot, Meah Shearim, French Hill, Ramat Eshkol, Givat HaMivtar, Ma'alot Dafna, Sanhedria, Ir Gannim, Kiryat Menachem, Pat, Gilo, East Talpiot, Ramat Shlomo, Ramot Alon, Holyland, Nayot, and more — keeping existing 4.
+2. **`src/components/filters/NeighborhoodSelector.tsx`** — Replace `.includes()` filtering with `neighborhoodMatchesQuery()` in both city-scoped and global modes (lines 42 and 89)
 
-## Tel Aviv (expanding from 5 → ~20+)
-Adding: Sarona, Kerem HaTeimanim, Jaffa, Ramat Aviv, Ramat HaHayal, Bavli, Park HaYarkon area, HaTikva, Shapira, Montefiore, Kiryat Shalom, Nahalat Binyamin, Ramat Aviv Gimel, Neve Sha'anan, Yad Eliyahu, and more.
+3. **`src/components/home/CitySearchInput.tsx`** — Replace the neighborhood `.includes()` filter (line 111) with `neighborhoodMatchesQuery()`
 
-## All Other Cities
-Similar expansion to 8-20+ neighborhoods per city depending on city size, using Anglo-standard names.
+## Alias Coverage (key neighborhoods)
+Jerusalem: Rehavia, Nachlaot, Talpiot, Baka, Arnona, Katamon, Meah Shearim, Ein Kerem, Bayit Vegan, Har Nof, Ramot, Pisgat Ze'ev, Givat Shaul, Kiryat Moshe, Sanhedria, Ma'alot Dafna, French Hill, Mamilla, Musrara, Geula, Abu Tor, Gilo, Malha, Ramat Eshkol
 
-## Implementation
-1. Build complete JSON data for all 25 cities with `name`, `name_he`, and empty `boundary_coords: []`
-2. Call the existing `bulk-update-neighborhoods` edge function (or direct updates) to write to the `cities.neighborhoods` JSONB column
-3. Preserve any existing `boundary_coords` data for neighborhoods that already have it
-4. Verify the data loads correctly in the new neighborhood filter
+Tel Aviv: Neve Tzedek, Florentin, Kerem HaTeimanim, Jaffa/Yafo, Ramat Aviv, Bavli, Sarona, Shapira, HaTikva, Nahalat Binyamin
 
-## What Won't Change
-- No boundary coordinate work (as requested)
-- No schema changes needed — same JSONB structure
-- The filter UI code from the previous implementation stays as-is
+Other cities: Ramat Beit Shemesh variations, Kfar Saba neighborhoods, etc.
+
+## No DB changes needed
+All alias data lives client-side in the matcher utility — same pattern as the existing city aliases.
 
