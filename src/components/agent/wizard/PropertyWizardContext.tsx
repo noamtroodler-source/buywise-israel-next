@@ -194,7 +194,7 @@ export function PropertyWizardProvider({ children, totalSteps = DEFAULT_TOTAL_ST
     }
   })();
 
-  const isLastStep = currentStep === TOTAL_STEPS - 1;
+  const isLastStep = currentStep === totalSteps - 1;
 
   return (
     <PropertyWizardContext.Provider
