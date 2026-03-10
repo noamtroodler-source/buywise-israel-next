@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  CheckCircle2, Circle, X, ChevronDown, ChevronUp,
+  CheckCircle2, Circle, ChevronDown, ChevronUp,
   Image, FileText, Phone, Globe, MapPin, Briefcase, Users, Home, Share2
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,15 +39,6 @@ interface AgencyOnboardingProgressProps {
 
 export function AgencyOnboardingProgress({ agency, teamCount, listingsCount = 0 }: AgencyOnboardingProgressProps) {
   const [isExpanded, setIsExpanded] = useState(true);
-  const [isDismissed, setIsDismissed] = useState(false);
-
-  // Check local storage for dismissed state
-  useEffect(() => {
-    const dismissed = sessionStorage.getItem('agency_onboarding_dismissed');
-    if (dismissed === 'true') {
-      setIsDismissed(true);
-    }
-  }, []);
 
   const checklistItems: ChecklistItem[] = [
     {
@@ -127,15 +118,9 @@ export function AgencyOnboardingProgress({ agency, teamCount, listingsCount = 0 
   const completedCount = checklistItems.filter(item => item.isComplete).length;
   const completionPercentage = Math.round((completedCount / checklistItems.length) * 100);
 
-  // Don't show if dismissed or 100% complete
-  if (isDismissed || completionPercentage === 100) {
+  if (completionPercentage === 100) {
     return null;
   }
-
-  const handleDismiss = () => {
-    sessionStorage.setItem('agency_onboarding_dismissed', 'true');
-    setIsDismissed(true);
-  };
 
   return (
     <Card className="rounded-2xl border-primary/20 bg-gradient-to-br from-primary/5 to-transparent overflow-hidden">
@@ -159,14 +144,6 @@ export function AgencyOnboardingProgress({ agency, teamCount, listingsCount = 0 
               ) : (
                 <ChevronDown className="h-4 w-4" />
               )}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleDismiss}
-              className="rounded-lg text-muted-foreground hover:text-foreground"
-            >
-              <X className="h-4 w-4" />
             </Button>
           </div>
         </div>
