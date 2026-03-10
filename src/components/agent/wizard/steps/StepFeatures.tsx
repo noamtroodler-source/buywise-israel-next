@@ -399,7 +399,7 @@ export function StepFeatures() {
 
             {/* Pets Policy */}
             <div className="space-y-2">
-              <Label>Pets Policy</Label>
+              <Label>Pets Policy *</Label>
               <Select
                 value={data.pets_policy || ''}
                 onValueChange={(v) => updateData({ pets_policy: v as PetsPolicy })}
