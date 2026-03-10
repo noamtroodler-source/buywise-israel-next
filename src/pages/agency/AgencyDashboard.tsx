@@ -172,7 +172,7 @@ export default function AgencyDashboard() {
                 >
                   <Link 
                     to={action.disabled ? '#' : action.href}
-                    className={`group relative flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border border-border/50 bg-card ${action.hoverBg} hover:border-primary/30 transition-all text-center h-full min-h-[120px] ${action.disabled ? 'opacity-50 pointer-events-none' : ''}`}
+                    className={`group relative flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border border-border/50 bg-card ${action.hoverBg} hover:border-primary/30 transition-all text-center h-full min-h-[96px] ${action.disabled ? 'opacity-50 pointer-events-none' : ''}`}
                   >
                     <div className={`p-2.5 rounded-xl ${action.bg} transition-colors`}>
                       <action.icon className={`h-5 w-5 ${action.color}`} />
