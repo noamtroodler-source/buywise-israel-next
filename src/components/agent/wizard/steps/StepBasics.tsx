@@ -105,14 +105,16 @@ export function StepBasics() {
             <Input
               id="title"
               value={data.title}
-              onChange={(e) => updateData({ title: e.target.value })}
+              onChange={(e) => {
+                if (e.target.value.length <= 60) updateData({ title: e.target.value });
+              }}
               placeholder="e.g., Stunning 3BR Apartment with Sea View"
-              maxLength={100}
+              maxLength={60}
               className="h-11 rounded-xl"
             />
             <div className="flex items-center justify-between">
-              <p className="text-xs text-muted-foreground">
-                {data.title.length}/100 characters
+              <p className={`text-xs ${data.title.length > 0 && data.title.length < 20 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                {data.title.length}/60 characters {data.title.length > 0 && data.title.length < 20 && '(minimum 20)'}
               </p>
             </div>
             <div className="flex items-center gap-2 rounded-lg bg-muted/50 border border-border px-3 py-2">
