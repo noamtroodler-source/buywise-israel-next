@@ -76,12 +76,12 @@ export default function AgencyDashboard() {
 
   // Quick action navigation items
   const quickActions = [
-    { label: 'Listings', icon: FileText, href: '/agency/listings', count: stats?.activeListings, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-500/10', hoverBg: 'hover:bg-blue-500/5' },
-    { label: 'Team', icon: Users, href: '/agency/team', count: team.length, badge: pendingRequests > 0 ? `${pendingRequests} pending` : undefined, color: 'text-violet-600 dark:text-violet-400', bg: 'bg-violet-500/10', hoverBg: 'hover:bg-violet-500/5' },
-    { label: 'Analytics', icon: BarChart3, href: '/agency/analytics', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-500/10', hoverBg: 'hover:bg-emerald-500/5' },
-    { label: 'Blog', icon: PenLine, href: canSubmitBlog ? '/agency/blog/new' : '/agency', count: blogPosts.length, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-500/10', hoverBg: 'hover:bg-amber-500/5', disabled: !canSubmitBlog, tooltip: !canSubmitBlog ? 'Blog limit reached' : undefined },
-    { label: 'Featured', icon: Star, href: '/agency/featured', count: featuredListings.length, color: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-500/10', hoverBg: 'hover:bg-orange-500/5', subtitle: featuredListings.filter(fl => !fl.is_free_credit).length > 0 ? `₪${(featuredListings.filter(fl => !fl.is_free_credit).length * 299).toLocaleString()}/mo` : undefined },
-    { label: 'Billing', icon: CreditCard, href: '/agency/billing', color: 'text-pink-600 dark:text-pink-400', bg: 'bg-pink-500/10', hoverBg: 'hover:bg-pink-500/5' },
+    { label: 'Listings', icon: FileText, href: '/agency/listings', count: stats?.activeListings, color: 'text-primary', bg: 'bg-primary/10', hoverBg: 'hover:bg-primary/5' },
+    { label: 'Team', icon: Users, href: '/agency/team', count: team.length, badge: pendingRequests > 0 ? `${pendingRequests} pending` : undefined, color: 'text-primary', bg: 'bg-primary/10', hoverBg: 'hover:bg-primary/5' },
+    { label: 'Analytics', icon: BarChart3, href: '/agency/analytics', color: 'text-primary', bg: 'bg-primary/10', hoverBg: 'hover:bg-primary/5' },
+    { label: 'Blog', icon: PenLine, href: canSubmitBlog ? '/agency/blog/new' : '/agency', count: blogPosts.length, color: 'text-primary', bg: 'bg-primary/10', hoverBg: 'hover:bg-primary/5', disabled: !canSubmitBlog, tooltip: !canSubmitBlog ? 'Blog limit reached' : undefined },
+    { label: 'Featured', icon: Star, href: '/agency/featured', count: featuredListings.length, color: 'text-primary', bg: 'bg-primary/10', hoverBg: 'hover:bg-primary/5', subtitle: featuredListings.filter(fl => !fl.is_free_credit).length > 0 ? `₪${(featuredListings.filter(fl => !fl.is_free_credit).length * 299).toLocaleString()}/mo` : undefined },
+    { label: 'Billing', icon: CreditCard, href: '/agency/billing', color: 'text-primary', bg: 'bg-primary/10', hoverBg: 'hover:bg-primary/5' },
   ];
 
   // Snapshot stats for inline strip
