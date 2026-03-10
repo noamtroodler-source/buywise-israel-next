@@ -55,7 +55,7 @@ export function StepPhotos() {
               )}
               {!hasEnoughPhotos && (
                 <span>
-                  {' '}— Minimum {minPhotos} photos required to continue
+                  {' '}— Minimum {safeMinPhotos} photos required ({data.bedrooms} bed{data.bedrooms !== 1 ? 's' : ''} + {data.additional_rooms || 0} room{(data.additional_rooms || 0) !== 1 ? 's' : ''} + {data.bathrooms} bath{data.bathrooms !== 1 ? 's' : ''})
                 </span>
               )}
             </AlertDescription>
