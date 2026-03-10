@@ -5,6 +5,7 @@ import { usePropertyWizard } from '../PropertyWizardContext';
 import { PropertyType, ListingStatus } from '@/types/database';
 import { Home, MapPin, DollarSign, AlertCircle, ShieldCheck, TrendingDown, TrendingUp } from 'lucide-react';
 import { AddressAutocomplete, ParsedAddress } from '../AddressAutocomplete';
+import { NeighborhoodAutocomplete } from '../NeighborhoodAutocomplete';
 import { PropertyMiniMapWrapper } from '@/components/property/PropertyMiniMapWrapper';
 import { useCities } from '@/hooks/useCities';
 import { GoogleMapsProvider } from '@/components/maps/GoogleMapsProvider';
@@ -255,13 +256,11 @@ export function StepBasics() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="neighborhood">Neighborhood *</Label>
-              <Input
-                id="neighborhood"
+              <NeighborhoodAutocomplete
                 value={data.neighborhood}
-                onChange={(e) => updateData({ neighborhood: e.target.value })}
-                placeholder="Auto-filled or enter manually"
-                className="h-11 rounded-xl"
-                required
+                onValueChange={(val) => updateData({ neighborhood: val })}
+                cityName={data.city}
+                placeholder="Select or search neighborhood"
               />
               {!data.neighborhood && data.city && (
                 <p className="text-xs text-destructive">Neighborhood is required</p>
