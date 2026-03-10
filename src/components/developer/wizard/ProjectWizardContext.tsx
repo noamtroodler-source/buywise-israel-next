@@ -108,6 +108,11 @@ export function ProjectWizardProvider({ children }: { children: ReactNode }) {
     setData(prev => ({ ...prev, ...updates }));
   }, []);
 
+  const handleSetCurrentStep = useCallback((step: number) => {
+    setCurrentStep(step);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
   const resetWizard = useCallback(() => {
     setData(defaultProjectData);
     setCurrentStep(0);
