@@ -441,32 +441,22 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
             <PopoverTrigger asChild>
               <Button 
                 variant="outline" 
-                className={cn(filterButtonBase, (filters.city || filters.neighborhoods?.length) && "border-primary/50", cityOpen && filterButtonActive)}
+                className={cn(filterButtonBase, filters.city && "border-primary/50", cityOpen && filterButtonActive)}
               >
                 <MapPin className="h-4 w-4" />
-                <span>
-                  {filters.neighborhoods?.length === 1
-                    ? filters.neighborhoods[0]
-                    : filters.neighborhoods?.length
-                      ? `${filters.city} · ${filters.neighborhoods.length} areas`
-                      : filters.city || 'City'}
-                </span>
+                <span>{filters.city || 'City'}</span>
                 {cityOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[360px] p-0 bg-background border shadow-xl z-50" align="start">
+            <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[320px] p-0 bg-background border shadow-xl z-50" align="start">
               <div className="p-4 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-lg">Location</h3>
-                  {(filters.city || filters.neighborhoods?.length) && (
+                  <h3 className="font-semibold text-lg">Select City</h3>
+                  {filters.city && (
                     <button 
                       className="text-sm text-muted-foreground hover:text-foreground"
                       onClick={() => {
-                        onFiltersChange({
-                          ...filters,
-                          city: undefined,
-                          neighborhoods: undefined,
-                        });
+                        onFiltersChange({ ...filters, city: undefined, neighborhoods: undefined });
                       }}
                     >
                       Clear
@@ -474,84 +464,60 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
                   )}
                 </div>
                 
-                {/* City Selection */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">City</Label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search..."
-                      value={citySearch}
-                      onChange={(e) => setCitySearch(e.target.value)}
-                      className="pl-10 rounded-lg"
-                    />
-                  </div>
-
-                 {/* My Location Button */}
-                 {geoSupported && (
-                   <div className="space-y-1">
-                     <button
-                       type="button"
-                       disabled={geoLoading || !cities?.length}
-                       onClick={handleUseMyLocation}
-                       className="w-full flex items-center gap-2 px-3 py-2 text-sm text-primary hover:bg-muted rounded-lg transition-colors disabled:opacity-50"
-                     >
-                       {geoLoading ? (
-                         <Loader2 className="h-4 w-4 animate-spin" />
-                       ) : (
-                         <Navigation className="h-4 w-4" />
-                       )}
-                       <span>{geoLoading ? 'Locating...' : 'Use my location'}</span>
-                     </button>
-                     {geoError && (
-                       <p className="text-xs text-muted-foreground px-3">{geoError}</p>
-                     )}
-                   </div>
-                 )}
- 
-                  <div className="border-t my-2" />
-
-                  {/* Neighborhood Selection - only when city is selected, shown BEFORE cities */}
-                  <NeighborhoodSelector
-                    cityName={filters.city}
-                    selectedNeighborhoods={filters.neighborhoods || []}
-                    onNeighborhoodsChange={(neighborhoods) => {
-                      onFiltersChange({
-                        ...filters,
-                        neighborhoods: neighborhoods.length > 0 ? neighborhoods : undefined,
-                      });
-                    }}
-                    externalSearch={citySearch}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search..."
+                    value={citySearch}
+                    onChange={(e) => setCitySearch(e.target.value)}
+                    className="pl-10 rounded-lg"
                   />
-
-                  {filters.city && <Label className="text-sm font-medium">Cities</Label>}
-
-                   <div className="max-h-[96px] overflow-y-auto space-y-1">
-                     {filteredCities?.map(city => (
-                       <button
-                         key={city.id}
-                         className={cn(
-                           "w-full text-left px-3 py-2 text-sm rounded-lg transition-colors",
-                           filters.city === city.name 
-                             ? "bg-primary text-primary-foreground font-medium" 
-                             : "hover:bg-muted"
-                         )}
-                         onClick={() => {
-                           onFiltersChange({
-                             ...filters,
-                             city: city.name,
-                             neighborhoods: undefined,
-                           });
-                           setCityOpen(false);
-                           setCitySearch('');
-                         }}
-                       >
-                         {city.name}
-                       </button>
-                     ))}
-                   </div>
                 </div>
 
+                {/* My Location Button */}
+                {geoSupported && (
+                  <div className="space-y-1">
+                    <button
+                      type="button"
+                      disabled={geoLoading || !cities?.length}
+                      onClick={handleUseMyLocation}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-primary hover:bg-muted rounded-lg transition-colors disabled:opacity-50"
+                    >
+                      {geoLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Navigation className="h-4 w-4" />
+                      )}
+                      <span>{geoLoading ? 'Locating...' : 'Use my location'}</span>
+                    </button>
+                    {geoError && (
+                      <p className="text-xs text-muted-foreground px-3">{geoError}</p>
+                    )}
+                  </div>
+                )}
+
+                <div className="border-t my-2" />
+
+                <div className="max-h-[250px] overflow-y-auto space-y-1">
+                  {filteredCities?.map(city => (
+                    <button
+                      key={city.id}
+                      className={cn(
+                        "w-full text-left px-3 py-2 text-sm rounded-lg transition-colors",
+                        filters.city === city.name 
+                          ? "bg-primary text-primary-foreground font-medium" 
+                          : "hover:bg-muted"
+                      )}
+                      onClick={() => {
+                        onFiltersChange({ ...filters, city: city.name, neighborhoods: undefined });
+                        setCityOpen(false);
+                        setCitySearch('');
+                      }}
+                    >
+                      {city.name}
+                    </button>
+                  ))}
+                </div>
 
                 <Link 
                   to="/tools" 
@@ -559,16 +525,58 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
                 >
                   Not sure where to look? <ArrowRight className="h-4 w-4" />
                 </Link>
+              </div>
+            </PopoverContent>
+          </Popover>
 
+          {/* Neighborhood Filter */}
+          <Popover open={neighborhoodOpen} onOpenChange={setNeighborhoodOpen}>
+            <PopoverTrigger asChild>
+              <Button 
+                variant="outline" 
+                className={cn(filterButtonBase, filters.neighborhoods?.length && "border-primary/50", neighborhoodOpen && filterButtonActive)}
+              >
+                <span>
+                  {filters.neighborhoods?.length === 1
+                    ? filters.neighborhoods[0]
+                    : filters.neighborhoods?.length
+                      ? `${filters.neighborhoods.length} areas`
+                      : 'Neighborhood'}
+                </span>
+                {neighborhoodOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[320px] p-0 bg-background border shadow-xl z-50" align="start">
+              <div className="p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-lg">Neighborhood</h3>
+                  {filters.neighborhoods?.length ? (
+                    <button 
+                      className="text-sm text-muted-foreground hover:text-foreground"
+                      onClick={() => onFiltersChange({ ...filters, neighborhoods: undefined })}
+                    >
+                      Clear
+                    </button>
+                  ) : null}
+                </div>
+                <NeighborhoodSelector
+                  cityName={filters.city}
+                  selectedNeighborhoods={filters.neighborhoods || []}
+                  onNeighborhoodsChange={(neighborhoods) => {
+                    onFiltersChange({
+                      ...filters,
+                      neighborhoods: neighborhoods.length > 0 ? neighborhoods : undefined,
+                    });
+                  }}
+                  onCityChange={(city) => {
+                    onFiltersChange({ ...filters, city, neighborhoods: undefined });
+                  }}
+                />
                 <Button 
                   className="w-full"
-                  onClick={() => {
-                    setCityOpen(false);
-                  }}
+                  onClick={() => setNeighborhoodOpen(false)}
                 >
-                  {countLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : null}
+                  {countLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                   {previewCount !== undefined ? `Show ${previewCount} results` : 'Apply'}
                 </Button>
               </div>
