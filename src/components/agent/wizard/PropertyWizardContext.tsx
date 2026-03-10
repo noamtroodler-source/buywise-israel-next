@@ -71,6 +71,9 @@ interface PropertyWizardContextType {
   goBack: () => void;
   canGoNext: boolean;
   isLastStep: boolean;
+  /** Offset applied to currentStep before validation (e.g., 1 for agency wizard with Assign Agent step) */
+  stepOffset: number;
+  setStepOffset: (offset: number) => void;
   // New save-related properties
   resetWizard: () => void;
   loadFromSaved: (savedData: PropertyWizardData) => void;
