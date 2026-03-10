@@ -133,7 +133,7 @@ export function AgencyOnboardingProgress({ agency, teamCount, listingsCount = 0 
   }
 
   const handleDismiss = () => {
-    localStorage.setItem('agency_onboarding_dismissed', 'true');
+    sessionStorage.setItem('agency_onboarding_dismissed', 'true');
     setIsDismissed(true);
   };
 
