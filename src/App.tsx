@@ -290,12 +290,12 @@ const App = () => (
                         } />
                         <Route path="/agent/properties/new" element={
                           <ProtectedRoute requiredRole="agent">
-                            <Navigate to="/agent/properties" replace />
+                            <NewPropertyWizard />
                           </ProtectedRoute>
                         } />
                         <Route path="/agent/properties/:id/edit" element={
                           <ProtectedRoute requiredRole="agent">
-                            <Navigate to="/agent/properties" replace />
+                            <EditPropertyWizard />
                           </ProtectedRoute>
                         } />
                         <Route path="/agent/blog" element={

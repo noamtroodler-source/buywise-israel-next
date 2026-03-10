@@ -140,7 +140,8 @@ export default function AgentDashboard() {
   ];
 
   const quickActions = [
-    { title: 'My Listings', desc: 'View your assigned listings', icon: Home, href: '/agent/properties' },
+    { title: 'New Listing', desc: 'Create a new property listing', icon: Plus, href: '/agent/properties/new' },
+    { title: 'My Listings', desc: 'View and manage your listings', icon: Home, href: '/agent/properties' },
     { title: 'Analytics', desc: 'View engagement and inquiries', icon: BarChart3, href: '/agent/leads', badge: leadStats?.new },
     { title: 'Write Blog', desc: 'Share your market insights', icon: PenLine, href: '/agent/blog' },
   ];
@@ -188,19 +189,25 @@ export default function AgentDashboard() {
                     <span className="hidden sm:inline">Analytics</span>
                   </Link>
                 </Button>
+                <Button size="sm" asChild>
+                  <Link to="/agent/properties/new">
+                    <Plus className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">New Listing</span>
+                  </Link>
+                </Button>
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <span>
-                        <Button size="sm" asChild={!blogQuotaLoading && canSubmitBlog} disabled={!blogQuotaLoading && !canSubmitBlog}>
+                        <Button size="sm" variant="outline" asChild={!blogQuotaLoading && canSubmitBlog} disabled={!blogQuotaLoading && !canSubmitBlog} className="border-primary/20 hover:bg-primary/5">
                           {(!blogQuotaLoading && canSubmitBlog) ? (
                             <Link to="/agent/blog/new">
-                              <Plus className="h-4 w-4 sm:mr-2" />
+                              <PenLine className="h-4 w-4 sm:mr-2" />
                               <span className="hidden sm:inline">Add Blog</span>
                             </Link>
                           ) : (
                             <>
-                              <Plus className="h-4 w-4 sm:mr-2" />
+                              <PenLine className="h-4 w-4 sm:mr-2" />
                               <span className="hidden sm:inline">Add Blog</span>
                             </>
                           )}
