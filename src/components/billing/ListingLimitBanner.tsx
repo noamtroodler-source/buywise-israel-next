@@ -10,7 +10,7 @@ interface ListingLimitBannerProps {
 
 export function ListingLimitBanner({ entityType }: ListingLimitBannerProps) {
   const { canCreate, currentCount, maxListings, isLoading, needsSubscription, nextTierName, overageRate, isOverLimit } = useListingLimitCheck(entityType);
-  const sub = undefined; // We derive free status from nextTierName
+  
   const isFreeAtLimit = !needsSubscription && nextTierName === 'Starter' && isOverLimit;
 
   if (isLoading || canCreate) return null;
