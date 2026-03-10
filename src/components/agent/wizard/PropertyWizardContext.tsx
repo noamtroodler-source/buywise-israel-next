@@ -148,7 +148,7 @@ export function PropertyWizardProvider({ children, totalSteps = DEFAULT_TOTAL_ST
   }, []);
 
   const goNext = () => {
-    if (currentStep < TOTAL_STEPS - 1) {
+    if (currentStep < totalSteps - 1) {
       setCurrentStep(prev => prev + 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
