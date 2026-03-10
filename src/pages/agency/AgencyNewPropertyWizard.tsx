@@ -45,7 +45,12 @@ const itemVariants = {
 
 function AgencyWizardContent() {
   const navigate = useNavigate();
-  const { data, currentStep, setCurrentStep, goNext, goBack, canGoNext, isLastStep } = usePropertyWizard();
+  const { data, currentStep, setCurrentStep, goNext, goBack, canGoNext, isLastStep, setStepOffset } = usePropertyWizard();
+
+  // Agency wizard has an extra "Assign Agent" step at index 0, so offset validation by 1
+  React.useEffect(() => {
+    setStepOffset(1);
+  }, [setStepOffset]);
   const { data: agency } = useMyAgency();
   const { data: team = [] } = useAgencyTeam(agency?.id);
   const { data: listings = [] } = useAgencyListingsManagement(agency?.id);
