@@ -187,31 +187,18 @@ export function MobileFilterSheet({
               </section>
             )}
 
-            {/* Location Section */}
+            {/* City Section */}
             <section className="space-y-3">
               <h3 className="font-semibold flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-primary" />
-                Location
+                City
               </h3>
               <Input
-                placeholder="Search..."
+                placeholder="Search cities..."
                 value={citySearch}
                 onChange={(e) => setCitySearch(e.target.value)}
                 className="rounded-xl"
               />
-              {/* Neighborhood selection - shown BEFORE cities when city is selected */}
-              <NeighborhoodSelector
-                cityName={filters.city}
-                selectedNeighborhoods={filters.neighborhoods || []}
-                onNeighborhoodsChange={(neighborhoods) => {
-                  onFiltersChange({
-                    ...filters,
-                    neighborhoods: neighborhoods.length > 0 ? neighborhoods : undefined,
-                  });
-                }}
-                externalSearch={citySearch}
-              />
-              {filters.city && <Label className="text-sm font-medium text-muted-foreground">Cities</Label>}
               <div className="flex flex-wrap gap-2 max-h-[96px] overflow-y-auto">
                 {filteredCities.slice(0, 12).map(city => (
                   <button
@@ -234,6 +221,30 @@ export function MobileFilterSheet({
                   </button>
                 ))}
               </div>
+            </section>
+
+            {/* Neighborhood Section */}
+            <section className="space-y-3">
+              <h3 className="font-semibold flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-primary" />
+                Neighborhood
+                {filters.neighborhoods?.length ? (
+                  <span className="text-xs text-muted-foreground font-normal">({filters.neighborhoods.length} selected)</span>
+                ) : null}
+              </h3>
+              <NeighborhoodSelector
+                cityName={filters.city}
+                selectedNeighborhoods={filters.neighborhoods || []}
+                onNeighborhoodsChange={(neighborhoods) => {
+                  onFiltersChange({
+                    ...filters,
+                    neighborhoods: neighborhoods.length > 0 ? neighborhoods : undefined,
+                  });
+                }}
+                onCityChange={(city) => {
+                  onFiltersChange({ ...filters, city, neighborhoods: undefined });
+                }}
+              />
             </section>
 
             {/* Price Section */}

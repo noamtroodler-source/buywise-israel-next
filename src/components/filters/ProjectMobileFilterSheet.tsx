@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { MapPin, DollarSign, LayoutGrid, Building2, Calendar, Briefcase, Loader2, Bath, Search, Layers, Sparkles, Car, Check, HardHat, Home } from 'lucide-react';
+import { NeighborhoodSelector } from '@/components/filters/NeighborhoodSelector';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -116,11 +117,11 @@ export function ProjectMobileFilterSheet({
         
         <ScrollArea className="h-[calc(90vh-140px)]">
           <div className="px-4 py-4 space-y-6">
-            {/* Location Section */}
+            {/* City Section */}
             <section className="space-y-3">
               <h3 className="font-semibold flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-primary" />
-                Location
+                City
               </h3>
               <Input
                 placeholder="Search city..."
@@ -138,12 +139,42 @@ export function ProjectMobileFilterSheet({
                         ? "bg-primary text-primary-foreground" 
                         : "bg-muted hover:bg-muted/80"
                     )}
-                    onClick={() => updateFilter('city', filters.city === city.name ? undefined : city.name)}
+                    onClick={() => {
+                      if (filters.city === city.name) {
+                        onFiltersChange({ ...filters, city: undefined, neighborhoods: undefined });
+                      } else {
+                        onFiltersChange({ ...filters, city: city.name, neighborhoods: undefined });
+                      }
+                    }}
                   >
                     {city.name}
                   </button>
                 ))}
               </div>
+            </section>
+
+            {/* Neighborhood Section */}
+            <section className="space-y-3">
+              <h3 className="font-semibold flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-primary" />
+                Neighborhood
+                {filters.neighborhoods?.length ? (
+                  <span className="text-xs text-muted-foreground font-normal">({filters.neighborhoods.length} selected)</span>
+                ) : null}
+              </h3>
+              <NeighborhoodSelector
+                cityName={filters.city}
+                selectedNeighborhoods={filters.neighborhoods || []}
+                onNeighborhoodsChange={(neighborhoods) => {
+                  onFiltersChange({
+                    ...filters,
+                    neighborhoods: neighborhoods.length > 0 ? neighborhoods : undefined,
+                  });
+                }}
+                onCityChange={(city) => {
+                  onFiltersChange({ ...filters, city, neighborhoods: undefined });
+                }}
+              />
             </section>
 
             {/* Status Section */}

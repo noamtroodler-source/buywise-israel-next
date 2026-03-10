@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
  import { ChevronDown, ChevronUp, MapPin, DollarSign, Building2, Calendar, ArrowUpDown, Search, Check, ArrowRight, LayoutGrid, HelpCircle, Bell, Briefcase, Loader2, RotateCcw, SlidersHorizontal, Navigation, Layers, Sparkles, Car, HardHat, Home } from 'lucide-react';
+import { NeighborhoodSelector } from '@/components/filters/NeighborhoodSelector';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +21,7 @@ import { ProjectMobileFilterSheet } from '@/components/filters/ProjectMobileFilt
 
 export interface ProjectFiltersType {
   city?: string;
+  neighborhoods?: string[];
   status?: string;
   min_price?: number;
   max_price?: number;
@@ -89,6 +91,7 @@ const parseCommaNumber = (value: string): number | undefined => {
 
 export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: ProjectFiltersProps) {
   const [cityOpen, setCityOpen] = useState(false);
+  const [neighborhoodOpen, setNeighborhoodOpen] = useState(false);
   const [priceOpen, setPriceOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
   const [yearOpen, setYearOpen] = useState(false);
@@ -238,7 +241,7 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
                 <button 
                   className="text-sm text-muted-foreground hover:text-foreground"
                   onClick={() => {
-                    updateFilter('city', undefined);
+                    onFiltersChange({ ...filters, city: undefined, neighborhoods: undefined });
                     setCityOpen(false);
                   }}
                 >
@@ -292,7 +295,7 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
                       : "hover:bg-muted"
                   )}
                   onClick={() => {
-                    updateFilter('city', city.name);
+                    onFiltersChange({ ...filters, city: city.name, neighborhoods: undefined });
                     setCityOpen(false);
                     setCitySearch('');
                   }}
@@ -308,6 +311,60 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
             >
               Explore all areas <ArrowRight className="h-4 w-4" />
             </Link>
+          </div>
+        </PopoverContent>
+      </Popover>
+
+      {/* Neighborhood Filter */}
+      <Popover open={neighborhoodOpen} onOpenChange={setNeighborhoodOpen}>
+        <PopoverTrigger asChild>
+          <Button 
+            variant="outline" 
+            className={cn(filterButtonBase, filters.neighborhoods?.length && filterButtonActive)}
+          >
+            <span>
+              {filters.neighborhoods?.length === 1
+                ? filters.neighborhoods[0]
+                : filters.neighborhoods?.length
+                  ? `${filters.neighborhoods.length} areas`
+                  : 'Neighborhood'}
+            </span>
+            {neighborhoodOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[320px] p-0 bg-background border shadow-xl z-50" align="start">
+          <div className="p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-lg">Neighborhood</h3>
+              {filters.neighborhoods?.length ? (
+                <button 
+                  className="text-sm text-muted-foreground hover:text-foreground"
+                  onClick={() => onFiltersChange({ ...filters, neighborhoods: undefined })}
+                >
+                  Clear
+                </button>
+              ) : null}
+            </div>
+            <NeighborhoodSelector
+              cityName={filters.city}
+              selectedNeighborhoods={filters.neighborhoods || []}
+              onNeighborhoodsChange={(neighborhoods) => {
+                onFiltersChange({
+                  ...filters,
+                  neighborhoods: neighborhoods.length > 0 ? neighborhoods : undefined,
+                });
+              }}
+              onCityChange={(city) => {
+                onFiltersChange({ ...filters, city, neighborhoods: undefined });
+              }}
+            />
+            <Button 
+              className="w-full"
+              onClick={() => setNeighborhoodOpen(false)}
+            >
+              {countLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              {previewCount !== undefined ? `Show ${previewCount} results` : 'Apply'}
+            </Button>
           </div>
         </PopoverContent>
       </Popover>

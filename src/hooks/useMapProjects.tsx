@@ -112,6 +112,10 @@ function applyProjectFilters(query: any, filters?: PropertyFilters) {
     query = query.lte('price_from', filters.max_price);
   }
 
+  if (filters.neighborhoods && filters.neighborhoods.length > 0) {
+    query = query.in('neighborhood', filters.neighborhoods);
+  }
+
   // Bounds filtering
   if (filters.bounds) {
     query = query

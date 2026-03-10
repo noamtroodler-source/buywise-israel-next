@@ -192,6 +192,9 @@ function applyFilters(query: any, filters?: ProjectFiltersType) {
   if (filters.city) {
     query = query.eq('city', filters.city);
   }
+  if (filters.neighborhoods && filters.neighborhoods.length > 0) {
+    query = query.in('neighborhood', filters.neighborhoods);
+  }
   if (filters.status) {
     query = query.eq('status', filters.status as any);
   }
