@@ -107,7 +107,7 @@ export function StepDescription() {
       <div>
         <h2 className="text-2xl font-bold mb-1">Description</h2>
         <p className="text-muted-foreground">
-          Tell the story of this property to attract buyers
+          Tell the story of this property to attract {data.listing_status === 'for_rent' ? 'renters' : 'buyers'}
         </p>
       </div>
 

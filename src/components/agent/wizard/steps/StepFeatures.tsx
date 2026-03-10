@@ -367,13 +367,14 @@ export function StepFeatures() {
           </div>
         )}
 
-        {/* Property Terms Section - Both Rental and Sale */}
+        {/* Rental Terms Section - Rental Only */}
+        {isRental && (
         <div className="space-y-4 pt-4 border-t">
           <div className="flex items-center gap-3">
             <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
               <Home className="h-4 w-4 text-primary" />
             </div>
-            <h3 className="font-semibold">Property Terms</h3>
+            <h3 className="font-semibold">Rental Terms</h3>
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

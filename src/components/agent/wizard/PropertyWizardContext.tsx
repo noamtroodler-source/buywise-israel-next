@@ -183,10 +183,11 @@ export function PropertyWizardProvider({ children, totalSteps = DEFAULT_TOTAL_ST
           && (!needsFloor || (data.floor !== undefined && data.total_floors !== undefined));
       }
       case 2: { // Features
-        const baseValid = !!data.furnished_status && !!data.pets_policy;
-        const rentalValid = data.listing_status !== 'for_rent' || !!data.lease_term;
         const entryValid = data.is_immediate_entry || !!data.entry_date;
-        return baseValid && rentalValid && entryValid;
+        if (data.listing_status === 'for_rent') {
+          return !!data.furnished_status && !!data.pets_policy && !!data.lease_term && entryValid;
+        }
+        return entryValid;
       }
       case 3: // Photos
         return data.images.length >= 3;
