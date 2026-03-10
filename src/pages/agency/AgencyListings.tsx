@@ -255,7 +255,21 @@ export default function AgencyListings() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Property</TableHead>
-                        <TableHead>Agent</TableHead>
+                        <TableHead>
+                          <TooltipProvider delayDuration={300}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="inline-flex items-center gap-1 cursor-help">
+                                  Agent
+                                  <ArrowLeftRight className="h-3 w-3 text-muted-foreground" />
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent side="top">
+                                <p className="text-xs">Click agent name to reassign</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead className="text-right">Price</TableHead>
                         <TableHead className="text-center">Views</TableHead>
