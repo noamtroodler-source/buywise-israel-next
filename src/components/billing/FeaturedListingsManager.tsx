@@ -150,17 +150,29 @@ export function FeaturedListingsManager({ agencyId }: FeaturedListingsManagerPro
 
       {/* Listings Table */}
       <Card className="rounded-2xl border-primary/10">
-        <CardHeader className="pb-2">
+        <CardHeader className="pb-3">
           <CardTitle className="text-lg">Your Published Listings</CardTitle>
+          {publishedListings.length > 3 && (
+            <div className="relative mt-2">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by name or city..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 h-9 rounded-xl text-sm"
+              />
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           {publishedListings.length === 0 ? (
             <p className="text-muted-foreground text-sm py-4">
               No published listings yet. Listings must be approved before they can be featured.
             </p>
-          ) : (
-            <div className="divide-y divide-border/50">
-              {publishedListings.map((listing) => {
+          ) : filteredListings.length === 0 ? (
+            <p className="text-muted-foreground text-sm py-4">
+              No listings match "{searchQuery}"
+            </p>
                 const featured = featuredMap.get(listing.id);
                 const isFeatured = !!featured;
 
