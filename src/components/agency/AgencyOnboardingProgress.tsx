@@ -112,6 +112,7 @@ export function AgencyOnboardingProgress({ agency, teamCount, listingsCount = 0 
       description: 'Invite someone to join your agency',
       icon: Users,
       isComplete: teamCount >= 2,
+      link: '/agency/team',
     },
     {
       id: 'listing',
