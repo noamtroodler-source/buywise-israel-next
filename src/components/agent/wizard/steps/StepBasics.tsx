@@ -13,7 +13,10 @@ const propertyTypes: { value: PropertyType; label: string }[] = [
   { value: 'apartment', label: 'Apartment' },
   { value: 'house', label: 'House' },
   { value: 'penthouse', label: 'Penthouse' },
-  { value: 'cottage', label: 'Cottage / Garden Apartment' },
+  { value: 'mini_penthouse', label: 'Mini Penthouse' },
+  { value: 'duplex', label: 'Duplex' },
+  { value: 'garden_apartment', label: 'Garden Apartment' },
+  { value: 'cottage', label: 'Cottage' },
   { value: 'land', label: 'Land' },
 ];
 
