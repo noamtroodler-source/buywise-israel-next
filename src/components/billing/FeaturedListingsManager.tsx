@@ -22,6 +22,7 @@ import {
   useToggleFeaturedListing,
 } from '@/hooks/useFeaturedListings';
 import { format } from 'date-fns';
+import { FeaturedFAQ } from './FeaturedFAQ';
 
 const FEATURED_PRICE_ILS = 299;
 
