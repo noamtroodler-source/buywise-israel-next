@@ -85,10 +85,12 @@ export default function AgencyDashboard() {
   ];
 
   // Snapshot stats for inline strip
+  const activeFeatured = featuredListings.filter(f => f.is_active).length;
   const snapshotItems = [
     { label: 'listings', value: stats?.activeListings || 0 },
     { label: 'agents', value: stats?.totalAgents || 0 },
     { label: 'all-time views', value: stats?.totalViews || 0 },
+    ...(activeFeatured > 0 ? [{ label: 'featured', value: activeFeatured }] : []),
     ...(stats?.pendingListings ? [{ label: 'pending', value: stats.pendingListings }] : []),
   ];
 
