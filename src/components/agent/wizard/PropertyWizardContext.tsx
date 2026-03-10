@@ -126,10 +126,10 @@ export const defaultPropertyData: PropertyWizardData = {
 
 const PropertyWizardContext = createContext<PropertyWizardContextType | undefined>(undefined);
 
-const TOTAL_STEPS = 6;
+const DEFAULT_TOTAL_STEPS = 6;
 export const PROPERTY_WIZARD_STORAGE_KEY = 'property-wizard-draft';
 
-export function PropertyWizardProvider({ children }: { children: ReactNode }) {
+export function PropertyWizardProvider({ children, totalSteps = DEFAULT_TOTAL_STEPS }: { children: ReactNode; totalSteps?: number }) {
   const [data, setData] = useState<PropertyWizardData>(defaultPropertyData);
   const [currentStep, setCurrentStep] = useState(0);
   const [stepOffset, setStepOffset] = useState(0);
