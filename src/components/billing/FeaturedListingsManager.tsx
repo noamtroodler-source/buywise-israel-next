@@ -22,6 +22,7 @@ import {
   useToggleFeaturedListing,
 } from '@/hooks/useFeaturedListings';
 import { format } from 'date-fns';
+import { FeaturedFAQ } from './FeaturedFAQ';
 
 const FEATURED_PRICE_ILS = 299;
 
@@ -147,6 +148,9 @@ export function FeaturedListingsManager({ agencyId }: FeaturedListingsManagerPro
           </CardContent>
         </Card>
       )}
+
+      {/* FAQ */}
+      <FeaturedFAQ />
 
       {/* Listings Table */}
       <Card className="rounded-2xl border-primary/10">
