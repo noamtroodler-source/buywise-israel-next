@@ -1,22 +1,46 @@
 
 
-## Phase 1: Founding Partner Enrollment — Implemented ✅
+# Enable Agent-Level Listing Creation & Management
 
-All changes from the plan have been implemented:
+## Current State
+- Agents are **locked out** of creating/editing listings — both `/agent/properties/new` and `/agent/properties/:id/edit` redirect to the properties list
+- The `AgentProperties` page shows a banner: "Listings are created and managed by your agency. Contact your agency admin to make changes."
+- The agent `NewPropertyWizard` and `EditPropertyWizard` **already exist** with full functionality but are disconnected
+- The agency wizard has Step 0 (Assign Agent) — this stays as-is for admin-created listings
+- The `useCreateProperty` hook already handles agent-level creation correctly (sets `agent_id` from the logged-in agent)
 
-1. **DB Migration** — Added `is_founding_partner`, `payplus_customer_id`, `payplus_subscription_id` to `subscriptions`; `payplus_subscription_id` to `featured_listings`. Updated FOUNDING2026 promo code (max_redemptions=15, cleared old discount/credit data).
-2. **`enroll-founding-partner` edge function** — 15-cap enforcement, trial creation (60 days), founding_partners insert, first month credit grant, promo redemption tracking.
-3. **`check-trial-expirations` edge function** — Daily cron (6 AM UTC) expires trialing subscriptions past trial_end.
-4. **`useFoundingSpots` hook** — Live spots remaining counter querying founding_partners.
-5. **`FoundingProgramSection`** — Updated benefits (2mo free, 3 featured/mo, early access, case study), spots counter badge.
-6. **`FoundingProgramModal`** — Updated benefits, spots counter, activates enrollment flow.
-7. **`Pricing.tsx`** — FOUNDING2026 code routes to `enroll-founding-partner` instead of Stripe; CTA changes to "Activate Founding Program".
-8. **`CheckoutSuccess.tsx`** — Founding partner variant with trial end date and featured listings CTA.
-9. **`grant-monthly-featured-credits`** — Already has 2-month duration cap logic.
-10. **`PlanCard`** — Added `ctaLabel` prop for custom CTA text.
+## What Changes
 
-### Deferred (PayPlus not yet set up):
-- `payplus-checkout`, `payplus-webhook`, `manage-billing` edge functions
-- `list-invoices` PayPlus integration
-- Featured listing ₪299/mo PayPlus recurring charge
-- Trial-to-paid automatic charge initiation
+### 1. Restore Agent Listing Creation Route
+**File: `src/App.tsx`**
+- Change `/agent/properties/new` from `<Navigate>` redirect back to rendering `<NewPropertyWizard />`
+- Change `/agent/properties/:id/edit` from `<Navigate>` redirect back to rendering `<EditPropertyWizard />`
+
+### 2. Update Agent Dashboard — Add "New Listing" Action
+**File: `src/pages/agent/AgentDashboard.tsx`**
+- Add a `+ New Listing` button in the header (alongside Settings/Analytics)
+- Add a "New Listing" quick action card linking to `/agent/properties/new`
+
+### 3. Update Agent Properties Page — Enable Full Management
+**File: `src/pages/agent/AgentProperties.tsx`**
+- Remove the "Listings are created and managed by your agency" banner
+- Add a `+ New Listing` button in the page header
+- Add Edit/Delete actions to each property row (Edit links to `/agent/properties/:id/edit`, Delete uses existing `useDeleteProperty`)
+- Add "Submit for Review" action on draft listings (using existing `useSubmitForReview`)
+- Update empty state to encourage creating a first listing instead of waiting for agency assignment
+- Update page title from "My Assigned Listings" to "My Listings"
+
+### 4. Agency Listings Page — Add Agent Attribution Column
+**File: `src/pages/agency/AgencyListings.tsx`**
+- Already has agent filter and shows all agency listings — no structural changes needed
+- Confirm agent name is displayed per listing (it already filters by agent)
+
+### 5. Single Source of Truth
+- All listings remain attributed to an `agent_id` which maps to an agency via `agents.agency_id`
+- Agency admins see all listings across their agents in `/agency/listings`
+- Agents see only their own via `useAgentProperties` (filtered by their `agent_id`)
+- The existing verification pipeline (`draft` → `pending_review` → platform review → `approved`) remains unchanged
+
+## No Database Changes Needed
+All tables, RLS policies, and hooks already support this model. The `useCreateProperty` hook sets `agent_id` correctly, and `useAgentProperties` filters by the logged-in agent's ID.
+
