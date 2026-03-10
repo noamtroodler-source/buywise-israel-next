@@ -108,6 +108,11 @@ export function ProjectWizardProvider({ children }: { children: ReactNode }) {
     setData(prev => ({ ...prev, ...updates }));
   }, []);
 
+  const handleSetCurrentStep = useCallback((step: number) => {
+    setCurrentStep(step);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
   const resetWizard = useCallback(() => {
     setData(defaultProjectData);
     setCurrentStep(0);
@@ -120,12 +125,14 @@ export function ProjectWizardProvider({ children }: { children: ReactNode }) {
   const goNext = () => {
     if (currentStep < TOTAL_STEPS - 1) {
       setCurrentStep(prev => prev + 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
   const goBack = () => {
     if (currentStep > 0) {
       setCurrentStep(prev => prev - 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -168,7 +175,7 @@ export function ProjectWizardProvider({ children }: { children: ReactNode }) {
         data,
         updateData,
         currentStep,
-        setCurrentStep,
+        setCurrentStep: handleSetCurrentStep,
         goNext,
         goBack,
         canGoNext,

@@ -138,6 +138,11 @@ export function PropertyWizardProvider({ children, totalSteps = DEFAULT_TOTAL_ST
     setData(prev => ({ ...prev, ...updates }));
   }, []);
 
+  const handleSetCurrentStep = useCallback((step: number) => {
+    setCurrentStep(step);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
   const resetWizard = useCallback(() => {
     setData(defaultPropertyData);
     setCurrentStep(0);
@@ -202,7 +207,7 @@ export function PropertyWizardProvider({ children, totalSteps = DEFAULT_TOTAL_ST
         data,
         updateData,
         currentStep,
-        setCurrentStep,
+        setCurrentStep: handleSetCurrentStep,
         goNext,
         goBack,
         canGoNext,

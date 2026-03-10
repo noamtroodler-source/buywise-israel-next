@@ -1,37 +1,22 @@
 
 
-## Plan: Add Scroll-to-Top on Every Wizard Step Change
+## Phase 1: Founding Partner Enrollment — Implemented ✅
 
-### Problem
-Several wizards don't scroll to top when navigating between steps — particularly when using direct step clicks (`setCurrentStep`) or in wizards that lack `window.scrollTo` calls entirely.
+All changes from the plan have been implemented:
 
-### Wizards Affected
+1. **DB Migration** — Added `is_founding_partner`, `payplus_customer_id`, `payplus_subscription_id` to `subscriptions`; `payplus_subscription_id` to `featured_listings`. Updated FOUNDING2026 promo code (max_redemptions=15, cleared old discount/credit data).
+2. **`enroll-founding-partner` edge function** — 15-cap enforcement, trial creation (60 days), founding_partners insert, first month credit grant, promo redemption tracking.
+3. **`check-trial-expirations` edge function** — Daily cron (6 AM UTC) expires trialing subscriptions past trial_end.
+4. **`useFoundingSpots` hook** — Live spots remaining counter querying founding_partners.
+5. **`FoundingProgramSection`** — Updated benefits (2mo free, 3 featured/mo, early access, case study), spots counter badge.
+6. **`FoundingProgramModal`** — Updated benefits, spots counter, activates enrollment flow.
+7. **`Pricing.tsx`** — FOUNDING2026 code routes to `enroll-founding-partner` instead of Stripe; CTA changes to "Activate Founding Program".
+8. **`CheckoutSuccess.tsx`** — Founding partner variant with trial end date and featured listings CTA.
+9. **`grant-monthly-featured-credits`** — Already has 2-month duration cap logic.
+10. **`PlanCard`** — Added `ctaLabel` prop for custom CTA text.
 
-| Wizard | `goNext`/`goBack` scroll | `setCurrentStep` click scroll |
-|--------|------------------------|------------------------------|
-| PropertyWizardContext | ✅ Has it | ❌ Missing |
-| ProjectWizardContext (developer) | ❌ Missing | ❌ Missing |
-| AgentRegisterWizard | ❌ Missing | ❌ Missing |
-| MortgageWizard | ❌ Missing | N/A (no step clicks) |
-| DeveloperRegister | ✅ Has `scrollToWizardTop` | ✅ Has it |
-
-### Changes
-
-**1. `PropertyWizardContext.tsx`** — Wrap `setCurrentStep` so it always scrolls to top. Replace the raw `useState` setter exposed in context with a wrapper that calls `window.scrollTo({ top: 0, behavior: 'smooth' })` after setting the step. This covers both `onStepClick` from `WizardProgress` and `onEditStep` from `StepReview`.
-
-**2. `ProjectWizardContext.tsx`** (developer wizard) — Same pattern: add `window.scrollTo` to `goNext`, `goBack`, and wrap `setCurrentStep`.
-
-**3. `AgentRegisterWizard.tsx`** — Add `window.scrollTo({ top: 0, behavior: 'smooth' })` to `goNext` and `goBack` functions.
-
-**4. `MortgageWizard.tsx`** — Add scroll-to-top when step changes via the next/back buttons.
-
-### Technical Approach
-For the context-based wizards (Property, Project), create a `handleSetCurrentStep` wrapper:
-```ts
-const handleSetCurrentStep = useCallback((step: number) => {
-  setCurrentStep(step);
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}, []);
-```
-Expose this wrapper as `setCurrentStep` in the context value. For standalone wizards (AgentRegister, Mortgage), add the scroll call inline in `goNext`/`goBack`.
-
+### Deferred (PayPlus not yet set up):
+- `payplus-checkout`, `payplus-webhook`, `manage-billing` edge functions
+- `list-invoices` PayPlus integration
+- Featured listing ₪299/mo PayPlus recurring charge
+- Trial-to-paid automatic charge initiation
