@@ -102,7 +102,7 @@ function NominatimLocationSearch({ onLocationSelect, propertyLat, propertyLng }:
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
-  const debounceRef = useRef<NodeJS.Timeout>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);

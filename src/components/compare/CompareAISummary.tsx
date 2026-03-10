@@ -32,7 +32,7 @@ export function CompareAISummary({ properties, winnerCounts, isRental, hideCTAs 
   // Use ref to track if we're currently generating to prevent duplicate calls
   const isGeneratingRef = useRef(false);
   // Track the retry timeout so we can clear it if properties change
-  const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Reset retry count when properties change
   useEffect(() => {

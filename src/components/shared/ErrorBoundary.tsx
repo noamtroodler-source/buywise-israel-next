@@ -113,7 +113,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 <p className="text-sm text-muted-foreground">
                   We encountered an unexpected error. Please try again or return to the homepage.
                 </p>
-                {process.env.NODE_ENV === 'development' && this.state.error && (
+                {import.meta.env.DEV && this.state.error && (
                   <details className="mt-4 text-left">
                     <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">
                       Technical details
