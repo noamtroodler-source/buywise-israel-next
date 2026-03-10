@@ -145,14 +145,6 @@ export function AgencyOnboardingProgress({ agency, teamCount, listingsCount = 0 
                 <ChevronDown className="h-4 w-4" />
               )}
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleDismiss}
-              className="rounded-lg text-muted-foreground hover:text-foreground"
-            >
-              <X className="h-4 w-4" />
-            </Button>
           </div>
         </div>
         <Progress value={completionPercentage} className="h-2" />
