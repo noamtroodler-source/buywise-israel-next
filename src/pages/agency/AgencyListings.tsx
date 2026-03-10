@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft, Loader2, Home, Plus, Search, Download,
-  Eye, Clock, CheckCircle2, Building2,
+  Eye, Clock, CheckCircle2, Building2, Heart, MessageSquare,
   Edit, Trash2, Send, MoreHorizontal, Copy, Key, ArrowLeftRight,
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
