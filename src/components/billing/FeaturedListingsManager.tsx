@@ -35,6 +35,7 @@ export function FeaturedListingsManager({ agencyId }: FeaturedListingsManagerPro
   const { data: foundingStatus } = useFoundingPartnerStatus(agencyId);
   const toggleMutation = useToggleFeaturedListing();
 
+  const [searchQuery, setSearchQuery] = useState('');
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
     action: 'activate' | 'deactivate';
