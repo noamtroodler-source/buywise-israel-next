@@ -67,7 +67,7 @@ export function StepPhotos() {
           images={data.images}
           onImagesChange={(images) => updateData({ images })}
           maxImages={20}
-          minImages={minPhotos}
+          minImages={safeMinPhotos}
         />
 
         {data.images.length === 0 && (
