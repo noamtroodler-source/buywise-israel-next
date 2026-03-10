@@ -120,6 +120,7 @@ export function AgencyOnboardingProgress({ agency, teamCount, listingsCount = 0 
       description: 'Get your first property live',
       icon: Home,
       isComplete: listingsCount >= 1,
+      link: '/agency/properties/new',
     },
   ];
 
