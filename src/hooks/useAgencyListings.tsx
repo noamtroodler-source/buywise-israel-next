@@ -52,6 +52,7 @@ export function useAgencyListingsManagement(agencyId: string | undefined) {
           listing_status,
           verification_status,
           views_count,
+          total_saves,
           images,
           agent_id,
           created_at,
@@ -61,7 +62,28 @@ export function useAgencyListingsManagement(agencyId: string | undefined) {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as AgencyListing[];
+
+      const propertyIds = data?.map(p => p.id) || [];
+
+      // Fetch inquiry counts per property
+      let inquiryCounts: Record<string, number> = {};
+      if (propertyIds.length > 0) {
+        const { data: inquiries } = await supabase
+          .from('property_inquiries')
+          .select('property_id')
+          .in('property_id', propertyIds);
+
+        (inquiries || []).forEach(i => {
+          if (i.property_id) {
+            inquiryCounts[i.property_id] = (inquiryCounts[i.property_id] || 0) + 1;
+          }
+        });
+      }
+
+      return (data || []).map(p => ({
+        ...p,
+        inquiries_count: inquiryCounts[p.id] || 0,
+      })) as AgencyListing[];
     },
     enabled: !!agencyId,
   });
