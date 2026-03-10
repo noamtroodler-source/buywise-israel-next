@@ -1,22 +1,55 @@
 
 
-## Phase 1: Founding Partner Enrollment — Implemented ✅
+# Linked City + Neighborhood Filter (Resale, Rental, Projects)
 
-All changes from the plan have been implemented:
+## Current State
+- **PropertyFilters** (resale/rental): Has a single "City" popover that contains both city list and a `NeighborhoodSelector` that only appears after a city is selected. Neighborhoods are scoped to the selected city only.
+- **ProjectFilters**: Has a "City" popover with no neighborhood support at all.
+- **MobileFilterSheet**: Same pattern as PropertyFilters.
+- **ProjectMobileFilterSheet**: No neighborhood support.
 
-1. **DB Migration** — Added `is_founding_partner`, `payplus_customer_id`, `payplus_subscription_id` to `subscriptions`; `payplus_subscription_id` to `featured_listings`. Updated FOUNDING2026 promo code (max_redemptions=15, cleared old discount/credit data).
-2. **`enroll-founding-partner` edge function** — 15-cap enforcement, trial creation (60 days), founding_partners insert, first month credit grant, promo redemption tracking.
-3. **`check-trial-expirations` edge function** — Daily cron (6 AM UTC) expires trialing subscriptions past trial_end.
-4. **`useFoundingSpots` hook** — Live spots remaining counter querying founding_partners.
-5. **`FoundingProgramSection`** — Updated benefits (2mo free, 3 featured/mo, early access, case study), spots counter badge.
-6. **`FoundingProgramModal`** — Updated benefits, spots counter, activates enrollment flow.
-7. **`Pricing.tsx`** — FOUNDING2026 code routes to `enroll-founding-partner` instead of Stripe; CTA changes to "Activate Founding Program".
-8. **`CheckoutSuccess.tsx`** — Founding partner variant with trial end date and featured listings CTA.
-9. **`grant-monthly-featured-credits`** — Already has 2-month duration cap logic.
-10. **`PlanCard`** — Added `ctaLabel` prop for custom CTA text.
+## Proposed Design: Linked Dual-Filter
 
-### Deferred (PayPlus not yet set up):
-- `payplus-checkout`, `payplus-webhook`, `manage-billing` edge functions
-- `list-invoices` PayPlus integration
-- Featured listing ₪299/mo PayPlus recurring charge
-- Trial-to-paid automatic charge initiation
+Replace the single "City" popover with **two side-by-side filter buttons**: **City** and **Neighborhood**.
+
+### Behavior
+
+**City button/popover:**
+- Search + list of all 25 cities
+- Selecting a city updates the city filter (clears neighborhoods)
+- "Use my location" stays here
+
+**Neighborhood button/popover:**
+- Always has a search input at the top
+- **If a city is selected**: Shows only that city's neighborhoods (multi-select checkboxes)
+- **If no city is selected**: Search is global across all cities; results grouped by city (e.g., "Rehavia — Jerusalem"). Selecting a neighborhood from any city auto-sets the city filter to that neighborhood's city.
+- Button label shows: "Neighborhood" (default), single name, or "X areas" count
+
+**Cross-sync:**
+- Selecting a neighborhood from a different city → city filter updates to match
+- Changing city → clears neighborhood selection
+- Clearing city → clears neighborhoods
+
+### Files to Change
+
+1. **`src/components/filters/NeighborhoodSelector.tsx`** — Rewrite as a standalone `NeighborhoodFilterPopover` component:
+   - Accepts `cityName` (optional), `allNeighborhoods` data, `selectedNeighborhoods`, callbacks
+   - When no city: global search with city-grouped results
+   - When city set: scoped list with multi-select
+   - On selecting a neighborhood from a different city, calls `onCityChange`
+
+2. **`src/components/filters/PropertyFilters.tsx`** — Split the single city popover into two buttons:
+   - City popover (simplified, no neighborhood section)
+   - Neighborhood popover (new, using the rewritten component)
+   - Wire cross-sync logic
+
+3. **`src/components/filters/ProjectFilters.tsx`** — Add `neighborhoods` to `ProjectFiltersType`, add the same dual City + Neighborhood buttons
+
+4. **`src/components/filters/MobileFilterSheet.tsx`** — Update location section to show City and Neighborhood as separate sections with same linked behavior
+
+5. **`src/components/filters/ProjectMobileFilterSheet.tsx`** — Add neighborhood filtering matching the desktop ProjectFilters
+
+6. **`src/hooks/usePaginatedProjects.tsx`** + **`src/hooks/useMapProjects.tsx`** — Apply neighborhood filter to project queries (filter by `neighborhood` column or joined unit neighborhoods)
+
+7. **`src/hooks/useNeighborhoodNames.ts`** — Already has both `useNeighborhoodNames` (per-city) and `useAllNeighborhoods` (global). No changes needed.
+
