@@ -110,8 +110,13 @@ export function StepBasics() {
               maxLength={100}
               className="h-11 rounded-xl"
             />
-            <p className="text-xs text-muted-foreground">
-              {data.title.length}/100 characters
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">
+                {data.title.length}/100 characters
+              </p>
+            </div>
+            <p className="text-xs text-muted-foreground/70 italic">
+              💡 Titles with proper capitalization and no typos get up to 30% more engagement. Capitalize each word and double-check spelling.
             </p>
           </div>
 
