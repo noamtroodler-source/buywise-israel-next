@@ -379,7 +379,7 @@ export function StepFeatures() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Furnished Status */}
             <div className="space-y-2">
-              <Label>Furnished Status</Label>
+              <Label>Furnished Status *</Label>
               <Select
                 value={data.furnished_status || ''}
                 onValueChange={(v) => updateData({ furnished_status: v as FurnishedStatus })}
