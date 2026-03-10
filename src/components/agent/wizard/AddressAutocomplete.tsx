@@ -307,7 +307,7 @@ function GoogleAddressAutocomplete({
         <div className="mt-1.5 flex items-start gap-2 text-xs text-primary bg-primary/10 rounded-lg p-2.5">
           <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
           <span>
-            "{unsupportedCityError}" is not a supported city. Please choose an address in one of our 25 focus cities.
+            BuyWise Israel currently operates in 25 cities. "{unsupportedCityError}" is not yet supported. Please select an address in a supported city (e.g., Tel Aviv, Jerusalem, Herzliya, Ra'anana).
           </span>
         </div>
       )}
