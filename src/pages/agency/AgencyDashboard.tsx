@@ -79,7 +79,7 @@ export default function AgencyDashboard() {
     { label: 'Listings', icon: FileText, href: '/agency/listings', count: stats?.activeListings, color: 'text-primary', bg: 'bg-primary/10', hoverBg: 'hover:bg-primary/5' },
     { label: 'Team', icon: Users, href: '/agency/team', count: team.length, badge: pendingRequests > 0 ? `${pendingRequests} pending` : undefined, color: 'text-primary', bg: 'bg-primary/10', hoverBg: 'hover:bg-primary/5' },
     { label: 'Analytics', icon: BarChart3, href: '/agency/analytics', color: 'text-primary', bg: 'bg-primary/10', hoverBg: 'hover:bg-primary/5' },
-    { label: 'Blog', icon: PenLine, href: canSubmitBlog ? '/agency/blog/new' : '/agency', count: blogPosts.length, color: 'text-primary', bg: 'bg-primary/10', hoverBg: 'hover:bg-primary/5', disabled: !canSubmitBlog, tooltip: !canSubmitBlog ? 'Blog limit reached' : undefined },
+    { label: 'Blog', icon: PenLine, href: '/agency/blog', count: blogPosts.length, color: 'text-primary', bg: 'bg-primary/10', hoverBg: 'hover:bg-primary/5' },
     { label: 'Featured', icon: Star, href: '/agency/featured', color: 'text-primary', bg: 'bg-primary/10', hoverBg: 'hover:bg-primary/5' },
     { label: 'Billing', icon: CreditCard, href: '/agency/billing', color: 'text-primary', bg: 'bg-primary/10', hoverBg: 'hover:bg-primary/5' },
   ];
