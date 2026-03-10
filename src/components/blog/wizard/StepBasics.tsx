@@ -1,44 +1,13 @@
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { useBlogWizard } from './BlogWizardContext';
 import { useBlogCategories } from '@/hooks/useProfessionalBlog';
-import { AUDIENCE_OPTIONS } from '@/types/content';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+
 export function StepBasics() {
   const { data, updateData } = useBlogWizard();
   const { data: categories = [] } = useBlogCategories();
-  
-  // Fetch cities for the dropdown
-  const { data: cities = [] } = useQuery({
-    queryKey: ['blog-cities'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('cities')
-        .select('name, slug')
-        .order('name');
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  const handleAudienceToggle = (audience: string) => {
-    const current = data.audiences || [];
-    if (current.includes(audience)) {
-      updateData({ audiences: current.filter(a => a !== audience) });
-    } else {
-      updateData({ audiences: [...current, audience] });
-    }
-  };
 
   const handleCategoryToggle = (categoryId: string) => {
     const current = data.categoryIds || [];
@@ -91,56 +60,6 @@ export function StepBasics() {
         </div>
         <p className="text-xs text-muted-foreground">
           {data.categoryIds?.length || 0} of 3 selected
-        </p>
-      </div>
-
-      <div className="space-y-3">
-        <Label>Target Audience</Label>
-        <p className="text-xs text-muted-foreground mb-2">
-          Select who this article is most relevant for (optional)
-        </p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {AUDIENCE_OPTIONS.map((audience) => (
-            <div
-              key={audience.value}
-              className="flex items-center space-x-2"
-            >
-              <Checkbox
-                id={`audience-${audience.value}`}
-                checked={data.audiences?.includes(audience.value)}
-                onCheckedChange={() => handleAudienceToggle(audience.value)}
-              />
-              <label
-                htmlFor={`audience-${audience.value}`}
-                className="text-sm cursor-pointer"
-              >
-                {audience.label}
-              </label>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="city">Related City (Optional)</Label>
-        <Select
-          value={data.city}
-          onValueChange={(value) => updateData({ city: value === 'none' ? '' : value })}
-        >
-          <SelectTrigger id="city">
-            <SelectValue placeholder="Select a city if relevant" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">No specific city</SelectItem>
-            {cities.map((city) => (
-              <SelectItem key={city.slug} value={city.name}>
-                {city.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <p className="text-xs text-muted-foreground">
-          If your article focuses on a specific city, select it here
         </p>
       </div>
     </div>
