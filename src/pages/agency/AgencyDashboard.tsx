@@ -237,32 +237,18 @@ export default function AgencyDashboard() {
                 </Card>
               )}
 
-              {/* Announcements — compact when empty */}
-              {announcements.length > 0 ? (
-                <Card className="rounded-2xl border-border/50">
-                  <CardHeader className="pb-2 pt-4 px-4">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Megaphone className="h-4 w-4 text-primary" />
-                      Announcements
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="px-4 pb-4">
-                    <AgencyAnnouncements agencyId={agency.id} compact />
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="flex items-center justify-between px-1 py-3 border-b border-border/30">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Megaphone className="h-4 w-4" />
-                    <span>No announcements</span>
-                  </div>
-                  <Button variant="ghost" size="sm" className="rounded-xl text-xs h-7 px-3 hover:bg-primary/10" asChild>
-                    <Link to="#" onClick={(e) => { e.preventDefault(); /* AgencyAnnouncements handles creation */ }}>
-                      Create
-                    </Link>
-                  </Button>
-                </div>
-              )}
+              {/* Team Announcements — always show compact */}
+              <Card className="rounded-2xl border-border/50">
+                <CardHeader className="pb-2 pt-4 px-4">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Megaphone className="h-4 w-4 text-primary" />
+                    Team Announcements
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-4 pb-4">
+                  <AgencyAnnouncements agencyId={agency.id} compact />
+                </CardContent>
+              </Card>
 
               {/* Latest Blog Post */}
               {blogPosts.length > 0 && (

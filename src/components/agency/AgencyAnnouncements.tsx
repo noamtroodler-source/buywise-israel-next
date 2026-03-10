@@ -126,7 +126,7 @@ export function AgencyAnnouncements({ agencyId, compact = false }: AgencyAnnounc
     return (
       <>
         {displayAnnouncements.length === 0 ? (
-          <p className="text-xs text-muted-foreground py-2">No announcements yet</p>
+          <p className="text-xs text-muted-foreground py-2">No team announcements yet</p>
         ) : (
           <div className="space-y-2">
             {displayAnnouncements.map((a) => (
@@ -157,7 +157,7 @@ export function AgencyAnnouncements({ agencyId, compact = false }: AgencyAnnounc
           <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
             <Megaphone className="h-4 w-4 text-primary" />
           </div>
-          <CardTitle>Announcements</CardTitle>
+          <CardTitle>Team Announcements</CardTitle>
         </div>
         <Button 
           size="sm" 
@@ -172,8 +172,8 @@ export function AgencyAnnouncements({ agencyId, compact = false }: AgencyAnnounc
         {sortedAnnouncements.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <Megaphone className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">No announcements yet</p>
-            <p className="text-xs mt-1">Create one to share with your team</p>
+            <p className="text-sm">No team announcements yet</p>
+            <p className="text-xs mt-1">Post updates visible to all agents in your agency</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -250,7 +250,7 @@ export function AgencyAnnouncements({ agencyId, compact = false }: AgencyAnnounc
             <DialogHeader>
               <DialogTitle>Create Announcement</DialogTitle>
               <DialogDescription>
-                Post an announcement to your team
+                Post an announcement visible to all agents in your agency
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
