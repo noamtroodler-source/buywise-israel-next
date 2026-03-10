@@ -162,41 +162,29 @@ export default function AgencyDashboard() {
 
           {/* Quick Actions Grid */}
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
-            {quickActions.map((action, index) => {
-              const content = (
-                <motion.div
-                  key={action.label}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.03 }}
+            {quickActions.map((action, index) => (
+              <motion.div
+                key={action.label}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.03 }}
+              >
+                <Link 
+                  to={action.href}
+                  className={`group relative flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border border-border/50 bg-card ${action.hoverBg} hover:border-primary/30 transition-all text-center h-full min-h-[96px]`}
                 >
-                  <Link 
-                    to={action.disabled ? '#' : action.href}
-                    className={`group relative flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border border-border/50 bg-card ${action.hoverBg} hover:border-primary/30 transition-all text-center h-full min-h-[96px] ${action.disabled ? 'opacity-50 pointer-events-none' : ''}`}
-                  >
-                    <div className={`p-2.5 rounded-xl ${action.bg} transition-colors`}>
-                      <action.icon className={`h-5 w-5 ${action.color}`} />
-                    </div>
-                    <span className="text-xs font-medium text-foreground">{action.label}</span>
-                    {action.badge && (
-                      <Badge className="absolute -top-1.5 -right-1.5 text-[10px] px-1.5 py-0 bg-primary text-primary-foreground">
-                        {action.badge}
-                      </Badge>
-                    )}
-                  </Link>
-                </motion.div>
-              );
-
-              if (action.tooltip) {
-                return (
-                  <Tooltip key={action.label}>
-                    <TooltipTrigger asChild>{content}</TooltipTrigger>
-                    <TooltipContent>{action.tooltip}</TooltipContent>
-                  </Tooltip>
-                );
-              }
-              return content;
-            })}
+                  <div className={`p-2.5 rounded-xl ${action.bg} transition-colors`}>
+                    <action.icon className={`h-5 w-5 ${action.color}`} />
+                  </div>
+                  <span className="text-xs font-medium text-foreground">{action.label}</span>
+                  {action.badge && (
+                    <Badge className="absolute -top-1.5 -right-1.5 text-[10px] px-1.5 py-0 bg-primary text-primary-foreground">
+                      {action.badge}
+                    </Badge>
+                  )}
+                </Link>
+              </motion.div>
+            ))}
           </div>
 
           {/* Two-Column Layout: Performance + Activity */}
