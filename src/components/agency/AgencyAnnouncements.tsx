@@ -250,7 +250,7 @@ export function AgencyAnnouncements({ agencyId, compact = false }: AgencyAnnounc
             <DialogHeader>
               <DialogTitle>Create Announcement</DialogTitle>
               <DialogDescription>
-                Post an announcement to your team
+                Post an announcement visible to all agents in your agency
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
