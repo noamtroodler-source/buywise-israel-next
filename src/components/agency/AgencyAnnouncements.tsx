@@ -157,7 +157,7 @@ export function AgencyAnnouncements({ agencyId, compact = false }: AgencyAnnounc
           <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
             <Megaphone className="h-4 w-4 text-primary" />
           </div>
-          <CardTitle>Announcements</CardTitle>
+          <CardTitle>Team Announcements</CardTitle>
         </div>
         <Button 
           size="sm" 
