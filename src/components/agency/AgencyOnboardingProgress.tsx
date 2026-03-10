@@ -112,6 +112,7 @@ export function AgencyOnboardingProgress({ agency, teamCount, listingsCount = 0 
       description: 'Invite someone to join your agency',
       icon: Users,
       isComplete: teamCount >= 2,
+      link: '/agency/team',
     },
     {
       id: 'listing',
@@ -119,6 +120,7 @@ export function AgencyOnboardingProgress({ agency, teamCount, listingsCount = 0 
       description: 'Get your first property live',
       icon: Home,
       isComplete: listingsCount >= 1,
+      link: '/agency/properties/new',
     },
   ];
 
@@ -181,53 +183,60 @@ export function AgencyOnboardingProgress({ agency, teamCount, listingsCount = 0 
           >
             <CardContent className="pt-2 pb-4">
               <div className="grid gap-2">
-                {checklistItems.map((item) => (
-                  <div
-                    key={item.id}
-                    className={cn(
-                      "flex items-center gap-3 p-3 rounded-xl transition-colors",
-                      item.isComplete 
-                        ? "bg-primary/5" 
-                        : "bg-muted/30 hover:bg-muted/50"
-                    )}
-                  >
-                    <div className={cn(
-                      "flex-shrink-0",
-                      item.isComplete ? "text-primary" : "text-muted-foreground"
-                    )}>
-                      {item.isComplete ? (
-                        <CheckCircle2 className="h-5 w-5" />
-                      ) : (
-                        <Circle className="h-5 w-5" />
-                      )}
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <p className={cn(
-                        "font-medium text-sm",
-                        item.isComplete && "line-through text-muted-foreground"
+                {checklistItems.map((item) => {
+                  const content = (
+                    <>
+                      <div className={cn(
+                        "flex-shrink-0",
+                        item.isComplete ? "text-primary" : "text-muted-foreground"
                       )}>
-                        {item.label}
-                      </p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {item.description}
-                      </p>
-                    </div>
+                        {item.isComplete ? (
+                          <CheckCircle2 className="h-5 w-5" />
+                        ) : (
+                          <Circle className="h-5 w-5" />
+                        )}
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <p className={cn(
+                          "font-medium text-sm",
+                          item.isComplete && "line-through text-muted-foreground"
+                        )}>
+                          {item.label}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {item.description}
+                        </p>
+                      </div>
 
-                    {!item.isComplete && item.link && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        asChild
-                        className="rounded-lg text-primary hover:text-primary hover:bg-primary/10"
-                      >
-                        <Link to={item.link}>
-                          <item.icon className="h-4 w-4" />
-                        </Link>
-                      </Button>
-                    )}
-                  </div>
-                ))}
+                      {!item.isComplete && item.link && (
+                        <item.icon className="h-4 w-4 flex-shrink-0 text-primary" />
+                      )}
+                    </>
+                  );
+
+                  const rowClass = cn(
+                    "flex items-center gap-3 p-3 rounded-xl transition-colors",
+                    item.isComplete
+                      ? "bg-primary/5"
+                      : "bg-muted/30 hover:bg-muted/50",
+                    !item.isComplete && item.link && "cursor-pointer"
+                  );
+
+                  if (!item.isComplete && item.link) {
+                    return (
+                      <Link key={item.id} to={item.link} className={rowClass}>
+                        {content}
+                      </Link>
+                    );
+                  }
+
+                  return (
+                    <div key={item.id} className={rowClass}>
+                      {content}
+                    </div>
+                  );
+                })}
               </div>
             </CardContent>
           </motion.div>
