@@ -241,7 +241,7 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
                 <button 
                   className="text-sm text-muted-foreground hover:text-foreground"
                   onClick={() => {
-                    updateFilter('city', undefined);
+                    onFiltersChange({ ...filters, city: undefined, neighborhoods: undefined });
                     setCityOpen(false);
                   }}
                 >
