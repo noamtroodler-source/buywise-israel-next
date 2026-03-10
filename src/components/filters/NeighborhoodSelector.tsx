@@ -87,7 +87,7 @@ export function NeighborhoodSelector({
 
   // Global mode - search across all cities
   const filtered = search.length >= 2
-    ? allNeighborhoods.filter(n => n.name.toLowerCase().includes(search.toLowerCase()))
+    ? allNeighborhoods.filter(n => neighborhoodMatchesQuery(n.name, search))
     : [];
 
   // Group by city

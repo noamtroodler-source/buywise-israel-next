@@ -109,7 +109,7 @@ export function CitySearchInput({
     if (!inputValue.trim()) return [];
     const q = inputValue.trim().toLowerCase();
     return allNeighborhoods
-      .filter(n => n.name.toLowerCase().includes(q))
+      .filter(n => neighborhoodMatchesQuery(n.name, q))
       .slice(0, 8);
   }, [inputValue, allNeighborhoods]);
 
