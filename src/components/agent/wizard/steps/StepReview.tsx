@@ -62,7 +62,7 @@ export function StepReview({ onEditStep }: StepReviewProps) {
         </div>
         <Button variant="outline" onClick={() => setShowPreview(true)} className="gap-2 rounded-xl">
           <Eye className="h-4 w-4" />
-          Preview as Buyer
+          {data.listing_status === 'for_rent' ? 'Preview as Tenant' : 'Preview as Buyer'}
         </Button>
       </div>
 
