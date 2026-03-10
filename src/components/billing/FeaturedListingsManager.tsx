@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { Star, Loader2, Crown } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Star, Loader2, Crown, Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -34,6 +35,7 @@ export function FeaturedListingsManager({ agencyId }: FeaturedListingsManagerPro
   const { data: foundingStatus } = useFoundingPartnerStatus(agencyId);
   const toggleMutation = useToggleFeaturedListing();
 
+  const [searchQuery, setSearchQuery] = useState('');
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
     action: 'activate' | 'deactivate';
@@ -45,6 +47,16 @@ export function FeaturedListingsManager({ agencyId }: FeaturedListingsManagerPro
   const publishedListings = listings.filter(
     (l) => l.verification_status === 'approved'
   );
+
+  const filteredListings = useMemo(() => {
+    if (!searchQuery.trim()) return publishedListings;
+    const q = searchQuery.toLowerCase();
+    return publishedListings.filter(
+      (l) =>
+        l.title?.toLowerCase().includes(q) ||
+        l.city?.toLowerCase().includes(q)
+    );
+  }, [publishedListings, searchQuery]);
 
   // Map of property_id -> featured listing
   const featuredMap = new Map(
@@ -138,17 +150,32 @@ export function FeaturedListingsManager({ agencyId }: FeaturedListingsManagerPro
 
       {/* Listings Table */}
       <Card className="rounded-2xl border-primary/10">
-        <CardHeader className="pb-2">
+        <CardHeader className="pb-3">
           <CardTitle className="text-lg">Your Published Listings</CardTitle>
+          {publishedListings.length > 3 && (
+            <div className="relative mt-2">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by name or city..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 h-9 rounded-xl text-sm"
+              />
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           {publishedListings.length === 0 ? (
             <p className="text-muted-foreground text-sm py-4">
               No published listings yet. Listings must be approved before they can be featured.
             </p>
+          ) : filteredListings.length === 0 ? (
+            <p className="text-muted-foreground text-sm py-4">
+              No listings match &ldquo;{searchQuery}&rdquo;
+            </p>
           ) : (
             <div className="divide-y divide-border/50">
-              {publishedListings.map((listing) => {
+              {filteredListings.map((listing) => {
                 const featured = featuredMap.get(listing.id);
                 const isFeatured = !!featured;
 
@@ -157,7 +184,6 @@ export function FeaturedListingsManager({ agencyId }: FeaturedListingsManagerPro
                     key={listing.id}
                     className="flex items-center gap-4 py-4 first:pt-0 last:pb-0"
                   >
-                    {/* Thumbnail */}
                     <div className="h-14 w-14 rounded-xl bg-muted/50 overflow-hidden flex-shrink-0">
                       {listing.images?.[0] ? (
                         <img
@@ -172,7 +198,6 @@ export function FeaturedListingsManager({ agencyId }: FeaturedListingsManagerPro
                       )}
                     </div>
 
-                    {/* Info */}
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm truncate">{listing.title}</p>
                       <p className="text-xs text-muted-foreground truncate">{listing.city}</p>
@@ -188,7 +213,6 @@ export function FeaturedListingsManager({ agencyId }: FeaturedListingsManagerPro
                       )}
                     </div>
 
-                    {/* Toggle */}
                     <div className="flex items-center gap-3 flex-shrink-0">
                       {!isFeatured && (
                         <span className="text-xs text-muted-foreground hidden sm:block">
