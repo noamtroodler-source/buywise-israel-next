@@ -181,9 +181,6 @@ export default function AgencyDashboard() {
                     {action.count !== undefined && action.count > 0 && (
                       <span className="text-[10px] text-muted-foreground">{action.count}</span>
                     )}
-                    {action.subtitle && (
-                      <span className="text-[10px] text-muted-foreground">{action.subtitle}</span>
-                    )}
                     {action.badge && (
                       <Badge className="absolute -top-1.5 -right-1.5 text-[10px] px-1.5 py-0 bg-primary text-primary-foreground">
                         {action.badge}
