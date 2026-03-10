@@ -20,6 +20,7 @@ import { ProjectMobileFilterSheet } from '@/components/filters/ProjectMobileFilt
 
 export interface ProjectFiltersType {
   city?: string;
+  neighborhoods?: string[];
   status?: string;
   min_price?: number;
   max_price?: number;
