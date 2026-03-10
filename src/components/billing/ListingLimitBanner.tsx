@@ -9,7 +9,9 @@ interface ListingLimitBannerProps {
 }
 
 export function ListingLimitBanner({ entityType }: ListingLimitBannerProps) {
-  const { canCreate, currentCount, maxListings, isLoading, needsSubscription, nextTierName, overageRate } = useListingLimitCheck(entityType);
+  const { canCreate, currentCount, maxListings, isLoading, needsSubscription, nextTierName, overageRate, isOverLimit } = useListingLimitCheck(entityType);
+  
+  const isFreeAtLimit = !needsSubscription && nextTierName === 'Starter' && isOverLimit;
 
   if (isLoading || canCreate) return null;
 
@@ -19,11 +21,13 @@ export function ListingLimitBanner({ entityType }: ListingLimitBannerProps) {
     <Alert className="bg-primary/5 border-primary/20 rounded-xl">
       <AlertTriangle className="h-4 w-4 text-primary" />
       <AlertTitle className="text-foreground">
-        {needsSubscription ? 'Subscription Required' : 'Listing Limit Reached'}
+        {needsSubscription ? 'Subscription Required' : isFreeAtLimit ? 'Free Plan Limit Reached' : 'Listing Limit Reached'}
       </AlertTitle>
       <AlertDescription className="text-muted-foreground space-y-2">
         {needsSubscription ? (
           <p>You need an active subscription to create {listingLabel}.</p>
+        ) : isFreeAtLimit ? (
+          <p>Your free plan includes {maxListings} {listingLabel}. Upgrade to Starter to list more.</p>
         ) : (
           <>
             <p>You've used {currentCount}/{maxListings} {listingLabel} on your current plan.</p>
