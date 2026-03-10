@@ -141,7 +141,7 @@ export function StepDetails() {
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="floor">Floor</Label>
+                <Label htmlFor="floor">Floor *</Label>
                 <Input
                   id="floor"
                   type="number"
