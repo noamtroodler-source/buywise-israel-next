@@ -5,6 +5,7 @@ import { usePropertyWizard } from '../PropertyWizardContext';
 import { PropertyType, ListingStatus } from '@/types/database';
 import { Home, MapPin, DollarSign, AlertCircle, ShieldCheck, TrendingDown, TrendingUp } from 'lucide-react';
 import { AddressAutocomplete, ParsedAddress } from '../AddressAutocomplete';
+import { NeighborhoodAutocomplete } from '../NeighborhoodAutocomplete';
 import { PropertyMiniMapWrapper } from '@/components/property/PropertyMiniMapWrapper';
 import { useCities } from '@/hooks/useCities';
 import { GoogleMapsProvider } from '@/components/maps/GoogleMapsProvider';
