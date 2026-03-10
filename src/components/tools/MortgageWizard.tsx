@@ -343,7 +343,7 @@ export function MortgageWizard() {
         <div className="flex justify-between mt-6 pt-4 border-t">
           <Button
             variant="outline"
-            onClick={() => setCurrentStep(prev => prev - 1)}
+            onClick={() => { setCurrentStep(prev => prev - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
             disabled={currentStep === 0}
             className="gap-2"
           >
