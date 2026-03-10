@@ -120,6 +120,7 @@ const parseCommaNumber = (value: string): number | undefined => {
 
 export function PropertyFilters({ filters, onFiltersChange, listingType, onCreateAlert, showSoldToggle, isSoldView, onSoldToggle, previewCount, isCountLoading, showBuyRentToggle, onBuyRentChange, activeView = 'grid', mapMode = false }: PropertyFiltersProps) {
   const [cityOpen, setCityOpen] = useState(false);
+  const [neighborhoodOpen, setNeighborhoodOpen] = useState(false);
   const [priceOpen, setPriceOpen] = useState(false);
   const [bedsAndBathsOpen, setBedsAndBathsOpen] = useState(false);
   const [typeOpen, setTypeOpen] = useState(false);
