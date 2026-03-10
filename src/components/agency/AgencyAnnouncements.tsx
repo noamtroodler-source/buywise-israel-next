@@ -126,7 +126,7 @@ export function AgencyAnnouncements({ agencyId, compact = false }: AgencyAnnounc
     return (
       <>
         {displayAnnouncements.length === 0 ? (
-          <p className="text-xs text-muted-foreground py-2">No announcements yet</p>
+          <p className="text-xs text-muted-foreground py-2">No team announcements yet</p>
         ) : (
           <div className="space-y-2">
             {displayAnnouncements.map((a) => (
