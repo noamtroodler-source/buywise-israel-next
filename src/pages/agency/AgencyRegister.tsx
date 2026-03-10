@@ -114,7 +114,7 @@ export default function AgencyRegister() {
     bio: '',
   });
   const cardRef = useRef<HTMLDivElement>(null);
-  const draftSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const draftSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Dynamic steps based on opt-in
   const steps = useMemo(() => {

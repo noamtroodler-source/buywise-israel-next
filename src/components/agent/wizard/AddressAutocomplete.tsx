@@ -350,7 +350,7 @@ function NominatimAddressAutocomplete({
   const [unsupportedCityError, setUnsupportedCityError] = useState<string | null>(null);
   const [cityMismatchError, setCityMismatchError] = useState<{ extracted: string; selected: string } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const debounceRef = useRef<NodeJS.Timeout>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
     setInputValue(value);

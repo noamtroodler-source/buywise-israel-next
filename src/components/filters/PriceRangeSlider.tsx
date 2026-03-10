@@ -117,7 +117,7 @@ export function PriceRangeSlider({
   const [localSliderValues, setLocalSliderValues] = useState<[number, number] | null>(null);
   
   // Debounce timer ref
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   // Clamp values for slider (prevent weird states)
   const safeDisplayMin = displayMinValue ?? displayMin;

@@ -48,8 +48,8 @@ export function useAutoSave<T>({
   }, [storageKey, useSessionKey]);
 
   const initialDataRef = useRef<string | null>(null);
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSavedDataRef = useRef<string | null>(null);
 
   // Debounced save to localStorage
