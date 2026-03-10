@@ -27,6 +27,8 @@ import {
 import { useMyAgency, useAgencyTeam } from '@/hooks/useAgencyManagement';
 import { useAgencyListingsManagement } from '@/hooks/useAgencyListings';
 import { useDeleteProperty, useSubmitForReview } from '@/hooks/useAgentProperties';
+import { AgentReassignPopover } from '@/components/agency/AgentReassignPopover';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useUpdatePropertyStatus, useDuplicateProperty } from '@/hooks/useAgentProfile';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { cn } from '@/lib/utils';
