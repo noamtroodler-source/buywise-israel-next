@@ -350,6 +350,11 @@ const App = () => (
                             <AgencyEditPropertyWizard />
                           </ProtectedRoute>
                         } />
+                        <Route path="/agency/blog" element={
+                          <ProtectedRoute>
+                            <AgencyBlogManagement />
+                          </ProtectedRoute>
+                        } />
                         <Route path="/agency/blog/new" element={
                           <ProtectedRoute>
                             <AgencyBlogWizard />
