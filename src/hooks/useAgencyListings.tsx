@@ -12,10 +12,12 @@ export interface AgencyListing {
   listing_status: string;
   verification_status: string;
   views_count: number | null;
+  total_saves: number;
   images: string[] | null;
   agent_id: string | null;
   created_at: string;
   updated_at: string;
+  inquiries_count: number;
 }
 
 export function useAgencyListingsManagement(agencyId: string | undefined) {
