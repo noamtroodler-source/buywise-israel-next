@@ -171,8 +171,11 @@ export function FeaturedListingsManager({ agencyId }: FeaturedListingsManagerPro
             </p>
           ) : filteredListings.length === 0 ? (
             <p className="text-muted-foreground text-sm py-4">
-              No listings match "{searchQuery}"
+              No listings match &ldquo;{searchQuery}&rdquo;
             </p>
+          ) : (
+            <div className="divide-y divide-border/50">
+              {filteredListings.map((listing) => {
                 const featured = featuredMap.get(listing.id);
                 const isFeatured = !!featured;
 
@@ -181,7 +184,6 @@ export function FeaturedListingsManager({ agencyId }: FeaturedListingsManagerPro
                     key={listing.id}
                     className="flex items-center gap-4 py-4 first:pt-0 last:pb-0"
                   >
-                    {/* Thumbnail */}
                     <div className="h-14 w-14 rounded-xl bg-muted/50 overflow-hidden flex-shrink-0">
                       {listing.images?.[0] ? (
                         <img
@@ -196,7 +198,6 @@ export function FeaturedListingsManager({ agencyId }: FeaturedListingsManagerPro
                       )}
                     </div>
 
-                    {/* Info */}
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm truncate">{listing.title}</p>
                       <p className="text-xs text-muted-foreground truncate">{listing.city}</p>
@@ -212,7 +213,6 @@ export function FeaturedListingsManager({ agencyId }: FeaturedListingsManagerPro
                       )}
                     </div>
 
-                    {/* Toggle */}
                     <div className="flex items-center gap-3 flex-shrink-0">
                       {!isFeatured && (
                         <span className="text-xs text-muted-foreground hidden sm:block">
@@ -228,6 +228,7 @@ export function FeaturedListingsManager({ agencyId }: FeaturedListingsManagerPro
                   </div>
                 );
               })}
+            </div>
             </div>
           )}
         </CardContent>
