@@ -3,17 +3,22 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Eye, Loader2, Clock, CheckCircle, AlertCircle,
-  XCircle, FileText, Home, AlertTriangle, ArrowLeft, Building2, Info
+  XCircle, FileText, Home, AlertTriangle, ArrowLeft, Building2, Plus,
+  Pencil, Trash2, Send
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAgentProperties } from '@/hooks/useAgentProperties';
+import { useAgentProperties, useDeleteProperty, useSubmitForReview } from '@/hooks/useAgentProperties';
 import { STALE_THRESHOLD_DAYS } from '@/hooks/useAgentProfile';
 import { differenceInDays, parseISO } from 'date-fns';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
+} from '@/components/ui/alert-dialog';
 
 type VerificationStatus = 'draft' | 'pending_review' | 'approved' | 'changes_requested' | 'rejected';
 
@@ -38,6 +43,8 @@ export default function AgentProperties() {
   const [searchParams] = useSearchParams();
   const initialTab = searchParams.get('tab') || 'all';
   const { data: properties = [], isLoading } = useAgentProperties();
+  const deleteProperty = useDeleteProperty();
+  const submitForReview = useSubmitForReview();
 
   const getStatusLabel = (status: string) => {
     switch (status) {
@@ -87,6 +94,8 @@ export default function AgentProperties() {
     const badge = getVerificationBadge(status);
     const BadgeIcon = badge.icon;
     const isStale = isPropertyStale(property);
+    const canEdit = status === 'draft' || status === 'changes_requested';
+    const canSubmit = status === 'draft' || status === 'changes_requested';
 
     return (
       <div className="flex flex-col gap-3 p-4 rounded-lg border border-border">
@@ -117,11 +126,33 @@ export default function AgentProperties() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
             <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded-md">
               <Eye className="h-3 w-3" />
               {property.views_count || 0} views
             </div>
+
+            {canSubmit && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => submitForReview.mutate(property.id)}
+                disabled={submitForReview.isPending}
+              >
+                <Send className="h-4 w-4 mr-1" />
+                Submit
+              </Button>
+            )}
+
+            {canEdit && (
+              <Button variant="ghost" size="sm" asChild>
+                <Link to={`/agent/properties/${property.id}/edit`}>
+                  <Pencil className="h-4 w-4 mr-1" />
+                  Edit
+                </Link>
+              </Button>
+            )}
+
             {status === 'approved' && (
               <Button variant="ghost" size="sm" asChild>
                 <Link to={`/properties/${property.id}`} target="_blank">
@@ -130,8 +161,40 @@ export default function AgentProperties() {
                 </Link>
               </Button>
             )}
+
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete listing?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete "{property.title}". This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => deleteProperty.mutate(property.id)}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </div>
+
+        {/* Show rejection reason inline */}
+        {status === 'changes_requested' && (property as any).rejection_reason && (
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 text-sm text-orange-800">
+            <span className="font-medium">Changes requested:</span> {(property as any).rejection_reason}
+          </div>
+        )}
       </div>
     );
   };
@@ -148,25 +211,31 @@ export default function AgentProperties() {
             </Link>
           </Button>
 
-          <div className="flex items-center gap-3">
-            <Building2 className="h-6 w-6 text-primary" />
-            <h1 className="text-2xl font-bold text-foreground">My Assigned Listings</h1>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <Building2 className="h-6 w-6 text-primary" />
+              <h1 className="text-2xl font-bold text-foreground">My Listings</h1>
+            </div>
+            <Button asChild>
+              <Link to="/agent/properties/new">
+                <Plus className="h-4 w-4 mr-2" />
+                New Listing
+              </Link>
+            </Button>
           </div>
-
-          {/* Agency info banner */}
-          <Alert className="bg-primary/5 border-primary/20 rounded-xl">
-            <Info className="h-4 w-4 text-primary" />
-            <AlertDescription className="text-muted-foreground">
-              Listings are created and managed by your agency. Contact your agency admin to make changes.
-            </AlertDescription>
-          </Alert>
 
           {properties.length === 0 ? (
             <Card>
               <CardContent className="text-center py-12">
                 <Home className="h-12 w-12 mx-auto mb-4 opacity-30 text-muted-foreground" />
-                <p className="text-muted-foreground font-medium">No listings assigned to you yet</p>
-                <p className="text-sm text-muted-foreground mt-1">Your agency admin will assign listings to you once they're created.</p>
+                <p className="text-muted-foreground font-medium">No listings yet</p>
+                <p className="text-sm text-muted-foreground mt-1">Create your first listing to get started.</p>
+                <Button asChild className="mt-4">
+                  <Link to="/agent/properties/new">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Listing
+                  </Link>
+                </Button>
               </CardContent>
             </Card>
           ) : (
