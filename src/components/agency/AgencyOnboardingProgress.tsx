@@ -39,15 +39,6 @@ interface AgencyOnboardingProgressProps {
 
 export function AgencyOnboardingProgress({ agency, teamCount, listingsCount = 0 }: AgencyOnboardingProgressProps) {
   const [isExpanded, setIsExpanded] = useState(true);
-  const [isDismissed, setIsDismissed] = useState(false);
-
-  // Check local storage for dismissed state
-  useEffect(() => {
-    const dismissed = sessionStorage.getItem('agency_onboarding_dismissed');
-    if (dismissed === 'true') {
-      setIsDismissed(true);
-    }
-  }, []);
 
   const checklistItems: ChecklistItem[] = [
     {
