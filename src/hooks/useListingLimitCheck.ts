@@ -74,6 +74,7 @@ export function useListingLimitCheck(entityType: 'agency' | 'developer'): Listin
   const isLoading = subLoading || countLoading;
   const maxListings = sub?.maxListings ?? null;
   const needsSubscription = !sub || sub.status === 'none';
+  const isFree = sub?.tier === 'free';
   const tier = sub?.tier || '';
   const nextTierName = NEXT_TIER[tier] || null;
   const usagePercent = maxListings ? Math.min(100, Math.round((currentCount / maxListings) * 100)) : 0;
@@ -81,12 +82,14 @@ export function useListingLimitCheck(entityType: 'agency' | 'developer'): Listin
   // Over limit = has a finite limit and is at or beyond it
   const isOverLimit = !isLoading && !needsSubscription && maxListings !== null && currentCount >= maxListings;
 
-  // Overages are allowed — canCreate is only false if no subscription at all
+  // Free tier: hard cap (no overages). Paid tiers: always allowed (overage charges apply).
   const canCreate = isLoading
-    ? true // Optimistic while loading
+    ? true
     : needsSubscription
     ? false
-    : true; // Always allowed with subscription (overage charges apply when over limit)
+    : isFree
+    ? maxListings !== null ? currentCount < maxListings : true
+    : true;
 
   return { canCreate, isOverLimit, currentCount, maxListings, isLoading, needsSubscription, nextTierName, overageRate: null, usagePercent };
 }

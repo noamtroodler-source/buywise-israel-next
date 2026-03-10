@@ -9,7 +9,7 @@ import { motion } from "framer-motion";
 const faqs = [
   {
     question: "Is BuyWise free to use?",
-    answer: "Yes! Creating a profile, listing properties, and using our analytics tools is completely free. There are no hidden fees or commissions. We may introduce premium features in the future, but the core platform will always remain free."
+    answer: "Creating a profile is completely free, and every account includes 1 free listing so you can experience the platform. To publish additional listings and unlock advanced features, you can upgrade to one of our paid plans starting at ₪750/month."
   },
   {
     question: "How long does verification take?",

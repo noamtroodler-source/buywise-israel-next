@@ -65,21 +65,29 @@ export function useSubscription() {
 
 
       if (!sub) {
+        // Fetch free plan limits from DB
+        const { data: freePlan } = await supabase
+          .from('membership_plans')
+          .select('max_listings, max_seats, max_blogs_per_month')
+          .eq('tier', 'free')
+          .eq('entity_type', entity.entityType)
+          .maybeSingle();
+
         return {
           id: '',
           planName: 'Free',
           tier: 'free',
           entityType: entity.entityType,
           entityId: entity.entityId,
-          status: 'none',
+          status: 'free',
           billingCycle: '',
           currentPeriodEnd: null,
           trialEnd: null,
           trialStart: null,
           canceledAt: null,
-          maxListings: null,
-          maxSeats: null,
-          maxBlogsPerMonth: null,
+          maxListings: freePlan?.max_listings ?? null,
+          maxSeats: freePlan?.max_seats ?? null,
+          maxBlogsPerMonth: freePlan?.max_blogs_per_month ?? null,
         };
       }
 

@@ -10,7 +10,7 @@ const JOINING_FAQS = [
   {
     question: "Is BuyWise Israel free to join?",
     answer:
-      "Yes! Creating a professional profile is completely free to start. Registration and account approval are free of charge. Paid plans unlock higher listing limits, more team seats, and advanced visibility features — but you can explore the platform and get set up before committing to a plan.",
+      "Yes! Creating a professional profile is free, and every account includes 1 free listing so you can try the platform. To publish additional listings, add team members, and access advanced features, upgrade to a paid plan. Registration and approval are always free of charge.",
   },
   {
     question: "What types of professionals can join?",
