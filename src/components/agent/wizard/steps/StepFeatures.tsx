@@ -245,7 +245,7 @@ export function StepFeatures() {
             <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
               <Calendar className="h-4 w-4 text-primary" />
             </div>
-            <h3 className="font-semibold">Entry Date</h3>
+            <h3 className="font-semibold">Entry Date *</h3>
           </div>
           <div className="space-y-3">
             <div className="flex items-center space-x-2">

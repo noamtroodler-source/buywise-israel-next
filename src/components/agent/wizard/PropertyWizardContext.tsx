@@ -163,18 +163,25 @@ export function PropertyWizardProvider({ children }: { children: ReactNode }) {
       case 0: // Basics
         const hasStreetNumber = /\d+/.test(data.address);
         return !!(data.title && data.price > 0 && data.city && data.neighborhood && data.address && data.latitude && data.longitude && hasStreetNumber);
-      case 1: // Details
-        // For land, lot_size is required; for others, rooms/baths are required
+      case 1: { // Details
         if (data.property_type === 'land') {
           return (data.lot_size_sqm ?? 0) > 0;
         }
-        return data.bedrooms >= 0 && data.bathrooms >= 0;
-      case 2: // Features
-        return true; // Optional step
+        const needsFloor = ['apartment', 'penthouse', 'mini_penthouse', 'duplex', 'garden_apartment'].includes(data.property_type);
+        return data.bedrooms >= 0 && data.bathrooms >= 0
+          && (data.size_sqm ?? 0) > 0
+          && (!needsFloor || (data.floor !== undefined && data.total_floors !== undefined));
+      }
+      case 2: { // Features
+        const baseValid = !!data.furnished_status && !!data.pets_policy;
+        const rentalValid = data.listing_status !== 'for_rent' || !!data.lease_term;
+        const entryValid = data.is_immediate_entry || !!data.entry_date;
+        return baseValid && rentalValid && entryValid;
+      }
       case 3: // Photos
-        return data.images.length >= 3; // At least 3 photos required
+        return data.images.length >= 3;
       case 4: // Description
-        return !!data.description;
+        return data.description.length >= 100;
       case 5: // Review
         return true;
       default:

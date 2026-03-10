@@ -153,7 +153,7 @@ export function StepDetails() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="total_floors">Total Floors in Building</Label>
+                <Label htmlFor="total_floors">Total Floors in Building *</Label>
                 <Input
                   id="total_floors"
                   type="number"
