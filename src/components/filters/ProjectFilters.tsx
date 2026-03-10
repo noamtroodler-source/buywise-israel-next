@@ -90,6 +90,7 @@ const parseCommaNumber = (value: string): number | undefined => {
 
 export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: ProjectFiltersProps) {
   const [cityOpen, setCityOpen] = useState(false);
+  const [neighborhoodOpen, setNeighborhoodOpen] = useState(false);
   const [priceOpen, setPriceOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
   const [yearOpen, setYearOpen] = useState(false);
