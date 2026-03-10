@@ -6,6 +6,7 @@ import { useAuth } from './useAuth';
 
 // Tier upgrade mapping
 const NEXT_TIER: Record<string, string> = {
+  free: 'Starter',
   starter: 'Growth',
   growth: 'Professional',
   professional: 'Enterprise',
