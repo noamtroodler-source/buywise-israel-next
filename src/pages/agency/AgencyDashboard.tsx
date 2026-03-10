@@ -188,9 +188,9 @@ export default function AgencyDashboard() {
           </div>
 
           {/* Two-Column Layout: Performance + Activity */}
-          <div className="grid lg:grid-cols-5 gap-6">
+          <div className="grid lg:grid-cols-5 gap-6 lg:items-center">
             {/* Left Column — wider */}
-            <div className="lg:col-span-3 space-y-6">
+            <div className="lg:col-span-3">
               {/* Performance Insights — subtle bg wrap */}
               <div className="bg-muted/30 rounded-2xl p-4">
                 <AgencyPerformanceInsights />
