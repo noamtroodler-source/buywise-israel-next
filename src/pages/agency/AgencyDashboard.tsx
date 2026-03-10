@@ -178,9 +178,6 @@ export default function AgencyDashboard() {
                       <action.icon className={`h-5 w-5 ${action.color}`} />
                     </div>
                     <span className="text-xs font-medium text-foreground">{action.label}</span>
-                    {action.count !== undefined && action.count > 0 && (
-                      <span className="text-[10px] text-muted-foreground">{action.count}</span>
-                    )}
                     {action.badge && (
                       <Badge className="absolute -top-1.5 -right-1.5 text-[10px] px-1.5 py-0 bg-primary text-primary-foreground">
                         {action.badge}
