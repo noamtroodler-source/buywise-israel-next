@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  CheckCircle2, Circle, X, ChevronDown, ChevronUp,
+  CheckCircle2, Circle, ChevronDown, ChevronUp,
   Image, FileText, Phone, Globe, MapPin, Briefcase, Users, Home, Share2
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
