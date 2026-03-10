@@ -315,6 +315,60 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
         </PopoverContent>
       </Popover>
 
+      {/* Neighborhood Filter */}
+      <Popover open={neighborhoodOpen} onOpenChange={setNeighborhoodOpen}>
+        <PopoverTrigger asChild>
+          <Button 
+            variant="outline" 
+            className={cn(filterButtonBase, filters.neighborhoods?.length && filterButtonActive)}
+          >
+            <span>
+              {filters.neighborhoods?.length === 1
+                ? filters.neighborhoods[0]
+                : filters.neighborhoods?.length
+                  ? `${filters.neighborhoods.length} areas`
+                  : 'Neighborhood'}
+            </span>
+            {neighborhoodOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[320px] p-0 bg-background border shadow-xl z-50" align="start">
+          <div className="p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-lg">Neighborhood</h3>
+              {filters.neighborhoods?.length ? (
+                <button 
+                  className="text-sm text-muted-foreground hover:text-foreground"
+                  onClick={() => onFiltersChange({ ...filters, neighborhoods: undefined })}
+                >
+                  Clear
+                </button>
+              ) : null}
+            </div>
+            <NeighborhoodSelector
+              cityName={filters.city}
+              selectedNeighborhoods={filters.neighborhoods || []}
+              onNeighborhoodsChange={(neighborhoods) => {
+                onFiltersChange({
+                  ...filters,
+                  neighborhoods: neighborhoods.length > 0 ? neighborhoods : undefined,
+                });
+              }}
+              onCityChange={(city) => {
+                onFiltersChange({ ...filters, city, neighborhoods: undefined });
+              }}
+            />
+            <Button 
+              className="w-full"
+              onClick={() => setNeighborhoodOpen(false)}
+            >
+              {countLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              {previewCount !== undefined ? `Show ${previewCount} results` : 'Apply'}
+            </Button>
+          </div>
+        </PopoverContent>
+      </Popover>
+
       {/* Mobile: Consolidated Filters Button */}
       {isMobile && (
         <Button 
