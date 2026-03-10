@@ -115,9 +115,12 @@ export function StepBasics() {
                 {data.title.length}/100 characters
               </p>
             </div>
-            <p className="text-xs text-muted-foreground/70 italic">
-              💡 Titles with proper capitalization and no typos get up to 30% more engagement. Capitalize each word and double-check spelling.
-            </p>
+            <div className="flex items-center gap-2 rounded-lg bg-muted/50 border border-border px-3 py-2">
+              <AlertCircle className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              <p className="text-xs text-muted-foreground">
+                Capitalize Each Word and double-check spelling — clean titles stand out to buyers.
+              </p>
+            </div>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
