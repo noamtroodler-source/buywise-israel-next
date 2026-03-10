@@ -6,9 +6,10 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 export function StepPhotos() {
   const { data, updateData } = usePropertyWizard();
   
-  const minPhotos = 3;
-  const recommendedPhotos = 5;
-  const hasEnoughPhotos = data.images.length >= minPhotos;
+  const minPhotos = data.bedrooms + (data.additional_rooms || 0) + data.bathrooms;
+  const safeMinPhotos = Math.max(minPhotos, 3); // At least 3 no matter what
+  const recommendedPhotos = safeMinPhotos + 2;
+  const hasEnoughPhotos = data.images.length >= safeMinPhotos;
 
   return (
     <div className="space-y-8">
