@@ -207,6 +207,8 @@ export function PropertyWizardProvider({ children }: { children: ReactNode }) {
         goBack,
         canGoNext,
         isLastStep,
+        stepOffset,
+        setStepOffset,
         resetWizard,
         loadFromSaved,
       }}
