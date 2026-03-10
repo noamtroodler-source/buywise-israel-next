@@ -1,28 +1,23 @@
 
 
-# Assessment: Implementation Is Complete
+# Make Onboarding Checklist Items Clickable
 
-After investigating the database policies, wizard structure, and agent properties page, all the pieces are already in place:
+## What
+Make each row in the "Complete Your Profile" checklist a clickable link that navigates to the relevant settings page/section, instead of only having the small icon button on the right.
 
-## What's Already Working
+## Changes
 
-1. **RLS Policies** — Agents can INSERT, UPDATE, DELETE, and SELECT their own properties. No changes needed.
+**File: `src/components/agency/AgencyOnboardingProgress.tsx`**
 
-2. **Agent Wizard** — The agent `NewPropertyWizard` has 6 steps (Basics → Review) with no "Assign Agent" step. That Step 0 only exists in the agency wizard. No changes needed.
+1. **Make entire row clickable** — Wrap each incomplete item's row in a `Link` component (or use `onClick` with `navigate`) so clicking anywhere on the row navigates to the target page.
 
-3. **Agent Properties Page** — Already has full management: Edit, Delete, Submit for Review actions, verification status badges, tabbed filtering, and a "+ New Listing" button.
+2. **Add missing links**:
+   - `team` item → `/agency/team`
+   - `listing` item → `/agency/properties/new`
 
-4. **Routes** — Already restored in `App.tsx` to render `NewPropertyWizard` and `EditPropertyWizard` for agents.
+3. **Add cursor and hover styling** — Apply `cursor-pointer` and enhanced hover state to incomplete items with links, so users know they're clickable.
 
-5. **Agency Admin Flow** — Agency wizard retains Step 0 (Assign Agent) for admin-created listings. Agency listings page shows all listings across agents.
+4. **Keep completed items non-clickable** — Completed (checked) items remain static with no navigation, since they're already done.
 
-## No Further Changes Required
-
-The hybrid model is fully implemented:
-- **Agents** create their own listings, submit for platform review
-- **Agency admins** can also create listings and assign to agents
-- **All listings** are attributed to an agent under an agency (single source of truth)
-- **Verification pipeline** (draft → pending_review → approved) is intact
-
-The system is ready to test end-to-end.
+5. **Remove the separate icon button** — Since the whole row is now clickable, the standalone icon button on the right becomes redundant. Replace it with the icon displayed inline (non-interactive) as a visual indicator.
 
