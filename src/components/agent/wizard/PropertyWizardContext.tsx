@@ -207,7 +207,7 @@ export function PropertyWizardProvider({ children, totalSteps = DEFAULT_TOTAL_ST
         data,
         updateData,
         currentStep,
-        setCurrentStep,
+        setCurrentStep: handleSetCurrentStep,
         goNext,
         goBack,
         canGoNext,

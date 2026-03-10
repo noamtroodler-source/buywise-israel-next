@@ -175,7 +175,7 @@ export function ProjectWizardProvider({ children }: { children: ReactNode }) {
         data,
         updateData,
         currentStep,
-        setCurrentStep,
+        setCurrentStep: handleSetCurrentStep,
         goNext,
         goBack,
         canGoNext,
