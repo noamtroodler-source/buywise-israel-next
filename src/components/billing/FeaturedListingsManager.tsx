@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { Star, Loader2, Crown } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Star, Loader2, Crown, Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
