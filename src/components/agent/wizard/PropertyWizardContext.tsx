@@ -162,7 +162,7 @@ export function PropertyWizardProvider({ children }: { children: ReactNode }) {
     switch (currentStep) {
       case 0: // Basics
         const hasStreetNumber = /\d+/.test(data.address);
-        return !!(data.title && data.price > 0 && data.city && data.neighborhood && data.address && data.latitude && data.longitude && hasStreetNumber);
+        return !!(data.title && data.title.length >= 20 && data.price > 0 && data.city && data.neighborhood && data.address && data.latitude && data.longitude && hasStreetNumber);
       case 1: { // Details
         if (data.property_type === 'land') {
           return (data.lot_size_sqm ?? 0) > 0;
