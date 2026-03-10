@@ -1,22 +1,39 @@
 
 
-## Phase 1: Founding Partner Enrollment — Implemented ✅
+## Plan: Make Wizard Fields Conditional on Sale vs Rent
 
-All changes from the plan have been implemented:
+### Changes
 
-1. **DB Migration** — Added `is_founding_partner`, `payplus_customer_id`, `payplus_subscription_id` to `subscriptions`; `payplus_subscription_id` to `featured_listings`. Updated FOUNDING2026 promo code (max_redemptions=15, cleared old discount/credit data).
-2. **`enroll-founding-partner` edge function** — 15-cap enforcement, trial creation (60 days), founding_partners insert, first month credit grant, promo redemption tracking.
-3. **`check-trial-expirations` edge function** — Daily cron (6 AM UTC) expires trialing subscriptions past trial_end.
-4. **`useFoundingSpots` hook** — Live spots remaining counter querying founding_partners.
-5. **`FoundingProgramSection`** — Updated benefits (2mo free, 3 featured/mo, early access, case study), spots counter badge.
-6. **`FoundingProgramModal`** — Updated benefits, spots counter, activates enrollment flow.
-7. **`Pricing.tsx`** — FOUNDING2026 code routes to `enroll-founding-partner` instead of Stripe; CTA changes to "Activate Founding Program".
-8. **`CheckoutSuccess.tsx`** — Founding partner variant with trial end date and featured listings CTA.
-9. **`grant-monthly-featured-credits`** — Already has 2-month duration cap logic.
-10. **`PlanCard`** — Added `ctaLabel` prop for custom CTA text.
+**1. `StepFeatures.tsx`** — Hide rental-only fields when listing is for sale:
+- Move **Furnished Status**, **Pets Policy**, and **Furniture Items** inside the existing `isRental` conditional block (alongside Lease Details)
+- The "Property Terms" section header becomes "Rental Terms" and only shows for rentals
+- Condition, A/C, Entry Date, Va'ad Bayit, Features checkboxes, and Featured Highlight remain for both
 
-### Deferred (PayPlus not yet set up):
-- `payplus-checkout`, `payplus-webhook`, `manage-billing` edge functions
-- `list-invoices` PayPlus integration
-- Featured listing ₪299/mo PayPlus recurring charge
-- Trial-to-paid automatic charge initiation
+**2. `PropertyWizardContext.tsx`** — Update Step 2 (Features) validation:
+- Change `baseValid` from requiring `furnished_status && pets_policy` always, to only requiring them when `listing_status === 'for_rent'`
+- For sale: only require entry date validity
+- For rent: require `furnished_status`, `pets_policy`, `lease_term`, and entry date
+
+**3. `StepDescription.tsx`** — Dynamic copy:
+- Change subtitle from "attract buyers" to "attract renters" when `listing_status === 'for_rent'`
+
+**4. `StepReview.tsx`** — Conditional display:
+- Change "Preview as Buyer" button to "Preview as Tenant" for rentals
+- Only show Furnished Status, Pets Policy, and Lease Details badges in review when rental
+- Hide `/month` label only shown for rent (already done)
+
+### Summary of what shows when
+
+| Field | Sale | Rent |
+|-------|------|------|
+| Featured Highlight | Yes | Yes |
+| Condition | Yes | Yes |
+| A/C | Yes | Yes |
+| Entry Date | Yes | Yes |
+| Va'ad Bayit | Yes | Yes |
+| Features checkboxes | Yes | Yes |
+| Lease Term, Subletting, Agent Fee | No | Yes |
+| Furnished Status | No | Yes |
+| Pets Policy | No | Yes |
+| Furniture Items | No | Yes |
+
