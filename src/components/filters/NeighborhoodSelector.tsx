@@ -3,6 +3,7 @@ import { Check, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useNeighborhoodNames, useAllNeighborhoods } from '@/hooks/useNeighborhoodNames';
+import { neighborhoodMatchesQuery } from '@/lib/utils/neighborhoodMatcher';
 
 interface NeighborhoodSelectorProps {
   cityName?: string;
