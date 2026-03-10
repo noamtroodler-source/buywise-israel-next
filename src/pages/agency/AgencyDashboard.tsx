@@ -79,7 +79,7 @@ export default function AgencyDashboard() {
     { label: 'Listings', icon: FileText, href: '/agency/listings', count: stats?.activeListings, color: 'text-primary', bg: 'bg-primary/10', hoverBg: 'hover:bg-primary/5' },
     { label: 'Team', icon: Users, href: '/agency/team', count: team.length, badge: pendingRequests > 0 ? `${pendingRequests} pending` : undefined, color: 'text-primary', bg: 'bg-primary/10', hoverBg: 'hover:bg-primary/5' },
     { label: 'Analytics', icon: BarChart3, href: '/agency/analytics', color: 'text-primary', bg: 'bg-primary/10', hoverBg: 'hover:bg-primary/5' },
-    { label: 'Blog', icon: PenLine, href: canSubmitBlog ? '/agency/blog/new' : '/agency', count: blogPosts.length, color: 'text-primary', bg: 'bg-primary/10', hoverBg: 'hover:bg-primary/5', disabled: !canSubmitBlog, tooltip: !canSubmitBlog ? 'Blog limit reached' : undefined },
+    { label: 'Blog', icon: PenLine, href: '/agency/blog', count: blogPosts.length, color: 'text-primary', bg: 'bg-primary/10', hoverBg: 'hover:bg-primary/5' },
     { label: 'Featured', icon: Star, href: '/agency/featured', color: 'text-primary', bg: 'bg-primary/10', hoverBg: 'hover:bg-primary/5' },
     { label: 'Billing', icon: CreditCard, href: '/agency/billing', color: 'text-primary', bg: 'bg-primary/10', hoverBg: 'hover:bg-primary/5' },
   ];
@@ -162,41 +162,29 @@ export default function AgencyDashboard() {
 
           {/* Quick Actions Grid */}
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
-            {quickActions.map((action, index) => {
-              const content = (
-                <motion.div
-                  key={action.label}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.03 }}
+            {quickActions.map((action, index) => (
+              <motion.div
+                key={action.label}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.03 }}
+              >
+                <Link 
+                  to={action.href}
+                  className={`group relative flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border border-border/50 bg-card ${action.hoverBg} hover:border-primary/30 transition-all text-center h-full min-h-[96px]`}
                 >
-                  <Link 
-                    to={action.disabled ? '#' : action.href}
-                    className={`group relative flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border border-border/50 bg-card ${action.hoverBg} hover:border-primary/30 transition-all text-center h-full min-h-[96px] ${action.disabled ? 'opacity-50 pointer-events-none' : ''}`}
-                  >
-                    <div className={`p-2.5 rounded-xl ${action.bg} transition-colors`}>
-                      <action.icon className={`h-5 w-5 ${action.color}`} />
-                    </div>
-                    <span className="text-xs font-medium text-foreground">{action.label}</span>
-                    {action.badge && (
-                      <Badge className="absolute -top-1.5 -right-1.5 text-[10px] px-1.5 py-0 bg-primary text-primary-foreground">
-                        {action.badge}
-                      </Badge>
-                    )}
-                  </Link>
-                </motion.div>
-              );
-
-              if (action.tooltip) {
-                return (
-                  <Tooltip key={action.label}>
-                    <TooltipTrigger asChild>{content}</TooltipTrigger>
-                    <TooltipContent>{action.tooltip}</TooltipContent>
-                  </Tooltip>
-                );
-              }
-              return content;
-            })}
+                  <div className={`p-2.5 rounded-xl ${action.bg} transition-colors`}>
+                    <action.icon className={`h-5 w-5 ${action.color}`} />
+                  </div>
+                  <span className="text-xs font-medium text-foreground">{action.label}</span>
+                  {action.badge && (
+                    <Badge className="absolute -top-1.5 -right-1.5 text-[10px] px-1.5 py-0 bg-primary text-primary-foreground">
+                      {action.badge}
+                    </Badge>
+                  )}
+                </Link>
+              </motion.div>
+            ))}
           </div>
 
           {/* Two-Column Layout: Performance + Activity */}
@@ -248,27 +236,29 @@ export default function AgencyDashboard() {
 
               {/* Latest Blog Post */}
               {blogPosts.length > 0 && (
-                <Card className="rounded-2xl border-border/50">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="p-2 rounded-xl bg-amber-500/10">
-                        <PenLine className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                <Link to="/agency/blog" className="block">
+                  <Card className="rounded-2xl border-border/50 hover:border-primary/20 transition-colors">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="p-2 rounded-xl bg-accent">
+                          <PenLine className="h-4 w-4 text-primary" />
+                        </div>
+                        <p className="text-sm font-medium">Latest Article</p>
                       </div>
-                      <p className="text-sm font-medium">Latest Article</p>
-                    </div>
-                    <p className="text-sm text-muted-foreground line-clamp-1 mb-2">
-                      {blogPosts[0]?.title || 'Untitled'}
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary" className="text-xs">
-                        {blogPosts[0]?.verification_status || 'draft'}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">
-                        {blogPosts.length} total article{blogPosts.length !== 1 ? 's' : ''}
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
+                      <p className="text-sm text-muted-foreground line-clamp-1 mb-2">
+                        {blogPosts[0]?.title || 'Untitled'}
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="text-xs">
+                          {blogPosts[0]?.verification_status || 'draft'}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {blogPosts.length} total article{blogPosts.length !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
               )}
             </div>
           </div>

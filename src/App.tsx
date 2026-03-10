@@ -95,6 +95,7 @@ const AgencySettings = lazy(() => import("./pages/agency/AgencySettings"));
 const AgencyListingsPage = lazy(() => import("./pages/agency/AgencyListings"));
 const AgencyNewPropertyWizard = lazy(() => import("./pages/agency/AgencyNewPropertyWizard"));
 const AgencyEditPropertyWizard = lazy(() => import("./pages/agency/AgencyEditPropertyWizard"));
+const AgencyBlogManagement = lazy(() => import("./pages/agency/AgencyBlogManagement"));
 const AgencyBlogWizard = lazy(() => import("./pages/agency/AgencyBlogWizard"));
 const AgencyBilling = lazy(() => import("./pages/agency/AgencyBilling"));
 const AgencyFeatured = lazy(() => import("./pages/agency/AgencyFeatured"));
@@ -347,6 +348,11 @@ const App = () => (
                         <Route path="/agency/properties/:id/edit" element={
                           <ProtectedRoute>
                             <AgencyEditPropertyWizard />
+                          </ProtectedRoute>
+                        } />
+                        <Route path="/agency/blog" element={
+                          <ProtectedRoute>
+                            <AgencyBlogManagement />
                           </ProtectedRoute>
                         } />
                         <Route path="/agency/blog/new" element={
