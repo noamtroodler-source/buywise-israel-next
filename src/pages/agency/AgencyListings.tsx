@@ -323,6 +323,12 @@ export default function AgencyListings() {
                               <span className="text-sm text-muted-foreground">{listing.views_count || 0}</span>
                             </TableCell>
                             <TableCell className="text-center">
+                              <span className="text-sm text-muted-foreground">{listing.total_saves || 0}</span>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <span className="text-sm text-muted-foreground">{listing.inquiries_count || 0}</span>
+                            </TableCell>
+                            <TableCell className="text-center">
                               <span className="text-sm text-muted-foreground">{getDaysOnMarket(listing.created_at)}</span>
                             </TableCell>
                             <TableCell>
