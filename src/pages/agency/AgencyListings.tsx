@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import {
   ArrowLeft, Loader2, Home, Plus, Search, Download,
   Eye, Clock, CheckCircle2, Building2,
-  Edit, Trash2, Send, MoreHorizontal, Copy, Key,
+  Edit, Trash2, Send, MoreHorizontal, Copy, Key, ArrowLeftRight,
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
