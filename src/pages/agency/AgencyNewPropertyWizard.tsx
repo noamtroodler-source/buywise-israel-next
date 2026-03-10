@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Save, Send, Loader2, Sparkles } from 'lucide-react';
@@ -45,7 +45,12 @@ const itemVariants = {
 
 function AgencyWizardContent() {
   const navigate = useNavigate();
-  const { data, currentStep, setCurrentStep, goNext, goBack, canGoNext, isLastStep } = usePropertyWizard();
+  const { data, currentStep, setCurrentStep, goNext, goBack, canGoNext, isLastStep, setStepOffset } = usePropertyWizard();
+
+  // Agency wizard has an extra "Assign Agent" step at index 0, so offset validation by 1
+  useEffect(() => {
+    setStepOffset(1);
+  }, [setStepOffset]);
   const { data: agency } = useMyAgency();
   const { data: team = [] } = useAgencyTeam(agency?.id);
   const { data: listings = [] } = useAgencyListingsManagement(agency?.id);
@@ -284,7 +289,7 @@ function AgencyWizardContent() {
 
 export default function AgencyNewPropertyWizard() {
   return (
-    <PropertyWizardProvider>
+    <PropertyWizardProvider totalSteps={7}>
       <AgencyWizardContent />
     </PropertyWizardProvider>
   );

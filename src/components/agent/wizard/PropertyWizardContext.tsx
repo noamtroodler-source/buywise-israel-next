@@ -71,6 +71,9 @@ interface PropertyWizardContextType {
   goBack: () => void;
   canGoNext: boolean;
   isLastStep: boolean;
+  /** Offset applied to currentStep before validation (e.g., 1 for agency wizard with Assign Agent step) */
+  stepOffset: number;
+  setStepOffset: (offset: number) => void;
   // New save-related properties
   resetWizard: () => void;
   loadFromSaved: (savedData: PropertyWizardData) => void;
@@ -123,12 +126,13 @@ export const defaultPropertyData: PropertyWizardData = {
 
 const PropertyWizardContext = createContext<PropertyWizardContextType | undefined>(undefined);
 
-const TOTAL_STEPS = 6;
+const DEFAULT_TOTAL_STEPS = 6;
 export const PROPERTY_WIZARD_STORAGE_KEY = 'property-wizard-draft';
 
-export function PropertyWizardProvider({ children }: { children: ReactNode }) {
+export function PropertyWizardProvider({ children, totalSteps = DEFAULT_TOTAL_STEPS }: { children: ReactNode; totalSteps?: number }) {
   const [data, setData] = useState<PropertyWizardData>(defaultPropertyData);
   const [currentStep, setCurrentStep] = useState(0);
+  const [stepOffset, setStepOffset] = useState(0);
 
   const updateData = useCallback((updates: Partial<PropertyWizardData>) => {
     setData(prev => ({ ...prev, ...updates }));
@@ -144,7 +148,7 @@ export function PropertyWizardProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const goNext = () => {
-    if (currentStep < TOTAL_STEPS - 1) {
+    if (currentStep < totalSteps - 1) {
       setCurrentStep(prev => prev + 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -157,9 +161,10 @@ export function PropertyWizardProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Validation for each step
+  // Validation for each step — use adjusted step to account for offset (e.g., agency wizard's Assign Agent step)
+  const adjustedStep = currentStep - stepOffset;
   const canGoNext = (() => {
-    switch (currentStep) {
+    switch (adjustedStep) {
       case 0: // Basics
         const hasStreetNumber = /\d+/.test(data.address);
         return !!(data.title && data.title.length >= 20 && data.price > 0 && data.city && data.neighborhood && data.address && data.latitude && data.longitude && hasStreetNumber);
@@ -189,7 +194,7 @@ export function PropertyWizardProvider({ children }: { children: ReactNode }) {
     }
   })();
 
-  const isLastStep = currentStep === TOTAL_STEPS - 1;
+  const isLastStep = currentStep === totalSteps - 1;
 
   return (
     <PropertyWizardContext.Provider
@@ -202,6 +207,8 @@ export function PropertyWizardProvider({ children }: { children: ReactNode }) {
         goBack,
         canGoNext,
         isLastStep,
+        stepOffset,
+        setStepOffset,
         resetWizard,
         loadFromSaved,
       }}
