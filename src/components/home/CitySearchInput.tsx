@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { useCities } from '@/hooks/useCities';
 import { useAllNeighborhoods } from '@/hooks/useNeighborhoodNames';
 import { cityMatchesQuery } from '@/lib/utils/cityMatcher';
+import { neighborhoodMatchesQuery } from '@/lib/utils/neighborhoodMatcher';
 
 interface CitySearchInputProps {
   value: string;
@@ -108,7 +109,7 @@ export function CitySearchInput({
     if (!inputValue.trim()) return [];
     const q = inputValue.trim().toLowerCase();
     return allNeighborhoods
-      .filter(n => n.name.toLowerCase().includes(q))
+      .filter(n => neighborhoodMatchesQuery(n.name, q))
       .slice(0, 8);
   }, [inputValue, allNeighborhoods]);
 
