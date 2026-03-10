@@ -303,7 +303,11 @@ export default function AgencyListings() {
                               </div>
                             </TableCell>
                             <TableCell>
-                              <span className="text-sm">{getAgentName(listing.agent_id)}</span>
+                              <AgentReassignPopover
+                                propertyId={listing.id}
+                                currentAgentId={listing.agent_id}
+                                team={team}
+                              />
                             </TableCell>
                             <TableCell>
                               <Badge variant="outline" className={cn('text-xs', status.color)}>
