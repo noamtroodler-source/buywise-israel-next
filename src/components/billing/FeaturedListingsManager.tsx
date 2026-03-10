@@ -48,6 +48,16 @@ export function FeaturedListingsManager({ agencyId }: FeaturedListingsManagerPro
     (l) => l.verification_status === 'approved'
   );
 
+  const filteredListings = useMemo(() => {
+    if (!searchQuery.trim()) return publishedListings;
+    const q = searchQuery.toLowerCase();
+    return publishedListings.filter(
+      (l) =>
+        l.title?.toLowerCase().includes(q) ||
+        l.city?.toLowerCase().includes(q)
+    );
+  }, [publishedListings, searchQuery]);
+
   // Map of property_id -> featured listing
   const featuredMap = new Map(
     featuredListings.map((fl) => [fl.property_id, fl])
