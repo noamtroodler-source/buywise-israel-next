@@ -1,39 +1,22 @@
 
 
-# Agent Reassignment — Click-to-Reassign in Listings Table
+## Phase 1: Founding Partner Enrollment — Implemented ✅
 
-## What We're Building
-Make the "Agent" column in the agency listings table clickable. When the agency owner clicks an agent name, a popover appears with a searchable list of team agents. Selecting a different agent instantly reassigns the property and shows a confirmation toast.
+All changes from the plan have been implemented:
 
-A subtle tooltip/hint will appear on the column header to make this feature discoverable: "Click agent name to reassign".
+1. **DB Migration** — Added `is_founding_partner`, `payplus_customer_id`, `payplus_subscription_id` to `subscriptions`; `payplus_subscription_id` to `featured_listings`. Updated FOUNDING2026 promo code (max_redemptions=15, cleared old discount/credit data).
+2. **`enroll-founding-partner` edge function** — 15-cap enforcement, trial creation (60 days), founding_partners insert, first month credit grant, promo redemption tracking.
+3. **`check-trial-expirations` edge function** — Daily cron (6 AM UTC) expires trialing subscriptions past trial_end.
+4. **`useFoundingSpots` hook** — Live spots remaining counter querying founding_partners.
+5. **`FoundingProgramSection`** — Updated benefits (2mo free, 3 featured/mo, early access, case study), spots counter badge.
+6. **`FoundingProgramModal`** — Updated benefits, spots counter, activates enrollment flow.
+7. **`Pricing.tsx`** — FOUNDING2026 code routes to `enroll-founding-partner` instead of Stripe; CTA changes to "Activate Founding Program".
+8. **`CheckoutSuccess.tsx`** — Founding partner variant with trial end date and featured listings CTA.
+9. **`grant-monthly-featured-credits`** — Already has 2-month duration cap logic.
+10. **`PlanCard`** — Added `ctaLabel` prop for custom CTA text.
 
-## Implementation
-
-### 1. Create `useReassignProperty` mutation hook
-- Add to `src/hooks/useAgentProperties.tsx`
-- Updates `properties.agent_id` for the given property ID
-- Invalidates `agencyListingsManagement` and `properties` query caches
-- Shows toast: "Listing reassigned to [Agent Name]"
-
-### 2. Create `AgentReassignPopover` component
-- New file: `src/components/agency/AgentReassignPopover.tsx`
-- Popover trigger: agent name styled as a clickable chip (underline on hover, `ArrowLeftRight` icon)
-- Content: searchable list of team agents with avatars, names
-- Current agent shown with a checkmark, disabled from selection
-- On select → call `useReassignProperty`, close popover
-
-### 3. Update `AgencyListings.tsx`
-- Replace static `getAgentName()` text in the Agent column (line 290) with the new `AgentReassignPopover`
-- Add a subtle hint on the "Agent" column header: tooltip saying "Click to reassign"
-- Pass `team` array and current `listing.agent_id` to the popover
-
-### 4. RLS Check
-- The `properties` table update is already permitted for agency owners through existing RLS policies (agents can update their own listings, and agency admin operations go through the same update path). No migration needed.
-
-## UX Details
-- Agent name shows as a pill/chip with hover state (`bg-primary/5`, underline, small swap icon)
-- Popover has search input for teams with 5+ agents
-- Selecting same agent = no-op (greyed out with checkmark)
-- Toast confirmation with old → new agent name
-- Column header has a small `ArrowLeftRight` icon + tooltip for discoverability
-
+### Deferred (PayPlus not yet set up):
+- `payplus-checkout`, `payplus-webhook`, `manage-billing` edge functions
+- `list-invoices` PayPlus integration
+- Featured listing ₪299/mo PayPlus recurring charge
+- Trial-to-paid automatic charge initiation

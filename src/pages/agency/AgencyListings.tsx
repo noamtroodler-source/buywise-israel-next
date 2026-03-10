@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import {
   ArrowLeft, Loader2, Home, Plus, Search, Download,
   Eye, Clock, CheckCircle2, Building2,
-  Edit, Trash2, Send, MoreHorizontal, Copy, Key,
+  Edit, Trash2, Send, MoreHorizontal, Copy, Key, ArrowLeftRight,
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,6 +27,8 @@ import {
 import { useMyAgency, useAgencyTeam } from '@/hooks/useAgencyManagement';
 import { useAgencyListingsManagement } from '@/hooks/useAgencyListings';
 import { useDeleteProperty, useSubmitForReview } from '@/hooks/useAgentProperties';
+import { AgentReassignPopover } from '@/components/agency/AgentReassignPopover';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useUpdatePropertyStatus, useDuplicateProperty } from '@/hooks/useAgentProfile';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { cn } from '@/lib/utils';
@@ -253,7 +255,21 @@ export default function AgencyListings() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Property</TableHead>
-                        <TableHead>Agent</TableHead>
+                        <TableHead>
+                          <TooltipProvider delayDuration={300}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="inline-flex items-center gap-1 cursor-help">
+                                  Agent
+                                  <ArrowLeftRight className="h-3 w-3 text-muted-foreground" />
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent side="top">
+                                <p className="text-xs">Click agent name to reassign</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead className="text-right">Price</TableHead>
                         <TableHead className="text-center">Views</TableHead>
@@ -287,7 +303,11 @@ export default function AgencyListings() {
                               </div>
                             </TableCell>
                             <TableCell>
-                              <span className="text-sm">{getAgentName(listing.agent_id)}</span>
+                              <AgentReassignPopover
+                                propertyId={listing.id}
+                                currentAgentId={listing.agent_id}
+                                team={team}
+                              />
                             </TableCell>
                             <TableCell>
                               <Badge variant="outline" className={cn('text-xs', status.color)}>

@@ -281,6 +281,31 @@ export function useUpdatePropertyForAgency() {
   });
 }
 
+export function useReassignProperty() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ propertyId, newAgentId, newAgentName }: { propertyId: string; newAgentId: string; newAgentName: string }) => {
+      const { error } = await supabase
+        .from('properties')
+        .update({ agent_id: newAgentId } as any)
+        .eq('id', propertyId);
+
+      if (error) throw error;
+      return { newAgentName };
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['agencyListingsManagement'] });
+      queryClient.invalidateQueries({ queryKey: ['agentProperties'] });
+      queryClient.invalidateQueries({ queryKey: ['properties'] });
+      toast.success(`Listing reassigned to ${result.newAgentName}`);
+    },
+    onError: (error) => {
+      toast.error('Failed to reassign: ' + error.message);
+    },
+  });
+}
+
 export function useDeleteProperty() {
   const queryClient = useQueryClient();
 
