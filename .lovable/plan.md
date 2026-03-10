@@ -1,52 +1,22 @@
 
 
-## Plan: Enforce Required Fields in Property Listing Wizard
+## Phase 1: Founding Partner Enrollment — Implemented ✅
 
-### What Changes
+All changes from the plan have been implemented:
 
-Update the `canGoNext` validation logic in `PropertyWizardContext.tsx` to enforce these fields:
+1. **DB Migration** — Added `is_founding_partner`, `payplus_customer_id`, `payplus_subscription_id` to `subscriptions`; `payplus_subscription_id` to `featured_listings`. Updated FOUNDING2026 promo code (max_redemptions=15, cleared old discount/credit data).
+2. **`enroll-founding-partner` edge function** — 15-cap enforcement, trial creation (60 days), founding_partners insert, first month credit grant, promo redemption tracking.
+3. **`check-trial-expirations` edge function** — Daily cron (6 AM UTC) expires trialing subscriptions past trial_end.
+4. **`useFoundingSpots` hook** — Live spots remaining counter querying founding_partners.
+5. **`FoundingProgramSection`** — Updated benefits (2mo free, 3 featured/mo, early access, case study), spots counter badge.
+6. **`FoundingProgramModal`** — Updated benefits, spots counter, activates enrollment flow.
+7. **`Pricing.tsx`** — FOUNDING2026 code routes to `enroll-founding-partner` instead of Stripe; CTA changes to "Activate Founding Program".
+8. **`CheckoutSuccess.tsx`** — Founding partner variant with trial end date and featured listings CTA.
+9. **`grant-monthly-featured-credits`** — Already has 2-month duration cap logic.
+10. **`PlanCard`** — Added `ctaLabel` prop for custom CTA text.
 
-**Step 1 (Details) — case 1:**
-- `size_sqm > 0` required for all non-land properties
-- `floor` and `total_floors` required for apartment types (apartment, penthouse, mini_penthouse, duplex, garden_apartment)
-
-**Step 2 (Features) — case 2:**
-- `furnished_status` must be set (all listings)
-- `pets_policy` must be set (all listings)
-- `lease_term` must be set (rentals only)
-- `entry_date` must be set if `is_immediate_entry` is false
-
-**Step 4 (Description) — case 4:**
-- `description.length >= 100` (enforce the existing 100-char visual hint as a hard requirement)
-
-### File to Edit
-
-`src/components/agent/wizard/PropertyWizardContext.tsx` — update the `canGoNext` switch cases:
-
-```typescript
-case 1: // Details
-  if (data.property_type === 'land') {
-    return (data.lot_size_sqm ?? 0) > 0;
-  }
-  const needsFloor = ['apartment','penthouse','mini_penthouse','duplex','garden_apartment'].includes(data.property_type);
-  return data.bedrooms >= 0 && data.bathrooms >= 0 
-    && (data.size_sqm ?? 0) > 0
-    && (!needsFloor || (data.floor !== undefined && data.total_floors !== undefined));
-
-case 2: // Features
-  const baseValid = !!data.furnished_status && !!data.pets_policy;
-  const rentalValid = data.listing_status !== 'for_rent' || !!data.lease_term;
-  const entryValid = data.is_immediate_entry || !!data.entry_date;
-  return baseValid && rentalValid && entryValid;
-
-case 4: // Description
-  return data.description.length >= 100;
-```
-
-### Visual Feedback
-
-Add required asterisks (`*`) to the labels in:
-- `StepDetails.tsx` — Size, Floor, Total Floors labels
-- `StepFeatures.tsx` — Furnished Status, Pets Policy, Lease Term, Entry Date labels
-- `StepDescription.tsx` — update the character count hint to say "Minimum 100 characters required"
-
+### Deferred (PayPlus not yet set up):
+- `payplus-checkout`, `payplus-webhook`, `manage-billing` edge functions
+- `list-invoices` PayPlus integration
+- Featured listing ₪299/mo PayPlus recurring charge
+- Trial-to-paid automatic charge initiation

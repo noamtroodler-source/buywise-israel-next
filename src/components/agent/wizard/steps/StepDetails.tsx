@@ -114,7 +114,7 @@ export function StepDetails() {
               <h3 className="font-semibold">Size</h3>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="size_sqm">Living Area (m²)</Label>
+              <Label htmlFor="size_sqm">Living Area (m²) *</Label>
               <FormattedNumberInput
                 id="size_sqm"
                 value={data.size_sqm}
@@ -141,7 +141,7 @@ export function StepDetails() {
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="floor">Floor</Label>
+                <Label htmlFor="floor">Floor *</Label>
                 <Input
                   id="floor"
                   type="number"
@@ -153,7 +153,7 @@ export function StepDetails() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="total_floors">Total Floors in Building</Label>
+                <Label htmlFor="total_floors">Total Floors in Building *</Label>
                 <Input
                   id="total_floors"
                   type="number"

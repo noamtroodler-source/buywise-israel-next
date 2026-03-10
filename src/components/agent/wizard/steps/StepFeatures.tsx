@@ -245,7 +245,7 @@ export function StepFeatures() {
             <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
               <Calendar className="h-4 w-4 text-primary" />
             </div>
-            <h3 className="font-semibold">Entry Date</h3>
+            <h3 className="font-semibold">Entry Date *</h3>
           </div>
           <div className="space-y-3">
             <div className="flex items-center space-x-2">
@@ -309,7 +309,7 @@ export function StepFeatures() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {/* Lease Term */}
               <div className="space-y-2">
-                <Label>Typical Lease Term</Label>
+                <Label>Typical Lease Term *</Label>
                 <Select
                   value={data.lease_term || ''}
                   onValueChange={(v) => updateData({ lease_term: v as LeaseTermOption })}
@@ -379,7 +379,7 @@ export function StepFeatures() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Furnished Status */}
             <div className="space-y-2">
-              <Label>Furnished Status</Label>
+              <Label>Furnished Status *</Label>
               <Select
                 value={data.furnished_status || ''}
                 onValueChange={(v) => updateData({ furnished_status: v as FurnishedStatus })}
@@ -399,7 +399,7 @@ export function StepFeatures() {
 
             {/* Pets Policy */}
             <div className="space-y-2">
-              <Label>Pets Policy</Label>
+              <Label>Pets Policy *</Label>
               <Select
                 value={data.pets_policy || ''}
                 onValueChange={(v) => updateData({ pets_policy: v as PetsPolicy })}
