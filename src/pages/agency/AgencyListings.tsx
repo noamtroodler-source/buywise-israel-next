@@ -273,6 +273,8 @@ export default function AgencyListings() {
                         <TableHead>Status</TableHead>
                         <TableHead className="text-right">Price</TableHead>
                         <TableHead className="text-center">Views</TableHead>
+                        <TableHead className="text-center">Saves</TableHead>
+                        <TableHead className="text-center">Inquiries</TableHead>
                         <TableHead className="text-center">Days</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
