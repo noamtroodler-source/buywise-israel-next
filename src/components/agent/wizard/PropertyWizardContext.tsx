@@ -132,6 +132,7 @@ export const PROPERTY_WIZARD_STORAGE_KEY = 'property-wizard-draft';
 export function PropertyWizardProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<PropertyWizardData>(defaultPropertyData);
   const [currentStep, setCurrentStep] = useState(0);
+  const [stepOffset, setStepOffset] = useState(0);
 
   const updateData = useCallback((updates: Partial<PropertyWizardData>) => {
     setData(prev => ({ ...prev, ...updates }));
@@ -160,9 +161,10 @@ export function PropertyWizardProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Validation for each step
+  // Validation for each step — use adjusted step to account for offset (e.g., agency wizard's Assign Agent step)
+  const adjustedStep = currentStep - stepOffset;
   const canGoNext = (() => {
-    switch (currentStep) {
+    switch (adjustedStep) {
       case 0: // Basics
         const hasStreetNumber = /\d+/.test(data.address);
         return !!(data.title && data.title.length >= 20 && data.price > 0 && data.city && data.neighborhood && data.address && data.latitude && data.longitude && hasStreetNumber);
