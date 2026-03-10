@@ -118,15 +118,9 @@ export function AgencyOnboardingProgress({ agency, teamCount, listingsCount = 0 
   const completedCount = checklistItems.filter(item => item.isComplete).length;
   const completionPercentage = Math.round((completedCount / checklistItems.length) * 100);
 
-  // Don't show if dismissed or 100% complete
-  if (isDismissed || completionPercentage === 100) {
+  if (completionPercentage === 100) {
     return null;
   }
-
-  const handleDismiss = () => {
-    sessionStorage.setItem('agency_onboarding_dismissed', 'true');
-    setIsDismissed(true);
-  };
 
   return (
     <Card className="rounded-2xl border-primary/20 bg-gradient-to-br from-primary/5 to-transparent overflow-hidden">
