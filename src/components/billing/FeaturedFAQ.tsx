@@ -26,7 +26,7 @@ const FAQ_ITEMS = [
   {
     question: 'Is there a limit on how many listings I can feature?',
     answer:
-      'No limit at all. You can feature as many of your published listings as you'd like. Each featured listing costs ₪299/month.',
+      "No limit at all. You can feature as many of your published listings as you'd like. Each featured listing costs ₪299/month.",
   },
   {
     question: 'Can I turn it on and off anytime?',
