@@ -309,7 +309,7 @@ export function StepFeatures() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {/* Lease Term */}
               <div className="space-y-2">
-                <Label>Typical Lease Term</Label>
+                <Label>Typical Lease Term *</Label>
                 <Select
                   value={data.lease_term || ''}
                   onValueChange={(v) => updateData({ lease_term: v as LeaseTermOption })}
