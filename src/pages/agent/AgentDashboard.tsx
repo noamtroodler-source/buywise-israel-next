@@ -327,30 +327,25 @@ export default function AgentDashboard() {
           </div>
 
           {/* Two-Column Layout: Performance + Sidebar */}
-          <div className="grid lg:grid-cols-5 gap-6 lg:items-start">
+          <div className="grid lg:grid-cols-5 gap-6 lg:items-center">
             {/* Left Column — Performance */}
             <div className="lg:col-span-3 space-y-4">
-              <div className="bg-muted/30 rounded-2xl p-4 space-y-4">
-                {/* Inline performance cards */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                  {[
-                    { label: 'Live', value: statusCounts.approved, icon: CheckCircle },
-                    { label: 'Pending', value: statusCounts.pending_review, icon: Clock },
-                    { label: 'Views', value: totalViews, icon: Eye },
-                    { label: 'Leads', value: leadStats?.total || 0, icon: MessageSquare },
-                  ].map((metric) => (
-                    <div key={metric.label} className="p-3 rounded-xl bg-background border">
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <div className="p-1.5 rounded-lg bg-primary/10">
-                          <metric.icon className="h-3.5 w-3.5 text-primary" />
-                        </div>
-                        <span className="text-xs text-muted-foreground font-medium">{metric.label}</span>
-                      </div>
-                      <span className="text-2xl font-bold">{metric.value.toLocaleString()}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              {performanceData && (
+                <PerformanceInsights
+                  metrics={{
+                    viewsThisWeek: performanceData.viewsThisWeek,
+                    viewsLastWeek: performanceData.viewsLastWeek,
+                    inquiriesThisWeek: performanceData.inquiriesThisWeek,
+                    inquiriesLastWeek: performanceData.inquiriesLastWeek,
+                    listingsActive: performanceData.listingsActive,
+                    listingsLastWeek: performanceData.listingsLastWeek,
+                    conversionRate: performanceData.conversionRate,
+                    conversionRateLastWeek: performanceData.conversionRateLastWeek,
+                  }}
+                  topListingTitle={performanceData.topListingTitle ?? undefined}
+                  className="rounded-2xl border-border/50"
+                />
+              )}
 
               {/* Recent Properties (compact) */}
               {properties.length > 0 && (
