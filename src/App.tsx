@@ -346,6 +346,11 @@ const App = () => (
                             <AgencyNewPropertyWizard />
                           </ProtectedRoute>
                         } />
+                        <Route path="/agency/projects/new" element={
+                          <ProtectedRoute>
+                            <AgencyNewProjectWizard />
+                          </ProtectedRoute>
+                        } />
                         <Route path="/agency/properties/:id/edit" element={
                           <ProtectedRoute>
                             <AgencyEditPropertyWizard />
