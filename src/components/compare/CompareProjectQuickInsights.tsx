@@ -47,22 +47,6 @@ export function CompareProjectQuickInsights({
     }
   }
 
-  // Most units available
-  const withUnits = projects.filter(p => p.available_units !== null && p.available_units !== undefined && p.available_units > 0);
-  if (withUnits.length > 0) {
-    const mostAvailable = withUnits.reduce((max, p) => 
-      (p.available_units || 0) > (max.available_units || 0) ? p : max
-    );
-    if (mostAvailable.available_units && mostAvailable.available_units > 0) {
-      insights.push({
-        icon: DoorOpen,
-        label: 'Most Available Units',
-        value: `${mostAvailable.available_units} units`,
-        projectName: mostAvailable.name,
-      });
-    }
-  }
-
   // Soonest completion
   const withCompletion = projects.filter(p => p.completion_date);
   if (withCompletion.length > 0) {
