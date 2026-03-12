@@ -1,19 +1,22 @@
 
 
-## Plan: Upgrade Agent Dashboard Performance Section
+## Phase 1: Founding Partner Enrollment — Implemented ✅
 
-### Problem
-The agent dashboard's left column uses flat, static metric cards (Live/Pending/Views/Leads) with no trend data or percentage changes. The agency dashboard uses `AgencyPerformanceInsights` which shows trend arrows, week-over-week percentages, and a polished card layout. The agent already has both a `PerformanceInsights` component and a `useMyAgentPerformance` hook — they're just not wired up.
+All changes from the plan have been implemented:
 
-### Changes
+1. **DB Migration** — Added `is_founding_partner`, `payplus_customer_id`, `payplus_subscription_id` to `subscriptions`; `payplus_subscription_id` to `featured_listings`. Updated FOUNDING2026 promo code (max_redemptions=15, cleared old discount/credit data).
+2. **`enroll-founding-partner` edge function** — 15-cap enforcement, trial creation (60 days), founding_partners insert, first month credit grant, promo redemption tracking.
+3. **`check-trial-expirations` edge function** — Daily cron (6 AM UTC) expires trialing subscriptions past trial_end.
+4. **`useFoundingSpots` hook** — Live spots remaining counter querying founding_partners.
+5. **`FoundingProgramSection`** — Updated benefits (2mo free, 3 featured/mo, early access, case study), spots counter badge.
+6. **`FoundingProgramModal`** — Updated benefits, spots counter, activates enrollment flow.
+7. **`Pricing.tsx`** — FOUNDING2026 code routes to `enroll-founding-partner` instead of Stripe; CTA changes to "Activate Founding Program".
+8. **`CheckoutSuccess.tsx`** — Founding partner variant with trial end date and featured listings CTA.
+9. **`grant-monthly-featured-credits`** — Already has 2-month duration cap logic.
+10. **`PlanCard`** — Added `ctaLabel` prop for custom CTA text.
 
-**`src/pages/agent/AgentDashboard.tsx`**
-
-1. Import `useMyAgentPerformance` and `PerformanceInsights`
-2. Replace the inline 4-card grid (lines 330-349) with the `PerformanceInsights` component, passing metrics from the hook
-3. The `PerformanceInsights` component already matches agency style: trend arrows, percentage changes, top listing highlight, 2x2/4-col grid layout
-4. Keep the `bg-muted/30 rounded-2xl p-4` wrapper to match agency's performance section
-5. Align the two-column grid to use `lg:items-center` like the agency dashboard does (currently `lg:items-start`)
-
-This is a focused swap — ~20 lines changed. All the visual parity (trends, arrows, conversion rates) comes from reusing existing components that were built but never connected.
-
+### Deferred (PayPlus not yet set up):
+- `payplus-checkout`, `payplus-webhook`, `manage-billing` edge functions
+- `list-invoices` PayPlus integration
+- Featured listing ₪299/mo PayPlus recurring charge
+- Trial-to-paid automatic charge initiation
