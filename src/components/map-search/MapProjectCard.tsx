@@ -56,7 +56,7 @@ export const MapProjectCard = memo(function MapProjectCard({
 
   const stats = [
     bedroomRange,
-    project.available_units > 0 ? `${project.available_units} units` : null,
+    project.total_units > 0 ? `${project.total_units} units` : null,
   ].filter(Boolean).join(' · ');
 
   const completionYear = project.completion_date

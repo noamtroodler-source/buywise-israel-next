@@ -407,8 +407,8 @@ export default function CompareProjects() {
           />
 
           <CompareSection
-            title="Availability"
-            icon={DoorOpen}
+            title="Units"
+            icon={Home}
             rows={availabilityRows}
             properties={projects as any}
           />

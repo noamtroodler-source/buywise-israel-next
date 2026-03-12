@@ -98,9 +98,7 @@ export function generateProjectMeta(project: ProjectMetaInput): { title: string;
   if (priceText) title += ` | From ${priceText}`;
   
   // Generate description
-  const unitsText = project.available_units > 0 
-    ? `${project.available_units} units available` 
-    : `${project.total_units} total units`;
+  const unitsText = `${project.total_units} total units`;
   
   const completionText = project.completion_date 
     ? ` Completion: ${new Date(project.completion_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}.`

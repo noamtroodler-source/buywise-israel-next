@@ -191,8 +191,8 @@ export function generateProjectJsonLd(project: ProjectJsonLdInput): object[] {
         lowPrice: project.price_from?.toString(),
         highPrice: project.price_to?.toString() || project.price_from?.toString(),
         priceCurrency: project.currency || 'ILS',
-        offerCount: project.available_units,
-        availability: project.available_units > 0 ? 'https://schema.org/InStock' : 'https://schema.org/SoldOut',
+        offerCount: project.total_units,
+        availability: 'https://schema.org/InStock',
       },
     };
     schemas.push(product);

@@ -15,7 +15,7 @@ interface CompareProject {
   currency: string;
   completion_date: string | null;
   construction_progress_percent: number | null;
-  available_units: number;
+  
 }
 
 interface CompareProjectQuickInsightsProps {

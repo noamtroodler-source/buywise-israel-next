@@ -522,12 +522,6 @@ export function ProjectPreviewDialog({ open, onOpenChange }: ProjectPreviewDialo
                           <span className="font-medium">{data.total_units}</span>
                         </div>
                       )}
-                      {data.available_units !== undefined && (
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Available</span>
-                          <span className="font-medium">{data.available_units}</span>
-                        </div>
-                      )}
                       {data.completion_date && (
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">Completion</span>
