@@ -99,6 +99,7 @@ export function StepBasics() {
           <p className="text-xs text-muted-foreground">
             Helps buyers find this project when filtering by neighborhood
           </p>
+        </div>
 
         {/* Location Section with AddressAutocomplete */}
         <div className="space-y-4 pt-2">
