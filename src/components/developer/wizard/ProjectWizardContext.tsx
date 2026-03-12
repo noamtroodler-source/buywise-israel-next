@@ -100,12 +100,14 @@ export const defaultProjectData: ProjectWizardData = {
 
 const ProjectWizardContext = createContext<ProjectWizardContextType | undefined>(undefined);
 
-const TOTAL_STEPS = 7; // Updated from 6 to 7 with new Unit Types step
+const DEFAULT_TOTAL_STEPS = 7; // Updated from 6 to 7 with new Unit Types step
 export const PROJECT_WIZARD_STORAGE_KEY = 'project-wizard-draft';
 
-export function ProjectWizardProvider({ children }: { children: ReactNode }) {
+export function ProjectWizardProvider({ children, totalSteps }: { children: ReactNode; totalSteps?: number }) {
+  const TOTAL_STEPS = totalSteps ?? DEFAULT_TOTAL_STEPS;
   const [data, setData] = useState<ProjectWizardData>(defaultProjectData);
   const [currentStep, setCurrentStep] = useState(0);
+  const [stepOffset, setStepOffset] = useState(0);
 
   const updateData = useCallback((updates: Partial<ProjectWizardData>) => {
     setData(prev => ({ ...prev, ...updates }));
