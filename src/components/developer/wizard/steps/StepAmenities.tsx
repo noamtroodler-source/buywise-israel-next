@@ -10,6 +10,7 @@ const amenityOptions = {
     { value: 'concierge', label: '24/7 Concierge' },
     { value: 'security', label: '24/7 Security' },
     { value: 'parking_underground', label: 'Underground Parking' },
+    { value: 'multiple_parking', label: 'Multiple Parking Spots' },
     { value: 'ev_charging', label: 'EV Charging Stations' },
     { value: 'storage', label: 'Storage Units' },
     { value: 'bicycle_storage', label: 'Bicycle Storage' },
@@ -17,6 +18,14 @@ const amenityOptions = {
     { value: 'mamad', label: 'Safe Rooms (ממ״ד)' },
     { value: 'shabbat_elevator', label: 'Shabbat Elevator' },
     { value: 'accessible', label: 'Full Accessibility' },
+    { value: 'acoustic_insulation', label: 'Acoustic Insulation' },
+  ],
+  unit_features: [
+    { value: 'high_ceilings', label: 'High Ceilings (2.8m+)' },
+    { value: 'floor_to_ceiling_windows', label: 'Floor-to-Ceiling Windows' },
+    { value: 'central_ac', label: 'Central A/C (מיזוג מרכזי)' },
+    { value: 'pre_installed_kitchen', label: 'Pre-Installed Kitchen' },
+    { value: 'sea_city_view', label: 'Sea / City View Available' },
   ],
   leisure: [
     { value: 'pool', label: 'Swimming Pool' },
@@ -37,6 +46,7 @@ const amenityOptions = {
     { value: 'shul', label: 'Synagogue (בית כנסת)' },
     { value: 'mikvah', label: 'Mikvah (מקווה)' },
     { value: 'sukkot_area', label: 'Designated Sukkot Area' },
+    { value: 'eruv_proximity', label: 'Within Eruv' },
     { value: 'commercial', label: 'Commercial Spaces / Shops' },
     { value: 'daycare', label: 'Daycare Center' },
   ],
@@ -49,6 +59,9 @@ const amenityOptions = {
     { value: 'solar', label: 'Solar Panels' },
     { value: 'green_building', label: 'Green Building Certified' },
     { value: 'rainwater', label: 'Rainwater Harvesting' },
+  ],
+  buyer_friendly: [
+    { value: 'payment_plan', label: 'Payment Plan Available' },
   ],
 };
 
