@@ -11,6 +11,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { GlossaryTooltip } from '@/components/shared/GlossaryTooltip';
+import { scrollToTopInstant } from '@/lib/scrollToTop';
 
 interface Step {
   id: string;
@@ -343,7 +344,7 @@ export function MortgageWizard() {
         <div className="flex justify-between mt-6 pt-4 border-t">
           <Button
             variant="outline"
-            onClick={() => { setCurrentStep(prev => prev - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+            onClick={() => { setCurrentStep(prev => prev - 1); scrollToTopInstant(); }}
             disabled={currentStep === 0}
             className="gap-2"
           >
@@ -361,7 +362,7 @@ export function MortgageWizard() {
             </Button>
           ) : (
             <Button
-              onClick={() => { setCurrentStep(prev => prev + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              onClick={() => { setCurrentStep(prev => prev + 1); scrollToTopInstant(); }}
               className="gap-2"
             >
               Next

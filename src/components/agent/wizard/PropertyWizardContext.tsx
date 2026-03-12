@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
+import { scrollToTopInstant } from '@/lib/scrollToTop';
 import { PropertyType, ListingStatus, LeaseTermOption, SublettingOption, FurnishedStatus, PetsPolicy } from '@/types/database';
 
 export interface PropertyWizardData {
@@ -140,7 +141,7 @@ export function PropertyWizardProvider({ children, totalSteps = DEFAULT_TOTAL_ST
 
   const handleSetCurrentStep = useCallback((step: number) => {
     setCurrentStep(step);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    scrollToTopInstant();
   }, []);
 
   const resetWizard = useCallback(() => {
@@ -155,14 +156,14 @@ export function PropertyWizardProvider({ children, totalSteps = DEFAULT_TOTAL_ST
   const goNext = () => {
     if (currentStep < totalSteps - 1) {
       setCurrentStep(prev => prev + 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      scrollToTopInstant();
     }
   };
 
   const goBack = () => {
     if (currentStep > 0) {
       setCurrentStep(prev => prev - 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      scrollToTopInstant();
     }
   };
 

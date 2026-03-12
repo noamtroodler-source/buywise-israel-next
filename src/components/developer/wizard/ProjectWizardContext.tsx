@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, ReactNode, useCallback } from 'react';
+import { scrollToTopInstant } from '@/lib/scrollToTop';
 
 export type ProjectStatus = 'planning' | 'pre_sale' | 'foundation' | 'structure' | 'finishing' | 'delivery';
 
@@ -113,7 +114,7 @@ export function ProjectWizardProvider({ children, totalSteps }: { children: Reac
 
   const handleSetCurrentStep = useCallback((step: number) => {
     setCurrentStep(step);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    scrollToTopInstant();
   }, []);
 
   const resetWizard = useCallback(() => {
@@ -128,14 +129,14 @@ export function ProjectWizardProvider({ children, totalSteps }: { children: Reac
   const goNext = () => {
     if (currentStep < TOTAL_STEPS - 1) {
       setCurrentStep(prev => prev + 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      scrollToTopInstant();
     }
   };
 
   const goBack = () => {
     if (currentStep > 0) {
       setCurrentStep(prev => prev - 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      scrollToTopInstant();
     }
   };
 

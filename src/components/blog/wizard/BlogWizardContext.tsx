@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { scrollToTopInstant } from '@/lib/scrollToTop';
 import { AuthorType } from '@/hooks/useProfessionalBlog';
 
 export interface BlogWizardData {
@@ -76,14 +77,14 @@ export function BlogWizardProvider({
   const goNext = useCallback(() => {
     if (currentStep < 4) {
       setCurrentStep(prev => prev + 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      scrollToTopInstant();
     }
   }, [currentStep]);
 
   const goBack = useCallback(() => {
     if (currentStep > 1) {
       setCurrentStep(prev => prev - 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      scrollToTopInstant();
     }
   }, [currentStep]);
 

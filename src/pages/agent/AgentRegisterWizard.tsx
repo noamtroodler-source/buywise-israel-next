@@ -34,6 +34,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useAgentRegistration } from '@/hooks/useAgentRegistration';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { scrollToTopInstant } from '@/lib/scrollToTop';
 
 const steps = [
   { title: 'Basic Info', description: 'Your contact details', icon: User },
@@ -217,14 +218,14 @@ export default function AgentRegisterWizard() {
   const goNext = () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(prev => prev + 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      scrollToTopInstant();
     }
   };
 
   const goBack = () => {
     if (currentStep > 0) {
       setCurrentStep(prev => prev - 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      scrollToTopInstant();
     }
   };
 
