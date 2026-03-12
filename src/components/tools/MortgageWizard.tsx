@@ -11,6 +11,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { GlossaryTooltip } from '@/components/shared/GlossaryTooltip';
+import { scrollToTopInstant } from '@/lib/scrollToTop';
 
 interface Step {
   id: string;
