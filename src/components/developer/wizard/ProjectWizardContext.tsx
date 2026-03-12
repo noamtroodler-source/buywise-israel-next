@@ -141,9 +141,10 @@ export function ProjectWizardProvider({ children, totalSteps }: { children: Reac
     }
   };
 
-  // Validation for each step
+  // Validation for each step (adjusted by stepOffset for agency wizard)
   const canGoNext = (() => {
-    switch (currentStep) {
+    const effectiveStep = currentStep - stepOffset;
+    switch (effectiveStep) {
       case 0: // Basics
         const hasValidAddress = data.address && data.latitude && data.longitude && /\d+/.test(data.address);
         return !!(data.name && data.city && data.neighborhood && hasValidAddress);
