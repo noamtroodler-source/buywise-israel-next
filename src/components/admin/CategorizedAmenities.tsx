@@ -6,14 +6,15 @@ import {
 const amenityCategories: Record<string, { icon: typeof Sparkles; keywords: string[] }> = {
   'Fitness & Wellness': { icon: Dumbbell, keywords: ['gym', 'fitness', 'yoga', 'spa', 'sauna'] },
   'Pool & Water': { icon: Waves, keywords: ['pool', 'swimming', 'jacuzzi', 'heated_pool', 'beach'] },
-  'Parking & Transport': { icon: Car, keywords: ['parking', 'garage', 'electric', 'charging', 'bicycle', 'ev_'] },
-  'Outdoor & Green': { icon: Leaf, keywords: ['garden', 'terrace', 'balcony', 'rooftop', 'landscap', 'private_garden', 'sukkot'] },
+  'Parking & Transport': { icon: Car, keywords: ['parking', 'garage', 'electric', 'charging', 'bicycle', 'ev_', 'multiple_parking'] },
+  'Outdoor & Green': { icon: Leaf, keywords: ['garden', 'terrace', 'balcony', 'rooftop', 'landscap', 'private_garden', 'sukkot', 'sea_city_view'] },
   'Family & Kids': { icon: Baby, keywords: ['playground', 'kids', 'children', 'family', 'daycare'] },
   'Pet Friendly': { icon: Dog, keywords: ['pet', 'dog'] },
-  'Security & Safety': { icon: Shield, keywords: ['security', 'guard', 'cctv', 'surveillance', 'doorman', 'concierge', 'mamad', 'safe room', 'generator'] },
+  'Security & Safety': { icon: Shield, keywords: ['security', 'guard', 'cctv', 'surveillance', 'doorman', 'concierge', 'mamad', 'safe room', 'generator', 'acoustic_insulation'] },
   'Smart Home': { icon: Wifi, keywords: ['smart', 'wifi', 'internet', 'fiber'] },
-  'Community & Religious': { icon: Users, keywords: ['club', 'lounge', 'community', 'social', 'shul', 'synagogue', 'mikvah', 'event', 'commercial', 'coworking'] },
-  'Comfort & Accessibility': { icon: Wind, keywords: ['ac', 'air condition', 'heating', 'elevator', 'lift', 'shabbat', 'underfloor', 'accessible', 'lobby'] },
+  'Community & Religious': { icon: Users, keywords: ['club', 'lounge', 'community', 'social', 'shul', 'synagogue', 'mikvah', 'event', 'commercial', 'coworking', 'eruv'] },
+  'Comfort & Accessibility': { icon: Wind, keywords: ['ac', 'air condition', 'heating', 'elevator', 'lift', 'shabbat', 'underfloor', 'accessible', 'lobby', 'high_ceiling', 'floor_to_ceiling', 'central_ac'] },
+  'Unit Features': { icon: Sparkles, keywords: ['pre_installed_kitchen', 'payment_plan'] },
 };
 
 const amenityLabels: Record<string, string> = {
