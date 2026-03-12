@@ -57,7 +57,7 @@ function AgencyProjectWizardContent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSubmittedDialog, setShowSubmittedDialog] = useState(false);
 
-  const isAgencyVerified = agency?.verification_status === 'approved';
+  const isAgencyVerified = agency?.is_verified === true;
 
   const autoSave = useAutoSave<ProjectWizardData>({
     data,
