@@ -34,7 +34,6 @@ export interface ProjectWizardData {
   
   // Step 2: Details
   total_units: number | undefined;
-  available_units: number | undefined;
   price_from: number | undefined;
   price_to: number | undefined;
   construction_start: string | undefined;
@@ -84,7 +83,6 @@ export const defaultProjectData: ProjectWizardData = {
   longitude: undefined,
   status: 'planning',
   total_units: undefined,
-  available_units: undefined,
   price_from: undefined,
   price_to: undefined,
   construction_start: undefined,

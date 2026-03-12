@@ -1,38 +1,22 @@
 
 
-## Plan: Remove `available_units` from the Site
+## Phase 1: Founding Partner Enrollment — Implemented ✅
 
-Remove the "Available Units" field from all wizard inputs and display components. The database column stays (harmless), but nothing references it in the UI anymore.
+All changes from the plan have been implemented:
 
-### Files to Edit
+1. **DB Migration** — Added `is_founding_partner`, `payplus_customer_id`, `payplus_subscription_id` to `subscriptions`; `payplus_subscription_id` to `featured_listings`. Updated FOUNDING2026 promo code (max_redemptions=15, cleared old discount/credit data).
+2. **`enroll-founding-partner` edge function** — 15-cap enforcement, trial creation (60 days), founding_partners insert, first month credit grant, promo redemption tracking.
+3. **`check-trial-expirations` edge function** — Daily cron (6 AM UTC) expires trialing subscriptions past trial_end.
+4. **`useFoundingSpots` hook** — Live spots remaining counter querying founding_partners.
+5. **`FoundingProgramSection`** — Updated benefits (2mo free, 3 featured/mo, early access, case study), spots counter badge.
+6. **`FoundingProgramModal`** — Updated benefits, spots counter, activates enrollment flow.
+7. **`Pricing.tsx`** — FOUNDING2026 code routes to `enroll-founding-partner` instead of Stripe; CTA changes to "Activate Founding Program".
+8. **`CheckoutSuccess.tsx`** — Founding partner variant with trial end date and featured listings CTA.
+9. **`grant-monthly-featured-credits`** — Already has 2-month duration cap logic.
+10. **`PlanCard`** — Added `ctaLabel` prop for custom CTA text.
 
-**1. Wizard Input — `src/components/developer/wizard/steps/StepDetails.tsx`**
-- Remove the "Available Units" `FormattedNumberInput` block entirely
-
-**2. Wizard Context — `src/components/developer/wizard/ProjectWizardContext.tsx`**
-- Remove `available_units` from `ProjectWizardData` interface and `defaultProjectData`
-
-**3. Wizard Submissions**
-- `src/pages/developer/NewProjectWizard.tsx` — Remove `available_units` from both insert payloads
-- `src/pages/agency/AgencyNewProjectWizard.tsx` — Remove `available_units` from insert payload
-
-**4. Wizard Review/Preview**
-- `src/components/developer/wizard/steps/StepReview.tsx` — Remove the "Available Units" row
-- `src/components/developer/wizard/steps/ProjectPreviewDialog.tsx` — Remove the "Available" row
-
-**5. Project Display — `src/components/project/ProjectQuickSummary.tsx`**
-- Change units display from `available_units/total_units "Units Left"` → just `total_units "Units"`
-
-**6. Compare Features**
-- `src/components/compare/CompareProjectCard.tsx` — Show just `total_units` instead of `available/total`
-- `src/components/compare/CompareProjectQuickInsights.tsx` — Remove "Most Available Units" insight block; remove `available_units` from interface
-- `src/pages/CompareProjects.tsx` — Remove "Available Units" and "Availability Rate" comparison rows; remove from `CompareProject` interface
-
-**7. Other Display**
-- `src/components/map-search/MapProjectOverlay.tsx` — Remove `available_units` from stats line, use `total_units` if needed
-- `src/components/admin/ProjectPreviewModal.tsx` — Show just total units instead of available/total
-- `src/components/project/SimilarProjects.tsx` — Remove from interface
-- `src/types/projects.ts` — Remove `available_units` from `Project` interface
-
-No database migration needed — the column remains nullable and unused.
-
+### Deferred (PayPlus not yet set up):
+- `payplus-checkout`, `payplus-webhook`, `manage-billing` edge functions
+- `list-invoices` PayPlus integration
+- Featured listing ₪299/mo PayPlus recurring charge
+- Trial-to-paid automatic charge initiation

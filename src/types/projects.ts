@@ -42,7 +42,6 @@ export interface Project {
   longitude: number | null;
   status: ProjectStatus;
   total_units: number;
-  available_units: number;
   price_from: number | null;
   price_to: number | null;
   currency: string;

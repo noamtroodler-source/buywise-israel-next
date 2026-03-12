@@ -40,34 +40,18 @@ export function StepDetails() {
 
       <div className="space-y-6">
         {/* Units */}
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <LabelWithTooltip 
-              htmlFor="total_units" 
-              label="Total Units"
-              tooltip="The total number of units in the entire project. This is a fixed number that typically doesn't change."
-            />
-            <FormattedNumberInput
-              id="total_units"
-              value={data.total_units}
-              onChange={(value) => updateData({ total_units: value })}
-              placeholder="e.g., 120"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <LabelWithTooltip 
-              htmlFor="available_units" 
-              label="Available Units"
-              tooltip="Units still available for sale. Update this regularly (we recommend weekly) as units are sold to keep your listing accurate."
-            />
-            <FormattedNumberInput
-              id="available_units"
-              value={data.available_units}
-              onChange={(value) => updateData({ available_units: value })}
-              placeholder="e.g., 45"
-            />
-          </div>
+        <div className="space-y-2">
+          <LabelWithTooltip 
+            htmlFor="total_units" 
+            label="Total Units"
+            tooltip="The total number of units in the entire project. This is a fixed number that typically doesn't change."
+          />
+          <FormattedNumberInput
+            id="total_units"
+            value={data.total_units}
+            onChange={(value) => updateData({ total_units: value })}
+            placeholder="e.g., 120"
+          />
         </div>
 
         {/* Pricing */}

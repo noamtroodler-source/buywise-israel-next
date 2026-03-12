@@ -1,8 +1,8 @@
 import { useEffect, useState, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { 
-  Building, MapPin, Calendar, Home, HardHat, DoorOpen, Clock, 
-  Percent, Wrench, CheckCircle 
+  Building, MapPin, Calendar, Home, HardHat, Clock, 
+  Wrench, CheckCircle 
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { useCompare } from '@/contexts/CompareContext';
@@ -40,7 +40,6 @@ interface CompareProject {
   completion_date: string | null;
   construction_progress_percent: number | null;
   total_units: number;
-  available_units: number;
   images: string[] | null;
   amenities: string[] | null;
   developer?: {
@@ -225,29 +224,6 @@ export default function CompareProjects() {
       getValue: (p: any) => (p as CompareProject).total_units?.toString() || '—',
       icon: Home,
     },
-    {
-      label: 'Available Units',
-      getValue: (p: any) => (p as CompareProject).available_units?.toString() || '—',
-      icon: DoorOpen,
-      getBestPropertyId: (props: any[]) => {
-        const withUnits = (props as CompareProject[]).filter(p => p.available_units);
-        if (withUnits.length < 2) return null;
-        const max = withUnits.reduce((best, p) => 
-          (p.available_units || 0) > (best.available_units || 0) ? p : best
-        );
-        return max.id;
-      },
-    },
-    {
-      label: 'Availability Rate',
-      getValue: (p: any) => {
-        const project = p as CompareProject;
-        if (!project.total_units || !project.available_units) return '—';
-        const rate = Math.round((project.available_units / project.total_units) * 100);
-        return `${rate}%`;
-      },
-      icon: Percent,
-    },
   ], []);
 
   const amenitiesRow: ComparisonRow[] = useMemo(() => [
@@ -431,8 +407,8 @@ export default function CompareProjects() {
           />
 
           <CompareSection
-            title="Availability"
-            icon={DoorOpen}
+            title="Units"
+            icon={Home}
             rows={availabilityRows}
             properties={projects as any}
           />

@@ -148,12 +148,6 @@ export function StepReview({ onEditStep }: StepReviewProps) {
               <span className="font-medium">{data.total_units}</span>
             </div>
           )}
-          {data.available_units !== undefined && (
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Available Units:</span>
-              <span className="font-medium">{data.available_units}</span>
-            </div>
-          )}
           {(data.price_from || data.price_to) && (
             <div className="flex justify-between">
               <span className="text-muted-foreground">Price Range:</span>

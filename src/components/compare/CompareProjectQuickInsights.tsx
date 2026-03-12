@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { TrendingDown, Sparkles, Calendar, HardHat, DoorOpen } from 'lucide-react';
+import { TrendingDown, Sparkles, Calendar, HardHat } from 'lucide-react';
 
 interface Insight {
   icon: React.ElementType;
@@ -15,7 +15,7 @@ interface CompareProject {
   currency: string;
   completion_date: string | null;
   construction_progress_percent: number | null;
-  available_units: number;
+  
 }
 
 interface CompareProjectQuickInsightsProps {
@@ -43,22 +43,6 @@ export function CompareProjectQuickInsights({
         label: 'Lowest Starting Price',
         value: formatPrice(lowestPrice.price_from, lowestPrice.currency || 'ILS'),
         projectName: lowestPrice.name,
-      });
-    }
-  }
-
-  // Most units available
-  const withUnits = projects.filter(p => p.available_units !== null && p.available_units !== undefined && p.available_units > 0);
-  if (withUnits.length > 0) {
-    const mostAvailable = withUnits.reduce((max, p) => 
-      (p.available_units || 0) > (max.available_units || 0) ? p : max
-    );
-    if (mostAvailable.available_units && mostAvailable.available_units > 0) {
-      insights.push({
-        icon: DoorOpen,
-        label: 'Most Available Units',
-        value: `${mostAvailable.available_units} units`,
-        projectName: mostAvailable.name,
       });
     }
   }

@@ -131,13 +131,9 @@ export function ProjectQuickSummary({
       <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-4 sm:gap-6 py-3 sm:py-4 border-y border-border">
         <div className="text-center">
           <p className="text-lg sm:text-xl font-semibold">
-            {project.available_units 
-              ? `${project.available_units}/${project.total_units || 0}` 
-              : project.total_units || 0}
+            {project.total_units || 0}
           </p>
-          <p className="text-xs text-muted-foreground">
-            {project.available_units ? 'Units Left' : 'Units'}
-          </p>
+          <p className="text-xs text-muted-foreground">Units</p>
         </div>
         <div className="text-center">
           <p className="text-lg sm:text-xl font-semibold">

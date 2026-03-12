@@ -19,7 +19,6 @@ interface Project {
   images?: string[] | null;
   status?: string | null;
   completion_date?: string | null;
-  available_units?: number | null;
 }
 
 interface SimilarProjectsProps {

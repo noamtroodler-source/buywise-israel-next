@@ -18,7 +18,6 @@ interface CompareProject {
   completion_date: string | null;
   construction_progress_percent: number | null;
   total_units: number;
-  available_units: number;
   images: string[] | null;
   amenities: string[] | null;
   developer?: {
@@ -164,7 +163,7 @@ export function CompareProjectCard({
           )}
           <div className="flex items-center gap-1.5">
             <Home className="h-4 w-4 text-muted-foreground" />
-            <span className="font-medium">{project.available_units ?? '—'} / {project.total_units ?? '—'}</span>
+            <span className="font-medium">{project.total_units ?? '—'} units</span>
           </div>
         </div>
 

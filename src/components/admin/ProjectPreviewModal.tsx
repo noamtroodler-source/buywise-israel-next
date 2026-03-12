@@ -303,10 +303,10 @@ export function ProjectPreviewModal({ project, open, onOpenChange }: ProjectPrev
                   </div>
                   <div className="text-center">
                     <div className="flex items-center justify-center gap-1 text-muted-foreground mb-1">
-                      <Clock className="h-4 w-4" />
-                      <span className="text-xs">Available</span>
+                      <Building2 className="h-4 w-4" />
+                      <span className="text-xs">Status</span>
                     </div>
-                    <p className="font-semibold">{project.available_units ?? project.total_units ?? 'TBD'} units</p>
+                    <p className="font-semibold">{constructionStatusLabels[project.status] || project.status || 'TBD'}</p>
                   </div>
                 </div>
 
