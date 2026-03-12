@@ -141,7 +141,7 @@ export function PropertyWizardProvider({ children, totalSteps = DEFAULT_TOTAL_ST
 
   const handleSetCurrentStep = useCallback((step: number) => {
     setCurrentStep(step);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    scrollToTopInstant();
   }, []);
 
   const resetWizard = useCallback(() => {
