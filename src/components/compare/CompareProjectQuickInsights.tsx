@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { TrendingDown, Sparkles, Calendar, HardHat, DoorOpen } from 'lucide-react';
+import { TrendingDown, Sparkles, Calendar, HardHat } from 'lucide-react';
 
 interface Insight {
   icon: React.ElementType;

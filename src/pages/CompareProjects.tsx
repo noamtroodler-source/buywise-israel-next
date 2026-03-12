@@ -1,8 +1,8 @@
 import { useEffect, useState, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { 
-  Building, MapPin, Calendar, Home, HardHat, DoorOpen, Clock, 
-  Percent, Wrench, CheckCircle 
+  Building, MapPin, Calendar, Home, HardHat, Clock, 
+  Wrench, CheckCircle 
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { useCompare } from '@/contexts/CompareContext';

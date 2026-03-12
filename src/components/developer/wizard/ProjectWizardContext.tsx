@@ -83,7 +83,6 @@ export const defaultProjectData: ProjectWizardData = {
   longitude: undefined,
   status: 'planning',
   total_units: undefined,
-  available_units: undefined,
   price_from: undefined,
   price_to: undefined,
   construction_start: undefined,

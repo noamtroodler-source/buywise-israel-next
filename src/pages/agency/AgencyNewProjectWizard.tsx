@@ -87,7 +87,6 @@ function AgencyProjectWizardContent() {
     description: data.description || undefined,
     status: data.status,
     total_units: data.total_units,
-    available_units: data.available_units,
     price_from: data.price_from,
     price_to: data.price_to,
     construction_start: data.construction_start,
