@@ -1,27 +1,37 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Building2, Plus, Eye, Home, BarChart3, Loader2, FileText, Clock, CheckCircle, AlertCircle, Settings, Users, RefreshCw, ShieldCheck, ShieldAlert, ArrowLeft, X, PartyPopper, Mail, PenLine } from 'lucide-react';
+import {
+  Building2, Plus, Eye, Home, BarChart3, Loader2, FileText, Clock,
+  CheckCircle, AlertCircle, Settings, RefreshCw, ShieldCheck, ShieldAlert,
+  ArrowLeft, X, PartyPopper, Mail, PenLine, ExternalLink, MessageSquare,
+  BadgeCheck, Star
+} from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useLeadStats } from '@/hooks/useAgentLeads';
 import { useAgentProfile, useAgentProperties, AgentProperty } from '@/hooks/useAgentProperties';
 import { OnboardingChecklist } from '@/components/agent/OnboardingChecklist';
+import { NotificationBell } from '@/components/agent/NotificationBell';
 import { STALE_THRESHOLD_DAYS } from '@/hooks/useAgentProfile';
 import { differenceInDays, parseISO, format, isToday, isYesterday } from 'date-fns';
 import { useAdvertiserTracking } from '@/hooks/useAdvertiserTracking';
 import { useBlogQuotaCheck } from '@/hooks/useBlogQuota';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useMyBlogPosts } from '@/hooks/useProfessionalBlog';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function AgentDashboard() {
   const { data: agentProfile, isLoading: profileLoading } = useAgentProfile();
   const { data: properties = [], isLoading: propertiesLoading } = useAgentProperties();
   const { data: leadStats } = useLeadStats();
-  const { trackDashboardView, trackAnalyticsView } = useAdvertiserTracking();
+  const { trackDashboardView } = useAdvertiserTracking();
   const { used: blogQuotaUsed, limit: blogQuotaLimit, canSubmit: canSubmitBlog, isLoading: blogQuotaLoading } = useBlogQuotaCheck('agent', agentProfile?.id);
+  const { data: blogPosts = [] } = useMyBlogPosts('agent', agentProfile?.id);
+  const isMobile = useIsMobile();
 
   // Track dashboard view on mount
   useEffect(() => {
@@ -29,53 +39,43 @@ export default function AgentDashboard() {
       trackDashboardView(agentProfile.id, 'agent', 'dashboard');
     }
   }, [agentProfile?.id, trackDashboardView]);
-  
-  // Onboarding checklist dismiss state (persisted in localStorage)
-  const [showOnboarding, setShowOnboarding] = useState(() => {
-    const dismissed = localStorage.getItem('agent-onboarding-dismissed');
-    return dismissed !== 'true';
-  });
 
+  // Onboarding checklist dismiss state
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    return localStorage.getItem('agent-onboarding-dismissed') !== 'true';
+  });
   const handleDismissOnboarding = () => {
     setShowOnboarding(false);
     localStorage.setItem('agent-onboarding-dismissed', 'true');
   };
 
-  // Track dismissed approval alerts in localStorage
+  // Track dismissed approval alerts
   const [dismissedApprovals, setDismissedApprovals] = useState<string[]>(() => {
     const stored = localStorage.getItem('dismissed-approval-alerts');
     return stored ? JSON.parse(stored) : [];
   });
-
-  // State for expanding batch approval list
   const [showAllApproved, setShowAllApproved] = useState(false);
 
-  // Find recently approved properties (within last 7 days)
+  // Recently approved properties (within 7 days)
   const recentlyApproved = useMemo(() => {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    
     return properties.filter(p => {
-      if (p.verification_status !== 'approved' || !p.reviewed_at) return false;
+      if ((p as any).verification_status !== 'approved' || !(p as any).reviewed_at) return false;
       if (dismissedApprovals.includes(p.id)) return false;
-      const reviewedDate = parseISO(p.reviewed_at);
-      return reviewedDate >= sevenDaysAgo;
-    }).sort((a, b) => 
-      new Date(b.reviewed_at!).getTime() - new Date(a.reviewed_at!).getTime()
+      return parseISO((p as any).reviewed_at) >= sevenDaysAgo;
+    }).sort((a, b) =>
+      new Date((b as any).reviewed_at!).getTime() - new Date((a as any).reviewed_at!).getTime()
     );
   }, [properties, dismissedApprovals]);
 
-  // Visible approved properties (collapsed to 3 by default when batch)
-  const visibleApproved = showAllApproved 
-    ? recentlyApproved 
-    : recentlyApproved.slice(0, 3);
+  const visibleApproved = showAllApproved ? recentlyApproved : recentlyApproved.slice(0, 3);
 
   const handleDismissApproval = (propertyId: string) => {
     const updated = [...dismissedApprovals, propertyId];
     setDismissedApprovals(updated);
     localStorage.setItem('dismissed-approval-alerts', JSON.stringify(updated));
   };
-
   const handleDismissAllApprovals = () => {
     const allIds = recentlyApproved.map(p => p.id);
     const updated = [...dismissedApprovals, ...allIds];
@@ -87,19 +87,14 @@ export default function AgentDashboard() {
   const formatApprovalDate = (dateString: string) => {
     const date = parseISO(dateString);
     const time = format(date, 'h:mm a');
-    
-    if (isToday(date)) {
-      return `Today at ${time}`;
-    } else if (isYesterday(date)) {
-      return `Yesterday at ${time}`;
-    } else {
-      return `${format(date, 'MMM d, yyyy')} at ${time}`;
-    }
+    if (isToday(date)) return `Today at ${time}`;
+    if (isYesterday(date)) return `Yesterday at ${time}`;
+    return `${format(date, 'MMM d, yyyy')} at ${time}`;
   };
 
   const isLoading = profileLoading || propertiesLoading;
 
-  // Count by verification status
+  // Status counts
   const statusCounts = {
     draft: properties.filter(p => (p as any).verification_status === 'draft').length,
     pending_review: properties.filter(p => (p as any).verification_status === 'pending_review').length,
@@ -107,18 +102,16 @@ export default function AgentDashboard() {
     approved: properties.filter(p => (p as any).verification_status === 'approved').length,
     rejected: properties.filter(p => (p as any).verification_status === 'rejected').length,
   };
-  
   const totalViews = properties.reduce((sum, p) => sum + (p.views_count || 0), 0);
 
-  // Count stale listings (approved listings older than threshold)
+  // Stale listings
   const staleListings = useMemo(() => {
     const now = new Date();
     return properties.filter(p => {
       if ((p as any).verification_status !== 'approved') return false;
       const renewedAt = (p as any).last_renewed_at || p.created_at;
       if (!renewedAt) return false;
-      const daysSinceRenewal = differenceInDays(now, parseISO(renewedAt));
-      return daysSinceRenewal >= STALE_THRESHOLD_DAYS;
+      return differenceInDays(now, parseISO(renewedAt)) >= STALE_THRESHOLD_DAYS;
     });
   }, [properties]);
 
@@ -132,110 +125,90 @@ export default function AgentDashboard() {
     );
   }
 
-  const statusCards = [
-    { key: 'draft', label: 'Drafts', icon: FileText, color: 'text-muted-foreground', bg: 'bg-muted/50' },
-    { key: 'pending_review', label: 'Pending Review', icon: Clock, color: 'text-primary', bg: 'bg-primary/10' },
-    { key: 'changes_requested', label: 'Changes Requested', icon: AlertCircle, color: 'text-primary', bg: 'bg-primary/10' },
-    { key: 'approved', label: 'Live', icon: CheckCircle, color: 'text-primary', bg: 'bg-primary/10' },
+  // Snapshot strip data
+  const snapshotItems = [
+    { label: 'live', value: statusCounts.approved },
+    ...(statusCounts.draft > 0 ? [{ label: 'drafts', value: statusCounts.draft }] : []),
+    ...(statusCounts.pending_review > 0 ? [{ label: 'pending', value: statusCounts.pending_review }] : []),
+    { label: 'total views', value: totalViews },
   ];
 
+  // Quick actions grid
   const quickActions = [
-    { title: 'New Listing', desc: 'Create a new property listing', icon: Plus, href: '/agent/properties/new' },
-    { title: 'My Listings', desc: 'View and manage your listings', icon: Home, href: '/agent/properties' },
-    { title: 'Analytics', desc: 'View engagement and inquiries', icon: BarChart3, href: '/agent/leads', badge: leadStats?.new },
-    { title: 'Write Blog', desc: 'Share your market insights', icon: PenLine, href: '/agent/blog' },
+    { label: 'Listings', icon: FileText, href: '/agent/properties', count: statusCounts.approved, color: 'text-primary', bg: 'bg-primary/10', hoverBg: 'hover:bg-primary/5' },
+    { label: 'Leads', icon: MessageSquare, href: '/agent/leads', badge: leadStats?.new && leadStats.new > 0 ? `${leadStats.new} new` : undefined, color: 'text-primary', bg: 'bg-primary/10', hoverBg: 'hover:bg-primary/5' },
+    { label: 'Analytics', icon: BarChart3, href: '/agent/analytics', color: 'text-primary', bg: 'bg-primary/10', hoverBg: 'hover:bg-primary/5' },
+    { label: 'Blog', icon: PenLine, href: '/agent/blog', count: blogPosts.length, color: 'text-primary', bg: 'bg-primary/10', hoverBg: 'hover:bg-primary/5' },
+    { label: 'Settings', icon: Settings, href: '/agent/settings', color: 'text-primary', bg: 'bg-primary/10', hoverBg: 'hover:bg-primary/5' },
+    { label: 'Public Page', icon: ExternalLink, href: agentProfile ? `/agents/${agentProfile.id}` : '#', color: 'text-primary', bg: 'bg-primary/10', hoverBg: 'hover:bg-primary/5' },
   ];
 
   return (
     <Layout>
-      <div className="container py-8">
+      <div className="container py-8 pb-24 md:pb-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="space-y-6"
         >
-          {/* Premium Header with gradient */}
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 p-6">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.08),transparent_50%)]" />
-            <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" asChild className="rounded-xl hover:bg-primary/10 flex-shrink-0">
-                  <Link to="/">
-                    <ArrowLeft className="h-4 w-4" />
-                  </Link>
-                </Button>
-                <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <Building2 className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold text-foreground">
-                    Welcome, {agentProfile?.name}
-                  </h1>
-                  <p className="text-muted-foreground">
-                    {agentProfile?.agency_name || 'Independent Agent'}
-                  </p>
-                </div>
+          {/* Compact Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <Button variant="ghost" size="icon" asChild className="rounded-xl hover:bg-primary/10 flex-shrink-0">
+                <Link to="/">
+                  <ArrowLeft className="h-4 w-4" />
+                </Link>
+              </Button>
+              <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <Building2 className="h-6 w-6 text-primary" />
               </div>
-              <div className="flex flex-wrap gap-2 mt-4 sm:mt-0">
-                <Button variant="outline" size="sm" asChild className="border-primary/20 hover:bg-primary/5">
-                  <Link to="/agent/settings">
-                    <Settings className="h-4 w-4 sm:mr-2" />
-                    <span className="hidden sm:inline">Settings</span>
-                  </Link>
-                </Button>
-                <Button variant="outline" size="sm" asChild className="border-primary/20 hover:bg-primary/5">
-                  <Link to="/agent/analytics">
-                    <BarChart3 className="h-4 w-4 sm:mr-2" />
-                    <span className="hidden sm:inline">Analytics</span>
-                  </Link>
-                </Button>
-                <Button size="sm" asChild>
-                  <Link to="/agent/properties/new">
-                    <Plus className="h-4 w-4 sm:mr-2" />
-                    <span className="hidden sm:inline">New Listing</span>
-                  </Link>
-                </Button>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span>
-                        <Button size="sm" variant="outline" asChild={!blogQuotaLoading && canSubmitBlog} disabled={!blogQuotaLoading && !canSubmitBlog} className="border-primary/20 hover:bg-primary/5">
-                          {(!blogQuotaLoading && canSubmitBlog) ? (
-                            <Link to="/agent/blog/new">
-                              <PenLine className="h-4 w-4 sm:mr-2" />
-                              <span className="hidden sm:inline">Add Blog</span>
-                            </Link>
-                          ) : (
-                            <>
-                              <PenLine className="h-4 w-4 sm:mr-2" />
-                              <span className="hidden sm:inline">Add Blog</span>
-                            </>
-                          )}
-                        </Button>
-                      </span>
-                    </TooltipTrigger>
-                    {!blogQuotaLoading && !canSubmitBlog && (
-                      <TooltipContent>Monthly blog limit reached. Resets on the 1st.</TooltipContent>
-                    )}
-                  </Tooltip>
-                </TooltipProvider>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-xl font-bold text-foreground">{agentProfile?.name}</h1>
+                  {agentProfile?.status === 'active' && <BadgeCheck className="h-5 w-5 text-primary" />}
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {agentProfile?.agency_name || 'Independent Agent'} · Agent Dashboard
+                </p>
               </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <NotificationBell />
+              <Button variant="ghost" size="icon" asChild className="rounded-xl hover:bg-primary/10">
+                <Link to="/agent/settings">
+                  <Settings className="h-4 w-4" />
+                </Link>
+              </Button>
+              <Button variant="outline" size="sm" asChild className="rounded-xl border-primary/20 hover:bg-primary/5 hidden sm:inline-flex">
+                <Link to={agentProfile ? `/agents/${agentProfile.id}` : '#'}>
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Public Page
+                </Link>
+              </Button>
             </div>
           </div>
 
-          {/* Property Went Live Alerts - Single vs Batch */}
+          {/* Snapshot Strip */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.1 }}
+            className="flex flex-wrap items-center gap-x-4 gap-y-1 px-1"
+          >
+            {snapshotItems.map((item, i) => (
+              <span key={item.label} className="flex items-center gap-1.5 text-sm">
+                {i > 0 && <span className="text-muted-foreground/40 mr-1.5">·</span>}
+                <span className="font-semibold text-foreground">{item.value.toLocaleString()}</span>
+                <span className="text-muted-foreground">{item.label}</span>
+              </span>
+            ))}
+          </motion.div>
+
+          {/* Property Went Live Alerts */}
           {recentlyApproved.length === 1 ? (
-            // Single approval - full card
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-            >
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
               <div className="relative bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 rounded-xl p-4">
-                <button
-                  onClick={() => handleDismissApproval(recentlyApproved[0].id)}
-                  className="absolute top-3 right-3 p-1 rounded-lg hover:bg-primary/10 transition-colors"
-                >
+                <button onClick={() => handleDismissApproval(recentlyApproved[0].id)} className="absolute top-3 right-3 p-1 rounded-lg hover:bg-primary/10 transition-colors">
                   <X className="h-4 w-4 text-muted-foreground" />
                 </button>
                 <div className="flex items-start gap-4 pr-8">
@@ -243,122 +216,53 @@ export default function AgentDashboard() {
                     <PartyPopper className="h-5 w-5 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-foreground">
-                      Congratulations! Your listing is now live
-                    </h3>
+                    <h3 className="font-semibold text-foreground">Congratulations! Your listing is now live</h3>
                     <p className="text-sm text-muted-foreground mt-0.5">
-                      <span className="font-medium text-foreground">"{recentlyApproved[0].title}"</span> was approved and went live {formatApprovalDate(recentlyApproved[0].reviewed_at!)}
+                      <span className="font-medium text-foreground">"{recentlyApproved[0].title}"</span> was approved {formatApprovalDate((recentlyApproved[0] as any).reviewed_at!)}
                     </p>
-                    <Button
-                      variant="link"
-                      size="sm"
-                      asChild
-                      className="h-auto p-0 mt-2 text-primary"
-                    >
-                      <Link to={`/properties/${recentlyApproved[0].id}`}>
-                        View Listing →
-                      </Link>
+                    <Button variant="link" size="sm" asChild className="h-auto p-0 mt-2 text-primary">
+                      <Link to={`/properties/${recentlyApproved[0].id}`}>View Listing →</Link>
                     </Button>
                   </div>
                 </div>
               </div>
             </motion.div>
           ) : recentlyApproved.length >= 2 ? (
-            // Batch approvals - consolidated card
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-            >
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
               <div className="relative bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 rounded-xl p-4">
-                <button
-                  onClick={handleDismissAllApprovals}
-                  className="absolute top-3 right-3 p-1 rounded-lg hover:bg-primary/10 transition-colors"
-                  title="Dismiss all"
-                >
+                <button onClick={handleDismissAllApprovals} className="absolute top-3 right-3 p-1 rounded-lg hover:bg-primary/10 transition-colors" title="Dismiss all">
                   <X className="h-4 w-4 text-muted-foreground" />
                 </button>
-                
-                {/* Header */}
                 <div className="flex items-start gap-4 pr-8">
                   <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
                     <PartyPopper className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-foreground">
-                      🎉 {recentlyApproved.length} Listings Are Now Live!
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      Your properties were approved and are visible to buyers
-                    </p>
+                    <h3 className="font-semibold text-foreground">🎉 {recentlyApproved.length} Listings Are Now Live!</h3>
+                    <p className="text-sm text-muted-foreground">Your properties were approved and are visible to buyers</p>
                   </div>
                 </div>
-                
-                {/* Compact property list */}
                 <div className="mt-4 space-y-2 bg-background/50 rounded-lg p-3">
                   {visibleApproved.map((property) => (
-                    <div 
-                      key={property.id}
-                      className="flex items-center justify-between text-sm gap-2"
-                    >
-                      <span className="truncate text-foreground font-medium min-w-0 flex-1">
-                        "{property.title}"
-                      </span>
+                    <div key={property.id} className="flex items-center justify-between text-sm gap-2">
+                      <span className="truncate text-foreground font-medium min-w-0 flex-1">"{property.title}"</span>
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-muted-foreground text-xs hidden sm:inline">
-                          {formatApprovalDate(property.reviewed_at!)}
-                        </span>
-                        <Link 
-                          to={`/properties/${property.id}`}
-                          className="text-primary hover:text-primary/80 transition-colors"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Link>
-                        <button 
-                          onClick={() => handleDismissApproval(property.id)}
-                          className="text-muted-foreground hover:text-foreground transition-colors"
-                          title="Dismiss"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
+                        <span className="text-muted-foreground text-xs hidden sm:inline">{formatApprovalDate((property as any).reviewed_at!)}</span>
+                        <Link to={`/properties/${property.id}`} className="text-primary hover:text-primary/80 transition-colors"><Eye className="h-4 w-4" /></Link>
+                        <button onClick={() => handleDismissApproval(property.id)} className="text-muted-foreground hover:text-foreground transition-colors" title="Dismiss"><X className="h-3 w-3" /></button>
                       </div>
                     </div>
                   ))}
-                  
-                  {/* Show more toggle */}
                   {recentlyApproved.length > 3 && !showAllApproved && (
-                    <button 
-                      onClick={() => setShowAllApproved(true)}
-                      className="text-sm text-primary hover:underline pt-1"
-                    >
-                      Show {recentlyApproved.length - 3} more
-                    </button>
+                    <button onClick={() => setShowAllApproved(true)} className="text-sm text-primary hover:underline pt-1">Show {recentlyApproved.length - 3} more</button>
                   )}
                   {showAllApproved && recentlyApproved.length > 3 && (
-                    <button 
-                      onClick={() => setShowAllApproved(false)}
-                      className="text-sm text-muted-foreground hover:underline pt-1"
-                    >
-                      Show less
-                    </button>
+                    <button onClick={() => setShowAllApproved(false)} className="text-sm text-muted-foreground hover:underline pt-1">Show less</button>
                   )}
                 </div>
-                
-                {/* Footer actions */}
                 <div className="flex items-center justify-between mt-4 pt-3 border-t border-primary/10">
-                  <Button variant="link" asChild className="h-auto p-0 text-primary">
-                    <Link to="/agent/properties?tab=approved">
-                      View All Live Listings →
-                    </Link>
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={handleDismissAllApprovals}
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    Dismiss All
-                  </Button>
+                  <Button variant="link" asChild className="h-auto p-0 text-primary"><Link to="/agent/properties?tab=approved">View All Live Listings →</Link></Button>
+                  <Button variant="ghost" size="sm" onClick={handleDismissAllApprovals} className="text-muted-foreground hover:text-foreground">Dismiss All</Button>
                 </div>
               </div>
             </motion.div>
@@ -372,25 +276,14 @@ export default function AgentDashboard() {
               <AlertDescription className="text-muted-foreground">
                 Your agent license is currently under review. You can create draft listings, but you won't be able to submit them for publication until your account is verified. This typically takes 24-48 hours.
                 <br />
-                <a 
-                  href="mailto:hello@buywiseisrael.com" 
-                  className="text-primary hover:underline font-medium mt-2 inline-block"
-                >
+                <a href="mailto:hello@buywiseisrael.com" className="text-primary hover:underline font-medium mt-2 inline-block">
                   Questions while you wait? Email us →
                 </a>
               </AlertDescription>
             </Alert>
           )}
 
-          {/* Verified Agent Badge */}
-          {agentProfile?.status === 'active' && (
-            <div className="flex items-center gap-2 text-sm text-primary">
-              <ShieldCheck className="h-4 w-4" />
-              <span className="font-medium">Verified Agent</span>
-            </div>
-          )}
-
-          {/* Onboarding Checklist for new agents */}
+          {/* Onboarding Checklist */}
           {showOnboarding && (
             <OnboardingChecklist
               agentProfile={agentProfile}
@@ -403,213 +296,222 @@ export default function AgentDashboard() {
             />
           )}
 
-          {/* Homepage Exposure Information */}
-          <Card className="rounded-2xl border-primary/10 bg-gradient-to-br from-primary/5 via-transparent to-transparent">
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Home className="h-5 w-5 text-primary" />
-                Homepage Exposure (Optional)
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                BuyWise Israel periodically highlights a limited number of resale and rental listings on the homepage.
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Listings rotate weekly and are curated to maintain a high-quality experience for buyers. Placement is limited and not guaranteed.
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Availability, fit, and pricing are reviewed per listing.
-              </p>
-              
-              <div className="pt-2 border-t border-border/50">
-                <a 
-                  href="mailto:hello@buywiseisrael.com" 
-                  className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
-                >
-                  <Mail className="h-4 w-4" />
-                  hello@buywiseisrael.com
-                </a>
-              </div>
-              
-              <p className="text-xs text-muted-foreground italic">
-                One listing per agent at a time.
-              </p>
-              
-              <p className="text-xs text-muted-foreground/70 pt-1">
-                Homepage exposure does not include guaranteed placement, ranking, or performance metrics.
-              </p>
-            </CardContent>
-          </Card>
-
-          {staleListings.length > 0 && (
-            <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 flex items-center gap-3">
-              <RefreshCw className="h-5 w-5 text-primary flex-shrink-0" />
-              <div className="flex-1">
-                <p className="font-medium text-foreground">Listings Need Renewal</p>
-                <p className="text-sm text-muted-foreground">
-                  {staleListings.length} listing{staleListings.length > 1 ? 's are' : ' is'} over {STALE_THRESHOLD_DAYS} days old. Renew to stay visible to buyers.
-                </p>
-              </div>
-              <Button variant="outline" size="sm" asChild className="flex-shrink-0 border-primary/30 text-primary hover:bg-primary/10">
-                <Link to="/agent/properties?tab=stale">Renew Now</Link>
-              </Button>
-            </div>
-          )}
-
-          {/* Changes Requested Alert - Blue palette */}
-          {statusCounts.changes_requested > 0 && (
-            <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 flex items-center gap-3">
-              <AlertCircle className="h-5 w-5 text-primary flex-shrink-0" />
-              <div className="flex-1">
-                <p className="font-medium text-foreground">Action Required</p>
-                <p className="text-sm text-muted-foreground">
-                  {statusCounts.changes_requested} listing{statusCounts.changes_requested > 1 ? 's' : ''} need{statusCounts.changes_requested === 1 ? 's' : ''} changes before approval.
-                </p>
-              </div>
-              <Button variant="outline" size="sm" asChild className="flex-shrink-0 border-primary/30 text-primary hover:bg-primary/10">
-                <Link to="/agent/properties?tab=changes_requested">View</Link>
-              </Button>
-            </div>
-          )}
-
-          {/* Status Cards with premium styling */}
-          <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">
-            {statusCards.map((s, index) => (
+          {/* Quick Actions Grid */}
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+            {quickActions.map((action, index) => (
               <motion.div
-                key={s.key}
+                key={action.label}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
+                transition={{ delay: index * 0.03 }}
               >
-                <Card className="border-primary/10 bg-gradient-to-br from-primary/5 to-transparent rounded-2xl hover:border-primary/20 transition-colors">
-                  <CardContent className="p-5">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2.5 rounded-xl ${s.bg}`}>
-                        <s.icon className={`h-5 w-5 ${s.color}`} />
+                <Link
+                  to={action.href}
+                  className={`group relative flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border border-border/50 bg-card ${action.hoverBg} hover:border-primary/30 transition-all text-center h-full min-h-[96px]`}
+                >
+                  <div className={`p-2.5 rounded-xl ${action.bg} transition-colors`}>
+                    <action.icon className={`h-5 w-5 ${action.color}`} />
+                  </div>
+                  <span className="text-xs font-medium text-foreground">{action.label}</span>
+                  {action.badge && (
+                    <Badge className="absolute -top-1.5 -right-1.5 text-[10px] px-1.5 py-0 bg-primary text-primary-foreground">
+                      {action.badge}
+                    </Badge>
+                  )}
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Two-Column Layout: Performance + Sidebar */}
+          <div className="grid lg:grid-cols-5 gap-6 lg:items-start">
+            {/* Left Column — Performance */}
+            <div className="lg:col-span-3 space-y-4">
+              <div className="bg-muted/30 rounded-2xl p-4 space-y-4">
+                {/* Inline performance cards */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  {[
+                    { label: 'Live', value: statusCounts.approved, icon: CheckCircle },
+                    { label: 'Pending', value: statusCounts.pending_review, icon: Clock },
+                    { label: 'Views', value: totalViews, icon: Eye },
+                    { label: 'Leads', value: leadStats?.total || 0, icon: MessageSquare },
+                  ].map((metric) => (
+                    <div key={metric.label} className="p-3 rounded-xl bg-background border">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <div className="p-1.5 rounded-lg bg-primary/10">
+                          <metric.icon className="h-3.5 w-3.5 text-primary" />
+                        </div>
+                        <span className="text-xs text-muted-foreground font-medium">{metric.label}</span>
                       </div>
-                      <div>
-                        <p className="text-2xl font-bold">{statusCounts[s.key as keyof typeof statusCounts]}</p>
-                        <p className="text-xs text-muted-foreground">{s.label}</p>
-                      </div>
+                      <span className="text-2xl font-bold">{metric.value.toLocaleString()}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Recent Properties (compact) */}
+              {properties.length > 0 && (
+                <Card className="rounded-2xl border-border/50">
+                  <CardHeader className="pb-2 pt-4 px-4">
+                    <CardTitle className="text-sm flex items-center justify-between">
+                      <span className="flex items-center gap-2">
+                        <Home className="h-4 w-4 text-primary" />
+                        Recent Properties
+                      </span>
+                      <Button variant="link" size="sm" asChild className="h-auto p-0 text-xs text-primary">
+                        <Link to="/agent/properties">View All</Link>
+                      </Button>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-4 pb-4">
+                    <div className="space-y-2">
+                      {properties.slice(0, 3).map((property) => (
+                        <div key={property.id} className="flex items-center justify-between p-2.5 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <img
+                              src={property.images?.[0] || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=100'}
+                              alt={property.title}
+                              className="h-10 w-10 rounded-lg object-cover flex-shrink-0"
+                            />
+                            <div className="min-w-0">
+                              <p className="font-medium text-sm line-clamp-1">{property.title}</p>
+                              <p className="text-xs text-muted-foreground">{property.city}</p>
+                            </div>
+                          </div>
+                          <span className={`text-xs px-2 py-1 rounded-lg font-medium flex-shrink-0 ${
+                            (property as any).verification_status === 'approved'
+                              ? 'bg-primary/10 text-primary'
+                              : 'bg-muted text-muted-foreground'
+                          }`}>
+                            {(property as any).verification_status === 'approved' ? 'Live' :
+                             (property as any).verification_status === 'pending_review' ? 'Pending' :
+                             (property as any).verification_status === 'changes_requested' ? 'Changes' :
+                             'Draft'}
+                          </span>
+                        </div>
+                      ))}
                     </div>
                   </CardContent>
                 </Card>
-              </motion.div>
-            ))}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <Card className="border-primary/10 bg-gradient-to-br from-primary/5 to-transparent rounded-2xl hover:border-primary/20 transition-colors">
-                <CardContent className="p-5">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 rounded-xl bg-primary/10">
-                      <Eye className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold">{totalViews}</p>
-                      <p className="text-xs text-muted-foreground">Total Views</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </div>
+              )}
+            </div>
 
-          {/* Quick Actions with unified styling */}
-          <div className="grid gap-4 sm:grid-cols-3">
-            {quickActions.map((action, index) => (
-              <motion.div
-                key={action.title}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.25 + index * 0.05 }}
-              >
-                <Card className="cursor-pointer hover:shadow-md transition-all rounded-2xl border-primary/10 hover:border-primary/20 group">
-                  <Link to={action.href}>
-                    <CardContent className="flex items-center gap-4 p-6">
-                      <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
-                        <action.icon className="h-6 w-6 text-primary" />
+            {/* Right Column — Contextual Sidebar */}
+            <div className="lg:col-span-2 space-y-4">
+              {/* Stale Listings Alert */}
+              {staleListings.length > 0 && (
+                <Card className="rounded-2xl border-primary/20 bg-primary/5">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="p-2 rounded-xl bg-primary/10">
+                        <RefreshCw className="h-4 w-4 text-primary" />
                       </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold">{action.title}</h3>
-                          {action.badge && action.badge > 0 && (
-                            <Badge variant="default" className="text-xs">
-                              {action.badge} new
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          {action.desc}
+                      <div>
+                        <p className="text-sm font-medium">Listings Need Renewal</p>
+                        <p className="text-xs text-muted-foreground">
+                          {staleListings.length} listing{staleListings.length > 1 ? 's' : ''} over {STALE_THRESHOLD_DAYS} days old
                         </p>
                       </div>
-                    </CardContent>
-                  </Link>
+                    </div>
+                    <Button size="sm" variant="outline" asChild className="rounded-xl w-full border-primary/30 text-primary hover:bg-primary/10">
+                      <Link to="/agent/properties?tab=stale">Renew Now</Link>
+                    </Button>
+                  </CardContent>
                 </Card>
-              </motion.div>
-            ))}
-          </div>
+              )}
 
-          {/* Recent Properties with premium styling */}
-          {properties.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-            >
-              <Card className="rounded-2xl border-primary/10">
-                <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent rounded-t-2xl">
-                  <CardTitle>Recent Properties</CardTitle>
-                </CardHeader>
-                <CardContent className="p-6">
-                  <div className="space-y-3">
-                    {properties.slice(0, 5).map((property, index) => (
-                      <motion.div
-                        key={property.id}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.45 + index * 0.05 }}
-                        className="flex items-center justify-between p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors"
-                      >
-                        <div className="flex items-center gap-3">
-                          <img
-                            src={property.images?.[0] || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=100'}
-                            alt={property.title}
-                            className="h-12 w-12 rounded-lg object-cover"
-                          />
-                          <div>
-                            <p className="font-medium line-clamp-1">{property.title}</p>
-                            <p className="text-sm text-muted-foreground">{property.city}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className={`text-xs px-2.5 py-1 rounded-lg font-medium ${
-                            (property as any).verification_status === 'approved' 
-                              ? 'bg-primary/10 text-primary' 
-                              : 'bg-muted text-muted-foreground'
-                          }`}>
-                            {(property as any).verification_status === 'approved' ? 'Live' : 
-                             (property as any).verification_status === 'pending_review' ? 'Pending' :
-                             (property as any).verification_status === 'changes_requested' ? 'Changes Needed' :
-                             'Draft'}
-                          </span>
-                          {(property as any).verification_status === 'approved' && (
-                            <Button variant="ghost" size="sm" asChild className="hover:bg-primary/10 hover:text-primary">
-                              <Link to={`/properties/${property.id}`} target="_blank">View</Link>
-                            </Button>
-                          )}
-                        </div>
-                      </motion.div>
-                    ))}
+              {/* Changes Requested Alert */}
+              {statusCounts.changes_requested > 0 && (
+                <Card className="rounded-2xl border-primary/20 bg-primary/5">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="p-2 rounded-xl bg-primary/10">
+                        <AlertCircle className="h-4 w-4 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Action Required</p>
+                        <p className="text-xs text-muted-foreground">
+                          {statusCounts.changes_requested} listing{statusCounts.changes_requested > 1 ? 's' : ''} need{statusCounts.changes_requested === 1 ? 's' : ''} changes
+                        </p>
+                      </div>
+                    </div>
+                    <Button size="sm" variant="outline" asChild className="rounded-xl w-full border-primary/30 text-primary hover:bg-primary/10">
+                      <Link to="/agent/properties?tab=changes_requested">Review</Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Homepage Exposure (condensed) */}
+              <Card className="rounded-2xl border-border/50">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 rounded-xl bg-primary/10">
+                      <Home className="h-4 w-4 text-primary" />
+                    </div>
+                    <p className="text-sm font-medium">Homepage Exposure</p>
                   </div>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    BuyWise Israel periodically highlights listings on the homepage. Placement is curated and limited.
+                  </p>
+                  <a
+                    href="mailto:hello@buywiseisrael.com"
+                    className="inline-flex items-center gap-2 text-xs font-medium text-primary hover:underline"
+                  >
+                    <Mail className="h-3.5 w-3.5" />
+                    hello@buywiseisrael.com
+                  </a>
+                  <p className="text-[10px] text-muted-foreground/70 mt-2">
+                    One listing per agent at a time. Not guaranteed.
+                  </p>
                 </CardContent>
               </Card>
-            </motion.div>
-          )}
+
+              {/* Latest Blog Post */}
+              {blogPosts.length > 0 && (
+                <Link to="/agent/blog" className="block">
+                  <Card className="rounded-2xl border-border/50 hover:border-primary/20 transition-colors">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="p-2 rounded-xl bg-accent">
+                          <PenLine className="h-4 w-4 text-primary" />
+                        </div>
+                        <p className="text-sm font-medium">Latest Article</p>
+                      </div>
+                      <p className="text-sm text-muted-foreground line-clamp-1 mb-2">
+                        {blogPosts[0]?.title || 'Untitled'}
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="text-xs">
+                          {blogPosts[0]?.verification_status || 'draft'}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {blogPosts.length} total article{blogPosts.length !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              )}
+            </div>
+          </div>
         </motion.div>
+
+        {/* Mobile FAB — New Listing */}
+        {isMobile && (
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.4, type: 'spring', stiffness: 260, damping: 20 }}
+            className="fixed bottom-20 right-4 z-40"
+          >
+            <Button asChild size="lg" className="rounded-full h-14 w-14 shadow-lg shadow-primary/25 p-0">
+              <Link to="/agent/properties/new">
+                <Plus className="h-6 w-6" />
+              </Link>
+            </Button>
+          </motion.div>
+        )}
       </div>
     </Layout>
   );

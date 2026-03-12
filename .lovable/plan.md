@@ -1,81 +1,22 @@
 
 
-## Plan: Reinvent Agent Dashboard to Match Agency Dashboard Design
+## Phase 1: Founding Partner Enrollment — Implemented ✅
 
-### Problem
-The Agent Dashboard (`AgentDashboard.tsx`) is a long, vertically stacked page with a bulky gradient header, scattered status cards, large quick action cards, and an inline "Homepage Exposure" info card. It feels dated compared to the clean, compact Agency Dashboard which uses a snapshot strip, icon-grid quick actions, two-column performance layout, and mobile FAB.
+All changes from the plan have been implemented:
 
-### Design Changes
+1. **DB Migration** — Added `is_founding_partner`, `payplus_customer_id`, `payplus_subscription_id` to `subscriptions`; `payplus_subscription_id` to `featured_listings`. Updated FOUNDING2026 promo code (max_redemptions=15, cleared old discount/credit data).
+2. **`enroll-founding-partner` edge function** — 15-cap enforcement, trial creation (60 days), founding_partners insert, first month credit grant, promo redemption tracking.
+3. **`check-trial-expirations` edge function** — Daily cron (6 AM UTC) expires trialing subscriptions past trial_end.
+4. **`useFoundingSpots` hook** — Live spots remaining counter querying founding_partners.
+5. **`FoundingProgramSection`** — Updated benefits (2mo free, 3 featured/mo, early access, case study), spots counter badge.
+6. **`FoundingProgramModal`** — Updated benefits, spots counter, activates enrollment flow.
+7. **`Pricing.tsx`** — FOUNDING2026 code routes to `enroll-founding-partner` instead of Stripe; CTA changes to "Activate Founding Program".
+8. **`CheckoutSuccess.tsx`** — Founding partner variant with trial end date and featured listings CTA.
+9. **`grant-monthly-featured-credits`** — Already has 2-month duration cap logic.
+10. **`PlanCard`** — Added `ctaLabel` prop for custom CTA text.
 
-**1. Compact Header** (matches agency pattern)
-- Remove the gradient hero banner
-- Use the same flat `flex` header: icon + name/subtitle on left, action buttons on right
-- Show "Agent Dashboard" subtitle, verified badge if active
-- Keep Settings, Analytics, New Listing, Add Blog buttons but move to compact icon row
-
-**2. Snapshot Strip** (new — matches agency)
-- Inline dot-separated stats: `X live · X drafts · X pending · X total views`
-- Replace the 5-column status cards grid entirely
-
-**3. Quick Actions Grid** (redesign to match agency 3x2 icon grid)
-- 6 compact icon tiles in `grid-cols-3 sm:grid-cols-6`: My Listings, Leads, Analytics, Blog, Settings, Public Profile
-- Standardized `min-h-[96px]` tiles with icon + label, badge support
-- Replace the current large 3-column cards with descriptions
-
-**4. Two-Column Performance + Activity Layout** (new)
-- Left (3/5): Performance Insights wrapped in `bg-muted/30 rounded-2xl p-4` — reuse existing `PerformanceInsights` component with data from `useMyAgentPerformance`
-- Right (2/5): Stack of contextual cards:
-  - Stale listings alert (if any)
-  - Changes requested alert (if any)
-  - Homepage Exposure card (condensed)
-  - Recent Properties (top 3, compact)
-
-**5. Priority Alerts** (keep but streamline)
-- Keep approval celebration banners (single + batch) — already good
-- Keep pending verification alert
-- Move stale/changes-requested into the right column instead of standalone banners
-
-**6. Onboarding Checklist** — keep as-is, already conditional
-
-**7. Mobile FAB** (new — matches agency)
-- Fixed bottom-right `+ New Listing` FAB on mobile, same spring animation
-
-**8. Remove**
-- The gradient header banner
-- The 5-column status cards section
-- The large 3-column quick actions with descriptions
-- The large "Recent Properties" full-width card at the bottom
-
-### Files to Edit
-
-1. **`src/pages/agent/AgentDashboard.tsx`** — Full rewrite of the JSX layout (~400 lines changed). Keep all existing hooks, state, and logic. Restructure the template to match agency dashboard patterns.
-
-2. **`src/components/agent/NotificationBell.tsx`** — Verify it exists and works (agent equivalent of `AgencyNotificationBell`)
-
-No new components needed — reuse existing `PerformanceInsights`, `OnboardingChecklist`, and hooks.
-
-### Layout Structure (top to bottom)
-```text
-┌─────────────────────────────────────────────┐
-│ [←] [icon] Agent Name  ··· [⚙] [📊] [+ New]│  ← compact header
-├─────────────────────────────────────────────┤
-│ 4 live · 2 drafts · 1 pending · 342 views  │  ← snapshot strip
-├─────────────────────────────────────────────┤
-│ 🎉 Approval banners (if any)               │  ← priority alerts
-│ ⚠ Verification pending (if applicable)     │
-├─────────────────────────────────────────────┤
-│ Onboarding checklist (if not dismissed)     │
-├──────┬──────┬──────┬──────┬──────┬──────────┤
-│ List │ Leads│ Stats│ Blog │ Sets │ Profile  │  ← quick actions grid
-├──────┴──────┴──────┴──────┴──────┴──────────┤
-│ ┌─────────────────┐ ┌────────────────┐      │
-│ │ Performance     │ │ Stale alert    │      │
-│ │ (3/5 width)     │ │ Changes alert  │      │
-│ │ Views/Inquiries │ │ Homepage info  │      │
-│ │ Listings/Conv.  │ │ Recent Props   │      │
-│ └─────────────────┘ └────────────────┘      │
-├─────────────────────────────────────────────┤
-│                          [+ FAB] (mobile)   │
-└─────────────────────────────────────────────┘
-```
-
+### Deferred (PayPlus not yet set up):
+- `payplus-checkout`, `payplus-webhook`, `manage-billing` edge functions
+- `list-invoices` PayPlus integration
+- Featured listing ₪299/mo PayPlus recurring charge
+- Trial-to-paid automatic charge initiation
