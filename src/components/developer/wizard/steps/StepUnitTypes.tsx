@@ -258,7 +258,7 @@ export function StepUnitTypes() {
       floorPlanUrl: unitType.floorPlanUrl,
       quantity: unitType.quantity,
     });
-    setCustomName(UNIT_TYPE_PRESETS.includes(unitType.name) ? '' : unitType.name);
+    setCustomName(UNIT_TYPE_PRESETS.some(p => p.value === unitType.name) ? '' : unitType.name);
     setIsDialogOpen(true);
   };
 
