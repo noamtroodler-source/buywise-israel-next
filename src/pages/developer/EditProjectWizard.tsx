@@ -138,7 +138,7 @@ function EditWizardContent({ projectId }: { projectId: string }) {
         latitude: project.latitude ?? undefined,
         longitude: project.longitude ?? undefined,
         total_units: project.total_units ?? undefined,
-        available_units: project.available_units ?? undefined,
+        price_from: project.price_from ?? undefined,
         price_from: project.price_from ?? undefined,
         price_to: project.price_to ?? undefined,
         construction_start: project.construction_start ?? undefined,
