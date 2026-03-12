@@ -88,6 +88,18 @@ export function StepBasics() {
           </Select>
         </div>
 
+        <div className="space-y-2">
+          <Label htmlFor="neighborhood">Neighborhood</Label>
+          <NeighborhoodAutocomplete
+            value={data.neighborhood || ''}
+            onValueChange={(val) => updateData({ neighborhood: val })}
+            cityName={data.city}
+            placeholder="Select or search neighborhood"
+          />
+          <p className="text-xs text-muted-foreground">
+            Helps buyers find this project when filtering by neighborhood
+          </p>
+
         {/* Location Section with AddressAutocomplete */}
         <div className="space-y-4 pt-2">
           <div className="flex items-center gap-3">
