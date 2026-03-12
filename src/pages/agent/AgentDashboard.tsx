@@ -20,6 +20,8 @@ import { NotificationBell } from '@/components/agent/NotificationBell';
 import { STALE_THRESHOLD_DAYS } from '@/hooks/useAgentProfile';
 import { differenceInDays, parseISO, format, isToday, isYesterday } from 'date-fns';
 import { useAdvertiserTracking } from '@/hooks/useAdvertiserTracking';
+import { useMyAgentPerformance } from '@/hooks/useMyAgentPerformance';
+import { PerformanceInsights } from '@/components/agent/PerformanceInsights';
 import { useBlogQuotaCheck } from '@/hooks/useBlogQuota';
 import { useMyBlogPosts } from '@/hooks/useProfessionalBlog';
 import { useIsMobile } from '@/hooks/use-mobile';
