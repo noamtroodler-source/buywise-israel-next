@@ -170,7 +170,6 @@ function EditWizardContent({ projectId }: { projectId: string }) {
       price_to: data.price_to ?? null,
       total_units: data.total_units ?? null,
       construction_start: data.construction_start ?? null,
-      construction_start: data.construction_start ?? null,
       completion_date: data.completion_date ?? null,
       construction_progress_percent: data.construction_progress_percent ?? 0,
       amenities: data.amenities,

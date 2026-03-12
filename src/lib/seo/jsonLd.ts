@@ -130,7 +130,6 @@ interface ProjectJsonLdInput {
   status: string;
   total_units: number;
   price_from?: number | null;
-  price_from?: number | null;
   price_to?: number | null;
   currency?: string;
   completion_date?: string | null;
