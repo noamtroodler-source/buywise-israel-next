@@ -40,7 +40,6 @@ interface CompareProject {
   completion_date: string | null;
   construction_progress_percent: number | null;
   total_units: number;
-  available_units: number;
   images: string[] | null;
   amenities: string[] | null;
   developer?: {
