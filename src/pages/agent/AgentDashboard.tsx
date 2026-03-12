@@ -34,6 +34,7 @@ export default function AgentDashboard() {
   const { used: blogQuotaUsed, limit: blogQuotaLimit, canSubmit: canSubmitBlog, isLoading: blogQuotaLoading } = useBlogQuotaCheck('agent', agentProfile?.id);
   const { data: blogPosts = [] } = useMyBlogPosts('agent', agentProfile?.id);
   const isMobile = useIsMobile();
+  const { data: performanceData, isLoading: performanceLoading } = useMyAgentPerformance();
 
   // Track dashboard view on mount
   useEffect(() => {
