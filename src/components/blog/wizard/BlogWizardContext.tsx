@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { scrollToTopInstant } from '@/lib/scrollToTop';
 import { AuthorType } from '@/hooks/useProfessionalBlog';
 
 export interface BlogWizardData {

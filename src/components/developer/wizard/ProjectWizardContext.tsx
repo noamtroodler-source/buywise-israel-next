@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, ReactNode, useCallback } from 'react';
+import { scrollToTopInstant } from '@/lib/scrollToTop';
 
 export type ProjectStatus = 'planning' | 'pre_sale' | 'foundation' | 'structure' | 'finishing' | 'delivery';
 

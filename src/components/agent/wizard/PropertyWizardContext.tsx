@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
+import { scrollToTopInstant } from '@/lib/scrollToTop';
 import { PropertyType, ListingStatus, LeaseTermOption, SublettingOption, FurnishedStatus, PetsPolicy } from '@/types/database';
 
 export interface PropertyWizardData {
