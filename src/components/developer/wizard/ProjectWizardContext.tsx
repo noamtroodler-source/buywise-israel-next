@@ -70,6 +70,9 @@ interface ProjectWizardContextType {
   // Save-related properties
   resetWizard: () => void;
   loadFromSaved: (savedData: ProjectWizardData) => void;
+  // Step offset for agency wizard (prepends steps)
+  stepOffset: number;
+  setStepOffset: (offset: number) => void;
 }
 
 export const defaultProjectData: ProjectWizardData = {
