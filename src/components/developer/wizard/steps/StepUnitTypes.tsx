@@ -33,17 +33,17 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 const UNIT_TYPE_PRESETS = [
-  '1 Bedroom',
-  '2 Bedroom',
-  '3 Bedroom',
-  '4 Bedroom',
-  '5 Bedroom',
-  'Garden Apartment',
-  'Penthouse',
-  'Duplex',
-  'Mini Penthouse',
-  'Studio',
-  'Custom',
+  { value: 'Studio', label: 'Studio (1–1.5 rooms)' },
+  { value: '1 Bedroom', label: '1 Bedroom (2 rooms)' },
+  { value: '2 Bedroom', label: '2 Bedroom (3 rooms)' },
+  { value: '3 Bedroom', label: '3 Bedroom (4 rooms)' },
+  { value: '4 Bedroom', label: '4 Bedroom (5 rooms)' },
+  { value: '5 Bedroom', label: '5 Bedroom (6 rooms)' },
+  { value: 'Garden Apartment', label: 'Garden Apartment' },
+  { value: 'Penthouse', label: 'Penthouse' },
+  { value: 'Duplex', label: 'Duplex' },
+  { value: 'Mini Penthouse', label: 'Mini Penthouse' },
+  { value: 'Custom', label: 'Custom' },
 ];
 
 const OUTDOOR_SPACE_OPTIONS: { value: OutdoorSpaceType; label: string }[] = [
@@ -145,7 +145,7 @@ function SortableUnitCard({ unitType, onEdit, onDelete, formatPrice }: SortableU
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <Bed className="h-3.5 w-3.5" />
-                  {unitType.bedrooms} Bed
+                  {unitType.bedrooms} Bed{unitType.additionalRooms > 0 ? ` + ${unitType.additionalRooms}` : ''}
                 </span>
                 <span className="flex items-center gap-1">
                   <Bath className="h-3.5 w-3.5" />
@@ -258,7 +258,7 @@ export function StepUnitTypes() {
       floorPlanUrl: unitType.floorPlanUrl,
       quantity: unitType.quantity,
     });
-    setCustomName(UNIT_TYPE_PRESETS.includes(unitType.name) ? '' : unitType.name);
+    setCustomName(UNIT_TYPE_PRESETS.some(p => p.value === unitType.name) ? '' : unitType.name);
     setIsDialogOpen(true);
   };
 
@@ -493,9 +493,9 @@ export function StepUnitTypes() {
                   <SelectValue placeholder="Select unit type" />
                 </SelectTrigger>
                 <SelectContent>
-                  {UNIT_TYPE_PRESETS.map((preset) => (
-                    <SelectItem key={preset} value={preset}>
-                      {preset}
+                {UNIT_TYPE_PRESETS.map((preset) => (
+                    <SelectItem key={preset.value} value={preset.value}>
+                      {preset.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -513,7 +513,21 @@ export function StepUnitTypes() {
 {/* Bedrooms, Other Rooms & Bathrooms */}
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label>Bedrooms *</Label>
+                  <div className="flex items-center gap-1.5">
+                    <Label>Bedrooms *</Label>
+                    <TooltipProvider delayDuration={0}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button type="button" className="inline-flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+                            <HelpCircle className="h-3.5 w-3.5" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs text-sm">
+                          <p>True bedrooms only — do not count living room, mamad, or office.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                 <Select
                   value={String(formData.bedrooms)}
                   onValueChange={(v) => setFormData(prev => ({ ...prev, bedrooms: Number(v) }))}
@@ -529,7 +543,21 @@ export function StepUnitTypes() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Other Rooms</Label>
+                <div className="flex items-center gap-1.5">
+                  <Label>Extra Rooms</Label>
+                  <TooltipProvider delayDuration={0}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button type="button" className="inline-flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+                          <HelpCircle className="h-3.5 w-3.5" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs text-sm">
+                        <p>Office, mamad used as a room, storage room, etc. Not counted as bedrooms.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
                 <Select
                   value={String(formData.additionalRooms)}
                   onValueChange={(v) => setFormData(prev => ({ ...prev, additionalRooms: Number(v) }))}
