@@ -33,17 +33,17 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 const UNIT_TYPE_PRESETS = [
-  '1 Bedroom',
-  '2 Bedroom',
-  '3 Bedroom',
-  '4 Bedroom',
-  '5 Bedroom',
-  'Garden Apartment',
-  'Penthouse',
-  'Duplex',
-  'Mini Penthouse',
-  'Studio',
-  'Custom',
+  { value: 'Studio', label: 'Studio (1–1.5 rooms)' },
+  { value: '1 Bedroom', label: '1 Bedroom (2 rooms)' },
+  { value: '2 Bedroom', label: '2 Bedroom (3 rooms)' },
+  { value: '3 Bedroom', label: '3 Bedroom (4 rooms)' },
+  { value: '4 Bedroom', label: '4 Bedroom (5 rooms)' },
+  { value: '5 Bedroom', label: '5 Bedroom (6 rooms)' },
+  { value: 'Garden Apartment', label: 'Garden Apartment' },
+  { value: 'Penthouse', label: 'Penthouse' },
+  { value: 'Duplex', label: 'Duplex' },
+  { value: 'Mini Penthouse', label: 'Mini Penthouse' },
+  { value: 'Custom', label: 'Custom' },
 ];
 
 const OUTDOOR_SPACE_OPTIONS: { value: OutdoorSpaceType; label: string }[] = [
