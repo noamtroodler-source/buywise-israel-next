@@ -188,6 +188,8 @@ export function ProjectWizardProvider({ children, totalSteps }: { children: Reac
         isLastStep,
         resetWizard,
         loadFromSaved,
+        stepOffset,
+        setStepOffset,
       }}
     >
       {children}
