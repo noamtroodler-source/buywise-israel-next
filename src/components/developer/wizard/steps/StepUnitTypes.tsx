@@ -513,7 +513,21 @@ export function StepUnitTypes() {
 {/* Bedrooms, Other Rooms & Bathrooms */}
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label>Bedrooms *</Label>
+                  <div className="flex items-center gap-1.5">
+                    <Label>Bedrooms *</Label>
+                    <TooltipProvider delayDuration={0}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button type="button" className="inline-flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+                            <HelpCircle className="h-3.5 w-3.5" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs text-sm">
+                          <p>True bedrooms only — do not count living room, mamad, or office.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                 <Select
                   value={String(formData.bedrooms)}
                   onValueChange={(v) => setFormData(prev => ({ ...prev, bedrooms: Number(v) }))}
@@ -529,7 +543,21 @@ export function StepUnitTypes() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Other Rooms</Label>
+                <div className="flex items-center gap-1.5">
+                  <Label>Extra Rooms</Label>
+                  <TooltipProvider delayDuration={0}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button type="button" className="inline-flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+                          <HelpCircle className="h-3.5 w-3.5" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs text-sm">
+                        <p>Office, mamad used as a room, storage room, etc. Not counted as bedrooms.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
                 <Select
                   value={String(formData.additionalRooms)}
                   onValueChange={(v) => setFormData(prev => ({ ...prev, additionalRooms: Number(v) }))}
