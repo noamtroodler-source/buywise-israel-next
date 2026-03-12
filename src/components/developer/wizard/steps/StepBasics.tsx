@@ -4,6 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useProjectWizard, ProjectStatus } from '../ProjectWizardContext';
 import { useCities } from '@/hooks/useCities';
 import { AddressAutocomplete, ParsedAddress } from '@/components/agent/wizard/AddressAutocomplete';
+import { NeighborhoodAutocomplete } from '@/components/agent/wizard/NeighborhoodAutocomplete';
 import { PropertyMiniMapWrapper } from '@/components/property/PropertyMiniMapWrapper';
 import { AlertCircle, MapPin } from 'lucide-react';
 import { GoogleMapsProvider } from '@/components/maps/GoogleMapsProvider';
