@@ -1,70 +1,22 @@
 
 
-## Plan: Agency Project Wizard (`/agency/projects/new`)
+## Phase 1: Founding Partner Enrollment — Implemented ✅
 
-This creates a dedicated project wizard for agencies, mirroring the pattern of `AgencyNewPropertyWizard` — reusing the existing developer project wizard steps with an added "Step 0: Assign Agent" and agency-specific submission logic.
+All changes from the plan have been implemented:
 
-### Architecture
+1. **DB Migration** — Added `is_founding_partner`, `payplus_customer_id`, `payplus_subscription_id` to `subscriptions`; `payplus_subscription_id` to `featured_listings`. Updated FOUNDING2026 promo code (max_redemptions=15, cleared old discount/credit data).
+2. **`enroll-founding-partner` edge function** — 15-cap enforcement, trial creation (60 days), founding_partners insert, first month credit grant, promo redemption tracking.
+3. **`check-trial-expirations` edge function** — Daily cron (6 AM UTC) expires trialing subscriptions past trial_end.
+4. **`useFoundingSpots` hook** — Live spots remaining counter querying founding_partners.
+5. **`FoundingProgramSection`** — Updated benefits (2mo free, 3 featured/mo, early access, case study), spots counter badge.
+6. **`FoundingProgramModal`** — Updated benefits, spots counter, activates enrollment flow.
+7. **`Pricing.tsx`** — FOUNDING2026 code routes to `enroll-founding-partner` instead of Stripe; CTA changes to "Activate Founding Program".
+8. **`CheckoutSuccess.tsx`** — Founding partner variant with trial end date and featured listings CTA.
+9. **`grant-monthly-featured-credits`** — Already has 2-month duration cap logic.
+10. **`PlanCard`** — Added `ctaLabel` prop for custom CTA text.
 
-The existing developer wizard components (`StepBasics`, `StepDetails`, `StepAmenities`, `StepUnitTypes`, `StepPhotos`, `StepDescription`, `StepReview`) are already well-built and complete. The agency version wraps them identically to how `AgencyNewPropertyWizard` wraps the property wizard steps.
-
-### Files to Create
-
-**1. `src/pages/agency/AgencyNewProjectWizard.tsx`** — Main page component
-- Wraps `ProjectWizardProvider` with `totalSteps={8}` (7 existing + 1 assign agent)
-- Step 0: `StepAssignAgent` (reuse from `src/components/agency/wizard/StepAssignAgent.tsx`) — selects which agent represents this project
-- Steps 1-7: Reuses all existing developer wizard steps (`StepBasics` through `StepReview`)
-- On submit: Inserts into `projects` table with `representing_agent_id` set to the selected agent, and `developer_id` set to `null` (agency-listed project, not developer-listed)
-- Uses `useAutoSave` with key `project-wizard-draft-agency`
-- Save Draft and Submit for Review buttons (same pattern as property wizard)
-- Verification check: requires agency verification before submission
-- Navigation: "Back to Listings" links to `/agency/listings`
-
-**2. `src/hooks/useAgencyProjects.tsx`** — Agency-specific project mutations
-- `useCreateProjectForAgency()` — similar to `useCreateProject` but:
-  - Sets `representing_agent_id` instead of `developer_id`
-  - Fetches agent record for the selected agent to validate
-  - Inserts project_units the same way
-  - Sets `verification_status` based on draft vs submit
-- `useAgencyProjects()` — fetches all projects where `representing_agent_id` belongs to agents in the agency
-
-### Files to Modify
-
-**3. `src/App.tsx` (or routing file)**
-- Add route: `/agency/projects/new` → `AgencyNewProjectWizard`
-
-**4. `src/components/developer/wizard/ProjectWizardContext.tsx`**
-- Add `stepOffset` / `setStepOffset` support (same pattern as `PropertyWizardContext`) so validation works correctly when the agency wizard prepends Step 0
-- Add `totalSteps` prop to `ProjectWizardProvider`
-
-**5. `src/components/developer/wizard/steps/StepReview.tsx`**
-- The `onEditStep` callback needs to account for step offset (agency wizard calls `setCurrentStep(s + 1)` like the property wizard does)
-
-### Key Design Decisions
-
-- **`representing_agent_id`** is the existing FK on `projects` — no schema changes needed
-- **`developer_id` = null** for agency-created projects (agencies aren't developers)
-- **Reuse all 7 step components** without modification — they use `useProjectWizard()` context which is the same
-- **StepAssignAgent** is already generic enough — it shows team members and allows selection
-- **Listing limit check** reuses `useListingLimitCheck('agency')` or a new `'agency_project'` type
-- **ProjectSubmittedDialog** is reused from the developer flow
-- **Minimum 1 photo** validation stays the same (projects don't have the rooms-based dynamic photo rule)
-
-### Step Flow
-
-```text
-Step 0: Assign Agent (agency-only)
-Step 1: Basics (name, city, address, status)
-Step 2: Details (units, pricing, timeline)
-Step 3: Amenities (checkboxes + featured highlight)
-Step 4: Unit Types (drag-and-drop unit definitions)
-Step 5: Gallery (project images)
-Step 6: Description (with AI checker)
-Step 7: Review (preview + submit)
-```
-
-### Validation
-
-Step 0 validation: `!!assignedAgentId` (must select an agent).
-Steps 1-7: Existing validation from `ProjectWizardContext` — adjusted by `stepOffset = 1`.
-
+### Deferred (PayPlus not yet set up):
+- `payplus-checkout`, `payplus-webhook`, `manage-billing` edge functions
+- `list-invoices` PayPlus integration
+- Featured listing ₪299/mo PayPlus recurring charge
+- Trial-to-paid automatic charge initiation

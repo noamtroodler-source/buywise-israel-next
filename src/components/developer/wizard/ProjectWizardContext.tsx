@@ -70,6 +70,9 @@ interface ProjectWizardContextType {
   // Save-related properties
   resetWizard: () => void;
   loadFromSaved: (savedData: ProjectWizardData) => void;
+  // Step offset for agency wizard (prepends steps)
+  stepOffset: number;
+  setStepOffset: (offset: number) => void;
 }
 
 export const defaultProjectData: ProjectWizardData = {
@@ -97,12 +100,14 @@ export const defaultProjectData: ProjectWizardData = {
 
 const ProjectWizardContext = createContext<ProjectWizardContextType | undefined>(undefined);
 
-const TOTAL_STEPS = 7; // Updated from 6 to 7 with new Unit Types step
+const DEFAULT_TOTAL_STEPS = 7; // Updated from 6 to 7 with new Unit Types step
 export const PROJECT_WIZARD_STORAGE_KEY = 'project-wizard-draft';
 
-export function ProjectWizardProvider({ children }: { children: ReactNode }) {
+export function ProjectWizardProvider({ children, totalSteps }: { children: ReactNode; totalSteps?: number }) {
+  const TOTAL_STEPS = totalSteps ?? DEFAULT_TOTAL_STEPS;
   const [data, setData] = useState<ProjectWizardData>(defaultProjectData);
   const [currentStep, setCurrentStep] = useState(0);
+  const [stepOffset, setStepOffset] = useState(0);
 
   const updateData = useCallback((updates: Partial<ProjectWizardData>) => {
     setData(prev => ({ ...prev, ...updates }));
@@ -136,9 +141,10 @@ export function ProjectWizardProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Validation for each step
+  // Validation for each step (adjusted by stepOffset for agency wizard)
   const canGoNext = (() => {
-    switch (currentStep) {
+    const effectiveStep = currentStep - stepOffset;
+    switch (effectiveStep) {
       case 0: // Basics
         const hasValidAddress = data.address && data.latitude && data.longitude && /\d+/.test(data.address);
         return !!(data.name && data.city && data.neighborhood && hasValidAddress);
@@ -182,6 +188,8 @@ export function ProjectWizardProvider({ children }: { children: ReactNode }) {
         isLastStep,
         resetWizard,
         loadFromSaved,
+        stepOffset,
+        setStepOffset,
       }}
     >
       {children}
