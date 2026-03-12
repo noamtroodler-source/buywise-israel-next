@@ -145,7 +145,7 @@ function SortableUnitCard({ unitType, onEdit, onDelete, formatPrice }: SortableU
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <Bed className="h-3.5 w-3.5" />
-                  {unitType.bedrooms} Bed
+                  {unitType.bedrooms} Bed{unitType.additionalRooms > 0 ? ` + ${unitType.additionalRooms}` : ''}
                 </span>
                 <span className="flex items-center gap-1">
                   <Bath className="h-3.5 w-3.5" />
