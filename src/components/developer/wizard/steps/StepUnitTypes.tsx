@@ -493,9 +493,9 @@ export function StepUnitTypes() {
                   <SelectValue placeholder="Select unit type" />
                 </SelectTrigger>
                 <SelectContent>
-                  {UNIT_TYPE_PRESETS.map((preset) => (
-                    <SelectItem key={preset} value={preset}>
-                      {preset}
+                {UNIT_TYPE_PRESETS.map((preset) => (
+                    <SelectItem key={preset.value} value={preset.value}>
+                      {preset.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
