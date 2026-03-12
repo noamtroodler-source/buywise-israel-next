@@ -136,7 +136,7 @@ export function ProjectWizardProvider({ children, totalSteps }: { children: Reac
   const goBack = () => {
     if (currentStep > 0) {
       setCurrentStep(prev => prev - 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      scrollToTopInstant();
     }
   };
 

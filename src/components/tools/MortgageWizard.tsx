@@ -361,7 +361,7 @@ export function MortgageWizard() {
             </Button>
           ) : (
             <Button
-              onClick={() => { setCurrentStep(prev => prev + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              onClick={() => { setCurrentStep(prev => prev + 1); scrollToTopInstant(); }}
               className="gap-2"
             >
               Next

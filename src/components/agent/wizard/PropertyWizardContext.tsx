@@ -163,7 +163,7 @@ export function PropertyWizardProvider({ children, totalSteps = DEFAULT_TOTAL_ST
   const goBack = () => {
     if (currentStep > 0) {
       setCurrentStep(prev => prev - 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      scrollToTopInstant();
     }
   };
 

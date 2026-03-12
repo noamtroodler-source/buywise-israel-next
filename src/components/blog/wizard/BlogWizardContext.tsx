@@ -84,7 +84,7 @@ export function BlogWizardProvider({
   const goBack = useCallback(() => {
     if (currentStep > 1) {
       setCurrentStep(prev => prev - 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      scrollToTopInstant();
     }
   }, [currentStep]);
 
