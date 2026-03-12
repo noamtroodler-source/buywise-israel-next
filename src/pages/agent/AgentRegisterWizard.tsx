@@ -217,7 +217,7 @@ export default function AgentRegisterWizard() {
   const goNext = () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(prev => prev + 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      scrollToTopInstant();
     }
   };
 
