@@ -145,8 +145,14 @@ export default function AgencyListings() {
               </Button>
               <Button asChild className="rounded-xl">
                 <Link to="/agency/properties/new">
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Home className="h-4 w-4 mr-2" />
                   Add Listing
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="rounded-xl border-primary/30 text-primary hover:bg-primary/5">
+                <Link to="/agency/projects/new">
+                  <Building2 className="h-4 w-4 mr-2" />
+                  Add Project
                 </Link>
               </Button>
             </div>
