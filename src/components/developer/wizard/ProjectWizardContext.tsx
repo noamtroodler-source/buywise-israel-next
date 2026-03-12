@@ -114,7 +114,7 @@ export function ProjectWizardProvider({ children, totalSteps }: { children: Reac
 
   const handleSetCurrentStep = useCallback((step: number) => {
     setCurrentStep(step);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    scrollToTopInstant();
   }, []);
 
   const resetWizard = useCallback(() => {
