@@ -67,10 +67,12 @@ const amenityOptions = {
 
 const categoryLabels: Record<string, string> = {
   building: 'Building Essentials',
+  unit_features: 'Unit Features',
   leisure: 'Leisure & Recreation',
   community: 'Community & Services',
   technology: 'Technology',
   sustainability: 'Sustainability',
+  buyer_friendly: 'Buyer-Friendly',
 };
 
 export function StepAmenities() {
