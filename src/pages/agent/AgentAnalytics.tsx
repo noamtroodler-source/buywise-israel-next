@@ -34,6 +34,22 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
 };
 
+const machineTitlePattern = /^[a-z0-9_-]{16,}$/i;
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const isLikelyMachineTitle = (value: string) => {
+  const normalized = value.trim();
+  if (!normalized) return true;
+  if (uuidPattern.test(normalized)) return true;
+  return machineTitlePattern.test(normalized) && !/\s/.test(normalized);
+};
+
+const getReadableListingTitle = (rawTitle: string | null | undefined, city: string | null | undefined, index: number) => {
+  const normalizedTitle = (rawTitle ?? '').trim();
+  if (normalizedTitle && !isLikelyMachineTitle(normalizedTitle)) return normalizedTitle;
+  return city ? `${city} Listing ${index + 1}` : `Listing ${index + 1}`;
+};
+
 export default function AgentAnalytics() {
   const [dateRange, setDateRange] = useState<DateRangeFilter>('30d');
   const [activeTab, setActiveTab] = useState('overview');
