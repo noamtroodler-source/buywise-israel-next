@@ -43,14 +43,6 @@ export default function AgentDashboard() {
     }
   }, [agentProfile?.id, trackDashboardView]);
 
-  // Onboarding checklist dismiss state
-  const [showOnboarding, setShowOnboarding] = useState(() => {
-    return localStorage.getItem('agent-onboarding-dismissed') !== 'true';
-  });
-  const handleDismissOnboarding = () => {
-    setShowOnboarding(false);
-    localStorage.setItem('agent-onboarding-dismissed', 'true');
-  };
 
   // Track dismissed approval alerts
   const [dismissedApprovals, setDismissedApprovals] = useState<string[]>(() => {
