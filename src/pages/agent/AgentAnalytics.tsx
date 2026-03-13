@@ -34,6 +34,22 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
 };
 
+const machineTitlePattern = /^[a-z0-9_-]{16,}$/i;
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const isLikelyMachineTitle = (value: string) => {
+  const normalized = value.trim();
+  if (!normalized) return true;
+  if (uuidPattern.test(normalized)) return true;
+  return machineTitlePattern.test(normalized) && !/\s/.test(normalized);
+};
+
+const getReadableListingTitle = (rawTitle: string | null | undefined, city: string | null | undefined, index: number) => {
+  const normalizedTitle = (rawTitle ?? '').trim();
+  if (normalizedTitle && !isLikelyMachineTitle(normalizedTitle)) return normalizedTitle;
+  return city ? `${city} Listing ${index + 1}` : `Listing ${index + 1}`;
+};
+
 export default function AgentAnalytics() {
   const [dateRange, setDateRange] = useState<DateRangeFilter>('30d');
   const [activeTab, setActiveTab] = useState('overview');
@@ -59,11 +75,11 @@ export default function AgentAnalytics() {
   const dateRangeLabel = dateRangeOptions.find(o => o.value === dateRange)?.label || 'All time';
 
   // Prepare chart data
-  const propertyChartData = properties.map(property => {
+  const propertyChartData = properties.map((property, index) => {
     const stats = analytics?.propertyAnalytics.find(p => p.propertyId === property.id);
     return {
       propertyId: property.id,
-      title: property.title,
+      title: getReadableListingTitle(property.title, property.city, index),
       views: stats?.views || 0,
       saves: stats?.saves || 0,
       inquiries: stats?.inquiries || 0,
@@ -213,23 +229,24 @@ export default function AgentAnalytics() {
                         </p>
                       ) : (
                         <div className="space-y-3">
-                          {properties.map((property) => {
+                          {properties.map((property, index) => {
                             const propertyStats = analytics?.propertyAnalytics.find(p => p.propertyId === property.id);
                             const views = propertyStats?.views || 0;
                             const saves = propertyStats?.saves || 0;
                             const inquiries = propertyStats?.inquiries || 0;
                             const convRate = views > 0 ? ((inquiries / views) * 100).toFixed(1) : '0';
+                            const displayTitle = getReadableListingTitle(property.title, property.city, index);
                             
                             return (
                               <div key={property.id} className="flex items-center justify-between p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors">
                                 <div className="flex items-center gap-3 flex-1 min-w-0">
                                   <img
                                     src={property.images?.[0] || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=100'}
-                                    alt={property.title}
+                                    alt={displayTitle}
                                     className="h-12 w-12 rounded-xl object-cover flex-shrink-0"
                                   />
                                   <div className="min-w-0">
-                                    <p className="font-medium line-clamp-1">{property.title}</p>
+                                    <p className="font-medium line-clamp-1">{displayTitle}</p>
                                     <p className="text-sm text-muted-foreground">{property.city}</p>
                                   </div>
                                 </div>
