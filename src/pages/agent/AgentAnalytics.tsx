@@ -229,23 +229,24 @@ export default function AgentAnalytics() {
                         </p>
                       ) : (
                         <div className="space-y-3">
-                          {properties.map((property) => {
+                          {properties.map((property, index) => {
                             const propertyStats = analytics?.propertyAnalytics.find(p => p.propertyId === property.id);
                             const views = propertyStats?.views || 0;
                             const saves = propertyStats?.saves || 0;
                             const inquiries = propertyStats?.inquiries || 0;
                             const convRate = views > 0 ? ((inquiries / views) * 100).toFixed(1) : '0';
+                            const displayTitle = getReadableListingTitle(property.title, property.city, index);
                             
                             return (
                               <div key={property.id} className="flex items-center justify-between p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors">
                                 <div className="flex items-center gap-3 flex-1 min-w-0">
                                   <img
                                     src={property.images?.[0] || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=100'}
-                                    alt={property.title}
+                                    alt={displayTitle}
                                     className="h-12 w-12 rounded-xl object-cover flex-shrink-0"
                                   />
                                   <div className="min-w-0">
-                                    <p className="font-medium line-clamp-1">{property.title}</p>
+                                    <p className="font-medium line-clamp-1">{displayTitle}</p>
                                     <p className="text-sm text-muted-foreground">{property.city}</p>
                                   </div>
                                 </div>
