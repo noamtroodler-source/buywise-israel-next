@@ -1,82 +1,84 @@
-import { useMemo } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  Eye, Loader2, Clock, CheckCircle, AlertCircle,
-  XCircle, FileText, Home, AlertTriangle, ArrowLeft, Building2, Plus,
-  Pencil, Trash2, Send
+  ArrowLeft, Loader2, Home, Plus, Search, Eye, Clock,
+  CheckCircle2, Building2, Edit, Trash2, Send, MoreHorizontal,
+  AlertTriangle, MessageSquare, Heart,
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from '@/components/ui/table';
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { useAgentProperties, useDeleteProperty, useSubmitForReview } from '@/hooks/useAgentProperties';
 import { STALE_THRESHOLD_DAYS } from '@/hooks/useAgentProfile';
+import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { differenceInDays, parseISO } from 'date-fns';
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel,
-  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
-  AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
-} from '@/components/ui/alert-dialog';
+import { cn } from '@/lib/utils';
 
-type VerificationStatus = 'draft' | 'pending_review' | 'approved' | 'changes_requested' | 'rejected';
-
-const getVerificationBadge = (status: VerificationStatus | undefined) => {
-  switch (status) {
-    case 'draft':
-      return { label: 'Draft', icon: FileText, className: 'bg-muted text-muted-foreground' };
-    case 'pending_review':
-      return { label: 'Pending Review', icon: Clock, className: 'bg-primary/10 text-primary' };
-    case 'approved':
-      return { label: 'Approved', icon: CheckCircle, className: 'bg-primary/10 text-primary' };
-    case 'changes_requested':
-      return { label: 'Changes Requested', icon: AlertCircle, className: 'bg-orange-100 text-orange-700' };
-    case 'rejected':
-      return { label: 'Rejected', icon: XCircle, className: 'bg-muted text-muted-foreground' };
-    default:
-      return { label: 'Unknown', icon: FileText, className: 'bg-muted text-muted-foreground' };
-  }
+const statusConfig = {
+  draft: { label: 'Draft', color: 'bg-muted text-muted-foreground' },
+  pending_review: { label: 'Pending', color: 'bg-yellow-500/10 text-yellow-600' },
+  approved: { label: 'Active', color: 'bg-green-500/10 text-green-600' },
+  changes_requested: { label: 'Changes', color: 'bg-orange-500/10 text-orange-600' },
+  rejected: { label: 'Rejected', color: 'bg-red-500/10 text-red-600' },
 };
 
 export default function AgentProperties() {
-  const [searchParams] = useSearchParams();
-  const initialTab = searchParams.get('tab') || 'all';
   const { data: properties = [], isLoading } = useAgentProperties();
   const deleteProperty = useDeleteProperty();
   const submitForReview = useSubmitForReview();
+  const formatPrice = useFormatPrice();
 
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'for_sale': return 'For Sale';
-      case 'for_rent': return 'For Rent';
-      case 'sold': return 'Sold';
-      case 'rented': return 'Rented';
-      default: return status;
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [cityFilter, setCityFilter] = useState<string>('all');
+
+  const cities = useMemo(() => [...new Set(properties.map(p => p.city).filter(Boolean))], [properties]);
+
+  const filteredListings = useMemo(() => properties.filter(listing => {
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      const matchesSearch =
+        listing.title?.toLowerCase().includes(query) ||
+        listing.address?.toLowerCase().includes(query) ||
+        listing.city?.toLowerCase().includes(query);
+      if (!matchesSearch) return false;
     }
-  };
+    if (statusFilter !== 'all' && (listing as any).verification_status !== statusFilter) return false;
+    if (cityFilter !== 'all' && listing.city !== cityFilter) return false;
+    return true;
+  }), [properties, searchQuery, statusFilter, cityFilter]);
+
+  const stats = useMemo(() => ({
+    total: properties.length,
+    active: properties.filter(l => (l as any).verification_status === 'approved').length,
+    pending: properties.filter(l => (l as any).verification_status === 'pending_review').length,
+    totalViews: properties.reduce((sum, l) => sum + (l.views_count || 0), 0),
+  }), [properties]);
+
+  const getDaysOnMarket = (createdAt: string) =>
+    Math.floor((Date.now() - new Date(createdAt).getTime()) / (1000 * 60 * 60 * 24));
 
   const isPropertyStale = (property: typeof properties[0]) => {
     if ((property as any).verification_status !== 'approved') return false;
     const renewedAt = (property as any).last_renewed_at || property.created_at;
     if (!renewedAt) return false;
-    const daysSinceRenewal = differenceInDays(new Date(), parseISO(renewedAt));
-    return daysSinceRenewal >= STALE_THRESHOLD_DAYS;
-  };
-
-  const filterByStatus = (status: VerificationStatus | 'all' | 'stale') => {
-    if (status === 'all') return properties;
-    if (status === 'stale') return properties.filter(p => isPropertyStale(p));
-    return properties.filter(p => (p as any).verification_status === status);
-  };
-
-  const statusCounts = {
-    all: properties.length,
-    draft: filterByStatus('draft').length,
-    pending_review: filterByStatus('pending_review').length,
-    changes_requested: filterByStatus('changes_requested').length,
-    approved: filterByStatus('approved').length,
-    stale: filterByStatus('stale').length,
+    return differenceInDays(new Date(), parseISO(renewedAt)) >= STALE_THRESHOLD_DAYS;
   };
 
   if (isLoading) {
@@ -89,134 +91,23 @@ export default function AgentProperties() {
     );
   }
 
-  const PropertyRow = ({ property, showStaleWarning = false }: { property: typeof properties[0]; showStaleWarning?: boolean }) => {
-    const status = (property as any).verification_status as VerificationStatus;
-    const badge = getVerificationBadge(status);
-    const BadgeIcon = badge.icon;
-    const isStale = isPropertyStale(property);
-    const canEdit = status === 'draft' || status === 'changes_requested';
-    const canSubmit = status === 'draft' || status === 'changes_requested';
-
-    return (
-      <div className="flex flex-col gap-3 p-4 rounded-lg border border-border">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <img
-              src={property.images?.[0] || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=100'}
-              alt={property.title}
-              className="h-16 w-16 rounded-lg object-cover flex-shrink-0"
-            />
-            <div className="min-w-0">
-              <h3 className="font-semibold line-clamp-1">{property.title}</h3>
-              <p className="text-sm text-muted-foreground truncate">{property.address}, {property.city}</p>
-              <div className="flex items-center gap-2 mt-1 flex-wrap">
-                <Badge variant="outline">{getStatusLabel(property.listing_status)}</Badge>
-                <span className="text-sm font-medium">₪{property.price.toLocaleString()}</span>
-                <Badge className={`${badge.className} gap-1`}>
-                  <BadgeIcon className="h-3 w-3" />
-                  {badge.label}
-                </Badge>
-                {(showStaleWarning || isStale) && status === 'approved' && (
-                  <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 gap-1">
-                    <AlertTriangle className="h-3 w-3" />
-                    Renewal Due
-                  </Badge>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
-            <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded-md">
-              <Eye className="h-3 w-3" />
-              {property.views_count || 0} views
-            </div>
-
-            {canSubmit && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => submitForReview.mutate(property.id)}
-                disabled={submitForReview.isPending}
-              >
-                <Send className="h-4 w-4 mr-1" />
-                Submit
-              </Button>
-            )}
-
-            {canEdit && (
-              <Button variant="ghost" size="sm" asChild>
-                <Link to={`/agent/properties/${property.id}/edit`}>
-                  <Pencil className="h-4 w-4 mr-1" />
-                  Edit
-                </Link>
-              </Button>
-            )}
-
-            {status === 'approved' && (
-              <Button variant="ghost" size="sm" asChild>
-                <Link to={`/properties/${property.id}`} target="_blank">
-                  <Eye className="h-4 w-4 mr-1" />
-                  View Live
-                </Link>
-              </Button>
-            )}
-
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete listing?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This will permanently delete "{property.title}". This action cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={() => deleteProperty.mutate(property.id)}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  >
-                    Delete
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-        </div>
-
-        {/* Show rejection reason inline */}
-        {status === 'changes_requested' && (property as any).rejection_reason && (
-          <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 text-sm text-orange-800">
-            <span className="font-medium">Changes requested:</span> {(property as any).rejection_reason}
-          </div>
-        )}
-      </div>
-    );
-  };
-
   return (
     <Layout>
       <div className="container py-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
 
-          <Button variant="ghost" asChild className="rounded-xl hover:bg-primary/5 mb-4 -ml-2">
-            <Link to="/agent">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Dashboard
-            </Link>
-          </Button>
-
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <Building2 className="h-6 w-6 text-primary" />
-              <h1 className="text-2xl font-bold text-foreground">My Listings</h1>
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" size="icon" asChild className="rounded-xl">
+                <Link to="/agent"><ArrowLeft className="h-4 w-4" /></Link>
+              </Button>
+              <div>
+                <h1 className="text-2xl font-bold">My Listings</h1>
+                <p className="text-muted-foreground">Manage all your properties</p>
+              </div>
             </div>
-            <Button asChild>
+            <Button asChild className="rounded-xl">
               <Link to="/agent/properties/new">
                 <Plus className="h-4 w-4 mr-2" />
                 New Listing
@@ -224,65 +115,254 @@ export default function AgentProperties() {
             </Button>
           </div>
 
-          {properties.length === 0 ? (
-            <Card>
-              <CardContent className="text-center py-12">
-                <Home className="h-12 w-12 mx-auto mb-4 opacity-30 text-muted-foreground" />
-                <p className="text-muted-foreground font-medium">No listings yet</p>
-                <p className="text-sm text-muted-foreground mt-1">Create your first listing to get started.</p>
-                <Button asChild className="mt-4">
-                  <Link to="/agent/properties/new">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Listing
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <Tabs defaultValue={initialTab}>
-              <TabsList className="mb-4 flex-wrap h-auto gap-1">
-                <TabsTrigger value="all">All ({statusCounts.all})</TabsTrigger>
-                <TabsTrigger value="draft">Drafts ({statusCounts.draft})</TabsTrigger>
-                <TabsTrigger value="pending_review">Pending ({statusCounts.pending_review})</TabsTrigger>
-                <TabsTrigger value="changes_requested">Changes ({statusCounts.changes_requested})</TabsTrigger>
-                <TabsTrigger value="approved">Live ({statusCounts.approved})</TabsTrigger>
-                {statusCounts.stale > 0 && (
-                  <TabsTrigger value="stale" className="text-amber-700 data-[state=active]:bg-amber-100">
-                    <AlertTriangle className="h-3 w-3 mr-1" />
-                    Renewal Due ({statusCounts.stale})
-                  </TabsTrigger>
-                )}
-              </TabsList>
+          {/* Stats Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              { label: 'Total Listings', value: stats.total, icon: Home },
+              { label: 'Active', value: stats.active, icon: CheckCircle2 },
+              { label: 'Pending Review', value: stats.pending, icon: Clock, highlight: stats.pending > 0 },
+              { label: 'Total Views', value: stats.totalViews, icon: Eye },
+            ].map((stat, index) => (
+              <motion.div key={stat.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
+                <Card className={cn('rounded-2xl border-primary/10', stat.highlight && 'bg-primary/5 border-primary/20')}>
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className={cn('p-2 rounded-xl', stat.highlight ? 'bg-primary/20' : 'bg-primary/10')}>
+                        <stat.icon className="h-4 w-4 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold">{stat.value}</p>
+                        <p className="text-xs text-muted-foreground">{stat.label}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
 
-              {(['all', 'draft', 'pending_review', 'changes_requested', 'approved', 'stale'] as const).map((tab) => {
-                const filteredProperties = filterByStatus(tab);
-                return (
-                  <TabsContent key={tab} value={tab}>
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>{filteredProperties.length} Listing{filteredProperties.length !== 1 ? 's' : ''}</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        {filteredProperties.length === 0 ? (
-                          <p className="text-center text-muted-foreground py-8">No listings in this category</p>
-                        ) : (
-                          <div className="space-y-4">
-                            {filteredProperties.map((property) => (
-                              <PropertyRow
-                                key={property.id}
-                                property={property}
-                                showStaleWarning={tab === 'stale'}
-                              />
-                            ))}
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
-                );
-              })}
-            </Tabs>
-          )}
+          {/* Filters */}
+          <Card className="rounded-2xl border-primary/10">
+            <CardContent className="p-4">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search listings..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 rounded-xl"
+                  />
+                </div>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-[140px] rounded-xl"><SelectValue placeholder="Status" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Statuses</SelectItem>
+                    <SelectItem value="approved">Active</SelectItem>
+                    <SelectItem value="pending_review">Pending</SelectItem>
+                    <SelectItem value="draft">Draft</SelectItem>
+                    <SelectItem value="changes_requested">Changes</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={cityFilter} onValueChange={setCityFilter}>
+                  <SelectTrigger className="w-[140px] rounded-xl"><SelectValue placeholder="City" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Cities</SelectItem>
+                    {cities.map((city) => (
+                      <SelectItem key={city} value={city}>{city}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Listings Table */}
+          <Card className="rounded-2xl border-primary/10 overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent">
+              <CardTitle className="flex items-center gap-2">
+                <Building2 className="h-5 w-5 text-primary" />
+                Listings ({filteredListings.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {filteredListings.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Home className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                  <p className="font-medium">No listings found</p>
+                  <p className="text-sm">
+                    {properties.length === 0
+                      ? "Create your first listing to get started"
+                      : "Try adjusting your filters"}
+                  </p>
+                  {properties.length === 0 && (
+                    <Button asChild className="mt-4 rounded-xl">
+                      <Link to="/agent/properties/new">
+                        <Plus className="h-4 w-4 mr-2" />Create Listing
+                      </Link>
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Property</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Price</TableHead>
+                        <TableHead className="text-center">Views</TableHead>
+                        <TableHead className="text-center">Saves</TableHead>
+                        <TableHead className="text-center">Inquiries</TableHead>
+                        <TableHead className="text-center">Days</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredListings.map((listing) => {
+                        const verificationStatus = (listing as any).verification_status as keyof typeof statusConfig;
+                        const status = statusConfig[verificationStatus] || statusConfig.draft;
+                        const isDraft = verificationStatus === 'draft';
+                        const isChangesRequested = verificationStatus === 'changes_requested';
+                        const isApproved = verificationStatus === 'approved';
+                        const canSubmit = isDraft || isChangesRequested;
+                        const stale = isPropertyStale(listing);
+
+                        return (
+                          <TableRow key={listing.id} className="hover:bg-muted/30">
+                            <TableCell>
+                              <div className="flex items-center gap-3">
+                                <div className="h-12 w-16 rounded-lg bg-muted overflow-hidden flex-shrink-0">
+                                  {listing.images?.[0] ? (
+                                    <img src={listing.images[0]} alt={listing.title} className="h-full w-full object-cover" />
+                                  ) : (
+                                    <div className="h-full w-full flex items-center justify-center">
+                                      <Home className="h-4 w-4 text-muted-foreground" />
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="font-medium truncate max-w-[200px]">{listing.title}</p>
+                                  <p className="text-xs text-muted-foreground">{listing.city}</p>
+                                  {/* Rejection reason inline hint */}
+                                  {isChangesRequested && (listing as any).rejection_reason && (
+                                    <p className="text-xs text-orange-600 truncate max-w-[200px]">
+                                      ⚠ {(listing as any).rejection_reason}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex flex-col gap-1">
+                                <Badge variant="outline" className={cn('text-xs w-fit', status.color)}>
+                                  {status.label}
+                                </Badge>
+                                {stale && isApproved && (
+                                  <Badge variant="outline" className="text-xs w-fit bg-amber-50 text-amber-700 border-amber-200 gap-1">
+                                    <AlertTriangle className="h-3 w-3" />
+                                    Renewal Due
+                                  </Badge>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right font-medium">
+                              {formatPrice(listing.price, listing.currency)}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <span className="text-sm text-muted-foreground">{listing.views_count || 0}</span>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <span className="text-sm text-muted-foreground">—</span>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <span className="text-sm text-muted-foreground">—</span>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <span className="text-sm text-muted-foreground">{getDaysOnMarket(listing.created_at)}</span>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center justify-end gap-1">
+                                {/* Edit */}
+                                <Button variant="ghost" size="sm" asChild className="rounded-lg">
+                                  <Link to={`/agent/properties/${listing.id}/edit`}>
+                                    <Edit className="h-4 w-4" />
+                                  </Link>
+                                </Button>
+
+                                {/* Submit for review */}
+                                {canSubmit && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="rounded-lg"
+                                    onClick={() => submitForReview.mutate(listing.id)}
+                                    disabled={submitForReview.isPending}
+                                    title="Submit for Review"
+                                  >
+                                    <Send className="h-4 w-4" />
+                                  </Button>
+                                )}
+
+                                {/* View live */}
+                                {isApproved && (
+                                  <Button variant="ghost" size="sm" asChild className="rounded-lg">
+                                    <Link to={`/properties/${listing.id}`} target="_blank">
+                                      <Eye className="h-4 w-4" />
+                                    </Link>
+                                  </Button>
+                                )}
+
+                                {/* More actions */}
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="rounded-lg">
+                                      <MoreHorizontal className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuSeparator />
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <DropdownMenuItem
+                                          className="text-destructive focus:text-destructive"
+                                          onSelect={(e) => e.preventDefault()}
+                                        >
+                                          <Trash2 className="h-4 w-4 mr-2" />
+                                          Delete
+                                        </DropdownMenuItem>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>Delete Listing</AlertDialogTitle>
+                                          <AlertDialogDescription>
+                                            Are you sure you want to delete "{listing.title}"? This cannot be undone.
+                                          </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                          <AlertDialogAction
+                                            onClick={() => deleteProperty.mutate(listing.id)}
+                                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                          >
+                                            Delete
+                                          </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </motion.div>
       </div>
     </Layout>
