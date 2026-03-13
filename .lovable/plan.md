@@ -1,22 +1,39 @@
 
 
-## Phase 1: Founding Partner Enrollment — Implemented ✅
+## Plan: Upgrade Agent Listings Page to Match Agency Listings
 
-All changes from the plan have been implemented:
+### Assessment
+After comparing all 6 agent sub-pages against their agency equivalents:
 
-1. **DB Migration** — Added `is_founding_partner`, `payplus_customer_id`, `payplus_subscription_id` to `subscriptions`; `payplus_subscription_id` to `featured_listings`. Updated FOUNDING2026 promo code (max_redemptions=15, cleared old discount/credit data).
-2. **`enroll-founding-partner` edge function** — 15-cap enforcement, trial creation (60 days), founding_partners insert, first month credit grant, promo redemption tracking.
-3. **`check-trial-expirations` edge function** — Daily cron (6 AM UTC) expires trialing subscriptions past trial_end.
-4. **`useFoundingSpots` hook** — Live spots remaining counter querying founding_partners.
-5. **`FoundingProgramSection`** — Updated benefits (2mo free, 3 featured/mo, early access, case study), spots counter badge.
-6. **`FoundingProgramModal`** — Updated benefits, spots counter, activates enrollment flow.
-7. **`Pricing.tsx`** — FOUNDING2026 code routes to `enroll-founding-partner` instead of Stripe; CTA changes to "Activate Founding Program".
-8. **`CheckoutSuccess.tsx`** — Founding partner variant with trial end date and featured listings CTA.
-9. **`grant-monthly-featured-credits`** — Already has 2-month duration cap logic.
-10. **`PlanCard`** — Added `ctaLabel` prop for custom CTA text.
+- **Analytics, Settings, Blog** — already use identical design patterns (gradient headers, rounded-2xl cards, motion animations, stat cards). No changes needed.
+- **Leads** — already polished with the 5-column engagement grid, pie chart, hourly chart. No changes needed.
+- **Listings (AgentProperties.tsx)** — this is the outlier. It uses a basic card-row layout with simple tabs, no search, no filters, no stats strip, and no table with columns. The agency version (`AgencyListings.tsx`) has search, status/city filters, stat cards, and a full data table with Views/Saves/Inquiries/Days columns plus dropdown actions.
 
-### Deferred (PayPlus not yet set up):
-- `payplus-checkout`, `payplus-webhook`, `manage-billing` edge functions
-- `list-invoices` PayPlus integration
-- Featured listing ₪299/mo PayPlus recurring charge
-- Trial-to-paid automatic charge initiation
+### Changes — `src/pages/agent/AgentProperties.tsx`
+
+**1. Add Stats Cards Strip** (matching agency)
+- 4-card grid: Total Listings, Active, Pending Review, Total Views
+- Same `rounded-2xl border-primary/10` card styling with icon + value + label
+
+**2. Add Search + Filters Bar** (matching agency)
+- Search input with icon
+- Status filter dropdown (All / Active / Pending / Draft / Changes Requested)
+- City filter dropdown (extracted from properties)
+- All inside a `rounded-2xl border-primary/10` card
+
+**3. Replace Card Rows with Data Table** (matching agency)
+- Table columns: Property (image + title + city), Status badge, Price, Views, Saves, Inquiries, Days on Market, Actions
+- Actions column: Edit, Submit for Review, View Live, Delete — using a dropdown menu for cleaner layout
+- Same `hover:bg-muted/30` row styling
+
+**4. Upgrade Header** (matching agency)
+- Same flat layout: back arrow + icon + title/subtitle on left, "New Listing" button on right
+- Use `rounded-xl` buttons consistently
+
+**5. Keep Existing Logic**
+- All hooks (`useAgentProperties`, `useDeleteProperty`, `useSubmitForReview`), stale detection, verification badges, rejection reason display — preserved as-is
+- Tabs removed in favor of the filter dropdown (matching agency pattern)
+
+### Files to Edit
+1. `src/pages/agent/AgentProperties.tsx` — full rewrite of layout/template (~290 lines)
+
