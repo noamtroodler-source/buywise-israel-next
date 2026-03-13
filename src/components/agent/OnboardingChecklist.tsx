@@ -8,22 +8,22 @@ import {
   Home, 
   Send, 
   Eye, 
-  X, 
-  ChevronRight,
-  Sparkles,
+  ChevronDown,
+  ChevronUp,
   Share2
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { cn } from '@/lib/utils';
 
 interface ChecklistItem {
   id: string;
-  title: string;
+  label: string;
   description: string;
-  completed: boolean;
-  href?: string;
   icon: React.ElementType;
+  isComplete: boolean;
+  link?: string;
 }
 
 interface OnboardingChecklistProps {
@@ -43,42 +43,28 @@ interface OnboardingChecklistProps {
     verification_status?: string;
     views_count?: number | null;
   }[];
-  onDismiss: () => void;
 }
 
 export function OnboardingChecklist({ 
   agentProfile, 
   properties, 
-  onDismiss 
 }: OnboardingChecklistProps) {
   const [isExpanded, setIsExpanded] = useState(true);
 
-  // Profile is "enhanced" if they have at least 3 of these 4 enhancements:
-  // - Profile photo, Bio, Languages, Specializations
   const profileEnhancements = [
     Boolean(agentProfile?.avatar_url),
     Boolean(agentProfile?.bio && agentProfile.bio.length > 10),
     (agentProfile?.languages?.length || 0) > 0,
     (agentProfile?.specializations?.length || 0) > 0,
   ];
-  const enhancementCount = profileEnhancements.filter(Boolean).length;
-  const hasEnhancedProfile = enhancementCount >= 3;
+  const hasEnhancedProfile = profileEnhancements.filter(Boolean).length >= 3;
   
   const hasAddedListing = properties.length > 0;
-  
   const hasSubmittedListing = properties.some(
-    p => p.verification_status === 'pending_review' || 
-         p.verification_status === 'approved'
+    p => p.verification_status === 'pending_review' || p.verification_status === 'approved'
   );
-  
-  const hasApprovedListing = properties.some(
-    p => p.verification_status === 'approved'
-  );
-  
-  const hasReceivedViews = properties.some(
-    p => (p.views_count || 0) > 0
-  );
-
+  const hasApprovedListing = properties.some(p => p.verification_status === 'approved');
+  const hasReceivedViews = properties.some(p => (p.views_count || 0) > 0);
   const hasSocialLinks = Boolean(
     agentProfile?.social_links?.linkedin ||
     agentProfile?.social_links?.instagram ||
@@ -88,94 +74,83 @@ export function OnboardingChecklist({
   const checklistItems: ChecklistItem[] = [
     {
       id: 'profile',
-      title: 'Enhance your profile',
+      label: 'Enhance your profile',
       description: 'Add a photo, bio, and expertise',
-      completed: hasEnhancedProfile,
-      href: '/agent/settings',
+      isComplete: hasEnhancedProfile,
+      link: '/agent/settings',
       icon: User,
     },
     {
       id: 'socials',
-      title: 'Add your social links',
+      label: 'Add your social links',
       description: 'Connect LinkedIn, Instagram, or Facebook',
-      completed: hasSocialLinks,
-      href: '/agent/settings',
+      isComplete: hasSocialLinks,
+      link: '/agent/settings',
       icon: Share2,
     },
     {
       id: 'listing',
-      title: 'Add your first listing',
+      label: 'Add your first listing',
       description: 'Create a property listing',
-      completed: hasAddedListing,
-      href: '/agent/properties/new',
+      isComplete: hasAddedListing,
+      link: '/agent/properties/new',
       icon: Home,
     },
     {
       id: 'submit',
-      title: 'Submit for review',
+      label: 'Submit for review',
       description: 'Send listing for admin approval',
-      completed: hasSubmittedListing,
-      href: '/agent/properties',
+      isComplete: hasSubmittedListing,
+      link: '/agent/properties',
       icon: Send,
     },
     {
       id: 'approved',
-      title: 'Get listing approved',
+      label: 'Get listing approved',
       description: 'Listing goes live on the platform',
-      completed: hasApprovedListing,
+      isComplete: hasApprovedListing,
       icon: CheckCircle2,
     },
     {
       id: 'views',
-      title: 'Get your first view',
+      label: 'Get your first view',
       description: 'Buyers discover your listing',
-      completed: hasReceivedViews,
+      isComplete: hasReceivedViews,
       icon: Eye,
     },
   ];
 
-  const completedCount = checklistItems.filter(item => item.completed).length;
-  const progress = (completedCount / checklistItems.length) * 100;
-  const isComplete = completedCount === checklistItems.length;
+  const completedCount = checklistItems.filter(item => item.isComplete).length;
+  const completionPercentage = Math.round((completedCount / checklistItems.length) * 100);
 
-  // Don't show if all items are complete
-  if (isComplete) {
+  if (completionPercentage === 100) {
     return null;
   }
 
   return (
-    <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
-      <CardHeader className="pb-2">
+    <Card className="rounded-2xl border-primary/20 bg-gradient-to-br from-primary/5 to-transparent overflow-hidden">
+      <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />
-            <CardTitle className="text-lg">Getting Started</CardTitle>
+          <div className="flex items-center gap-3">
+            <CardTitle className="text-lg">Complete Your Profile</CardTitle>
+            <span className="text-sm text-muted-foreground">
+              {completedCount}/{checklistItems.length} steps
+            </span>
           </div>
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => setIsExpanded(!isExpanded)}
-            >
-              {isExpanded ? 'Collapse' : 'Expand'}
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              className="h-8 w-8"
-              onClick={onDismiss}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="rounded-lg"
+          >
+            {isExpanded ? (
+              <ChevronUp className="h-4 w-4" />
+            ) : (
+              <ChevronDown className="h-4 w-4" />
+            )}
+          </Button>
         </div>
-        
-        <div className="flex items-center gap-3 mt-2">
-          <Progress value={progress} className="flex-1 h-2" />
-          <span className="text-sm font-medium text-muted-foreground">
-            {completedCount}/{checklistItems.length}
-          </span>
-        </div>
+        <Progress value={completionPercentage} className="h-2" />
       </CardHeader>
 
       <AnimatePresence>
@@ -186,76 +161,60 @@ export function OnboardingChecklist({
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2 }}
           >
-            <CardContent className="pt-2">
-              <div className="space-y-2">
-                {checklistItems.map((item, index) => {
-                  const Icon = item.icon;
-                  const isNext = !item.completed && 
-                    (index === 0 || checklistItems[index - 1].completed);
-                  
-                  return (
-                    <motion.div
-                      key={item.id}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                    >
-                      {item.href && !item.completed ? (
-                        <Link
-                          to={item.href}
-                          className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
-                            isNext 
-                              ? 'bg-primary/10 hover:bg-primary/15 border border-primary/20' 
-                              : 'hover:bg-muted/50'
-                          }`}
-                        >
-                          <div className={`flex-shrink-0 ${
-                            item.completed ? 'text-primary' : 'text-muted-foreground'
-                          }`}>
-                            {item.completed ? (
-                              <CheckCircle2 className="h-5 w-5" />
-                            ) : (
-                              <Circle className="h-5 w-5" />
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className={`font-medium text-sm ${
-                              item.completed ? 'text-muted-foreground line-through' : ''
-                            }`}>
-                              {item.title}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {item.description}
-                            </p>
-                          </div>
-                          {isNext && (
-                            <ChevronRight className="h-4 w-4 text-primary flex-shrink-0" />
-                          )}
-                        </Link>
-                      ) : (
-                        <div className="flex items-center gap-3 p-3 rounded-lg">
-                          <div className={`flex-shrink-0 ${
-                            item.completed ? 'text-primary' : 'text-muted-foreground'
-                          }`}>
-                            {item.completed ? (
-                              <CheckCircle2 className="h-5 w-5" />
-                            ) : (
-                              <Circle className="h-5 w-5" />
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className={`font-medium text-sm ${
-                              item.completed ? 'text-muted-foreground line-through' : ''
-                            }`}>
-                              {item.title}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {item.description}
-                            </p>
-                          </div>
-                        </div>
+            <CardContent className="pt-2 pb-4">
+              <div className="grid gap-2">
+                {checklistItems.map((item) => {
+                  const content = (
+                    <>
+                      <div className={cn(
+                        "flex-shrink-0",
+                        item.isComplete ? "text-primary" : "text-muted-foreground"
+                      )}>
+                        {item.isComplete ? (
+                          <CheckCircle2 className="h-5 w-5" />
+                        ) : (
+                          <Circle className="h-5 w-5" />
+                        )}
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <p className={cn(
+                          "font-medium text-sm",
+                          item.isComplete && "line-through text-muted-foreground"
+                        )}>
+                          {item.label}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {item.description}
+                        </p>
+                      </div>
+
+                      {!item.isComplete && item.link && (
+                        <item.icon className="h-4 w-4 flex-shrink-0 text-primary" />
                       )}
-                    </motion.div>
+                    </>
+                  );
+
+                  const rowClass = cn(
+                    "flex items-center gap-3 p-3 rounded-xl transition-colors",
+                    item.isComplete
+                      ? "bg-primary/5"
+                      : "bg-muted/30 hover:bg-muted/50",
+                    !item.isComplete && item.link && "cursor-pointer"
+                  );
+
+                  if (!item.isComplete && item.link) {
+                    return (
+                      <Link key={item.id} to={item.link} className={rowClass}>
+                        {content}
+                      </Link>
+                    );
+                  }
+
+                  return (
+                    <div key={item.id} className={rowClass}>
+                      {content}
+                    </div>
                   );
                 })}
               </div>

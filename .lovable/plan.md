@@ -1,31 +1,22 @@
 
 
-## Plan: Upgrade Agent Onboarding Checklist to Match Agency Style
+## Phase 1: Founding Partner Enrollment — Implemented ✅
 
-### Problem
-The agent dashboard has a "Getting Started" checklist (`OnboardingChecklist.tsx`) that uses a different design pattern than the agency's "Complete Your Profile" checklist (`AgencyOnboardingProgress.tsx`). The agency version is non-dismissible, uses `rounded-2xl` cards, chevron toggle, and the "Complete Your Profile" title with step count — matching the screenshot the user shared.
+All changes from the plan have been implemented:
 
-### Changes — `src/components/agent/OnboardingChecklist.tsx`
+1. **DB Migration** — Added `is_founding_partner`, `payplus_customer_id`, `payplus_subscription_id` to `subscriptions`; `payplus_subscription_id` to `featured_listings`. Updated FOUNDING2026 promo code (max_redemptions=15, cleared old discount/credit data).
+2. **`enroll-founding-partner` edge function** — 15-cap enforcement, trial creation (60 days), founding_partners insert, first month credit grant, promo redemption tracking.
+3. **`check-trial-expirations` edge function** — Daily cron (6 AM UTC) expires trialing subscriptions past trial_end.
+4. **`useFoundingSpots` hook** — Live spots remaining counter querying founding_partners.
+5. **`FoundingProgramSection`** — Updated benefits (2mo free, 3 featured/mo, early access, case study), spots counter badge.
+6. **`FoundingProgramModal`** — Updated benefits, spots counter, activates enrollment flow.
+7. **`Pricing.tsx`** — FOUNDING2026 code routes to `enroll-founding-partner` instead of Stripe; CTA changes to "Activate Founding Program".
+8. **`CheckoutSuccess.tsx`** — Founding partner variant with trial end date and featured listings CTA.
+9. **`grant-monthly-featured-credits`** — Already has 2-month duration cap logic.
+10. **`PlanCard`** — Added `ctaLabel` prop for custom CTA text.
 
-**1. Rename title**: "Getting Started" → "Complete Your Profile" with `{completedCount}/{total} steps` inline
-
-**2. Match agency visual pattern**:
-- Use `rounded-2xl border-primary/20` card styling
-- Replace "Collapse/Expand" text button + X dismiss with a single chevron toggle (ChevronDown/ChevronUp)
-- Remove the dismiss (X) button — make it non-dismissible like the agency version, auto-hides at 100%
-
-**3. Match row styling**:
-- Use `rounded-xl` rows with `bg-primary/5` for completed, `bg-muted/30 hover:bg-muted/50` for incomplete
-- Show the item's icon on the right for incomplete+linkable items (agency pattern)
-- Remove the "next step" highlight border — keep it simpler like the agency version
-
-**4. Keep agent-specific checklist items** (profile enhancement, social links, first listing, submit, approved, first view) — these are already appropriate for agents
-
-**5. Update `AgentDashboard.tsx`**:
-- Remove the dismiss handler and `localStorage` logic for onboarding since it's now non-dismissible
-- Always render the checklist (it self-hides at 100%)
-
-### Files to Edit
-1. `src/components/agent/OnboardingChecklist.tsx` — restyle to match agency pattern
-2. `src/pages/agent/AgentDashboard.tsx` — remove dismiss logic, simplify rendering
-
+### Deferred (PayPlus not yet set up):
+- `payplus-checkout`, `payplus-webhook`, `manage-billing` edge functions
+- `list-invoices` PayPlus integration
+- Featured listing ₪299/mo PayPlus recurring charge
+- Trial-to-paid automatic charge initiation

@@ -43,14 +43,6 @@ export default function AgentDashboard() {
     }
   }, [agentProfile?.id, trackDashboardView]);
 
-  // Onboarding checklist dismiss state
-  const [showOnboarding, setShowOnboarding] = useState(() => {
-    return localStorage.getItem('agent-onboarding-dismissed') !== 'true';
-  });
-  const handleDismissOnboarding = () => {
-    setShowOnboarding(false);
-    localStorage.setItem('agent-onboarding-dismissed', 'true');
-  };
 
   // Track dismissed approval alerts
   const [dismissedApprovals, setDismissedApprovals] = useState<string[]>(() => {
@@ -287,17 +279,14 @@ export default function AgentDashboard() {
           )}
 
           {/* Onboarding Checklist */}
-          {showOnboarding && (
-            <OnboardingChecklist
-              agentProfile={agentProfile}
-              properties={properties.map(p => ({
-                id: p.id,
-                verification_status: (p as any).verification_status,
-                views_count: p.views_count,
-              }))}
-              onDismiss={handleDismissOnboarding}
-            />
-          )}
+          <OnboardingChecklist
+            agentProfile={agentProfile}
+            properties={properties.map(p => ({
+              id: p.id,
+              verification_status: (p as any).verification_status,
+              views_count: p.views_count,
+            }))}
+          />
 
           {/* Quick Actions Grid */}
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
