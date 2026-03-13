@@ -29,15 +29,21 @@ export function PropertyPerformanceChart({ data }: PropertyPerformanceChartProps
     );
   }
 
-  // Truncate titles for better display; fall back to a short label if title looks like an ID
+  // Truncate titles and guard against machine-like labels
+  const machineTitlePattern = /^[a-z0-9_-]{16,}$/i;
   const chartData = data.slice(0, 6).map((item, idx) => {
-    const looksLikeId = /^[0-9a-f-]{20,}$/i.test(item.title.trim());
-    const label = looksLikeId ? `Listing ${idx + 1}` : item.title;
+    const normalized = item.title?.trim() || '';
+    const safeLabel = machineTitlePattern.test(normalized) && !/\s/.test(normalized)
+      ? `Listing ${idx + 1}`
+      : (normalized || `Listing ${idx + 1}`);
+
     return {
       ...item,
-      name: label.length > 20 ? label.substring(0, 20) + '…' : label,
+      name: safeLabel.length > 20 ? `${safeLabel.substring(0, 20)}…` : safeLabel,
     };
   });
+
+  const shouldRotateLabels = chartData.length > 3;
 
   return (
     <Card>
@@ -49,15 +55,16 @@ export function PropertyPerformanceChart({ data }: PropertyPerformanceChartProps
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={chartData}
-              margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+              margin={{ top: 20, right: 30, left: 20, bottom: shouldRotateLabels ? 60 : 30 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis
                 dataKey="name"
                 tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
-                angle={-45}
-                textAnchor="end"
-                height={80}
+                angle={shouldRotateLabels ? -35 : 0}
+                textAnchor={shouldRotateLabels ? 'end' : 'middle'}
+                height={shouldRotateLabels ? 80 : 40}
+                interval={0}
               />
               <YAxis
                 tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
