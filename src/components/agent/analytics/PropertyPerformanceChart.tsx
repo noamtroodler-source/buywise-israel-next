@@ -29,11 +29,15 @@ export function PropertyPerformanceChart({ data }: PropertyPerformanceChartProps
     );
   }
 
-  // Truncate titles for better display
-  const chartData = data.slice(0, 6).map(item => ({
-    ...item,
-    name: item.title.length > 20 ? item.title.substring(0, 20) + '...' : item.title,
-  }));
+  // Truncate titles for better display; fall back to a short label if title looks like an ID
+  const chartData = data.slice(0, 6).map((item, idx) => {
+    const looksLikeId = /^[0-9a-f-]{20,}$/i.test(item.title.trim());
+    const label = looksLikeId ? `Listing ${idx + 1}` : item.title;
+    return {
+      ...item,
+      name: label.length > 20 ? label.substring(0, 20) + '…' : label,
+    };
+  });
 
   return (
     <Card>
