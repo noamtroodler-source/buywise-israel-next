@@ -75,11 +75,11 @@ export default function AgentAnalytics() {
   const dateRangeLabel = dateRangeOptions.find(o => o.value === dateRange)?.label || 'All time';
 
   // Prepare chart data
-  const propertyChartData = properties.map(property => {
+  const propertyChartData = properties.map((property, index) => {
     const stats = analytics?.propertyAnalytics.find(p => p.propertyId === property.id);
     return {
       propertyId: property.id,
-      title: property.title,
+      title: getReadableListingTitle(property.title, property.city, index),
       views: stats?.views || 0,
       saves: stats?.saves || 0,
       inquiries: stats?.inquiries || 0,
