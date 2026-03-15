@@ -1,35 +1,39 @@
-## Phase 1: Founding Partner Enrollment — Implemented ✅
 
-All changes from the plan have been implemented:
 
-1. **DB Migration** — Added `is_founding_partner`, `payplus_customer_id`, `payplus_subscription_id` to `subscriptions`; `payplus_subscription_id` to `featured_listings`. Updated FOUNDING2026 promo code (max_redemptions=15, cleared old discount/credit data).
-2. **`enroll-founding-partner` edge function** — 15-cap enforcement, trial creation (60 days), founding_partners insert, first month credit grant, promo redemption tracking.
-3. **`check-trial-expirations` edge function** — Daily cron (6 AM UTC) expires trialing subscriptions past trial_end.
-4. **`useFoundingSpots` hook** — Live spots remaining counter querying founding_partners.
-5. **`FoundingProgramSection`** — Updated benefits (2mo free, 3 featured/mo, early access, case study), spots counter badge.
-6. **`FoundingProgramModal`** — Updated benefits, spots counter, activates enrollment flow.
-7. **`Pricing.tsx`** — FOUNDING2026 code routes to `enroll-founding-partner` instead of Stripe; CTA changes to "Activate Founding Program".
-8. **`CheckoutSuccess.tsx`** — Founding partner variant with trial end date and featured listings CTA.
-9. **`grant-monthly-featured-credits`** — Already has 2-month duration cap logic.
-10. **`PlanCard`** — Added `ctaLabel` prop for custom CTA text.
+## Personalized "What This Means" Insights for Every City
 
-### Deferred (PayPlus not yet set up):
-- `payplus-checkout`, `payplus-webhook`, `manage-billing` edge functions
-- `list-invoices` PayPlus integration
-- Featured listing ₪299/mo PayPlus recurring charge
-- Trial-to-paid automatic charge initiation
+### What we're doing
+Replace the generic, formula-driven insight text (lines 166–191 of `HistoricalPriceChart.tsx`) with a city-specific insight map. Each city gets a hand-crafted, conversational insight template that references its actual metrics dynamically but reads like advice from a knowledgeable friend.
 
-## Phase 2: CBS Data Organization — Implemented ✅
+### Implementation
 
-**Data Source:** All data in these tables originates from **Nadlan.gov.il — Ministry of Justice, Israel** (official government property transaction records). This is the same authoritative source used for `sold_transactions`.
+**File: `src/components/city/HistoricalPriceChart.tsx`**
 
-1. **`city_price_history` table** — Quarterly avg transaction prices by city + room count (3/4/5), 2020-2025, with national comparison. ~1,625 rows from `market_data.csv`.
-2. **`neighborhood_price_history` table** — Quarterly prices by neighborhood + room count, with yield and YoY. ~52,398 rows from `neighborhood_data.csv`.
-3. **`import-cbs-data` edge function** — Admin-only bulk importer, accepts parsed CSV rows, upserts in batches of 500.
-4. **Admin import page** — `/admin/import-cbs-data` with file upload for both CSVs.
-5. **Public read-only RLS** — Both tables have SELECT-only policies (public government data).
+Replace the current `insight` useMemo (lines 166–191) with:
 
-### Next steps (not yet built):
-- City page trend charts using `city_price_history`
-- Neighborhood comparison widgets using `neighborhood_price_history`
-- AI market insights grounded in neighborhood-level data
+1. A `CITY_INSIGHTS` map keyed by slug, where each entry is a function receiving `metrics` (totalAppreciation, cagr, latestYoY, deltaVsNational, currentPrice, peakYear, peakPrice, years) and returning a string. This lets each city have its own narrative while weaving in real numbers.
+
+2. A fallback generator for any city not in the map (keeps current logic but in friendlier tone).
+
+**Example entries:**
+
+```typescript
+'tel-aviv': (m) => `Tel Aviv consistently commands a significant premium over the national market — currently about ${Math.abs(m.deltaVsNational)}% above average. Prices have ${m.latestYoY < 0 ? `dipped about ${Math.abs(m.latestYoY).toFixed(1)}% from their ${m.peakYear} peak, which is rare here. If you've been watching this market, this is one of the more buyer-friendly moments you'll get` : `grown ${m.latestYoY.toFixed(1)}% in the past year, continuing the upward trend`}. At around ${formatAbbrev(m.currentPrice)} average, ${m.latestYoY < 0 ? `there's a bit more room to negotiate than there was 18 months ago` : `expect competition — demand here doesn't let up`}.`
+
+'beer-sheva': (m) => `Beer Sheva has quietly been one of Israel's fastest-growing markets — up ${m.totalAppreciation.toFixed(0)}% over the last ${m.years} years. It's still well below the national average, but that gap is narrowing as demand picks up from the tech park and university expansion. At around ${formatAbbrev(m.currentPrice)} for an average apartment, you're getting in while it's still undervalued relative to where it's heading.`
+```
+
+3. All ~30 cities get unique entries reflecting their character: tech hubs (Herzliya, Ra'anana), affordable growth (Beer Sheva, Hadera), coastal lifestyle (Netanya, Nahariya), premium suburban (Shoham, Mevaseret Zion), Jerusalem corridor (Beit Shemesh, Ma'ale Adumim), etc.
+
+4. The `citySlug` prop (already available) is used as the lookup key.
+
+### What changes
+- **Lines 166–191** of `HistoricalPriceChart.tsx`: Replace with city insight map + fallback
+- Add `citySlug` to the insight useMemo dependency (already a prop)
+- No other files change
+
+### What stays the same
+- Metric pills above the chart (precise numbers)
+- Insight box styling, icon, conditional rendering
+- All other sections
+
