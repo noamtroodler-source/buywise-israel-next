@@ -46,6 +46,22 @@ export default function AgentDashboard() {
   const { data: blogPosts = [] } = useMyBlogPosts('agent', agentProfile?.id);
   const isMobile = useIsMobile();
   const { data: performanceData, isLoading: performanceLoading } = useMyAgentPerformance();
+  const queryClient = useQueryClient();
+  const isFetchingAny = useIsFetching({ queryKey: ['agentProperties'] }) + useIsFetching({ queryKey: ['my-agent-performance'] }) + useIsFetching({ queryKey: ['leadStats'] });
+  const [isManualRefresh, setIsManualRefresh] = useState(false);
+
+  const handleRefresh = useCallback(async () => {
+    setIsManualRefresh(true);
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['agentProperties'] }),
+      queryClient.invalidateQueries({ queryKey: ['my-agent-performance'] }),
+      queryClient.invalidateQueries({ queryKey: ['leadStats'] }),
+      queryClient.invalidateQueries({ queryKey: ['agentProfile'] }),
+    ]);
+    // Small delay so the spinner is visible
+    await new Promise(r => setTimeout(r, 400));
+    setIsManualRefresh(false);
+  }, [queryClient]);
 
   // Track dashboard view on mount
   useEffect(() => {
