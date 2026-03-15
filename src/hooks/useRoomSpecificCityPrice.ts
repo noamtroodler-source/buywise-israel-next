@@ -5,6 +5,7 @@ interface RoomSpecificPrice {
   avgPrice: number;
   avgPriceSqm: number;
   yoyChange: number | null;
+  fiveYearChange: number | null;
   quarter: number;
   year: number;
 }
