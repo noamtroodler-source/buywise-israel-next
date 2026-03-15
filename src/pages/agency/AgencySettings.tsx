@@ -31,6 +31,7 @@ import { cn } from '@/lib/utils';
 import { AddressAutocomplete } from '@/components/agent/wizard/AddressAutocomplete';
 import { GoogleMapsProvider } from '@/components/maps/GoogleMapsProvider';
 import { AgencySettingsSkeleton } from '@/components/agency/skeletons/AgencyPageSkeletons';
+import { EnhancedEmptyState } from '@/components/shared/EnhancedEmptyState';
 
 const allCities = [
   'Tel Aviv', 'Jerusalem', 'Haifa', 'Ra\'anana', 'Herzliya', 
