@@ -262,6 +262,7 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
       // Then submit for review
       await submitForReview.mutateAsync(propertyId);
       
+      clearSavedData();
       setShowSuccessDialog(true);
     } finally {
       setIsSubmitting(false);
