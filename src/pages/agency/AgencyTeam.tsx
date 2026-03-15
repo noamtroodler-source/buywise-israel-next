@@ -28,7 +28,7 @@ import { toast } from 'sonner';
 import { AgencyTeamSkeleton } from '@/components/agency/skeletons/AgencyPageSkeletons';
 
 export default function AgencyTeam() {
-  const { data: agency, isLoading } = useMyAgency();
+  const { data: agency, isLoading, isAgencyAdmin } = useMyAgency();
   const { data: team = [] } = useAgencyTeam(agency?.id);
   const { data: joinRequests = [] } = useAgencyJoinRequests(agency?.id);
   const { data: invites = [] } = useAgencyInvites(agency?.id);

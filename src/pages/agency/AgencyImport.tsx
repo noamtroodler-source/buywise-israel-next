@@ -77,7 +77,7 @@ function normalizeUrl(raw: string): string {
 }
 
 export default function AgencyImport() {
-  const { data: agency, isLoading: agencyLoading } = useMyAgency();
+  const { data: agency, isLoading: agencyLoading, isAgencyAdmin } = useMyAgency();
   const { data: stats } = useAgencyStats(agency?.id);
   const { data: jobs = [], isLoading: jobsLoading } = useImportJobs(agency?.id);
   const discoverMutation = useDiscoverListings();

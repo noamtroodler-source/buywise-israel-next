@@ -61,7 +61,7 @@ export default function AgencySettings() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const { data: agency, isLoading } = useMyAgency();
+  const { data: agency, isLoading, isAgencyAdmin } = useMyAgency();
   const { data: invites = [] } = useAgencyInvites(agency?.id);
   const updateAgency = useUpdateAgency();
   const deactivateInvite = useDeactivateInvite();
