@@ -259,7 +259,20 @@ export function PriceByApartmentSize({
             availableCities={availableCities}
           />
 
-          {/* Room type toggle — visible when comparing */}
+          {/* Missing data banners */}
+          {hasNoData && (
+            <InfoBanner variant="info">
+              Room-specific price data isn't available for {cityName}. The CBS requires a minimum number of transactions per room type to publish data.
+            </InfoBanner>
+          )}
+
+          {compCityNamesWithNoData.length > 0 && !hasNoData && (
+            <InfoBanner variant="info">
+              {compCityNamesWithNoData.join(' and ')} {compCityNamesWithNoData.length === 1 ? "doesn't" : "don't"} have {selectedRoomLabel.toLowerCase()} transaction data available.
+            </InfoBanner>
+          )}
+
+
           {isComparing && (
             <div className="flex items-center gap-1 p-1 rounded-lg bg-muted/50 border border-border/50 w-fit">
               {ROOM_CONFIG.map((room) => (
