@@ -576,6 +576,7 @@ export default function AgentDashboard() {
           </motion.div>
         )}
       </div>
+      </PullToRefresh>
     </Layout>
   );
 }
