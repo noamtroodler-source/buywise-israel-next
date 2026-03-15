@@ -53,19 +53,26 @@ export function HistoricalPriceChart({
   const { data: cityPrices = [] } = useHistoricalPrices(citySlug);
   const { data: nationalAvg = [] } = useNationalAveragePrices();
 
-  // Merge city + national data by year
+  // Merge city + national data by year, compute YoY live from prices
   const mergedData = useMemo(() => {
     const nationalMap = new Map(nationalAvg.map((n) => [n.year, n.avg_price]));
-    return cityPrices
+    const sorted = cityPrices
       .filter((p) => p.average_price && p.average_price > 0)
-      .map((p) => ({
+      .sort((a, b) => a.year - b.year);
+
+    return sorted.map((p, i) => {
+      const prevPrice = i > 0 ? sorted[i - 1].average_price : null;
+      const computedYoY = prevPrice && prevPrice > 0
+        ? Math.round(((p.average_price! - prevPrice) / prevPrice) * 1000) / 10
+        : null;
+      return {
         year: p.year,
         city: p.average_price!,
         national: nationalMap.get(p.year) ?? null,
-        yoy: p.yoy_change_percent,
+        yoy: computedYoY,
         notes: p.notes,
-      }))
-      .sort((a, b) => a.year - b.year);
+      };
+    });
   }, [cityPrices, nationalAvg]);
 
   // Filter by period
