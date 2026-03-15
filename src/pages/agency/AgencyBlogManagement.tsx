@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
-import { PenLine, Plus, Eye, Clock, CheckCircle2, XCircle, AlertCircle, ArrowLeft } from 'lucide-react';
+import { PenLine, Plus, Eye, Clock, CheckCircle2, XCircle, AlertCircle, ArrowLeft, Lightbulb } from 'lucide-react';
+import { EnhancedEmptyState } from '@/components/shared/EnhancedEmptyState';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
