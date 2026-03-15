@@ -67,6 +67,8 @@ import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { MORTGAGE_RATE_RANGES } from '@/lib/utils/formatRange';
 import { toolUrl, TOOL_IDS } from '@/lib/routes';
+import { useCityRoomPrices, useAvailableCities } from '@/hooks/useCityRoomPrices';
+import { CityRoomPriceBreakdown } from './affordability/CityRoomPriceBreakdown';
 
 const STORAGE_KEY = 'affordability-calculator-inputs';
 
