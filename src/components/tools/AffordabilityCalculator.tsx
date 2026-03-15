@@ -511,6 +511,7 @@ function AffordabilityCalculatorContent() {
           </div>
         }
         rightColumn={
+          <>
           <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-background">
             <CardHeader className="pb-2"><CardTitle className="text-lg">Your Maximum Budget</CardTitle></CardHeader>
             <CardContent className="space-y-6">
