@@ -571,6 +571,15 @@ function AffordabilityCalculatorContent() {
               )}
             </CardContent>
           </Card>
+          {selectedCity && roomPrices.length > 0 && (
+            <CityRoomPriceBreakdown
+              city={selectedCity}
+              maxBudget={calculations.maxPropertyPrice}
+              roomPrices={roomPrices}
+              formatPrice={formatPrice}
+            />
+          )}
+        </>
         }
         bottomSection={
           <div className="space-y-6">
