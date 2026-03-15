@@ -359,10 +359,15 @@ export default function Compare() {
       tooltip: 'Annual rent divided by purchase price. Higher = better investment return.',
       getBestPropertyId: (props: Property[]) => {
         const yields = props.map(p => {
-          const cityData = rentalData.filter(r => r.city.toLowerCase() === p.city.toLowerCase());
-          const roomMatch = cityData.find(r => r.rooms === p.bedrooms);
-          if (roomMatch && p.price > 0) {
-            const avgRent = (roomMatch.price_min + roomMatch.price_max) / 2;
+          const city = cityData.find(c => c.name.toLowerCase() === p.city.toLowerCase());
+          if (!city || p.price <= 0) return { id: p.id, yield: 0 };
+          const rooms = p.bedrooms;
+          let min: number | null = null, max: number | null = null;
+          if (rooms === 3) { min = city.rental_3_room_min; max = city.rental_3_room_max; }
+          else if (rooms === 4) { min = city.rental_4_room_min; max = city.rental_4_room_max; }
+          else if (rooms === 5) { min = city.rental_5_room_min; max = city.rental_5_room_max; }
+          if (min && max) {
+            const avgRent = (min + max) / 2;
             return { id: p.id, yield: (avgRent * 12 / p.price) * 100 };
           }
           return { id: p.id, yield: 0 };
@@ -382,7 +387,7 @@ export default function Compare() {
       getValue: (p: Property) => getPriceChange(p),
       tooltip: 'How prices in this area changed over the past year.',
     },
-  ], [rentalData, cityData]);
+  ], [cityData]);
 
   // Calculate winner counts
   const winnerCounts = useMemo(() => {
