@@ -469,6 +469,9 @@ export function PriceByApartmentSize({
               </>
             )}
           </div>
+
+          {/* Personalized insight — below chart, normal mode only */}
+          {!isComparing && <RoomSizeInsight citySlug={citySlug} cityName={cityName} latestPrices={latestPrices} />}
           </>
           )}
 
