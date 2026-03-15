@@ -322,72 +322,72 @@ const App = () => (
                           </ProtectedRoute>
                         } />
                         <Route path="/agency" element={
-                          <ProtectedRoute>
+                          <ProtectedRoute requiredRole="agent">
                             <AgencyDashboard />
                           </ProtectedRoute>
                         } />
                         <Route path="/agency/analytics" element={
-                          <ProtectedRoute>
+                          <ProtectedRoute requiredRole="agent">
                             <AgencyAnalytics />
                           </ProtectedRoute>
                         } />
                         <Route path="/agency/settings" element={
-                          <ProtectedRoute>
+                          <ProtectedRoute requiredRole="agent">
                             <AgencySettings />
                           </ProtectedRoute>
                         } />
                         <Route path="/agency/listings" element={
-                          <ProtectedRoute>
+                          <ProtectedRoute requiredRole="agent">
                             <AgencyListingsPage />
                           </ProtectedRoute>
                         } />
                         <Route path="/agency/properties/new" element={
-                          <ProtectedRoute>
+                          <ProtectedRoute requiredRole="agent">
                             <AgencyNewPropertyWizard />
                           </ProtectedRoute>
                         } />
                         <Route path="/agency/projects/new" element={
-                          <ProtectedRoute>
+                          <ProtectedRoute requiredRole="agent">
                             <AgencyNewProjectWizard />
                           </ProtectedRoute>
                         } />
                         <Route path="/agency/properties/:id/edit" element={
-                          <ProtectedRoute>
+                          <ProtectedRoute requiredRole="agent">
                             <AgencyEditPropertyWizard />
                           </ProtectedRoute>
                         } />
                         <Route path="/agency/blog" element={
-                          <ProtectedRoute>
+                          <ProtectedRoute requiredRole="agent">
                             <AgencyBlogManagement />
                           </ProtectedRoute>
                         } />
                         <Route path="/agency/blog/new" element={
-                          <ProtectedRoute>
+                          <ProtectedRoute requiredRole="agent">
                             <AgencyBlogWizard />
                           </ProtectedRoute>
                         } />
                         <Route path="/agency/blog/:id/edit" element={
-                          <ProtectedRoute>
+                          <ProtectedRoute requiredRole="agent">
                             <AgencyBlogWizard />
                           </ProtectedRoute>
                         } />
                         <Route path="/agency/billing" element={
-                          <ProtectedRoute>
+                          <ProtectedRoute requiredRole="agent">
                             <AgencyBilling />
                           </ProtectedRoute>
                         } />
                         <Route path="/agency/featured" element={
-                          <ProtectedRoute>
+                          <ProtectedRoute requiredRole="agent">
                             <AgencyFeatured />
                           </ProtectedRoute>
                         } />
                         <Route path="/agency/import" element={
-                          <ProtectedRoute>
+                          <ProtectedRoute requiredRole="agent">
                             <AgencyImport />
                           </ProtectedRoute>
                         } />
                         <Route path="/agency/team" element={
-                          <ProtectedRoute>
+                          <ProtectedRoute requiredRole="agent">
                             <AgencyTeam />
                           </ProtectedRoute>
                         } />

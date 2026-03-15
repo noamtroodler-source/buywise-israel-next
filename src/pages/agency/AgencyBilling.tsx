@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowLeft, CreditCard, Receipt, Star } from 'lucide-react';
+import { ArrowLeft, CreditCard, Receipt, Star, ShieldAlert } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -13,12 +13,29 @@ import { useMyAgency } from '@/hooks/useAgencyManagement';
 import { useFeaturedListings } from '@/hooks/useFeaturedListings';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button as UiButton } from '@/components/ui/button';
+import { EnhancedEmptyState } from '@/components/shared/EnhancedEmptyState';
 
 export default function AgencyBilling() {
-  const { data: agency } = useMyAgency();
+  const { data: agency, isAgencyAdmin } = useMyAgency();
   const { data: featuredListings = [] } = useFeaturedListings(agency?.id);
   const paidCount = featuredListings.filter(fl => !fl.is_free_credit).length;
   const monthlyCost = paidCount * 299;
+
+  if (agency && !isAgencyAdmin) {
+    return (
+      <Layout>
+        <div className="container py-16 max-w-lg">
+          <EnhancedEmptyState
+            icon={ShieldAlert}
+            title="Admin access required"
+            description="Only the agency admin can manage billing settings."
+            actionLabel="Back to Dashboard"
+            actionHref="/agency"
+          />
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>

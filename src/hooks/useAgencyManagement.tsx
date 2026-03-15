@@ -49,7 +49,7 @@ export interface JoinRequest {
 export function useMyAgency() {
   const { user } = useAuth();
 
-  return useQuery({
+  const query = useQuery({
     queryKey: ['myAgency', user?.id],
     queryFn: async () => {
       if (!user) return null;
@@ -67,6 +67,10 @@ export function useMyAgency() {
     },
     enabled: !!user,
   });
+
+  const isAgencyAdmin = !!(user && query.data && query.data.admin_user_id === user.id);
+
+  return { ...query, isAgencyAdmin };
 }
 
 export function useAgencyTeam(agencyId: string | undefined) {
