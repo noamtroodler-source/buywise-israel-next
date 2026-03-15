@@ -268,7 +268,7 @@ export function useCreatePropertyForAgency() {
       }
     },
     onError: (error) => {
-      toast.error('Failed to create property: ' + error.message);
+      toast.error(getUserFriendlyError(error, 'Failed to create listing'));
     },
   });
 }
