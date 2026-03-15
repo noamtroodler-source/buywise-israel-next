@@ -1,4 +1,5 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useQueryClient, useIsFetching } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -8,6 +9,7 @@ import {
   BadgeCheck, Star
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
+import { PullToRefresh } from '@/components/shared/PullToRefresh';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -44,6 +46,22 @@ export default function AgentDashboard() {
   const { data: blogPosts = [] } = useMyBlogPosts('agent', agentProfile?.id);
   const isMobile = useIsMobile();
   const { data: performanceData, isLoading: performanceLoading } = useMyAgentPerformance();
+  const queryClient = useQueryClient();
+  const isFetchingAny = useIsFetching({ queryKey: ['agentProperties'] }) + useIsFetching({ queryKey: ['my-agent-performance'] }) + useIsFetching({ queryKey: ['leadStats'] });
+  const [isManualRefresh, setIsManualRefresh] = useState(false);
+
+  const handleRefresh = useCallback(async () => {
+    setIsManualRefresh(true);
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['agentProperties'] }),
+      queryClient.invalidateQueries({ queryKey: ['my-agent-performance'] }),
+      queryClient.invalidateQueries({ queryKey: ['leadStats'] }),
+      queryClient.invalidateQueries({ queryKey: ['agentProfile'] }),
+    ]);
+    // Small delay so the spinner is visible
+    await new Promise(r => setTimeout(r, 400));
+    setIsManualRefresh(false);
+  }, [queryClient]);
 
   // Track dashboard view on mount
   useEffect(() => {
@@ -137,6 +155,7 @@ export default function AgentDashboard() {
 
   return (
     <Layout>
+      <PullToRefresh onRefresh={handleRefresh} disabled={!isMobile} className="min-h-0">
       <div className="container py-8 pb-24 md:pb-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -169,6 +188,22 @@ export default function AgentDashboard() {
               </div>
             )}
             <div className="flex items-center gap-2">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleRefresh}
+                      disabled={isManualRefresh}
+                      className="rounded-xl hover:bg-primary/10"
+                    >
+                      <RefreshCw className={`h-4 w-4 ${isManualRefresh || isFetchingAny > 0 ? 'animate-spin' : ''}`} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Refresh dashboard</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               <NotificationBell />
               <Button variant="ghost" size="icon" asChild className="rounded-xl hover:bg-primary/10">
                 <Link to="/agent/settings">
@@ -541,6 +576,7 @@ export default function AgentDashboard() {
           </motion.div>
         )}
       </div>
+      </PullToRefresh>
     </Layout>
   );
 }
