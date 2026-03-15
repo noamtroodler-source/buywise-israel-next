@@ -180,9 +180,11 @@ export default function AgencyListings() {
   const handleBulkReassign = (targetAgentId: string) => {
     const ids = [...selectedIds];
     let completed = 0;
+    const targetAgent = team.find(a => a.id === targetAgentId);
+    const targetName = targetAgent?.name || 'Unknown';
     ids.forEach(propertyId => {
       reassignProperty.mutate(
-        { propertyId, newAgentId: targetAgentId },
+        { propertyId, newAgentId: targetAgentId, newAgentName: targetName },
         {
           onSettled: () => {
             completed++;
