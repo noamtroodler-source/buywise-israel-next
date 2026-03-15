@@ -163,33 +163,11 @@ export function HistoricalPriceChart({
     };
   }, [filteredData]);
 
-  // Insight text
+  // Personalized insight text
   const insight = useMemo(() => {
     if (!metrics) return null;
-    const parts: string[] = [];
-    if (metrics.deltaVsNational !== null) {
-      const dir = metrics.deltaVsNational > 0 ? 'above' : 'below';
-      parts.push(`${cityName} prices are ${Math.abs(metrics.deltaVsNational)}% ${dir} the national average.`);
-    }
-    if (metrics.totalAppreciation > 0) {
-      parts.push(
-        `Over ${metrics.years} years, prices rose ${metrics.totalAppreciation.toFixed(0)}% total (${metrics.cagr}% annually${metrics.nationalCagr !== null ? ` vs ${metrics.nationalCagr}% nationally` : ''}).`,
-      );
-    } else {
-      parts.push(`Over this ${metrics.years}-year window, prices declined ${Math.abs(metrics.totalAppreciation).toFixed(0)}%.`);
-      if (metrics.peakYear && metrics.currentPrice < metrics.peakPrice) {
-        const fromPeak = (((metrics.peakPrice - metrics.currentPrice) / metrics.peakPrice) * 100).toFixed(0);
-        parts.push(`Prices peaked in ${metrics.peakYear} at ${formatAbbrev(metrics.peakPrice)} and are currently ${fromPeak}% below that peak.`);
-      }
-    }
-    if (metrics.latestYoY != null) {
-      if (metrics.latestYoY > 5) parts.push(`The market is currently accelerating at +${metrics.latestYoY.toFixed(1)}% year-over-year.`);
-      else if (metrics.latestYoY > 0) parts.push(`Recent growth is steady at +${metrics.latestYoY.toFixed(1)}% year-over-year.`);
-      else if (metrics.latestYoY < -5) parts.push(`The market is in a correction phase, with prices down ${Math.abs(metrics.latestYoY).toFixed(1)}% from the previous year.`);
-      else if (metrics.latestYoY < 0) parts.push(`Prices have softened ${Math.abs(metrics.latestYoY).toFixed(1)}% from the previous year.`);
-    }
-    return parts.join(' ');
-  }, [metrics, cityName]);
+    return getCityInsight(citySlug, cityName, metrics);
+  }, [metrics, cityName, citySlug]);
 
   // Custom tooltip
   const CustomTooltip = ({ active, payload, label }: any) => {
