@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
+import { getUserFriendlyError } from '@/utils/userFriendlyErrors';
 import { Property, PropertyType, ListingStatus } from '@/types/database';
 
 export type VerificationStatus = 'draft' | 'pending_review' | 'changes_requested' | 'approved' | 'rejected';
@@ -151,7 +152,7 @@ export function useCreateProperty() {
       }
     },
     onError: (error) => {
-      toast.error('Failed to create property: ' + error.message);
+      toast.error(getUserFriendlyError(error, 'Failed to create listing'));
     },
   });
 }
@@ -188,7 +189,7 @@ export function useSubmitForReview() {
       if (context?.previous) {
         queryClient.setQueryData(['agentProperties'], context.previous);
       }
-      toast.error('Failed to submit: ' + error.message);
+      toast.error(getUserFriendlyError(error, 'Failed to submit for review'));
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['agentProperties'] });
@@ -221,7 +222,7 @@ export function useUpdateProperty() {
       toast.success('Property updated successfully');
     },
     onError: (error) => {
-      toast.error('Failed to update property: ' + error.message);
+      toast.error(getUserFriendlyError(error, 'Failed to update listing'));
     },
   });
 }
@@ -267,7 +268,7 @@ export function useCreatePropertyForAgency() {
       }
     },
     onError: (error) => {
-      toast.error('Failed to create property: ' + error.message);
+      toast.error(getUserFriendlyError(error, 'Failed to create listing'));
     },
   });
 }
@@ -293,7 +294,7 @@ export function useUpdatePropertyForAgency() {
       toast.success('Property updated successfully');
     },
     onError: (error) => {
-      toast.error('Failed to update property: ' + error.message);
+      toast.error(getUserFriendlyError(error, 'Failed to update listing'));
     },
   });
 }
@@ -311,14 +312,29 @@ export function useReassignProperty() {
       if (error) throw error;
       return { newAgentName };
     },
-    onSuccess: (result) => {
+    onMutate: async ({ propertyId, newAgentId }) => {
+      await queryClient.cancelQueries({ queryKey: ['agencyListingsManagement'] });
+      const previous = queryClient.getQueryData(['agencyListingsManagement']);
+      queryClient.setQueryData<any[] | undefined>(['agencyListingsManagement'], (old) =>
+        old?.map((p: any) =>
+          p.id === propertyId ? { ...p, agent_id: newAgentId } : p
+        )
+      );
+      return { previous };
+    },
+    onError: (error, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['agencyListingsManagement'], context.previous);
+      }
+      toast.error(getUserFriendlyError(error, 'Failed to reassign listing'));
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['agencyListingsManagement'] });
       queryClient.invalidateQueries({ queryKey: ['agentProperties'] });
       queryClient.invalidateQueries({ queryKey: ['properties'] });
-      toast.success(`Listing reassigned to ${result.newAgentName}`);
     },
-    onError: (error) => {
-      toast.error('Failed to reassign: ' + error.message);
+    onSuccess: (result) => {
+      toast.success(`Listing reassigned to ${result.newAgentName}`);
     },
   });
 }
@@ -347,7 +363,7 @@ export function useDeleteProperty() {
       if (context?.previous) {
         queryClient.setQueryData(['agentProperties'], context.previous);
       }
-      toast.error('Failed to delete property: ' + error.message);
+      toast.error(getUserFriendlyError(error, 'Failed to delete listing'));
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['agentProperties'] });
@@ -382,7 +398,7 @@ export function useBulkDeleteProperties() {
       if (context?.previous) {
         queryClient.setQueryData(['agentProperties'], context.previous);
       }
-      toast.error('Failed to delete properties: ' + error.message);
+      toast.error(getUserFriendlyError(error, 'Failed to delete listings'));
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['agentProperties'] });
@@ -428,7 +444,7 @@ export function useBulkSubmitForReview() {
       if (context?.previous) {
         queryClient.setQueryData(['agentProperties'], context.previous);
       }
-      toast.error('Failed to submit: ' + error.message);
+      toast.error(getUserFriendlyError(error, 'Failed to submit for review'));
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['agentProperties'] });
