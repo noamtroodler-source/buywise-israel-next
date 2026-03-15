@@ -98,19 +98,31 @@ export default function AgentLeads() {
                     </div>
                   </div>
                   
-                  {/* Date Range Selector */}
-                  <Select value={dateRange} onValueChange={(v) => setDateRange(v as DateRange)}>
-                    <SelectTrigger className="w-[160px] rounded-xl border-primary/20">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl">
-                      {Object.entries(dateRangeLabels).map(([value, label]) => (
-                        <SelectItem key={value} value={value} className="rounded-lg">
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {/* Date Range Selector + Export */}
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="rounded-xl border-primary/20"
+                      onClick={() => exportAnalyticsToCSV(analytics?.propertyEngagement || [])}
+                      disabled={!analytics?.propertyEngagement?.length}
+                    >
+                      <Download className="h-4 w-4 mr-1" />
+                      Export
+                    </Button>
+                    <Select value={dateRange} onValueChange={(v) => setDateRange(v as DateRange)}>
+                      <SelectTrigger className="w-[160px] rounded-xl border-primary/20">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl">
+                        {Object.entries(dateRangeLabels).map(([value, label]) => (
+                          <SelectItem key={value} value={value} className="rounded-lg">
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
             </div>
