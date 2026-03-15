@@ -152,7 +152,7 @@ export function TrueCostCalculator() {
   }, [propertyPrice, propertySize, selectedCity, trackChange]);
   
   // Fetch canonical metrics for selected city
-  const { data: cityMetrics } = useCanonicalMetrics(selectedCity);
+  const { data: cityMetrics } = useCityDetails(selectedCity);
   
   // Calculate suggested price based on city metrics
   const suggestedPrice = useMemo(() => {

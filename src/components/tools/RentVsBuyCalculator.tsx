@@ -210,7 +210,7 @@ export function RentVsBuyCalculator() {
   }, [propertyPrice, monthlyRent, downPaymentPercent, timeHorizon, buyerType, trackChange]);
 
   // Get canonical metrics for selected city
-  const { data: cityMetrics } = useCanonicalMetrics(selectedCity);
+  const { data: cityMetrics } = useCityDetails(selectedCity);
   
   // Auto-populate buyer type from profile
   useEffect(() => {
