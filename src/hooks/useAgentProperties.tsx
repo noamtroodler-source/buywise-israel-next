@@ -312,14 +312,29 @@ export function useReassignProperty() {
       if (error) throw error;
       return { newAgentName };
     },
-    onSuccess: (result) => {
+    onMutate: async ({ propertyId, newAgentId }) => {
+      await queryClient.cancelQueries({ queryKey: ['agencyListingsManagement'] });
+      const previous = queryClient.getQueryData(['agencyListingsManagement']);
+      queryClient.setQueryData<any[] | undefined>(['agencyListingsManagement'], (old) =>
+        old?.map((p: any) =>
+          p.id === propertyId ? { ...p, agent_id: newAgentId } : p
+        )
+      );
+      return { previous };
+    },
+    onError: (error, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['agencyListingsManagement'], context.previous);
+      }
+      toast.error(getUserFriendlyError(error, 'Failed to reassign listing'));
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['agencyListingsManagement'] });
       queryClient.invalidateQueries({ queryKey: ['agentProperties'] });
       queryClient.invalidateQueries({ queryKey: ['properties'] });
-      toast.success(`Listing reassigned to ${result.newAgentName}`);
     },
-    onError: (error) => {
-      toast.error('Failed to reassign: ' + error.message);
+    onSuccess: (result) => {
+      toast.success(`Listing reassigned to ${result.newAgentName}`);
     },
   });
 }
