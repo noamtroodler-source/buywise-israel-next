@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Home } from 'lucide-react';
+import { Home, TrendingUp } from 'lucide-react';
 import {
   CartesianGrid,
   Line,
@@ -12,7 +12,6 @@ import {
 } from 'recharts';
 import { InlineSourceBadge } from '@/components/shared/InlineSourceBadge';
 import { InfoBanner } from '@/components/tools/shared/InfoBanner';
-import { InsightCard } from '@/components/tools/shared/InsightCard';
 import { useRoomPriceHistory } from '@/hooks/useRoomPriceHistory';
 import { useRoomPriceComparison } from '@/hooks/useRoomPriceComparison';
 import { useCities } from '@/hooks/useCities';
@@ -76,7 +75,15 @@ function RoomSizeInsight({ citySlug, cityName, latestPrices }: { citySlug: strin
   }, [citySlug, cityName, latestPrices]);
 
   if (!insight) return null;
-  return <InsightCard insights={[insight]} />;
+  return (
+    <div className="flex gap-3 p-4 rounded-lg bg-primary/5 border border-primary/10">
+      <TrendingUp className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+      <p className="text-sm text-muted-foreground leading-relaxed">
+        <span className="font-medium text-foreground">What this means: </span>
+        {insight}
+      </p>
+    </div>
+  );
 }
 
 export function PriceByApartmentSize({
@@ -355,8 +362,8 @@ export function PriceByApartmentSize({
             </div>
           )}
 
-          {/* Personalized insight — normal mode only */}
-          {!isComparing && <RoomSizeInsight citySlug={citySlug} cityName={cityName} latestPrices={latestPrices} />}
+
+
 
           {/* Chart */}
           <div className="h-[300px] w-full bg-muted/20 rounded-xl border border-border/50 p-4 pt-2">
@@ -462,6 +469,9 @@ export function PriceByApartmentSize({
               </>
             )}
           </div>
+
+          {/* Personalized insight — below chart, normal mode only */}
+          {!isComparing && <RoomSizeInsight citySlug={citySlug} cityName={cityName} latestPrices={latestPrices} />}
           </>
           )}
 
