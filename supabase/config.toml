@@ -98,3 +98,6 @@ verify_jwt = false
 
 [functions.check-trial-expirations]
 verify_jwt = false
+
+[functions.import-cbs-data]
+verify_jwt = false
