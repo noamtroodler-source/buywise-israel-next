@@ -101,3 +101,6 @@ verify_jwt = false
 
 [functions.import-cbs-data]
 verify_jwt = false
+
+[functions.map-neighborhoods]
+verify_jwt = false
