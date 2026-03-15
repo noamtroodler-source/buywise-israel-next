@@ -1,42 +1,35 @@
+## Phase 1: Founding Partner Enrollment — Implemented ✅
 
+All changes from the plan have been implemented:
 
-## Plan: Auto-Map Neighborhoods via Lovable AI Edge Function
+1. **DB Migration** — Added `is_founding_partner`, `payplus_customer_id`, `payplus_subscription_id` to `subscriptions`; `payplus_subscription_id` to `featured_listings`. Updated FOUNDING2026 promo code (max_redemptions=15, cleared old discount/credit data).
+2. **`enroll-founding-partner` edge function** — 15-cap enforcement, trial creation (60 days), founding_partners insert, first month credit grant, promo redemption tracking.
+3. **`check-trial-expirations` edge function** — Daily cron (6 AM UTC) expires trialing subscriptions past trial_end.
+4. **`useFoundingSpots` hook** — Live spots remaining counter querying founding_partners.
+5. **`FoundingProgramSection`** — Updated benefits (2mo free, 3 featured/mo, early access, case study), spots counter badge.
+6. **`FoundingProgramModal`** — Updated benefits, spots counter, activates enrollment flow.
+7. **`Pricing.tsx`** — FOUNDING2026 code routes to `enroll-founding-partner` instead of Stripe; CTA changes to "Activate Founding Program".
+8. **`CheckoutSuccess.tsx`** — Founding partner variant with trial end date and featured listings CTA.
+9. **`grant-monthly-featured-credits`** — Already has 2-month duration cap logic.
+10. **`PlanCard`** — Added `ctaLabel` prop for custom CTA text.
 
-### What this does
-Creates an edge function `map-neighborhoods` that pulls both datasets from the database (CBS Hebrew names + your Anglo roster), sends them to Gemini for matching, and returns a structured JSON mapping you can review.
+### Deferred (PayPlus not yet set up):
+- `payplus-checkout`, `payplus-webhook`, `manage-billing` edge functions
+- `list-invoices` PayPlus integration
+- Featured listing ₪299/mo PayPlus recurring charge
+- Trial-to-paid automatic charge initiation
 
-### Data overview
-- **22 cities** have CBS neighborhood data (679 distinct neighborhoods, 52K price rows)
-- **25 cities** on your platform (3 missing from CBS: Efrat, Gush Etzion, Mevaseret Zion)
-- Your roster has Anglo names + Hebrew names (e.g., `{"name": "Abu Tor", "name_he": "אבו טור"}`)
-- CBS has Hebrew names + numeric IDs (e.g., `"א טור"` / `65209922`)
+## Phase 2: CBS Data Organization — Implemented ✅
 
-### Implementation steps
+**Data Source:** All data in these tables originates from **Nadlan.gov.il — Ministry of Justice, Israel** (official government property transaction records). This is the same authoritative source used for `sold_transactions`.
 
-**Step 1: Create edge function `map-neighborhoods`**
+1. **`city_price_history` table** — Quarterly avg transaction prices by city + room count (3/4/5), 2020-2025, with national comparison. ~1,625 rows from `market_data.csv`.
+2. **`neighborhood_price_history` table** — Quarterly prices by neighborhood + room count, with yield and YoY. ~52,398 rows from `neighborhood_data.csv`.
+3. **`import-cbs-data` edge function** — Admin-only bulk importer, accepts parsed CSV rows, upserts in batches of 500.
+4. **Admin import page** — `/admin/import-cbs-data` with file upload for both CSVs.
+5. **Public read-only RLS** — Both tables have SELECT-only policies (public government data).
 
-The function will:
-1. Query all distinct `(city_en, neighborhood_he, neighborhood_id)` from `neighborhood_price_history`
-2. Query all cities' `neighborhoods` JSON field for the Anglo names + Hebrew names
-3. Build a structured prompt with both lists, grouped by city
-4. Call Gemini via Lovable AI with tool calling to get structured output:
-   - `mappings[]`: `{ city, anglo_name, our_hebrew, cbs_hebrew, cbs_id, confidence, notes }`
-   - `unmapped_cbs[]`: CBS neighborhoods with no platform match
-   - `unmapped_anglo[]`: Platform neighborhoods with no CBS match
-5. Return the full mapping as JSON
-
-**Step 2: Call the function and review output**
-
-You review the mapping. I'll present a summary of matches, confidence levels, and gaps.
-
-**Step 3 (future, not this task): Create `neighborhood_aliases` table**
-
-Once mapping is approved, we create the table and import. That's a separate step.
-
-### Technical details
-
-- Uses `google/gemini-2.5-pro` (best for Hebrew transliteration matching and large context)
-- Tool calling for structured output (no JSON parsing issues)
-- All 22 cities in one call (~700 CBS entries + ~300 Anglo entries fits easily in context)
-- No database changes in this step — read-only queries, AI matching, JSON output
-
+### Next steps (not yet built):
+- City page trend charts using `city_price_history`
+- Neighborhood comparison widgets using `neighborhood_price_history`
+- AI market insights grounded in neighborhood-level data

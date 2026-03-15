@@ -143,6 +143,7 @@ const HeroImageGenerator = lazy(() => import("./pages/admin/HeroImageGenerator")
 const HeroPreview = lazy(() => import("./pages/admin/HeroPreview"));
 const ImportNeighborhoods = lazy(() => import("./pages/admin/ImportNeighborhoods"));
 const ImportCBSData = lazy(() => import("./pages/admin/ImportCBSData"));
+const MapNeighborhoods = lazy(() => import("./pages/admin/MapNeighborhoods"));
 const AdminClientErrors = lazy(() => import("./pages/admin/AdminClientErrors"));
 const AdminEnterpriseInquiries = lazy(() => import("./pages/admin/AdminEnterpriseInquiries"));
 const AdminWarmLeads = lazy(() => import("./pages/admin/AdminWarmLeads"));
@@ -486,6 +487,7 @@ const App = () => (
                           <Route path="sold-transactions" element={<AdminSoldTransactions />} />
                           <Route path="import-neighborhoods" element={<ImportNeighborhoods />} />
                           <Route path="import-cbs-data" element={<ImportCBSData />} />
+                          <Route path="map-neighborhoods" element={<MapNeighborhoods />} />
                           <Route path="errors" element={<AdminClientErrors />} />
                           <Route path="enterprise-inquiries" element={<AdminEnterpriseInquiries />} />
                           <Route path="warm-leads" element={<AdminWarmLeads />} />
