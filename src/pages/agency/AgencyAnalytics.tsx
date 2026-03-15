@@ -122,19 +122,54 @@ export default function AgencyAnalytics() {
                   </div>
                   
                   {/* Date Range Selector */}
-                  <Select value={dateRange} onValueChange={(v) => setDateRange(v as DateRangeFilter)}>
-                    <SelectTrigger className="w-[160px] bg-background/80 backdrop-blur-sm rounded-xl">
-                      <Calendar className="h-4 w-4 mr-2 text-primary" />
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {dateRangeOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="rounded-xl bg-background/80 backdrop-blur-sm"
+                      onClick={() => {
+                        const summaryHeaders = ['Metric', 'Value'];
+                        const summaryRows = [
+                          ['Total Views', String(analytics?.totalViews ?? 0)],
+                          ['Total Saves', String(analytics?.totalSaves ?? 0)],
+                          ['Total Inquiries', String(analytics?.totalInquiries ?? 0)],
+                          ['Conversion Rate', conversionRateDisplay],
+                          ['Date Range', dateRangeLabel],
+                          [], // blank separator
+                        ];
+                        const agentHeaders = ['Agent Name', 'Active Listings', 'Views', 'Inquiries'];
+                        const agentRows = (analytics?.agentPerformance || []).map(a => [
+                          a.agentName,
+                          String(a.activeListings),
+                          String(a.views),
+                          String(a.inquiries),
+                        ]);
+                        // Combine: summary section then agent section
+                        const allHeaders = agentRows.length > 0 ? agentHeaders : summaryHeaders;
+                        const allRows = [
+                          ...summaryRows.map(r => r.length === 0 ? ['', '', '', ''] : [r[0], r[1], '', '']),
+                          ...(agentRows.length > 0 ? [['', '', '', ''], ['--- Agent Performance ---', '', '', ''], ...agentRows] : []),
+                        ];
+                        exportToCSV(`agency-analytics-${dateRange}-${new Date().toISOString().slice(0, 10)}`, allHeaders, allRows);
+                      }}
+                    >
+                      <FileSpreadsheet className="h-4 w-4 mr-1" />
+                      Export
+                    </Button>
+                    <Select value={dateRange} onValueChange={(v) => setDateRange(v as DateRangeFilter)}>
+                      <SelectTrigger className="w-[160px] bg-background/80 backdrop-blur-sm rounded-xl">
+                        <Calendar className="h-4 w-4 mr-2 text-primary" />
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {dateRangeOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
             </motion.div>
