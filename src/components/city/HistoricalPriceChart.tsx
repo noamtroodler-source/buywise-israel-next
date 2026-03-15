@@ -19,6 +19,7 @@ import { useNationalAveragePrices } from '@/hooks/useNationalAveragePrices';
 import { useCities } from '@/hooks/useCities';
 import { CityComparisonSelector } from './CityComparisonSelector';
 import { cn } from '@/lib/utils';
+import { getCityInsight } from './cityInsights';
 
 interface HistoricalPriceChartProps {
   citySlug: string;
