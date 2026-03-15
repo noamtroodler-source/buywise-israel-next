@@ -33,6 +33,7 @@ import { useUpdatePropertyStatus, useDuplicateProperty } from '@/hooks/useAgentP
 import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { cn } from '@/lib/utils';
 import { AgencyListingsSkeleton } from '@/components/agency/skeletons/AgencyPageSkeletons';
+import { EnhancedEmptyState } from '@/components/shared/EnhancedEmptyState';
 
 const statusConfig = {
   draft: { label: 'Draft', color: 'bg-muted text-muted-foreground' },
