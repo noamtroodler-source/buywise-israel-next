@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Home, TrendingUp } from 'lucide-react';
+import {
   CartesianGrid,
   Line,
   LineChart,
@@ -11,7 +12,6 @@ import { Home, TrendingUp } from 'lucide-react';
 } from 'recharts';
 import { InlineSourceBadge } from '@/components/shared/InlineSourceBadge';
 import { InfoBanner } from '@/components/tools/shared/InfoBanner';
-import { useRoomPriceHistory } from '@/hooks/useRoomPriceHistory';
 import { useRoomPriceHistory } from '@/hooks/useRoomPriceHistory';
 import { useRoomPriceComparison } from '@/hooks/useRoomPriceComparison';
 import { useCities } from '@/hooks/useCities';
