@@ -166,19 +166,36 @@ export function useSubmitForReview() {
         .update({
           verification_status: 'pending_review',
           submitted_at: new Date().toISOString(),
-          rejection_reason: null, // Clear previous rejection reason
+          rejection_reason: null,
         } as any)
         .eq('id', propertyId);
 
       if (error) throw error;
     },
-    onSuccess: () => {
+    onMutate: async (propertyId: string) => {
+      await queryClient.cancelQueries({ queryKey: ['agentProperties'] });
+      const previous = queryClient.getQueryData<AgentProperty[]>(['agentProperties']);
+      queryClient.setQueryData<AgentProperty[] | undefined>(['agentProperties'], (old) =>
+        old?.map(p =>
+          p.id === propertyId
+            ? { ...p, verification_status: 'pending_review' as const, rejection_reason: null, submitted_at: new Date().toISOString() }
+            : p
+        )
+      );
+      return { previous };
+    },
+    onError: (error, _propertyId, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['agentProperties'], context.previous);
+      }
+      toast.error('Failed to submit: ' + error.message);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['agentProperties'] });
       queryClient.invalidateQueries({ queryKey: ['pendingReviewCount'] });
-      toast.success('Listing submitted for review!');
     },
-    onError: (error) => {
-      toast.error('Failed to submit: ' + error.message);
+    onSuccess: () => {
+      toast.success('Listing submitted for review!');
     },
   });
 }
