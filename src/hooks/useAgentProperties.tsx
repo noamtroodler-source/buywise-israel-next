@@ -398,7 +398,7 @@ export function useBulkDeleteProperties() {
       if (context?.previous) {
         queryClient.setQueryData(['agentProperties'], context.previous);
       }
-      toast.error('Failed to delete properties: ' + error.message);
+      toast.error(getUserFriendlyError(error, 'Failed to delete listings'));
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['agentProperties'] });
