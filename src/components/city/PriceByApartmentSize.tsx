@@ -441,6 +441,8 @@ export function PriceByApartmentSize({
               </>
             )}
           </div>
+          </>
+          )}
 
           {/* Source attribution */}
           <div className="flex items-center gap-2 flex-wrap">
