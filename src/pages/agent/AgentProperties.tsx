@@ -165,7 +165,7 @@ export default function AgentProperties() {
                   </SelectContent>
                 </Select>
                 <Select value={cityFilter} onValueChange={setCityFilter}>
-                  <SelectTrigger className="w-[140px] rounded-xl"><SelectValue placeholder="City" /></SelectTrigger>
+                  <SelectTrigger className="w-full sm:w-[140px] rounded-xl"><SelectValue placeholder="City" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Cities</SelectItem>
                     {cities.map((city) => (
