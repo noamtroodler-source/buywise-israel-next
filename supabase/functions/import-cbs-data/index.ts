@@ -25,40 +25,44 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Verify user is admin
-    const anonClient = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
-    );
-    const { data: claims, error: claimsErr } = await anonClient.auth.getClaims(
-      authHeader.replace("Bearer ", "")
-    );
-    if (claimsErr || !claims?.claims?.sub) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    const userId = claims.claims.sub as string;
-    const { data: roleData } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId)
-      .eq("role", "admin")
-      .maybeSingle();
-    if (!roleData) {
-      return new Response(JSON.stringify({ error: "Admin only" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    const token = authHeader.replace("Bearer ", "");
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    // Allow service role key OR admin user
+    if (token !== serviceRoleKey) {
+      const anonClient = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_ANON_KEY")!,
+        { global: { headers: { Authorization: authHeader } } }
+      );
+      const { data: { user }, error: userErr } = await anonClient.auth.getUser();
+      if (userErr || !user) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const { data: roleData } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+      if (!roleData) {
+        return new Response(JSON.stringify({ error: "Admin only" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
-    const { table, rows } = await req.json();
+    const { table, rows, clear } = await req.json();
 
     if (table === "city_price_history") {
-      // Clear existing data first
-      await supabase.from("city_price_history").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      // Clear existing data first (unless clear=false)
+      if (clear !== false) {
+        await supabase.from("city_price_history").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      }
 
       // Insert in batches of 500
       const batchSize = 500;
@@ -66,7 +70,7 @@ Deno.serve(async (req) => {
       for (let i = 0; i < rows.length; i += batchSize) {
         const batch = rows.slice(i, i + batchSize).map((r: any) => ({
           city_en: r.city_en,
-          rooms: parseInt(r.rooms),
+          rooms: r.rooms === 'all' ? 0 : parseInt(r.rooms),
           year: parseInt(r.year),
           quarter: parseInt(r.quarter),
           avg_price_nis: r.avg_price_nis ? parseFloat(r.avg_price_nis) : null,
@@ -87,8 +91,10 @@ Deno.serve(async (req) => {
     }
 
     if (table === "neighborhood_price_history") {
-      // Clear existing data first
-      await supabase.from("neighborhood_price_history").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      // Clear existing data first (unless clear=false)
+      if (clear !== false) {
+        await supabase.from("neighborhood_price_history").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      }
 
       const batchSize = 500;
       let inserted = 0;
@@ -123,6 +129,33 @@ Deno.serve(async (req) => {
         inserted += batch.length;
       }
       return new Response(JSON.stringify({ success: true, inserted }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Update cities table from city_summary data
+    if (table === "city_summary") {
+      let updated = 0;
+      for (const r of rows) {
+        if (!r.city_en || r.transaction_count === '0') continue;
+        
+        const updateData: Record<string, any> = {};
+        if (r.avg_price_per_sqm) updateData.average_price_sqm = parseFloat(r.avg_price_per_sqm);
+        if (r.price_increase_pct) updateData.yoy_price_change = parseFloat(r.price_increase_pct);
+        if (r.rental_yield_pct) updateData.gross_yield_percent = parseFloat(r.rental_yield_pct);
+        if (r.avg_transaction_price) updateData.average_price = parseFloat(r.avg_transaction_price);
+        
+        if (Object.keys(updateData).length === 0) continue;
+        
+        // Match by city name
+        const { error } = await supabase
+          .from("cities")
+          .update(updateData)
+          .eq("name", r.city_en);
+        
+        if (!error) updated++;
+      }
+      return new Response(JSON.stringify({ success: true, updated }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
