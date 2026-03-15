@@ -56,11 +56,13 @@ Deno.serve(async (req) => {
       }
     }
 
-    const { table, rows } = await req.json();
+    const { table, rows, clear } = await req.json();
 
     if (table === "city_price_history") {
-      // Clear existing data first
-      await supabase.from("city_price_history").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      // Clear existing data first (unless clear=false)
+      if (clear !== false) {
+        await supabase.from("city_price_history").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      }
 
       // Insert in batches of 500
       const batchSize = 500;
@@ -68,7 +70,7 @@ Deno.serve(async (req) => {
       for (let i = 0; i < rows.length; i += batchSize) {
         const batch = rows.slice(i, i + batchSize).map((r: any) => ({
           city_en: r.city_en,
-          rooms: parseInt(r.rooms),
+          rooms: r.rooms === 'all' ? 0 : parseInt(r.rooms),
           year: parseInt(r.year),
           quarter: parseInt(r.quarter),
           avg_price_nis: r.avg_price_nis ? parseFloat(r.avg_price_nis) : null,
