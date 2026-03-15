@@ -354,7 +354,9 @@ export function HistoricalPriceChart({
             </div>
           )}
 
-          {/* Chart */}
+          {/* Chart — only if we have data */}
+          {!hasNoData && (
+            <>
           <div className="h-[300px] w-full bg-background rounded-xl border border-border/50 p-4 pt-2">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={filteredData} margin={{ top: 20, right: 16, left: 0, bottom: 0 }}>
