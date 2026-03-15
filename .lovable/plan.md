@@ -1,22 +1,38 @@
 
 
-## Phase 1: Founding Partner Enrollment — Implemented ✅
+# Phase K: CSV Export
 
-All changes from the plan have been implemented:
+## Overview
 
-1. **DB Migration** — Added `is_founding_partner`, `payplus_customer_id`, `payplus_subscription_id` to `subscriptions`; `payplus_subscription_id` to `featured_listings`. Updated FOUNDING2026 promo code (max_redemptions=15, cleared old discount/credit data).
-2. **`enroll-founding-partner` edge function** — 15-cap enforcement, trial creation (60 days), founding_partners insert, first month credit grant, promo redemption tracking.
-3. **`check-trial-expirations` edge function** — Daily cron (6 AM UTC) expires trialing subscriptions past trial_end.
-4. **`useFoundingSpots` hook** — Live spots remaining counter querying founding_partners.
-5. **`FoundingProgramSection`** — Updated benefits (2mo free, 3 featured/mo, early access, case study), spots counter badge.
-6. **`FoundingProgramModal`** — Updated benefits, spots counter, activates enrollment flow.
-7. **`Pricing.tsx`** — FOUNDING2026 code routes to `enroll-founding-partner` instead of Stripe; CTA changes to "Activate Founding Program".
-8. **`CheckoutSuccess.tsx`** — Founding partner variant with trial end date and featured listings CTA.
-9. **`grant-monthly-featured-credits`** — Already has 2-month duration cap logic.
-10. **`PlanCard`** — Added `ctaLabel` prop for custom CTA text.
+Add a reusable CSV utility and export buttons to both Agency Listings and Agency Analytics pages, exporting the currently filtered/visible data.
 
-### Deferred (PayPlus not yet set up):
-- `payplus-checkout`, `payplus-webhook`, `manage-billing` edge functions
-- `list-invoices` PayPlus integration
-- Featured listing ₪299/mo PayPlus recurring charge
-- Trial-to-paid automatic charge initiation
+## Changes
+
+### 1. New utility: `src/lib/csvExport.ts`
+
+A generic helper:
+- `exportToCSV(filename: string, headers: string[], rows: string[][])` — builds CSV string, creates a Blob, triggers download via a temporary `<a>` element
+- Handles escaping (commas, quotes, newlines in cell values)
+
+### 2. Update: `src/pages/agency/AgencyListings.tsx`
+
+- Import `exportToCSV` utility and `FileSpreadsheet` icon
+- Add an "Export CSV" button in the header actions row (next to Import/Add Listing)
+- On click, export `filteredListings` with columns: Title, Address, City, Price, Type, Status, Agent, Views, Saves, Inquiries, Days on Market, Created
+
+### 3. Update: `src/pages/agency/AgencyAnalytics.tsx`
+
+- Import `exportToCSV` and `FileSpreadsheet` icon
+- Add an "Export CSV" button next to the date range selector in the header
+- On click, export two sections into one CSV:
+  - Summary row: Total Views, Total Saves, Inquiries, Conversion Rate
+  - Agent performance rows (if available): Agent Name, Active Listings, Views, Inquiries
+
+## Files touched
+
+| File | Change |
+|------|--------|
+| `src/lib/csvExport.ts` | New — generic CSV export utility |
+| `src/pages/agency/AgencyListings.tsx` | Add export button using filtered data |
+| `src/pages/agency/AgencyAnalytics.tsx` | Add export button using analytics data |
+
