@@ -24,6 +24,7 @@ import { SeatOverageConsentDialog } from '@/components/agency/SeatOverageConsent
 import { CreateInviteDialog } from '@/components/agency/CreateInviteDialog';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { AgencyTeamSkeleton } from '@/components/agency/skeletons/AgencyPageSkeletons';
 
 export default function AgencyTeam() {
   const { data: agency, isLoading } = useMyAgency();
