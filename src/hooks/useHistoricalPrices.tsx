@@ -166,7 +166,7 @@ export function useHistoricalPriceComparison(cityNames: string[]) {
       const { data, error } = await supabase
         .from('city_price_history')
         .select('*')
-        .in('city_en', cityNames)
+        .in('city_en', cityNames.map(n => n.replace(/['']/g, '')))
         .order('year', { ascending: true });
 
       if (error) throw error;
