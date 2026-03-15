@@ -19,19 +19,26 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Step 1: Get all distinct CBS neighborhoods from neighborhood_price_history
-    const { data: cbsRows, error: cbsErr } = await supabase
-      .from("neighborhood_price_history")
-      .select("city_en, neighborhood_he, neighborhood_id")
-      .order("city_en");
-
-    if (cbsErr) throw new Error(`CBS query failed: ${cbsErr.message}`);
-
-    // Deduplicate CBS entries
+    // Step 1: Get all distinct CBS neighborhoods via paginated query
     const cbsMap = new Map<string, { city_en: string; neighborhood_he: string; neighborhood_id: string }>();
-    for (const row of cbsRows || []) {
-      const key = `${row.city_en}|${row.neighborhood_he}|${row.neighborhood_id}`;
-      if (!cbsMap.has(key)) cbsMap.set(key, row);
+    let page = 0;
+    const pageSize = 1000;
+    while (true) {
+      const { data: batch, error: batchErr } = await supabase
+        .from("neighborhood_price_history")
+        .select("city_en, neighborhood_he, neighborhood_id")
+        .order("city_en")
+        .range(page * pageSize, (page + 1) * pageSize - 1);
+
+      if (batchErr) throw new Error(`CBS query failed: ${batchErr.message}`);
+      if (!batch || batch.length === 0) break;
+
+      for (const row of batch) {
+        const key = `${row.city_en}|${row.neighborhood_he}|${row.neighborhood_id}`;
+        if (!cbsMap.has(key)) cbsMap.set(key, row);
+      }
+      if (batch.length < pageSize) break;
+      page++;
     }
     const cbsNeighborhoods = Array.from(cbsMap.values());
 
