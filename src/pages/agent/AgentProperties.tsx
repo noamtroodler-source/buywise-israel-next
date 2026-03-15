@@ -4,8 +4,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Loader2, Home, Plus, Search, Eye, Clock,
   CheckCircle2, Building2, Edit, Trash2, Send, MoreHorizontal,
-  AlertTriangle, MessageSquare, Heart, Download, X, FileEdit,
+  AlertTriangle, MessageSquare, Heart, Download, X, FileEdit, Copy,
 } from 'lucide-react';
+import { propertyToWizardDraft } from '@/utils/duplicateProperty';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -417,6 +418,14 @@ export default function AgentProperties() {
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onSelect={() => {
+                                    const draft = propertyToWizardDraft(listing);
+                                    localStorage.setItem(PROPERTY_WIZARD_STORAGE_KEY, JSON.stringify(draft));
+                                    navigate('/agent/properties/new');
+                                  }}>
+                                    <Copy className="h-4 w-4 mr-2" />
+                                    Duplicate
+                                  </DropdownMenuItem>
                                   <DropdownMenuSeparator />
                                   <AlertDialog>
                                     <AlertDialogTrigger asChild>
@@ -577,6 +586,14 @@ export default function AgentProperties() {
                                       </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
+                                      <DropdownMenuItem onSelect={() => {
+                                        const draft = propertyToWizardDraft(listing);
+                                        localStorage.setItem(PROPERTY_WIZARD_STORAGE_KEY, JSON.stringify(draft));
+                                        navigate('/agent/properties/new');
+                                      }}>
+                                        <Copy className="h-4 w-4 mr-2" />
+                                        Duplicate
+                                      </DropdownMenuItem>
                                       <DropdownMenuSeparator />
                                       <AlertDialog>
                                         <AlertDialogTrigger asChild>
