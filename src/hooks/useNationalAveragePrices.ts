@@ -26,19 +26,16 @@ export function useNationalAveragePrices() {
       if (error) throw error;
 
       // Group by year: use the country_avg column (CBS national average)
-      // Take the average of quarterly country_avg values per year
-      const byYear = new Map<number, { values: number[]; cities: Set<string> }>();
+      // Deduplicate: country_avg is the same across all cities for a given quarter
+      const byYear = new Map<number, { quarterValues: Map<number, number>; cityCount: Set<string> }>();
       for (const row of (data || [])) {
         if (!row.country_avg) continue;
-        const existing = byYear.get(row.year) || { values: [], cities: new Set<string>() };
-        // Only add one country_avg per quarter (they're the same across cities)
-        const quarterKey = `${row.year}-Q${row.quarter}`;
-        if (!existing.cities.has(quarterKey)) {
-          existing.values.push(row.country_avg);
-          existing.cities.add(quarterKey);
+        const existing = byYear.get(row.year) || { quarterValues: new Map(), cityCount: new Set() };
+        // Only store one country_avg per quarter (they're identical across cities)
+        if (!existing.quarterValues.has(row.quarter)) {
+          existing.quarterValues.set(row.quarter, row.country_avg);
         }
-        // Track unique cities for the count
-        existing.cities.add(row.city_en);
+        existing.cityCount.add(row.city_en);
         byYear.set(row.year, existing);
       }
 
