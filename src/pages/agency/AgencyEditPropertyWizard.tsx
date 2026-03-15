@@ -65,6 +65,16 @@ function AgencyEditWizardContent({ propertyId }: { propertyId: string }) {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
 
+  // Auto-save for dirty tracking + beforeunload warning
+  const autoSaveMetadata = useMemo(() => ({ currentStep }), [currentStep]);
+  const { isDirty, isSaving, lastSavedAt, error: saveError, clearSavedData } = useAutoSave({
+    data: hasLoaded ? data : {},
+    storageKey: `agency-edit-property-draft-${propertyId}`,
+    debounceMs: 1000,
+    autoSaveInterval: 0,
+    metadata: autoSaveMetadata,
+  });
+
   useEffect(() => {
     if (property && !hasLoaded) {
       const wizardData: PropertyWizardData = {
