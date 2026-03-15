@@ -18,6 +18,7 @@ import { CityWorthWatchingNew, MarketFactor } from '@/components/city/CityWorthW
 import { CityExploreListings } from '@/components/city/CityExploreListings';
 import { CityFeaturedProperties } from '@/components/city/CityFeaturedProperties';
 import { HistoricalPriceChart } from '@/components/city/HistoricalPriceChart';
+import { PriceByApartmentSize } from '@/components/city/PriceByApartmentSize';
 import { useCityDetails } from '@/hooks/useCityDetails';
 import { SEOHead } from '@/components/seo/SEOHead';
 import { generateCityMeta, generateCityJsonLd, SITE_CONFIG } from '@/lib/seo';
