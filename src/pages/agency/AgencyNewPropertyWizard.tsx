@@ -1,12 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ArrowRight, Save, Send, Loader2, Sparkles } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Save, Send, Loader2, Sparkles, FileText } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { WizardProgress } from '@/components/agent/wizard/WizardProgress';
-import { PropertyWizardProvider, usePropertyWizard, PROPERTY_WIZARD_STORAGE_KEY, PropertyWizardData } from '@/components/agent/wizard/PropertyWizardContext';
+import { PropertyWizardProvider, usePropertyWizard, PropertyWizardData } from '@/components/agent/wizard/PropertyWizardContext';
 import {
   StepBasics,
   StepDetails,
@@ -22,6 +23,8 @@ import { useAgencyListingsManagement } from '@/hooks/useAgencyListings';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { SaveStatusIndicator } from '@/components/shared/SaveStatusIndicator';
 import { PropertySubmittedDialog } from '@/components/agent/PropertySubmittedDialog';
+
+const AGENCY_WIZARD_STORAGE_KEY = 'agency-property-wizard-draft';
 
 const steps = [
   { title: 'Assign Agent', description: 'Choose team member' },
@@ -43,14 +46,19 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
 };
 
+interface AgencyWizardMetadata {
+  currentStep: number;
+  assignedAgentId: string | null;
+}
+
 function AgencyWizardContent() {
   const navigate = useNavigate();
-  const { data, currentStep, setCurrentStep, goNext, goBack, canGoNext, isLastStep, setStepOffset } = usePropertyWizard();
+  const { data, currentStep, setCurrentStep, goNext, goBack, canGoNext, isLastStep, setStepOffset, loadFromSaved } = usePropertyWizard();
 
-  // Agency wizard has an extra "Assign Agent" step at index 0, so offset validation by 1
   useEffect(() => {
     setStepOffset(1);
   }, [setStepOffset]);
+
   const { data: agency } = useMyAgency();
   const { data: team = [] } = useAgencyTeam(agency?.id);
   const { data: listings = [] } = useAgencyListingsManagement(agency?.id);
@@ -60,15 +68,46 @@ function AgencyWizardContent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [submittedTitle, setSubmittedTitle] = useState('');
+  const [showRecoveryDialog, setShowRecoveryDialog] = useState(false);
+  const hasCheckedDraft = useRef(false);
 
-  const autoSave = useAutoSave<PropertyWizardData>({
+  const autoSave = useAutoSave<PropertyWizardData, AgencyWizardMetadata>({
     data,
-    storageKey: PROPERTY_WIZARD_STORAGE_KEY + '-agency',
+    storageKey: AGENCY_WIZARD_STORAGE_KEY,
     autoSaveInterval: 0,
-    useSessionKey: true,
+    useSessionKey: false,
+    metadata: { currentStep, assignedAgentId },
   });
 
-  // Compute listing counts per agent for StepAssignAgent
+  // Check for saved draft on mount
+  useEffect(() => {
+    if (hasCheckedDraft.current) return;
+    hasCheckedDraft.current = true;
+    const saved = autoSave.getSavedData();
+    if (saved?.data && saved.data.title) {
+      setShowRecoveryDialog(true);
+    }
+  }, []);
+
+  const handleResumeDraft = () => {
+    const saved = autoSave.getSavedData();
+    if (saved?.data) {
+      loadFromSaved(saved.data);
+      if (saved.metadata?.currentStep !== undefined) {
+        setCurrentStep(saved.metadata.currentStep);
+      }
+      if (saved.metadata?.assignedAgentId) {
+        setAssignedAgentId(saved.metadata.assignedAgentId);
+      }
+    }
+    setShowRecoveryDialog(false);
+  };
+
+  const handleStartFresh = () => {
+    autoSave.clearSavedData();
+    setShowRecoveryDialog(false);
+  };
+
   const listingCounts: Record<string, number> = {};
   for (const listing of listings) {
     if (listing.agent_id) {
@@ -76,7 +115,6 @@ function AgencyWizardContent() {
     }
   }
 
-  // Step 0 validation: must have an agent selected
   const canGoNextAgency = currentStep === 0 ? !!assignedAgentId : canGoNext;
 
   const buildPropertyPayload = (submitForReview: boolean) => ({
@@ -171,7 +209,6 @@ function AgencyWizardContent() {
 
         <div className="container py-8 max-w-3xl">
           <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
-
             {/* Header */}
             <motion.div variants={itemVariants} className="flex items-center justify-between">
               <Button variant="ghost" onClick={() => navigate('/agency/listings')} className="rounded-xl hover:bg-primary/5 -ml-2">
@@ -276,6 +313,30 @@ function AgencyWizardContent() {
             </motion.div>
           </motion.div>
         </div>
+
+        {/* Draft Recovery Dialog */}
+        <Dialog open={showRecoveryDialog} onOpenChange={setShowRecoveryDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mb-2">
+                <FileText className="h-6 w-6 text-primary" />
+              </div>
+              <DialogTitle className="text-center">Resume Previous Draft?</DialogTitle>
+              <DialogDescription className="text-center">
+                You have an unfinished listing draft. Would you like to continue where you left off or start fresh?
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+              <Button variant="outline" onClick={handleStartFresh} className="rounded-xl">
+                Start Fresh
+              </Button>
+              <Button onClick={handleResumeDraft} className="rounded-xl">
+                <FileText className="h-4 w-4 mr-2" />
+                Resume Draft
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <PropertySubmittedDialog
           open={showSuccessDialog}

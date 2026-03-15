@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ArrowRight, Save, Send, Loader2, Sparkles, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Save, Send, Loader2, Sparkles, ShieldAlert, FileText } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { WizardProgress } from '@/components/agent/wizard/WizardProgress';
 import { PropertyWizardProvider, usePropertyWizard, PROPERTY_WIZARD_STORAGE_KEY, PropertyWizardData } from '@/components/agent/wizard/PropertyWizardContext';
 import { 
@@ -42,27 +43,58 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
 };
 
+interface WizardMetadata {
+  currentStep: number;
+}
+
 function WizardContent() {
   const navigate = useNavigate();
-  const { data, currentStep, setCurrentStep, goNext, goBack, canGoNext, isLastStep } = usePropertyWizard();
+  const { data, currentStep, setCurrentStep, goNext, goBack, canGoNext, isLastStep, loadFromSaved } = usePropertyWizard();
   const { data: agentProfile } = useAgentProfile();
   const createProperty = useCreateProperty();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [submittedTitle, setSubmittedTitle] = useState('');
   const [overageAccepted, setOverageAccepted] = useState(true);
+  const [showRecoveryDialog, setShowRecoveryDialog] = useState(false);
+  const hasCheckedDraft = useRef(false);
   
-  // Check if agent is verified (status is 'active')
   const isAgentVerified = agentProfile?.status === 'active';
   const { canCreate: canCreateListing, isOverLimit } = useListingLimitCheck('agency');
 
-  // Auto-save functionality with session-unique key (always starts fresh)
-  const autoSave = useAutoSave<PropertyWizardData>({
+  const autoSave = useAutoSave<PropertyWizardData, WizardMetadata>({
     data,
     storageKey: PROPERTY_WIZARD_STORAGE_KEY,
-    autoSaveInterval: 0, // Disable auto-save to DB for now, just localStorage
-    useSessionKey: true, // Each wizard session gets unique storage key
+    autoSaveInterval: 0,
+    useSessionKey: false,
+    metadata: { currentStep },
   });
+
+  // Check for saved draft on mount
+  useEffect(() => {
+    if (hasCheckedDraft.current) return;
+    hasCheckedDraft.current = true;
+    const saved = autoSave.getSavedData();
+    if (saved?.data && saved.data.title) {
+      setShowRecoveryDialog(true);
+    }
+  }, []);
+
+  const handleResumeDraft = () => {
+    const saved = autoSave.getSavedData();
+    if (saved?.data) {
+      loadFromSaved(saved.data);
+      if (saved.metadata?.currentStep !== undefined) {
+        setCurrentStep(saved.metadata.currentStep);
+      }
+    }
+    setShowRecoveryDialog(false);
+  };
+
+  const handleStartFresh = () => {
+    autoSave.clearSavedData();
+    setShowRecoveryDialog(false);
+  };
 
   const handleSaveDraft = async () => {
     setIsSubmitting(true);
@@ -89,17 +121,15 @@ function WizardContent() {
         entry_date: data.is_immediate_entry ? undefined : data.entry_date,
         ac_type: data.ac_type as any,
         vaad_bayit_monthly: data.vaad_bayit_monthly,
-        // Explicit amenity booleans
         has_balcony: data.has_balcony,
         has_elevator: data.has_elevator,
         has_storage: data.has_storage,
-        // Lease reality fields
         lease_term: data.lease_term,
         subletting_allowed: data.subletting_allowed,
         furnished_status: data.furnished_status,
         pets_policy: data.pets_policy,
-         furniture_items: data.furniture_items,
-         featured_highlight: data.featured_highlight || null,
+        furniture_items: data.furniture_items,
+        featured_highlight: data.featured_highlight || null,
         submitForReview: false,
       });
       autoSave.clearSavedData();
@@ -134,17 +164,15 @@ function WizardContent() {
         entry_date: data.is_immediate_entry ? undefined : data.entry_date,
         ac_type: data.ac_type as any,
         vaad_bayit_monthly: data.vaad_bayit_monthly,
-        // Explicit amenity booleans
         has_balcony: data.has_balcony,
         has_elevator: data.has_elevator,
         has_storage: data.has_storage,
-        // Lease reality fields
         lease_term: data.lease_term,
         subletting_allowed: data.subletting_allowed,
         furnished_status: data.furnished_status,
         pets_policy: data.pets_policy,
-         furniture_items: data.furniture_items,
-         featured_highlight: data.featured_highlight || null,
+        furniture_items: data.furniture_items,
+        featured_highlight: data.featured_highlight || null,
         submitForReview: true,
       });
       
@@ -158,38 +186,25 @@ function WizardContent() {
 
   const renderStep = () => {
     switch (currentStep) {
-      case 0:
-        return <StepBasics />;
-      case 1:
-        return <StepDetails />;
-      case 2:
-        return <StepFeatures />;
-      case 3:
-        return <StepPhotos />;
-      case 4:
-        return <StepDescription />;
-      case 5:
-        return <StepReview onEditStep={setCurrentStep} />;
-      default:
-        return null;
+      case 0: return <StepBasics />;
+      case 1: return <StepDetails />;
+      case 2: return <StepFeatures />;
+      case 3: return <StepPhotos />;
+      case 4: return <StepDescription />;
+      case 5: return <StepReview onEditStep={setCurrentStep} />;
+      default: return null;
     }
   };
 
   return (
     <Layout>
       <div className="min-h-screen relative">
-        {/* Background Effects */}
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-primary/[0.02] to-background -z-10" />
         <div className="absolute top-20 left-10 w-72 h-72 bg-primary/5 rounded-full blur-3xl -z-10" />
         <div className="absolute top-40 right-20 w-96 h-96 bg-primary/3 rounded-full blur-3xl -z-10" />
 
         <div className="container py-8 max-w-3xl">
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className="space-y-6"
-          >
+          <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
             {/* Header */}
             <motion.div variants={itemVariants} className="flex items-center justify-between">
               <Button variant="ghost" onClick={() => navigate('/agent')} className="rounded-xl hover:bg-primary/5 -ml-2">
@@ -215,7 +230,6 @@ function WizardContent() {
                 </Button>
               </div>
             </motion.div>
-
 
             {/* Progress */}
             <motion.div variants={itemVariants}>
@@ -320,6 +334,30 @@ function WizardContent() {
             </motion.div>
           </motion.div>
         </div>
+
+        {/* Draft Recovery Dialog */}
+        <Dialog open={showRecoveryDialog} onOpenChange={setShowRecoveryDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mb-2">
+                <FileText className="h-6 w-6 text-primary" />
+              </div>
+              <DialogTitle className="text-center">Resume Previous Draft?</DialogTitle>
+              <DialogDescription className="text-center">
+                You have an unfinished listing draft. Would you like to continue where you left off or start fresh?
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+              <Button variant="outline" onClick={handleStartFresh} className="rounded-xl">
+                Start Fresh
+              </Button>
+              <Button onClick={handleResumeDraft} className="rounded-xl">
+                <FileText className="h-4 w-4 mr-2" />
+                Resume Draft
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <PropertySubmittedDialog
           open={showSuccessDialog}
