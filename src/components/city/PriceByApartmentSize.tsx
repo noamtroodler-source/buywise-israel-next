@@ -272,6 +272,12 @@ export function PriceByApartmentSize({
             </InfoBanner>
           )}
 
+          {/* Partial data notice */}
+          {hasPartialData && !isComparing && (
+            <InfoBanner variant="info">
+              Data available for {availableRoomTypes.map((r) => r.label).join(', ')} apartments only. Other room types have insufficient transaction volume.
+            </InfoBanner>
+          )}
 
           {isComparing && (
             <div className="flex items-center gap-1 p-1 rounded-lg bg-muted/50 border border-border/50 w-fit">
