@@ -37,6 +37,7 @@ interface MarketInsightRequest {
   // City-level data
   city_avg_price_sqm: number | null;
   city_yoy_change: number | null;
+  city_5yr_change: number | null;
   // Comp data
   comp_count: number;
   avg_comp_deviation_percent: number | null;
