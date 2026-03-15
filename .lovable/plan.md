@@ -1,35 +1,30 @@
-## Phase 1: Founding Partner Enrollment — Implemented ✅
 
-All changes from the plan have been implemented:
 
-1. **DB Migration** — Added `is_founding_partner`, `payplus_customer_id`, `payplus_subscription_id` to `subscriptions`; `payplus_subscription_id` to `featured_listings`. Updated FOUNDING2026 promo code (max_redemptions=15, cleared old discount/credit data).
-2. **`enroll-founding-partner` edge function** — 15-cap enforcement, trial creation (60 days), founding_partners insert, first month credit grant, promo redemption tracking.
-3. **`check-trial-expirations` edge function** — Daily cron (6 AM UTC) expires trialing subscriptions past trial_end.
-4. **`useFoundingSpots` hook** — Live spots remaining counter querying founding_partners.
-5. **`FoundingProgramSection`** — Updated benefits (2mo free, 3 featured/mo, early access, case study), spots counter badge.
-6. **`FoundingProgramModal`** — Updated benefits, spots counter, activates enrollment flow.
-7. **`Pricing.tsx`** — FOUNDING2026 code routes to `enroll-founding-partner` instead of Stripe; CTA changes to "Activate Founding Program".
-8. **`CheckoutSuccess.tsx`** — Founding partner variant with trial end date and featured listings CTA.
-9. **`grant-monthly-featured-credits`** — Already has 2-month duration cap logic.
-10. **`PlanCard`** — Added `ctaLabel` prop for custom CTA text.
+## Update NATIONAL_AVG_PRICE_SQM to Reflect True National Data
 
-### Deferred (PayPlus not yet set up):
-- `payplus-checkout`, `payplus-webhook`, `manage-billing` edge functions
-- `list-invoices` PayPlus integration
-- Featured listing ₪299/mo PayPlus recurring charge
-- Trial-to-paid automatic charge initiation
+### Problem
+`NATIONAL_AVG_PRICE_SQM = 27,700` was derived from an unweighted average of the 25 cities on the platform — heavily skewed by Tel Aviv (₪53k) and Ramat Gan (₪45k). The CBS national average (from `country_avg` in `city_price_history`) is approximately **₪22,685/sqm**, about 18% lower.
 
-## Phase 2: CBS Data Organization — Implemented ✅
+This means city pages currently understate how expensive a city is relative to the true national average.
 
-**Data Source:** All data in these tables originates from **Nadlan.gov.il — Ministry of Justice, Israel** (official government property transaction records). This is the same authoritative source used for `sold_transactions`.
+### What Changes
 
-1. **`city_price_history` table** — Quarterly avg transaction prices by city + room count (3/4/5), 2020-2025, with national comparison. ~1,625 rows from `market_data.csv`.
-2. **`neighborhood_price_history` table** — Quarterly prices by neighborhood + room count, with yield and YoY. ~52,398 rows from `neighborhood_data.csv`.
-3. **`import-cbs-data` edge function** — Admin-only bulk importer, accepts parsed CSV rows, upserts in batches of 500.
-4. **Admin import page** — `/admin/import-cbs-data` with file upload for both CSVs.
-5. **Public read-only RLS** — Both tables have SELECT-only policies (public government data).
+**Single file edit — `src/lib/constants/marketAverages.ts`:**
+- Update `NATIONAL_AVG_PRICE_SQM` from `27700` to `22700` (rounded from CBS ₪1,928,200 ÷ 85m² average apartment)
+- Update the comment to note the derivation method and CBS source
 
-### Next steps (not yet built):
-- City page trend charts using `city_price_history`
-- Neighborhood comparison widgets using `neighborhood_price_history`
-- AI market insights grounded in neighborhood-level data
+**No other files change.** All 4 consumer files (`MarketOverviewCards`, `CityQuickStats`, `CityMarketSnapshot`, `MarketRealityTabs`) already import the constant — they'll automatically reflect the corrected benchmark.
+
+### Impact on City Pages
+Cities will now show higher "above national" percentages, which is more accurate:
+
+| City | Old "vs national" | New "vs national" |
+|------|-------------------|-------------------|
+| Tel Aviv | +93% | +135% |
+| Beer Sheva | -45% | -33% |
+| Modi'in | +8% | +32% |
+
+### Technical Notes
+- The `country_avg` column stores total transaction price (not per sqm), so we divide by ~85m² (CBS average apartment size for all-rooms aggregate). This is an approximation but matches CBS methodology.
+- The `NATIONAL_AVG_ARNONA = 55` constant is unrelated and stays unchanged.
+
