@@ -235,6 +235,42 @@ export default function AgentProperties() {
             ))}
           </div>
 
+          {/* Draft Banner */}
+          {hasDraft && !draftDismissed && (
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+              <Card className="rounded-2xl border-primary/30 bg-primary/5">
+                <CardContent className="p-4 flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-xl bg-primary/10">
+                      <FileEdit className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">You have an unfinished draft</p>
+                      <p className="text-xs text-muted-foreground">Continue where you left off</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="rounded-xl h-8"
+                      onClick={() => setDraftDismissed(true)}
+                    >
+                      Dismiss
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="rounded-xl h-8"
+                      onClick={() => navigate('/agent/properties/new')}
+                    >
+                      Continue Draft
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
           {/* Filters */}
           <Card className="rounded-2xl border-primary/10">
             <CardContent className="p-4">
