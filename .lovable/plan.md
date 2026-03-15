@@ -1,22 +1,46 @@
 
 
-## Phase 1: Founding Partner Enrollment — Implemented ✅
+# Phase H: Role Guards Audit
 
-All changes from the plan have been implemented:
+## Problem
 
-1. **DB Migration** — Added `is_founding_partner`, `payplus_customer_id`, `payplus_subscription_id` to `subscriptions`; `payplus_subscription_id` to `featured_listings`. Updated FOUNDING2026 promo code (max_redemptions=15, cleared old discount/credit data).
-2. **`enroll-founding-partner` edge function** — 15-cap enforcement, trial creation (60 days), founding_partners insert, first month credit grant, promo redemption tracking.
-3. **`check-trial-expirations` edge function** — Daily cron (6 AM UTC) expires trialing subscriptions past trial_end.
-4. **`useFoundingSpots` hook** — Live spots remaining counter querying founding_partners.
-5. **`FoundingProgramSection`** — Updated benefits (2mo free, 3 featured/mo, early access, case study), spots counter badge.
-6. **`FoundingProgramModal`** — Updated benefits, spots counter, activates enrollment flow.
-7. **`Pricing.tsx`** — FOUNDING2026 code routes to `enroll-founding-partner` instead of Stripe; CTA changes to "Activate Founding Program".
-8. **`CheckoutSuccess.tsx`** — Founding partner variant with trial end date and featured listings CTA.
-9. **`grant-monthly-featured-credits`** — Already has 2-month duration cap logic.
-10. **`PlanCard`** — Added `ctaLabel` prop for custom CTA text.
+Two gaps in route protection:
 
-### Deferred (PayPlus not yet set up):
-- `payplus-checkout`, `payplus-webhook`, `manage-billing` edge functions
-- `list-invoices` PayPlus integration
-- Featured listing ₪299/mo PayPlus recurring charge
-- Trial-to-paid automatic charge initiation
+1. **All 14 `/agency/*` routes** (except `/agency/register`) use `<ProtectedRoute>` without `requiredRole="agent"`, meaning any logged-in user (even a plain buyer) can access agency dashboard, settings, team, etc. Compare with `/agent/*` and `/developer/*` routes which all use `requiredRole="agent"` / `requiredRole="developer"`.
+
+2. **Agency-admin-only actions** (team management, settings, billing, import) have no client-side guard checking if the current user is the agency's `admin_user_id`. Any agent in the agency can currently access these pages.
+
+## Changes
+
+### 1. Add `requiredRole="agent"` to all agency routes (except register)
+
+In `src/App.tsx`, update 13 routes from `<ProtectedRoute>` to `<ProtectedRoute requiredRole="agent">`:
+- `/agency`, `/agency/analytics`, `/agency/settings`, `/agency/listings`, `/agency/properties/new`, `/agency/projects/new`, `/agency/properties/:id/edit`, `/agency/blog`, `/agency/blog/new`, `/agency/blog/:id/edit`, `/agency/billing`, `/agency/featured`, `/agency/import`, `/agency/team`
+
+`/agency/register` stays as `<ProtectedRoute>` (no role required — that's how users become agents).
+
+### 2. Add `isAgencyAdmin` flag to `useAgencyManagement`
+
+Expose a computed boolean `isAgencyAdmin` from the existing hook by comparing `agency.admin_user_id === user.id`. This avoids a new hook.
+
+### 3. Guard admin-only pages with redirect
+
+Add an `isAgencyAdmin` check in admin-only pages. If the logged-in agent is not the agency admin, show a message or redirect to `/agency`:
+- `AgencySettings.tsx`
+- `AgencyTeam.tsx`
+- `AgencyBilling.tsx`
+- `AgencyImport.tsx`
+
+These pages will show an `EnhancedEmptyState` with "Admin access required" and a CTA back to the agency dashboard.
+
+## Files touched
+
+| File | Change |
+|------|--------|
+| `src/App.tsx` | Add `requiredRole="agent"` to 13 agency routes |
+| `src/hooks/useAgencyManagement.tsx` | Export `isAgencyAdmin` boolean |
+| `src/pages/agency/AgencySettings.tsx` | Add admin guard |
+| `src/pages/agency/AgencyTeam.tsx` | Add admin guard |
+| `src/pages/agency/AgencyBilling.tsx` | Add admin guard |
+| `src/pages/agency/AgencyImport.tsx` | Add admin guard |
+
