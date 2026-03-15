@@ -32,7 +32,7 @@ export function useRoomSpecificCityPrice(city: string | null, rooms: number | nu
     queryFn: async () => {
       if (!normalizedCity || !rooms) return null;
 
-      // Fetch latest 2 years of data for this city + room count to compute YoY
+      // Fetch ~6 years of data to compute both YoY and 5-year change
       const { data, error } = await supabase
         .from('city_price_history')
         .select('avg_price_nis, year, quarter, rooms')
@@ -41,7 +41,7 @@ export function useRoomSpecificCityPrice(city: string | null, rooms: number | nu
         .not('avg_price_nis', 'is', null)
         .order('year', { ascending: false })
         .order('quarter', { ascending: false })
-        .limit(8);
+        .limit(24);
 
       if (error || !data || data.length === 0) return null;
 
