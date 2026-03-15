@@ -1,35 +1,42 @@
-## Phase 1: Founding Partner Enrollment — Implemented ✅
 
-All changes from the plan have been implemented:
 
-1. **DB Migration** — Added `is_founding_partner`, `payplus_customer_id`, `payplus_subscription_id` to `subscriptions`; `payplus_subscription_id` to `featured_listings`. Updated FOUNDING2026 promo code (max_redemptions=15, cleared old discount/credit data).
-2. **`enroll-founding-partner` edge function** — 15-cap enforcement, trial creation (60 days), founding_partners insert, first month credit grant, promo redemption tracking.
-3. **`check-trial-expirations` edge function** — Daily cron (6 AM UTC) expires trialing subscriptions past trial_end.
-4. **`useFoundingSpots` hook** — Live spots remaining counter querying founding_partners.
-5. **`FoundingProgramSection`** — Updated benefits (2mo free, 3 featured/mo, early access, case study), spots counter badge.
-6. **`FoundingProgramModal`** — Updated benefits, spots counter, activates enrollment flow.
-7. **`Pricing.tsx`** — FOUNDING2026 code routes to `enroll-founding-partner` instead of Stripe; CTA changes to "Activate Founding Program".
-8. **`CheckoutSuccess.tsx`** — Founding partner variant with trial end date and featured listings CTA.
-9. **`grant-monthly-featured-credits`** — Already has 2-month duration cap logic.
-10. **`PlanCard`** — Added `ctaLabel` prop for custom CTA text.
+## Add Room-Specific City Pricing to Affordability Calculator
 
-### Deferred (PayPlus not yet set up):
-- `payplus-checkout`, `payplus-webhook`, `manage-billing` edge functions
-- `list-invoices` PayPlus integration
-- Featured listing ₪299/mo PayPlus recurring charge
-- Trial-to-paid automatic charge initiation
+### What It Does
+Adds a city selector to the calculator inputs and shows a "What can you buy?" card that compares the user's max budget against actual 3, 4, and 5-room prices in the selected city. Each room type shows whether it's "Within budget", "Stretch", or "Over budget".
 
-## Phase 2: CBS Data Organization — Implemented ✅
+### Changes
 
-**Data Source:** All data in these tables originates from **Nadlan.gov.il — Ministry of Justice, Israel** (official government property transaction records). This is the same authoritative source used for `sold_transactions`.
+**1. New hook: `src/hooks/useCityRoomPrices.ts`**
+- Fetches latest `avg_price_nis` from `city_price_history` for rooms 3, 4, 5 in a given city (single query with `.in('rooms', [3, 4, 5])`)
+- Returns `{ rooms: 3, avgPrice: number }[]`
+- Reuses the same normalization pattern as `useRoomSpecificCityPrice`
 
-1. **`city_price_history` table** — Quarterly avg transaction prices by city + room count (3/4/5), 2020-2025, with national comparison. ~1,625 rows from `market_data.csv`.
-2. **`neighborhood_price_history` table** — Quarterly prices by neighborhood + room count, with yield and YoY. ~52,398 rows from `neighborhood_data.csv`.
-3. **`import-cbs-data` edge function** — Admin-only bulk importer, accepts parsed CSV rows, upserts in batches of 500.
-4. **Admin import page** — `/admin/import-cbs-data` with file upload for both CSVs.
-5. **Public read-only RLS** — Both tables have SELECT-only policies (public government data).
+**2. New component: `src/components/tools/affordability/CityRoomPriceBreakdown.tsx`**
+- Takes `city`, `maxBudget`, and room price data
+- Renders 3 rows: "A typical 3-room in [City] costs ₪X" with a colored badge (green = within budget, amber = stretch 90-100%, red = over)
+- Placed in the right column, below the existing budget card
 
-### Next steps (not yet built):
-- City page trend charts using `city_price_history`
-- Neighborhood comparison widgets using `neighborhood_price_history`
-- AI market insights grounded in neighborhood-level data
+**3. Edit: `src/components/tools/AffordabilityCalculator.tsx`**
+- Add a city `Select` dropdown in the left column (Debts & Savings card or new small card)
+  - Pre-populate from `buyerProfile.target_cities[0]` if available
+  - Options: query distinct cities from `city_price_history` (or use a static list of the 25 supported cities)
+- Import and render `CityRoomPriceBreakdown` in the right column after the main budget card
+- Pass `calculations.maxPropertyPrice` and selected city
+
+### Data Flow
+```text
+City selector (input) life
+    → useCityRoomPrices(selectedCity) 
+    → returns [{rooms: 3, avg: 1.5M}, {rooms: 4, avg: 2.1M}, {rooms: 5, avg: 2.8M}]
+    → CityRoomPriceBreakdown compares each against maxPropertyPrice
+    → Shows colored badges per room type
+```
+
+### UI Placement
+- City selector: new card in left column after "Debts & Savings", titled "Target City" with a Building2 icon
+- Room breakdown: in right column, below the main budget card — a simple card with 3 rows
+
+### No DB Changes Required
+All data comes from existing `city_price_history` table.
+
