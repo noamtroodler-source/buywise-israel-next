@@ -485,6 +485,7 @@ const App = () => (
                           <Route path="featured" element={<AdminFeatured />} />
                           <Route path="sold-transactions" element={<AdminSoldTransactions />} />
                           <Route path="import-neighborhoods" element={<ImportNeighborhoods />} />
+                          <Route path="import-cbs-data" element={<ImportCBSData />} />
                           <Route path="errors" element={<AdminClientErrors />} />
                           <Route path="enterprise-inquiries" element={<AdminEnterpriseInquiries />} />
                           <Route path="warm-leads" element={<AdminWarmLeads />} />
