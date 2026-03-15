@@ -116,7 +116,7 @@ export function useCityPriceComparison(citySlugs: string[], startYear: number, e
       for (const c of (citiesData || [])) {
         slugToName.set(c.slug, c.name);
       }
-      const cityNames = citySlugs.map(s => slugToName.get(s) || slugToCityName(s));
+      const cityNames = citySlugs.map(s => (slugToName.get(s) || slugToCityName(s)).replace(/['']/g, ''));
 
       const { data, error } = await supabase
         .from('city_price_history')
