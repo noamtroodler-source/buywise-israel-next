@@ -259,7 +259,16 @@ export default function AgencyDashboard() {
               )}
             </div>
           </div>
-        </motion.div>
+
+          {/* Listings Preview + Activity Feed */}
+          <div className="grid lg:grid-cols-5 gap-6">
+            <div className="lg:col-span-3">
+              <DashboardListingsPreview agencyId={agency.id} />
+            </div>
+            <div className="lg:col-span-2">
+              <AgencyTeamActivityFeed agencyId={agency.id} />
+            </div>
+          </div>
 
         {/* Mobile FAB — New Listing */}
         {isMobile && (
