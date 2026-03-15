@@ -33,6 +33,7 @@ import { useUpdatePropertyStatus, useDuplicateProperty } from '@/hooks/useAgentP
 import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { cn } from '@/lib/utils';
 import { AgencyListingsSkeleton } from '@/components/agency/skeletons/AgencyPageSkeletons';
+import { EnhancedEmptyState } from '@/components/shared/EnhancedEmptyState';
 
 const statusConfig = {
   draft: { label: 'Draft', color: 'bg-muted text-muted-foreground' },
@@ -65,10 +66,14 @@ export default function AgencyListings() {
   if (!agency) {
     return (
       <Layout>
-        <div className="container py-16 text-center">
-          <h1 className="text-2xl font-bold mb-2">No Agency Found</h1>
-          <p className="text-muted-foreground mb-6">You need to have an agency to view listings.</p>
-          <Button asChild><Link to="/agency/register">Register Agency</Link></Button>
+        <div className="container py-16">
+          <EnhancedEmptyState
+            icon={Building2}
+            title="No Agency Found"
+            description="You need to have an agency to view and manage listings."
+            primaryAction={{ label: 'Register Agency', href: '/agency/register' }}
+            secondaryAction={{ label: 'Go to Agency', href: '/agency' }}
+          />
         </div>
       </Layout>
     );
@@ -234,22 +239,17 @@ export default function AgencyListings() {
             </CardHeader>
             <CardContent className="p-0">
               {filteredListings.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  <Home className="h-12 w-12 mx-auto mb-4 opacity-30" />
-                  <p className="font-medium">No listings found</p>
-                  <p className="text-sm">
-                    {listings.length === 0
-                      ? "Add your first listing to get started"
-                      : "Try adjusting your filters"}
-                  </p>
-                  {listings.length === 0 && (
-                    <Button asChild className="mt-4 rounded-xl">
-                      <Link to="/agency/properties/new">
-                        <Plus className="h-4 w-4 mr-2" />Add Listing
-                      </Link>
-                    </Button>
-                  )}
-                </div>
+                <EnhancedEmptyState
+                  icon={Home}
+                  title="No listings found"
+                  description={listings.length === 0 ? "Add your first listing to get started" : "Try adjusting your filters"}
+                  variant="compact"
+                  primaryAction={listings.length === 0 ? { label: 'Add Listing', href: '/agency/properties/new', icon: Plus } : undefined}
+                  suggestions={listings.length === 0 ? [
+                    { icon: Plus, text: 'Create a new property listing' },
+                    { icon: Eye, text: 'Listings will appear here once added' },
+                  ] : undefined}
+                />
               ) : (
                 <div className="overflow-x-auto">
                   <Table>

@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { 
   ArrowLeft, Users, UserPlus, Plus, Copy, Check, Hash, Loader2
 } from 'lucide-react';
+import { EnhancedEmptyState } from '@/components/shared/EnhancedEmptyState';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -54,8 +55,13 @@ export default function AgencyTeam() {
   if (!agency) {
     return (
       <Layout>
-        <div className="container py-16 text-center">
-          <p className="text-muted-foreground">No agency found.</p>
+        <div className="container py-16">
+          <EnhancedEmptyState
+            icon={Users}
+            title="No Agency Found"
+            description="You need an agency to manage your team."
+            primaryAction={{ label: 'Go to Agency', href: '/agency' }}
+          />
         </div>
       </Layout>
     );

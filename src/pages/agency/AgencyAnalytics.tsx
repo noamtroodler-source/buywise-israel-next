@@ -5,6 +5,7 @@ import {
   ArrowLeft, Eye, Heart, MessageSquare, TrendingUp, Loader2, Calendar, 
   Building2, Users, BarChart3, Home
 } from 'lucide-react';
+import { EnhancedEmptyState } from '@/components/shared/EnhancedEmptyState';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -53,12 +54,14 @@ export default function AgencyAnalytics() {
   if (!agency) {
     return (
       <Layout>
-        <div className="container py-16 text-center">
-          <div className="h-16 w-16 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-4">
-            <Building2 className="h-8 w-8 text-muted-foreground" />
-          </div>
-          <h1 className="text-2xl font-bold mb-2">No Agency Found</h1>
-          <p className="text-muted-foreground">You need an agency to view analytics.</p>
+        <div className="container py-16">
+          <EnhancedEmptyState
+            icon={BarChart3}
+            title="No Agency Found"
+            description="You need an agency to view analytics. Register your agency to start tracking performance."
+            primaryAction={{ label: 'Register Agency', href: '/agency/register', icon: Building2 }}
+            secondaryAction={{ label: 'Go to Agency', href: '/agency' }}
+          />
         </div>
       </Layout>
     );

@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
-import { PenLine, Plus, Eye, Clock, CheckCircle2, XCircle, AlertCircle, ArrowLeft } from 'lucide-react';
+import { PenLine, Plus, Eye, Clock, CheckCircle2, XCircle, AlertCircle, ArrowLeft, Lightbulb } from 'lucide-react';
+import { EnhancedEmptyState } from '@/components/shared/EnhancedEmptyState';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -55,21 +56,17 @@ export default function AgencyBlogManagement() {
 
           {/* Posts List */}
           {blogPosts.length === 0 ? (
-            <Card className="rounded-2xl border-border/50">
-              <CardContent className="py-12 text-center">
-                <PenLine className="h-8 w-8 mx-auto mb-3 text-muted-foreground/50" />
-                <p className="text-sm font-medium mb-1">No articles yet</p>
-                <p className="text-xs text-muted-foreground mb-4">Write your first article to share expertise with buyers</p>
-                {canSubmit && (
-                  <Button asChild size="sm" className="rounded-xl">
-                    <Link to="/agency/blog/new">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Write Article
-                    </Link>
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
+            <EnhancedEmptyState
+              icon={PenLine}
+              title="No articles yet"
+              description="Write your first article to share expertise with buyers and boost your agency's visibility."
+              variant="compact"
+              primaryAction={canSubmit ? { label: 'Write Article', href: '/agency/blog/new', icon: Plus } : undefined}
+              suggestions={[
+                { icon: Lightbulb, text: 'Share market insights or neighborhood guides' },
+                { icon: Eye, text: 'Published articles appear on your agency profile' },
+              ]}
+            />
           ) : (
             <div className="space-y-3">
               {blogPosts.map((post, index) => {
