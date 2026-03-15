@@ -17,6 +17,7 @@ import {
   MousePointerClick,
   Eye,
   Heart,
+  Download,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -25,6 +26,7 @@ import { InquiryPieChart } from "@/components/agent/analytics/InquiryPieChart";
 import { HourlyActivityChart } from "@/components/agent/analytics/HourlyActivityChart";
 import { PropertyEngagementTable } from "@/components/agent/analytics/PropertyEngagementTable";
 import { Skeleton } from "@/components/ui/skeleton";
+import { format } from "date-fns";
 
 type DateRange = '7d' | '30d' | '90d' | 'all';
 
@@ -34,6 +36,26 @@ const dateRangeLabels: Record<DateRange, string> = {
   '90d': 'Last 90 days',
   'all': 'All time',
 };
+
+function exportAnalyticsToCSV(engagement: any[]) {
+  const headers = ['Property Title', 'Views', 'Saves', 'WhatsApp Clicks', 'Email Clicks', 'Form Clicks'];
+  const rows = engagement.map(e => [
+    `"${(e.title || '').replace(/"/g, '""')}"`,
+    e.views || 0,
+    e.saves || 0,
+    e.whatsappClicks || 0,
+    e.emailClicks || 0,
+    e.formClicks || 0,
+  ]);
+  const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `analytics-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 export default function AgentLeads() {
   const [dateRange, setDateRange] = useState<DateRange>('30d');
@@ -76,19 +98,31 @@ export default function AgentLeads() {
                     </div>
                   </div>
                   
-                  {/* Date Range Selector */}
-                  <Select value={dateRange} onValueChange={(v) => setDateRange(v as DateRange)}>
-                    <SelectTrigger className="w-[160px] rounded-xl border-primary/20">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl">
-                      {Object.entries(dateRangeLabels).map(([value, label]) => (
-                        <SelectItem key={value} value={value} className="rounded-lg">
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {/* Date Range Selector + Export */}
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="rounded-xl border-primary/20"
+                      onClick={() => exportAnalyticsToCSV(analytics?.propertyEngagement || [])}
+                      disabled={!analytics?.propertyEngagement?.length}
+                    >
+                      <Download className="h-4 w-4 mr-1" />
+                      Export
+                    </Button>
+                    <Select value={dateRange} onValueChange={(v) => setDateRange(v as DateRange)}>
+                      <SelectTrigger className="w-[160px] rounded-xl border-primary/20">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl">
+                        {Object.entries(dateRangeLabels).map(([value, label]) => (
+                          <SelectItem key={value} value={value} className="rounded-lg">
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
             </div>
