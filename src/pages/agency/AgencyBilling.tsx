@@ -29,8 +29,7 @@ export default function AgencyBilling() {
             icon={ShieldAlert}
             title="Admin access required"
             description="Only the agency admin can manage billing settings."
-            actionLabel="Back to Dashboard"
-            actionHref="/agency"
+            primaryAction={{ label: 'Back to Dashboard', href: '/agency' }}
           />
         </div>
       </Layout>

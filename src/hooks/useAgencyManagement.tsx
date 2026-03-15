@@ -17,6 +17,7 @@ export interface ManagedAgency {
   is_verified: boolean | null;
   is_accepting_agents: boolean | null;
   default_invite_code: string | null;
+  admin_user_id: string | null;
   created_at: string | null;
 }
 
