@@ -1369,6 +1369,39 @@ export type Database = {
           },
         ]
       }
+      city_price_history: {
+        Row: {
+          avg_price_nis: number | null
+          city_en: string
+          country_avg: number | null
+          created_at: string
+          id: string
+          quarter: number
+          rooms: number
+          year: number
+        }
+        Insert: {
+          avg_price_nis?: number | null
+          city_en: string
+          country_avg?: number | null
+          created_at?: string
+          id?: string
+          quarter: number
+          rooms: number
+          year: number
+        }
+        Update: {
+          avg_price_nis?: number | null
+          city_en?: string
+          country_avg?: number | null
+          created_at?: string
+          id?: string
+          quarter?: number
+          rooms?: number
+          year?: number
+        }
+        Relationships: []
+      }
       client_errors: {
         Row: {
           created_at: string
@@ -3191,6 +3224,54 @@ export type Database = {
           risk_level?: string | null
           track_type?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      neighborhood_price_history: {
+        Row: {
+          avg_price_nis: number | null
+          city_en: string
+          created_at: string
+          id: string
+          latest_avg_price: number | null
+          neighborhood_he: string
+          neighborhood_id: string
+          price_increase_pct: number | null
+          quarter: number
+          rental_yield_pct: number | null
+          rooms: number
+          year: number
+          yoy_change_pct: number | null
+        }
+        Insert: {
+          avg_price_nis?: number | null
+          city_en: string
+          created_at?: string
+          id?: string
+          latest_avg_price?: number | null
+          neighborhood_he: string
+          neighborhood_id: string
+          price_increase_pct?: number | null
+          quarter: number
+          rental_yield_pct?: number | null
+          rooms: number
+          year: number
+          yoy_change_pct?: number | null
+        }
+        Update: {
+          avg_price_nis?: number | null
+          city_en?: string
+          created_at?: string
+          id?: string
+          latest_avg_price?: number | null
+          neighborhood_he?: string
+          neighborhood_id?: string
+          price_increase_pct?: number | null
+          quarter?: number
+          rental_yield_pct?: number | null
+          rooms?: number
+          year?: number
+          yoy_change_pct?: number | null
         }
         Relationships: []
       }
