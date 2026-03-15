@@ -334,7 +334,7 @@ export default function AgentDashboard() {
           {profileLoading ? (
             <QuickActionsSkeleton />
           ) : (
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+            <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
               {quickActions.map((action, index) => (
                 <motion.div
                   key={action.label}
@@ -362,9 +362,9 @@ export default function AgentDashboard() {
           )}
 
           {/* Two-Column Layout: Performance + Sidebar */}
-          <div className="grid lg:grid-cols-5 gap-6 lg:items-center">
+          <div className="grid md:grid-cols-5 gap-6 md:items-start">
             {/* Left Column — Performance */}
-            <div className="lg:col-span-3 space-y-4">
+            <div className="md:col-span-3 space-y-4">
               <WidgetErrorBoundary fallbackTitle="Couldn't load performance data">
                 {performanceLoading ? (
                   <PerformanceSkeleton />
@@ -456,7 +456,7 @@ export default function AgentDashboard() {
             </div>
 
             {/* Right Column — Contextual Sidebar */}
-            <div className="lg:col-span-2 space-y-4">
+            <div className="md:col-span-2 space-y-4">
               {/* Stale Listings Alert */}
               <WidgetErrorBoundary fallbackTitle="Couldn't load stale listings">
                 {staleListings.length > 0 && (

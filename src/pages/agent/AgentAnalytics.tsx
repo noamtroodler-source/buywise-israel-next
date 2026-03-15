@@ -245,7 +245,7 @@ export default function AgentAnalytics() {
                             const displayTitle = getReadableListingTitle(property.title, property.city, index);
                             
                             return (
-                              <div key={property.id} className="flex items-center justify-between p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors">
+                              <div key={property.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors gap-3">
                                 <div className="flex items-center gap-3 flex-1 min-w-0">
                                   <img
                                     src={property.images?.[0] || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=100'}
@@ -257,7 +257,7 @@ export default function AgentAnalytics() {
                                     <p className="text-sm text-muted-foreground">{property.city}</p>
                                   </div>
                                 </div>
-                                <div className="flex items-center gap-4 sm:gap-6 text-sm">
+                                <div className="grid grid-cols-4 sm:flex sm:items-center gap-4 sm:gap-6 text-sm pl-15 sm:pl-0">
                                   <div className="text-center">
                                     <p className="font-medium">{views}</p>
                                     <p className="text-xs text-muted-foreground">views</p>
@@ -270,7 +270,7 @@ export default function AgentAnalytics() {
                                     <p className="font-medium">{inquiries}</p>
                                     <p className="text-xs text-muted-foreground">inquiries</p>
                                   </div>
-                                  <div className="text-center hidden sm:block">
+                                  <div className="text-center">
                                     <p className="font-medium">{convRate}%</p>
                                     <p className="text-xs text-muted-foreground">conv.</p>
                                   </div>
