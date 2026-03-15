@@ -35,7 +35,8 @@ export function useHistoricalPrices(citySlug: string, years?: number) {
         .eq('slug', citySlug)
         .maybeSingle();
 
-      const cityName = cityData?.name || slugToCityName(citySlug);
+      // city_price_history uses names without apostrophes (e.g. "Raanana" not "Ra'anana")
+      const cityName = (cityData?.name || slugToCityName(citySlug)).replace(/['']/g, '');
 
       let query = supabase
         .from('city_price_history')
