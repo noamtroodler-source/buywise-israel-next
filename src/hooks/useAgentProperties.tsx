@@ -189,7 +189,7 @@ export function useSubmitForReview() {
       if (context?.previous) {
         queryClient.setQueryData(['agentProperties'], context.previous);
       }
-      toast.error('Failed to submit: ' + error.message);
+      toast.error(getUserFriendlyError(error, 'Failed to submit for review'));
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['agentProperties'] });
