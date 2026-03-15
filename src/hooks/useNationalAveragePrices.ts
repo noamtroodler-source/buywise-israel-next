@@ -41,12 +41,12 @@ export function useNationalAveragePrices() {
 
       const result: NationalAverageYear[] = [];
       for (const [year, entry] of byYear) {
-        // Average the quarterly national values for this year
-        const avg = Math.round(entry.values.reduce((a, b) => a + b, 0) / entry.values.length);
+        const values = [...entry.quarterValues.values()];
+        const avg = Math.round(values.reduce((a, b) => a + b, 0) / values.length);
         result.push({
           year,
           avg_price: avg,
-          city_count: entry.cities.size,
+          city_count: entry.cityCount.size,
         });
       }
 
