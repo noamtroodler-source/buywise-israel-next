@@ -16,6 +16,8 @@ interface PropertyValueSnapshotProps {
   vaadBayitMonthly?: number | null;
   cityArnonaRate?: number | null;
   cityAvgVaadBayit?: number | null;
+  /** When set, labels will say "vs {city} {roomCount}-Room Avg" */
+  roomCount?: number | null;
   /** When true, skip the section header (used when embedded in MarketIntelligence) */
   hideHeader?: boolean;
 }
