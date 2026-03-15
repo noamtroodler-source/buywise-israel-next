@@ -1,16 +1,17 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Loader2, Home, Plus, Search, Eye, Clock,
   CheckCircle2, Building2, Edit, Trash2, Send, MoreHorizontal,
-  AlertTriangle, MessageSquare, Heart,
+  AlertTriangle, MessageSquare, Heart, Download, X,
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
@@ -24,10 +25,10 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { useAgentProperties, useDeleteProperty, useSubmitForReview } from '@/hooks/useAgentProperties';
+import { useAgentProperties, useDeleteProperty, useSubmitForReview, useBulkDeleteProperties, useBulkSubmitForReview } from '@/hooks/useAgentProperties';
 import { STALE_THRESHOLD_DAYS } from '@/hooks/useAgentProfile';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
-import { differenceInDays, parseISO } from 'date-fns';
+import { differenceInDays, parseISO, format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 const statusConfig = {
@@ -38,15 +39,42 @@ const statusConfig = {
   rejected: { label: 'Rejected', color: 'bg-red-500/10 text-red-600' },
 };
 
+function exportListingsToCSV(listings: any[], formatPrice: (price: number, currency: string) => string) {
+  const headers = ['Title', 'City', 'Address', 'Status', 'Price', 'Currency', 'Views', 'Days on Market', 'Created At'];
+  const rows = listings.map(l => [
+    `"${(l.title || '').replace(/"/g, '""')}"`,
+    l.city || '',
+    `"${(l.address || '').replace(/"/g, '""')}"`,
+    (l as any).verification_status || 'draft',
+    l.price || 0,
+    l.currency || 'ILS',
+    l.views_count || 0,
+    Math.floor((Date.now() - new Date(l.created_at).getTime()) / (1000 * 60 * 60 * 24)),
+    format(new Date(l.created_at), 'yyyy-MM-dd'),
+  ]);
+  const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `my-listings-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function AgentProperties() {
   const { data: properties = [], isLoading } = useAgentProperties();
   const deleteProperty = useDeleteProperty();
   const submitForReview = useSubmitForReview();
+  const bulkDelete = useBulkDeleteProperties();
+  const bulkSubmit = useBulkSubmitForReview();
   const formatPrice = useFormatPrice();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [cityFilter, setCityFilter] = useState<string>('all');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
 
   const cities = useMemo(() => [...new Set(properties.map(p => p.city).filter(Boolean))], [properties]);
 
@@ -81,6 +109,47 @@ export default function AgentProperties() {
     return differenceInDays(new Date(), parseISO(renewedAt)) >= STALE_THRESHOLD_DAYS;
   };
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredListings.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredListings.map(l => l.id)));
+    }
+  };
+
+  const allSelectedCanSubmit = useMemo(() => {
+    if (selectedIds.size === 0) return false;
+    return [...selectedIds].every(id => {
+      const listing = properties.find(p => p.id === id);
+      if (!listing) return false;
+      const vs = (listing as any).verification_status;
+      return vs === 'draft' || vs === 'changes_requested';
+    });
+  }, [selectedIds, properties]);
+
+  const handleBulkDelete = () => {
+    bulkDelete.mutate([...selectedIds], {
+      onSuccess: () => {
+        setSelectedIds(new Set());
+        setShowBulkDeleteConfirm(false);
+      },
+    });
+  };
+
+  const handleBulkSubmit = () => {
+    bulkSubmit.mutate([...selectedIds], {
+      onSuccess: () => setSelectedIds(new Set()),
+    });
+  };
+
   if (isLoading) {
     return (
       <Layout>
@@ -107,12 +176,23 @@ export default function AgentProperties() {
                 <p className="text-muted-foreground">Manage all your properties</p>
               </div>
             </div>
-            <Button asChild className="rounded-xl">
-              <Link to="/agent/properties/new">
-                <Plus className="h-4 w-4 mr-2" />
-                New Listing
-              </Link>
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                className="rounded-xl"
+                onClick={() => exportListingsToCSV(filteredListings, formatPrice)}
+                disabled={filteredListings.length === 0}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+              <Button asChild className="rounded-xl">
+                <Link to="/agent/properties/new">
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Listing
+                </Link>
+              </Button>
+            </div>
           </div>
 
           {/* Stats Cards */}
@@ -219,6 +299,11 @@ export default function AgentProperties() {
                       return (
                         <div key={listing.id} className="p-4 space-y-3">
                           <div className="flex items-start gap-3">
+                            <Checkbox
+                              checked={selectedIds.has(listing.id)}
+                              onCheckedChange={() => toggleSelect(listing.id)}
+                              className="mt-1"
+                            />
                             <div className="h-16 w-20 rounded-lg bg-muted overflow-hidden flex-shrink-0">
                               {listing.images?.[0] ? (
                                 <img src={listing.images[0]} alt={listing.title} className="h-full w-full object-cover" />
@@ -325,6 +410,12 @@ export default function AgentProperties() {
                     <Table>
                       <TableHeader>
                         <TableRow>
+                          <TableHead className="w-10">
+                            <Checkbox
+                              checked={filteredListings.length > 0 && selectedIds.size === filteredListings.length}
+                              onCheckedChange={toggleSelectAll}
+                            />
+                          </TableHead>
                           <TableHead>Property</TableHead>
                           <TableHead>Status</TableHead>
                           <TableHead className="text-right">Price</TableHead>
@@ -346,7 +437,13 @@ export default function AgentProperties() {
                           const stale = isPropertyStale(listing);
 
                           return (
-                            <TableRow key={listing.id} className="hover:bg-muted/30">
+                            <TableRow key={listing.id} className={cn('hover:bg-muted/30', selectedIds.has(listing.id) && 'bg-primary/5')}>
+                              <TableCell>
+                                <Checkbox
+                                  checked={selectedIds.has(listing.id)}
+                                  onCheckedChange={() => toggleSelect(listing.id)}
+                                />
+                              </TableCell>
                               <TableCell>
                                 <div className="flex items-center gap-3">
                                   <div className="h-12 w-16 rounded-lg bg-muted overflow-hidden flex-shrink-0">
@@ -475,6 +572,71 @@ export default function AgentProperties() {
           </Card>
         </motion.div>
       </div>
+
+      {/* Floating Bulk Action Bar */}
+      <AnimatePresence>
+        {selectedIds.size > 0 && (
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50"
+          >
+            <Card className="rounded-2xl border-primary/20 shadow-lg bg-background/95 backdrop-blur-sm">
+              <CardContent className="p-3 flex items-center gap-3 flex-wrap justify-center">
+                <span className="text-sm font-medium whitespace-nowrap">
+                  {selectedIds.size} selected
+                </span>
+                {allSelectedCanSubmit && (
+                  <Button
+                    size="sm"
+                    className="rounded-xl"
+                    onClick={handleBulkSubmit}
+                    disabled={bulkSubmit.isPending}
+                  >
+                    <Send className="h-4 w-4 mr-1" />
+                    Submit for Review
+                  </Button>
+                )}
+                <AlertDialog open={showBulkDeleteConfirm} onOpenChange={setShowBulkDeleteConfirm}>
+                  <AlertDialogTrigger asChild>
+                    <Button size="sm" variant="destructive" className="rounded-xl">
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Delete
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete {selectedIds.size} Listing(s)</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete {selectedIds.size} listing(s)? This cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleBulkDelete}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        disabled={bulkDelete.isPending}
+                      >
+                        Delete All
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="rounded-xl"
+                  onClick={() => setSelectedIds(new Set())}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </Layout>
   );
 }

@@ -356,3 +356,86 @@ export function useDeleteProperty() {
     },
   });
 }
+
+export function useBulkDeleteProperties() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { error } = await supabase
+        .from('properties')
+        .delete()
+        .in('id', ids);
+
+      if (error) throw error;
+    },
+    onMutate: async (ids: string[]) => {
+      await queryClient.cancelQueries({ queryKey: ['agentProperties'] });
+      const previous = queryClient.getQueryData<AgentProperty[]>(['agentProperties']);
+      const idSet = new Set(ids);
+      queryClient.setQueryData<AgentProperty[] | undefined>(['agentProperties'], (old) =>
+        old?.filter(p => !idSet.has(p.id))
+      );
+      return { previous };
+    },
+    onError: (error, _ids, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['agentProperties'], context.previous);
+      }
+      toast.error('Failed to delete properties: ' + error.message);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['agentProperties'] });
+      queryClient.invalidateQueries({ queryKey: ['agencyListingsManagement'] });
+      queryClient.invalidateQueries({ queryKey: ['properties'] });
+    },
+    onSuccess: (_data, ids) => {
+      toast.success(`${ids.length} listing(s) deleted`);
+    },
+  });
+}
+
+export function useBulkSubmitForReview() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { error } = await supabase
+        .from('properties')
+        .update({
+          verification_status: 'pending_review',
+          submitted_at: new Date().toISOString(),
+          rejection_reason: null,
+        } as any)
+        .in('id', ids);
+
+      if (error) throw error;
+    },
+    onMutate: async (ids: string[]) => {
+      await queryClient.cancelQueries({ queryKey: ['agentProperties'] });
+      const previous = queryClient.getQueryData<AgentProperty[]>(['agentProperties']);
+      const idSet = new Set(ids);
+      queryClient.setQueryData<AgentProperty[] | undefined>(['agentProperties'], (old) =>
+        old?.map(p =>
+          idSet.has(p.id)
+            ? { ...p, verification_status: 'pending_review' as const, rejection_reason: null, submitted_at: new Date().toISOString() }
+            : p
+        )
+      );
+      return { previous };
+    },
+    onError: (error, _ids, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['agentProperties'], context.previous);
+      }
+      toast.error('Failed to submit: ' + error.message);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['agentProperties'] });
+      queryClient.invalidateQueries({ queryKey: ['pendingReviewCount'] });
+    },
+    onSuccess: (_data, ids) => {
+      toast.success(`${ids.length} listing(s) submitted for review`);
+    },
+  });
+}
