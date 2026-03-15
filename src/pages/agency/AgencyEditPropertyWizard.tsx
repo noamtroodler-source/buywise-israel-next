@@ -167,6 +167,7 @@ function AgencyEditWizardContent({ propertyId }: { propertyId: string }) {
     setIsSubmitting(true);
     try {
       await updateProperty.mutateAsync(buildPayload() as any);
+      clearSavedData();
       navigate('/agency/listings');
     } finally {
       setIsSubmitting(false);
