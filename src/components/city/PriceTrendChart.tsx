@@ -29,6 +29,7 @@ function useCityPriceTrend(cityNames: string[]) {
         .from('city_price_history')
         .select('*')
         .in('city_en', cityNames.map(n => n.replace(/['']/g, '')))
+        .eq('rooms', 0) // all-rooms aggregate only
         .order('year', { ascending: true })
         .order('quarter', { ascending: true });
 
