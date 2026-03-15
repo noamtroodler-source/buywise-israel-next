@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CanonicalMetrics, getRentalRange } from '@/hooks/useCanonicalMetrics';
 import { MarketData } from '@/types/projects';
+import { NATIONAL_AVG_PRICE_SQM } from '@/lib/constants/marketAverages';
 
 interface CityMarketSnapshotProps {
   marketData: MarketData[];
