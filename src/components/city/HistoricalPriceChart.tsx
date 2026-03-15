@@ -463,8 +463,10 @@ export function HistoricalPriceChart({
               </p>
             </div>
           )}
+          </>
+          )}
 
-          {/* Source attribution */}
+
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div className="flex items-center gap-2 flex-wrap">
               <InlineSourceBadge sources={{ CBS: 'Central Bureau of Statistics' }} lastVerified={lastVerified} />
