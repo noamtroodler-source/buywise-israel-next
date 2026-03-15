@@ -70,7 +70,7 @@ function mapCategoryToBuyerType(category: SharedBuyerCategory): BuyerType {
   return mapping[category] || 'first_time';
 }
 import { useCities } from '@/hooks/useCities';
-import { useCanonicalMetrics, getRentalRange } from '@/hooks/useCanonicalMetrics';
+import { useCityDetails } from '@/hooks/useCityDetails';
 import { usePreferences, useFormatPrice, useFormatArea, useCurrencySymbol } from '@/contexts/PreferencesContext';
 import { calculateMasShevach } from '@/lib/calculations/capitalGains';
 import { cn } from '@/lib/utils';
