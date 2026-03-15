@@ -12,10 +12,12 @@ import {
 } from 'recharts';
 import { InlineSourceBadge } from '@/components/shared/InlineSourceBadge';
 import { InfoBanner } from '@/components/tools/shared/InfoBanner';
+import { InsightCard } from '@/components/tools/shared/InsightCard';
 import { useRoomPriceHistory } from '@/hooks/useRoomPriceHistory';
 import { useRoomPriceComparison } from '@/hooks/useRoomPriceComparison';
 import { useCities } from '@/hooks/useCities';
 import { CityComparisonSelector } from './CityComparisonSelector';
+import { getCityRoomSizeInsight } from './cityRoomSizeInsights';
 import { cn } from '@/lib/utils';
 
 interface PriceByApartmentSizeProps {
