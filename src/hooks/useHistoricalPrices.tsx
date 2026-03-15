@@ -12,6 +12,11 @@ export interface HistoricalPrice {
   notes: string | null;
 }
 
+/** Strip apostrophes to match city_price_history naming (e.g. "Raanana" not "Ra'anana") */
+function normalizeCityName(name: string): string {
+  return name.replace(/['']/g, '');
+}
+
 // Convert slug to city name format (e.g., 'tel-aviv' -> 'Tel Aviv')
 function slugToCityName(slug: string): string {
   return slug
@@ -22,63 +27,57 @@ function slugToCityName(slug: string): string {
 
 /**
  * Fetches historical prices from city_price_history table.
- * Uses rooms=0 (all rooms aggregate) and averages quarterly data into yearly values.
+ * Uses rooms=0 (CBS all-rooms aggregate) and averages quarterly data into yearly values.
  */
 export function useHistoricalPrices(citySlug: string, years?: number) {
   return useQuery({
     queryKey: ['historical-prices', citySlug, years],
     queryFn: async () => {
-      // Get canonical city name from cities table
       const { data: cityData } = await supabase
         .from('cities')
         .select('name')
         .eq('slug', citySlug)
         .maybeSingle();
 
-      // city_price_history uses names without apostrophes (e.g. "Raanana" not "Ra'anana")
-      const cityName = (cityData?.name || slugToCityName(citySlug)).replace(/['']/g, '');
+      const cityName = normalizeCityName(cityData?.name || slugToCityName(citySlug));
 
       let query = supabase
         .from('city_price_history')
         .select('*')
         .eq('city_en', cityName)
+        .eq('rooms', 0) // all-rooms aggregate only
         .order('year', { ascending: true })
         .order('quarter', { ascending: true });
 
       if (years) {
         const currentYear = new Date().getFullYear();
-        const startYear = currentYear - years;
-        query = query.gte('year', startYear);
+        query = query.gte('year', currentYear - years);
       }
 
       const { data, error } = await query;
       if (error) throw error;
 
-      // Group by year — average quarterly prices across all room types for each year
-      const yearMap = new Map<number, { prices: number[]; counts: number }>();
-      
+      // Group quarterly data into yearly averages
+      const yearMap = new Map<number, number[]>();
       for (const row of (data || [])) {
         if (!row.avg_price_nis) continue;
-        const existing = yearMap.get(row.year) || { prices: [], counts: 0 };
-        existing.prices.push(row.avg_price_nis);
-        existing.counts++;
-        yearMap.set(row.year, existing);
+        const arr = yearMap.get(row.year) || [];
+        arr.push(row.avg_price_nis);
+        yearMap.set(row.year, arr);
       }
 
       const result: HistoricalPrice[] = [];
       const sortedYears = [...yearMap.keys()].sort((a, b) => a - b);
-      
+
       for (let i = 0; i < sortedYears.length; i++) {
         const year = sortedYears[i];
-        const entry = yearMap.get(year)!;
-        const avgPrice = Math.round(entry.prices.reduce((a, b) => a + b, 0) / entry.prices.length);
-        
-        // Calculate YoY change
+        const prices = yearMap.get(year)!;
+        const avgPrice = Math.round(prices.reduce((a, b) => a + b, 0) / prices.length);
+
         let yoyChange: number | null = null;
         if (i > 0) {
-          const prevYear = sortedYears[i - 1];
-          const prevEntry = yearMap.get(prevYear)!;
-          const prevAvg = prevEntry.prices.reduce((a, b) => a + b, 0) / prevEntry.prices.length;
+          const prevPrices = yearMap.get(sortedYears[i - 1])!;
+          const prevAvg = prevPrices.reduce((a, b) => a + b, 0) / prevPrices.length;
           if (prevAvg > 0) {
             yoyChange = Math.round(((avgPrice - prevAvg) / prevAvg) * 1000) / 10;
           }
@@ -89,7 +88,7 @@ export function useHistoricalPrices(citySlug: string, years?: number) {
           city: cityName,
           year,
           average_price: avgPrice,
-          average_price_sqm: null, // city_price_history stores total price, not per sqm
+          average_price_sqm: null,
           yoy_change_percent: yoyChange,
           transaction_count: null,
           notes: null,
@@ -106,7 +105,6 @@ export function useCityPriceComparison(citySlugs: string[], startYear: number, e
   return useQuery({
     queryKey: ['city-price-comparison', citySlugs, startYear, endYear],
     queryFn: async () => {
-      // Get canonical names
       const { data: citiesData } = await supabase
         .from('cities')
         .select('name, slug')
@@ -116,36 +114,36 @@ export function useCityPriceComparison(citySlugs: string[], startYear: number, e
       for (const c of (citiesData || [])) {
         slugToName.set(c.slug, c.name);
       }
-      const cityNames = citySlugs.map(s => (slugToName.get(s) || slugToCityName(s)).replace(/['']/g, ''));
+      const cityNames = citySlugs.map(s => normalizeCityName(slugToName.get(s) || slugToCityName(s)));
 
       const { data, error } = await supabase
         .from('city_price_history')
         .select('*')
         .in('city_en', cityNames)
+        .eq('rooms', 0)
         .gte('year', startYear)
         .lte('year', endYear)
         .order('year', { ascending: true });
 
       if (error) throw error;
 
-      // Group by city+year
-      const grouped = new Map<string, { prices: number[] }>();
+      const grouped = new Map<string, number[]>();
       for (const row of (data || [])) {
         if (!row.avg_price_nis) continue;
         const key = `${row.city_en}-${row.year}`;
-        const existing = grouped.get(key) || { prices: [] };
-        existing.prices.push(row.avg_price_nis);
-        grouped.set(key, existing);
+        const arr = grouped.get(key) || [];
+        arr.push(row.avg_price_nis);
+        grouped.set(key, arr);
       }
 
       const result: HistoricalPrice[] = [];
-      for (const [key, entry] of grouped) {
+      for (const [key, prices] of grouped) {
         const [city, yearStr] = [key.substring(0, key.lastIndexOf('-')), key.substring(key.lastIndexOf('-') + 1)];
         result.push({
           id: key,
           city,
           year: parseInt(yearStr),
-          average_price: Math.round(entry.prices.reduce((a, b) => a + b, 0) / entry.prices.length),
+          average_price: Math.round(prices.reduce((a, b) => a + b, 0) / prices.length),
           average_price_sqm: null,
           yoy_change_percent: null,
           transaction_count: null,
@@ -166,29 +164,29 @@ export function useHistoricalPriceComparison(cityNames: string[]) {
       const { data, error } = await supabase
         .from('city_price_history')
         .select('*')
-        .in('city_en', cityNames.map(n => n.replace(/['']/g, '')))
+        .in('city_en', cityNames.map(normalizeCityName))
+        .eq('rooms', 0)
         .order('year', { ascending: true });
 
       if (error) throw error;
 
-      // Group by city+year
-      const grouped = new Map<string, { prices: number[] }>();
+      const grouped = new Map<string, number[]>();
       for (const row of (data || [])) {
         if (!row.avg_price_nis) continue;
         const key = `${row.city_en}-${row.year}`;
-        const existing = grouped.get(key) || { prices: [] };
-        existing.prices.push(row.avg_price_nis);
-        grouped.set(key, existing);
+        const arr = grouped.get(key) || [];
+        arr.push(row.avg_price_nis);
+        grouped.set(key, arr);
       }
 
       const result: HistoricalPrice[] = [];
-      for (const [key, entry] of grouped) {
+      for (const [key, prices] of grouped) {
         const [city, yearStr] = [key.substring(0, key.lastIndexOf('-')), key.substring(key.lastIndexOf('-') + 1)];
         result.push({
           id: key,
           city,
           year: parseInt(yearStr),
-          average_price: Math.round(entry.prices.reduce((a, b) => a + b, 0) / entry.prices.length),
+          average_price: Math.round(prices.reduce((a, b) => a + b, 0) / prices.length),
           average_price_sqm: null,
           yoy_change_percent: null,
           transaction_count: null,
