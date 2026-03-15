@@ -1,56 +1,35 @@
+## Phase 1: Founding Partner Enrollment — Implemented ✅
 
+All changes from the plan have been implemented:
 
-## City Comparison on Both Charts
+1. **DB Migration** — Added `is_founding_partner`, `payplus_customer_id`, `payplus_subscription_id` to `subscriptions`; `payplus_subscription_id` to `featured_listings`. Updated FOUNDING2026 promo code (max_redemptions=15, cleared old discount/credit data).
+2. **`enroll-founding-partner` edge function** — 15-cap enforcement, trial creation (60 days), founding_partners insert, first month credit grant, promo redemption tracking.
+3. **`check-trial-expirations` edge function** — Daily cron (6 AM UTC) expires trialing subscriptions past trial_end.
+4. **`useFoundingSpots` hook** — Live spots remaining counter querying founding_partners.
+5. **`FoundingProgramSection`** — Updated benefits (2mo free, 3 featured/mo, early access, case study), spots counter badge.
+6. **`FoundingProgramModal`** — Updated benefits, spots counter, activates enrollment flow.
+7. **`Pricing.tsx`** — FOUNDING2026 code routes to `enroll-founding-partner` instead of Stripe; CTA changes to "Activate Founding Program".
+8. **`CheckoutSuccess.tsx`** — Founding partner variant with trial end date and featured listings CTA.
+9. **`grant-monthly-featured-credits`** — Already has 2-month duration cap logic.
+10. **`PlanCard`** — Added `ctaLabel` prop for custom CTA text.
 
-### Summary
-Add city-vs-city comparison (up to 2 additional cities) to both the **Price History** and **Price by Apartment Size** charts using the existing `CityComparisonSelector` component and existing data hooks.
+### Deferred (PayPlus not yet set up):
+- `payplus-checkout`, `payplus-webhook`, `manage-billing` edge functions
+- `list-invoices` PayPlus integration
+- Featured listing ₪299/mo PayPlus recurring charge
+- Trial-to-paid automatic charge initiation
 
-### Color System (consistent across both)
-| Slot | Color | Usage |
-|------|-------|-------|
-| Current city | `hsl(var(--primary))` | Always slot 0 |
-| Compare city 1 | `#1FA3A3` (Teal) | Slot 1 |
-| Compare city 2 | `#6366F1` (Indigo) | Slot 2 |
+## Phase 2: CBS Data Organization — Implemented ✅
 
-### 1. Price History Chart (`HistoricalPriceChart.tsx`)
+**Data Source:** All data in these tables originates from **Nadlan.gov.il — Ministry of Justice, Israel** (official government property transaction records). This is the same authoritative source used for `sold_transactions`.
 
-**Changes:**
-- Add `compareCities` local state (array of city names)
-- Import `useCities` to feed city list to selector
-- Import and render `CityComparisonSelector` in the header row (between subtitle and period tabs)
-- Use `useHistoricalPriceComparison` (already exists) to fetch comparison data
-- Merge comparison city data into chart — add one `Line` per comparison city with teal/indigo colors
-- Update tooltip to show all city prices for the hovered year
-- Update inline legend to show comparison city names
-- Keep metrics/insight for current city only (no clutter)
+1. **`city_price_history` table** — Quarterly avg transaction prices by city + room count (3/4/5), 2020-2025, with national comparison. ~1,625 rows from `market_data.csv`.
+2. **`neighborhood_price_history` table** — Quarterly prices by neighborhood + room count, with yield and YoY. ~52,398 rows from `neighborhood_data.csv`.
+3. **`import-cbs-data` edge function** — Admin-only bulk importer, accepts parsed CSV rows, upserts in batches of 500.
+4. **Admin import page** — `/admin/import-cbs-data` with file upload for both CSVs.
+5. **Public read-only RLS** — Both tables have SELECT-only policies (public government data).
 
-**Data flow:** `useHistoricalPriceComparison(compareCityNames)` → group by year → merge into `filteredData` as `compare1` and `compare2` keys.
-
-### 2. Price by Apartment Size Chart (`PriceByApartmentSize.tsx`)
-
-**Changes:**
-- Add `compareCities` local state + `selectedRoom` state (default: null, set to 3 when comparison starts)
-- Import `useCities` and `CityComparisonSelector`
-- Render selector in header row
-- **When no comparison:** Show all 3 room lines for current city (current behavior)
-- **When comparing:** Show room type pill toggle (`3-Room | 4-Room | 5-Room`), chart shows selected room type across all cities (max 3 lines)
-- Extend `useRoomPriceHistory` to accept an array of city slugs, or create a new `useRoomPriceComparison` hook that fetches room-specific data for multiple cities
-- Update summary cards: show selected room price per city (side by side)
-- Update tooltip and legend for comparison mode
-
-**New hook:** `useRoomPriceComparison(citySlugs: string[], roomType: number)` — queries `city_price_history` for specific room type across multiple cities, returns data grouped by quarter with one key per city.
-
-### 3. Shared Infrastructure
-
-- `CityComparisonSelector` already exists — no changes needed
-- `useCities` already exists — provides city list for the selector
-- Need to map city names to slugs for data fetching (cities table lookup)
-
-### Files to modify/create
-
-| File | Action |
-|------|--------|
-| `src/components/city/HistoricalPriceChart.tsx` | Add comparison state, selector, extra lines |
-| `src/components/city/PriceByApartmentSize.tsx` | Add comparison state, room toggle, multi-city lines |
-| `src/hooks/useRoomPriceHistory.ts` | Add `useRoomPriceComparison` hook |
-
+### Next steps (not yet built):
+- City page trend charts using `city_price_history`
+- Neighborhood comparison widgets using `neighborhood_price_history`
+- AI market insights grounded in neighborhood-level data
