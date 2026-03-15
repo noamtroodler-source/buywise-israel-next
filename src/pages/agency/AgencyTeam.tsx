@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { 
   ArrowLeft, Users, UserPlus, Plus, Copy, Check, Hash, Loader2
 } from 'lucide-react';
+import { EnhancedEmptyState } from '@/components/shared/EnhancedEmptyState';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
