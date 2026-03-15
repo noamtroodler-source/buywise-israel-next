@@ -239,6 +239,11 @@ function AffordabilityCalculatorContent() {
       else if (buyerProfile.is_first_property) setSelectedBuyerType('first_time');
       else if (buyerProfile.purchase_purpose === 'investment') setSelectedBuyerType('investor');
       else setSelectedBuyerType('additional');
+
+      // Pre-populate city from buyer profile
+      if (!selectedCity && buyerProfile.target_cities?.length) {
+        setSelectedCity(buyerProfile.target_cities[0]);
+      }
     }
   }, [buyerProfile]);
 
