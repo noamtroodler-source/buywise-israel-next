@@ -67,6 +67,8 @@ import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { MORTGAGE_RATE_RANGES } from '@/lib/utils/formatRange';
 import { toolUrl, TOOL_IDS } from '@/lib/routes';
+import { useCityRoomPrices, useAvailableCities } from '@/hooks/useCityRoomPrices';
+import { CityRoomPriceBreakdown } from './affordability/CityRoomPriceBreakdown';
 
 const STORAGE_KEY = 'affordability-calculator-inputs';
 
@@ -168,11 +170,16 @@ function AffordabilityCalculatorContent() {
   const [foreignIncomePercent, setForeignIncomePercent] = useState(DEFAULTS.foreignIncomePercent);
   
   const [educationOpen, setEducationOpen] = useState(false);
+  const [selectedCity, setSelectedCity] = useState<string>('');
   
   const [selectedBuyerType, setSelectedBuyerType] = useState<BuyerCategory>('first_time');
   const [olehIsFirstProperty, setOlehIsFirstProperty] = useState(true);
   const { showPrompt: showSavePrompt, dismissPrompt: dismissSavePrompt, trackChange } = useSavePromptTrigger();
   const [hasInteracted, setHasInteracted] = useState(false);
+
+  // City room prices data
+  const { data: availableCities = [] } = useAvailableCities();
+  const { data: roomPrices = [] } = useCityRoomPrices(selectedCity || null);
 
   // Convert down payment input to ILS whenever currency or amount changes
   useEffect(() => {
@@ -232,6 +239,11 @@ function AffordabilityCalculatorContent() {
       else if (buyerProfile.is_first_property) setSelectedBuyerType('first_time');
       else if (buyerProfile.purchase_purpose === 'investment') setSelectedBuyerType('investor');
       else setSelectedBuyerType('additional');
+
+      // Pre-populate city from buyer profile
+      if (!selectedCity && buyerProfile.target_cities?.length) {
+        setSelectedCity(buyerProfile.target_cities[0]);
+      }
     }
   }, [buyerProfile]);
 
@@ -480,9 +492,26 @@ function AffordabilityCalculatorContent() {
                 </div>
               </CardContent>
             </Card>
+            <Card>
+              <CardHeader className="pb-4"><CardTitle className="text-base flex items-center gap-2"><Building2 className="h-4 w-4 text-primary" />Target City</CardTitle></CardHeader>
+              <CardContent>
+                <Select value={selectedCity} onValueChange={setSelectedCity}>
+                  <SelectTrigger className="h-11">
+                    <SelectValue placeholder="Select a city" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableCities.map((city) => (
+                      <SelectItem key={city} value={city}>{city}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-2">Compare your budget against actual apartment prices</p>
+              </CardContent>
+            </Card>
           </div>
         }
         rightColumn={
+          <>
           <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-background">
             <CardHeader className="pb-2"><CardTitle className="text-lg">Your Maximum Budget</CardTitle></CardHeader>
             <CardContent className="space-y-6">
@@ -543,6 +572,15 @@ function AffordabilityCalculatorContent() {
               )}
             </CardContent>
           </Card>
+          {selectedCity && roomPrices.length > 0 && (
+            <CityRoomPriceBreakdown
+              city={selectedCity}
+              maxBudget={calculations.maxPropertyPrice}
+              roomPrices={roomPrices}
+              formatPrice={formatPrice}
+            />
+          )}
+        </>
         }
         bottomSection={
           <div className="space-y-6">
