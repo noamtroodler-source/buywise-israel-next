@@ -140,6 +140,7 @@ Think like an experienced Israeli real estate agent who notices things buyers mi
 - Price reductions signal motivated sellers.
 - Long days on market may mean overpricing.
 - Rising city trends can justify higher prices.
+- If 5-year price data is provided and it tells a meaningfully different story than the 1-year trend (e.g., sustained growth vs recent correction, or stagnation vs recent surge), weave that context in naturally. Don't mention the 5-year trend if it simply mirrors the 1-year direction — only when the contrast adds insight.
 
 Rules:
 - Output ONLY the insight text, nothing else.

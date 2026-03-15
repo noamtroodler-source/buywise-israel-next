@@ -148,6 +148,7 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
     listing_status: property.listing_status,
     city_avg_price_sqm: effectiveAvgPriceSqm,
     city_yoy_change: effectiveYoyChange,
+    city_5yr_change: roomPrice?.fiveYearChange ?? null,
     comp_count: verdictData.compsCount,
     avg_comp_deviation_percent: verdictData.avgComparison,
   } : null;
