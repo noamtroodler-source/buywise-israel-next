@@ -329,8 +329,21 @@ export function HistoricalPriceChart({
             availableCities={availableCities}
           />
 
+          {/* Missing data banners */}
+          {hasNoData && (
+            <InfoBanner variant="info">
+              Historical price trend data isn't available for {cityName}. The CBS requires sufficient transaction volume to publish trends.
+            </InfoBanner>
+          )}
+
+          {comparisonCitiesWithNoData.length > 0 && (
+            <InfoBanner variant="info">
+              {comparisonCitiesWithNoData.join(' and ')} {comparisonCitiesWithNoData.length === 1 ? "doesn't" : "don't"} have enough transaction data for historical price trends.
+            </InfoBanner>
+          )}
+
           {/* Key Metrics — current city only */}
-          {metrics && (
+          {!hasNoData && metrics && (
             <div className="flex flex-wrap gap-x-5 gap-y-2">
               <MetricPill value={metrics.totalAppreciation} label={`total (${metrics.years}yr)`} decimals={0} />
               <MetricPill value={metrics.cagr} label="annual (CAGR)" />
