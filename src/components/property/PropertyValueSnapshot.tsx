@@ -237,9 +237,9 @@ export function PropertyValueSnapshot({
                     </span>
                   </TooltipTrigger>
                   <TooltipContent side="top" className="max-w-xs">
-                    <p className="font-medium mb-1">Price vs City Average</p>
+                    <p className="font-medium mb-1">Price vs {roomCount ? `${roomCount}-Room ` : 'City '}Average</p>
                     <p className="text-xs text-muted-foreground">
-                      Compares this property's price per m² against the average sale price in {city}, based on recent government-recorded transactions. A positive % means priced above average; negative means below.
+                      Compares this property's price per m² against the average {roomCount ? `${roomCount}-room ` : ''}sale price in {city}, based on recent government-recorded transactions. A positive % means priced above average; negative means below.
                     </p>
                   </TooltipContent>
                 </Tooltip>
