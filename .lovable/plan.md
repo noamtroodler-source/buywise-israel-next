@@ -1,22 +1,47 @@
 
 
-## Phase 1: Founding Partner Enrollment — Implemented ✅
+# Phase I: Bulk Actions for Agency Listings
 
-All changes from the plan have been implemented:
+## Overview
 
-1. **DB Migration** — Added `is_founding_partner`, `payplus_customer_id`, `payplus_subscription_id` to `subscriptions`; `payplus_subscription_id` to `featured_listings`. Updated FOUNDING2026 promo code (max_redemptions=15, cleared old discount/credit data).
-2. **`enroll-founding-partner` edge function** — 15-cap enforcement, trial creation (60 days), founding_partners insert, first month credit grant, promo redemption tracking.
-3. **`check-trial-expirations` edge function** — Daily cron (6 AM UTC) expires trialing subscriptions past trial_end.
-4. **`useFoundingSpots` hook** — Live spots remaining counter querying founding_partners.
-5. **`FoundingProgramSection`** — Updated benefits (2mo free, 3 featured/mo, early access, case study), spots counter badge.
-6. **`FoundingProgramModal`** — Updated benefits, spots counter, activates enrollment flow.
-7. **`Pricing.tsx`** — FOUNDING2026 code routes to `enroll-founding-partner` instead of Stripe; CTA changes to "Activate Founding Program".
-8. **`CheckoutSuccess.tsx`** — Founding partner variant with trial end date and featured listings CTA.
-9. **`grant-monthly-featured-credits`** — Already has 2-month duration cap logic.
-10. **`PlanCard`** — Added `ctaLabel` prop for custom CTA text.
+Add multi-select checkboxes to the agency listings table with a floating action bar for bulk delete, bulk submit for review, and bulk reassign — mirroring the existing pattern in `AgentProperties.tsx`.
 
-### Deferred (PayPlus not yet set up):
-- `payplus-checkout`, `payplus-webhook`, `manage-billing` edge functions
-- `list-invoices` PayPlus integration
-- Featured listing ₪299/mo PayPlus recurring charge
-- Trial-to-paid automatic charge initiation
+## Changes
+
+### `src/pages/agency/AgencyListings.tsx`
+
+1. **New state & hooks**:
+   - Add `selectedIds: Set<string>` state
+   - Add `showBulkDeleteConfirm` state
+   - Import `Checkbox` from `@/components/ui/checkbox`
+   - Import `useBulkDeleteProperties`, `useBulkSubmitForReview`, `useReassignProperty` from hooks
+   - Import `AnimatePresence` from framer-motion, `X` icon, `Card/CardContent` (already imported)
+
+2. **Selection helpers** (same pattern as AgentProperties):
+   - `toggleSelect(id)` — add/remove from set
+   - `toggleSelectAll()` — select all filtered or clear
+   - `allSelectedCanSubmit` memo — true when all selected have `draft` or `changes_requested` status
+
+3. **Table changes**:
+   - Add a new `<TableHead>` with a select-all `<Checkbox>` as the first column
+   - Add a `<TableCell>` with per-row `<Checkbox>` as the first cell in each row
+   - Highlight selected rows with `bg-primary/5`
+
+4. **Floating Bulk Action Bar** (rendered after the table card, inside `AnimatePresence`):
+   - Shows when `selectedIds.size > 0`
+   - Displays: `{n} selected`
+   - **Submit for Review** button (conditionally shown when `allSelectedCanSubmit`)
+   - **Bulk Reassign** — a dropdown/popover to pick a target agent, then calls `useReassignProperty` for each selected property
+   - **Delete** button → opens inline `AlertDialog` confirmation
+   - **Clear selection** (X) button
+
+5. **Bulk reassign implementation**: Use a `Select` dropdown in the floating bar listing team members. On selection, iterate through `selectedIds` calling `reassignProperty.mutate` for each, then clear selection on completion.
+
+## Files touched
+
+| File | Change |
+|------|--------|
+| `src/pages/agency/AgencyListings.tsx` | Add checkboxes, selection state, floating bulk action bar with delete/submit/reassign |
+
+Single file change. All hooks (`useBulkDeleteProperties`, `useBulkSubmitForReview`, `useReassignProperty`) already exist.
+
