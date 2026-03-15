@@ -257,6 +257,16 @@ export default function CityDetail() {
           />
         </section>
 
+        {/* 5.5. Price by Apartment Size */}
+        <section id="price-by-size">
+          <PriceByApartmentSize
+            citySlug={slug || ''}
+            cityName={city.name}
+            dataSources={(city as any).data_sources}
+            lastVerified={city.updated_at}
+          />
+        </section>
+
         {/* 6. Worth Watching */}
         <section id="watching">
           {worthWatching.length > 0 ? (
