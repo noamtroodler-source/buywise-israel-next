@@ -56,6 +56,29 @@ function formatSigned(value: number): string {
   return `${prefix}${value.toFixed(1)}%`;
 }
 
+function RoomSizeInsight({ citySlug, cityName, latestPrices }: { citySlug: string; cityName: string; latestPrices: { roomType: number; price: number; yoyChange: number | null }[] }) {
+  const insight = useMemo(() => {
+    if (latestPrices.length < 2) return null;
+    const r3 = latestPrices.find(p => p.roomType === 3);
+    const r4 = latestPrices.find(p => p.roomType === 4);
+    const r5 = latestPrices.find(p => p.roomType === 5);
+    const prices = latestPrices.map(p => p.price);
+    const gap = prices.length >= 2 ? Math.max(...prices) - Math.min(...prices) : null;
+    return getCityRoomSizeInsight(citySlug, cityName, {
+      room3Price: r3?.price ?? null,
+      room4Price: r4?.price ?? null,
+      room5Price: r5?.price ?? null,
+      room3YoY: r3?.yoyChange ?? null,
+      room4YoY: r4?.yoyChange ?? null,
+      room5YoY: r5?.yoyChange ?? null,
+      gapSmallToLarge: gap,
+    });
+  }, [citySlug, cityName, latestPrices]);
+
+  if (!insight) return null;
+  return <InsightCard insights={[insight]} />;
+}
+
 export function PriceByApartmentSize({
   citySlug,
   cityName,
