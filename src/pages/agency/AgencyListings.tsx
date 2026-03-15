@@ -32,6 +32,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useUpdatePropertyStatus, useDuplicateProperty } from '@/hooks/useAgentProfile';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { cn } from '@/lib/utils';
+import { AgencyListingsSkeleton } from '@/components/agency/skeletons/AgencyPageSkeletons';
 
 const statusConfig = {
   draft: { label: 'Draft', color: 'bg-muted text-muted-foreground' },
