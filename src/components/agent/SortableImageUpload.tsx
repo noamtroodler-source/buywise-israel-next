@@ -140,6 +140,7 @@ export function SortableImageUpload({
 }: SortableImageUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [enhancingCount, setEnhancingCount] = useState(0);
+  const [failedUploads, setFailedUploads] = useState<{ file: File; error: string }[]>([]);
   const { toast } = useToast();
 
   const sensors = useSensors(
