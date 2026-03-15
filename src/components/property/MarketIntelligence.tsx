@@ -8,6 +8,7 @@ import { PropertyValueSnapshot } from './PropertyValueSnapshot';
 import { RecentNearbySales } from './RecentNearbySales';
 import { AIMarketInsight } from './AIMarketInsight';
 import { useMarketInsight } from '@/hooks/useMarketInsight';
+import { useRoomSpecificCityPrice } from '@/hooks/useRoomSpecificCityPrice';
 
 interface MarketIntelligenceProps {
   property: {
@@ -109,6 +110,13 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
   const citySlug = property.city?.toLowerCase().replace(/['']/g, '').replace(/\s+/g, '-') || '';
   const hasComps = property.latitude && property.longitude;
 
+  // Room-specific city average (overrides generic city avg when available)
+  const { data: roomPrice } = useRoomSpecificCityPrice(property.city, property.bedrooms);
+  
+  const effectiveAvgPriceSqm = roomPrice?.avgPriceSqm ?? cityData?.average_price_sqm ?? null;
+  const effectiveYoyChange = roomPrice?.yoyChange ?? cityData?.yoy_price_change ?? null;
+  const effectiveRoomCount = roomPrice ? property.bedrooms : null;
+
   // Compute days on market
   const createdDate = property.created_at ? new Date(property.created_at) : new Date();
   const daysOnMarket = Math.floor((Date.now() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -138,8 +146,8 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
     description_snippet: property.description?.slice(0, 500) || null,
     features: property.features || null,
     listing_status: property.listing_status,
-    city_avg_price_sqm: cityData?.average_price_sqm ?? null,
-    city_yoy_change: cityData?.yoy_price_change ?? null,
+    city_avg_price_sqm: effectiveAvgPriceSqm,
+    city_yoy_change: effectiveYoyChange,
     comp_count: verdictData.compsCount,
     avg_comp_deviation_percent: verdictData.avgComparison,
   } : null;
@@ -184,12 +192,13 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
           price={property.price}
           sizeSqm={property.size_sqm}
           city={property.city}
-          averagePriceSqm={cityData?.average_price_sqm}
-          priceChange={cityData?.yoy_price_change}
+          averagePriceSqm={effectiveAvgPriceSqm}
+          priceChange={effectiveYoyChange}
           listingStatus={property.listing_status}
           bedrooms={property.bedrooms}
           cityArnonaRate={cityData?.arnona_rate_sqm}
           cityAvgVaadBayit={cityData?.average_vaad_bayit}
+          roomCount={effectiveRoomCount}
           hideHeader
         />
 

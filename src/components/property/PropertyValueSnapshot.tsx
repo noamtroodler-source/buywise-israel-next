@@ -16,6 +16,8 @@ interface PropertyValueSnapshotProps {
   vaadBayitMonthly?: number | null;
   cityArnonaRate?: number | null;
   cityAvgVaadBayit?: number | null;
+  /** When set, labels will say "vs {city} {roomCount}-Room Avg" */
+  roomCount?: number | null;
   /** When true, skip the section header (used when embedded in MarketIntelligence) */
   hideHeader?: boolean;
 }
@@ -33,6 +35,7 @@ export function PropertyValueSnapshot({
   vaadBayitMonthly,
   cityArnonaRate,
   cityAvgVaadBayit,
+  roomCount,
   hideHeader = false,
 }: PropertyValueSnapshotProps) {
   const formatPrice = useFormatPrice();
@@ -230,13 +233,13 @@ export function PropertyValueSnapshot({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <span className="text-sm cursor-help border-b border-dotted border-muted-foreground/30">
-                      vs {city} Average
+                      vs {city} {roomCount ? `${roomCount}-Room ` : ''}Avg
                     </span>
                   </TooltipTrigger>
                   <TooltipContent side="top" className="max-w-xs">
-                    <p className="font-medium mb-1">Price vs City Average</p>
+                    <p className="font-medium mb-1">Price vs {roomCount ? `${roomCount}-Room ` : 'City '}Average</p>
                     <p className="text-xs text-muted-foreground">
-                      Compares this property's price per m² against the average sale price in {city}, based on recent government-recorded transactions. A positive % means priced above average; negative means below.
+                      Compares this property's price per m² against the average {roomCount ? `${roomCount}-room ` : ''}sale price in {city}, based on recent government-recorded transactions. A positive % means priced above average; negative means below.
                     </p>
                   </TooltipContent>
                 </Tooltip>
