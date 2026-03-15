@@ -330,12 +330,6 @@ export function PriceByApartmentSize({
             </div>
           )}
 
-          {/* Partial data notice */}
-          {hasPartialData && !isComparing && (
-            <InfoBanner variant="info">
-              Data available for {availableRoomTypes.map((r) => r.label).join(', ')} apartments only. Other room types have insufficient transaction volume.
-            </InfoBanner>
-          )}
 
           {/* Chart */}
           <div className="h-[300px] w-full bg-muted/20 rounded-xl border border-border/50 p-4 pt-2">
