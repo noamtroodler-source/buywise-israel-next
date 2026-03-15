@@ -418,6 +418,14 @@ export default function AgentProperties() {
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onSelect={() => {
+                                    const draft = propertyToWizardDraft(listing);
+                                    localStorage.setItem(PROPERTY_WIZARD_STORAGE_KEY, JSON.stringify(draft));
+                                    navigate('/agent/properties/new');
+                                  }}>
+                                    <Copy className="h-4 w-4 mr-2" />
+                                    Duplicate
+                                  </DropdownMenuItem>
                                   <DropdownMenuSeparator />
                                   <AlertDialog>
                                     <AlertDialogTrigger asChild>
