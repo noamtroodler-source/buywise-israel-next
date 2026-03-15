@@ -22,6 +22,7 @@ import { useAgencyAnalytics } from '@/hooks/useAgencyAnalytics';
 import { DateRangeFilter } from '@/hooks/useAgentAnalytics';
 import { InquiryPieChart, FunnelMetrics } from '@/components/agent/analytics';
 import { AgencyAnalyticsSkeleton } from '@/components/agency/skeletons/AgencyPageSkeletons';
+import { exportToCSV } from '@/lib/csvExport';
 
 const dateRangeOptions: { value: DateRangeFilter; label: string }[] = [
   { value: '7d', label: 'Last 7 days' },
