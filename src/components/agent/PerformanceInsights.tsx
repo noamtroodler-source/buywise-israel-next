@@ -27,6 +27,9 @@ interface PerformanceInsightsProps {
 }
 
 export function PerformanceInsights({ metrics, topListingTitle, className }: PerformanceInsightsProps) {
+  const allZero = metrics.viewsThisWeek === 0 && metrics.inquiriesThisWeek === 0 
+    && metrics.listingsActive === 0 && metrics.conversionRate === 0;
+
   const performanceMetrics: PerformanceMetric[] = [
     {
       label: 'Views',
