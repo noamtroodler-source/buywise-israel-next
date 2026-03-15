@@ -35,7 +35,8 @@ export function useHistoricalPrices(citySlug: string, years?: number) {
         .eq('slug', citySlug)
         .maybeSingle();
 
-      const cityName = cityData?.name || slugToCityName(citySlug);
+      // city_price_history uses names without apostrophes (e.g. "Raanana" not "Ra'anana")
+      const cityName = (cityData?.name || slugToCityName(citySlug)).replace(/['']/g, '');
 
       let query = supabase
         .from('city_price_history')
@@ -115,7 +116,7 @@ export function useCityPriceComparison(citySlugs: string[], startYear: number, e
       for (const c of (citiesData || [])) {
         slugToName.set(c.slug, c.name);
       }
-      const cityNames = citySlugs.map(s => slugToName.get(s) || slugToCityName(s));
+      const cityNames = citySlugs.map(s => (slugToName.get(s) || slugToCityName(s)).replace(/['']/g, ''));
 
       const { data, error } = await supabase
         .from('city_price_history')
@@ -165,7 +166,7 @@ export function useHistoricalPriceComparison(cityNames: string[]) {
       const { data, error } = await supabase
         .from('city_price_history')
         .select('*')
-        .in('city_en', cityNames)
+        .in('city_en', cityNames.map(n => n.replace(/['']/g, '')))
         .order('year', { ascending: true });
 
       if (error) throw error;
