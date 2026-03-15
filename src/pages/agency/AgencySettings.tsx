@@ -30,6 +30,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { AddressAutocomplete } from '@/components/agent/wizard/AddressAutocomplete';
 import { GoogleMapsProvider } from '@/components/maps/GoogleMapsProvider';
+import { AgencySettingsSkeleton } from '@/components/agency/skeletons/AgencyPageSkeletons';
 
 const allCities = [
   'Tel Aviv', 'Jerusalem', 'Haifa', 'Ra\'anana', 'Herzliya', 
@@ -223,13 +224,7 @@ export default function AgencySettings() {
   };
 
   if (isLoading) {
-    return (
-      <Layout>
-        <div className="min-h-screen flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      </Layout>
-    );
+    return <AgencySettingsSkeleton />;
   }
 
   if (!agency) {

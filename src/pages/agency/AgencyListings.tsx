@@ -32,6 +32,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useUpdatePropertyStatus, useDuplicateProperty } from '@/hooks/useAgentProfile';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { cn } from '@/lib/utils';
+import { AgencyListingsSkeleton } from '@/components/agency/skeletons/AgencyPageSkeletons';
 
 const statusConfig = {
   draft: { label: 'Draft', color: 'bg-muted text-muted-foreground' },
@@ -58,13 +59,7 @@ export default function AgencyListings() {
   const formatPrice = useFormatPrice();
 
   if (agencyLoading || listingsLoading) {
-    return (
-      <Layout>
-        <div className="min-h-screen flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      </Layout>
-    );
+    return <AgencyListingsSkeleton />;
   }
 
   if (!agency) {
