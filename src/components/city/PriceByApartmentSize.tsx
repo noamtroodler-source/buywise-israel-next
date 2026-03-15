@@ -11,6 +11,7 @@ import {
   YAxis,
 } from 'recharts';
 import { InlineSourceBadge } from '@/components/shared/InlineSourceBadge';
+import { InfoBanner } from '@/components/tools/shared/InfoBanner';
 import { useRoomPriceHistory } from '@/hooks/useRoomPriceHistory';
 import { useRoomPriceComparison } from '@/hooks/useRoomPriceComparison';
 import { useCities } from '@/hooks/useCities';
