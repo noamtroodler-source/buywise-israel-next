@@ -56,7 +56,7 @@ import { getBuyerCategoryLabel, getBuyerTaxCategory, useBuyerProfile } from '@/h
 import { calculateTaxAmount, BuyerType } from '@/lib/calculations/purchaseTax';
 import { BuyerCategory as BannerBuyerCategory } from './shared/BuyerTypeInfoBanner';
 import { useCities } from '@/hooks/useCities';
-import { useCanonicalMetrics } from '@/hooks/useCanonicalMetrics';
+import { useCityDetails } from '@/hooks/useCityDetails';
 import { usePreferences, useFormatPrice, useFormatArea, useCurrencySymbol, useAreaUnitLabel } from '@/contexts/PreferencesContext';
 import { cn } from '@/lib/utils';
 
