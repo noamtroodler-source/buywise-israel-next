@@ -1,16 +1,17 @@
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Loader2, Home, Plus, Search, Download,
   Eye, Clock, CheckCircle2, Building2, Heart, MessageSquare,
-  Edit, Trash2, Send, MoreHorizontal, Copy, Key, ArrowLeftRight,
+  Edit, Trash2, Send, MoreHorizontal, Copy, Key, ArrowLeftRight, X,
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
@@ -24,9 +25,12 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import {
+  Popover, PopoverContent, PopoverTrigger,
+} from '@/components/ui/popover';
 import { useMyAgency, useAgencyTeam } from '@/hooks/useAgencyManagement';
 import { useAgencyListingsManagement } from '@/hooks/useAgencyListings';
-import { useDeleteProperty, useSubmitForReview } from '@/hooks/useAgentProperties';
+import { useDeleteProperty, useSubmitForReview, useBulkDeleteProperties, useBulkSubmitForReview, useReassignProperty } from '@/hooks/useAgentProperties';
 import { AgentReassignPopover } from '@/components/agency/AgentReassignPopover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useUpdatePropertyStatus, useDuplicateProperty } from '@/hooks/useAgentProfile';
@@ -52,12 +56,26 @@ export default function AgencyListings() {
   const submitForReview = useSubmitForReview();
   const updateStatus = useUpdatePropertyStatus();
   const duplicateProperty = useDuplicateProperty();
+  const bulkDelete = useBulkDeleteProperties();
+  const bulkSubmit = useBulkSubmitForReview();
+  const reassignProperty = useReassignProperty();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [agentFilter, setAgentFilter] = useState<string>('all');
   const [cityFilter, setCityFilter] = useState<string>('all');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const formatPrice = useFormatPrice();
+
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
 
   if (agencyLoading || listingsLoading) {
     return <AgencyListingsSkeleton />;
@@ -117,6 +135,63 @@ export default function AgencyListings() {
       onSuccess: (result) => {
         navigate(`/agency/properties/${result.newPropertyId}/edit`);
       },
+    });
+  };
+
+  const filteredIds = filteredListings.map(l => l.id);
+  const allFilteredSelected = filteredListings.length > 0 && filteredListings.every(l => selectedIds.has(l.id));
+
+  const toggleSelectAll = () => {
+    if (allFilteredSelected) {
+      setSelectedIds(prev => {
+        const next = new Set(prev);
+        filteredIds.forEach(id => next.delete(id));
+        return next;
+      });
+    } else {
+      setSelectedIds(prev => {
+        const next = new Set(prev);
+        filteredIds.forEach(id => next.add(id));
+        return next;
+      });
+    }
+  };
+
+  const allSelectedCanSubmit = selectedIds.size > 0 && [...selectedIds].every(id => {
+    const listing = listings.find(l => l.id === id);
+    return listing && (listing.verification_status === 'draft' || listing.verification_status === 'changes_requested');
+  });
+
+  const handleBulkDelete = () => {
+    bulkDelete.mutate([...selectedIds], {
+      onSuccess: () => {
+        setSelectedIds(new Set());
+        setShowBulkDeleteConfirm(false);
+      },
+    });
+  };
+
+  const handleBulkSubmit = () => {
+    bulkSubmit.mutate([...selectedIds], {
+      onSuccess: () => setSelectedIds(new Set()),
+    });
+  };
+
+  const handleBulkReassign = (targetAgentId: string) => {
+    const ids = [...selectedIds];
+    let completed = 0;
+    ids.forEach(propertyId => {
+      reassignProperty.mutate(
+        { propertyId, newAgentId: targetAgentId },
+        {
+          onSettled: () => {
+            completed++;
+            if (completed === ids.length) {
+              setSelectedIds(new Set());
+            }
+          },
+        }
+      );
     });
   };
 
@@ -255,6 +330,13 @@ export default function AgencyListings() {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead className="w-[40px]">
+                          <Checkbox
+                            checked={allFilteredSelected}
+                            onCheckedChange={toggleSelectAll}
+                            aria-label="Select all"
+                          />
+                        </TableHead>
                         <TableHead>Property</TableHead>
                         <TableHead>
                           <TooltipProvider delayDuration={300}>
@@ -285,9 +367,17 @@ export default function AgencyListings() {
                         const status = statusConfig[listing.verification_status as keyof typeof statusConfig] || statusConfig.draft;
                         const isDraft = listing.verification_status === 'draft';
                         const isApproved = listing.verification_status === 'approved';
+                        const isSelected = selectedIds.has(listing.id);
 
                         return (
-                          <TableRow key={listing.id} className="hover:bg-muted/30">
+                          <TableRow key={listing.id} className={cn('hover:bg-muted/30', isSelected && 'bg-primary/5')}>
+                            <TableCell>
+                              <Checkbox
+                                checked={isSelected}
+                                onCheckedChange={() => toggleSelect(listing.id)}
+                                aria-label={`Select ${listing.title}`}
+                              />
+                            </TableCell>
                             <TableCell>
                               <div className="flex items-center gap-3">
                                 <div className="h-12 w-16 rounded-lg bg-muted overflow-hidden flex-shrink-0">
@@ -334,14 +424,12 @@ export default function AgencyListings() {
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center justify-end gap-1">
-                                {/* Edit button */}
                                 <Button variant="ghost" size="sm" asChild className="rounded-lg">
                                   <Link to={`/agency/properties/${listing.id}/edit`}>
                                     <Edit className="h-4 w-4" />
                                   </Link>
                                 </Button>
 
-                                {/* Submit for review */}
                                 {isDraft && (
                                   <Button
                                     variant="ghost"
@@ -355,7 +443,6 @@ export default function AgencyListings() {
                                   </Button>
                                 )}
 
-                                {/* View live */}
                                 {isApproved && (
                                   <Button variant="ghost" size="sm" asChild className="rounded-lg">
                                     <Link to={`/property/${listing.id}`} target="_blank">
@@ -364,7 +451,6 @@ export default function AgencyListings() {
                                   </Button>
                                 )}
 
-                                {/* More actions dropdown */}
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
                                     <Button variant="ghost" size="sm" className="rounded-lg">
@@ -430,6 +516,103 @@ export default function AgencyListings() {
               )}
             </CardContent>
           </Card>
+
+          {/* Floating Bulk Action Bar */}
+          <AnimatePresence>
+            {selectedIds.size > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 40 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 40 }}
+                className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50"
+              >
+                <Card className="rounded-2xl border-primary/20 shadow-lg bg-background/95 backdrop-blur-sm">
+                  <CardContent className="p-3 flex items-center gap-3">
+                    <span className="text-sm font-medium pl-2 text-primary">
+                      {selectedIds.size} selected
+                    </span>
+
+                    {allSelectedCanSubmit && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="rounded-xl"
+                        onClick={handleBulkSubmit}
+                        disabled={bulkSubmit.isPending}
+                      >
+                        <Send className="h-3.5 w-3.5 mr-1.5" />
+                        Submit for Review
+                      </Button>
+                    )}
+
+                    {/* Bulk Reassign */}
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button size="sm" variant="outline" className="rounded-xl">
+                          <ArrowLeftRight className="h-3.5 w-3.5 mr-1.5" />
+                          Reassign
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-56 p-2" side="top" align="center">
+                        <p className="text-xs font-medium text-muted-foreground px-2 py-1">Reassign to:</p>
+                        {team.map((agent) => (
+                          <button
+                            key={agent.id}
+                            className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-accent transition-colors"
+                            onClick={() => handleBulkReassign(agent.id)}
+                          >
+                            {agent.name}
+                          </button>
+                        ))}
+                        {team.length === 0 && (
+                          <p className="text-xs text-muted-foreground px-2 py-2">No team members found</p>
+                        )}
+                      </PopoverContent>
+                    </Popover>
+
+                    {/* Bulk Delete */}
+                    <AlertDialog open={showBulkDeleteConfirm} onOpenChange={setShowBulkDeleteConfirm}>
+                      <AlertDialogTrigger asChild>
+                        <Button size="sm" variant="outline" className="rounded-xl text-destructive hover:text-destructive border-destructive/30 hover:bg-destructive/5">
+                          <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                          Delete
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete {selectedIds.size} Listings</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete {selectedIds.size} listing{selectedIds.size > 1 ? 's' : ''}? This cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={handleBulkDelete}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            disabled={bulkDelete.isPending}
+                          >
+                            {bulkDelete.isPending ? 'Deleting...' : 'Delete All'}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+
+                    {/* Clear selection */}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="rounded-xl"
+                      onClick={() => setSelectedIds(new Set())}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
         </motion.div>
       </div>
     </Layout>
