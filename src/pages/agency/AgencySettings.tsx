@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { BillingSection } from '@/components/billing/BillingSection';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Loader2, Save, Upload, Building2, Trash2, X, Mail, Phone, Globe, MapPin, Briefcase, Users, Bell, Linkedin, Instagram, Facebook } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, Upload, Building2, Trash2, X, Mail, Phone, Globe, MapPin, Briefcase, Users, Bell, Linkedin, Instagram, Facebook, ShieldAlert } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -31,6 +31,7 @@ import { cn } from '@/lib/utils';
 import { AddressAutocomplete } from '@/components/agent/wizard/AddressAutocomplete';
 import { GoogleMapsProvider } from '@/components/maps/GoogleMapsProvider';
 import { AgencySettingsSkeleton } from '@/components/agency/skeletons/AgencyPageSkeletons';
+import { EnhancedEmptyState } from '@/components/shared/EnhancedEmptyState';
 
 const allCities = [
   'Tel Aviv', 'Jerusalem', 'Haifa', 'Ra\'anana', 'Herzliya', 
@@ -61,7 +62,7 @@ export default function AgencySettings() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const { data: agency, isLoading } = useMyAgency();
+  const { data: agency, isLoading, isAgencyAdmin } = useMyAgency();
   const { data: invites = [] } = useAgencyInvites(agency?.id);
   const updateAgency = useUpdateAgency();
   const deactivateInvite = useDeactivateInvite();
@@ -225,6 +226,21 @@ export default function AgencySettings() {
 
   if (isLoading) {
     return <AgencySettingsSkeleton />;
+  }
+
+  if (agency && !isAgencyAdmin) {
+    return (
+      <Layout>
+        <div className="container py-16 max-w-lg">
+          <EnhancedEmptyState
+            icon={ShieldAlert}
+            title="Admin access required"
+            description="Only the agency admin can manage settings."
+            primaryAction={{ label: 'Back to Dashboard', href: '/agency' }}
+          />
+        </div>
+      </Layout>
+    );
   }
 
   if (!agency) {

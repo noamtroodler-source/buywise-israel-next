@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
-  ArrowLeft, Users, UserPlus, Plus, Copy, Check, Hash, Loader2
+  ArrowLeft, Users, UserPlus, Plus, Copy, Check, Hash, Loader2, ShieldAlert
 } from 'lucide-react';
 import { EnhancedEmptyState } from '@/components/shared/EnhancedEmptyState';
 import { Layout } from '@/components/layout/Layout';
@@ -28,7 +28,7 @@ import { toast } from 'sonner';
 import { AgencyTeamSkeleton } from '@/components/agency/skeletons/AgencyPageSkeletons';
 
 export default function AgencyTeam() {
-  const { data: agency, isLoading } = useMyAgency();
+  const { data: agency, isLoading, isAgencyAdmin } = useMyAgency();
   const { data: team = [] } = useAgencyTeam(agency?.id);
   const { data: joinRequests = [] } = useAgencyJoinRequests(agency?.id);
   const { data: invites = [] } = useAgencyInvites(agency?.id);
@@ -50,6 +50,21 @@ export default function AgencyTeam() {
 
   if (isLoading) {
     return <AgencyTeamSkeleton />;
+  }
+
+  if (agency && !isAgencyAdmin) {
+    return (
+      <Layout>
+        <div className="container py-16 max-w-lg">
+          <EnhancedEmptyState
+            icon={ShieldAlert}
+            title="Admin access required"
+            description="Only the agency admin can manage the team."
+            primaryAction={{ label: 'Back to Dashboard', href: '/agency' }}
+          />
+        </div>
+      </Layout>
+    );
   }
 
   if (!agency) {

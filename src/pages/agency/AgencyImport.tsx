@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import {
   ArrowLeft, Globe, Loader2, Download, CheckCircle2,
   XCircle, AlertCircle, FileText, RefreshCw, Trash2,
-  Info, MinusCircle,
+  Info, MinusCircle, ShieldAlert,
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useMyAgency, useAgencyStats } from '@/hooks/useAgencyManagement';
 import { InfoBanner } from '@/components/tools/shared/InfoBanner';
+import { EnhancedEmptyState } from '@/components/shared/EnhancedEmptyState';
 import {
   useImportJobs,
   useImportJobItems,
@@ -77,7 +78,7 @@ function normalizeUrl(raw: string): string {
 }
 
 export default function AgencyImport() {
-  const { data: agency, isLoading: agencyLoading } = useMyAgency();
+  const { data: agency, isLoading: agencyLoading, isAgencyAdmin } = useMyAgency();
   const { data: stats } = useAgencyStats(agency?.id);
   const { data: jobs = [], isLoading: jobsLoading } = useImportJobs(agency?.id);
   const discoverMutation = useDiscoverListings();
@@ -123,6 +124,21 @@ export default function AgencyImport() {
       <Layout>
         <div className="min-h-screen flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </Layout>
+    );
+  }
+
+  if (agency && !isAgencyAdmin) {
+    return (
+      <Layout>
+        <div className="container py-16 max-w-lg">
+          <EnhancedEmptyState
+            icon={ShieldAlert}
+            title="Admin access required"
+            description="Only the agency admin can import listings."
+            primaryAction={{ label: 'Back to Dashboard', href: '/agency' }}
+          />
         </div>
       </Layout>
     );
