@@ -192,12 +192,13 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
           price={property.price}
           sizeSqm={property.size_sqm}
           city={property.city}
-          averagePriceSqm={cityData?.average_price_sqm}
-          priceChange={cityData?.yoy_price_change}
+          averagePriceSqm={effectiveAvgPriceSqm}
+          priceChange={effectiveYoyChange}
           listingStatus={property.listing_status}
           bedrooms={property.bedrooms}
           cityArnonaRate={cityData?.arnona_rate_sqm}
           cityAvgVaadBayit={cityData?.average_vaad_bayit}
+          roomCount={effectiveRoomCount}
           hideHeader
         />
 
