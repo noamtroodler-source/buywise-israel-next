@@ -13,6 +13,7 @@ import {
   ReferenceLine,
 } from 'recharts';
 import { InlineSourceBadge } from '@/components/shared/InlineSourceBadge';
+import { InfoBanner } from '@/components/tools/shared/InfoBanner';
 import { useHistoricalPrices, useHistoricalPriceComparison, calculateCAGR } from '@/hooks/useHistoricalPrices';
 import { useNationalAveragePrices } from '@/hooks/useNationalAveragePrices';
 import { useCities } from '@/hooks/useCities';
@@ -278,7 +279,16 @@ export function HistoricalPriceChart({
     return [Math.max(0, niceMin), niceMax];
   }, [filteredData, comparisonCityNames]);
 
-  if (filteredData.length < 2) return null;
+  // Detect comparison cities with no data
+  const comparisonCitiesWithNoData = useMemo(() => {
+    if (!isComparing || filteredData.length === 0) return [];
+    return comparisonCityNames.filter((_, idx) => {
+      const key = `compare${idx}`;
+      return !filteredData.some((d) => d[key] != null);
+    });
+  }, [filteredData, comparisonCityNames, isComparing]);
+
+  const hasNoData = filteredData.length < 2;
 
   const isOverallPositive = metrics && metrics.totalAppreciation >= 0;
 
@@ -300,13 +310,15 @@ export function HistoricalPriceChart({
                 How {cityName} apartment prices have moved over time
               </p>
             </div>
-            <Tabs value={period} onValueChange={(v) => setPeriod(v as Period)}>
-              <TabsList className="bg-background">
-                <TabsTrigger value="5y" className="text-xs">5 Years</TabsTrigger>
-                <TabsTrigger value="10y" className="text-xs">10 Years</TabsTrigger>
-                <TabsTrigger value="all" className="text-xs">All Time</TabsTrigger>
-              </TabsList>
-            </Tabs>
+            {!hasNoData && (
+              <Tabs value={period} onValueChange={(v) => setPeriod(v as Period)}>
+                <TabsList className="bg-background">
+                  <TabsTrigger value="5y" className="text-xs">5 Years</TabsTrigger>
+                  <TabsTrigger value="10y" className="text-xs">10 Years</TabsTrigger>
+                  <TabsTrigger value="all" className="text-xs">All Time</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            )}
           </div>
 
           {/* City Comparison Selector */}
@@ -317,8 +329,21 @@ export function HistoricalPriceChart({
             availableCities={availableCities}
           />
 
+          {/* Missing data banners */}
+          {hasNoData && (
+            <InfoBanner variant="info">
+              Historical price trend data isn't available for {cityName}. The CBS requires sufficient transaction volume to publish trends.
+            </InfoBanner>
+          )}
+
+          {comparisonCitiesWithNoData.length > 0 && (
+            <InfoBanner variant="info">
+              {comparisonCitiesWithNoData.join(' and ')} {comparisonCitiesWithNoData.length === 1 ? "doesn't" : "don't"} have enough transaction data for historical price trends.
+            </InfoBanner>
+          )}
+
           {/* Key Metrics — current city only */}
-          {metrics && (
+          {!hasNoData && metrics && (
             <div className="flex flex-wrap gap-x-5 gap-y-2">
               <MetricPill value={metrics.totalAppreciation} label={`total (${metrics.years}yr)`} decimals={0} />
               <MetricPill value={metrics.cagr} label="annual (CAGR)" />
@@ -329,7 +354,9 @@ export function HistoricalPriceChart({
             </div>
           )}
 
-          {/* Chart */}
+          {/* Chart — only if we have data */}
+          {!hasNoData && (
+            <>
           <div className="h-[300px] w-full bg-background rounded-xl border border-border/50 p-4 pt-2">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={filteredData} margin={{ top: 20, right: 16, left: 0, bottom: 0 }}>
@@ -436,8 +463,10 @@ export function HistoricalPriceChart({
               </p>
             </div>
           )}
+          </>
+          )}
 
-          {/* Source attribution */}
+
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div className="flex items-center gap-2 flex-wrap">
               <InlineSourceBadge sources={{ CBS: 'Central Bureau of Statistics' }} lastVerified={lastVerified} />
