@@ -276,6 +276,16 @@ export default function CityDetail() {
         )}
 
 
+        {/* 5.5. Historical Price Chart */}
+        <section id="price-history">
+          <HistoricalPriceChart
+            citySlug={slug || ''}
+            cityName={city.name}
+            dataSources={(city as any).data_sources}
+            lastVerified={canonicalMetrics?.updated_at}
+          />
+        </section>
+
         {/* 6. Worth Watching */}
         <section id="watching">
           {worthWatching.length > 0 ? (
