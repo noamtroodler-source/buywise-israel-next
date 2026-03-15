@@ -16,7 +16,6 @@ import { CityNeighborhoodHighlights } from '@/components/city/CityNeighborhoodHi
 // Existing components (kept)
 import { CityQuickStats } from '@/components/city/CityQuickStats';
 import { MarketOverviewCards } from '@/components/city/MarketOverviewCards';
-import { PriceTrendsSection } from '@/components/city/PriceTrendsSection';
 import { CityWorthWatchingNew, MarketFactor } from '@/components/city/CityWorthWatchingNew';
 import { CityExploreListings } from '@/components/city/CityExploreListings';
 import { CityFeaturedProperties } from '@/components/city/CityFeaturedProperties';
@@ -263,20 +262,7 @@ export default function CityDetail() {
           />
         </section>
 
-        {/* 5. Price Trends Chart */}
-        {districtName && (
-          <section id="trends">
-            <PriceTrendsSection
-              cityName={city.name}
-              districtName={districtName}
-              dataSources={(city as any).data_sources}
-              lastVerified={canonicalMetrics?.updated_at}
-            />
-          </section>
-        )}
-
-
-        {/* 5.5. Historical Price Chart */}
+        {/* 5. Historical Price Chart */}
         <section id="price-history">
           <HistoricalPriceChart
             citySlug={slug || ''}
