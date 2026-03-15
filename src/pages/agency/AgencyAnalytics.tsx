@@ -5,6 +5,7 @@ import {
   ArrowLeft, Eye, Heart, MessageSquare, TrendingUp, Loader2, Calendar, 
   Building2, Users, BarChart3, Home
 } from 'lucide-react';
+import { EnhancedEmptyState } from '@/components/shared/EnhancedEmptyState';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
