@@ -91,8 +91,10 @@ Deno.serve(async (req) => {
     }
 
     if (table === "neighborhood_price_history") {
-      // Clear existing data first
-      await supabase.from("neighborhood_price_history").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      // Clear existing data first (unless clear=false)
+      if (clear !== false) {
+        await supabase.from("neighborhood_price_history").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      }
 
       const batchSize = 500;
       let inserted = 0;
@@ -127,6 +129,33 @@ Deno.serve(async (req) => {
         inserted += batch.length;
       }
       return new Response(JSON.stringify({ success: true, inserted }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Update cities table from city_summary data
+    if (table === "city_summary") {
+      let updated = 0;
+      for (const r of rows) {
+        if (!r.city_en || r.transaction_count === '0') continue;
+        
+        const updateData: Record<string, any> = {};
+        if (r.avg_price_per_sqm) updateData.average_price_sqm = parseFloat(r.avg_price_per_sqm);
+        if (r.price_increase_pct) updateData.yoy_price_change = parseFloat(r.price_increase_pct);
+        if (r.rental_yield_pct) updateData.gross_yield_percent = parseFloat(r.rental_yield_pct);
+        if (r.avg_transaction_price) updateData.average_price = parseFloat(r.avg_transaction_price);
+        
+        if (Object.keys(updateData).length === 0) continue;
+        
+        // Match by city name
+        const { error } = await supabase
+          .from("cities")
+          .update(updateData)
+          .eq("name", r.city_en);
+        
+        if (!error) updated++;
+      }
+      return new Response(JSON.stringify({ success: true, updated }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
