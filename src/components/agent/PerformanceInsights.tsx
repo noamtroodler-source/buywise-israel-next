@@ -72,6 +72,17 @@ export function PerformanceInsights({ metrics, topListingTitle, className }: Per
         </CardTitle>
       </CardHeader>
       <CardContent>
+        {allZero ? (
+          <div className="flex flex-col items-center justify-center py-6 text-center">
+            <div className="p-3 rounded-xl bg-primary/10 mb-3">
+              <TrendingUp className="h-6 w-6 text-primary" />
+            </div>
+            <p className="text-sm font-medium text-foreground">No performance data yet</p>
+            <p className="text-xs text-muted-foreground mt-1 max-w-xs">
+              Create and publish your first listing to start tracking views, inquiries, and conversions.
+            </p>
+          </div>
+        ) : (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {performanceMetrics.map((metric, index) => {
             const change = calculateChange(metric.current, metric.previous);
