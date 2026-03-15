@@ -5,6 +5,7 @@ interface RoomSpecificPrice {
   avgPrice: number;
   avgPriceSqm: number;
   yoyChange: number | null;
+  fiveYearChange: number | null;
   quarter: number;
   year: number;
 }
@@ -31,7 +32,7 @@ export function useRoomSpecificCityPrice(city: string | null, rooms: number | nu
     queryFn: async () => {
       if (!normalizedCity || !rooms) return null;
 
-      // Fetch latest 2 years of data for this city + room count to compute YoY
+      // Fetch ~6 years of data to compute both YoY and 5-year change
       const { data, error } = await supabase
         .from('city_price_history')
         .select('avg_price_nis, year, quarter, rooms')
@@ -40,7 +41,7 @@ export function useRoomSpecificCityPrice(city: string | null, rooms: number | nu
         .not('avg_price_nis', 'is', null)
         .order('year', { ascending: false })
         .order('quarter', { ascending: false })
-        .limit(8);
+        .limit(24);
 
       if (error || !data || data.length === 0) return null;
 
@@ -63,10 +64,22 @@ export function useRoomSpecificCityPrice(city: string | null, rooms: number | nu
         );
       }
 
+      // Find same quarter 5 years prior
+      const fiveYearPrior = data.find(
+        (d) => d.year === latest.year - 5 && d.quarter === latest.quarter
+      );
+      let fiveYearChange: number | null = null;
+      if (fiveYearPrior?.avg_price_nis && latest.avg_price_nis) {
+        fiveYearChange = Math.round(
+          ((latest.avg_price_nis - fiveYearPrior.avg_price_nis) / fiveYearPrior.avg_price_nis) * 100
+        );
+      }
+
       return {
         avgPrice: latest.avg_price_nis,
         avgPriceSqm,
         yoyChange,
+        fiveYearChange,
         quarter: latest.quarter,
         year: latest.year,
       };

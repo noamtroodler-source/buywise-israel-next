@@ -37,6 +37,7 @@ interface MarketInsightRequest {
   // City-level data
   city_avg_price_sqm: number | null;
   city_yoy_change: number | null;
+  city_5yr_change: number | null;
   // Comp data
   comp_count: number;
   avg_comp_deviation_percent: number | null;
@@ -110,6 +111,7 @@ serve(async (req) => {
       body.neighborhood ? `Neighborhood: ${body.neighborhood}` : null,
       cityAvg ? `City avg price/sqm: ₪${Math.round(cityAvg).toLocaleString()}` : null,
       body.city_yoy_change !== null && body.city_yoy_change !== undefined ? `City 12-month price trend: ${body.city_yoy_change > 0 ? "+" : ""}${body.city_yoy_change.toFixed(1)}%` : null,
+      body.city_5yr_change !== null && body.city_5yr_change !== undefined ? `City 5-year price change: ${body.city_5yr_change > 0 ? "+" : ""}${body.city_5yr_change}%` : null,
       `Nearby comparable sales: ${body.comp_count}`,
       deviation !== null && deviation !== undefined ? `Listing is ${deviation > 0 ? "+" : ""}${deviation.toFixed(0)}% vs avg of nearby comps` : null,
       `Days on market: ${body.days_on_market}`,
@@ -138,6 +140,7 @@ Think like an experienced Israeli real estate agent who notices things buyers mi
 - Price reductions signal motivated sellers.
 - Long days on market may mean overpricing.
 - Rising city trends can justify higher prices.
+- If 5-year price data is provided and it tells a meaningfully different story than the 1-year trend (e.g., sustained growth vs recent correction, or stagnation vs recent surge), weave that context in naturally. Don't mention the 5-year trend if it simply mirrors the 1-year direction — only when the contrast adds insight.
 
 Rules:
 - Output ONLY the insight text, nothing else.
