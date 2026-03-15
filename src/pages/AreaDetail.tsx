@@ -15,7 +15,6 @@ import { CityNeighborhoodHighlights } from '@/components/city/CityNeighborhoodHi
 // Existing components (kept)
 import { CityQuickStats } from '@/components/city/CityQuickStats';
 import { MarketOverviewCards } from '@/components/city/MarketOverviewCards';
-import { PriceTrendsSection } from '@/components/city/PriceTrendsSection';
 import { CityWorthWatchingNew, MarketFactor } from '@/components/city/CityWorthWatchingNew';
 import { CityExploreListings } from '@/components/city/CityExploreListings';
 import { CityFeaturedProperties } from '@/components/city/CityFeaturedProperties';
