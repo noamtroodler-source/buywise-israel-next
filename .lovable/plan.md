@@ -1,22 +1,27 @@
 
 
-## Phase 1: Founding Partner Enrollment — Implemented ✅
+# Phase C: Listing Duplication
 
-All changes from the plan have been implemented:
+## What
+Add a "Duplicate" action to the listing dropdown menus (both card and table views) on `AgentProperties.tsx`. Clicking it maps the existing property's data into `PropertyWizardData`, saves it to `localStorage` under `PROPERTY_WIZARD_STORAGE_KEY`, and navigates to `/agent/properties/new` — where the wizard picks it up as a pre-filled draft.
 
-1. **DB Migration** — Added `is_founding_partner`, `payplus_customer_id`, `payplus_subscription_id` to `subscriptions`; `payplus_subscription_id` to `featured_listings`. Updated FOUNDING2026 promo code (max_redemptions=15, cleared old discount/credit data).
-2. **`enroll-founding-partner` edge function** — 15-cap enforcement, trial creation (60 days), founding_partners insert, first month credit grant, promo redemption tracking.
-3. **`check-trial-expirations` edge function** — Daily cron (6 AM UTC) expires trialing subscriptions past trial_end.
-4. **`useFoundingSpots` hook** — Live spots remaining counter querying founding_partners.
-5. **`FoundingProgramSection`** — Updated benefits (2mo free, 3 featured/mo, early access, case study), spots counter badge.
-6. **`FoundingProgramModal`** — Updated benefits, spots counter, activates enrollment flow.
-7. **`Pricing.tsx`** — FOUNDING2026 code routes to `enroll-founding-partner` instead of Stripe; CTA changes to "Activate Founding Program".
-8. **`CheckoutSuccess.tsx`** — Founding partner variant with trial end date and featured listings CTA.
-9. **`grant-monthly-featured-credits`** — Already has 2-month duration cap logic.
-10. **`PlanCard`** — Added `ctaLabel` prop for custom CTA text.
+## How
 
-### Deferred (PayPlus not yet set up):
-- `payplus-checkout`, `payplus-webhook`, `manage-billing` edge functions
-- `list-invoices` PayPlus integration
-- Featured listing ₪299/mo PayPlus recurring charge
-- Trial-to-paid automatic charge initiation
+### 1. Create a helper: `src/utils/duplicateProperty.ts`
+- Export a function `propertyToWizardDraft(property: AgentProperty): PropertyWizardData` that maps DB property fields to `PropertyWizardData` shape
+- Strips `id`, clears `images` (they belong to the original), resets price-tracking fields
+- Prepends title with "Copy of " (truncated to 60 chars)
+- Sets `description`, `features`, amenity booleans, lease fields, etc.
+
+### 2. Update `AgentProperties.tsx`
+- Import `Copy` icon from lucide-react and the new helper
+- Add a "Duplicate" `DropdownMenuItem` **above** the Delete separator in both the card view dropdown (~line 419) and the table view dropdown (~line 579)
+- On click: call `propertyToWizardDraft(listing)`, save result to `localStorage.setItem(PROPERTY_WIZARD_STORAGE_KEY, JSON.stringify(...))`, then `navigate('/agent/properties/new')`
+- The existing wizard draft recovery dialog will show, letting the agent continue editing the cloned data
+
+### Files touched
+| File | Change |
+|------|--------|
+| `src/utils/duplicateProperty.ts` | New — mapping function |
+| `src/pages/agent/AgentProperties.tsx` | Add Duplicate menu item in both views |
+
