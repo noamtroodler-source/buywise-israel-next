@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 
+/** Default draft TTL: 7 days in milliseconds */
+export const DRAFT_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
 export interface AutoSaveState {
   isSaving: boolean;
   lastSavedAt: Date | null;
@@ -11,6 +14,12 @@ interface SavePayload<T, M = Record<string, unknown>> {
   data: T;
   metadata?: M;
   savedAt: string;
+}
+
+/** Check if a draft savedAt timestamp is older than the TTL */
+export function isDraftExpired(savedAt: string | number, ttlMs: number = DRAFT_TTL_MS): boolean {
+  const savedTime = typeof savedAt === 'number' ? savedAt : new Date(savedAt).getTime();
+  return Date.now() - savedTime > ttlMs;
 }
 
 interface UseAutoSaveOptions<T, M = Record<string, unknown>> {
@@ -175,7 +184,14 @@ export function useAutoSave<T, M = Record<string, unknown>>({
       const saved = localStorage.getItem(actualStorageKey);
       if (saved) {
         const parsed = JSON.parse(saved) as SavePayload<T, M>;
-        if (parsed.data) return parsed;
+        if (parsed.data) {
+          // Auto-discard expired drafts
+          if (parsed.savedAt && isDraftExpired(parsed.savedAt)) {
+            localStorage.removeItem(actualStorageKey);
+            return null;
+          }
+          return parsed;
+        }
       }
     } catch (e) {
       console.error('Error getting saved data:', e);

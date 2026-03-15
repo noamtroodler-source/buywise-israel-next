@@ -81,11 +81,25 @@ export default function AgentProperties() {
   const [hasDraft, setHasDraft] = useState(false);
   const [draftDismissed, setDraftDismissed] = useState(false);
 
-  // Check for existing wizard draft in localStorage
+  // Check for existing wizard draft in localStorage (with TTL)
   useEffect(() => {
     try {
       const saved = localStorage.getItem(PROPERTY_WIZARD_STORAGE_KEY);
-      setHasDraft(!!saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.savedAt) {
+          const savedTime = typeof parsed.savedAt === 'number' ? parsed.savedAt : new Date(parsed.savedAt).getTime();
+          const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+          if (Date.now() - savedTime > SEVEN_DAYS_MS) {
+            localStorage.removeItem(PROPERTY_WIZARD_STORAGE_KEY);
+            setHasDraft(false);
+            return;
+          }
+        }
+        setHasDraft(true);
+      } else {
+        setHasDraft(false);
+      }
     } catch {
       setHasDraft(false);
     }

@@ -168,8 +168,8 @@ export default function AgencyRegister() {
         const stored = localStorage.getItem(DRAFT_STORAGE_KEY);
         if (stored) {
           const draft: DraftData = JSON.parse(stored);
-          // Only restore if draft is less than 24 hours old
-          const isRecent = Date.now() - draft.savedAt < 24 * 60 * 60 * 1000;
+          // Only restore if draft is less than 7 days old
+          const isRecent = Date.now() - draft.savedAt < 7 * 24 * 60 * 60 * 1000;
           if (isRecent && draft.currentStep > 0) {
             setPendingDraft(draft);
             setShowResumeDraft(true);
