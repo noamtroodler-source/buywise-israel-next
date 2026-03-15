@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Home } from 'lucide-react';
-import {
+import { Home, TrendingUp } from 'lucide-react';
   CartesianGrid,
   Line,
   LineChart,
