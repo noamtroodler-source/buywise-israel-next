@@ -170,11 +170,16 @@ function AffordabilityCalculatorContent() {
   const [foreignIncomePercent, setForeignIncomePercent] = useState(DEFAULTS.foreignIncomePercent);
   
   const [educationOpen, setEducationOpen] = useState(false);
+  const [selectedCity, setSelectedCity] = useState<string>('');
   
   const [selectedBuyerType, setSelectedBuyerType] = useState<BuyerCategory>('first_time');
   const [olehIsFirstProperty, setOlehIsFirstProperty] = useState(true);
   const { showPrompt: showSavePrompt, dismissPrompt: dismissSavePrompt, trackChange } = useSavePromptTrigger();
   const [hasInteracted, setHasInteracted] = useState(false);
+
+  // City room prices data
+  const { data: availableCities = [] } = useAvailableCities();
+  const { data: roomPrices = [] } = useCityRoomPrices(selectedCity || null);
 
   // Convert down payment input to ILS whenever currency or amount changes
   useEffect(() => {
