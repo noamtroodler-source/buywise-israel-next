@@ -205,8 +205,30 @@ export function PriceByApartmentSize({
     );
   };
 
-  // Don't render if no room-specific data
-  if (latestPrices.length === 0 || displayData.length < 2) return null;
+  const hasNoData = latestPrices.length === 0 || displayData.length < 2;
+
+  // Detect partial room data (e.g. Efrat only has 5-room)
+  const availableRoomTypes = ROOM_CONFIG.filter((room) =>
+    latestPrices.some((p) => p.roomType === room.rooms),
+  );
+  const missingRoomTypes = ROOM_CONFIG.filter(
+    (room) => !latestPrices.some((p) => p.roomType === room.rooms),
+  );
+  const hasPartialData = !hasNoData && missingRoomTypes.length > 0 && availableRoomTypes.length > 0;
+
+  // Detect comparison cities with no data for selected room type
+  const comparisonCitiesWithNoData = useMemo(() => {
+    if (!isComparing || compDisplayData.length === 0) return [];
+    return comparisonSlugs.filter((slug) => {
+      return !compDisplayData.some((d) => d[slug] != null);
+    });
+  }, [compDisplayData, comparisonSlugs, isComparing]);
+
+  const compCityNamesWithNoData = comparisonCitiesWithNoData.map(
+    (slug) => citySlugNameMap[slug] || slug,
+  );
+
+  const selectedRoomLabel = ROOM_CONFIG.find((r) => r.rooms === selectedRoom)?.label || `${selectedRoom}-Room`;
 
   const yearRange =
     displayData.length >= 2 ? `${displayData[0].label}–${displayData[displayData.length - 1].label}` : '';
