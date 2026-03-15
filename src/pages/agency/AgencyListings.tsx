@@ -36,6 +36,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useUpdatePropertyStatus, useDuplicateProperty } from '@/hooks/useAgentProfile';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { cn } from '@/lib/utils';
+import { exportToCSV } from '@/lib/csvExport';
 import { AgencyListingsSkeleton } from '@/components/agency/skeletons/AgencyPageSkeletons';
 import { EnhancedEmptyState } from '@/components/shared/EnhancedEmptyState';
 
