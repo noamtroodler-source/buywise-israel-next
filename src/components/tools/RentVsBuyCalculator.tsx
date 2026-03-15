@@ -270,9 +270,14 @@ export function RentVsBuyCalculator() {
   // Get suggested values from city metrics
   const suggestedRent = useMemo(() => {
     if (!cityMetrics) return null;
-    const range = getRentalRange(cityMetrics, parseInt(rooms));
-    if (range.min && range.max) {
-      return Math.round((range.min + range.max) / 2);
+    const roomCount = parseInt(rooms);
+    let min: number | null = null;
+    let max: number | null = null;
+    if (roomCount === 3) { min = cityMetrics.rental_3_room_min; max = cityMetrics.rental_3_room_max; }
+    else if (roomCount === 4) { min = cityMetrics.rental_4_room_min; max = cityMetrics.rental_4_room_max; }
+    else if (roomCount === 5) { min = (cityMetrics as any).rental_5_room_min; max = (cityMetrics as any).rental_5_room_max; }
+    if (min && max) {
+      return Math.round((min + max) / 2);
     }
     return null;
   }, [cityMetrics, rooms]);

@@ -135,10 +135,15 @@ export default function Compare() {
   };
 
   const getRentalYield = (property: Property) => {
-    const cityData = rentalData.filter(r => r.city.toLowerCase() === property.city.toLowerCase());
-    const roomMatch = cityData.find(r => r.rooms === property.bedrooms);
-    if (roomMatch && property.price > 0) {
-      const avgRent = (roomMatch.price_min + roomMatch.price_max) / 2;
+    const city = cityData.find(c => c.name.toLowerCase() === property.city.toLowerCase());
+    if (!city || property.price <= 0) return '—';
+    const rooms = property.bedrooms;
+    let min: number | null = null, max: number | null = null;
+    if (rooms === 3) { min = city.rental_3_room_min; max = city.rental_3_room_max; }
+    else if (rooms === 4) { min = city.rental_4_room_min; max = city.rental_4_room_max; }
+    else if (rooms === 5) { min = city.rental_5_room_min; max = city.rental_5_room_max; }
+    if (min && max) {
+      const avgRent = (min + max) / 2;
       const annualRent = avgRent * 12;
       const yieldPercent = (annualRent / property.price) * 100;
       return `${yieldPercent.toFixed(1)}%`;
