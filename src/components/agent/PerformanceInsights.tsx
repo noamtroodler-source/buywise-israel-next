@@ -108,7 +108,7 @@ export function PerformanceInsights({ metrics, topListingTitle, className }: Per
                 <div className="flex items-end justify-between">
                   <span className="text-2xl font-bold">
                     {metric.format === 'percent' 
-                      ? `${metric.current.toFixed(1)}%`
+                      ? (metric.current === 0 && metric.previous === 0 ? '—' : `${metric.current.toFixed(1)}%`)
                       : metric.current.toLocaleString()
                     }
                   </span>
