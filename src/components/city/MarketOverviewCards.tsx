@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
-import { MarketData } from '@/types/projects';
 import { useBuyerProfile, BuyerProfile } from '@/hooks/useBuyerProfile';
 import { calculateArnonaWithDiscount } from '@/lib/calculations/arnona';
 import { ARNONA_AREA_TOOLTIP } from '@/lib/content/areaTooltips';
@@ -13,40 +12,29 @@ import { InlineSourceBadge } from '@/components/shared/InlineSourceBadge';
 import { NATIONAL_AVG_PRICE_SQM, NATIONAL_AVG_ARNONA } from '@/lib/constants/marketAverages';
 
 interface MarketOverviewCardsProps {
-  marketData: MarketData[];
   cityName: string;
   arnonaRateSqm?: number | null;
   propertyTypes?: { name: string; value: number }[];
   dataSources?: Record<string, string> | null;
   lastVerified?: string | null;
-  // For proper fallback when market_data is empty
-  canonicalMetrics?: {
-    average_price_sqm?: number | null;
-  } | null;
   cityData?: {
     average_price_sqm?: number | null;
   };
 }
 
 export function MarketOverviewCards({
-  marketData, 
   cityName, 
   arnonaRateSqm,
   propertyTypes = [],
   dataSources,
   lastVerified,
-  canonicalMetrics,
   cityData
 }: MarketOverviewCardsProps) {
   const [apartmentSize, setApartmentSize] = useState(80);
   const { data: buyerProfile } = useBuyerProfile();
   
-  const latestData = marketData[0];
-  // Priority: Canonical > cityData > marketData > 0
-  const pricePerSqm = canonicalMetrics?.average_price_sqm 
-    ?? cityData?.average_price_sqm 
-    ?? latestData?.average_price_sqm 
-    ?? 0;
+  // Use cityData directly — cities table is the single source of truth
+  const pricePerSqm = cityData?.average_price_sqm ?? 0;
   const percentDiff = ((pricePerSqm - NATIONAL_AVG_PRICE_SQM) / NATIONAL_AVG_PRICE_SQM) * 100;
   
   // Arnona calculations with discount

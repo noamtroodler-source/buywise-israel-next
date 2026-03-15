@@ -34,25 +34,16 @@ import {
   formatDaysOnMarket,
 } from '@/lib/property-labels';
 
-interface RentalData {
-  city: string;
-  rooms: number;
-  price_min: number;
-  price_max: number;
-}
-
-interface MarketDataEntry {
-  city: string;
-  average_price_sqm: number | null;
-  price_change_percent: number | null;
-  year: number;
-  month: number | null;
-}
-
 interface CityData {
   name: string;
   average_price_sqm: number | null;
   yoy_price_change: number | null;
+  rental_3_room_min: number | null;
+  rental_3_room_max: number | null;
+  rental_4_room_min: number | null;
+  rental_4_room_max: number | null;
+  rental_5_room_min: number | null;
+  rental_5_room_max: number | null;
 }
 
 export default function Compare() {
@@ -60,8 +51,6 @@ export default function Compare() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [investorView, setInvestorView] = useState(false);
-  const [rentalData, setRentalData] = useState<RentalData[]>([]);
-  const [marketData, setMarketData] = useState<MarketDataEntry[]>([]);
   const [cityData, setCityData] = useState<CityData[]>([]);
   const { user } = useAuth();
   const { favoriteIds, toggleFavorite } = useFavorites();
@@ -91,15 +80,11 @@ export default function Compare() {
 
         const cities = [...new Set(ordered.map(p => p.city))];
         
-        const [rentalResult, marketResult, citiesResult] = await Promise.all([
-          supabase.from('rental_prices').select('*').in('city', cities),
-          supabase.from('market_data').select('*').in('city', cities).order('year', { ascending: false }).order('month', { ascending: false }),
-          supabase.from('cities').select('name, average_price_sqm, yoy_price_change')
-        ]);
+        const citiesResult = await supabase
+          .from('cities')
+          .select('name, average_price_sqm, yoy_price_change, rental_3_room_min, rental_3_room_max, rental_4_room_min, rental_4_room_max, rental_5_room_min, rental_5_room_max');
 
-        if (rentalResult.data) setRentalData(rentalResult.data);
-        if (marketResult.data) setMarketData(marketResult.data);
-        if (citiesResult.data) setCityData(citiesResult.data);
+        if (citiesResult.data) setCityData(citiesResult.data as CityData[]);
       }
       setLoading(false);
     }
@@ -135,20 +120,30 @@ export default function Compare() {
 
   // Helper functions for investment metrics
   const getEstimatedRent = (property: Property) => {
-    const cityData = rentalData.filter(r => r.city.toLowerCase() === property.city.toLowerCase());
-    const roomMatch = cityData.find(r => r.rooms === property.bedrooms);
-    if (roomMatch) {
-      const avgRent = Math.round((roomMatch.price_min + roomMatch.price_max) / 2);
+    const city = cityData.find(c => c.name.toLowerCase() === property.city.toLowerCase());
+    if (!city) return '—';
+    const rooms = property.bedrooms;
+    let min: number | null = null, max: number | null = null;
+    if (rooms === 3) { min = city.rental_3_room_min; max = city.rental_3_room_max; }
+    else if (rooms === 4) { min = city.rental_4_room_min; max = city.rental_4_room_max; }
+    else if (rooms === 5) { min = city.rental_5_room_min; max = city.rental_5_room_max; }
+    if (min && max) {
+      const avgRent = Math.round((min + max) / 2);
       return formatPrice(avgRent, 'ILS') + '/mo';
     }
     return '—';
   };
 
   const getRentalYield = (property: Property) => {
-    const cityData = rentalData.filter(r => r.city.toLowerCase() === property.city.toLowerCase());
-    const roomMatch = cityData.find(r => r.rooms === property.bedrooms);
-    if (roomMatch && property.price > 0) {
-      const avgRent = (roomMatch.price_min + roomMatch.price_max) / 2;
+    const city = cityData.find(c => c.name.toLowerCase() === property.city.toLowerCase());
+    if (!city || property.price <= 0) return '—';
+    const rooms = property.bedrooms;
+    let min: number | null = null, max: number | null = null;
+    if (rooms === 3) { min = city.rental_3_room_min; max = city.rental_3_room_max; }
+    else if (rooms === 4) { min = city.rental_4_room_min; max = city.rental_4_room_max; }
+    else if (rooms === 5) { min = city.rental_5_room_min; max = city.rental_5_room_max; }
+    if (min && max) {
+      const avgRent = (min + max) / 2;
       const annualRent = avgRent * 12;
       const yieldPercent = (annualRent / property.price) * 100;
       return `${yieldPercent.toFixed(1)}%`;
@@ -364,10 +359,15 @@ export default function Compare() {
       tooltip: 'Annual rent divided by purchase price. Higher = better investment return.',
       getBestPropertyId: (props: Property[]) => {
         const yields = props.map(p => {
-          const cityData = rentalData.filter(r => r.city.toLowerCase() === p.city.toLowerCase());
-          const roomMatch = cityData.find(r => r.rooms === p.bedrooms);
-          if (roomMatch && p.price > 0) {
-            const avgRent = (roomMatch.price_min + roomMatch.price_max) / 2;
+          const city = cityData.find(c => c.name.toLowerCase() === p.city.toLowerCase());
+          if (!city || p.price <= 0) return { id: p.id, yield: 0 };
+          const rooms = p.bedrooms;
+          let min: number | null = null, max: number | null = null;
+          if (rooms === 3) { min = city.rental_3_room_min; max = city.rental_3_room_max; }
+          else if (rooms === 4) { min = city.rental_4_room_min; max = city.rental_4_room_max; }
+          else if (rooms === 5) { min = city.rental_5_room_min; max = city.rental_5_room_max; }
+          if (min && max) {
+            const avgRent = (min + max) / 2;
             return { id: p.id, yield: (avgRent * 12 / p.price) * 100 };
           }
           return { id: p.id, yield: 0 };
@@ -387,7 +387,7 @@ export default function Compare() {
       getValue: (p: Property) => getPriceChange(p),
       tooltip: 'How prices in this area changed over the past year.',
     },
-  ], [rentalData, cityData]);
+  ], [cityData]);
 
   // Calculate winner counts
   const winnerCounts = useMemo(() => {

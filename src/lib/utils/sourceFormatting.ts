@@ -8,7 +8,7 @@ export const SOURCE_LABELS: Record<string, string | null> = {
   rental_data: 'Rental Data',
   arnona: 'Arnona',
   arnona_data: 'Arnona',
-  historical_prices: 'Historical Prices',
+  price_history: 'Price History',
   market_factors: 'Market Factors',
   demographics: 'Demographics',
   

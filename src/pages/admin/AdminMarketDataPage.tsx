@@ -7,41 +7,26 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Search, Plus, Edit, Trash2, RefreshCw, TrendingUp, Calendar } from 'lucide-react';
+import { Search, Plus, Edit, RefreshCw, TrendingUp, Calendar } from 'lucide-react';
 
-interface HistoricalPrice {
+interface CityPriceEntry {
   id: string;
-  city: string;
+  city_en: string;
   year: number;
-  average_price: number | null;
-  average_price_sqm: number | null;
-  yoy_change_percent: number | null;
-  transaction_count: number | null;
-  source: string | null;
-  notes: string | null;
+  quarter: number;
+  rooms: number;
+  avg_price_nis: number | null;
+  country_avg: number | null;
 }
 
 interface PurchaseTaxBracket {
@@ -58,21 +43,23 @@ interface PurchaseTaxBracket {
 export function AdminMarketDataPage() {
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
-  const [editingPrice, setEditingPrice] = useState<HistoricalPrice | null>(null);
+  const [editingPrice, setEditingPrice] = useState<CityPriceEntry | null>(null);
   const [editingBracket, setEditingBracket] = useState<PurchaseTaxBracket | null>(null);
   const [isAddingPrice, setIsAddingPrice] = useState(false);
 
-  // Historical Prices
-  const { data: historicalPrices, isLoading: loadingPrices } = useQuery({
-    queryKey: ['admin-historical-prices'],
+  // City Price History
+  const { data: priceHistory, isLoading: loadingPrices } = useQuery({
+    queryKey: ['admin-city-price-history'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('historical_prices')
+        .from('city_price_history')
         .select('*')
-        .order('city')
-        .order('year', { ascending: false });
+        .order('city_en')
+        .order('year', { ascending: false })
+        .order('quarter', { ascending: false })
+        .limit(500);
       if (error) throw error;
-      return data as HistoricalPrice[];
+      return data as CityPriceEntry[];
     },
   });
 
@@ -91,16 +78,16 @@ export function AdminMarketDataPage() {
   });
 
   const updatePriceMutation = useMutation({
-    mutationFn: async (price: Partial<HistoricalPrice> & { id: string }) => {
-      const { id, ...data } = price;
+    mutationFn: async (entry: Partial<CityPriceEntry> & { id: string }) => {
+      const { id, ...data } = entry;
       const { error } = await supabase
-        .from('historical_prices')
+        .from('city_price_history')
         .update(data)
         .eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-historical-prices'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-city-price-history'] });
       toast.success('Price data updated');
       setEditingPrice(null);
     },
@@ -108,12 +95,12 @@ export function AdminMarketDataPage() {
   });
 
   const addPriceMutation = useMutation({
-    mutationFn: async (price: Omit<HistoricalPrice, 'id'>) => {
-      const { error } = await supabase.from('historical_prices').insert([price]);
+    mutationFn: async (entry: Omit<CityPriceEntry, 'id'>) => {
+      const { error } = await supabase.from('city_price_history').insert([entry]);
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-historical-prices'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-city-price-history'] });
       toast.success('Price data added');
       setIsAddingPrice(false);
     },
@@ -138,11 +125,11 @@ export function AdminMarketDataPage() {
     onError: (error) => toast.error('Failed to update: ' + error.message),
   });
 
-  const filteredPrices = historicalPrices?.filter((p) =>
-    p.city.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredPrices = priceHistory?.filter((p) =>
+    p.city_en.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const uniqueCities = [...new Set(historicalPrices?.map((p) => p.city) || [])];
+  const uniqueCities = [...new Set(priceHistory?.map((p) => p.city_en) || [])];
   const buyerTypes = [...new Set(taxBrackets?.map((b) => b.buyer_type) || [])];
 
   const formatCurrency = (val: number | null) =>
@@ -161,7 +148,7 @@ export function AdminMarketDataPage() {
       <div>
         <h2 className="text-2xl font-bold text-foreground">Market Data Management</h2>
         <p className="text-muted-foreground">
-          Manage historical prices and tax brackets.
+          Manage city price history (CBS data) and tax brackets.
         </p>
       </div>
 
@@ -169,7 +156,7 @@ export function AdminMarketDataPage() {
         <TabsList>
           <TabsTrigger value="prices" className="flex items-center gap-2">
             <TrendingUp className="h-4 w-4" />
-            Historical Prices
+            City Price History
           </TabsTrigger>
           <TabsTrigger value="brackets" className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
@@ -203,50 +190,31 @@ export function AdminMarketDataPage() {
                     <TableRow>
                       <TableHead>City</TableHead>
                       <TableHead>Year</TableHead>
-                      <TableHead className="text-right">Avg Price</TableHead>
-                      <TableHead className="text-right">₪/sqm</TableHead>
-                      <TableHead className="text-right">YoY %</TableHead>
-                      <TableHead>Source</TableHead>
+                      <TableHead>Quarter</TableHead>
+                      <TableHead>Rooms</TableHead>
+                      <TableHead className="text-right">Avg Price (₪)</TableHead>
+                      <TableHead className="text-right">Country Avg</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredPrices?.slice(0, 100).map((price) => (
-                      <TableRow key={price.id}>
-                        <TableCell className="font-medium">{price.city}</TableCell>
-                        <TableCell>{price.year}</TableCell>
+                    {filteredPrices?.slice(0, 100).map((entry) => (
+                      <TableRow key={entry.id}>
+                        <TableCell className="font-medium">{entry.city_en}</TableCell>
+                        <TableCell>{entry.year}</TableCell>
+                        <TableCell>Q{entry.quarter}</TableCell>
+                        <TableCell>{entry.rooms}</TableCell>
                         <TableCell className="text-right">
-                          {formatCurrency(price.average_price)}
+                          {formatCurrency(entry.avg_price_nis)}
                         </TableCell>
                         <TableCell className="text-right">
-                          {formatCurrency(price.average_price_sqm)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {price.yoy_change_percent != null ? (
-                            <span
-                              className={
-                                price.yoy_change_percent >= 0
-                                  ? 'text-green-600'
-                                  : 'text-red-600'
-                              }
-                            >
-                              {price.yoy_change_percent >= 0 ? '+' : ''}
-                              {price.yoy_change_percent}%
-                            </span>
-                          ) : (
-                            '-'
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {price.source && (
-                            <Badge variant="outline">{price.source}</Badge>
-                          )}
+                          {formatCurrency(entry.country_avg)}
                         </TableCell>
                         <TableCell className="text-right">
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => setEditingPrice(price)}
+                            onClick={() => setEditingPrice(entry)}
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -331,7 +299,7 @@ export function AdminMarketDataPage() {
       <Dialog open={!!editingPrice} onOpenChange={(open) => !open && setEditingPrice(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Historical Price</DialogTitle>
+            <DialogTitle>Edit Price Entry</DialogTitle>
           </DialogHeader>
           {editingPrice && (
             <PriceForm
@@ -349,11 +317,11 @@ export function AdminMarketDataPage() {
       <Dialog open={isAddingPrice} onOpenChange={setIsAddingPrice}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Historical Price</DialogTitle>
+            <DialogTitle>Add Price Entry</DialogTitle>
           </DialogHeader>
           <PriceForm
             cities={uniqueCities}
-            onSubmit={(data) => addPriceMutation.mutate(data as Omit<HistoricalPrice, 'id'>)}
+            onSubmit={(data) => addPriceMutation.mutate(data as Omit<CityPriceEntry, 'id'>)}
             onCancel={() => setIsAddingPrice(false)}
             isLoading={addPriceMutation.isPending}
           />
@@ -390,14 +358,14 @@ function PriceForm({
   onCancel,
   isLoading,
 }: {
-  initialData?: Partial<HistoricalPrice>;
+  initialData?: Partial<CityPriceEntry>;
   cities: string[];
-  onSubmit: (data: Partial<HistoricalPrice>) => void;
+  onSubmit: (data: Partial<CityPriceEntry>) => void;
   onCancel: () => void;
   isLoading: boolean;
 }) {
-  const [formData, setFormData] = useState<Partial<HistoricalPrice>>(
-    initialData || { city: '', year: new Date().getFullYear() }
+  const [formData, setFormData] = useState<Partial<CityPriceEntry>>(
+    initialData || { city_en: '', year: new Date().getFullYear(), quarter: 1, rooms: 3 }
   );
 
   return (
@@ -406,8 +374,8 @@ function PriceForm({
         <div className="space-y-1.5">
           <Label>City</Label>
           <Input
-            value={formData.city || ''}
-            onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+            value={formData.city_en || ''}
+            onChange={(e) => setFormData({ ...formData, city_en: e.target.value })}
             list="cities"
           />
           <datalist id="cities">
@@ -427,52 +395,53 @@ function PriceForm({
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <Label>Average Price (₪)</Label>
-          <Input
-            type="number"
-            value={formData.average_price || ''}
-            onChange={(e) =>
-              setFormData({
-                ...formData,
-                average_price: e.target.value ? parseFloat(e.target.value) : null,
-              })
-            }
-          />
+          <Label>Quarter</Label>
+          <Select
+            value={String(formData.quarter || 1)}
+            onValueChange={(v) => setFormData({ ...formData, quarter: parseInt(v) })}
+          >
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {[1, 2, 3, 4].map(q => (
+                <SelectItem key={q} value={String(q)}>Q{q}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-1.5">
-          <Label>Price per sqm (₪)</Label>
+          <Label>Rooms</Label>
           <Input
             type="number"
-            value={formData.average_price_sqm || ''}
-            onChange={(e) =>
-              setFormData({
-                ...formData,
-                average_price_sqm: e.target.value ? parseFloat(e.target.value) : null,
-              })
-            }
+            value={formData.rooms || ''}
+            onChange={(e) => setFormData({ ...formData, rooms: parseInt(e.target.value) })}
           />
         </div>
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <Label>YoY Change (%)</Label>
+          <Label>Average Price (₪)</Label>
           <Input
             type="number"
-            step="0.1"
-            value={formData.yoy_change_percent ?? ''}
+            value={formData.avg_price_nis || ''}
             onChange={(e) =>
               setFormData({
                 ...formData,
-                yoy_change_percent: e.target.value ? parseFloat(e.target.value) : null,
+                avg_price_nis: e.target.value ? parseFloat(e.target.value) : null,
               })
             }
           />
         </div>
         <div className="space-y-1.5">
-          <Label>Source</Label>
+          <Label>Country Average (₪)</Label>
           <Input
-            value={formData.source || ''}
-            onChange={(e) => setFormData({ ...formData, source: e.target.value })}
+            type="number"
+            value={formData.country_avg || ''}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                country_avg: e.target.value ? parseFloat(e.target.value) : null,
+              })
+            }
           />
         </div>
       </div>
@@ -526,19 +495,38 @@ function BracketForm({
                 bracket_max: e.target.value ? parseFloat(e.target.value) : null,
               })
             }
-            placeholder="Leave empty for no limit"
+            placeholder="No limit"
+          />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-1.5">
+          <Label>Rate (%)</Label>
+          <Input
+            type="number"
+            step="0.01"
+            value={formData.rate_percent || ''}
+            onChange={(e) =>
+              setFormData({ ...formData, rate_percent: parseFloat(e.target.value) })
+            }
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Effective From</Label>
+          <Input
+            type="date"
+            value={formData.effective_from || ''}
+            onChange={(e) =>
+              setFormData({ ...formData, effective_from: e.target.value })
+            }
           />
         </div>
       </div>
       <div className="space-y-1.5">
-        <Label>Rate (%)</Label>
+        <Label>Notes</Label>
         <Input
-          type="number"
-          step="0.1"
-          value={formData.rate_percent || ''}
-          onChange={(e) =>
-            setFormData({ ...formData, rate_percent: parseFloat(e.target.value) })
-          }
+          value={formData.notes || ''}
+          onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
         />
       </div>
       <DialogFooter>

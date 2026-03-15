@@ -1,15 +1,11 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CanonicalMetrics, getRentalRange } from '@/hooks/useCanonicalMetrics';
-import { MarketData } from '@/types/projects';
 import { InlineSourceBadge } from '@/components/shared/InlineSourceBadge';
 import { useFormatPrice, useCurrencySymbol, useAreaUnitLabel, useFormatPricePerArea } from '@/contexts/PreferencesContext';
 import { NATIONAL_AVG_PRICE_SQM } from '@/lib/constants/marketAverages';
 
 interface CityQuickStatsProps {
-  marketData: MarketData[];
-  canonicalMetrics?: CanonicalMetrics | null;
   cityData?: {
     average_price_sqm?: number | null;
     average_price_sqm_min?: number | null;
@@ -29,8 +25,7 @@ interface CityQuickStatsProps {
   lastVerified?: string | null;
 }
 
-export function CityQuickStats({ marketData, canonicalMetrics, cityData, dataSources, lastVerified }: CityQuickStatsProps) {
-  // Determine if we have verified data
+export function CityQuickStats({ cityData, dataSources, lastVerified }: CityQuickStatsProps) {
   const hasVerifiedData = !!(dataSources && Object.keys(dataSources).length > 0);
   const [selectedRooms, setSelectedRooms] = useState<number>(3);
   
@@ -39,18 +34,8 @@ export function CityQuickStats({ marketData, canonicalMetrics, cityData, dataSou
   const areaUnitLabel = useAreaUnitLabel();
   const formatPricePerArea = useFormatPricePerArea();
   
-  const latestData = marketData[0];
-  
-  // Priority: Canonical > cityData > marketData
-  const pricePerSqm = canonicalMetrics?.average_price_sqm 
-    ?? cityData?.average_price_sqm 
-    ?? latestData?.average_price_sqm 
-    ?? null;
-    
-  const medianPrice = canonicalMetrics?.median_apartment_price 
-    ?? cityData?.median_apartment_price 
-    ?? latestData?.median_price 
-    ?? null;
+  const pricePerSqm = cityData?.average_price_sqm ?? null;
+  const medianPrice = cityData?.median_apartment_price ?? null;
 
   // National comparison
   const priceVsNational = pricePerSqm 
@@ -70,23 +55,23 @@ export function CityQuickStats({ marketData, canonicalMetrics, cityData, dataSou
   const formatRentalPrice = (value: number) => formatPriceHook(value, 'ILS');
 
   const getRentalPriceRange = () => {
-    if (canonicalMetrics) {
-      const range = getRentalRange(canonicalMetrics, selectedRooms);
-      if (range.min && range.max) {
-        return `${formatRentalPrice(range.min)}–${formatRentalPrice(range.max)}`;
+    const getRentalForRooms = (rooms: number) => {
+      if (rooms === 3 && cityData?.rental_3_room_min && cityData?.rental_3_room_max) {
+        return { min: cityData.rental_3_room_min, max: cityData.rental_3_room_max };
       }
+      if (rooms === 4 && cityData?.rental_4_room_min && cityData?.rental_4_room_max) {
+        return { min: cityData.rental_4_room_min, max: cityData.rental_4_room_max };
+      }
+      if (rooms === 5 && cityData?.rental_5_room_min && cityData?.rental_5_room_max) {
+        return { min: cityData.rental_5_room_min, max: cityData.rental_5_room_max };
+      }
+      return null;
+    };
+
+    const range = getRentalForRooms(selectedRooms);
+    if (range) {
+      return `${formatRentalPrice(range.min)}–${formatRentalPrice(range.max)}`;
     }
-    
-    if (selectedRooms === 3 && cityData?.rental_3_room_min && cityData?.rental_3_room_max) {
-      return `${formatRentalPrice(cityData.rental_3_room_min)}–${formatRentalPrice(cityData.rental_3_room_max)}`;
-    }
-    if (selectedRooms === 4 && cityData?.rental_4_room_min && cityData?.rental_4_room_max) {
-      return `${formatRentalPrice(cityData.rental_4_room_min)}–${formatRentalPrice(cityData.rental_4_room_max)}`;
-    }
-    if (selectedRooms === 5 && cityData?.rental_5_room_min && cityData?.rental_5_room_max) {
-      return `${formatRentalPrice(cityData.rental_5_room_min)}–${formatRentalPrice(cityData.rental_5_room_max)}`;
-    }
-    
     return null;
   };
 
@@ -94,7 +79,7 @@ export function CityQuickStats({ marketData, canonicalMetrics, cityData, dataSou
 
   // Yield range display
   const getYieldDisplay = () => {
-    const grossYield = canonicalMetrics?.gross_yield_percent ?? cityData?.gross_yield_percent;
+    const grossYield = cityData?.gross_yield_percent;
     const yieldMin = cityData?.gross_yield_percent_min;
     const yieldMax = cityData?.gross_yield_percent_max;
     
@@ -192,7 +177,7 @@ export function CityQuickStats({ marketData, canonicalMetrics, cityData, dataSou
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {[2, 3, 4, 5].map((rooms) => (
+                  {[3, 4, 5].map((rooms) => (
                     <SelectItem key={rooms} value={rooms.toString()}>
                       {rooms} rooms
                     </SelectItem>

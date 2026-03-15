@@ -70,7 +70,7 @@ function mapCategoryToBuyerType(category: SharedBuyerCategory): BuyerType {
   return mapping[category] || 'first_time';
 }
 import { useCities } from '@/hooks/useCities';
-import { useCanonicalMetrics, getRentalRange } from '@/hooks/useCanonicalMetrics';
+import { useCityDetails } from '@/hooks/useCityDetails';
 import { usePreferences, useFormatPrice, useFormatArea, useCurrencySymbol } from '@/contexts/PreferencesContext';
 import { calculateMasShevach } from '@/lib/calculations/capitalGains';
 import { cn } from '@/lib/utils';
@@ -210,7 +210,7 @@ export function RentVsBuyCalculator() {
   }, [propertyPrice, monthlyRent, downPaymentPercent, timeHorizon, buyerType, trackChange]);
 
   // Get canonical metrics for selected city
-  const { data: cityMetrics } = useCanonicalMetrics(selectedCity);
+  const { data: cityMetrics } = useCityDetails(selectedCity);
   
   // Auto-populate buyer type from profile
   useEffect(() => {
@@ -270,9 +270,14 @@ export function RentVsBuyCalculator() {
   // Get suggested values from city metrics
   const suggestedRent = useMemo(() => {
     if (!cityMetrics) return null;
-    const range = getRentalRange(cityMetrics, parseInt(rooms));
-    if (range.min && range.max) {
-      return Math.round((range.min + range.max) / 2);
+    const roomCount = parseInt(rooms);
+    let min: number | null = null;
+    let max: number | null = null;
+    if (roomCount === 3) { min = cityMetrics.rental_3_room_min; max = cityMetrics.rental_3_room_max; }
+    else if (roomCount === 4) { min = cityMetrics.rental_4_room_min; max = cityMetrics.rental_4_room_max; }
+    else if (roomCount === 5) { min = (cityMetrics as any).rental_5_room_min; max = (cityMetrics as any).rental_5_room_max; }
+    if (min && max) {
+      return Math.round((min + max) / 2);
     }
     return null;
   }, [cityMetrics, rooms]);

@@ -4,17 +4,16 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TrendingUp } from 'lucide-react';
-import { MarketData } from '@/types/projects';
 import { CityComparisonSelector } from './CityComparisonSelector';
 import { useCities } from '@/hooks/useCities';
-import { useCityComparison } from '@/hooks/useMarketData';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PriceTrendChartProps {
-  marketData: MarketData[];
   cityName: string;
 }
 
-const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const quarterLabels = ['Q1', 'Q2', 'Q3', 'Q4'];
 
 const LINE_COLORS = [
   'hsl(213 94% 45%)',  // Primary blue
@@ -22,13 +21,31 @@ const LINE_COLORS = [
   'hsl(221 83% 53%)',  // Secondary blue
 ];
 
-export function PriceTrendChart({ marketData, cityName }: PriceTrendChartProps) {
+function useCityPriceTrend(cityNames: string[]) {
+  return useQuery({
+    queryKey: ['city-price-trend', cityNames],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('city_price_history')
+        .select('*')
+        .in('city_en', cityNames)
+        .order('year', { ascending: true })
+        .order('quarter', { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: cityNames.length > 0,
+  });
+}
+
+export function PriceTrendChart({ cityName }: PriceTrendChartProps) {
   const normalizedCityName = cityName.trim();
-  const [period, setPeriod] = useState<'6m' | '1y' | 'all'>('6m');
+  const [period, setPeriod] = useState<'2y' | '5y' | 'all'>('5y');
   const [selectedCities, setSelectedCities] = useState<string[]>([normalizedCityName]);
   
   const { data: allCities = [] } = useCities();
-  const { data: comparisonData = [] } = useCityComparison(selectedCities);
+  const { data: rawData = [] } = useCityPriceTrend(selectedCities);
 
   // Reset selection when city changes
   useEffect(() => {
@@ -39,40 +56,37 @@ export function PriceTrendChart({ marketData, cityName }: PriceTrendChartProps) 
     return allCities.map(c => ({ name: c.name, slug: c.slug }));
   }, [allCities]);
 
-  // Only use monthly points with a month (keeps the chart stable and predictable)
-  const monthlyMarketData = useMemo(() => {
-    return marketData.filter((d) => d.data_type === 'monthly' && d.month != null);
-  }, [marketData]);
-
-  // Process data for multi-city chart
+  // Process data: group by year+quarter, average across room types per city
   const chartData = useMemo(() => {
-    const dataToUse = selectedCities.length > 1 ? comparisonData : monthlyMarketData;
-
-    // Group data by date across all cities
     const dateMap = new Map<string, { name: string; sortKey: string; [key: string]: string | number }>();
 
-    dataToUse.forEach((d) => {
-      const dateKey = `${d.year}-${String(d.month || 1).padStart(2, '0')}`;
-      const displayKey = `${months[(d.month || 1) - 1]} ${d.year}`;
+    for (const row of rawData) {
+      if (!row.avg_price_nis) continue;
+      const dateKey = `${row.year}-Q${row.quarter}`;
+      const displayKey = `${quarterLabels[row.quarter - 1]} ${row.year}`;
 
       if (!dateMap.has(dateKey)) {
         dateMap.set(dateKey, { name: displayKey, sortKey: dateKey });
       }
 
       const entry = dateMap.get(dateKey)!;
-      // Use cityName for single-city view to ensure key matches selectedCities
-      const cityKey = (selectedCities.length === 1 ? normalizedCityName : d.city).trim();
-      entry[cityKey] = d.average_price_sqm || 0;
-    });
+      const cityKey = row.city_en.trim();
+      
+      // Average if multiple room types for same city+quarter
+      if (entry[cityKey]) {
+        entry[cityKey] = Math.round(((entry[cityKey] as number) + row.avg_price_nis) / 2);
+      } else {
+        entry[cityKey] = row.avg_price_nis;
+      }
+    }
 
-    // Sort by date and return
     return Array.from(dateMap.values()).sort((a, b) => a.sortKey.localeCompare(b.sortKey));
-  }, [monthlyMarketData, comparisonData, selectedCities, cityName]);
+  }, [rawData]);
 
   // Filter based on period
   const filteredData = useMemo(() => {
-    if (period === '6m') return chartData.slice(-6);
-    if (period === '1y') return chartData.slice(-12);
+    if (period === '2y') return chartData.slice(-8); // 8 quarters = 2 years
+    if (period === '5y') return chartData.slice(-20); // 20 quarters = 5 years
     return chartData;
   }, [chartData, period]);
 
@@ -121,8 +135,8 @@ export function PriceTrendChart({ marketData, cityName }: PriceTrendChartProps) 
               </CardTitle>
               <Tabs value={period} onValueChange={(v) => setPeriod(v as typeof period)}>
                 <TabsList className="bg-muted">
-                  <TabsTrigger value="6m" className="text-xs">6M</TabsTrigger>
-                  <TabsTrigger value="1y" className="text-xs">1Y</TabsTrigger>
+                  <TabsTrigger value="2y" className="text-xs">2Y</TabsTrigger>
+                  <TabsTrigger value="5y" className="text-xs">5Y</TabsTrigger>
                   <TabsTrigger value="all" className="text-xs">All</TabsTrigger>
                 </TabsList>
               </Tabs>

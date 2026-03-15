@@ -56,7 +56,7 @@ import { getBuyerCategoryLabel, getBuyerTaxCategory, useBuyerProfile } from '@/h
 import { calculateTaxAmount, BuyerType } from '@/lib/calculations/purchaseTax';
 import { BuyerCategory as BannerBuyerCategory } from './shared/BuyerTypeInfoBanner';
 import { useCities } from '@/hooks/useCities';
-import { useCanonicalMetrics } from '@/hooks/useCanonicalMetrics';
+import { useCityDetails } from '@/hooks/useCityDetails';
 import { usePreferences, useFormatPrice, useFormatArea, useCurrencySymbol, useAreaUnitLabel } from '@/contexts/PreferencesContext';
 import { cn } from '@/lib/utils';
 
@@ -152,7 +152,7 @@ export function TrueCostCalculator() {
   }, [propertyPrice, propertySize, selectedCity, trackChange]);
   
   // Fetch canonical metrics for selected city
-  const { data: cityMetrics } = useCanonicalMetrics(selectedCity);
+  const { data: cityMetrics } = useCityDetails(selectedCity);
   
   // Calculate suggested price based on city metrics
   const suggestedPrice = useMemo(() => {

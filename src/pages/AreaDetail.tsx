@@ -4,8 +4,6 @@ import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { useCity } from '@/hooks/useCities';
 import { useProperties } from '@/hooks/useProperties';
-import { useMarketData } from '@/hooks/useMarketData';
-import { useCanonicalMetrics } from '@/hooks/useCanonicalMetrics';
 import { useCityMarketFactors } from '@/hooks/useCityMarketFactors';
 import { useCityNeighborhoods } from '@/hooks/useCityNeighborhoods';
 import { getDistrictForCity } from '@/lib/utils/districtMapping';
@@ -24,8 +22,6 @@ import { useCityDetails } from '@/hooks/useCityDetails';
 import { SEOHead } from '@/components/seo/SEOHead';
 import { generateCityMeta, generateCityJsonLd, SITE_CONFIG } from '@/lib/seo';
 import { useTrackContentVisit } from '@/hooks/useTrackContentVisit';
-
-// Generic fallback for cities without identity_sentence in database
 
 // Hero Images (high resolution 1920x800)
 import telAvivHeroImg from '@/assets/cities/hero/tel-aviv.jpg';
@@ -63,7 +59,6 @@ import gushEtzionHeroImg from '@/assets/cities/hero/gush-etzion.jpg';
 import maaleAdumimHeroImg from '@/assets/cities/hero/maale-adumim.jpg';
 import givatZeevHeroImg from '@/assets/cities/hero/givat-zeev.jpg';
 
-// Slug to hero image mapping
 const cityHeroImages: Record<string, string> = {
   'tel-aviv': telAvivHeroImg,
   'herzliya': herzliyaHeroImg,
@@ -109,9 +104,8 @@ export default function CityDetail() {
   const { data: dbMarketFactors = [] } = useCityMarketFactors(slug || '');
   const { data: neighborhoods = [] } = useCityNeighborhoods(slug || '');
   const { data: properties = [] } = useProperties(city ? { city: city.name } : undefined);
-  const { data: marketData = [], isLoading: marketLoading } = useMarketData(city?.name);
-  const { data: canonicalMetrics } = useCanonicalMetrics(slug || '');
   const districtName = city ? getDistrictForCity(city.name) : null;
+
   if (cityLoading) {
     return (
       <Layout>
@@ -170,22 +164,18 @@ export default function CityDetail() {
     return null;
   })();
   
-  // Combine database factors and dynamic TAMA 38 factor
   const allFactors = tama38Factor 
     ? [...staticFactors.filter(f => !f.title.toLowerCase().includes('tama')), tama38Factor]
     : staticFactors;
 
-  // Limit to maximum 6 items (already sorted by sort_order from database)
   const worthWatching = allFactors.slice(0, 6);
     
   const heroImage = cityHeroImages[slug || ''] || city.hero_image || 'https://images.unsplash.com/photo-1544967082-d9d25d867d66?w=1920';
-  const medianPrice = canonicalMetrics?.median_apartment_price ?? city.median_apartment_price ?? null;
-  const grossYield = canonicalMetrics?.gross_yield_percent ?? city.gross_yield_percent ?? null;
-  // Priority: database identity_sentence > description > generic fallback
+  const medianPrice = city.median_apartment_price ?? null;
+  const grossYield = city.gross_yield_percent ?? null;
   const identitySentence = (city as any).identity_sentence || city.description || `${city.name} is a city in Israel with its own unique character and real estate market.`;
-  const yoyChange = canonicalMetrics?.yoy_price_change ?? city.yoy_price_change ?? undefined;
+  const yoyChange = city.yoy_price_change ?? undefined;
 
-  // Generate SEO meta and JSON-LD
   const seoMeta = generateCityMeta(city, properties.length);
   const jsonLd = generateCityJsonLd({
     ...city,
@@ -210,29 +200,25 @@ export default function CityDetail() {
         />
 
         {/* 2. Quick Stats Strip */}
-        {!marketLoading && (
-          <CityQuickStats
-            marketData={marketData}
-            canonicalMetrics={canonicalMetrics}
-            cityData={{
-              average_price_sqm: city.average_price_sqm,
-              average_price_sqm_min: (city as any).average_price_sqm_min,
-              average_price_sqm_max: (city as any).average_price_sqm_max,
-              median_apartment_price: city.median_apartment_price,
-              rental_3_room_min: city.rental_3_room_min,
-              rental_3_room_max: city.rental_3_room_max,
-              rental_4_room_min: city.rental_4_room_min,
-              rental_4_room_max: city.rental_4_room_max,
-              rental_5_room_min: (city as any).rental_5_room_min,
-              rental_5_room_max: (city as any).rental_5_room_max,
-              gross_yield_percent: city.gross_yield_percent,
-              gross_yield_percent_min: (city as any).gross_yield_percent_min,
-              gross_yield_percent_max: (city as any).gross_yield_percent_max,
-            }}
-            dataSources={(city as any).data_sources}
-            lastVerified={canonicalMetrics?.updated_at}
-          />
-        )}
+        <CityQuickStats
+          cityData={{
+            average_price_sqm: city.average_price_sqm,
+            average_price_sqm_min: (city as any).average_price_sqm_min,
+            average_price_sqm_max: (city as any).average_price_sqm_max,
+            median_apartment_price: city.median_apartment_price,
+            rental_3_room_min: city.rental_3_room_min,
+            rental_3_room_max: city.rental_3_room_max,
+            rental_4_room_min: city.rental_4_room_min,
+            rental_4_room_max: city.rental_4_room_max,
+            rental_5_room_min: (city as any).rental_5_room_min,
+            rental_5_room_max: (city as any).rental_5_room_max,
+            gross_yield_percent: city.gross_yield_percent,
+            gross_yield_percent_min: (city as any).gross_yield_percent_min,
+            gross_yield_percent_max: (city as any).gross_yield_percent_max,
+          }}
+          dataSources={(city as any).data_sources}
+          lastVerified={city.updated_at}
+        />
 
         {/* 2.5. Neighborhood Highlights */}
         {neighborhoods.length > 0 && (
@@ -245,17 +231,15 @@ export default function CityDetail() {
         {/* 3. Market Overview - 3 Card Grid */}
         <section id="market">
           <MarketOverviewCards
-            marketData={marketData}
             cityName={city.name}
-            arnonaRateSqm={canonicalMetrics?.arnona_rate_sqm ?? city.arnona_rate_sqm}
-            propertyTypes={canonicalMetrics ? [
-              { name: 'Resale', value: canonicalMetrics.resale_percent || 55 },
-              { name: 'New Projects', value: canonicalMetrics.new_projects_percent || 30 },
-              { name: 'Rentals', value: canonicalMetrics.rentals_percent || 15 },
-            ] : undefined}
+            arnonaRateSqm={city.arnona_rate_sqm}
+            propertyTypes={[
+              { name: 'Resale', value: (city as any).resale_percent || 55 },
+              { name: 'New Projects', value: (city as any).new_projects_percent || 30 },
+              { name: 'Rentals', value: (city as any).rentals_percent || 15 },
+            ]}
             dataSources={(city as any).data_sources}
-            lastVerified={canonicalMetrics?.updated_at}
-            canonicalMetrics={canonicalMetrics}
+            lastVerified={city.updated_at}
             cityData={{
               average_price_sqm: city.average_price_sqm,
             }}
@@ -268,7 +252,7 @@ export default function CityDetail() {
             citySlug={slug || ''}
             cityName={city.name}
             dataSources={(city as any).data_sources}
-            lastVerified={canonicalMetrics?.updated_at}
+            lastVerified={city.updated_at}
           />
         </section>
 
@@ -292,7 +276,6 @@ export default function CityDetail() {
           )}
         </section>
 
-
         {/* 8. Explore Listings CTA */}
         <section id="listings">
           <CityExploreListings 
@@ -307,7 +290,7 @@ export default function CityDetail() {
         {/* 10. Source Attribution */}
         <CitySourceAttribution 
           sources={(city as any).data_sources} 
-          lastVerified={canonicalMetrics?.updated_at}
+          lastVerified={city.updated_at}
           cityName={city.name}
           districtName={districtName}
         />
