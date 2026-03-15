@@ -52,6 +52,21 @@ export default function AgencyTeam() {
     return <AgencyTeamSkeleton />;
   }
 
+  if (agency && !isAgencyAdmin) {
+    return (
+      <Layout>
+        <div className="container py-16 max-w-lg">
+          <EnhancedEmptyState
+            icon={ShieldAlert}
+            title="Admin access required"
+            description="Only the agency admin can manage the team."
+            primaryAction={{ label: 'Back to Dashboard', href: '/agency' }}
+          />
+        </div>
+      </Layout>
+    );
+  }
+
   if (!agency) {
     return (
       <Layout>

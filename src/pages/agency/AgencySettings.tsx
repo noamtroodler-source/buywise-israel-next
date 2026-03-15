@@ -227,6 +227,21 @@ export default function AgencySettings() {
     return <AgencySettingsSkeleton />;
   }
 
+  if (agency && !isAgencyAdmin) {
+    return (
+      <Layout>
+        <div className="container py-16 max-w-lg">
+          <EnhancedEmptyState
+            icon={ShieldAlert}
+            title="Admin access required"
+            description="Only the agency admin can manage settings."
+            primaryAction={{ label: 'Back to Dashboard', href: '/agency' }}
+          />
+        </div>
+      </Layout>
+    );
+  }
+
   if (!agency) {
     return (
       <Layout>
