@@ -184,7 +184,14 @@ export function useAutoSave<T, M = Record<string, unknown>>({
       const saved = localStorage.getItem(actualStorageKey);
       if (saved) {
         const parsed = JSON.parse(saved) as SavePayload<T, M>;
-        if (parsed.data) return parsed;
+        if (parsed.data) {
+          // Auto-discard expired drafts
+          if (parsed.savedAt && isDraftExpired(parsed.savedAt)) {
+            localStorage.removeItem(actualStorageKey);
+            return null;
+          }
+          return parsed;
+        }
       }
     } catch (e) {
       console.error('Error getting saved data:', e);
