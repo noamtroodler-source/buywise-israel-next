@@ -364,7 +364,7 @@ export default function AgentDashboard() {
           {/* Two-Column Layout: Performance + Sidebar */}
           <div className="grid md:grid-cols-5 gap-6 md:items-start">
             {/* Left Column — Performance */}
-            <div className="lg:col-span-3 space-y-4">
+            <div className="md:col-span-3 space-y-4">
               <WidgetErrorBoundary fallbackTitle="Couldn't load performance data">
                 {performanceLoading ? (
                   <PerformanceSkeleton />
