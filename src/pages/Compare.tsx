@@ -120,10 +120,15 @@ export default function Compare() {
 
   // Helper functions for investment metrics
   const getEstimatedRent = (property: Property) => {
-    const cityData = rentalData.filter(r => r.city.toLowerCase() === property.city.toLowerCase());
-    const roomMatch = cityData.find(r => r.rooms === property.bedrooms);
-    if (roomMatch) {
-      const avgRent = Math.round((roomMatch.price_min + roomMatch.price_max) / 2);
+    const city = cityData.find(c => c.name.toLowerCase() === property.city.toLowerCase());
+    if (!city) return '—';
+    const rooms = property.bedrooms;
+    let min: number | null = null, max: number | null = null;
+    if (rooms === 3) { min = city.rental_3_room_min; max = city.rental_3_room_max; }
+    else if (rooms === 4) { min = city.rental_4_room_min; max = city.rental_4_room_max; }
+    else if (rooms === 5) { min = city.rental_5_room_min; max = city.rental_5_room_max; }
+    if (min && max) {
+      const avgRent = Math.round((min + max) / 2);
       return formatPrice(avgRent, 'ILS') + '/mo';
     }
     return '—';
