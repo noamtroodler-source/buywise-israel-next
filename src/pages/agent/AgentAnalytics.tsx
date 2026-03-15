@@ -8,6 +8,7 @@ import { motion } from 'framer-motion';
 import { useAgentProperties } from '@/hooks/useAgentProperties';
 import { useAgentAnalytics, DateRangeFilter } from '@/hooks/useAgentAnalytics';
 import { InquiryPieChart, PropertyPerformanceChart, FunnelMetrics } from '@/components/agent/analytics';
+import { WidgetErrorBoundary } from '@/components/shared/WidgetErrorBoundary';
 import {
   Select,
   SelectContent,
