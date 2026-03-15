@@ -51,8 +51,6 @@ export default function Compare() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [investorView, setInvestorView] = useState(false);
-  const [rentalData, setRentalData] = useState<RentalData[]>([]);
-  const [marketData, setMarketData] = useState<MarketDataEntry[]>([]);
   const [cityData, setCityData] = useState<CityData[]>([]);
   const { user } = useAuth();
   const { favoriteIds, toggleFavorite } = useFavorites();
