@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Save, Send, Loader2, ShieldAlert, AlertCircle, Clock, CheckCircle2, XCircle } from 'lucide-react';
@@ -21,6 +21,8 @@ import { useProperty } from '@/hooks/useProperties';
 import { useUpdateProperty, useSubmitForReview, VerificationStatus, useAgentProfile } from '@/hooks/useAgentProperties';
 import { PropertySubmittedDialog } from '@/components/agent/PropertySubmittedDialog';
 import { useListingLimitCheck } from '@/hooks/useListingLimitCheck';
+import { useAutoSave } from '@/hooks/useAutoSave';
+import { SaveStatusIndicator } from '@/components/shared/SaveStatusIndicator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const steps = [
