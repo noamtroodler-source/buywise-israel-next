@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Save, Send, Loader2, AlertCircle, Clock, CheckCircle2, XCircle } from 'lucide-react';
@@ -20,6 +20,8 @@ import {
 import { useProperty } from '@/hooks/useProperties';
 import { useUpdatePropertyForAgency, useSubmitForReview, VerificationStatus } from '@/hooks/useAgentProperties';
 import { PropertySubmittedDialog } from '@/components/agent/PropertySubmittedDialog';
+import { useAutoSave } from '@/hooks/useAutoSave';
+import { SaveStatusIndicator } from '@/components/shared/SaveStatusIndicator';
 
 const steps = [
   { title: 'Basics', description: 'Property type, price, location' },
@@ -62,6 +64,16 @@ function AgencyEditWizardContent({ propertyId }: { propertyId: string }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
+
+  // Auto-save for dirty tracking + beforeunload warning
+  const autoSaveMetadata = useMemo(() => ({ currentStep }), [currentStep]);
+  const { isDirty, isSaving, lastSavedAt, error: saveError, clearSavedData } = useAutoSave({
+    data: hasLoaded ? data : {},
+    storageKey: `agency-edit-property-draft-${propertyId}`,
+    debounceMs: 1000,
+    autoSaveInterval: 0,
+    metadata: autoSaveMetadata,
+  });
 
   useEffect(() => {
     if (property && !hasLoaded) {
@@ -155,6 +167,7 @@ function AgencyEditWizardContent({ propertyId }: { propertyId: string }) {
     setIsSubmitting(true);
     try {
       await updateProperty.mutateAsync(buildPayload() as any);
+      clearSavedData();
       navigate('/agency/listings');
     } finally {
       setIsSubmitting(false);
@@ -166,6 +179,7 @@ function AgencyEditWizardContent({ propertyId }: { propertyId: string }) {
     try {
       await updateProperty.mutateAsync(buildPayload() as any);
       await submitForReview.mutateAsync(propertyId);
+      clearSavedData();
       setShowSuccessDialog(true);
     } finally {
       setIsSubmitting(false);
@@ -222,6 +236,7 @@ function AgencyEditWizardContent({ propertyId }: { propertyId: string }) {
                 Back to Listings
               </Button>
               <div className="flex items-center gap-3">
+                <SaveStatusIndicator isSaving={isSaving} lastSavedAt={lastSavedAt} isDirty={isDirty} error={saveError} />
                 <Badge variant={statusInfo.variant} className={`flex items-center gap-1.5 ${statusInfo.className}`}>
                   <StatusIcon className="h-3 w-3" />
                   {statusInfo.label}

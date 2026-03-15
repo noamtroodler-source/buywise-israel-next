@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Save, Send, Loader2, ShieldAlert, AlertCircle, Clock, CheckCircle2, XCircle } from 'lucide-react';
@@ -21,6 +21,8 @@ import { useProperty } from '@/hooks/useProperties';
 import { useUpdateProperty, useSubmitForReview, VerificationStatus, useAgentProfile } from '@/hooks/useAgentProperties';
 import { PropertySubmittedDialog } from '@/components/agent/PropertySubmittedDialog';
 import { useListingLimitCheck } from '@/hooks/useListingLimitCheck';
+import { useAutoSave } from '@/hooks/useAutoSave';
+import { SaveStatusIndicator } from '@/components/shared/SaveStatusIndicator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const steps = [
@@ -103,6 +105,16 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
   
   const isAgentVerified = agentProfile?.status === 'active';
   const { canCreate: canCreateListing } = useListingLimitCheck('agency');
+
+  // Auto-save for dirty tracking + beforeunload warning
+  const autoSaveMetadata = useMemo(() => ({ currentStep }), [currentStep]);
+  const { isDirty, isSaving, lastSavedAt, error: saveError, clearSavedData } = useAutoSave({
+    data: hasLoaded ? data : {},
+    storageKey: `edit-property-draft-${propertyId}`,
+    debounceMs: 1000,
+    autoSaveInterval: 0, // No DB auto-save for edits
+    metadata: autoSaveMetadata,
+  });
 
   // Load property data into wizard context
   useEffect(() => {
@@ -201,6 +213,7 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
          furniture_items: data.furniture_items,
          featured_highlight: data.featured_highlight || null,
       } as any);
+      clearSavedData();
       navigate('/agent/properties');
     } finally {
       setIsSubmitting(false);
@@ -249,6 +262,7 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
       // Then submit for review
       await submitForReview.mutateAsync(propertyId);
       
+      clearSavedData();
       setShowSuccessDialog(true);
     } finally {
       setIsSubmitting(false);
@@ -323,6 +337,7 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
                   <StatusIcon className="h-3 w-3" />
                   {statusInfo.label}
                 </Badge>
+              <SaveStatusIndicator isSaving={isSaving} lastSavedAt={lastSavedAt} isDirty={isDirty} error={saveError} />
                 <Button
                   variant="outline"
                   size="sm"

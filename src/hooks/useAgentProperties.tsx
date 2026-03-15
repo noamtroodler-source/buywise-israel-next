@@ -432,6 +432,8 @@ export function useBulkSubmitForReview() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['agentProperties'] });
+      queryClient.invalidateQueries({ queryKey: ['agencyListingsManagement'] });
+      queryClient.invalidateQueries({ queryKey: ['properties'] });
       queryClient.invalidateQueries({ queryKey: ['pendingReviewCount'] });
     },
     onSuccess: (_data, ids) => {

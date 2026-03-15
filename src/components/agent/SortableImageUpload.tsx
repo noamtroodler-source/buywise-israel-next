@@ -21,6 +21,8 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { cn } from '@/lib/utils';
+import { RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface SortableImageUploadProps {
   images: string[];
@@ -140,6 +142,7 @@ export function SortableImageUpload({
 }: SortableImageUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [enhancingCount, setEnhancingCount] = useState(0);
+  const [failedUploads, setFailedUploads] = useState<{ file: File; error: string }[]>([]);
   const { toast } = useToast();
 
   const sensors = useSensors(
@@ -211,34 +214,81 @@ export function SortableImageUpload({
       return;
     }
 
-    const filesToUpload = Array.from(files).slice(0, remainingSlots);
+    // Validate file sizes (10MB max)
+    const MAX_SIZE = 10 * 1024 * 1024;
+    const validFiles: File[] = [];
+    const oversizedFiles: string[] = [];
+    
+    Array.from(files).slice(0, remainingSlots).forEach(file => {
+      if (file.size > MAX_SIZE) {
+        oversizedFiles.push(file.name);
+      } else {
+        validFiles.push(file);
+      }
+    });
+
+    if (oversizedFiles.length > 0) {
+      toast({
+        title: "Files too large",
+        description: `${oversizedFiles.join(', ')} exceed 10MB limit.`,
+        variant: "destructive",
+      });
+    }
+
+    if (validFiles.length === 0) {
+      event.target.value = '';
+      return;
+    }
+
     setUploading(true);
 
     try {
-      const uploadPromises = filesToUpload.map(uploadImage);
-      const newUrls = await Promise.all(uploadPromises);
-      const allImages = [...images, ...newUrls];
-      onImagesChange(allImages);
-      setUploading(false);
-
-      // Enhance only the cover photo (index 0) if it's among the newly uploaded batch
-      const coverUrl = allImages[0];
-      const isCoverNew = newUrls.includes(coverUrl);
-
-      if (isCoverNew) {
-        setEnhancingCount(1);
-        sonnerToast.info('Enhancing cover photo with AI...', { duration: 3000 });
-
-        const enhancedCover = await enhanceUploadedImage(coverUrl);
-
-        if (enhancedCover !== coverUrl) {
-          const updatedImages = allImages.map(url =>
-            url === coverUrl ? enhancedCover : url
-          );
-          onImagesChange(updatedImages);
-          sonnerToast.success('Cover photo enhanced with AI');
+      const results = await Promise.allSettled(validFiles.map(uploadImage));
+      
+      const newUrls: string[] = [];
+      const newFailed: { file: File; error: string }[] = [];
+      
+      results.forEach((result, i) => {
+        if (result.status === 'fulfilled') {
+          newUrls.push(result.value);
+        } else {
+          newFailed.push({ file: validFiles[i], error: result.reason?.message || 'Upload failed' });
         }
-        setEnhancingCount(0);
+      });
+
+      if (newFailed.length > 0) {
+        setFailedUploads(prev => [...prev, ...newFailed]);
+        toast({
+          title: `${newFailed.length} upload(s) failed`,
+          description: "You can retry failed uploads below.",
+          variant: "destructive",
+        });
+      }
+
+      if (newUrls.length > 0) {
+        const allImages = [...images, ...newUrls];
+        onImagesChange(allImages);
+        setUploading(false);
+
+        // Enhance only the cover photo (index 0) if it's among the newly uploaded batch
+        const coverUrl = allImages[0];
+        const isCoverNew = newUrls.includes(coverUrl);
+
+        if (isCoverNew) {
+          setEnhancingCount(1);
+          sonnerToast.info('Enhancing cover photo with AI...', { duration: 3000 });
+
+          const enhancedCover = await enhanceUploadedImage(coverUrl);
+
+          if (enhancedCover !== coverUrl) {
+            const updatedImages = allImages.map(url =>
+              url === coverUrl ? enhancedCover : url
+            );
+            onImagesChange(updatedImages);
+            sonnerToast.success('Cover photo enhanced with AI');
+          }
+          setEnhancingCount(0);
+        }
       }
     } catch (error) {
       console.error('Upload error:', error);
@@ -327,6 +377,57 @@ export function SortableImageUpload({
           </div>
         </SortableContext>
       </DndContext>
+
+      {/* Failed uploads retry UI */}
+      {failedUploads.length > 0 && (
+        <div className="p-3 rounded-xl border border-destructive/30 bg-destructive/5 space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium text-destructive">
+              {failedUploads.length} upload(s) failed
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs"
+              onClick={async () => {
+                const toRetry = [...failedUploads];
+                setFailedUploads([]);
+                setUploading(true);
+                try {
+                  const results = await Promise.allSettled(toRetry.map(f => uploadImage(f.file)));
+                  const newUrls: string[] = [];
+                  const stillFailed: { file: File; error: string }[] = [];
+                  results.forEach((r, i) => {
+                    if (r.status === 'fulfilled') newUrls.push(r.value);
+                    else stillFailed.push({ file: toRetry[i].file, error: r.reason?.message || 'Upload failed' });
+                  });
+                  if (stillFailed.length > 0) setFailedUploads(stillFailed);
+                  if (newUrls.length > 0) onImagesChange([...images, ...newUrls]);
+                } finally {
+                  setUploading(false);
+                }
+              }}
+            >
+              <RefreshCw className="h-3 w-3 mr-1" />
+              Retry All
+            </Button>
+          </div>
+          <ul className="text-xs text-muted-foreground space-y-1">
+            {failedUploads.map((f, i) => (
+              <li key={i} className="flex items-center justify-between">
+                <span className="truncate mr-2">{f.file.name}</span>
+                <button
+                  type="button"
+                  className="text-destructive hover:underline shrink-0"
+                  onClick={() => setFailedUploads(prev => prev.filter((_, j) => j !== i))}
+                >
+                  Dismiss
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Enhancement indicator */}
       {enhancingCount > 0 && (
