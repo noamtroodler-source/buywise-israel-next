@@ -335,14 +335,24 @@ export function useDeleteProperty() {
 
       if (error) throw error;
     },
-    onSuccess: () => {
+    onMutate: async (id: string) => {
+      await queryClient.cancelQueries({ queryKey: ['agentProperties'] });
+      const previous = queryClient.getQueryData<AgentProperty[]>(['agentProperties']);
+      queryClient.setQueryData<AgentProperty[] | undefined>(['agentProperties'], (old) =>
+        old?.filter(p => p.id !== id)
+      );
+      return { previous };
+    },
+    onError: (error, _id, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['agentProperties'], context.previous);
+      }
+      toast.error('Failed to delete property: ' + error.message);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['agentProperties'] });
       queryClient.invalidateQueries({ queryKey: ['agencyListingsManagement'] });
       queryClient.invalidateQueries({ queryKey: ['properties'] });
-      // No toast - row disappears from table visually
-    },
-    onError: (error) => {
-      toast.error('Failed to delete property: ' + error.message);
     },
   });
 }
