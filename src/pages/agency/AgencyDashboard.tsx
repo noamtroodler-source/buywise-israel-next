@@ -25,6 +25,8 @@ import { AgencyOnboardingProgress } from '@/components/agency/AgencyOnboardingPr
 import { NoPlanBanner } from '@/components/billing/NoPlanBanner';
 import { ImportWelcomeBanner } from '@/components/agency/ImportWelcomeBanner';
 import { AgencyAnnouncements } from '@/components/agency/AgencyAnnouncements';
+import { AgencyTeamActivityFeed } from '@/components/agency/AgencyTeamActivityFeed';
+import { DashboardListingsPreview } from '@/components/agency/DashboardListingsPreview';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useBlogQuotaCheck } from '@/hooks/useBlogQuota';
 import { useIsMobile } from '@/hooks/use-mobile';
