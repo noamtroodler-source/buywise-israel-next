@@ -1,35 +1,27 @@
-## Phase 1: Founding Partner Enrollment — Implemented ✅
 
-All changes from the plan have been implemented:
 
-1. **DB Migration** — Added `is_founding_partner`, `payplus_customer_id`, `payplus_subscription_id` to `subscriptions`; `payplus_subscription_id` to `featured_listings`. Updated FOUNDING2026 promo code (max_redemptions=15, cleared old discount/credit data).
-2. **`enroll-founding-partner` edge function** — 15-cap enforcement, trial creation (60 days), founding_partners insert, first month credit grant, promo redemption tracking.
-3. **`check-trial-expirations` edge function** — Daily cron (6 AM UTC) expires trialing subscriptions past trial_end.
-4. **`useFoundingSpots` hook** — Live spots remaining counter querying founding_partners.
-5. **`FoundingProgramSection`** — Updated benefits (2mo free, 3 featured/mo, early access, case study), spots counter badge.
-6. **`FoundingProgramModal`** — Updated benefits, spots counter, activates enrollment flow.
-7. **`Pricing.tsx`** — FOUNDING2026 code routes to `enroll-founding-partner` instead of Stripe; CTA changes to "Activate Founding Program".
-8. **`CheckoutSuccess.tsx`** — Founding partner variant with trial end date and featured listings CTA.
-9. **`grant-monthly-featured-credits`** — Already has 2-month duration cap logic.
-10. **`PlanCard`** — Added `ctaLabel` prop for custom CTA text.
+## Communicate Missing Data — Own Pages + Comparison Mode
 
-### Deferred (PayPlus not yet set up):
-- `payplus-checkout`, `payplus-webhook`, `manage-billing` edge functions
-- `list-invoices` PayPlus integration
-- Featured listing ₪299/mo PayPlus recurring charge
-- Trial-to-paid automatic charge initiation
+### What we're doing
+Two scenarios need missing-data messaging:
 
-## Phase 2: CBS Data Organization — Implemented ✅
+1. **On the city's own page** (Caesarea, Efrat, Gush Etzion) — instead of silently hiding chart sections, show the section header with an `InfoBanner` explaining why data is limited.
+2. **When adding a data-sparse city as a comparison** on another city's page — show a small inline notice near the comparison selector or chart indicating that the compared city has limited/no data for this view.
 
-**Data Source:** All data in these tables originates from **Nadlan.gov.il — Ministry of Justice, Israel** (official government property transaction records). This is the same authoritative source used for `sold_transactions`.
+### Changes
 
-1. **`city_price_history` table** — Quarterly avg transaction prices by city + room count (3/4/5), 2020-2025, with national comparison. ~1,625 rows from `market_data.csv`.
-2. **`neighborhood_price_history` table** — Quarterly prices by neighborhood + room count, with yield and YoY. ~52,398 rows from `neighborhood_data.csv`.
-3. **`import-cbs-data` edge function** — Admin-only bulk importer, accepts parsed CSV rows, upserts in batches of 500.
-4. **Admin import page** — `/admin/import-cbs-data` with file upload for both CSVs.
-5. **Public read-only RLS** — Both tables have SELECT-only policies (public government data).
+**1. `HistoricalPriceChart.tsx`**
+- **Own page (no data):** Replace `if (filteredData.length < 2) return null` with rendering the section shell + `InfoBanner`: *"Historical price trend data isn't available for {cityName}. The CBS requires sufficient transaction volume to publish trends."*
+- **Comparison mode (no data for compared city):** After merging comparison data, detect if a comparison city has zero data points (all `compare0`/`compare1` values are null). If so, render a small `InfoBanner` below the selector: *"{CityName} doesn't have enough transaction data for historical price trends."*
 
-### Next steps (not yet built):
-- City page trend charts using `city_price_history`
-- Neighborhood comparison widgets using `neighborhood_price_history`
-- AI market insights grounded in neighborhood-level data
+**2. `PriceByApartmentSize.tsx`**
+- **Own page (no data):** Replace `if (latestPrices.length === 0 || displayData.length < 2) return null` with section shell + `InfoBanner`: *"Room-specific price data isn't available for {cityName}. The CBS requires a minimum number of transactions per room type."*
+- **Own page (partial data, e.g. Efrat):** Add a subtle note below summary cards listing which room types are available: *"Data available for 5-room apartments only. Other room types have insufficient transaction volume."*
+- **Comparison mode (no data for compared city + room type):** Detect if a comparison city slug has zero data points in `compDisplayData`. Show `InfoBanner` below selector: *"{CityName} doesn't have {N}-room transaction data available."*
+
+**3. Both files:** Import `InfoBanner` from `@/components/tools/shared/InfoBanner`.
+
+### Detection logic
+- **Own page no data:** `filteredData.length < 2` / `latestPrices.length === 0`
+- **Comparison missing data:** After data loads, check if any comparison city slug has zero non-null values across the merged/comparison dataset. Map slug back to city name via `compareCities` state for the message.
+
