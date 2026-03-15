@@ -18,6 +18,17 @@ export function FunnelMetrics({ views, saves, inquiries }: FunnelMetricsProps) {
         <CardTitle className="text-lg">Conversion Funnel</CardTitle>
       </CardHeader>
       <CardContent>
+        {views === 0 && saves === 0 && inquiries === 0 ? (
+          <div className="flex flex-col items-center justify-center py-8 text-center">
+            <div className="p-3 rounded-xl bg-primary/10 mb-3">
+              <ArrowRight className="h-6 w-6 text-primary" />
+            </div>
+            <p className="text-sm font-medium text-foreground">No funnel data yet</p>
+            <p className="text-xs text-muted-foreground mt-1 max-w-xs">
+              Views will appear once your listings go live. Saves and inquiries will follow as buyers engage.
+            </p>
+          </div>
+        ) : (
         <div className="flex items-center justify-between gap-2">
           {/* Views */}
           <div className="flex-1 text-center">
