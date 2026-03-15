@@ -13,6 +13,7 @@ import {
   ReferenceLine,
 } from 'recharts';
 import { InlineSourceBadge } from '@/components/shared/InlineSourceBadge';
+import { InfoBanner } from '@/components/tools/shared/InfoBanner';
 import { useHistoricalPrices, useHistoricalPriceComparison, calculateCAGR } from '@/hooks/useHistoricalPrices';
 import { useNationalAveragePrices } from '@/hooks/useNationalAveragePrices';
 import { useCities } from '@/hooks/useCities';
