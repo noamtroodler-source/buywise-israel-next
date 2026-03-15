@@ -35,6 +35,7 @@ export function PropertyValueSnapshot({
   vaadBayitMonthly,
   cityArnonaRate,
   cityAvgVaadBayit,
+  roomCount,
   hideHeader = false,
 }: PropertyValueSnapshotProps) {
   const formatPrice = useFormatPrice();
