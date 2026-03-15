@@ -205,16 +205,11 @@ export function PriceByApartmentSize({
     );
   };
 
-  const hasNoData = latestPrices.length === 0 || displayData.length < 2;
-
-  // Detect partial room data (e.g. Efrat only has 5-room)
+  // Treat as "no data" if fewer than 2 room types have data (e.g. Efrat only has 5-room)
   const availableRoomTypes = ROOM_CONFIG.filter((room) =>
     latestPrices.some((p) => p.roomType === room.rooms),
   );
-  const missingRoomTypes = ROOM_CONFIG.filter(
-    (room) => !latestPrices.some((p) => p.roomType === room.rooms),
-  );
-  const hasPartialData = !hasNoData && missingRoomTypes.length > 0 && availableRoomTypes.length > 0;
+  const hasNoData = latestPrices.length === 0 || displayData.length < 2 || availableRoomTypes.length < 2;
 
   // Detect comparison cities with no data for selected room type
   const comparisonCitiesWithNoData = useMemo(() => {
@@ -260,9 +255,15 @@ export function PriceByApartmentSize({
           />
 
           {/* Missing data banners */}
-          {hasNoData && (
+          {hasNoData && !isComparing && (
             <InfoBanner variant="info">
               Room-specific price data isn't available for {cityName}. The CBS requires a minimum number of transactions per room type to publish data.
+            </InfoBanner>
+          )}
+
+          {hasNoData && isComparing && (
+            <InfoBanner variant="info">
+              {cityName} doesn't have room-specific price data available. Comparison data is shown below where available.
             </InfoBanner>
           )}
 
@@ -291,7 +292,7 @@ export function PriceByApartmentSize({
             </div>
           )}
 
-          {!hasNoData && (
+          {!(hasNoData && !isComparing) && (
           <>
           {/* Summary cards — normal mode only */}
           {!isComparing && (
@@ -329,12 +330,6 @@ export function PriceByApartmentSize({
             </div>
           )}
 
-          {/* Partial data notice */}
-          {hasPartialData && !isComparing && (
-            <InfoBanner variant="info">
-              Data available for {availableRoomTypes.map((r) => r.label).join(', ')} apartments only. Other room types have insufficient transaction volume.
-            </InfoBanner>
-          )}
 
           {/* Chart */}
           <div className="h-[300px] w-full bg-muted/20 rounded-xl border border-border/50 p-4 pt-2">

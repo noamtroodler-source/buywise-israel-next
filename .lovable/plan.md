@@ -1,37 +1,35 @@
+## Phase 1: Founding Partner Enrollment — Implemented ✅
 
+All changes from the plan have been implemented:
 
-## Fix Missing Data Communication for Efrat, Caesarea, and Gush Etzion
+1. **DB Migration** — Added `is_founding_partner`, `payplus_customer_id`, `payplus_subscription_id` to `subscriptions`; `payplus_subscription_id` to `featured_listings`. Updated FOUNDING2026 promo code (max_redemptions=15, cleared old discount/credit data).
+2. **`enroll-founding-partner` edge function** — 15-cap enforcement, trial creation (60 days), founding_partners insert, first month credit grant, promo redemption tracking.
+3. **`check-trial-expirations` edge function** — Daily cron (6 AM UTC) expires trialing subscriptions past trial_end.
+4. **`useFoundingSpots` hook** — Live spots remaining counter querying founding_partners.
+5. **`FoundingProgramSection`** — Updated benefits (2mo free, 3 featured/mo, early access, case study), spots counter badge.
+6. **`FoundingProgramModal`** — Updated benefits, spots counter, activates enrollment flow.
+7. **`Pricing.tsx`** — FOUNDING2026 code routes to `enroll-founding-partner` instead of Stripe; CTA changes to "Activate Founding Program".
+8. **`CheckoutSuccess.tsx`** — Founding partner variant with trial end date and featured listings CTA.
+9. **`grant-monthly-featured-credits`** — Already has 2-month duration cap logic.
+10. **`PlanCard`** — Added `ctaLabel` prop for custom CTA text.
 
-### Problem
-The current implementation shows Efrat's 5-room data as if it's meaningful, but it likely has too few data points to be useful. The user wants all three cities (Efrat, Caesarea, Gush Etzion) treated similarly: show the section shell with the comparison selector, but display an InfoBanner instead of chart content, and communicate missing data when these cities are added as comparisons on other city pages.
+### Deferred (PayPlus not yet set up):
+- `payplus-checkout`, `payplus-webhook`, `manage-billing` edge functions
+- `list-invoices` PayPlus integration
+- Featured listing ₪299/mo PayPlus recurring charge
+- Trial-to-paid automatic charge initiation
 
-### Changes
+## Phase 2: CBS Data Organization — Implemented ✅
 
-**1. `PriceByApartmentSize.tsx`**
+**Data Source:** All data in these tables originates from **Nadlan.gov.il — Ministry of Justice, Israel** (official government property transaction records). This is the same authoritative source used for `sold_transactions`.
 
-- For Efrat (partial data): Currently shows a 5-room summary card + chart line + partial data banner. Change to treat it the same as no data — show the section header, comparison selector, and InfoBanner only. No summary cards, no chart.
-- Simplify: Remove the `hasPartialData` logic entirely. If `latestPrices.length === 0` or `displayData.length < 2`, treat as `hasNoData`. But also add a stricter check: if available room types cover fewer than 2 of the 3 standard sizes (3, 4, 5), treat as `hasNoData` — the data isn't meaningful enough.
-- Actually, simpler approach per user intent: just expand `hasNoData` to also be true when `displayData.length < 2` OR `latestPrices.length === 0`. The current Efrat case (only 5-room) already shows sparse chart. Change: set `hasNoData = true` when there are fewer than 2 room types with data, so Efrat gets the same "no data" treatment.
-- When `hasNoData`: show section header + comparison selector + InfoBanner. Hide summary cards, partial data banner, and chart entirely.
-- Remove `hasPartialData` logic and its banner.
+1. **`city_price_history` table** — Quarterly avg transaction prices by city + room count (3/4/5), 2020-2025, with national comparison. ~1,625 rows from `market_data.csv`.
+2. **`neighborhood_price_history` table** — Quarterly prices by neighborhood + room count, with yield and YoY. ~52,398 rows from `neighborhood_data.csv`.
+3. **`import-cbs-data` edge function** — Admin-only bulk importer, accepts parsed CSV rows, upserts in batches of 500.
+4. **Admin import page** — `/admin/import-cbs-data` with file upload for both CSVs.
+5. **Public read-only RLS** — Both tables have SELECT-only policies (public government data).
 
-**2. `HistoricalPriceChart.tsx`**
-- No changes needed for own-page — Gush Etzion already shows the no-data banner. Caesarea and Efrat have historical data and display fine.
-- Comparison mode banners already work.
-
-**3. Comparison mode (both components)**
-- The existing comparison-city-no-data detection already works. For `PriceByApartmentSize`, when a compared city (Efrat/Caesarea/Gush Etzion) has no data for the selected room type, the banner already shows. Verify that the current city slug itself also gets checked — if the current city has no data but a comparison city does, we should still show comparison chart if comparison data exists. Current logic gates the entire chart on `!hasNoData` which would block this. 
-- Fix: When `hasNoData` for current city but comparison mode is active and comparison data exists, still show the comparison chart. Adjust the conditional to: hide chart only when `hasNoData && !isComparing`, or when `isComparing && compDisplayData.length < 2`.
-
-### Summary of changes
-
-**`PriceByApartmentSize.tsx`:**
-1. Expand `hasNoData` to include cases with only 1 room type (like Efrat's 5-room only)
-2. Remove `hasPartialData` logic and its banner
-3. When `hasNoData` and not comparing: show InfoBanner, hide cards + chart
-4. When `hasNoData` but comparing with cities that have data: show comparison chart + room selector, plus banner noting current city lacks data
-5. Comparison cities missing data: existing banner works, no change needed
-
-**`HistoricalPriceChart.tsx`:**
-- Already handles all cases correctly. No changes needed.
-
+### Next steps (not yet built):
+- City page trend charts using `city_price_history`
+- Neighborhood comparison widgets using `neighborhood_price_history`
+- AI market insights grounded in neighborhood-level data
