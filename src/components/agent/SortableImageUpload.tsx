@@ -212,34 +212,81 @@ export function SortableImageUpload({
       return;
     }
 
-    const filesToUpload = Array.from(files).slice(0, remainingSlots);
+    // Validate file sizes (10MB max)
+    const MAX_SIZE = 10 * 1024 * 1024;
+    const validFiles: File[] = [];
+    const oversizedFiles: string[] = [];
+    
+    Array.from(files).slice(0, remainingSlots).forEach(file => {
+      if (file.size > MAX_SIZE) {
+        oversizedFiles.push(file.name);
+      } else {
+        validFiles.push(file);
+      }
+    });
+
+    if (oversizedFiles.length > 0) {
+      toast({
+        title: "Files too large",
+        description: `${oversizedFiles.join(', ')} exceed 10MB limit.`,
+        variant: "destructive",
+      });
+    }
+
+    if (validFiles.length === 0) {
+      event.target.value = '';
+      return;
+    }
+
     setUploading(true);
 
     try {
-      const uploadPromises = filesToUpload.map(uploadImage);
-      const newUrls = await Promise.all(uploadPromises);
-      const allImages = [...images, ...newUrls];
-      onImagesChange(allImages);
-      setUploading(false);
-
-      // Enhance only the cover photo (index 0) if it's among the newly uploaded batch
-      const coverUrl = allImages[0];
-      const isCoverNew = newUrls.includes(coverUrl);
-
-      if (isCoverNew) {
-        setEnhancingCount(1);
-        sonnerToast.info('Enhancing cover photo with AI...', { duration: 3000 });
-
-        const enhancedCover = await enhanceUploadedImage(coverUrl);
-
-        if (enhancedCover !== coverUrl) {
-          const updatedImages = allImages.map(url =>
-            url === coverUrl ? enhancedCover : url
-          );
-          onImagesChange(updatedImages);
-          sonnerToast.success('Cover photo enhanced with AI');
+      const results = await Promise.allSettled(validFiles.map(uploadImage));
+      
+      const newUrls: string[] = [];
+      const newFailed: { file: File; error: string }[] = [];
+      
+      results.forEach((result, i) => {
+        if (result.status === 'fulfilled') {
+          newUrls.push(result.value);
+        } else {
+          newFailed.push({ file: validFiles[i], error: result.reason?.message || 'Upload failed' });
         }
-        setEnhancingCount(0);
+      });
+
+      if (newFailed.length > 0) {
+        setFailedUploads(prev => [...prev, ...newFailed]);
+        toast({
+          title: `${newFailed.length} upload(s) failed`,
+          description: "You can retry failed uploads below.",
+          variant: "destructive",
+        });
+      }
+
+      if (newUrls.length > 0) {
+        const allImages = [...images, ...newUrls];
+        onImagesChange(allImages);
+        setUploading(false);
+
+        // Enhance only the cover photo (index 0) if it's among the newly uploaded batch
+        const coverUrl = allImages[0];
+        const isCoverNew = newUrls.includes(coverUrl);
+
+        if (isCoverNew) {
+          setEnhancingCount(1);
+          sonnerToast.info('Enhancing cover photo with AI...', { duration: 3000 });
+
+          const enhancedCover = await enhanceUploadedImage(coverUrl);
+
+          if (enhancedCover !== coverUrl) {
+            const updatedImages = allImages.map(url =>
+              url === coverUrl ? enhancedCover : url
+            );
+            onImagesChange(updatedImages);
+            sonnerToast.success('Cover photo enhanced with AI');
+          }
+          setEnhancingCount(0);
+        }
       }
     } catch (error) {
       console.error('Upload error:', error);
