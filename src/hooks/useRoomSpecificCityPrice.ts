@@ -64,10 +64,22 @@ export function useRoomSpecificCityPrice(city: string | null, rooms: number | nu
         );
       }
 
+      // Find same quarter 5 years prior
+      const fiveYearPrior = data.find(
+        (d) => d.year === latest.year - 5 && d.quarter === latest.quarter
+      );
+      let fiveYearChange: number | null = null;
+      if (fiveYearPrior?.avg_price_nis && latest.avg_price_nis) {
+        fiveYearChange = Math.round(
+          ((latest.avg_price_nis - fiveYearPrior.avg_price_nis) / fiveYearPrior.avg_price_nis) * 100
+        );
+      }
+
       return {
         avgPrice: latest.avg_price_nis,
         avgPriceSqm,
         yoyChange,
+        fiveYearChange,
         quarter: latest.quarter,
         year: latest.year,
       };
