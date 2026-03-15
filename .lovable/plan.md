@@ -1,22 +1,56 @@
 
 
-## Phase 1: Founding Partner Enrollment — Implemented ✅
+# Phase A: Data Safety & Error Resilience
 
-All changes from the plan have been implemented:
+## Summary
 
-1. **DB Migration** — Added `is_founding_partner`, `payplus_customer_id`, `payplus_subscription_id` to `subscriptions`; `payplus_subscription_id` to `featured_listings`. Updated FOUNDING2026 promo code (max_redemptions=15, cleared old discount/credit data).
-2. **`enroll-founding-partner` edge function** — 15-cap enforcement, trial creation (60 days), founding_partners insert, first month credit grant, promo redemption tracking.
-3. **`check-trial-expirations` edge function** — Daily cron (6 AM UTC) expires trialing subscriptions past trial_end.
-4. **`useFoundingSpots` hook** — Live spots remaining counter querying founding_partners.
-5. **`FoundingProgramSection`** — Updated benefits (2mo free, 3 featured/mo, early access, case study), spots counter badge.
-6. **`FoundingProgramModal`** — Updated benefits, spots counter, activates enrollment flow.
-7. **`Pricing.tsx`** — FOUNDING2026 code routes to `enroll-founding-partner` instead of Stripe; CTA changes to "Activate Founding Program".
-8. **`CheckoutSuccess.tsx`** — Founding partner variant with trial end date and featured listings CTA.
-9. **`grant-monthly-featured-credits`** — Already has 2-month duration cap logic.
-10. **`PlanCard`** — Added `ctaLabel` prop for custom CTA text.
+Three improvements: (1) add unsaved-changes warning to edit wizards, (2) improve image upload with per-file error handling and retry, (3) fix cache invalidation gaps.
 
-### Deferred (PayPlus not yet set up):
-- `payplus-checkout`, `payplus-webhook`, `manage-billing` edge functions
-- `list-invoices` PayPlus integration
-- Featured listing ₪299/mo PayPlus recurring charge
-- Trial-to-paid automatic charge initiation
+## 1. Edit Wizard Unsaved Changes Warning
+
+Both `EditPropertyWizard.tsx` (agent) and `AgencyEditPropertyWizard.tsx` (agency) load saved property data into the wizard but have no `beforeunload` warning if the user navigates away with changes.
+
+**Changes in `src/pages/agent/EditPropertyWizard.tsx`**:
+- Import `useAutoSave` with the property ID as the storage key (`edit-property-draft-${propertyId}`)
+- Pass `data` and `metadata: { currentStep }` to track dirty state
+- The `beforeunload` handler in `useAutoSave` will fire automatically when `isDirty` is true
+- Call `clearSavedData()` on successful save/submit
+- No draft recovery dialog for edits (the source of truth is the DB), only the unsaved warning matters
+
+**Changes in `src/pages/agency/AgencyEditPropertyWizard.tsx`**:
+- Same pattern with key `agency-edit-property-draft-${propertyId}`
+
+## 2. Image Upload Error Handling with Retry
+
+Currently `SortableImageUpload` uses `Promise.all` — if any single upload fails, ALL uploads fail and no images are added. Users get stuck.
+
+**Changes in `src/components/agent/SortableImageUpload.tsx`**:
+- Replace `Promise.all` with `Promise.allSettled` to handle partial failures
+- Add successfully uploaded images immediately
+- Track failed files in a `failedUploads` state: `{ file: File, error: string }[]`
+- Show a "retry" UI for failed uploads: a list of failed filenames with a "Retry" button per file or "Retry All"
+- On retry, attempt upload again for just those files
+- Add file size validation (reject >10MB upfront with toast) before upload attempt
+
+**Changes in `src/components/developer/wizard/steps/StepPhotos.tsx`**:
+- Already has per-file error handling — add a retry button for failed uploads using the same pattern
+
+## 3. Cache Invalidation Fix
+
+After inspecting the code, bulk mutations (`useBulkDeleteProperties`, `useBulkSubmitForReview`) already invalidate `agentProperties` in `onSettled`. The dashboard (`AgentDashboard.tsx`) derives all counts from the same `agentProperties` query, so counts update automatically.
+
+**However**, `useBulkSubmitForReview` doesn't invalidate `agencyListingsManagement` or `properties` (general). Fix:
+
+**Changes in `src/hooks/useAgentProperties.tsx`**:
+- Add `queryClient.invalidateQueries({ queryKey: ['properties'] })` to `useBulkSubmitForReview.onSettled`
+- Add `queryClient.invalidateQueries({ queryKey: ['agencyListingsManagement'] })` to `useBulkSubmitForReview.onSettled`
+
+## Files Touched
+
+| File | Action |
+|------|--------|
+| `src/pages/agent/EditPropertyWizard.tsx` | Add `useAutoSave` for dirty tracking + beforeunload warning |
+| `src/pages/agency/AgencyEditPropertyWizard.tsx` | Same pattern |
+| `src/components/agent/SortableImageUpload.tsx` | `Promise.allSettled`, failed upload state, retry UI |
+| `src/hooks/useAgentProperties.tsx` | Add missing invalidations to `useBulkSubmitForReview` |
+
