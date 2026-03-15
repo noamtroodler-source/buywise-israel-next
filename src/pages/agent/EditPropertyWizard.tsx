@@ -213,6 +213,7 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
          furniture_items: data.furniture_items,
          featured_highlight: data.featured_highlight || null,
       } as any);
+      clearSavedData();
       navigate('/agent/properties');
     } finally {
       setIsSubmitting(false);
