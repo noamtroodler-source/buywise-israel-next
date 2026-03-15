@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Lightbulb } from 'lucide-react';
+import { Lightbulb, TrendingUp, TrendingDown } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   CartesianGrid,
@@ -10,12 +10,12 @@ import {
   Tooltip as RechartsTooltip,
   XAxis,
   YAxis,
-  Legend,
+  ReferenceLine,
 } from 'recharts';
 import { InlineSourceBadge } from '@/components/shared/InlineSourceBadge';
 import { useHistoricalPrices, calculateCAGR } from '@/hooks/useHistoricalPrices';
 import { useNationalAveragePrices } from '@/hooks/useNationalAveragePrices';
-import { useFormatPrice } from '@/contexts/PreferencesContext';
+import { cn } from '@/lib/utils';
 
 interface HistoricalPriceChartProps {
   citySlug: string;
@@ -29,7 +29,18 @@ type Period = '5y' | '10y' | 'all';
 function formatAbbrev(value: number): string {
   if (value >= 1_000_000) return `₪${(value / 1_000_000).toFixed(1)}M`;
   if (value >= 1_000) return `₪${(value / 1_000).toFixed(0)}K`;
-  return `₪${value}`;
+  return `₪${value.toLocaleString()}`;
+}
+
+function metricColor(value: number): string {
+  if (value > 0) return 'text-emerald-600 dark:text-emerald-400';
+  if (value < 0) return 'text-red-600 dark:text-red-400';
+  return 'text-muted-foreground';
+}
+
+function formatSigned(value: number, decimals = 1): string {
+  const prefix = value > 0 ? '+' : '';
+  return `${prefix}${value.toFixed(decimals)}%`;
 }
 
 export function HistoricalPriceChart({
@@ -41,12 +52,10 @@ export function HistoricalPriceChart({
   const [period, setPeriod] = useState<Period>('10y');
   const { data: cityPrices = [] } = useHistoricalPrices(citySlug);
   const { data: nationalAvg = [] } = useNationalAveragePrices();
-  const formatPrice = useFormatPrice();
 
   // Merge city + national data by year
   const mergedData = useMemo(() => {
     const nationalMap = new Map(nationalAvg.map((n) => [n.year, n.avg_price]));
-
     return cityPrices
       .filter((p) => p.average_price && p.average_price > 0)
       .map((p) => ({
@@ -80,25 +89,29 @@ export function HistoricalPriceChart({
     const cagr = calculateCAGR(first.city, last.city, years);
     const latestYoY = last.yoy;
 
-    // National CAGR for comparison
     let nationalCagr: number | null = null;
     if (first.national && last.national && first.national > 0) {
       nationalCagr = calculateCAGR(first.national, last.national, years);
     }
 
-    // Delta vs national
     let deltaVsNational: number | null = null;
     if (last.national && last.national > 0) {
       deltaVsNational = ((last.city - last.national) / last.national) * 100;
     }
 
+    // Find peak price and year within period
+    const peak = filteredData.reduce((max, d) => d.city > max.city ? d : max, filteredData[0]);
+
     return {
-      totalAppreciation: Math.round(totalAppreciation),
+      totalAppreciation: Math.round(totalAppreciation * 10) / 10,
       cagr,
       latestYoY,
       years,
       nationalCagr,
       deltaVsNational: deltaVsNational !== null ? Math.round(deltaVsNational) : null,
+      peakYear: peak.year,
+      peakPrice: peak.city,
+      currentPrice: last.city,
     };
   }, [filteredData]);
 
@@ -107,6 +120,7 @@ export function HistoricalPriceChart({
     if (!metrics) return null;
     const parts: string[] = [];
 
+    // Context about where prices stand relative to national
     if (metrics.deltaVsNational !== null) {
       const dir = metrics.deltaVsNational > 0 ? 'above' : 'below';
       parts.push(
@@ -114,22 +128,32 @@ export function HistoricalPriceChart({
       );
     }
 
-    parts.push(
-      `Over the past ${metrics.years} years, the city has grown ${metrics.cagr}% annually`
-    );
-    if (metrics.nationalCagr !== null) {
-      parts[parts.length - 1] += ` vs ${metrics.nationalCagr}% nationally.`;
+    // Growth narrative
+    if (metrics.totalAppreciation > 0) {
+      parts.push(
+        `Over ${metrics.years} years, prices rose ${metrics.totalAppreciation.toFixed(0)}% total (${metrics.cagr}% annually${metrics.nationalCagr !== null ? ` vs ${metrics.nationalCagr}% nationally` : ''}).`
+      );
     } else {
-      parts[parts.length - 1] += '.';
+      parts.push(
+        `Over this ${metrics.years}-year window, prices declined ${Math.abs(metrics.totalAppreciation).toFixed(0)}%.`
+      );
+      // Add peak context for declining markets
+      if (metrics.peakYear && metrics.currentPrice < metrics.peakPrice) {
+        const fromPeak = ((metrics.peakPrice - metrics.currentPrice) / metrics.peakPrice * 100).toFixed(0);
+        parts.push(`Prices peaked in ${metrics.peakYear} at ${formatAbbrev(metrics.peakPrice)} and are currently ${fromPeak}% below that peak.`);
+      }
     }
 
+    // Latest YoY context
     if (metrics.latestYoY !== null && metrics.latestYoY !== undefined) {
       if (metrics.latestYoY > 5) {
         parts.push(`The market is currently accelerating at +${metrics.latestYoY.toFixed(1)}% year-over-year.`);
       } else if (metrics.latestYoY > 0) {
         parts.push(`Recent growth is steady at +${metrics.latestYoY.toFixed(1)}% year-over-year.`);
-      } else if (metrics.latestYoY < -2) {
-        parts.push(`Prices have softened ${metrics.latestYoY.toFixed(1)}% from the previous year.`);
+      } else if (metrics.latestYoY < -5) {
+        parts.push(`The market is in a correction phase, with prices down ${Math.abs(metrics.latestYoY).toFixed(1)}% from the previous year.`);
+      } else if (metrics.latestYoY < 0) {
+        parts.push(`Prices have softened ${Math.abs(metrics.latestYoY).toFixed(1)}% from the previous year.`);
       }
     }
 
@@ -142,28 +166,48 @@ export function HistoricalPriceChart({
     const cityVal = payload.find((p: any) => p.dataKey === 'city')?.value;
     const natVal = payload.find((p: any) => p.dataKey === 'national')?.value;
     const item = filteredData.find((d) => d.year === label);
+    const delta = cityVal && natVal ? ((cityVal - natVal) / natVal * 100) : null;
 
     return (
-      <div className="bg-card border border-border rounded-lg shadow-lg p-3 max-w-[240px]">
-        <p className="font-semibold text-foreground text-sm mb-1.5">{label}</p>
-        {cityVal != null && (
-          <p className="text-primary font-medium text-sm">
-            {cityName}: {formatAbbrev(cityVal)}
-          </p>
-        )}
-        {natVal != null && (
-          <p className="text-muted-foreground text-sm">
-            National Avg: {formatAbbrev(natVal)}
-          </p>
-        )}
-        {item?.yoy != null && (
-          <p className="text-xs text-muted-foreground mt-1">
-            YoY: {item.yoy > 0 ? '+' : ''}{item.yoy.toFixed(1)}%
-          </p>
+      <div className="bg-card border border-border rounded-lg shadow-lg p-3 min-w-[200px] max-w-[260px]">
+        <p className="font-semibold text-foreground text-sm mb-2">{label}</p>
+        <div className="space-y-1">
+          {cityVal != null && (
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-1.5">
+                <div className="w-2.5 h-0.5 rounded bg-primary" />
+                <span className="text-xs text-muted-foreground">{cityName}</span>
+              </div>
+              <span className="text-sm font-semibold text-foreground">{formatAbbrev(cityVal)}</span>
+            </div>
+          )}
+          {natVal != null && (
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-1.5">
+                <div className="w-2.5 h-0.5 rounded bg-muted-foreground/50 border-dashed" />
+                <span className="text-xs text-muted-foreground">National</span>
+              </div>
+              <span className="text-sm text-muted-foreground">{formatAbbrev(natVal)}</span>
+            </div>
+          )}
+        </div>
+        {(delta !== null || item?.yoy != null) && (
+          <div className="flex items-center gap-3 mt-2 pt-2 border-t border-border/50 text-xs">
+            {item?.yoy != null && (
+              <span className={cn('font-medium', metricColor(item.yoy))}>
+                {formatSigned(item.yoy)} YoY
+              </span>
+            )}
+            {delta !== null && (
+              <span className={cn('font-medium', metricColor(delta))}>
+                {formatSigned(delta, 0)} vs national
+              </span>
+            )}
+          </div>
         )}
         {item?.notes && (
-          <p className="text-xs text-muted-foreground mt-1 italic border-t border-border/50 pt-1">
-            {item.notes.length > 80 ? item.notes.slice(0, 80) + '…' : item.notes}
+          <p className="text-[11px] text-muted-foreground mt-2 pt-2 border-t border-border/50 leading-snug italic">
+            {item.notes.length > 100 ? item.notes.slice(0, 100) + '…' : item.notes}
           </p>
         )}
       </div>
@@ -175,7 +219,22 @@ export function HistoricalPriceChart({
     ? `${filteredData[0].year}–${filteredData[filteredData.length - 1].year}`
     : '';
 
+  // Y-axis domain: auto-scale with padding
+  const yDomain = useMemo(() => {
+    if (filteredData.length === 0) return [0, 'auto'] as [number, string];
+    const allValues = filteredData.flatMap((d) => [d.city, d.national].filter(Boolean) as number[]);
+    const min = Math.min(...allValues);
+    const max = Math.max(...allValues);
+    const padding = (max - min) * 0.15;
+    // Round down/up to nice numbers
+    const niceMin = Math.floor((min - padding) / 100_000) * 100_000;
+    const niceMax = Math.ceil((max + padding) / 100_000) * 100_000;
+    return [Math.max(0, niceMin), niceMax];
+  }, [filteredData]);
+
   if (filteredData.length < 2) return null;
+
+  const isOverallPositive = metrics && metrics.totalAppreciation >= 0;
 
   return (
     <section className="py-16 bg-muted/40">
@@ -185,16 +244,16 @@ export function HistoricalPriceChart({
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="space-y-6"
+          className="space-y-5"
         >
           {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div>
               <h2 className="text-2xl sm:text-3xl font-semibold text-foreground">
                 Price History
               </h2>
               <p className="text-muted-foreground text-sm mt-1">
-                How {cityName} prices have moved over time
+                How {cityName} apartment prices have moved over time
               </p>
             </div>
             <Tabs value={period} onValueChange={(v) => setPeriod(v as Period)}>
@@ -206,66 +265,67 @@ export function HistoricalPriceChart({
             </Tabs>
           </div>
 
-          {/* Key Metrics */}
+          {/* Key Metrics — color-coded */}
           {metrics && (
-            <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
-              <div>
-                <span className="font-semibold text-foreground">
-                  {metrics.totalAppreciation > 0 ? '+' : ''}{metrics.totalAppreciation}%
-                </span>
-                <span className="text-muted-foreground ml-1">total ({metrics.years}yr)</span>
-              </div>
-              <div>
-                <span className="font-semibold text-foreground">{metrics.cagr}%</span>
-                <span className="text-muted-foreground ml-1">annual (CAGR)</span>
-              </div>
+            <div className="flex flex-wrap gap-x-5 gap-y-2">
+              <MetricPill
+                value={metrics.totalAppreciation}
+                label={`total (${metrics.years}yr)`}
+                decimals={0}
+              />
+              <MetricPill value={metrics.cagr} label="annual (CAGR)" />
               {metrics.latestYoY != null && (
-                <div>
-                  <span className="font-semibold text-foreground">
-                    {metrics.latestYoY > 0 ? '+' : ''}{metrics.latestYoY.toFixed(1)}%
-                  </span>
-                  <span className="text-muted-foreground ml-1">last year</span>
-                </div>
+                <MetricPill value={metrics.latestYoY} label="last year" />
               )}
               {metrics.deltaVsNational != null && (
-                <div>
-                  <span className="font-semibold text-foreground">
-                    {metrics.deltaVsNational > 0 ? '+' : ''}{metrics.deltaVsNational}%
-                  </span>
-                  <span className="text-muted-foreground ml-1">vs national</span>
-                </div>
+                <MetricPill
+                  value={metrics.deltaVsNational}
+                  label="vs national"
+                  decimals={0}
+                  neutral
+                />
               )}
             </div>
           )}
 
           {/* Chart */}
-          <div className="h-[280px] w-full bg-background rounded-xl border border-border/50 p-4">
+          <div className="h-[300px] w-full bg-background rounded-xl border border-border/50 p-4 pt-2">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={filteredData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
+              <LineChart data={filteredData} margin={{ top: 20, right: 16, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border/30" vertical={false} />
                 <XAxis
                   dataKey="year"
                   tick={{ fontSize: 11 }}
                   className="text-muted-foreground"
                   axisLine={{ className: 'stroke-border' }}
-                  tickLine={{ className: 'stroke-border' }}
+                  tickLine={false}
+                  padding={{ left: 10, right: 10 }}
                 />
                 <YAxis
                   tick={{ fontSize: 11 }}
                   className="text-muted-foreground"
                   tickFormatter={(v) => formatAbbrev(v)}
-                  axisLine={{ className: 'stroke-border' }}
-                  tickLine={{ className: 'stroke-border' }}
-                  width={65}
+                  axisLine={false}
+                  tickLine={false}
+                  width={68}
+                  domain={yDomain}
                 />
                 <RechartsTooltip content={<CustomTooltip />} />
-                <Legend
-                  verticalAlign="top"
-                  align="right"
-                  height={28}
-                  iconType="plainline"
-                  wrapperStyle={{ fontSize: '12px' }}
-                />
+                {/* Peak reference line */}
+                {metrics && metrics.peakYear !== filteredData[filteredData.length - 1].year && (
+                  <ReferenceLine
+                    x={metrics.peakYear}
+                    stroke="hsl(var(--muted-foreground))"
+                    strokeDasharray="3 3"
+                    strokeOpacity={0.4}
+                    label={{
+                      value: `Peak ${metrics.peakYear}`,
+                      position: 'top',
+                      fontSize: 10,
+                      fill: 'hsl(var(--muted-foreground))',
+                    }}
+                  />
+                )}
                 <Line
                   name={cityName}
                   type="monotone"
@@ -273,7 +333,7 @@ export function HistoricalPriceChart({
                   stroke="hsl(var(--primary))"
                   strokeWidth={2.5}
                   dot={{ fill: 'hsl(var(--primary))', strokeWidth: 0, r: 3 }}
-                  activeDot={{ r: 5, strokeWidth: 0 }}
+                  activeDot={{ r: 6, strokeWidth: 2, stroke: 'hsl(var(--background))' }}
                 />
                 <Line
                   name="National Avg"
@@ -288,12 +348,27 @@ export function HistoricalPriceChart({
                 />
               </LineChart>
             </ResponsiveContainer>
+            {/* Inline legend */}
+            <div className="flex items-center gap-4 justify-end -mt-1 px-2">
+              <div className="flex items-center gap-1.5">
+                <div className="w-4 h-0.5 rounded bg-primary" />
+                <span className="text-[11px] text-muted-foreground">{cityName}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-4 h-0.5 rounded bg-muted-foreground/50 border-t border-dashed border-muted-foreground" />
+                <span className="text-[11px] text-muted-foreground">National Avg</span>
+              </div>
+            </div>
           </div>
 
           {/* Insight */}
           {insight && (
             <div className="flex gap-3 p-4 rounded-lg bg-primary/5 border border-primary/10">
-              <Lightbulb className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+              {isOverallPositive ? (
+                <TrendingUp className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+              ) : (
+                <TrendingDown className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              )}
               <p className="text-sm text-muted-foreground leading-relaxed">
                 <span className="font-medium text-foreground">What this means: </span>
                 {insight}
@@ -316,5 +391,23 @@ export function HistoricalPriceChart({
         </motion.div>
       </div>
     </section>
+  );
+}
+
+/** Small metric display with directional color coding */
+function MetricPill({ value, label, decimals = 1, neutral = false }: {
+  value: number;
+  label: string;
+  decimals?: number;
+  neutral?: boolean;
+}) {
+  const color = neutral ? 'text-foreground' : metricColor(value);
+  return (
+    <div className="flex items-baseline gap-1 text-sm">
+      <span className={cn('font-semibold tabular-nums', color)}>
+        {formatSigned(value, decimals)}
+      </span>
+      <span className="text-muted-foreground text-xs">{label}</span>
+    </div>
   );
 }
