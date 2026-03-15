@@ -106,6 +106,16 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
   const isAgentVerified = agentProfile?.status === 'active';
   const { canCreate: canCreateListing } = useListingLimitCheck('agency');
 
+  // Auto-save for dirty tracking + beforeunload warning
+  const autoSaveMetadata = useMemo(() => ({ currentStep }), [currentStep]);
+  const { isDirty, isSaving, lastSavedAt, error: saveError, clearSavedData } = useAutoSave({
+    data: hasLoaded ? data : {},
+    storageKey: `edit-property-draft-${propertyId}`,
+    debounceMs: 1000,
+    autoSaveInterval: 0, // No DB auto-save for edits
+    metadata: autoSaveMetadata,
+  });
+
   // Load property data into wizard context
   useEffect(() => {
     if (property && !hasLoaded) {
