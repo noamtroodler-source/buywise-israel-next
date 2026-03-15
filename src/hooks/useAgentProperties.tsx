@@ -363,7 +363,7 @@ export function useDeleteProperty() {
       if (context?.previous) {
         queryClient.setQueryData(['agentProperties'], context.previous);
       }
-      toast.error('Failed to delete property: ' + error.message);
+      toast.error(getUserFriendlyError(error, 'Failed to delete listing'));
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['agentProperties'] });
