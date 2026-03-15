@@ -26,6 +26,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { useAgentProperties, useDeleteProperty, useSubmitForReview, useBulkDeleteProperties, useBulkSubmitForReview } from '@/hooks/useAgentProperties';
+import { PROPERTY_WIZARD_STORAGE_KEY } from '@/components/agent/wizard/PropertyWizardContext';
 import { STALE_THRESHOLD_DAYS } from '@/hooks/useAgentProfile';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { differenceInDays, parseISO, format } from 'date-fns';
