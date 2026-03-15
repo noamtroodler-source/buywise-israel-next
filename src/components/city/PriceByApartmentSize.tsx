@@ -292,6 +292,8 @@ export function PriceByApartmentSize({
             </div>
           )}
 
+          {!hasNoData && (
+          <>
           {/* Summary cards — normal mode only */}
           {!isComparing && (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
