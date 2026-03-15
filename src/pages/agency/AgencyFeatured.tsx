@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Star, Loader2 } from 'lucide-react';
+import { ArrowLeft, Star } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { useMyAgency } from '@/hooks/useAgencyManagement';
 import { FeaturedListingsManager } from '@/components/billing/FeaturedListingsManager';
 import { AgencyFeaturedSkeleton } from '@/components/agency/skeletons/AgencyPageSkeletons';
+import { EnhancedEmptyState } from '@/components/shared/EnhancedEmptyState';
 
 export default function AgencyFeatured() {
   const { data: agency, isLoading } = useMyAgency();
@@ -16,8 +17,13 @@ export default function AgencyFeatured() {
   if (!agency) {
     return (
       <Layout>
-        <div className="container py-16 text-center">
-          <p className="text-muted-foreground">No agency found.</p>
+        <div className="container py-16">
+          <EnhancedEmptyState
+            icon={Star}
+            title="No Agency Found"
+            description="You need an agency to manage featured listings."
+            primaryAction={{ label: 'Go to Agency', href: '/agency' }}
+          />
         </div>
       </Layout>
     );

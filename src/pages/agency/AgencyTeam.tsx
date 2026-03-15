@@ -55,8 +55,13 @@ export default function AgencyTeam() {
   if (!agency) {
     return (
       <Layout>
-        <div className="container py-16 text-center">
-          <p className="text-muted-foreground">No agency found.</p>
+        <div className="container py-16">
+          <EnhancedEmptyState
+            icon={Users}
+            title="No Agency Found"
+            description="You need an agency to manage your team."
+            primaryAction={{ label: 'Go to Agency', href: '/agency' }}
+          />
         </div>
       </Layout>
     );

@@ -239,22 +239,17 @@ export default function AgencyListings() {
             </CardHeader>
             <CardContent className="p-0">
               {filteredListings.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  <Home className="h-12 w-12 mx-auto mb-4 opacity-30" />
-                  <p className="font-medium">No listings found</p>
-                  <p className="text-sm">
-                    {listings.length === 0
-                      ? "Add your first listing to get started"
-                      : "Try adjusting your filters"}
-                  </p>
-                  {listings.length === 0 && (
-                    <Button asChild className="mt-4 rounded-xl">
-                      <Link to="/agency/properties/new">
-                        <Plus className="h-4 w-4 mr-2" />Add Listing
-                      </Link>
-                    </Button>
-                  )}
-                </div>
+                <EnhancedEmptyState
+                  icon={Home}
+                  title="No listings found"
+                  description={listings.length === 0 ? "Add your first listing to get started" : "Try adjusting your filters"}
+                  variant="compact"
+                  primaryAction={listings.length === 0 ? { label: 'Add Listing', href: '/agency/properties/new', icon: Plus } : undefined}
+                  suggestions={listings.length === 0 ? [
+                    { icon: Plus, text: 'Create a new property listing' },
+                    { icon: Eye, text: 'Listings will appear here once added' },
+                  ] : undefined}
+                />
               ) : (
                 <div className="overflow-x-auto">
                   <Table>
