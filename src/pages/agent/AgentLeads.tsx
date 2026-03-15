@@ -26,6 +26,7 @@ import { InquiryPieChart } from "@/components/agent/analytics/InquiryPieChart";
 import { HourlyActivityChart } from "@/components/agent/analytics/HourlyActivityChart";
 import { PropertyEngagementTable } from "@/components/agent/analytics/PropertyEngagementTable";
 import { Skeleton } from "@/components/ui/skeleton";
+import { format } from "date-fns";
 
 type DateRange = '7d' | '30d' | '90d' | 'all';
 
@@ -35,6 +36,26 @@ const dateRangeLabels: Record<DateRange, string> = {
   '90d': 'Last 90 days',
   'all': 'All time',
 };
+
+function exportAnalyticsToCSV(engagement: any[]) {
+  const headers = ['Property Title', 'Views', 'Saves', 'WhatsApp Clicks', 'Email Clicks', 'Form Clicks'];
+  const rows = engagement.map(e => [
+    `"${(e.title || '').replace(/"/g, '""')}"`,
+    e.views || 0,
+    e.saves || 0,
+    e.whatsappClicks || 0,
+    e.emailClicks || 0,
+    e.formClicks || 0,
+  ]);
+  const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `analytics-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 export default function AgentLeads() {
   const [dateRange, setDateRange] = useState<DateRange>('30d');
