@@ -27,6 +27,9 @@ interface PerformanceInsightsProps {
 }
 
 export function PerformanceInsights({ metrics, topListingTitle, className }: PerformanceInsightsProps) {
+  const allZero = metrics.viewsThisWeek === 0 && metrics.inquiriesThisWeek === 0 
+    && metrics.listingsActive === 0 && metrics.conversionRate === 0;
+
   const performanceMetrics: PerformanceMetric[] = [
     {
       label: 'Views',
@@ -69,6 +72,17 @@ export function PerformanceInsights({ metrics, topListingTitle, className }: Per
         </CardTitle>
       </CardHeader>
       <CardContent>
+        {allZero ? (
+          <div className="flex flex-col items-center justify-center py-6 text-center">
+            <div className="p-3 rounded-xl bg-primary/10 mb-3">
+              <TrendingUp className="h-6 w-6 text-primary" />
+            </div>
+            <p className="text-sm font-medium text-foreground">No performance data yet</p>
+            <p className="text-xs text-muted-foreground mt-1 max-w-xs">
+              Create and publish your first listing to start tracking views, inquiries, and conversions.
+            </p>
+          </div>
+        ) : (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {performanceMetrics.map((metric, index) => {
             const change = calculateChange(metric.current, metric.previous);
@@ -94,7 +108,7 @@ export function PerformanceInsights({ metrics, topListingTitle, className }: Per
                 <div className="flex items-end justify-between">
                   <span className="text-2xl font-bold">
                     {metric.format === 'percent' 
-                      ? `${metric.current.toFixed(1)}%`
+                      ? (metric.current === 0 && metric.previous === 0 ? '—' : `${metric.current.toFixed(1)}%`)
                       : metric.current.toLocaleString()
                     }
                   </span>
@@ -114,8 +128,9 @@ export function PerformanceInsights({ metrics, topListingTitle, className }: Per
             );
           })}
         </div>
+        )}
 
-        {topListingTitle && (
+        {topListingTitle && !allZero && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}

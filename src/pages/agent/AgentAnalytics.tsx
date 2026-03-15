@@ -8,6 +8,7 @@ import { motion } from 'framer-motion';
 import { useAgentProperties } from '@/hooks/useAgentProperties';
 import { useAgentAnalytics, DateRangeFilter } from '@/hooks/useAgentAnalytics';
 import { InquiryPieChart, PropertyPerformanceChart, FunnelMetrics } from '@/components/agent/analytics';
+import { WidgetErrorBoundary } from '@/components/shared/WidgetErrorBoundary';
 import {
   Select,
   SelectContent,
@@ -194,20 +195,26 @@ export default function AgentAnalytics() {
 
                 {/* Conversion Funnel */}
                 <motion.div variants={itemVariants}>
-                  <FunnelMetrics
-                    views={analytics?.totalViews || 0}
-                    saves={analytics?.totalSaves || 0}
-                    inquiries={analytics?.totalInquiries || 0}
-                  />
+                  <WidgetErrorBoundary fallbackTitle="Couldn't load conversion funnel">
+                    <FunnelMetrics
+                      views={analytics?.totalViews || 0}
+                      saves={analytics?.totalSaves || 0}
+                      inquiries={analytics?.totalInquiries || 0}
+                    />
+                  </WidgetErrorBoundary>
                 </motion.div>
 
                 {/* Charts Row */}
                 <div className="grid gap-6 lg:grid-cols-2">
                   <motion.div variants={itemVariants}>
-                    <InquiryPieChart data={analytics?.inquiriesByType || { whatsapp: 0, email: 0, form: 0 }} />
+                    <WidgetErrorBoundary fallbackTitle="Couldn't load inquiry chart">
+                      <InquiryPieChart data={analytics?.inquiriesByType || { whatsapp: 0, email: 0, form: 0 }} />
+                    </WidgetErrorBoundary>
                   </motion.div>
                   <motion.div variants={itemVariants}>
-                    <PropertyPerformanceChart data={propertyChartData} />
+                    <WidgetErrorBoundary fallbackTitle="Couldn't load performance chart">
+                      <PropertyPerformanceChart data={propertyChartData} />
+                    </WidgetErrorBoundary>
                   </motion.div>
                 </div>
 
