@@ -80,15 +80,11 @@ export default function Compare() {
 
         const cities = [...new Set(ordered.map(p => p.city))];
         
-        const [rentalResult, marketResult, citiesResult] = await Promise.all([
-          supabase.from('rental_prices').select('*').in('city', cities),
-          supabase.from('market_data').select('*').in('city', cities).order('year', { ascending: false }).order('month', { ascending: false }),
-          supabase.from('cities').select('name, average_price_sqm, yoy_price_change')
-        ]);
+        const citiesResult = await supabase
+          .from('cities')
+          .select('name, average_price_sqm, yoy_price_change, rental_3_room_min, rental_3_room_max, rental_4_room_min, rental_4_room_max, rental_5_room_min, rental_5_room_max');
 
-        if (rentalResult.data) setRentalData(rentalResult.data);
-        if (marketResult.data) setMarketData(marketResult.data);
-        if (citiesResult.data) setCityData(citiesResult.data);
+        if (citiesResult.data) setCityData(citiesResult.data as CityData[]);
       }
       setLoading(false);
     }
