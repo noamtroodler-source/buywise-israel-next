@@ -7,28 +7,35 @@ export interface AutoSaveState {
   error: string | null;
 }
 
-interface UseAutoSaveOptions<T> {
+interface SavePayload<T, M = Record<string, unknown>> {
+  data: T;
+  metadata?: M;
+  savedAt: string;
+}
+
+interface UseAutoSaveOptions<T, M = Record<string, unknown>> {
   data: T;
   storageKey: string;
   onSave?: () => Promise<void>;
-  autoSaveInterval?: number; // in milliseconds, 0 to disable
+  autoSaveInterval?: number;
   debounceMs?: number;
-  useSessionKey?: boolean; // If true, generates unique key per session
+  useSessionKey?: boolean;
+  metadata?: M;
 }
 
-// Generate a unique session ID
 function generateSessionId(): string {
   return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
 
-export function useAutoSave<T>({
+export function useAutoSave<T, M = Record<string, unknown>>({
   data,
   storageKey,
   onSave,
-  autoSaveInterval = 30000, // 30 seconds default
+  autoSaveInterval = 30000,
   debounceMs = 500,
-  useSessionKey = true, // Default to session-unique keys
-}: UseAutoSaveOptions<T>) {
+  useSessionKey = false,
+  metadata,
+}: UseAutoSaveOptions<T, M>) {
   const [state, setState] = useState<AutoSaveState>({
     isSaving: false,
     lastSavedAt: null,
@@ -36,10 +43,8 @@ export function useAutoSave<T>({
     error: null,
   });
 
-  // Generate or reuse session ID for this wizard instance
   const sessionIdRef = useRef<string>(generateSessionId());
-  
-  // Compute the actual storage key (session-unique if enabled)
+
   const actualStorageKey = useMemo(() => {
     if (useSessionKey) {
       return `${storageKey}-${sessionIdRef.current}`;
@@ -47,25 +52,37 @@ export function useAutoSave<T>({
     return storageKey;
   }, [storageKey, useSessionKey]);
 
-  const initialDataRef = useRef<string | null>(null);
+  // Track initial data at mount to determine real dirty state
+  const initialDataRef = useRef<string>(JSON.stringify(data));
+  const mountedRef = useRef(false);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSavedDataRef = useRef<string | null>(null);
 
-  // Debounced save to localStorage
+  // After first render, start tracking changes
+  useEffect(() => {
+    mountedRef.current = true;
+  }, []);
+
+  // Debounced save to localStorage + dirty tracking against initial data
   useEffect(() => {
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
 
+    const currentData = JSON.stringify(data);
+
+    // Mark dirty if data differs from initial mount data
+    if (mountedRef.current && currentData !== initialDataRef.current) {
+      setState(prev => prev.isDirty ? prev : { ...prev, isDirty: true });
+    }
+
     debounceTimerRef.current = setTimeout(() => {
-      const currentData = JSON.stringify(data);
-      
-      // Check if data has changed from last saved
       if (currentData !== lastSavedDataRef.current) {
         try {
-          const saveData = {
+          const saveData: SavePayload<T, M> = {
             data,
+            metadata,
             savedAt: new Date().toISOString(),
           };
           localStorage.setItem(actualStorageKey, JSON.stringify(saveData));
@@ -73,7 +90,6 @@ export function useAutoSave<T>({
           setState(prev => ({
             ...prev,
             lastSavedAt: new Date(),
-            isDirty: false,
           }));
         } catch (e) {
           console.error('Error saving to localStorage:', e);
@@ -81,18 +97,12 @@ export function useAutoSave<T>({
       }
     }, debounceMs);
 
-    // Mark as dirty when data changes
-    const currentData = JSON.stringify(data);
-    if (lastSavedDataRef.current && currentData !== lastSavedDataRef.current) {
-      setState(prev => ({ ...prev, isDirty: true }));
-    }
-
     return () => {
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [data, actualStorageKey, debounceMs]);
+  }, [data, metadata, actualStorageKey, debounceMs]);
 
   // Auto-save to database at intervals
   useEffect(() => {
@@ -112,7 +122,7 @@ export function useAutoSave<T>({
     };
   }, [onSave, autoSaveInterval, state.isDirty, data]);
 
-  // Unsaved changes warning
+  // Unsaved changes warning — fires when data differs from initial
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (state.isDirty) {
@@ -151,21 +161,21 @@ export function useAutoSave<T>({
   const clearSavedData = useCallback(() => {
     localStorage.removeItem(actualStorageKey);
     lastSavedDataRef.current = null;
-    initialDataRef.current = null;
+    initialDataRef.current = JSON.stringify(data);
     setState({
       isSaving: false,
       lastSavedAt: null,
       isDirty: false,
       error: null,
     });
-  }, [actualStorageKey]);
+  }, [actualStorageKey, data]);
 
-  const getSavedData = useCallback((): T | null => {
+  const getSavedData = useCallback((): SavePayload<T, M> | null => {
     try {
       const saved = localStorage.getItem(actualStorageKey);
       if (saved) {
-        const parsed = JSON.parse(saved);
-        return parsed.data || null;
+        const parsed = JSON.parse(saved) as SavePayload<T, M>;
+        if (parsed.data) return parsed;
       }
     } catch (e) {
       console.error('Error getting saved data:', e);
