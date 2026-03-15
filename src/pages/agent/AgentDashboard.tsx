@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  Building2, Plus, Eye, Home, BarChart3, Loader2, FileText, Clock,
+  Building2, Plus, Eye, Home, BarChart3, FileText, Clock,
   CheckCircle, AlertCircle, Settings, RefreshCw, ShieldCheck, ShieldAlert,
   ArrowLeft, X, PartyPopper, Mail, PenLine, ExternalLink, MessageSquare,
   BadgeCheck, Star
@@ -25,6 +25,15 @@ import { PerformanceInsights } from '@/components/agent/PerformanceInsights';
 import { useBlogQuotaCheck } from '@/hooks/useBlogQuota';
 import { useMyBlogPosts } from '@/hooks/useProfessionalBlog';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { WidgetErrorBoundary } from '@/components/shared/WidgetErrorBoundary';
+import {
+  SnapshotStripSkeleton,
+  QuickActionsSkeleton,
+  PerformanceSkeleton,
+  RecentPropertiesSkeleton,
+  SidebarCardSkeleton,
+  HeaderSkeleton,
+} from '@/components/agent/DashboardSkeletons';
 
 export default function AgentDashboard() {
   const { data: agentProfile, isLoading: profileLoading } = useAgentProfile();
@@ -87,8 +96,6 @@ export default function AgentDashboard() {
     return `${format(date, 'MMM d, yyyy')} at ${time}`;
   };
 
-  const isLoading = profileLoading || propertiesLoading;
-
   // Status counts
   const statusCounts = {
     draft: properties.filter(p => (p as any).verification_status === 'draft').length,
@@ -109,16 +116,6 @@ export default function AgentDashboard() {
       return differenceInDays(now, parseISO(renewedAt)) >= STALE_THRESHOLD_DAYS;
     });
   }, [properties]);
-
-  if (isLoading) {
-    return (
-      <Layout>
-        <div className="min-h-screen flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      </Layout>
-    );
-  }
 
   // Snapshot strip data
   const snapshotItems = [
@@ -148,25 +145,29 @@ export default function AgentDashboard() {
         >
           {/* Compact Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <Button variant="ghost" size="icon" asChild className="rounded-xl hover:bg-primary/10 flex-shrink-0">
-                <Link to="/">
-                  <ArrowLeft className="h-4 w-4" />
-                </Link>
-              </Button>
-              <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center">
-                <Building2 className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-xl font-bold text-foreground">{agentProfile?.name}</h1>
-                  {agentProfile?.status === 'active' && <BadgeCheck className="h-5 w-5 text-primary" />}
+            {profileLoading ? (
+              <HeaderSkeleton />
+            ) : (
+              <div className="flex items-center gap-3">
+                <Button variant="ghost" size="icon" asChild className="rounded-xl hover:bg-primary/10 flex-shrink-0">
+                  <Link to="/">
+                    <ArrowLeft className="h-4 w-4" />
+                  </Link>
+                </Button>
+                <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                  <Building2 className="h-6 w-6 text-primary" />
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  {agentProfile?.agency_name || 'Independent Agent'} · Agent Dashboard
-                </p>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h1 className="text-xl font-bold text-foreground">{agentProfile?.name}</h1>
+                    {agentProfile?.status === 'active' && <BadgeCheck className="h-5 w-5 text-primary" />}
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {agentProfile?.agency_name || 'Independent Agent'} · Agent Dashboard
+                  </p>
+                </div>
               </div>
-            </div>
+            )}
             <div className="flex items-center gap-2">
               <NotificationBell />
               <Button variant="ghost" size="icon" asChild className="rounded-xl hover:bg-primary/10">
@@ -184,20 +185,24 @@ export default function AgentDashboard() {
           </div>
 
           {/* Snapshot Strip */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.1 }}
-            className="flex flex-wrap items-center gap-x-4 gap-y-1 px-1"
-          >
-            {snapshotItems.map((item, i) => (
-              <span key={item.label} className="flex items-center gap-1.5 text-sm">
-                {i > 0 && <span className="text-muted-foreground/40 mr-1.5">·</span>}
-                <span className="font-semibold text-foreground">{item.value.toLocaleString()}</span>
-                <span className="text-muted-foreground">{item.label}</span>
-              </span>
-            ))}
-          </motion.div>
+          {propertiesLoading ? (
+            <SnapshotStripSkeleton />
+          ) : (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.1 }}
+              className="flex flex-wrap items-center gap-x-4 gap-y-1 px-1"
+            >
+              {snapshotItems.map((item, i) => (
+                <span key={item.label} className="flex items-center gap-1.5 text-sm">
+                  {i > 0 && <span className="text-muted-foreground/40 mr-1.5">·</span>}
+                  <span className="font-semibold text-foreground">{item.value.toLocaleString()}</span>
+                  <span className="text-muted-foreground">{item.label}</span>
+                </span>
+              ))}
+            </motion.div>
+          )}
 
           {/* Property Went Live Alerts */}
           {recentlyApproved.length === 1 ? (
@@ -279,155 +284,191 @@ export default function AgentDashboard() {
           )}
 
           {/* Onboarding Checklist */}
-          <OnboardingChecklist
-            agentProfile={agentProfile}
-            properties={properties.map(p => ({
-              id: p.id,
-              verification_status: (p as any).verification_status,
-              views_count: p.views_count,
-            }))}
-          />
+          <WidgetErrorBoundary fallbackTitle="Couldn't load onboarding checklist">
+            <OnboardingChecklist
+              agentProfile={agentProfile}
+              properties={properties.map(p => ({
+                id: p.id,
+                verification_status: (p as any).verification_status,
+                views_count: p.views_count,
+              }))}
+            />
+          </WidgetErrorBoundary>
 
           {/* Quick Actions Grid */}
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
-            {quickActions.map((action, index) => (
-              <motion.div
-                key={action.label}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.03 }}
-              >
-                <Link
-                  to={action.href}
-                  className={`group relative flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border border-border/50 bg-card ${action.hoverBg} hover:border-primary/30 transition-all text-center h-full min-h-[96px]`}
+          {profileLoading ? (
+            <QuickActionsSkeleton />
+          ) : (
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+              {quickActions.map((action, index) => (
+                <motion.div
+                  key={action.label}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.03 }}
                 >
-                  <div className={`p-2.5 rounded-xl ${action.bg} transition-colors`}>
-                    <action.icon className={`h-5 w-5 ${action.color}`} />
-                  </div>
-                  <span className="text-xs font-medium text-foreground">{action.label}</span>
-                  {action.badge && (
-                    <Badge className="absolute -top-1.5 -right-1.5 text-[10px] px-1.5 py-0 bg-primary text-primary-foreground">
-                      {action.badge}
-                    </Badge>
-                  )}
-                </Link>
-              </motion.div>
-            ))}
-          </div>
+                  <Link
+                    to={action.href}
+                    className={`group relative flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border border-border/50 bg-card ${action.hoverBg} hover:border-primary/30 transition-all text-center h-full min-h-[96px]`}
+                  >
+                    <div className={`p-2.5 rounded-xl ${action.bg} transition-colors`}>
+                      <action.icon className={`h-5 w-5 ${action.color}`} />
+                    </div>
+                    <span className="text-xs font-medium text-foreground">{action.label}</span>
+                    {action.badge && (
+                      <Badge className="absolute -top-1.5 -right-1.5 text-[10px] px-1.5 py-0 bg-primary text-primary-foreground">
+                        {action.badge}
+                      </Badge>
+                    )}
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
+          )}
 
           {/* Two-Column Layout: Performance + Sidebar */}
           <div className="grid lg:grid-cols-5 gap-6 lg:items-center">
             {/* Left Column — Performance */}
             <div className="lg:col-span-3 space-y-4">
-              {performanceData && (
-                <PerformanceInsights
-                  metrics={{
-                    viewsThisWeek: performanceData.viewsThisWeek,
-                    viewsLastWeek: performanceData.viewsLastWeek,
-                    inquiriesThisWeek: performanceData.inquiriesThisWeek,
-                    inquiriesLastWeek: performanceData.inquiriesLastWeek,
-                    listingsActive: performanceData.listingsActive,
-                    listingsLastWeek: performanceData.listingsLastWeek,
-                    conversionRate: performanceData.conversionRate,
-                    conversionRateLastWeek: performanceData.conversionRateLastWeek,
-                  }}
-                  topListingTitle={performanceData.topListingTitle ?? undefined}
-                  className="rounded-2xl border-border/50"
-                />
-              )}
+              <WidgetErrorBoundary fallbackTitle="Couldn't load performance data">
+                {performanceLoading ? (
+                  <PerformanceSkeleton />
+                ) : performanceData ? (
+                  <PerformanceInsights
+                    metrics={{
+                      viewsThisWeek: performanceData.viewsThisWeek,
+                      viewsLastWeek: performanceData.viewsLastWeek,
+                      inquiriesThisWeek: performanceData.inquiriesThisWeek,
+                      inquiriesLastWeek: performanceData.inquiriesLastWeek,
+                      listingsActive: performanceData.listingsActive,
+                      listingsLastWeek: performanceData.listingsLastWeek,
+                      conversionRate: performanceData.conversionRate,
+                      conversionRateLastWeek: performanceData.conversionRateLastWeek,
+                    }}
+                    topListingTitle={performanceData.topListingTitle ?? undefined}
+                    className="rounded-2xl border-border/50"
+                  />
+                ) : null}
+              </WidgetErrorBoundary>
 
-              {/* Recent Properties (compact) */}
-              {properties.length > 0 && (
-                <Card className="rounded-2xl border-border/50">
-                  <CardHeader className="pb-2 pt-4 px-4">
-                    <CardTitle className="text-sm flex items-center justify-between">
-                      <span className="flex items-center gap-2">
-                        <Home className="h-4 w-4 text-primary" />
-                        Recent Properties
-                      </span>
-                      <Button variant="link" size="sm" asChild className="h-auto p-0 text-xs text-primary">
-                        <Link to="/agent/properties">View All</Link>
+              {/* Recent Properties */}
+              <WidgetErrorBoundary fallbackTitle="Couldn't load recent properties">
+                {propertiesLoading ? (
+                  <RecentPropertiesSkeleton />
+                ) : properties.length === 0 ? (
+                  <Card className="rounded-2xl border-border/50">
+                    <CardContent className="flex flex-col items-center justify-center py-10 text-center">
+                      <div className="p-3 rounded-xl bg-primary/10 mb-3">
+                        <Home className="h-6 w-6 text-primary" />
+                      </div>
+                      <p className="text-sm font-medium text-foreground">No listings yet</p>
+                      <p className="text-xs text-muted-foreground mt-1 mb-4 max-w-xs">
+                        Create your first listing to start attracting buyers and tracking performance.
+                      </p>
+                      <Button asChild size="sm" className="rounded-xl gap-2">
+                        <Link to="/agent/properties/new">
+                          <Plus className="h-4 w-4" />
+                          Create Your First Listing
+                        </Link>
                       </Button>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="px-4 pb-4">
-                    <div className="space-y-2">
-                      {properties.slice(0, 3).map((property) => (
-                        <div key={property.id} className="flex items-center justify-between p-2.5 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <img
-                              src={property.images?.[0] || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=100'}
-                              alt={property.title}
-                              className="h-10 w-10 rounded-lg object-cover flex-shrink-0"
-                            />
-                            <div className="min-w-0">
-                              <p className="font-medium text-sm line-clamp-1">{property.title}</p>
-                              <p className="text-xs text-muted-foreground">{property.city}</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <Card className="rounded-2xl border-border/50">
+                    <CardHeader className="pb-2 pt-4 px-4">
+                      <CardTitle className="text-sm flex items-center justify-between">
+                        <span className="flex items-center gap-2">
+                          <Home className="h-4 w-4 text-primary" />
+                          Recent Properties
+                        </span>
+                        <Button variant="link" size="sm" asChild className="h-auto p-0 text-xs text-primary">
+                          <Link to="/agent/properties">View All</Link>
+                        </Button>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="px-4 pb-4">
+                      <div className="space-y-2">
+                        {properties.slice(0, 3).map((property) => (
+                          <div key={property.id} className="flex items-center justify-between p-2.5 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <img
+                                src={property.images?.[0] || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=100'}
+                                alt={property.title}
+                                className="h-10 w-10 rounded-lg object-cover flex-shrink-0"
+                              />
+                              <div className="min-w-0">
+                                <p className="font-medium text-sm line-clamp-1">{property.title}</p>
+                                <p className="text-xs text-muted-foreground">{property.city}</p>
+                              </div>
                             </div>
+                            <span className={`text-xs px-2 py-1 rounded-lg font-medium flex-shrink-0 ${
+                              (property as any).verification_status === 'approved'
+                                ? 'bg-primary/10 text-primary'
+                                : 'bg-muted text-muted-foreground'
+                            }`}>
+                              {(property as any).verification_status === 'approved' ? 'Live' :
+                               (property as any).verification_status === 'pending_review' ? 'Pending' :
+                               (property as any).verification_status === 'changes_requested' ? 'Changes' :
+                               'Draft'}
+                            </span>
                           </div>
-                          <span className={`text-xs px-2 py-1 rounded-lg font-medium flex-shrink-0 ${
-                            (property as any).verification_status === 'approved'
-                              ? 'bg-primary/10 text-primary'
-                              : 'bg-muted text-muted-foreground'
-                          }`}>
-                            {(property as any).verification_status === 'approved' ? 'Live' :
-                             (property as any).verification_status === 'pending_review' ? 'Pending' :
-                             (property as any).verification_status === 'changes_requested' ? 'Changes' :
-                             'Draft'}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </WidgetErrorBoundary>
             </div>
 
             {/* Right Column — Contextual Sidebar */}
             <div className="lg:col-span-2 space-y-4">
               {/* Stale Listings Alert */}
-              {staleListings.length > 0 && (
-                <Card className="rounded-2xl border-primary/20 bg-primary/5">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="p-2 rounded-xl bg-primary/10">
-                        <RefreshCw className="h-4 w-4 text-primary" />
+              <WidgetErrorBoundary fallbackTitle="Couldn't load stale listings">
+                {staleListings.length > 0 && (
+                  <Card className="rounded-2xl border-primary/20 bg-primary/5">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="p-2 rounded-xl bg-primary/10">
+                          <RefreshCw className="h-4 w-4 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">Listings Need Renewal</p>
+                          <p className="text-xs text-muted-foreground">
+                            {staleListings.length} listing{staleListings.length > 1 ? 's' : ''} over {STALE_THRESHOLD_DAYS} days old
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-medium">Listings Need Renewal</p>
-                        <p className="text-xs text-muted-foreground">
-                          {staleListings.length} listing{staleListings.length > 1 ? 's' : ''} over {STALE_THRESHOLD_DAYS} days old
-                        </p>
-                      </div>
-                    </div>
-                    <Button size="sm" variant="outline" asChild className="rounded-xl w-full border-primary/30 text-primary hover:bg-primary/10">
-                      <Link to="/agent/properties?tab=stale">Renew Now</Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
+                      <Button size="sm" variant="outline" asChild className="rounded-xl w-full border-primary/30 text-primary hover:bg-primary/10">
+                        <Link to="/agent/properties?tab=stale">Renew Now</Link>
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
+              </WidgetErrorBoundary>
 
               {/* Changes Requested Alert */}
-              {statusCounts.changes_requested > 0 && (
-                <Card className="rounded-2xl border-primary/20 bg-primary/5">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="p-2 rounded-xl bg-primary/10">
-                        <AlertCircle className="h-4 w-4 text-primary" />
+              <WidgetErrorBoundary fallbackTitle="Couldn't load action items">
+                {statusCounts.changes_requested > 0 && (
+                  <Card className="rounded-2xl border-primary/20 bg-primary/5">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="p-2 rounded-xl bg-primary/10">
+                          <AlertCircle className="h-4 w-4 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">Action Required</p>
+                          <p className="text-xs text-muted-foreground">
+                            {statusCounts.changes_requested} listing{statusCounts.changes_requested > 1 ? 's' : ''} need{statusCounts.changes_requested === 1 ? 's' : ''} changes
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-medium">Action Required</p>
-                        <p className="text-xs text-muted-foreground">
-                          {statusCounts.changes_requested} listing{statusCounts.changes_requested > 1 ? 's' : ''} need{statusCounts.changes_requested === 1 ? 's' : ''} changes
-                        </p>
-                      </div>
-                    </div>
-                    <Button size="sm" variant="outline" asChild className="rounded-xl w-full border-primary/30 text-primary hover:bg-primary/10">
-                      <Link to="/agent/properties?tab=changes_requested">Review</Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
+                      <Button size="sm" variant="outline" asChild className="rounded-xl w-full border-primary/30 text-primary hover:bg-primary/10">
+                        <Link to="/agent/properties?tab=changes_requested">Review</Link>
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
+              </WidgetErrorBoundary>
 
               {/* Homepage Exposure (condensed) */}
               <Card className="rounded-2xl border-border/50">

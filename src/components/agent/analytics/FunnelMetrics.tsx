@@ -29,6 +29,7 @@ export function FunnelMetrics({ views, saves, inquiries }: FunnelMetricsProps) {
             </p>
           </div>
         ) : (
+        <>
         <div className="flex items-center justify-between gap-2">
           {/* Views */}
           <div className="flex-1 text-center">
@@ -76,6 +77,7 @@ export function FunnelMetrics({ views, saves, inquiries }: FunnelMetricsProps) {
             <span className="font-medium text-foreground">{saveToInquiryRate}%</span> of users who saved also inquired
           </p>
         </div>
+        </>
         )}
       </CardContent>
     </Card>
