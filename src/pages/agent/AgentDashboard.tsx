@@ -9,6 +9,7 @@ import {
   BadgeCheck, Star
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
+import { PullToRefresh } from '@/components/shared/PullToRefresh';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
