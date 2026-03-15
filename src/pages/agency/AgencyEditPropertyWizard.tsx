@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Save, Send, Loader2, AlertCircle, Clock, CheckCircle2, XCircle } from 'lucide-react';
@@ -20,6 +20,8 @@ import {
 import { useProperty } from '@/hooks/useProperties';
 import { useUpdatePropertyForAgency, useSubmitForReview, VerificationStatus } from '@/hooks/useAgentProperties';
 import { PropertySubmittedDialog } from '@/components/agent/PropertySubmittedDialog';
+import { useAutoSave } from '@/hooks/useAutoSave';
+import { SaveStatusIndicator } from '@/components/shared/SaveStatusIndicator';
 
 const steps = [
   { title: 'Basics', description: 'Property type, price, location' },
