@@ -204,162 +204,272 @@ export default function AgentProperties() {
                   )}
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Property</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Price</TableHead>
-                        <TableHead className="text-center">Views</TableHead>
-                        <TableHead className="text-center">Saves</TableHead>
-                        <TableHead className="text-center">Inquiries</TableHead>
-                        <TableHead className="text-center">Days</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredListings.map((listing) => {
-                        const verificationStatus = (listing as any).verification_status as keyof typeof statusConfig;
-                        const status = statusConfig[verificationStatus] || statusConfig.draft;
-                        const isDraft = verificationStatus === 'draft';
-                        const isChangesRequested = verificationStatus === 'changes_requested';
-                        const isApproved = verificationStatus === 'approved';
-                        const canSubmit = isDraft || isChangesRequested;
-                        const stale = isPropertyStale(listing);
+                <>
+                  {/* Mobile Card View */}
+                  <div className="md:hidden divide-y divide-border">
+                    {filteredListings.map((listing) => {
+                      const verificationStatus = (listing as any).verification_status as keyof typeof statusConfig;
+                      const status = statusConfig[verificationStatus] || statusConfig.draft;
+                      const isDraft = verificationStatus === 'draft';
+                      const isChangesRequested = verificationStatus === 'changes_requested';
+                      const isApproved = verificationStatus === 'approved';
+                      const canSubmit = isDraft || isChangesRequested;
+                      const stale = isPropertyStale(listing);
 
-                        return (
-                          <TableRow key={listing.id} className="hover:bg-muted/30">
-                            <TableCell>
-                              <div className="flex items-center gap-3">
-                                <div className="h-12 w-16 rounded-lg bg-muted overflow-hidden flex-shrink-0">
-                                  {listing.images?.[0] ? (
-                                    <img src={listing.images[0]} alt={listing.title} className="h-full w-full object-cover" />
-                                  ) : (
-                                    <div className="h-full w-full flex items-center justify-center">
-                                      <Home className="h-4 w-4 text-muted-foreground" />
-                                    </div>
-                                  )}
+                      return (
+                        <div key={listing.id} className="p-4 space-y-3">
+                          <div className="flex items-start gap-3">
+                            <div className="h-16 w-20 rounded-lg bg-muted overflow-hidden flex-shrink-0">
+                              {listing.images?.[0] ? (
+                                <img src={listing.images[0]} alt={listing.title} className="h-full w-full object-cover" />
+                              ) : (
+                                <div className="h-full w-full flex items-center justify-center">
+                                  <Home className="h-5 w-5 text-muted-foreground" />
                                 </div>
-                                <div className="min-w-0">
-                                  <p className="font-medium truncate max-w-[200px]">{listing.title}</p>
-                                  <p className="text-xs text-muted-foreground">{listing.city}</p>
-                                  {/* Rejection reason inline hint */}
-                                  {isChangesRequested && (listing as any).rejection_reason && (
-                                    <p className="text-xs text-orange-600 truncate max-w-[200px]">
-                                      ⚠ {(listing as any).rejection_reason}
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex flex-col gap-1">
-                                <Badge variant="outline" className={cn('text-xs w-fit', status.color)}>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm line-clamp-1">{listing.title}</p>
+                              <p className="text-xs text-muted-foreground">{listing.city}</p>
+                              <div className="flex items-center gap-2 mt-1.5">
+                                <Badge variant="outline" className={cn('text-xs', status.color)}>
                                   {status.label}
                                 </Badge>
                                 {stale && isApproved && (
-                                  <Badge variant="outline" className="text-xs w-fit bg-amber-50 text-amber-700 border-amber-200 gap-1">
+                                  <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200 gap-1">
                                     <AlertTriangle className="h-3 w-3" />
-                                    Renewal Due
+                                    Renewal
                                   </Badge>
                                 )}
                               </div>
-                            </TableCell>
-                            <TableCell className="text-right font-medium">
-                              {formatPrice(listing.price, listing.currency)}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <span className="text-sm text-muted-foreground">{listing.views_count || 0}</span>
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <span className="text-sm text-muted-foreground">—</span>
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <span className="text-sm text-muted-foreground">—</span>
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <span className="text-sm text-muted-foreground">{getDaysOnMarket(listing.created_at)}</span>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center justify-end gap-1">
-                                {/* Edit */}
-                                <Button variant="ghost" size="sm" asChild className="rounded-lg">
-                                  <Link to={`/agent/properties/${listing.id}/edit`}>
-                                    <Edit className="h-4 w-4" />
+                              {isChangesRequested && (listing as any).rejection_reason && (
+                                <p className="text-xs text-orange-600 mt-1 line-clamp-1">
+                                  ⚠ {(listing as any).rejection_reason}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium text-sm">{formatPrice(listing.price, listing.currency)}</span>
+                            <div className="flex items-center gap-1">
+                              <Button variant="ghost" size="sm" asChild className="rounded-lg h-8 w-8 p-0">
+                                <Link to={`/agent/properties/${listing.id}/edit`}>
+                                  <Edit className="h-4 w-4" />
+                                </Link>
+                              </Button>
+                              {canSubmit && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="rounded-lg h-8 w-8 p-0"
+                                  onClick={() => submitForReview.mutate(listing.id)}
+                                  disabled={submitForReview.isPending}
+                                >
+                                  <Send className="h-4 w-4" />
+                                </Button>
+                              )}
+                              {isApproved && (
+                                <Button variant="ghost" size="sm" asChild className="rounded-lg h-8 w-8 p-0">
+                                  <Link to={`/properties/${listing.id}`} target="_blank">
+                                    <Eye className="h-4 w-4" />
                                   </Link>
                                 </Button>
-
-                                {/* Submit for review */}
-                                {canSubmit && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="rounded-lg"
-                                    onClick={() => submitForReview.mutate(listing.id)}
-                                    disabled={submitForReview.isPending}
-                                    title="Submit for Review"
-                                  >
-                                    <Send className="h-4 w-4" />
+                              )}
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="rounded-lg h-8 w-8 p-0">
+                                    <MoreHorizontal className="h-4 w-4" />
                                   </Button>
-                                )}
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuSeparator />
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <DropdownMenuItem
+                                        className="text-destructive focus:text-destructive"
+                                        onSelect={(e) => e.preventDefault()}
+                                      >
+                                        <Trash2 className="h-4 w-4 mr-2" />
+                                        Delete
+                                      </DropdownMenuItem>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Delete Listing</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Are you sure you want to delete "{listing.title}"? This cannot be undone.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction
+                                          onClick={() => deleteProperty.mutate(listing.id)}
+                                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                        >
+                                          Delete
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
 
-                                {/* View live */}
-                                {isApproved && (
+                  {/* Desktop Table View */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Property</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="text-right">Price</TableHead>
+                          <TableHead className="text-center">Views</TableHead>
+                          <TableHead className="text-center">Saves</TableHead>
+                          <TableHead className="text-center">Inquiries</TableHead>
+                          <TableHead className="text-center">Days</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredListings.map((listing) => {
+                          const verificationStatus = (listing as any).verification_status as keyof typeof statusConfig;
+                          const status = statusConfig[verificationStatus] || statusConfig.draft;
+                          const isDraft = verificationStatus === 'draft';
+                          const isChangesRequested = verificationStatus === 'changes_requested';
+                          const isApproved = verificationStatus === 'approved';
+                          const canSubmit = isDraft || isChangesRequested;
+                          const stale = isPropertyStale(listing);
+
+                          return (
+                            <TableRow key={listing.id} className="hover:bg-muted/30">
+                              <TableCell>
+                                <div className="flex items-center gap-3">
+                                  <div className="h-12 w-16 rounded-lg bg-muted overflow-hidden flex-shrink-0">
+                                    {listing.images?.[0] ? (
+                                      <img src={listing.images[0]} alt={listing.title} className="h-full w-full object-cover" />
+                                    ) : (
+                                      <div className="h-full w-full flex items-center justify-center">
+                                        <Home className="h-4 w-4 text-muted-foreground" />
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="font-medium truncate max-w-[200px]">{listing.title}</p>
+                                    <p className="text-xs text-muted-foreground">{listing.city}</p>
+                                    {isChangesRequested && (listing as any).rejection_reason && (
+                                      <p className="text-xs text-orange-600 truncate max-w-[200px]">
+                                        ⚠ {(listing as any).rejection_reason}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex flex-col gap-1">
+                                  <Badge variant="outline" className={cn('text-xs w-fit', status.color)}>
+                                    {status.label}
+                                  </Badge>
+                                  {stale && isApproved && (
+                                    <Badge variant="outline" className="text-xs w-fit bg-amber-50 text-amber-700 border-amber-200 gap-1">
+                                      <AlertTriangle className="h-3 w-3" />
+                                      Renewal Due
+                                    </Badge>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-right font-medium">
+                                {formatPrice(listing.price, listing.currency)}
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <span className="text-sm text-muted-foreground">{listing.views_count || 0}</span>
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <span className="text-sm text-muted-foreground">—</span>
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <span className="text-sm text-muted-foreground">—</span>
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <span className="text-sm text-muted-foreground">{getDaysOnMarket(listing.created_at)}</span>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center justify-end gap-1">
                                   <Button variant="ghost" size="sm" asChild className="rounded-lg">
-                                    <Link to={`/properties/${listing.id}`} target="_blank">
-                                      <Eye className="h-4 w-4" />
+                                    <Link to={`/agent/properties/${listing.id}/edit`}>
+                                      <Edit className="h-4 w-4" />
                                     </Link>
                                   </Button>
-                                )}
-
-                                {/* More actions */}
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="sm" className="rounded-lg">
-                                      <MoreHorizontal className="h-4 w-4" />
+                                  {canSubmit && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="rounded-lg"
+                                      onClick={() => submitForReview.mutate(listing.id)}
+                                      disabled={submitForReview.isPending}
+                                      title="Submit for Review"
+                                    >
+                                      <Send className="h-4 w-4" />
                                     </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    <DropdownMenuSeparator />
-                                    <AlertDialog>
-                                      <AlertDialogTrigger asChild>
-                                        <DropdownMenuItem
-                                          className="text-destructive focus:text-destructive"
-                                          onSelect={(e) => e.preventDefault()}
-                                        >
-                                          <Trash2 className="h-4 w-4 mr-2" />
-                                          Delete
-                                        </DropdownMenuItem>
-                                      </AlertDialogTrigger>
-                                      <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                          <AlertDialogTitle>Delete Listing</AlertDialogTitle>
-                                          <AlertDialogDescription>
-                                            Are you sure you want to delete "{listing.title}"? This cannot be undone.
-                                          </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                          <AlertDialogAction
-                                            onClick={() => deleteProperty.mutate(listing.id)}
-                                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  )}
+                                  {isApproved && (
+                                    <Button variant="ghost" size="sm" asChild className="rounded-lg">
+                                      <Link to={`/properties/${listing.id}`} target="_blank">
+                                        <Eye className="h-4 w-4" />
+                                      </Link>
+                                    </Button>
+                                  )}
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="sm" className="rounded-lg">
+                                        <MoreHorizontal className="h-4 w-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      <DropdownMenuSeparator />
+                                      <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                          <DropdownMenuItem
+                                            className="text-destructive focus:text-destructive"
+                                            onSelect={(e) => e.preventDefault()}
                                           >
+                                            <Trash2 className="h-4 w-4 mr-2" />
                                             Delete
-                                          </AlertDialogAction>
-                                        </AlertDialogFooter>
-                                      </AlertDialogContent>
-                                    </AlertDialog>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </div>
+                                          </DropdownMenuItem>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                          <AlertDialogHeader>
+                                            <AlertDialogTitle>Delete Listing</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                              Are you sure you want to delete "{listing.title}"? This cannot be undone.
+                                            </AlertDialogDescription>
+                                          </AlertDialogHeader>
+                                          <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction
+                                              onClick={() => deleteProperty.mutate(listing.id)}
+                                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                            >
+                                              Delete
+                                            </AlertDialogAction>
+                                          </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                      </AlertDialog>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </>
               )}
             </CardContent>
           </Card>

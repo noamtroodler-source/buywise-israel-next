@@ -456,7 +456,7 @@ export default function AgentDashboard() {
             </div>
 
             {/* Right Column — Contextual Sidebar */}
-            <div className="lg:col-span-2 space-y-4">
+            <div className="md:col-span-2 space-y-4">
               {/* Stale Listings Alert */}
               <WidgetErrorBoundary fallbackTitle="Couldn't load stale listings">
                 {staleListings.length > 0 && (
