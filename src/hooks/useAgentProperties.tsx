@@ -222,7 +222,7 @@ export function useUpdateProperty() {
       toast.success('Property updated successfully');
     },
     onError: (error) => {
-      toast.error('Failed to update property: ' + error.message);
+      toast.error(getUserFriendlyError(error, 'Failed to update listing'));
     },
   });
 }
