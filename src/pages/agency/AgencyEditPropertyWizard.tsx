@@ -179,6 +179,7 @@ function AgencyEditWizardContent({ propertyId }: { propertyId: string }) {
     try {
       await updateProperty.mutateAsync(buildPayload() as any);
       await submitForReview.mutateAsync(propertyId);
+      clearSavedData();
       setShowSuccessDialog(true);
     } finally {
       setIsSubmitting(false);
