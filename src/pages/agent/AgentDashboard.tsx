@@ -187,6 +187,22 @@ export default function AgentDashboard() {
               </div>
             )}
             <div className="flex items-center gap-2">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleRefresh}
+                      disabled={isManualRefresh}
+                      className="rounded-xl hover:bg-primary/10"
+                    >
+                      <RefreshCw className={`h-4 w-4 ${isManualRefresh || isFetchingAny > 0 ? 'animate-spin' : ''}`} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Refresh dashboard</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               <NotificationBell />
               <Button variant="ghost" size="icon" asChild className="rounded-xl hover:bg-primary/10">
                 <Link to="/agent/settings">
