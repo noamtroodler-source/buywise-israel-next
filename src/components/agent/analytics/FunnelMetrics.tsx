@@ -76,6 +76,7 @@ export function FunnelMetrics({ views, saves, inquiries }: FunnelMetricsProps) {
             <span className="font-medium text-foreground">{saveToInquiryRate}%</span> of users who saved also inquired
           </p>
         </div>
+        )}
       </CardContent>
     </Card>
   );
