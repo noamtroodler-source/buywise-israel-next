@@ -20,6 +20,7 @@ import { PriceTrendsSection } from '@/components/city/PriceTrendsSection';
 import { CityWorthWatchingNew, MarketFactor } from '@/components/city/CityWorthWatchingNew';
 import { CityExploreListings } from '@/components/city/CityExploreListings';
 import { CityFeaturedProperties } from '@/components/city/CityFeaturedProperties';
+import { HistoricalPriceChart } from '@/components/city/HistoricalPriceChart';
 import { useCityDetails } from '@/hooks/useCityDetails';
 import { SEOHead } from '@/components/seo/SEOHead';
 import { generateCityMeta, generateCityJsonLd, SITE_CONFIG } from '@/lib/seo';
