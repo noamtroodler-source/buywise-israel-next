@@ -255,9 +255,15 @@ export function PriceByApartmentSize({
           />
 
           {/* Missing data banners */}
-          {hasNoData && (
+          {hasNoData && !isComparing && (
             <InfoBanner variant="info">
               Room-specific price data isn't available for {cityName}. The CBS requires a minimum number of transactions per room type to publish data.
+            </InfoBanner>
+          )}
+
+          {hasNoData && isComparing && (
+            <InfoBanner variant="info">
+              {cityName} doesn't have room-specific price data available. Comparison data is shown below where available.
             </InfoBanner>
           )}
 
