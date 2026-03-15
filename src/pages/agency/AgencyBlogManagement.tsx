@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { useMyBlogPosts, type BlogVerificationStatus } from '@/hooks/useProfessionalBlog';
 import { useMyAgency } from '@/hooks/useAgencyManagement';
 import { useBlogQuotaCheck } from '@/hooks/useBlogQuota';
-import { Loader2 } from 'lucide-react';
+import { AgencyBlogSkeleton } from '@/components/agency/skeletons/AgencyPageSkeletons';
 
 const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: typeof Clock }> = {
   draft: { label: 'Draft', variant: 'secondary', icon: Clock },
