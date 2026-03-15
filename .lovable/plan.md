@@ -1,57 +1,22 @@
 
 
-# Phase J: Dashboard Quick Search & Activity Feed
+## Phase 1: Founding Partner Enrollment — Implemented ✅
 
-## Overview
+All changes from the plan have been implemented:
 
-Add two new sections to the Agency Dashboard (`AgencyDashboard.tsx`):
-1. A compact **recent listings table** with an inline search bar (top 5 listings, filterable by title/address/agent)
-2. A **recent team activity feed** showing new listings and inquiries from team members
+1. **DB Migration** — Added `is_founding_partner`, `payplus_customer_id`, `payplus_subscription_id` to `subscriptions`; `payplus_subscription_id` to `featured_listings`. Updated FOUNDING2026 promo code (max_redemptions=15, cleared old discount/credit data).
+2. **`enroll-founding-partner` edge function** — 15-cap enforcement, trial creation (60 days), founding_partners insert, first month credit grant, promo redemption tracking.
+3. **`check-trial-expirations` edge function** — Daily cron (6 AM UTC) expires trialing subscriptions past trial_end.
+4. **`useFoundingSpots` hook** — Live spots remaining counter querying founding_partners.
+5. **`FoundingProgramSection`** — Updated benefits (2mo free, 3 featured/mo, early access, case study), spots counter badge.
+6. **`FoundingProgramModal`** — Updated benefits, spots counter, activates enrollment flow.
+7. **`Pricing.tsx`** — FOUNDING2026 code routes to `enroll-founding-partner` instead of Stripe; CTA changes to "Activate Founding Program".
+8. **`CheckoutSuccess.tsx`** — Founding partner variant with trial end date and featured listings CTA.
+9. **`grant-monthly-featured-credits`** — Already has 2-month duration cap logic.
+10. **`PlanCard`** — Added `ctaLabel` prop for custom CTA text.
 
-## Changes
-
-### 1. New hook: `src/hooks/useAgencyTeamActivity.tsx`
-
-Fetch recent activity for a given agency:
-- Recent properties created by agency agents (from `properties` joined with `agents` to get agent name)
-- Recent inquiries on agency properties (from `property_inquiries` joined with `properties`)
-- Merge, sort by `created_at` desc, limit to 10
-- Return typed `TeamActivityItem[]` with `id`, `type` ('new_listing' | 'inquiry'), `title`, `description`, `timestamp`, `relativeTime`
-- Uses `formatDistanceToNow` from date-fns (already in project)
-- `refetchInterval: 60000`
-
-### 2. New component: `src/components/agency/AgencyTeamActivityFeed.tsx`
-
-Compact card with:
-- Header: "Team Activity" with Activity icon
-- ScrollArea (max ~240px) listing activity items
-- Each item: icon (Home for listings, MessageSquare for inquiries), title, description, relative time
-- Empty state: "No recent activity"
-- Loading skeleton (3 items)
-
-### 3. New component: `src/components/agency/DashboardListingsPreview.tsx`
-
-Compact card with:
-- Header: "Recent Listings" with link to `/agency/listings`
-- Search input (filters by title, address, or agent name client-side)
-- Small table: Title, Agent, Status, Views — top 5 filtered results from `useAgencyListingsManagement`
-- Status badges matching existing `statusConfig`
-- Empty/loading states
-
-### 4. Update: `src/pages/agency/AgencyDashboard.tsx`
-
-- Import the two new components
-- Add them in a new two-column grid row between the Performance/Announcements section and the Mobile FAB
-- Left: `DashboardListingsPreview` (3 cols)
-- Right: `AgencyTeamActivityFeed` (2 cols)
-- Pass `agency.id` to both
-
-## Files touched
-
-| File | Change |
-|------|--------|
-| `src/hooks/useAgencyTeamActivity.tsx` | New hook — fetch recent team activity |
-| `src/components/agency/AgencyTeamActivityFeed.tsx` | New component — activity feed card |
-| `src/components/agency/DashboardListingsPreview.tsx` | New component — searchable mini listings table |
-| `src/pages/agency/AgencyDashboard.tsx` | Import & render new components |
-
+### Deferred (PayPlus not yet set up):
+- `payplus-checkout`, `payplus-webhook`, `manage-billing` edge functions
+- `list-invoices` PayPlus integration
+- Featured listing ₪299/mo PayPlus recurring charge
+- Trial-to-paid automatic charge initiation

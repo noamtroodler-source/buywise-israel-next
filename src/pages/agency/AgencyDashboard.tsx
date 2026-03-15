@@ -25,6 +25,8 @@ import { AgencyOnboardingProgress } from '@/components/agency/AgencyOnboardingPr
 import { NoPlanBanner } from '@/components/billing/NoPlanBanner';
 import { ImportWelcomeBanner } from '@/components/agency/ImportWelcomeBanner';
 import { AgencyAnnouncements } from '@/components/agency/AgencyAnnouncements';
+import { AgencyTeamActivityFeed } from '@/components/agency/AgencyTeamActivityFeed';
+import { DashboardListingsPreview } from '@/components/agency/DashboardListingsPreview';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useBlogQuotaCheck } from '@/hooks/useBlogQuota';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -255,6 +257,16 @@ export default function AgencyDashboard() {
                   </Card>
                 </Link>
               )}
+            </div>
+          </div>
+
+          {/* Listings Preview + Activity Feed */}
+          <div className="grid lg:grid-cols-5 gap-6">
+            <div className="lg:col-span-3">
+              <DashboardListingsPreview agencyId={agency.id} />
+            </div>
+            <div className="lg:col-span-2">
+              <AgencyTeamActivityFeed agencyId={agency.id} />
             </div>
           </div>
         </motion.div>
