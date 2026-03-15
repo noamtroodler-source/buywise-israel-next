@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   ArrowLeft, Eye, Heart, MessageSquare, TrendingUp, Loader2, Calendar, 
-  Building2, Users, BarChart3, Home
+  Building2, Users, BarChart3, Home, FileSpreadsheet
 } from 'lucide-react';
 import { EnhancedEmptyState } from '@/components/shared/EnhancedEmptyState';
 import { Layout } from '@/components/layout/Layout';
