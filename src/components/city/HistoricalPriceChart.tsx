@@ -279,7 +279,16 @@ export function HistoricalPriceChart({
     return [Math.max(0, niceMin), niceMax];
   }, [filteredData, comparisonCityNames]);
 
-  if (filteredData.length < 2) return null;
+  // Detect comparison cities with no data
+  const comparisonCitiesWithNoData = useMemo(() => {
+    if (!isComparing || filteredData.length === 0) return [];
+    return comparisonCityNames.filter((_, idx) => {
+      const key = `compare${idx}`;
+      return !filteredData.some((d) => d[key] != null);
+    });
+  }, [filteredData, comparisonCityNames, isComparing]);
+
+  const hasNoData = filteredData.length < 2;
 
   const isOverallPositive = metrics && metrics.totalAppreciation >= 0;
 
@@ -301,13 +310,15 @@ export function HistoricalPriceChart({
                 How {cityName} apartment prices have moved over time
               </p>
             </div>
-            <Tabs value={period} onValueChange={(v) => setPeriod(v as Period)}>
-              <TabsList className="bg-background">
-                <TabsTrigger value="5y" className="text-xs">5 Years</TabsTrigger>
-                <TabsTrigger value="10y" className="text-xs">10 Years</TabsTrigger>
-                <TabsTrigger value="all" className="text-xs">All Time</TabsTrigger>
-              </TabsList>
-            </Tabs>
+            {!hasNoData && (
+              <Tabs value={period} onValueChange={(v) => setPeriod(v as Period)}>
+                <TabsList className="bg-background">
+                  <TabsTrigger value="5y" className="text-xs">5 Years</TabsTrigger>
+                  <TabsTrigger value="10y" className="text-xs">10 Years</TabsTrigger>
+                  <TabsTrigger value="all" className="text-xs">All Time</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            )}
           </div>
 
           {/* City Comparison Selector */}
