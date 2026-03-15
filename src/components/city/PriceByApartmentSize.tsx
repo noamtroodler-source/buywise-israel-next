@@ -362,8 +362,8 @@ export function PriceByApartmentSize({
             </div>
           )}
 
-          {/* Personalized insight — normal mode only */}
-          {!isComparing && <RoomSizeInsight citySlug={citySlug} cityName={cityName} latestPrices={latestPrices} />}
+
+
 
           {/* Chart */}
           <div className="h-[300px] w-full bg-muted/20 rounded-xl border border-border/50 p-4 pt-2">
