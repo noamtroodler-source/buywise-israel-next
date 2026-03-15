@@ -25,13 +25,7 @@ export default function AgencyBlogManagement() {
   const { canSubmit } = useBlogQuotaCheck('agency', agency?.id);
 
   if (agencyLoading || postsLoading) {
-    return (
-      <Layout>
-        <div className="min-h-screen flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      </Layout>
-    );
+    return <AgencyBlogSkeleton />;
   }
 
   return (

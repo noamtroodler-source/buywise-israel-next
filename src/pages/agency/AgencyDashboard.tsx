@@ -28,6 +28,7 @@ import { AgencyAnnouncements } from '@/components/agency/AgencyAnnouncements';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useBlogQuotaCheck } from '@/hooks/useBlogQuota';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { AgencyDashboardSkeleton } from '@/components/agency/skeletons/AgencyPageSkeletons';
 
 export default function AgencyDashboard() {
   const { data: agency, isLoading: agencyLoading } = useMyAgency();
@@ -41,13 +42,7 @@ export default function AgencyDashboard() {
   const isMobile = useIsMobile();
 
   if (agencyLoading) {
-    return (
-      <Layout>
-        <div className="min-h-screen flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      </Layout>
-    );
+    return <AgencyDashboardSkeleton />;
   }
 
   if (!agency) {

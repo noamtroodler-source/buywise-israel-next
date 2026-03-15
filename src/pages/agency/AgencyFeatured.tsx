@@ -4,18 +4,13 @@ import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { useMyAgency } from '@/hooks/useAgencyManagement';
 import { FeaturedListingsManager } from '@/components/billing/FeaturedListingsManager';
+import { AgencyFeaturedSkeleton } from '@/components/agency/skeletons/AgencyPageSkeletons';
 
 export default function AgencyFeatured() {
   const { data: agency, isLoading } = useMyAgency();
 
   if (isLoading) {
-    return (
-      <Layout>
-        <div className="min-h-screen flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      </Layout>
-    );
+    return <AgencyFeaturedSkeleton />;
   }
 
   if (!agency) {
