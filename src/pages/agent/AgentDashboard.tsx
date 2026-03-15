@@ -155,6 +155,7 @@ export default function AgentDashboard() {
 
   return (
     <Layout>
+      <PullToRefresh onRefresh={handleRefresh} disabled={!isMobile} className="min-h-0">
       <div className="container py-8 pb-24 md:pb-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
