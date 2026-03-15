@@ -205,16 +205,11 @@ export function PriceByApartmentSize({
     );
   };
 
-  const hasNoData = latestPrices.length === 0 || displayData.length < 2;
-
-  // Detect partial room data (e.g. Efrat only has 5-room)
+  // Treat as "no data" if fewer than 2 room types have data (e.g. Efrat only has 5-room)
   const availableRoomTypes = ROOM_CONFIG.filter((room) =>
     latestPrices.some((p) => p.roomType === room.rooms),
   );
-  const missingRoomTypes = ROOM_CONFIG.filter(
-    (room) => !latestPrices.some((p) => p.roomType === room.rooms),
-  );
-  const hasPartialData = !hasNoData && missingRoomTypes.length > 0 && availableRoomTypes.length > 0;
+  const hasNoData = latestPrices.length === 0 || displayData.length < 2 || availableRoomTypes.length < 2;
 
   // Detect comparison cities with no data for selected room type
   const comparisonCitiesWithNoData = useMemo(() => {
