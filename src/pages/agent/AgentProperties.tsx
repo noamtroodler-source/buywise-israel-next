@@ -65,6 +65,7 @@ function exportListingsToCSV(listings: any[], formatPrice: (price: number, curre
 
 export default function AgentProperties() {
   const { data: properties = [], isLoading } = useAgentProperties();
+  const navigate = useNavigate();
   const deleteProperty = useDeleteProperty();
   const submitForReview = useSubmitForReview();
   const bulkDelete = useBulkDeleteProperties();
@@ -76,6 +77,18 @@ export default function AgentProperties() {
   const [cityFilter, setCityFilter] = useState<string>('all');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+  const [hasDraft, setHasDraft] = useState(false);
+  const [draftDismissed, setDraftDismissed] = useState(false);
+
+  // Check for existing wizard draft in localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(PROPERTY_WIZARD_STORAGE_KEY);
+      setHasDraft(!!saved);
+    } catch {
+      setHasDraft(false);
+    }
+  }, []);
 
   const cities = useMemo(() => [...new Set(properties.map(p => p.city).filter(Boolean))], [properties]);
 
