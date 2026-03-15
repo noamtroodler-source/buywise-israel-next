@@ -18,6 +18,7 @@ import { CityWorthWatchingNew, MarketFactor } from '@/components/city/CityWorthW
 import { CityExploreListings } from '@/components/city/CityExploreListings';
 import { CityFeaturedProperties } from '@/components/city/CityFeaturedProperties';
 import { HistoricalPriceChart } from '@/components/city/HistoricalPriceChart';
+import { PriceByApartmentSize } from '@/components/city/PriceByApartmentSize';
 import { useCityDetails } from '@/hooks/useCityDetails';
 import { SEOHead } from '@/components/seo/SEOHead';
 import { generateCityMeta, generateCityJsonLd, SITE_CONFIG } from '@/lib/seo';
@@ -249,6 +250,16 @@ export default function CityDetail() {
         {/* 5. Historical Price Chart */}
         <section id="price-history">
           <HistoricalPriceChart
+            citySlug={slug || ''}
+            cityName={city.name}
+            dataSources={(city as any).data_sources}
+            lastVerified={city.updated_at}
+          />
+        </section>
+
+        {/* 5.5. Price by Apartment Size */}
+        <section id="price-by-size">
+          <PriceByApartmentSize
             citySlug={slug || ''}
             cityName={city.name}
             dataSources={(city as any).data_sources}
