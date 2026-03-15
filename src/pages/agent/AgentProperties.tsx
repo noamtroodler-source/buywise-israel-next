@@ -1,10 +1,10 @@
-import { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useMemo, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Loader2, Home, Plus, Search, Eye, Clock,
   CheckCircle2, Building2, Edit, Trash2, Send, MoreHorizontal,
-  AlertTriangle, MessageSquare, Heart, Download, X,
+  AlertTriangle, MessageSquare, Heart, Download, X, FileEdit,
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,6 +26,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { useAgentProperties, useDeleteProperty, useSubmitForReview, useBulkDeleteProperties, useBulkSubmitForReview } from '@/hooks/useAgentProperties';
+import { PROPERTY_WIZARD_STORAGE_KEY } from '@/components/agent/wizard/PropertyWizardContext';
 import { STALE_THRESHOLD_DAYS } from '@/hooks/useAgentProfile';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { differenceInDays, parseISO, format } from 'date-fns';
@@ -64,6 +65,7 @@ function exportListingsToCSV(listings: any[], formatPrice: (price: number, curre
 
 export default function AgentProperties() {
   const { data: properties = [], isLoading } = useAgentProperties();
+  const navigate = useNavigate();
   const deleteProperty = useDeleteProperty();
   const submitForReview = useSubmitForReview();
   const bulkDelete = useBulkDeleteProperties();
@@ -75,6 +77,18 @@ export default function AgentProperties() {
   const [cityFilter, setCityFilter] = useState<string>('all');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+  const [hasDraft, setHasDraft] = useState(false);
+  const [draftDismissed, setDraftDismissed] = useState(false);
+
+  // Check for existing wizard draft in localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(PROPERTY_WIZARD_STORAGE_KEY);
+      setHasDraft(!!saved);
+    } catch {
+      setHasDraft(false);
+    }
+  }, []);
 
   const cities = useMemo(() => [...new Set(properties.map(p => p.city).filter(Boolean))], [properties]);
 
@@ -220,6 +234,42 @@ export default function AgentProperties() {
               </motion.div>
             ))}
           </div>
+
+          {/* Draft Banner */}
+          {hasDraft && !draftDismissed && (
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+              <Card className="rounded-2xl border-primary/30 bg-primary/5">
+                <CardContent className="p-4 flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-xl bg-primary/10">
+                      <FileEdit className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">You have an unfinished draft</p>
+                      <p className="text-xs text-muted-foreground">Continue where you left off</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="rounded-xl h-8"
+                      onClick={() => setDraftDismissed(true)}
+                    >
+                      Dismiss
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="rounded-xl h-8"
+                      onClick={() => navigate('/agent/properties/new')}
+                    >
+                      Continue Draft
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
 
           {/* Filters */}
           <Card className="rounded-2xl border-primary/10">
