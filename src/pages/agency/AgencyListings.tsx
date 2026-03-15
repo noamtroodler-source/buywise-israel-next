@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ArrowLeft, Loader2, Home, Plus, Search, Download,
+  ArrowLeft, Loader2, Home, Plus, Search, Download, FileSpreadsheet,
   Eye, Clock, CheckCircle2, Building2, Heart, MessageSquare,
   Edit, Trash2, Send, MoreHorizontal, Copy, Key, ArrowLeftRight, X,
 } from 'lucide-react';
@@ -36,6 +36,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useUpdatePropertyStatus, useDuplicateProperty } from '@/hooks/useAgentProfile';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { cn } from '@/lib/utils';
+import { exportToCSV } from '@/lib/csvExport';
 import { AgencyListingsSkeleton } from '@/components/agency/skeletons/AgencyPageSkeletons';
 import { EnhancedEmptyState } from '@/components/shared/EnhancedEmptyState';
 
@@ -214,6 +215,32 @@ export default function AgencyListings() {
               </div>
             </div>
             <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="rounded-xl"
+                onClick={() => {
+                  const agentMap = Object.fromEntries(team.map(a => [a.id, a.name]));
+                  const headers = ['Title', 'Address', 'City', 'Price', 'Currency', 'Type', 'Status', 'Agent', 'Views', 'Saves', 'Inquiries', 'Created'];
+                  const rows = filteredListings.map(l => [
+                    l.title || '',
+                    l.address || '',
+                    l.city || '',
+                    String(l.price ?? ''),
+                    l.currency || 'ILS',
+                    l.property_type || '',
+                    l.verification_status || '',
+                    (l.agent_id && agentMap[l.agent_id]) || '',
+                    String(l.views_count ?? 0),
+                    String(l.total_saves ?? 0),
+                    String(l.inquiries_count ?? 0),
+                    l.created_at ? new Date(l.created_at).toLocaleDateString() : '',
+                  ]);
+                  exportToCSV(`agency-listings-${new Date().toISOString().slice(0, 10)}`, headers, rows);
+                }}
+              >
+                <FileSpreadsheet className="h-4 w-4 mr-2" />
+                Export CSV
+              </Button>
               <Button variant="outline" asChild className="rounded-xl">
                 <Link to="/agency/import">
                   <Download className="h-4 w-4 mr-2" />
