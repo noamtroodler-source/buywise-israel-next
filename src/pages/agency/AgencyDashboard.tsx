@@ -269,6 +269,7 @@ export default function AgencyDashboard() {
               <AgencyTeamActivityFeed agencyId={agency.id} />
             </div>
           </div>
+        </motion.div>
 
         {/* Mobile FAB — New Listing */}
         {isMobile && (
