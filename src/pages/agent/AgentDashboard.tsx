@@ -334,7 +334,7 @@ export default function AgentDashboard() {
           {profileLoading ? (
             <QuickActionsSkeleton />
           ) : (
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+            <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
               {quickActions.map((action, index) => (
                 <motion.div
                   key={action.label}
