@@ -292,7 +292,7 @@ export function PriceByApartmentSize({
             </div>
           )}
 
-          {!hasNoData && (
+          {!(hasNoData && !isComparing) && (
           <>
           {/* Summary cards — normal mode only */}
           {!isComparing && (
