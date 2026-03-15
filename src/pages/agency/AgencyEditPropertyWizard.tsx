@@ -236,6 +236,7 @@ function AgencyEditWizardContent({ propertyId }: { propertyId: string }) {
                 Back to Listings
               </Button>
               <div className="flex items-center gap-3">
+                <SaveStatusIndicator isSaving={isSaving} lastSavedAt={lastSavedAt} isDirty={isDirty} error={saveError} />
                 <Badge variant={statusInfo.variant} className={`flex items-center gap-1.5 ${statusInfo.className}`}>
                   <StatusIcon className="h-3 w-3" />
                   {statusInfo.label}

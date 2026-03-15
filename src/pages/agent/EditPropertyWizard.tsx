@@ -337,6 +337,7 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
                   <StatusIcon className="h-3 w-3" />
                   {statusInfo.label}
                 </Badge>
+              <SaveStatusIndicator isSaving={isSaving} lastSavedAt={lastSavedAt} isDirty={isDirty} error={saveError} />
                 <Button
                   variant="outline"
                   size="sm"

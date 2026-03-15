@@ -378,6 +378,57 @@ export function SortableImageUpload({
         </SortableContext>
       </DndContext>
 
+      {/* Failed uploads retry UI */}
+      {failedUploads.length > 0 && (
+        <div className="p-3 rounded-xl border border-destructive/30 bg-destructive/5 space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium text-destructive">
+              {failedUploads.length} upload(s) failed
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs"
+              onClick={async () => {
+                const toRetry = [...failedUploads];
+                setFailedUploads([]);
+                setUploading(true);
+                try {
+                  const results = await Promise.allSettled(toRetry.map(f => uploadImage(f.file)));
+                  const newUrls: string[] = [];
+                  const stillFailed: { file: File; error: string }[] = [];
+                  results.forEach((r, i) => {
+                    if (r.status === 'fulfilled') newUrls.push(r.value);
+                    else stillFailed.push({ file: toRetry[i].file, error: r.reason?.message || 'Upload failed' });
+                  });
+                  if (stillFailed.length > 0) setFailedUploads(stillFailed);
+                  if (newUrls.length > 0) onImagesChange([...images, ...newUrls]);
+                } finally {
+                  setUploading(false);
+                }
+              }}
+            >
+              <RefreshCw className="h-3 w-3 mr-1" />
+              Retry All
+            </Button>
+          </div>
+          <ul className="text-xs text-muted-foreground space-y-1">
+            {failedUploads.map((f, i) => (
+              <li key={i} className="flex items-center justify-between">
+                <span className="truncate mr-2">{f.file.name}</span>
+                <button
+                  type="button"
+                  className="text-destructive hover:underline shrink-0"
+                  onClick={() => setFailedUploads(prev => prev.filter((_, j) => j !== i))}
+                >
+                  Dismiss
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {/* Enhancement indicator */}
       {enhancingCount > 0 && (
         <div className="flex items-center justify-center gap-2 text-sm text-primary">
