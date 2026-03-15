@@ -111,6 +111,7 @@ serve(async (req) => {
       body.neighborhood ? `Neighborhood: ${body.neighborhood}` : null,
       cityAvg ? `City avg price/sqm: ₪${Math.round(cityAvg).toLocaleString()}` : null,
       body.city_yoy_change !== null && body.city_yoy_change !== undefined ? `City 12-month price trend: ${body.city_yoy_change > 0 ? "+" : ""}${body.city_yoy_change.toFixed(1)}%` : null,
+      body.city_5yr_change !== null && body.city_5yr_change !== undefined ? `City 5-year price change: ${body.city_5yr_change > 0 ? "+" : ""}${body.city_5yr_change}%` : null,
       `Nearby comparable sales: ${body.comp_count}`,
       deviation !== null && deviation !== undefined ? `Listing is ${deviation > 0 ? "+" : ""}${deviation.toFixed(0)}% vs avg of nearby comps` : null,
       `Days on market: ${body.days_on_market}`,
