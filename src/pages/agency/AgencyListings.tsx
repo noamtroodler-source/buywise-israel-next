@@ -66,10 +66,14 @@ export default function AgencyListings() {
   if (!agency) {
     return (
       <Layout>
-        <div className="container py-16 text-center">
-          <h1 className="text-2xl font-bold mb-2">No Agency Found</h1>
-          <p className="text-muted-foreground mb-6">You need to have an agency to view listings.</p>
-          <Button asChild><Link to="/agency/register">Register Agency</Link></Button>
+        <div className="container py-16">
+          <EnhancedEmptyState
+            icon={Building2}
+            title="No Agency Found"
+            description="You need to have an agency to view and manage listings."
+            primaryAction={{ label: 'Register Agency', href: '/agency/register' }}
+            secondaryAction={{ label: 'Go to Agency', href: '/agency' }}
+          />
         </div>
       </Layout>
     );
