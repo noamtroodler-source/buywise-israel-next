@@ -13,17 +13,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { NATIONAL_AVG_PRICE_SQM, NATIONAL_AVG_ARNONA } from '@/lib/constants/marketAverages';
 
-interface MarketRealityTabsProps {
-  marketData: MarketData[];
-  cityName: string;
-  citySlug?: string;
-  propertyTypes?: { name: string; value: number }[];
-  arnonaRateSqm?: number | null;
-}
-
-const NATIONAL_AVG_PRICE_SQM = 32000; // National average for comparison
-const NATIONAL_AVG_ARNONA = 25; // National average arnona rate per sqm
 
 export function MarketRealityTabs({ 
   marketData, 

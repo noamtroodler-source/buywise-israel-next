@@ -20,7 +20,7 @@ interface CityMarketSnapshotProps {
   };
 }
 
-const NATIONAL_AVG_PRICE_SQM = 22800;
+
 
 export function CityMarketSnapshot({ marketData, canonicalMetrics, cityData }: CityMarketSnapshotProps) {
   const [selectedRooms, setSelectedRooms] = useState<number>(3);
