@@ -34,25 +34,16 @@ import {
   formatDaysOnMarket,
 } from '@/lib/property-labels';
 
-interface RentalData {
-  city: string;
-  rooms: number;
-  price_min: number;
-  price_max: number;
-}
-
-interface MarketDataEntry {
-  city: string;
-  average_price_sqm: number | null;
-  price_change_percent: number | null;
-  year: number;
-  month: number | null;
-}
-
 interface CityData {
   name: string;
   average_price_sqm: number | null;
   yoy_price_change: number | null;
+  rental_3_room_min: number | null;
+  rental_3_room_max: number | null;
+  rental_4_room_min: number | null;
+  rental_4_room_max: number | null;
+  rental_5_room_min: number | null;
+  rental_5_room_max: number | null;
 }
 
 export default function Compare() {
