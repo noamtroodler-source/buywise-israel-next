@@ -91,7 +91,9 @@ Based on Perplexity blueprint research. All changes in `import-agency-listings/i
 1. **Floor validation** — Added `floor <= total_floors` warning in `validatePropertyData`
 2. **Yad2 lat/lon passthrough** — `normalizeYad2Result` now extracts `_yad2_latitude`/`_yad2_longitude` from Apify results (supports `latitude`, `lat`, `coordinates.latitude` fields); `processYad2Item` uses these coordinates directly, skipping Nominatim geocoding when available (Israel bounds validated: lat 29-34, lng 34-36)
 
-### Phase 6.2: Dynamic Concurrency + AI Retry — Pending
+### Phase 6.2: Dynamic Concurrency + AI Retry — Implemented ✅
+1. **Dynamic concurrency** — `handleProcessBatch` starts at concurrency=5, drops to 2 on failures (with 3s backoff delay), recovers to 5 after 3 consecutive successful chunks. MAX_ITEMS raised to 15, REFILL_SIZE to 10.
+2. **Simplified prompt retry** — `retryWithSimplifiedPrompt()` uses `gemini-2.5-flash-lite` with minimal 6-field prompt (4000 char content limit). Triggers on non-429 AI failures. Applies -10 confidence penalty and `extracted_with_simplified_prompt` warning.
 ### Phase 6.3: CMS Adapters (WordPress + Wix) — Pending
 ### Phase 6.4: Image Optimization (WebP + Resize) — Pending
 ### Phase 6.5: Review UI Enhancements — Pending
