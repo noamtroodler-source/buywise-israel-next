@@ -2608,7 +2608,7 @@ async function handleYad2AgencyDiscover(body: any) {
 
   // Step 4: Pass discovered URLs to Apify as startUrls
   console.log(`Passing ${newUrls.length} new listing URLs to Apify`);
-  const actorId = "amit123~yadscraper";
+  const actorId = "gWicCzGByyQlba0Ql";
   const startUrls = newUrls.map(url => ({ url }));
 
   const runRes = await fetch(`https://api.apify.com/v2/acts/${actorId}/runs?token=${APIFY_API_KEY}`, {
