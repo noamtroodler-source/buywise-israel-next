@@ -1444,8 +1444,55 @@ async function processOneItem(
       }
     }
 
-    // Download and re-host images (with placeholder detection)
-    const imageUrls = await parallelImageDownload(listing.image_urls || [], sb, "property-images", jobId);
+    // ── DEDUP: Tier 3 — Cross-source (cross-agency) ──
+    const crossSourceWarnings: string[] = [];
+    if (listing.address && listing.city) {
+      const normalizedAddr = normalizeAddressForDedup(listing.address);
+      if (normalizedAddr.length > 0) {
+        const { data: crossDupes } = await sb
+          .from("properties").select("id, agent_id")
+          .neq("agent_id", agentId)
+          .ilike("address", normalizedAddr)
+          .ilike("city", listing.city.trim())
+          .limit(1);
+        if (crossDupes && crossDupes.length > 0) {
+          listing.cross_source_match_id = crossDupes[0].id;
+          crossSourceWarnings.push(`Potential cross-source duplicate with property ${crossDupes[0].id} (same address + city, different agent)`);
+        }
+      }
+    }
+    if (!listing.cross_source_match_id && listing.city && listing.bedrooms != null && listing.size_sqm && listing.price && listing.price > 0) {
+      const priceLow = listing.price * 0.90;
+      const priceHigh = listing.price * 1.10;
+      const sizeLow = listing.size_sqm - 5;
+      const sizeHigh = listing.size_sqm + 5;
+      const { data: crossFuzzy } = await sb
+        .from("properties").select("id, agent_id")
+        .neq("agent_id", agentId)
+        .ilike("city", listing.city.trim())
+        .eq("bedrooms", Math.floor(listing.bedrooms))
+        .gte("size_sqm", sizeLow).lte("size_sqm", sizeHigh)
+        .gte("price", priceLow).lte("price", priceHigh)
+        .limit(1);
+      if (crossFuzzy && crossFuzzy.length > 0) {
+        listing.cross_source_match_id = crossFuzzy[0].id;
+        crossSourceWarnings.push(`Potential cross-source duplicate with property ${crossFuzzy[0].id} (similar specs, different agent)`);
+      }
+    }
+
+    // Apply cross-source penalty to confidence and merge warnings
+    if (crossSourceWarnings.length > 0) {
+      validationWarnings.push(...crossSourceWarnings);
+      const adjustedScore = Math.max(0, confidenceScore - 10);
+      await sb.from("import_job_items").update({
+        confidence_score: adjustedScore,
+        extracted_data: { ...listing, confidence_score: adjustedScore, validation_warnings: validationWarnings },
+      }).eq("id", item.id);
+    }
+
+    // Download and re-host images (with placeholder detection + SHA-256 dedup)
+    const { urls: imageUrls, hashes: imageHashes } = await parallelImageDownload(listing.image_urls || [], sb, "property-images", jobId);
+    listing.image_hashes = imageHashes;
 
     // Geocode
     let latitude: number | null = null;
