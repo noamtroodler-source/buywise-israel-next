@@ -992,6 +992,66 @@ async function preCheckUrl(url: string): Promise<{ ok: boolean; skipReason: stri
   }
 }
 
+// ─── STRUCTURED DATA EXTRACTION (JSON-LD, Open Graph) ───────────────────────
+
+function extractStructuredData(html: string): Record<string, any> | null {
+  if (!html || html.length < 100) return null;
+
+  const result: Record<string, any> = {};
+  let found = false;
+
+  // 1. JSON-LD extraction
+  const jsonLdRegex = /<script\s+type\s*=\s*["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+  let match: RegExpExecArray | null;
+  while ((match = jsonLdRegex.exec(html)) !== null) {
+    try {
+      const jsonData = JSON.parse(match[1].trim());
+      const items = Array.isArray(jsonData) ? jsonData : [jsonData];
+      for (const item of items) {
+        const type = (item["@type"] || "").toLowerCase();
+        if (type.includes("realestate") || type.includes("product") || type.includes("offer") || type.includes("apartment") || type.includes("house") || type.includes("residence")) {
+          if (item.name) { result.title = item.name; found = true; }
+          if (item.description) { result.description = item.description; found = true; }
+          if (item.floorSize?.value) { result.size_sqm = parseFloat(item.floorSize.value); found = true; }
+          if (item.numberOfRooms) { result.bedrooms = parseInt(item.numberOfRooms) - 1; found = true; }
+          if (item.numberOfBathroomsTotal) { result.bathrooms = parseInt(item.numberOfBathroomsTotal); found = true; }
+          const price = item.offers?.price || item.price;
+          if (price) { result.price = parseFloat(String(price).replace(/[^\d.]/g, "")); found = true; }
+          const currency = item.offers?.priceCurrency || item.priceCurrency;
+          if (currency) { result.currency = currency === "ILS" || currency === "₪" ? "ILS" : currency; }
+          if (item.address) {
+            if (typeof item.address === "string") { result.address = item.address; found = true; }
+            else if (item.address.streetAddress) { result.address = item.address.streetAddress; found = true; }
+            if (item.address?.addressLocality) { result.city_hint = item.address.addressLocality; }
+          }
+          if (item.image) {
+            const images = Array.isArray(item.image) ? item.image : [item.image];
+            result.structured_images = images.filter((img: any) => typeof img === "string");
+            found = true;
+          }
+          if (item.geo?.latitude) { result.latitude = parseFloat(item.geo.latitude); }
+          if (item.geo?.longitude) { result.longitude = parseFloat(item.geo.longitude); }
+        }
+      }
+    } catch { /* ignore invalid JSON-LD */ }
+  }
+
+  // 2. Open Graph tags
+  const ogTitle = html.match(/<meta\s+(?:property|name)\s*=\s*["']og:title["']\s+content\s*=\s*["']([^"']+)["']/i);
+  const ogDesc = html.match(/<meta\s+(?:property|name)\s*=\s*["']og:description["']\s+content\s*=\s*["']([^"']+)["']/i);
+  const ogImage = html.match(/<meta\s+(?:property|name)\s*=\s*["']og:image["']\s+content\s*=\s*["']([^"']+)["']/i);
+
+  if (ogTitle && !result.title) { result.og_title = ogTitle[1]; found = true; }
+  if (ogDesc && !result.description) { result.og_description = ogDesc[1]; found = true; }
+  if (ogImage) {
+    if (!result.structured_images) result.structured_images = [];
+    result.structured_images.push(ogImage[1]);
+    found = true;
+  }
+
+  return found ? result : null;
+}
+
 // ─── EXTRACTION PROMPT (with comprehensive Hebrew dictionary) ───────────────
 
 function buildExtractionPrompt(url: string, domain: string, markdown: string, pageLinks: string[]): string {
