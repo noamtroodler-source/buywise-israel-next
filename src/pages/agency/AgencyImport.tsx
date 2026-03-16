@@ -203,12 +203,11 @@ export default function AgencyImport() {
             </InfoBanner>
           )}
 
-          {/* Resale & Rental only notice */}
+          {/* Resale & Rental notice */}
           <div className="flex items-start gap-3 p-4 rounded-xl bg-primary/5 border border-primary/10">
             <Info className="h-4 w-4 text-primary mt-0.5 shrink-0" />
             <p className="text-sm text-muted-foreground">
-              This tool imports <span className="font-medium text-foreground">resale and rental listings only</span>. 
-              New construction projects and developments are skipped automatically — add those via the{' '}
+              New construction projects and developments are always skipped — add those via the{' '}
               <Link to="/agency/projects/new" className="text-primary font-medium hover:underline">
                 Project Wizard
               </Link> for best results.
@@ -223,10 +222,27 @@ export default function AgencyImport() {
                 Step 1: Discover Listings
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-4">
-              <p className="text-sm text-muted-foreground mb-4">
+            <CardContent className="pt-4 space-y-4">
+              <p className="text-sm text-muted-foreground">
                 Paste your agency website URL. We'll scan it and find all property listing pages automatically.
               </p>
+
+              {/* Import type selector */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">Import type:</span>
+                {(['resale', 'rental', 'all'] as const).map(type => (
+                  <Button
+                    key={type}
+                    variant={importType === type ? 'default' : 'outline'}
+                    size="sm"
+                    className="rounded-lg capitalize"
+                    onClick={() => setImportType(type)}
+                  >
+                    {type === 'all' ? 'Both' : type}
+                  </Button>
+                ))}
+              </div>
+
               <form onSubmit={handleDiscover} className="flex gap-3">
                 <Input
                   type="url"
@@ -258,6 +274,36 @@ export default function AgencyImport() {
               )}
             </CardContent>
           </Card>
+
+          {/* Auto-Sync Toggle */}
+          {agency && (
+            <Card className="rounded-2xl border-primary/10">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-semibold">Auto-Sync</h3>
+                    <p className="text-xs text-muted-foreground">
+                      Automatically check for new listings daily
+                      {(agency as any).last_sync_at && (
+                        <> · Last sync: {new Date((agency as any).last_sync_at).toLocaleDateString()}</>
+                      )}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={(agency as any).auto_sync_enabled || false}
+                    onCheckedChange={(checked) => {
+                      updateAutoSyncMutation.mutate({
+                        agencyId: agency.id,
+                        enabled: checked,
+                        url: (agency as any).auto_sync_url || agency.website || undefined,
+                      });
+                    }}
+                    disabled={updateAutoSyncMutation.isPending || !(agency.website || (agency as any).auto_sync_url)}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Step 2: Import Progress */}
           {currentJob && (
