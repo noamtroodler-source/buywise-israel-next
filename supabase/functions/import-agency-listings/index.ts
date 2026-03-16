@@ -84,6 +84,10 @@ const DOMAIN_CITY_HINTS: Record<string, string> = {
   "givatshmuel": "Givat Shmuel",
   "maaleadumim": "Ma'ale Adumim",
   "gushetzion": "Gush Etzion",
+  "rehovot": "Rehovot",
+  "rechovot": "Rehovot",
+  "rishon": "Rishon LeZion",
+  "rishonlezion": "Rishon LeZion",
 };
 
 function normalizeCityStr(str: string): string {
