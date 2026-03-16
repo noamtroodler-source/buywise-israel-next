@@ -1120,6 +1120,7 @@ async function processOneItem(
 
     const markdown = scrapeData.data?.markdown || scrapeData.markdown || "";
     const pageLinks = scrapeData.data?.links || scrapeData.links || [];
+    const pageHtml = scrapeData.data?.html || scrapeData.html || "";
 
     if (!markdown || markdown.length < 50) {
       await sb.from("import_job_items").update({ status: "skipped", error_message: "Page content too short", error_type: "permanent" }).eq("id", item.id);
