@@ -1,0 +1,2 @@
+ALTER TABLE neighborhood_cbs_mappings DROP CONSTRAINT neighborhood_cbs_mappings_city_anglo_name_key;
+ALTER TABLE neighborhood_cbs_mappings ADD CONSTRAINT neighborhood_cbs_mappings_city_anglo_cbs_key UNIQUE (city, anglo_name, cbs_neighborhood_id);
