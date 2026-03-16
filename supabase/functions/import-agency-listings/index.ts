@@ -1550,7 +1550,7 @@ async function handleProcessBatch(body: any) {
 
       const chunk = pendingItems.slice(i, i + CONCURRENCY);
       const results = await Promise.allSettled(
-        chunk.map(item => processOneItem(item, sb, job, agentId, FIRECRAWL_API_KEY, LOVABLE_API_KEY, job_id, cachedDomainCity))
+        chunk.map(item => processOneItem(item, sb, job, agentId, FIRECRAWL_API_KEY, LOVABLE_API_KEY, job_id, cachedDomainCity, job.import_type || "resale"))
       );
 
       for (const result of results) {
