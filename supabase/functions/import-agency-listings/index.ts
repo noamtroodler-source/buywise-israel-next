@@ -155,6 +155,8 @@ const CITY_PRICE_RANGES: Record<string, { min: number; max: number; sqm_min: num
   "Ma'ale Adumim":  { min: 1_000_000, max: 3_500_000,  sqm_min: 15_000, sqm_max: 28_000 },
   "Mevaseret Zion": { min: 1_500_000, max: 5_000_000,  sqm_min: 25_000, sqm_max: 40_000 },
   "Pardes Hanna":   { min: 800_000,   max: 3_500_000,  sqm_min: 15_000, sqm_max: 28_000 },
+  "Rehovot":        { min: 1_000_000, max: 4_000_000,  sqm_min: 18_000, sqm_max: 30_000 },
+  "Rishon LeZion":  { min: 1_200_000, max: 5_000_000,  sqm_min: 20_000, sqm_max: 35_000 },
   "Zichron Yaakov": { min: 1_200_000, max: 5_000_000,  sqm_min: 20_000, sqm_max: 35_000 },
 };
 
