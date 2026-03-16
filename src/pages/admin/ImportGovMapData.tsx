@@ -383,12 +383,14 @@ export default function ImportGovMapData() {
             <CardTitle className="flex items-center gap-2"><CheckCircle className="h-5 w-5 text-primary" /> Step 2: Cleaning Results</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
               <Stat label="Total Rows" value={filterStats.total} />
               <Stat label="Non-Residential" value={filterStats.nonResidential} negative />
               <Stat label="New Construction" value={filterStats.newConstruction} negative />
-              <Stat label="Price < ₪100k" value={filterStats.priceOutlier} negative />
+              <Stat label="Price < ₪200k" value={filterStats.priceOutlier} negative />
               <Stat label="Size Outlier" value={filterStats.sizeOutlier} negative />
+              <Stat label="₪/sqm Outlier" value={filterStats.priceSqmOutlier} negative />
+              <Stat label="Zero Rooms" value={filterStats.zeroRooms} negative />
               <Stat label="Unknown City" value={filterStats.unknownCity} negative />
               <Stat label="Duplicate dealId" value={filterStats.duplicateDealId} negative />
               <Stat label="Valid to Import" value={filterStats.valid} highlight />
