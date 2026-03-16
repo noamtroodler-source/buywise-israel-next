@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import {
   ArrowLeft, Globe, Loader2, Download, CheckCircle2,
   XCircle, AlertCircle, FileText, RefreshCw, Trash2,
-  Info, MinusCircle, ShieldAlert, Eye, ToggleLeft,
+  Info, MinusCircle, ShieldAlert, Eye, ToggleLeft, Lightbulb,
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -204,24 +204,44 @@ export default function AgencyImport() {
             <CardContent className="pt-4 space-y-4">
               {sourceType === 'website' ? (
                 <div className="text-sm text-muted-foreground space-y-2">
-                  <p>Paste your agency's <strong>homepage URL</strong> — the main page that links to all your property listings.</p>
-                  <div className="bg-muted/50 rounded-lg p-3 space-y-1 text-xs">
-                    <p className="font-medium text-foreground">✅ Good examples:</p>
-                    <code className="block text-primary">https://your-agency.com</code>
-                    <code className="block text-primary">https://your-agency.com/properties</code>
-                    <p className="font-medium text-foreground mt-2">❌ Don't paste:</p>
-                    <p>A single listing page — we need the page that <em>lists</em> all properties</p>
+                  <p>Paste your agency's <strong className="text-foreground">homepage URL</strong> — the main page that links to all your property listings.</p>
+                  <div className="border border-border rounded-lg p-4 space-y-2 text-xs bg-card">
+                    <div className="flex items-center gap-1.5">
+                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[hsl(var(--success))]/15 text-[hsl(var(--success))]">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                      </span>
+                      <span className="font-medium text-foreground">Good examples:</span>
+                    </div>
+                    <code className="block text-primary ml-6.5">https://your-agency.com</code>
+                    <code className="block text-primary ml-6.5">https://your-agency.com/properties</code>
+                    <div className="flex items-center gap-1.5 mt-3">
+                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-destructive/15 text-destructive">
+                        <XCircle className="h-3.5 w-3.5" />
+                      </span>
+                      <span className="font-medium text-foreground">Don't paste:</span>
+                    </div>
+                    <p className="ml-6.5">A single listing page — we need the page that <em>lists</em> all properties</p>
                   </div>
                 </div>
               ) : (
                 <div className="text-sm text-muted-foreground space-y-2">
-                  <p>Paste your <strong>Yad2 agency profile page</strong> or a <strong>Yad2 search URL</strong> filtered to your listings.</p>
-                  <div className="bg-muted/50 rounded-lg p-3 space-y-1 text-xs">
-                    <p className="font-medium text-foreground">✅ Good examples:</p>
-                    <code className="block text-primary">https://www.yad2.co.il/agency/12345</code>
-                    <code className="block text-primary">https://www.yad2.co.il/realestate/forsale?city=1800000</code>
-                    <p className="font-medium text-foreground mt-2">💡 How to find your agency page:</p>
-                    <p>Go to yad2.co.il → click your profile icon → "My Listings" → copy the URL from the address bar</p>
+                  <p>Paste your <strong className="text-foreground">Yad2 agency profile page</strong> or a <strong className="text-foreground">Yad2 search URL</strong> filtered to your listings.</p>
+                  <div className="border border-border rounded-lg p-4 space-y-2 text-xs bg-card">
+                    <div className="flex items-center gap-1.5">
+                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[hsl(var(--success))]/15 text-[hsl(var(--success))]">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                      </span>
+                      <span className="font-medium text-foreground">Good examples:</span>
+                    </div>
+                    <code className="block text-primary ml-6.5">https://www.yad2.co.il/agency/12345</code>
+                    <code className="block text-primary ml-6.5">https://www.yad2.co.il/realestate/forsale?city=1800000</code>
+                    <div className="flex items-center gap-1.5 mt-3">
+                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[hsl(var(--warning))]/15 text-[hsl(var(--warning))]">
+                        <Lightbulb className="h-3.5 w-3.5" />
+                      </span>
+                      <span className="font-medium text-foreground">How to find your agency page:</span>
+                    </div>
+                    <p className="ml-6.5">Go to yad2.co.il → click your profile icon → "My Listings" → copy the URL from the address bar</p>
                   </div>
                 </div>
               )}
