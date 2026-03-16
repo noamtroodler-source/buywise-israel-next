@@ -1633,7 +1633,7 @@ async function retryWithSimplifiedPrompt(
 - size_sqm (number)
 - city (must be one of: ${SUPPORTED_CITIES.join(", ")})
 - address (street name + number)
-- property_type (one of: apartment, house, penthouse, duplex, garden_apartment, cottage, land, commercial)
+- property_type (one of: apartment, house, penthouse, duplex, garden_apartment, cottage, land, commercial, parking, storage, building, agricultural_estate, assisted_living)
 - listing_status (for_sale or for_rent)
 - image_urls (array of image URLs)
 - listing_category (property, project, or not_listing)
