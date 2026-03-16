@@ -180,7 +180,7 @@ export default function ImportGovMapData() {
 
       // 3. Price outlier — raised floor to ₪200k
       const price = parseFloat(row.dealAmount);
-      if (isNaN(price) || price < 200000) {
+      if (isNaN(price) || price < 400000) {
         stats.priceOutlier++;
         continue;
       }
