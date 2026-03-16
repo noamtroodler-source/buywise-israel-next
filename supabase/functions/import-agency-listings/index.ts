@@ -1386,7 +1386,7 @@ async function processOneItem(
       }
     }
 
-    const listing = JSON.parse(extractToolCall.function.arguments);
+    
 
     // Merge structured data from HTML (JSON-LD, OG tags) — takes priority for matching fields
     const structuredData = extractStructuredData(pageHtml);
