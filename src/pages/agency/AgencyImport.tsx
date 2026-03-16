@@ -520,8 +520,8 @@ export default function AgencyImport() {
                 </div>
 
                 {isCompleted && pendingCount === 0 && (
-                  <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-sm">
-                    <CheckCircle2 className="h-4 w-4 inline mr-2 text-green-600" />
+                  <div className="p-4 rounded-xl bg-[hsl(var(--success))]/10 border border-[hsl(var(--success))]/20 text-sm">
+                    <CheckCircle2 className="h-4 w-4 inline mr-2 text-[hsl(var(--success))]" />
                     Import complete! {doneCount} listings imported, {skippedCount} skipped{failedCount > 0 ? `, ${failedCount} failed` : ''}.
                     Review and publish them from your Listings page.
                   </div>

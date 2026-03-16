@@ -96,7 +96,7 @@ export function ImportProgressBar({
         )}
         {failedCount > 0 && (
           <span className="flex items-center gap-1">
-            <XCircle className="h-3 w-3 text-red-500" />
+            <XCircle className="h-3 w-3 text-destructive" />
             {failedCount} failed
           </span>
         )}
