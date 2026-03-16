@@ -885,6 +885,8 @@ async function handleDiscover(body: any) {
   if (rawUrls.length === 0) throw new Error("No URLs discovered on this website");
   console.log(`Discovered ${rawUrls.length} total URLs`);
 
+  // Track Firecrawl map cost (job_id not yet created, will track in batch)
+
   // Pre-filter: remove sold/rented keyword URLs
   const SOLD_URL_KEYWORDS = [
     'sold', 'rented', 'leased', 'archived', 'completed',
