@@ -2708,16 +2708,17 @@ async function handleYad2Discover(body: any) {
   if (agencyErr || !agency) throw new Error("Agency not found");
 
   // Start Apify Yad2 scraper actor run
-  // Using a generic Yad2 scraper actor — the user's search URL is passed as input
-  const actorId = "dtrungtin~yad2-scraper"; // Common Apify Yad2 actor
+  // Using the amit123/yadscraper Apify actor for Yad2 listings
+  const actorId = "amit123~yadscraper";
   console.log(`Starting Apify actor ${actorId} for URL: ${website_url}`);
 
   const runRes = await fetch(`https://api.apify.com/v2/acts/${actorId}/runs?token=${APIFY_API_KEY}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      startUrls: [{ url: website_url }],
-      maxItems: 200,
+      start_urls: [{ url: website_url }],
+      maxPagesPerSearch: 10,
+      maxRequestsPerCrawl: 1000,
     }),
   });
 
