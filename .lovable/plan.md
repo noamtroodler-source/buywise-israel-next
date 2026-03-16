@@ -94,7 +94,13 @@ Based on Perplexity blueprint research. All changes in `import-agency-listings/i
 ### Phase 6.2: Dynamic Concurrency + AI Retry — Implemented ✅
 1. **Dynamic concurrency** — `handleProcessBatch` starts at concurrency=5, drops to 2 on failures (with 3s backoff delay), recovers to 5 after 3 consecutive successful chunks. MAX_ITEMS raised to 15, REFILL_SIZE to 10.
 2. **Simplified prompt retry** — `retryWithSimplifiedPrompt()` uses `gemini-2.5-flash-lite` with minimal 6-field prompt (4000 char content limit). Triggers on non-429 AI failures. Applies -10 confidence penalty and `extracted_with_simplified_prompt` warning.
-### Phase 6.3: CMS Adapters (WordPress + Wix) — Pending
+### Phase 6.3: CMS Adapters (WordPress + Wix) — Implemented ✅
+1. **CMS detection** — `detectCmsType(html, url)` identifies WordPress (wp-content/wp-json/generator meta) and Wix (INITIAL_STATE/wixstatic/wix-warmup-data) sites.
+2. **WordPress adapter** — `extractFromWordPress(url)` queries WP REST API endpoints (property/listing/properties/listings/real-estate CPTs) with slug matching. Extracts title, description, price, rooms, size, address, city, type, images from ACF/meta + embedded media.
+3. **Wix adapter** — `extractFromWixState(html)` parses `window.__INITIAL_STATE__` / `__PRELOADED_STATE__` JSON, navigates data tree to find property objects with price/address/rooms.
+4. **Integration** — After scrape, before AI: if CMS extracts all core fields (price+city+property_type), AI is skipped entirely. Partial CMS data merges into AI result with CMS taking priority for gap-filling.
+5. **Confidence boost** — +15 confidence score for CMS-extracted listings. `_cms_extracted` flag stored in extracted_data.
+6. **Bug fix** — Removed duplicate `const listing` declaration at line 1389.
 ### Phase 6.4: Image Optimization (WebP + Resize) — Pending
 ### Phase 6.5: Review UI Enhancements — Pending
 - Cross-source dedup (Tier 3)
