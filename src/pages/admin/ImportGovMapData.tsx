@@ -216,7 +216,7 @@ export default function ImportGovMapData() {
         continue;
       }
 
-      // 6. Deduplicate by dealId
+      // 8. Deduplicate by dealId
       const dealId = row.dealId || "";
       if (dealId && seenDealIds.has(dealId)) {
         stats.duplicateDealId++;
