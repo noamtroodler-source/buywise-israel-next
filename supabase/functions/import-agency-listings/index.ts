@@ -1104,7 +1104,7 @@ async function processOneItem(
     const scrapeRes = await fetch("https://api.firecrawl.dev/v1/scrape", {
       method: "POST",
       headers: { Authorization: `Bearer ${firecrawlKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ url: item.url, formats: ["markdown", "links"], onlyMainContent: true }),
+      body: JSON.stringify({ url: item.url, formats: ["markdown", "links", "html"], onlyMainContent: true }),
     });
 
     const scrapeData = await scrapeRes.json();
