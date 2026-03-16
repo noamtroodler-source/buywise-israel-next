@@ -364,10 +364,10 @@ export default function AgencyImport() {
 
                 {/* Stalled job warning + Resume button */}
                 {isStalled && (
-                  <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
-                    <AlertCircle className="h-4 w-4 text-amber-600 shrink-0" />
+                  <div className="flex items-center gap-3 p-3 rounded-xl bg-[hsl(var(--warning))]/10 border border-[hsl(var(--warning))]/20">
+                    <AlertCircle className="h-4 w-4 text-[hsl(var(--warning-foreground))] shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-amber-700">
+                      <p className="text-sm font-medium text-[hsl(var(--warning-foreground))]">
                         This import appears to have stalled. Some items may be stuck in processing.
                       </p>
                     </div>
