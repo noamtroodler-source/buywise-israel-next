@@ -111,6 +111,7 @@ export default function AgencyImport() {
       agencyId: agency.id,
       websiteUrl: websiteUrl.trim(),
       importType,
+      sourceType,
     });
 
     // Only switch to job if one was created (new_urls > 0)
