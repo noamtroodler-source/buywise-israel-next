@@ -150,6 +150,7 @@ const AdminClientErrors = lazy(() => import("./pages/admin/AdminClientErrors"));
 const AdminEnterpriseInquiries = lazy(() => import("./pages/admin/AdminEnterpriseInquiries"));
 const AdminWarmLeads = lazy(() => import("./pages/admin/AdminWarmLeads"));
 const AdminDuplicates = lazy(() => import("./pages/admin/AdminDuplicates"));
+const AdminImportAnalytics = lazy(() => import("./pages/admin/AdminImportAnalytics"));
 // Global query client config for optimal caching
 const queryClient = new QueryClient({
   defaultOptions: {
