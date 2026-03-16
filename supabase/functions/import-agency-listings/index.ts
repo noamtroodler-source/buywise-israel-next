@@ -2626,6 +2626,8 @@ async function handleYad2AgencyDiscover(body: any) {
 
   console.log(`Apify returned ${results.length} listings from agency page`);
 
+  // Track Apify cost (will associate with job after creation)
+
   // Create job
   const { data: job, error: jobErr } = await sb
     .from("import_jobs")
