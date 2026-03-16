@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { Activity, Target, CheckCircle, AlertTriangle, TrendingUp, Database, Users } from 'lucide-react';
+import { Activity, Target, CheckCircle, AlertTriangle, TrendingUp, Database, Users, DollarSign, Flame, Bot, Cpu } from 'lucide-react';
 
 function KpiCard({ title, value, target, icon: Icon, description }: {
   title: string; value: number; target: number; icon: React.ElementType; description: string;
@@ -35,6 +35,18 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 const CHART_COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))'];
+
+const COST_ICONS: Record<string, React.ElementType> = {
+  firecrawl: Flame,
+  apify: Bot,
+  ai_tokens: Cpu,
+};
+
+const COST_LABELS: Record<string, string> = {
+  firecrawl: 'Firecrawl Credits',
+  apify: 'Apify Calls',
+  ai_tokens: 'AI Tokens',
+};
 
 export default function AdminImportAnalytics() {
   const { data, isLoading } = useImportAnalytics();
@@ -67,8 +79,8 @@ export default function AdminImportAnalytics() {
         <KpiCard title="Import Success Rate" value={data.importSuccessRate} target={95} icon={TrendingUp} description="Successful vs non-skipped items" />
       </div>
 
-      {/* Summary Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      {/* Summary Stats + Cost Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
         <Card>
           <CardContent className="pt-6 flex items-center gap-3">
             <Database className="h-5 w-5 text-muted-foreground" />
@@ -92,10 +104,24 @@ export default function AdminImportAnalytics() {
             <Users className="h-5 w-5 text-muted-foreground" />
             <div>
               <div className="text-2xl font-bold">{data.uniqueAgencies}</div>
-              <p className="text-xs text-muted-foreground">Agencies Importing</p>
+              <p className="text-xs text-muted-foreground">Agencies</p>
             </div>
           </CardContent>
         </Card>
+        {data.costSummary.map(c => {
+          const CostIcon = COST_ICONS[c.resourceType] || DollarSign;
+          return (
+            <Card key={c.resourceType}>
+              <CardContent className="pt-6 flex items-center gap-3">
+                <CostIcon className="h-5 w-5 text-muted-foreground" />
+                <div>
+                  <div className="text-2xl font-bold">{c.totalQuantity.toLocaleString()}</div>
+                  <p className="text-xs text-muted-foreground">{COST_LABELS[c.resourceType] || c.resourceType}</p>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -225,6 +251,9 @@ export default function AdminImportAnalytics() {
                 <TableHead className="text-right">URLs</TableHead>
                 <TableHead className="text-right">Processed</TableHead>
                 <TableHead className="text-right">Failed</TableHead>
+                <TableHead className="text-right">🔥 FC</TableHead>
+                <TableHead className="text-right">🤖 AP</TableHead>
+                <TableHead className="text-right">🧠 AI</TableHead>
                 <TableHead>Date</TableHead>
               </TableRow>
             </TableHeader>
@@ -239,6 +268,9 @@ export default function AdminImportAnalytics() {
                   <TableCell className="text-right">{j.totalUrls}</TableCell>
                   <TableCell className="text-right">{j.processedCount}</TableCell>
                   <TableCell className="text-right">{j.failedCount}</TableCell>
+                  <TableCell className="text-right text-muted-foreground text-xs">{j.costs.firecrawl || '—'}</TableCell>
+                  <TableCell className="text-right text-muted-foreground text-xs">{j.costs.apify || '—'}</TableCell>
+                  <TableCell className="text-right text-muted-foreground text-xs">{j.costs.aiTokens ? j.costs.aiTokens.toLocaleString() : '—'}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {new Date(j.createdAt).toLocaleDateString()}
                   </TableCell>

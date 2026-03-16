@@ -10,6 +10,8 @@ export interface ImportAnalyticsData {
   totalJobs: number;
   totalItems: number;
   uniqueAgencies: number;
+  // Costs
+  costSummary: { resourceType: string; totalQuantity: number; unit: string }[];
   // Source breakdown
   sourceBreakdown: { source: string; jobs: number; items: number; succeeded: number; failed: number; successRate: number }[];
   // Agency leaderboard
@@ -19,17 +21,18 @@ export interface ImportAnalyticsData {
   // Confidence distribution
   confidenceBuckets: { bucket: string; count: number }[];
   // Recent jobs
-  recentJobs: { id: string; agencyId: string; websiteUrl: string; status: string; totalUrls: number; processedCount: number; failedCount: number; importType: string; createdAt: string }[];
+  recentJobs: { id: string; agencyId: string; websiteUrl: string; status: string; totalUrls: number; processedCount: number; failedCount: number; importType: string; createdAt: string; costs: { firecrawl: number; apify: number; aiTokens: number } }[];
 }
 
 export function useImportAnalytics() {
   return useQuery({
     queryKey: ['importAnalytics'],
     queryFn: async (): Promise<ImportAnalyticsData> => {
-      // Fetch all jobs and items in parallel
-      const [jobsRes, itemsRes] = await Promise.all([
+      // Fetch all jobs, items, and costs in parallel
+      const [jobsRes, itemsRes, costsRes] = await Promise.all([
         supabase.from('import_jobs').select('*').order('created_at', { ascending: false }),
         supabase.from('import_job_items').select('id, job_id, status, error_type, confidence_score'),
+        supabase.from('import_job_costs').select('job_id, resource_type, quantity, unit'),
       ]);
 
       if (jobsRes.error) throw jobsRes.error;
@@ -37,13 +40,13 @@ export function useImportAnalytics() {
 
       const jobs = jobsRes.data || [];
       const items = itemsRes.data || [];
+      const costs = costsRes.data || [];
 
       // KPIs
       const totalDiscoveredUrls = jobs.reduce((sum, j) => sum + ((j.discovered_urls as string[])?.length || 0), 0);
       const totalUrlsOnSource = jobs.reduce((sum, j) => sum + (j.total_urls || 0), 0);
       const discoveryRate = totalUrlsOnSource > 0 ? (totalDiscoveredUrls / totalUrlsOnSource) * 100 : 0;
 
-      const processedItems = items.filter(i => i.status === 'done' || i.status === 'failed');
       const doneItems = items.filter(i => i.status === 'done');
       const highConfidenceItems = doneItems.filter(i => (i.confidence_score ?? 0) >= 70);
       const extractionAccuracy = doneItems.length > 0 ? (highConfidenceItems.length / doneItems.length) * 100 : 0;
@@ -54,7 +57,26 @@ export function useImportAnalytics() {
       // Unique agencies
       const agencyIds = new Set(jobs.map(j => j.agency_id));
 
-      // Source breakdown - group by import_type
+      // Cost summary
+      const costMap = new Map<string, { total: number; unit: string }>();
+      const jobCostMap = new Map<string, { firecrawl: number; apify: number; aiTokens: number }>();
+      for (const c of costs) {
+        const key = c.resource_type;
+        const entry = costMap.get(key) || { total: 0, unit: c.unit };
+        entry.total += c.quantity;
+        costMap.set(key, entry);
+
+        const jc = jobCostMap.get(c.job_id) || { firecrawl: 0, apify: 0, aiTokens: 0 };
+        if (c.resource_type === 'firecrawl') jc.firecrawl += c.quantity;
+        else if (c.resource_type === 'apify') jc.apify += c.quantity;
+        else if (c.resource_type === 'ai_tokens') jc.aiTokens += c.quantity;
+        jobCostMap.set(c.job_id, jc);
+      }
+      const costSummary = Array.from(costMap.entries()).map(([resourceType, d]) => ({
+        resourceType, totalQuantity: d.total, unit: d.unit,
+      }));
+
+      // Source breakdown
       const sourceMap = new Map<string, { jobs: number; items: Set<string>; succeeded: number; failed: number }>();
       const jobIdToSource = new Map<string, string>();
       jobs.forEach(j => {
@@ -74,11 +96,7 @@ export function useImportAnalytics() {
         }
       });
       const sourceBreakdown = Array.from(sourceMap.entries()).map(([source, d]) => ({
-        source,
-        jobs: d.jobs,
-        items: d.items.size,
-        succeeded: d.succeeded,
-        failed: d.failed,
+        source, jobs: d.jobs, items: d.items.size, succeeded: d.succeeded, failed: d.failed,
         successRate: d.items.size > 0 ? (d.succeeded / d.items.size) * 100 : 0,
       }));
 
@@ -103,9 +121,7 @@ export function useImportAnalytics() {
         .map(([agencyId, d]) => ({
           agencyId,
           agencyName: d.url ? new URL(d.url).hostname.replace('www.', '') : agencyId.slice(0, 8),
-          jobs: d.jobs,
-          items: d.items,
-          succeeded: d.succeeded,
+          jobs: d.jobs, items: d.items, succeeded: d.succeeded,
           successRate: d.items > 0 ? (d.succeeded / d.items) * 100 : 0,
         }))
         .sort((a, b) => b.items - a.items)
@@ -132,7 +148,7 @@ export function useImportAnalytics() {
       });
       const confidenceBuckets = Object.entries(buckets).map(([bucket, count]) => ({ bucket, count }));
 
-      // Recent jobs
+      // Recent jobs with costs
       const recentJobs = jobs.slice(0, 20).map(j => ({
         id: j.id,
         agencyId: j.agency_id,
@@ -143,6 +159,7 @@ export function useImportAnalytics() {
         failedCount: j.failed_count,
         importType: j.import_type,
         createdAt: j.created_at,
+        costs: jobCostMap.get(j.id) || { firecrawl: 0, apify: 0, aiTokens: 0 },
       }));
 
       return {
@@ -152,6 +169,7 @@ export function useImportAnalytics() {
         totalJobs: jobs.length,
         totalItems: items.length,
         uniqueAgencies: agencyIds.size,
+        costSummary,
         sourceBreakdown,
         agencyLeaderboard,
         errorBreakdown,

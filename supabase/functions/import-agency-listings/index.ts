@@ -13,6 +13,15 @@ function supabaseAdmin() {
   );
 }
 
+// ─── COST TRACKING ──────────────────────────────────────────────────────────
+async function trackCost(sb: any, jobId: string, resourceType: string, quantity: number, unit: string) {
+  try {
+    await sb.from("import_job_costs").insert({ job_id: jobId, resource_type: resourceType, quantity, unit });
+  } catch (e) {
+    console.error(`[trackCost] Failed to track ${resourceType}:`, e);
+  }
+}
+
 // ─── SUPPORTED CITIES WHITELIST ─────────────────────────────────────────────
 
 const SUPPORTED_CITIES = [
@@ -876,6 +885,8 @@ async function handleDiscover(body: any) {
   if (rawUrls.length === 0) throw new Error("No URLs discovered on this website");
   console.log(`Discovered ${rawUrls.length} total URLs`);
 
+  // Track Firecrawl map cost (job_id not yet created, will track in batch)
+
   // Pre-filter: remove sold/rented keyword URLs
   const SOLD_URL_KEYWORDS = [
     'sold', 'rented', 'leased', 'archived', 'completed',
@@ -941,6 +952,9 @@ async function handleDiscover(body: any) {
     .insert({ agency_id, website_url: formattedUrl, status: "ready", total_urls: listingUrls.length, discovered_urls: allUrls, import_type })
     .select("id").single();
   if (jobErr) throw new Error(`Failed to create import job: ${jobErr.message}`);
+
+  // Track Firecrawl map cost
+  await trackCost(sb, job.id, "firecrawl", 1, "credits");
 
   const items = listingUrls.map((url) => ({ job_id: job.id, url, status: "pending" }));
   const { error: itemsErr } = await sb.from("import_job_items").insert(items);
@@ -1757,6 +1771,9 @@ async function processOneItem(
     const pageLinks = scrapeData.data?.links || scrapeData.links || [];
     const pageHtml = scrapeData.data?.html || scrapeData.html || "";
 
+    // Track Firecrawl scrape cost
+    await trackCost(sb, jobId, "firecrawl", 1, "credits");
+
     if (!markdown || markdown.length < 50) {
       await sb.from("import_job_items").update({ status: "skipped", error_message: "Page content too short", error_type: "permanent" }).eq("id", item.id);
       return { succeeded: false };
@@ -1880,7 +1897,12 @@ async function processOneItem(
           listing = retryResult;
           usedSimplifiedPrompt = true;
         } else {
-          listing = JSON.parse(extractToolCall.function.arguments);
+        listing = JSON.parse(extractToolCall.function.arguments);
+
+          // Track AI token cost (estimate from prompt + response length)
+          const promptTokens = Math.ceil(extractionPrompt.length / 4);
+          const responseTokens = Math.ceil((extractToolCall.function.arguments?.length || 0) / 4);
+          await trackCost(sb, jobId, "ai_tokens", promptTokens + responseTokens, "tokens");
         }
       }
 
@@ -2607,6 +2629,8 @@ async function handleYad2AgencyDiscover(body: any) {
 
   console.log(`Apify returned ${results.length} listings from agency page`);
 
+  // Track Apify cost (will associate with job after creation)
+
   // Create job
   const { data: job, error: jobErr } = await sb
     .from("import_jobs")
@@ -2619,7 +2643,10 @@ async function handleYad2AgencyDiscover(body: any) {
     .select("id").single();
   if (jobErr) throw new Error(`Failed to create import job: ${jobErr.message}`);
 
-  // Create items with pre-extracted data
+  // Track Firecrawl scrape + Apify costs for Yad2 discovery
+  await trackCost(sb, job.id, "firecrawl", 1, "credits");
+  await trackCost(sb, job.id, "apify", 1, "calls");
+
   const items = results.map((r: any) => ({
     job_id: job.id,
     url: r.url || r.link || `yad2-agency-${crypto.randomUUID()}`,
