@@ -1274,6 +1274,9 @@ async function processOneItem(
       }),
     });
 
+    let listing: any = null;
+    let usedSimplifiedPrompt = false;
+
     if (!extractRes.ok) {
       const errText = await extractRes.text();
       console.error("AI extraction error:", extractRes.status, errText);
@@ -1281,15 +1284,31 @@ async function processOneItem(
         await sb.from("import_job_items").update({ status: "pending", error_message: "Rate limited, will retry", error_type: "transient" }).eq("id", item.id);
         return { succeeded: false };
       }
-      await sb.from("import_job_items").update({ status: "failed", error_message: `AI extraction failed (${extractRes.status})`, error_type: "transient" }).eq("id", item.id);
-      return { succeeded: false };
+      // Try simplified prompt retry (non-429 failures)
+      const retryResult = await retryWithSimplifiedPrompt(item.url, markdown, lovableKey);
+      if (!retryResult) {
+        await sb.from("import_job_items").update({ status: "failed", error_message: `AI extraction failed (${extractRes.status})`, error_type: "transient" }).eq("id", item.id);
+        return { succeeded: false };
+      }
+      listing = retryResult;
+      usedSimplifiedPrompt = true;
     }
 
-    const extractData = await extractRes.json();
-    const extractToolCall = extractData.choices?.[0]?.message?.tool_calls?.[0];
-    if (!extractToolCall?.function?.arguments) {
-      await sb.from("import_job_items").update({ status: "failed", error_message: "AI returned no extraction data", error_type: "permanent" }).eq("id", item.id);
-      return { succeeded: false };
+    if (!listing) {
+      const extractData = await extractRes.json();
+      const extractToolCall = extractData.choices?.[0]?.message?.tool_calls?.[0];
+      if (!extractToolCall?.function?.arguments) {
+        // Try simplified prompt retry
+        const retryResult = await retryWithSimplifiedPrompt(item.url, markdown, lovableKey);
+        if (!retryResult) {
+          await sb.from("import_job_items").update({ status: "failed", error_message: "AI returned no extraction data", error_type: "permanent" }).eq("id", item.id);
+          return { succeeded: false };
+        }
+        listing = retryResult;
+        usedSimplifiedPrompt = true;
+      } else {
+        listing = JSON.parse(extractToolCall.function.arguments);
+      }
     }
 
     const listing = JSON.parse(extractToolCall.function.arguments);
