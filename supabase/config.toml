@@ -107,3 +107,6 @@ verify_jwt = false
 
 [functions.import-govmap-data]
 verify_jwt = false
+
+[functions.optimize-image]
+verify_jwt = false
