@@ -33,3 +33,14 @@ All changes from the plan have been implemented:
 - City page trend charts using `city_price_history`
 - Neighborhood comparison widgets using `neighborhood_price_history`
 - AI market insights grounded in neighborhood-level data
+
+## Phase 3: GovMap Transaction Import — Implemented ✅
+
+1. **DB Migration** — Added `deal_id` column with unique partial index to `sold_transactions`.
+2. **`import-govmap-data` edge function** — Admin-only, receives cleaned transaction batches, upserts with `ON CONFLICT (address, city, sold_date, sold_price)`, sub-batches of 100.
+3. **Admin page `/admin/import-govmap`** — CSV upload with client-side cleaning pipeline:
+   - Filters: non-residential, new construction, price <₪100k, size outliers, unknown cities, duplicate dealIds
+   - Hebrew floor parsing, property type normalization, city cross-reference against `cities` table
+   - Batch upload (500/batch) with real-time progress
+   - Geocoding trigger using existing `geocode-sold-transaction` function
+4. **Known Tax Authority flaws handled** — year_built=1900→null, floor=0→null when size=0
