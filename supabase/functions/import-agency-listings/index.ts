@@ -2511,6 +2511,7 @@ Deno.serve(async (req) => {
     else if (action === "process_batch") result = await handleProcessBatch(body);
     else if (action === "retry_failed") result = await handleRetryFailed(body);
     else if (action === "approve_item") result = await handleApproveItem(body);
+    else if (action === "resume_job") result = await handleResumeJob(body);
     else throw new Error(`Unknown action: ${action}`);
 
     return new Response(JSON.stringify(result), {
