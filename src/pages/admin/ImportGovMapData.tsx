@@ -387,7 +387,7 @@ export default function ImportGovMapData() {
               <Stat label="Total Rows" value={filterStats.total} />
               <Stat label="Non-Residential" value={filterStats.nonResidential} negative />
               <Stat label="New Construction" value={filterStats.newConstruction} negative />
-              <Stat label="Price < ₪200k" value={filterStats.priceOutlier} negative />
+              <Stat label="Price < ₪400k" value={filterStats.priceOutlier} negative />
               <Stat label="Size Outlier" value={filterStats.sizeOutlier} negative />
               <Stat label="₪/sqm Outlier" value={filterStats.priceSqmOutlier} negative />
               <Stat label="Zero Rooms" value={filterStats.zeroRooms} negative />
