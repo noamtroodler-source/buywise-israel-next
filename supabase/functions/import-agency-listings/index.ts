@@ -2663,7 +2663,8 @@ async function handleYad2AgencyDiscover(body: any) {
   const results: any[] = await resultsRes.json();
 
   if (results.length === 0) {
-    return { job_id: null, total_listings: 0, total_discovered: newUrls.length, new_urls: 0, skipped_existing: listingUrls.length - newUrls.length };
+    console.warn("Apify returned 0 items for discovered Yad2 detail URLs; retrying original URL as a Yad2 results page");
+    return await handleYad2Discover({ agency_id, website_url, import_type });
   }
 
   console.log(`Apify returned ${results.length} listings from agency page`);
