@@ -2056,11 +2056,12 @@ async function processOneItem(
     const crossSourceWarnings: string[] = [];
     if (listing.address && listing.city) {
       const normalizedAddr = normalizeAddressForDedup(listing.address);
+      const addrPattern = buildAddressQueryPattern(normalizedAddr);
       if (normalizedAddr.length > 0) {
         const { data: crossDupes } = await sb
           .from("properties").select("id, agent_id")
           .neq("agent_id", agentId)
-          .ilike("address", normalizedAddr)
+          .ilike("address", addrPattern)
           .ilike("city", listing.city.trim())
           .limit(1);
         if (crossDupes && crossDupes.length > 0) {
