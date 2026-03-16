@@ -1,10 +1,11 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, ImageIcon, Eye, Trash2, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Loader2, ImageIcon, Eye, Trash2, RefreshCw, AlertTriangle, ExternalLink } from 'lucide-react';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { toast } from 'sonner';
 
@@ -141,7 +142,15 @@ export function ImageDedupPanel() {
             No cross-listing image duplicates detected
           </p>
         ) : (
-          <div className="space-y-4 max-h-[400px] overflow-y-auto">
+          <div className="space-y-3">
+            <Link
+              to="/admin/duplicates"
+              className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+            >
+              <ExternalLink className="h-3 w-3" />
+              Review All Duplicates
+            </Link>
+            <div className="space-y-4 max-h-[400px] overflow-y-auto">
             {groups.map((group, idx) => (
               <div
                 key={idx}
@@ -205,6 +214,7 @@ export function ImageDedupPanel() {
                 )}
               </div>
             ))}
+            </div>
           </div>
         )}
       </CardContent>

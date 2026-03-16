@@ -1758,6 +1758,67 @@ export type Database = {
         }
         Relationships: []
       }
+      duplicate_pairs: {
+        Row: {
+          created_at: string | null
+          detection_method: string
+          id: string
+          merged_into: string | null
+          property_a: string
+          property_b: string
+          resolved_at: string | null
+          resolved_by: string | null
+          similarity_score: number | null
+          status: string
+        }
+        Insert: {
+          created_at?: string | null
+          detection_method?: string
+          id?: string
+          merged_into?: string | null
+          property_a: string
+          property_b: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          similarity_score?: number | null
+          status?: string
+        }
+        Update: {
+          created_at?: string | null
+          detection_method?: string
+          id?: string
+          merged_into?: string | null
+          property_a?: string
+          property_b?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          similarity_score?: number | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "duplicate_pairs_merged_into_fkey"
+            columns: ["merged_into"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "duplicate_pairs_property_a_fkey"
+            columns: ["property_a"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "duplicate_pairs_property_b_fkey"
+            columns: ["property_b"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_verifications: {
         Row: {
           code: string
@@ -5483,6 +5544,15 @@ export type Database = {
       }
       increment_promo_redemptions: {
         Args: { p_promo_id: string }
+        Returns: undefined
+      }
+      merge_properties: {
+        Args: {
+          p_admin_id: string
+          p_loser_id: string
+          p_pair_id: string
+          p_winner_id: string
+        }
         Returns: undefined
       }
       use_agency_invite_code: { Args: { invite_code: string }; Returns: string }
