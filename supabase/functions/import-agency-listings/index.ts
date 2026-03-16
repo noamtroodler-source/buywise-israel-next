@@ -1152,6 +1152,231 @@ Links found on page:
 ${pageLinks.slice(0, 50).join("\n")}`;
 }
 
+// ─── CMS ADAPTERS (WordPress + Wix) ─────────────────────────────────────────
+
+function detectCmsType(html: string, _url: string): "wordpress" | "wix" | "generic" {
+  if (!html || html.length < 100) return "generic";
+
+  // WordPress indicators
+  if (
+    html.includes("wp-content") ||
+    html.includes("wp-json") ||
+    /<meta\s+name\s*=\s*["']generator["']\s+content\s*=\s*["'][^"']*WordPress/i.test(html)
+  ) {
+    return "wordpress";
+  }
+
+  // Wix indicators
+  if (
+    html.includes("window.__INITIAL_STATE__") ||
+    html.includes("wix-warmup-data") ||
+    html.includes("_wixCssModules") ||
+    html.includes("X-Wix-Published-Version") ||
+    html.includes("static.wixstatic.com")
+  ) {
+    return "wix";
+  }
+
+  return "generic";
+}
+
+async function extractFromWordPress(url: string, _firecrawlKey: string): Promise<Record<string, any> | null> {
+  try {
+    const origin = new URL(url).origin;
+    const urlPath = new URL(url).pathname;
+    const slug = urlPath.split("/").filter(Boolean).pop();
+
+    const endpoints = [
+      `${origin}/wp-json/wp/v2/property?per_page=1&_embed`,
+      `${origin}/wp-json/wp/v2/listing?per_page=1&_embed`,
+      `${origin}/wp-json/wp/v2/properties?per_page=1&_embed`,
+      `${origin}/wp-json/wp/v2/listings?per_page=1&_embed`,
+      `${origin}/wp-json/wp/v2/real-estate?per_page=1&_embed`,
+    ];
+
+    for (const endpoint of endpoints) {
+      try {
+        const slugEndpoint = slug ? `${endpoint}&slug=${encodeURIComponent(slug)}` : endpoint;
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 5000);
+        const res = await fetch(slugEndpoint, {
+          headers: { "Accept": "application/json" },
+          signal: controller.signal,
+        });
+        clearTimeout(timeout);
+
+        if (!res.ok) continue;
+        const data = await res.json();
+        if (!Array.isArray(data) || data.length === 0) continue;
+
+        const post = data[0];
+        const result: Record<string, any> = {};
+        let fieldCount = 0;
+
+        if (post.title?.rendered) {
+          result.title = post.title.rendered.replace(/<[^>]+>/g, "").trim();
+          fieldCount++;
+        }
+        if (post.content?.rendered) {
+          result.description = post.content.rendered.replace(/<[^>]+>/g, "").trim().slice(0, 2000);
+          fieldCount++;
+        } else if (post.excerpt?.rendered) {
+          result.description = post.excerpt.rendered.replace(/<[^>]+>/g, "").trim();
+          fieldCount++;
+        }
+
+        const meta = post.acf || post.meta || post.custom_fields || {};
+
+        const priceField = meta.price || meta.property_price || meta._price || meta.listing_price;
+        if (priceField) {
+          const priceNum = parseFloat(String(priceField).replace(/[^\d.]/g, ""));
+          if (!isNaN(priceNum) && priceNum > 0) { result.price = priceNum; fieldCount++; }
+        }
+
+        const roomsField = meta.bedrooms || meta.rooms || meta.property_bedrooms || meta._bedrooms;
+        if (roomsField) {
+          const rooms = parseInt(String(roomsField));
+          if (!isNaN(rooms)) { result.bedrooms = rooms; fieldCount++; }
+        }
+
+        const sizeField = meta.size || meta.property_size || meta.area || meta.sqm || meta._size;
+        if (sizeField) {
+          const size = parseFloat(String(sizeField).replace(/[^\d.]/g, ""));
+          if (!isNaN(size) && size > 0) { result.size_sqm = size; fieldCount++; }
+        }
+
+        const addrField = meta.address || meta.property_address || meta.location || meta._address;
+        if (addrField) {
+          result.address = typeof addrField === "string" ? addrField : (addrField.address || JSON.stringify(addrField));
+          fieldCount++;
+        }
+
+        const cityField = meta.city || meta.property_city || meta._city;
+        if (cityField) {
+          const matched = matchSupportedCity(String(cityField));
+          if (matched) { result.city = matched; fieldCount++; }
+        }
+
+        const typeField = meta.property_type || meta.type || meta._property_type;
+        if (typeField) { result.property_type = String(typeField).toLowerCase(); fieldCount++; }
+
+        const embedded = post._embedded?.["wp:featuredmedia"] || [];
+        const images: string[] = [];
+        for (const media of embedded) {
+          if (media.source_url) images.push(media.source_url);
+        }
+        const galleryField = meta.gallery || meta.property_gallery || meta.images || meta._gallery;
+        if (Array.isArray(galleryField)) {
+          for (const img of galleryField) {
+            const imgUrl = typeof img === "string" ? img : (img?.url || img?.source_url);
+            if (imgUrl) images.push(imgUrl);
+          }
+        }
+        if (images.length > 0) { result.image_urls = images; fieldCount++; }
+
+        if (fieldCount >= 3) {
+          console.log(`WordPress adapter: extracted ${fieldCount} fields from REST API`);
+          return result;
+        }
+      } catch { /* try next endpoint */ }
+    }
+    return null;
+  } catch (err) {
+    console.warn(`WordPress extraction error: ${err}`);
+    return null;
+  }
+}
+
+function extractFromWixState(html: string): Record<string, any> | null {
+  try {
+    const patterns = [
+      /window\.__INITIAL_STATE__\s*=\s*({[\s\S]*?});\s*(?:<\/script>|window\.)/,
+      /window\.__PRELOADED_STATE__\s*=\s*({[\s\S]*?});\s*(?:<\/script>|window\.)/,
+    ];
+
+    for (const pattern of patterns) {
+      const match = pattern.exec(html);
+      if (!match) continue;
+
+      let stateData: any;
+      try { stateData = JSON.parse(match[1]); } catch { continue; }
+
+      const result: Record<string, any> = {};
+      let fieldCount = 0;
+
+      const findData = (obj: any, depth = 0): any => {
+        if (depth > 5 || !obj || typeof obj !== "object") return null;
+        if (obj.price && (obj.address || obj.city || obj.rooms || obj.bedrooms)) return obj;
+        if (obj.currentItem) return findData(obj.currentItem, depth + 1);
+        if (obj.dynamicPageData) return findData(obj.dynamicPageData, depth + 1);
+        if (obj.wixCodeProps) return findData(obj.wixCodeProps, depth + 1);
+        for (const key of Object.keys(obj)) {
+          if (["router", "navigation", "styles", "components", "platform"].includes(key)) continue;
+          const child = findData(obj[key], depth + 1);
+          if (child) return child;
+        }
+        return null;
+      };
+
+      const propertyData = findData(stateData);
+      if (!propertyData) continue;
+
+      if (propertyData.title || propertyData.name) { result.title = propertyData.title || propertyData.name; fieldCount++; }
+      if (propertyData.description) { result.description = String(propertyData.description).slice(0, 2000); fieldCount++; }
+
+      const price = propertyData.price || propertyData.listingPrice || propertyData.salePrice;
+      if (price) {
+        const priceNum = parseFloat(String(price).replace(/[^\d.]/g, ""));
+        if (!isNaN(priceNum) && priceNum > 0) { result.price = priceNum; fieldCount++; }
+      }
+
+      const rooms = propertyData.rooms || propertyData.bedrooms || propertyData.numberOfRooms;
+      if (rooms) {
+        const roomsNum = parseInt(String(rooms));
+        if (!isNaN(roomsNum)) { result.bedrooms = propertyData.bedrooms ? roomsNum : roomsNum - 1; fieldCount++; }
+      }
+
+      const size = propertyData.size || propertyData.area || propertyData.sqm || propertyData.size_sqm;
+      if (size) {
+        const sizeNum = parseFloat(String(size).replace(/[^\d.]/g, ""));
+        if (!isNaN(sizeNum) && sizeNum > 0) { result.size_sqm = sizeNum; fieldCount++; }
+      }
+
+      if (propertyData.address) { result.address = String(propertyData.address); fieldCount++; }
+
+      const city = propertyData.city || propertyData.location;
+      if (city) {
+        const matched = matchSupportedCity(String(city));
+        if (matched) { result.city = matched; fieldCount++; }
+      }
+
+      if (propertyData.propertyType || propertyData.property_type || propertyData.type) {
+        result.property_type = String(propertyData.propertyType || propertyData.property_type || propertyData.type).toLowerCase();
+        fieldCount++;
+      }
+
+      const images: string[] = [];
+      const imgField = propertyData.images || propertyData.photos || propertyData.gallery;
+      if (Array.isArray(imgField)) {
+        for (const img of imgField) {
+          const imgUrl = typeof img === "string" ? img : (img?.src || img?.url || img?.uri);
+          if (imgUrl) images.push(imgUrl.startsWith("//") ? `https:${imgUrl}` : imgUrl);
+        }
+      }
+      if (images.length > 0) { result.image_urls = images; fieldCount++; }
+
+      if (fieldCount >= 3) {
+        console.log(`Wix adapter: extracted ${fieldCount} fields from embedded state`);
+        return result;
+      }
+    }
+    return null;
+  } catch (err) {
+    console.warn(`Wix extraction error: ${err}`);
+    return null;
+  }
+}
+
 // ─── PROCESS SINGLE ITEM ────────────────────────────────────────────────────
 // ─── SIMPLIFIED PROMPT RETRY ────────────────────────────────────────────────
 
