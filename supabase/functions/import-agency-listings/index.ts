@@ -2004,11 +2004,12 @@ async function processOneItem(
     // ── DEDUP: Tier 1 — Normalized address + city ──
     if (listing.address && listing.city) {
       const normalizedAddr = normalizeAddressForDedup(listing.address);
+      const addrPattern = buildAddressQueryPattern(normalizedAddr);
       if (normalizedAddr.length > 0) {
         const { data: dupes } = await sb
           .from("properties").select("id")
           .eq("agent_id", agentId)
-          .ilike("address", normalizedAddr)
+          .ilike("address", addrPattern)
           .ilike("city", listing.city.trim())
           .limit(1);
 
