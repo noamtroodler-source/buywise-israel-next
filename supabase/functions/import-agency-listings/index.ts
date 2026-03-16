@@ -1981,6 +1981,14 @@ async function processOneItem(
       return { succeeded: false };
     }
 
+    // Register image pHashes for cross-listing dedup
+    if (imageUrls.length > 0 && property?.id) {
+      const phashWarnings = await registerImageHashes(property.id, imageUrls, sb);
+      if (phashWarnings.length > 0) {
+        console.log(`pHash warnings for ${property.id}:`, phashWarnings);
+      }
+    }
+
     await sb.from("import_job_items").update({ status: "done", property_id: property.id }).eq("id", item.id);
     return { succeeded: true };
   } catch (err) {
