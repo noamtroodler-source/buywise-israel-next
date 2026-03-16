@@ -241,7 +241,7 @@ export default function ImportGovMapData() {
         sold_price: price,
         sold_date: row.dealDateClean,
         property_type: normalizePropertyType(propType || dealNature),
-        rooms: row.assetRoomNum ? parseFloat(row.assetRoomNum) || null : null,
+        rooms: rooms,
         size_sqm: !isNaN(size) ? size : null,
         floor,
         address,
