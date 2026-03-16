@@ -137,7 +137,7 @@ export default function AgencyImport() {
   const pendingCount = jobItems.filter(i => i.status === 'pending').length;
   const processingCount = jobItems.filter(i => i.status === 'processing').length;
   const totalItems = jobItems.length;
-  const progressPercent = totalItems > 0 ? Math.round(((doneCount + skippedCount + failedCount) / totalItems) * 100) : 0;
+  
 
   const isDiscovering = discoverMutation.isPending;
   const isProcessing = processBatchMutation.isPending || currentJob?.status === 'processing' || isProcessingAll;
