@@ -46,6 +46,8 @@ interface FilterStats {
   newConstruction: number;
   priceOutlier: number;
   sizeOutlier: number;
+  priceSqmOutlier: number;
+  zeroRooms: number;
   unknownCity: number;
   duplicateDealId: number;
   valid: number;
@@ -68,7 +70,11 @@ const PROPERTY_TYPE_MAP: Record<string, string> = {
   "דירה בבית בודד": "house",
 };
 
-const NON_RESIDENTIAL_KEYWORDS = ["חניה", "מחסן", "קרקע", "ללא תיכנון", "משרד", "חנות", "מגרש", "תעשיה"];
+const NON_RESIDENTIAL_KEYWORDS = [
+  "חניה", "מחסן", "מחסנים", "קרקע", "ללא תיכנון", "משרד", "חנות", "מגרש", "תעשיה",
+  "קרקע למגורים", "מסחרי", "תעשייתי",
+];
+const NON_RESIDENTIAL_PROP_TYPES = ["קרקע", "בנין"]; // "בנין" = commercial building
 const NEW_CONSTRUCTION_KEYWORDS = ["מכירה ראשונה", "קבלן", "חברה קבלנית"];
 
 function parseFloor(floorStr: string): number | null {
@@ -140,6 +146,8 @@ export default function ImportGovMapData() {
       newConstruction: 0,
       priceOutlier: 0,
       sizeOutlier: 0,
+      priceSqmOutlier: 0,
+      zeroRooms: 0,
       unknownCity: 0,
       duplicateDealId: 0,
       valid: 0,
@@ -152,33 +160,55 @@ export default function ImportGovMapData() {
       const dealNature = row.dealNatureDescription || "";
       const propType = row.propertyTypeDescription || "";
 
-      // 1. Non-residential filter
-      if (NON_RESIDENTIAL_KEYWORDS.some((kw) => dealNature.includes(kw) || propType.includes(kw))) {
+      // 1. Non-residential filter (check both dealNature AND propertyType)
+      if (
+        NON_RESIDENTIAL_KEYWORDS.some((kw) => dealNature.includes(kw) || propType.includes(kw)) ||
+        NON_RESIDENTIAL_PROP_TYPES.some((kw) => propType === kw)
+      ) {
         stats.nonResidential++;
         continue;
       }
 
-      // 2. New construction filter
-      if (NEW_CONSTRUCTION_KEYWORDS.some((kw) => dealNature.includes(kw))) {
+      // 2. New construction filter — keyword match OR heuristic (both fields empty = unclassified bulk developer sale)
+      if (
+        NEW_CONSTRUCTION_KEYWORDS.some((kw) => dealNature.includes(kw)) ||
+        (!dealNature && !propType) // Both empty = likely developer/new construction batch
+      ) {
         stats.newConstruction++;
         continue;
       }
 
-      // 3. Price outlier
+      // 3. Price outlier — raised floor to ₪200k
       const price = parseFloat(row.dealAmount);
-      if (isNaN(price) || price < 100000) {
+      if (isNaN(price) || price < 200000) {
         stats.priceOutlier++;
         continue;
       }
 
       // 4. Size outlier
       const size = parseFloat(row.assetArea);
-      if (!isNaN(size) && (size < 15 || size > 500)) {
+      if (!isNaN(size) && (size < 20 || size > 400)) {
         stats.sizeOutlier++;
         continue;
       }
 
-      // 5. City validation
+      // 5. Price per sqm outlier (catch misclassified parking/storage/land)
+      if (!isNaN(size) && size > 0) {
+        const priceSqm = price / size;
+        if (priceSqm < 3000 || priceSqm > 85000) {
+          stats.priceSqmOutlier++;
+          continue;
+        }
+      }
+
+      // 6. Rooms = 0 → commercial unit
+      const rooms = row.assetRoomNum ? parseFloat(row.assetRoomNum) : null;
+      if (rooms !== null && rooms === 0) {
+        stats.zeroRooms++;
+        continue;
+      }
+
+      // 7. City validation
       const cityKey = (row.cityNameEng || "").replace(/['']/g, "").toLowerCase();
       const canonicalCity = cityLookup.get(cityKey);
       if (!canonicalCity) {
@@ -186,7 +216,7 @@ export default function ImportGovMapData() {
         continue;
       }
 
-      // 6. Deduplicate by dealId
+      // 8. Deduplicate by dealId
       const dealId = row.dealId || "";
       if (dealId && seenDealIds.has(dealId)) {
         stats.duplicateDealId++;
@@ -194,7 +224,7 @@ export default function ImportGovMapData() {
       }
       if (dealId) seenDealIds.add(dealId);
 
-      // 7. Build address
+      // 9. Build address
       const street = row.streetNameEng || "";
       const houseNum = row.houseNum || "";
       let address = street ? `${street}${houseNum ? " " + houseNum : ""}` : "";
@@ -211,7 +241,7 @@ export default function ImportGovMapData() {
         sold_price: price,
         sold_date: row.dealDateClean,
         property_type: normalizePropertyType(propType || dealNature),
-        rooms: row.assetRoomNum ? parseFloat(row.assetRoomNum) || null : null,
+        rooms: rooms,
         size_sqm: !isNaN(size) ? size : null,
         floor,
         address,
@@ -353,12 +383,14 @@ export default function ImportGovMapData() {
             <CardTitle className="flex items-center gap-2"><CheckCircle className="h-5 w-5 text-primary" /> Step 2: Cleaning Results</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
               <Stat label="Total Rows" value={filterStats.total} />
               <Stat label="Non-Residential" value={filterStats.nonResidential} negative />
               <Stat label="New Construction" value={filterStats.newConstruction} negative />
-              <Stat label="Price < ₪100k" value={filterStats.priceOutlier} negative />
+              <Stat label="Price < ₪200k" value={filterStats.priceOutlier} negative />
               <Stat label="Size Outlier" value={filterStats.sizeOutlier} negative />
+              <Stat label="₪/sqm Outlier" value={filterStats.priceSqmOutlier} negative />
+              <Stat label="Zero Rooms" value={filterStats.zeroRooms} negative />
               <Stat label="Unknown City" value={filterStats.unknownCity} negative />
               <Stat label="Duplicate dealId" value={filterStats.duplicateDealId} negative />
               <Stat label="Valid to Import" value={filterStats.valid} highlight />
