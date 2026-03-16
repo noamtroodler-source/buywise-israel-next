@@ -388,6 +388,9 @@ function validatePropertyData(listing: Record<string, any>, importType: string =
   if (listing.floor != null && (typeof listing.floor !== "number" || listing.floor < -2 || listing.floor > 200)) {
     errors.push(`floor ${listing.floor} is out of range (-2 to 200)`);
   }
+  if (listing.floor != null && listing.total_floors != null && typeof listing.floor === "number" && typeof listing.total_floors === "number" && listing.floor > listing.total_floors) {
+    warnings.push(`floor ${listing.floor} exceeds total_floors ${listing.total_floors}`);
+  }
   if (listing.year_built != null && (typeof listing.year_built !== "number" || listing.year_built < 1800 || listing.year_built > currentYear + 5)) {
     errors.push(`year_built ${listing.year_built} is out of range`);
   }
