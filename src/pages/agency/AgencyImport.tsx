@@ -226,7 +226,7 @@ export default function AgencyImport() {
             </CardHeader>
             <CardContent className="pt-4 space-y-4">
               <p className="text-sm text-muted-foreground">
-                Paste your agency website URL. We'll scan it and find all property listing pages automatically.
+                Paste your agency website URL or Yad2 search URL. We'll scan and find all property listing pages automatically.
               </p>
 
               {/* Import type selector */}
