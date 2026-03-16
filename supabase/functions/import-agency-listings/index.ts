@@ -538,6 +538,11 @@ function computeConfidenceScore(
   const warningPenalty = Math.min(validationWarnings.length * 5, 20);
   score = Math.max(0, score - warningPenalty);
 
+  // Boost for structured data confirmation
+  if (hasStructuredData) {
+    score = Math.min(100, score + 10);
+  }
+
   return Math.min(100, Math.max(0, score));
 }
 
