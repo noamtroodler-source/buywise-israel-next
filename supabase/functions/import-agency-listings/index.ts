@@ -1976,7 +1976,7 @@ async function handleProcessBatch(body: any) {
     return { processed: 0, succeeded: 0, failed: 0, remaining: 0, status: "completed" };
   }
 
-  await sb.from("import_jobs").update({ status: "processing" }).eq("id", job_id);
+  await sb.from("import_jobs").update({ status: "processing", last_heartbeat: new Date().toISOString() }).eq("id", job_id);
 
   const { data: agents } = await sb.from("agents").select("id").eq("agency_id", job.agency_id).limit(1);
   const agentId = agents?.[0]?.id || null;
