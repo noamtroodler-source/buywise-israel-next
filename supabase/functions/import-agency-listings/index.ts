@@ -1282,6 +1282,16 @@ FLOOR ORDINALS (Hebrew → number):
 חמישית = 5 | שישית = 6 | שביעית = 7 | שמינית = 8 | תשיעית = 9
 עשירית = 10 | מרתף = -1
 
+RENTAL TERMS (Hebrew → BuyWise field):
+שכירות / להשכרה = listing_status: for_rent
+תקופת שכירות = lease_term | חוזה ל-12 חודשים = 12_months | חוזה ל-6 חודשים = 6_months | חוזה ל-24 חודשים = 24_months | גמיש = flexible
+מרוהט לגמרי / מרוהט = fully | מרוהט חלקית = semi | לא מרוהט / ללא ריהוט = unfurnished
+חיות מחמד / בע״ח = pets_policy | מותר חיות = allowed | לפי שיקול דעת = case_by_case | אין חיות = not_allowed
+סאבלט / השכרת משנה = subletting_allowed | מותר = allowed | אסור = not_allowed
+דמי תיווך = agent_fee_required (boolean)
+ערבות בנקאית = bank_guarantee_required (boolean)
+צ'קים / שיקים = checks_required (boolean)
+
 ═══ EXTRACTION RULES ═══
 
 FIRST, determine the CATEGORY of this page:
@@ -1296,8 +1306,10 @@ FOR PROPERTIES — extract these fields:
 - listing_status: for_sale if buying/מכירה, for_rent if renting/השכרה
 - Detect if sold (נמכר), rented (הושכר), under contract (בהסכם). Set is_sold_or_rented=true if so.
 - Price might appear as "₪1,500,000" or "1,500,000 ש״ח" or "$450,000"
+- For rentals, price is monthly rent (e.g., "₪5,500/חודש" or "5,500 ש״ח לחודש")
 - Extract ALL image URLs you can find
 - For floor: use the Hebrew ordinal map above
+- For rental listings: extract lease_term, furnished_status, pets_policy, subletting_allowed, agent_fee_required, bank_guarantee_required, checks_required if mentioned
 
 Page URL: ${url}
 Page content:
