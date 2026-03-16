@@ -442,23 +442,48 @@ function validatePropertyData(listing: Record<string, any>, importType: string =
     errors.push(`year_built ${listing.year_built} is out of range`);
   }
 
-  // ── City-specific price range validation (only for resale) ──
-  if (listing.city && listing.price && listing.price > 0 && importType === "resale") {
-    const cityRange = CITY_PRICE_RANGES[listing.city];
-    if (cityRange) {
-      if (listing.price < cityRange.min * 0.5) {
-        warnings.push(`price ${listing.price} is well below ${listing.city} range (${cityRange.min}–${cityRange.max})`);
-      } else if (listing.price > cityRange.max * 1.5) {
-        warnings.push(`price ${listing.price} is well above ${listing.city} range (${cityRange.min}–${cityRange.max})`);
-      }
+  // ── City-specific price range validation ──
+  if (listing.city && listing.price && listing.price > 0) {
+    if (importType === "resale") {
+      const cityRange = CITY_PRICE_RANGES[listing.city];
+      if (cityRange) {
+        if (listing.price < cityRange.min * 0.5) {
+          warnings.push(`price ${listing.price} is well below ${listing.city} range (${cityRange.min}–${cityRange.max})`);
+        } else if (listing.price > cityRange.max * 1.5) {
+          warnings.push(`price ${listing.price} is well above ${listing.city} range (${cityRange.min}–${cityRange.max})`);
+        }
 
-      // Price per sqm check
-      if (listing.size_sqm && listing.size_sqm > 0) {
-        const priceSqm = listing.price / listing.size_sqm;
-        if (priceSqm < cityRange.sqm_min * 0.5 || priceSqm > cityRange.sqm_max * 1.5) {
-          warnings.push(`price/sqm ${Math.round(priceSqm)} outside ${listing.city} range (${cityRange.sqm_min}–${cityRange.sqm_max})`);
+        // Price per sqm check
+        if (listing.size_sqm && listing.size_sqm > 0) {
+          const priceSqm = listing.price / listing.size_sqm;
+          if (priceSqm < cityRange.sqm_min * 0.5 || priceSqm > cityRange.sqm_max * 1.5) {
+            warnings.push(`price/sqm ${Math.round(priceSqm)} outside ${listing.city} range (${cityRange.sqm_min}–${cityRange.sqm_max})`);
+          }
         }
       }
+    } else if (importType === "rental") {
+      // Rental price validation
+      if (listing.price > 30_000) {
+        errors.push(`rental price ${listing.price} NIS/mo is suspiciously high — likely a sale price`);
+      }
+      const rentalRange = CITY_RENTAL_RANGES[listing.city];
+      if (rentalRange) {
+        if (listing.price < rentalRange.min * 0.5) {
+          warnings.push(`rental price ${listing.price} is well below ${listing.city} range (${rentalRange.min}–${rentalRange.max}/mo)`);
+        } else if (listing.price > rentalRange.max * 1.5) {
+          warnings.push(`rental price ${listing.price} is well above ${listing.city} range (${rentalRange.min}–${rentalRange.max}/mo)`);
+        }
+      }
+    }
+  }
+
+  // ── Rental-specific field warnings ──
+  if (importType === "rental" || listing.listing_status === "for_rent") {
+    if (!listing.furnished_status) {
+      warnings.push("rental listing missing furnished_status");
+    }
+    if (!listing.pets_policy) {
+      warnings.push("rental listing missing pets_policy");
     }
   }
 
