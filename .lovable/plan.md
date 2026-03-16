@@ -101,6 +101,9 @@ Based on Perplexity blueprint research. All changes in `import-agency-listings/i
 4. **Integration** — After scrape, before AI: if CMS extracts all core fields (price+city+property_type), AI is skipped entirely. Partial CMS data merges into AI result with CMS taking priority for gap-filling.
 5. **Confidence boost** — +15 confidence score for CMS-extracted listings. `_cms_extracted` flag stored in extracted_data.
 6. **Bug fix** — Removed duplicate `const listing` declaration at line 1389.
-### Phase 6.4: Image Optimization (WebP + Resize) — Pending
+### Phase 6.4: Image Optimization (WebP + Resize) — Implemented ✅
+1. **`optimize-image` edge function** — Uses `@imagemagick/magick-wasm@0.0.30` to convert images to WebP and generate 3 size variants (thumb 300px, medium 800px, full 1600px). Validates minimum 200×200px, skips images >5MB. Uploads to deterministic paths: `imports/{job_id}/{image_id}/{size}.webp`.
+2. **Pipeline integration** — `parallelImageDownload` calls `optimize-image` after upload+enhance. Medium (800px) URL used as primary `image_url`. Falls back to original on failure.
+3. **Path structure** — `property-images/imports/{job_id}/{image_id}/thumb.webp|medium.webp|full.webp`. Thumbnails and full-size derivable from medium URL by path replacement.
 ### Phase 6.5: Review UI Enhancements — Pending
 - Cross-source dedup (Tier 3)
