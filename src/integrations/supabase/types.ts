@@ -4016,6 +4016,7 @@ export type Database = {
           is_furnished: boolean | null
           is_published: boolean | null
           last_renewed_at: string | null
+          last_sync_checked_at: string | null
           latitude: number | null
           lease_term: string | null
           listing_status: Database["public"]["Enums"]["listing_status"]
@@ -4035,6 +4036,7 @@ export type Database = {
           source_url: string | null
           subletting_allowed: string | null
           submitted_at: string | null
+          sync_status: string | null
           title: string
           total_floors: number | null
           total_saves: number
@@ -4078,6 +4080,7 @@ export type Database = {
           is_furnished?: boolean | null
           is_published?: boolean | null
           last_renewed_at?: string | null
+          last_sync_checked_at?: string | null
           latitude?: number | null
           lease_term?: string | null
           listing_status?: Database["public"]["Enums"]["listing_status"]
@@ -4097,6 +4100,7 @@ export type Database = {
           source_url?: string | null
           subletting_allowed?: string | null
           submitted_at?: string | null
+          sync_status?: string | null
           title: string
           total_floors?: number | null
           total_saves?: number
@@ -4140,6 +4144,7 @@ export type Database = {
           is_furnished?: boolean | null
           is_published?: boolean | null
           last_renewed_at?: string | null
+          last_sync_checked_at?: string | null
           latitude?: number | null
           lease_term?: string | null
           listing_status?: Database["public"]["Enums"]["listing_status"]
@@ -4159,6 +4164,7 @@ export type Database = {
           source_url?: string | null
           subletting_allowed?: string | null
           submitted_at?: string | null
+          sync_status?: string | null
           title?: string
           total_floors?: number | null
           total_saves?: number

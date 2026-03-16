@@ -2723,6 +2723,166 @@ async function handleResumeJob(body: any) {
   return { reset_count: resetCount };
 }
 
+// ─── CHECK EXISTING LISTINGS (Price Change + Removal Detection) ────────────
+
+async function handleCheckExisting(body: any) {
+  const { agency_id, items } = body;
+  if (!agency_id || !items?.length) throw new Error("agency_id and items[] required");
+
+  const sb = supabaseAdmin();
+  const apiKey = Deno.env.get("FIRECRAWL_API_KEY");
+  if (!apiKey) throw new Error("FIRECRAWL_API_KEY not configured");
+
+  const results = {
+    checked: 0,
+    price_changes: [] as { id: string; old_price: number; new_price: number }[],
+    removed: [] as string[],
+    errors: 0,
+  };
+
+  // Hebrew price regex patterns
+  const pricePatterns = [
+    /₪\s?([\d,]+(?:\.\d+)?)/g,
+    /(\d{1,3}(?:,\d{3})+)\s?₪/g,
+    /NIS\s?([\d,]+)/gi,
+    /(\d{1,3}(?:,\d{3})+)\s?(?:ש"ח|שקל|shekel)/gi,
+    // Standalone large numbers (likely prices: 500,000+)
+    /\b(\d{1,3}(?:,\d{3}){1,3})\b/g,
+  ];
+
+  function extractPrice(markdown: string): number | null {
+    const prices: number[] = [];
+    for (const pattern of pricePatterns) {
+      pattern.lastIndex = 0;
+      let match;
+      while ((match = pattern.exec(markdown)) !== null) {
+        const numStr = match[1].replace(/,/g, "");
+        const num = parseFloat(numStr);
+        // Only consider values that look like property prices (100k+)
+        if (num >= 100000 && num <= 50000000) {
+          prices.push(num);
+        }
+      }
+    }
+    // Return the most common price, or the first one found
+    if (prices.length === 0) return null;
+    const freq = new Map<number, number>();
+    for (const p of prices) freq.set(p, (freq.get(p) || 0) + 1);
+    return [...freq.entries()].sort((a, b) => b[1] - a[1])[0][0];
+  }
+
+  // Indicators that a page is a listing index (not an individual listing)
+  const indexPageIndicators = [
+    /נמצאו\s+\d+\s+תוצאות/i, // "X results found"
+    /properties?\s+found/i,
+    /listing.*results/i,
+    /page\s+not\s+found/i,
+    /404/,
+    /הדף\s+לא\s+נמצא/i, // "page not found" in Hebrew
+    /הנכס\s+נמכר/i, // "property sold"
+    /הנכס\s+הושכר/i, // "property rented"
+  ];
+
+  for (const item of items) {
+    try {
+      const { property_id, source_url, current_price } = item;
+      if (!property_id || !source_url) {
+        results.errors++;
+        continue;
+      }
+
+      // Scrape via Firecrawl (markdown only, lightweight)
+      const scrapeRes = await fetch("https://api.firecrawl.dev/v1/scrape", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          url: source_url,
+          formats: ["markdown"],
+          onlyMainContent: true,
+          timeout: 15000,
+        }),
+      });
+
+      const scrapeData = await scrapeRes.json();
+
+      // Check for 404 / scrape failure
+      if (!scrapeRes.ok || !scrapeData.success ||
+          scrapeData.data?.metadata?.statusCode === 404 ||
+          scrapeData.data?.metadata?.statusCode === 410) {
+        // Mark as removed
+        await sb.from("properties").update({
+          sync_status: "removed",
+          last_sync_checked_at: new Date().toISOString(),
+        }).eq("id", property_id);
+        results.removed.push(property_id);
+        results.checked++;
+        continue;
+      }
+
+      const markdown = scrapeData.data?.markdown || scrapeData.markdown || "";
+
+      // Check if page is an index/redirect (not the actual listing)
+      const isIndexPage = indexPageIndicators.some((re) => re.test(markdown));
+      if (isIndexPage || markdown.length < 100) {
+        await sb.from("properties").update({
+          sync_status: "removed",
+          last_sync_checked_at: new Date().toISOString(),
+        }).eq("id", property_id);
+        results.removed.push(property_id);
+        results.checked++;
+        continue;
+      }
+
+      // Extract price from page content
+      const extractedPrice = extractPrice(markdown);
+
+      if (extractedPrice && current_price) {
+        const priceDiff = Math.abs(extractedPrice - current_price) / current_price;
+        // Only update if price differs by >1% (avoid rounding noise)
+        if (priceDiff > 0.01) {
+          // Update price — existing triggers handle:
+          // - handle_price_reduction() → sets original_price, price_reduced_at
+          // - log_property_price_change() → inserts into listing_price_history
+          // - track_property_lifecycle_price() → updates listing_lifecycle
+          // - notify_price_drop() → creates price_drop_notifications
+          await sb.from("properties").update({
+            price: extractedPrice,
+            sync_status: "price_changed",
+            last_sync_checked_at: new Date().toISOString(),
+          }).eq("id", property_id);
+
+          results.price_changes.push({
+            id: property_id,
+            old_price: current_price,
+            new_price: extractedPrice,
+          });
+        } else {
+          // Price same — clear any previous sync_status, update check time
+          await sb.from("properties").update({
+            sync_status: null,
+            last_sync_checked_at: new Date().toISOString(),
+          }).eq("id", property_id);
+        }
+      } else {
+        // Couldn't extract price — just update check time
+        await sb.from("properties").update({
+          last_sync_checked_at: new Date().toISOString(),
+        }).eq("id", property_id);
+      }
+
+      results.checked++;
+    } catch (err) {
+      console.error(`check_existing error for item:`, err);
+      results.errors++;
+    }
+  }
+
+  return results;
+}
+
 // ─── MAIN ───────────────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
@@ -2744,6 +2904,7 @@ Deno.serve(async (req) => {
     else if (action === "retry_failed") result = await handleRetryFailed(body);
     else if (action === "approve_item") result = await handleApproveItem(body);
     else if (action === "resume_job") result = await handleResumeJob(body);
+    else if (action === "check_existing") result = await handleCheckExisting(body);
     else throw new Error(`Unknown action: ${action}`);
 
     return new Response(JSON.stringify(result), {
