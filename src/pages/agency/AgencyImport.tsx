@@ -304,7 +304,9 @@ export default function AgencyImport() {
               </form>
               {isDiscovering && (
                 <p className="text-sm text-muted-foreground mt-3 animate-pulse">
-                  Scanning your website for listing pages... This may take 30-60 seconds.
+                  {sourceType === 'yad2'
+                    ? 'Scanning your agency page on Yad2... This may take 2-5 minutes.'
+                    : 'Scanning your website for listing pages... This may take 2-5 minutes.'}
                 </p>
               )}
             </CardContent>
