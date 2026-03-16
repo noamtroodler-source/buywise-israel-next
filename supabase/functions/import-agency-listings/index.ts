@@ -2401,7 +2401,7 @@ async function handleApproveItem(body: any) {
       listing_status: listing.listing_status || "for_sale",
       price: listing.price || 0,
       currency: listing.currency || "ILS",
-      address: listing.address || "",
+      address: listing.address ? normalizeAddressForStorage(listing.address) : "",
       city: listing.city,
       neighborhood: listing.neighborhood || null,
       latitude, longitude,
