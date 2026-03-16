@@ -947,30 +947,35 @@ function filterNonListingUrls(urls: string[]): { listingCandidates: string[]; re
 
 // ─── GEOCODING ──────────────────────────────────────────────────────────────
 
-let _lastGeoTime = 0;
-let _geoQueue: Promise<void> = Promise.resolve();
-
 async function geocodeWithRateLimit(address: string, city: string): Promise<{ lat: number; lng: number } | null> {
-  const result = await new Promise<{ lat: number; lng: number } | null>((resolve) => {
-    _geoQueue = _geoQueue.then(async () => {
-      const now = Date.now();
-      const wait = Math.max(0, 1100 - (now - _lastGeoTime));
-      if (wait > 0) await delay(wait);
-      _lastGeoTime = Date.now();
-      try {
-        const geoQuery = encodeURIComponent(`${address}, ${city}, Israel`);
-        const geoRes = await fetch(
-          `https://nominatim.openstreetmap.org/search?q=${geoQuery}&format=json&limit=1`,
-          { headers: { "User-Agent": "BuyWiseIsrael/1.0" } }
-        );
-        const geoData = await geoRes.json();
-        if (geoData?.[0]) {
-          resolve({ lat: parseFloat(geoData[0].lat), lng: parseFloat(geoData[0].lon) });
-        } else { resolve(null); }
-      } catch { resolve(null); }
-    });
-  });
-  return result;
+  try {
+    const res = await fetch(
+      `${Deno.env.get("SUPABASE_URL")}/functions/v1/geocode-address`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          entityType: "property",
+          entityId: crypto.randomUUID(),
+          address,
+          city,
+          skipDbSave: true,
+        }),
+      }
+    );
+    const data = await res.json();
+    if (data.success) {
+      return { lat: data.latitude, lng: data.longitude };
+    }
+    console.warn(`Geocoding failed for "${address}, ${city}":`, data.error);
+    return null;
+  } catch (err) {
+    console.error("Geocode fetch error:", err);
+    return null;
+  }
 }
 
 // ─── IMAGE HANDLING (with placeholder detection) ────────────────────────────

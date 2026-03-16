@@ -170,24 +170,26 @@ serve(async (req) => {
 
     const { lat, lng, source } = result;
 
-    // Save to database
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
-
-    const tableName = entityType === 'property' ? 'properties' : 'projects';
-    const { error: updateError } = await supabase
-      .from(tableName)
-      .update({ latitude: lat, longitude: lng })
-      .eq('id', entityId);
-
-    if (updateError) {
-      console.error("Database update error:", updateError);
-      return new Response(
-        JSON.stringify({ success: false, error: "Geocoded successfully but failed to save to database" } as GeocodeResponse),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    // Save to database (skip when called from import pipeline)
+    if (!skipDbSave) {
+      const supabase = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
       );
+
+      const tableName = entityType === 'property' ? 'properties' : 'projects';
+      const { error: updateError } = await supabase
+        .from(tableName)
+        .update({ latitude: lat, longitude: lng })
+        .eq('id', entityId);
+
+      if (updateError) {
+        console.error("Database update error:", updateError);
+        return new Response(
+          JSON.stringify({ success: false, error: "Geocoded successfully but failed to save to database" } as GeocodeResponse),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     console.log(`Successfully geocoded via ${source}: ${lat}, ${lng}`);
