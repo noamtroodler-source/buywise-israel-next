@@ -819,15 +819,45 @@ async function classifyUrlsInBatches(allUrls: string[], lovableKey: string, chun
 
 // ─── DISCOVER ───────────────────────────────────────────────────────────────
 
+// Tracking / marketing params to strip for dedup
+const STRIP_PARAMS = new Set([
+  'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'utm_id',
+  'ref', 'referer', 'referrer', 'source', 'src',
+  'fbclid', 'gclid', 'gclsrc', 'dclid', 'gbraid', 'wbraid',
+  'msclkid', 'twclid', 'ttclid', 'li_fat_id',
+  'mc_cid', 'mc_eid', '_ga', '_gl', '_hsenc', '_hsmi',
+  'hsa_cam', 'hsa_grp', 'hsa_mt', 'hsa_src', 'hsa_ad', 'hsa_acc', 'hsa_net', 'hsa_ver', 'hsa_la', 'hsa_ol', 'hsa_kw',
+  'yclid', 'spm', 'scm', 'aff_id', 'campaign_id', 'ad_id',
+  'pk_campaign', 'pk_kwd', 'pk_source', 'pk_medium', 'pk_content',
+  'mtm_campaign', 'mtm_kwd', 'mtm_source', 'mtm_medium', 'mtm_content',
+  'redirect', 'callback', 'returnUrl', 'return_url',
+  '_', 'nocache', 'timestamp', 'cachebuster',
+]);
+
 function normalizeUrl(raw: string): string {
   let url = raw.trim();
   if (!url.startsWith("http")) url = `https://${url}`;
   try {
     const parsed = new URL(url);
     parsed.hostname = parsed.hostname.toLowerCase();
+    // Remove www. prefix for consistent matching
+    if (parsed.hostname.startsWith("www.")) {
+      parsed.hostname = parsed.hostname.slice(4);
+    }
+    // Strip trailing slash
     if (parsed.pathname.endsWith("/") && parsed.pathname.length > 1) {
       parsed.pathname = parsed.pathname.slice(0, -1);
     }
+    // Strip tracking/marketing query params
+    const keysToDelete: string[] = [];
+    parsed.searchParams.forEach((_, key) => {
+      if (STRIP_PARAMS.has(key.toLowerCase())) {
+        keysToDelete.push(key);
+      }
+    });
+    keysToDelete.forEach(k => parsed.searchParams.delete(k));
+    // Remove fragment
+    parsed.hash = "";
     return parsed.toString();
   } catch {
     return url.toLowerCase().replace(/\/+$/, "");
