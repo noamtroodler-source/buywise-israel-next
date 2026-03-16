@@ -547,6 +547,11 @@ function computeConfidenceScore(
     score = Math.min(100, score + 10);
   }
 
+  // Boost for CMS adapter extraction
+  if (cmsExtracted) {
+    score = Math.min(100, score + 15);
+  }
+
   return Math.min(100, Math.max(0, score));
 }
 
