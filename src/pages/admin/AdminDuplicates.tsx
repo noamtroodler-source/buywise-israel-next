@@ -4,20 +4,23 @@ import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, RefreshCw, Search } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Loader2, Search } from 'lucide-react';
 import { DuplicateCompareCard } from '@/components/admin/DuplicateCompareCard';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 
 type StatusFilter = 'pending' | 'merged' | 'dismissed' | 'all';
+type MethodFilter = 'all' | 'phash' | 'cross_source';
 
 export default function AdminDuplicates() {
   const [tab, setTab] = useState<StatusFilter>('pending');
+  const [methodFilter, setMethodFilter] = useState<MethodFilter>('all');
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
   const { data: pairs, isLoading } = useQuery({
-    queryKey: ['duplicate-pairs', tab],
+    queryKey: ['duplicate-pairs', tab, methodFilter],
     queryFn: async () => {
       let query = supabase
         .from('duplicate_pairs')
@@ -28,13 +31,15 @@ export default function AdminDuplicates() {
       if (tab !== 'all') {
         query = query.eq('status', tab);
       }
+      if (methodFilter !== 'all') {
+        query = query.eq('detection_method', methodFilter);
+      }
 
       const { data, error } = await query;
       if (error) throw error;
 
       if (!data || data.length === 0) return [];
 
-      // Fetch property details for all referenced properties
       const propIds = new Set<string>();
       data.forEach((p: any) => {
         propIds.add(p.property_a);
@@ -108,7 +113,7 @@ export default function AdminDuplicates() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold text-foreground">Duplicate Properties</h2>
-          <p className="text-sm text-muted-foreground">Review and merge duplicate listings detected via image similarity</p>
+          <p className="text-sm text-muted-foreground">Review and merge duplicate listings detected via image similarity or cross-source matching</p>
         </div>
         <Button
           variant="outline"
@@ -121,43 +126,55 @@ export default function AdminDuplicates() {
         </Button>
       </div>
 
-      <Tabs value={tab} onValueChange={(v) => setTab(v as StatusFilter)}>
-        <TabsList>
-          <TabsTrigger value="pending">
-            Pending {pendingCount > 0 && <Badge variant="destructive" className="ml-1 text-xs">{pendingCount}</Badge>}
-          </TabsTrigger>
-          <TabsTrigger value="merged">Merged</TabsTrigger>
-          <TabsTrigger value="dismissed">Dismissed</TabsTrigger>
-          <TabsTrigger value="all">All</TabsTrigger>
-        </TabsList>
+      <div className="flex items-center gap-4">
+        <Tabs value={tab} onValueChange={(v) => setTab(v as StatusFilter)} className="flex-1">
+          <TabsList>
+            <TabsTrigger value="pending">
+              Pending {pendingCount > 0 && <Badge variant="destructive" className="ml-1 text-xs">{pendingCount}</Badge>}
+            </TabsTrigger>
+            <TabsTrigger value="merged">Merged</TabsTrigger>
+            <TabsTrigger value="dismissed">Dismissed</TabsTrigger>
+            <TabsTrigger value="all">All</TabsTrigger>
+          </TabsList>
+        </Tabs>
 
-        <TabsContent value={tab} className="mt-4">
-          {isLoading ? (
-            <div className="flex justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            </div>
-          ) : !pairs?.length ? (
-            <p className="text-center text-muted-foreground py-12">
-              No {tab === 'all' ? '' : tab} duplicate pairs found
-            </p>
-          ) : (
-            <div className="space-y-4">
-              {pairs.map((pair: any) => (
-                <DuplicateCompareCard
-                  key={pair.id}
-                  pairId={pair.id}
-                  propertyA={pair.propertyA}
-                  propertyB={pair.propertyB}
-                  similarityScore={pair.similarity_score}
-                  onKeep={(pairId, winnerId, loserId) => mergeMutation.mutate({ pairId, winnerId, loserId })}
-                  onDismiss={(pairId) => dismissMutation.mutate(pairId)}
-                  isLoading={isBusy}
-                />
-              ))}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+        <Select value={methodFilter} onValueChange={(v) => setMethodFilter(v as MethodFilter)}>
+          <SelectTrigger className="w-[160px] h-9">
+            <SelectValue placeholder="Detection method" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Methods</SelectItem>
+            <SelectItem value="phash">Image Match</SelectItem>
+            <SelectItem value="cross_source">Cross-Source</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {isLoading ? (
+        <div className="flex justify-center py-12">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      ) : !pairs?.length ? (
+        <p className="text-center text-muted-foreground py-12">
+          No {tab === 'all' ? '' : tab} duplicate pairs found{methodFilter !== 'all' ? ` (${methodFilter === 'phash' ? 'Image Match' : 'Cross-Source'})` : ''}
+        </p>
+      ) : (
+        <div className="space-y-4">
+          {pairs.map((pair: any) => (
+            <DuplicateCompareCard
+              key={pair.id}
+              pairId={pair.id}
+              propertyA={pair.propertyA}
+              propertyB={pair.propertyB}
+              similarityScore={pair.similarity_score}
+              detectionMethod={pair.detection_method}
+              onKeep={(pairId, winnerId, loserId) => mergeMutation.mutate({ pairId, winnerId, loserId })}
+              onDismiss={(pairId) => dismissMutation.mutate(pairId)}
+              isLoading={isBusy}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
