@@ -13,6 +13,15 @@ function supabaseAdmin() {
   );
 }
 
+// ─── COST TRACKING ──────────────────────────────────────────────────────────
+async function trackCost(sb: any, jobId: string, resourceType: string, quantity: number, unit: string) {
+  try {
+    await sb.from("import_job_costs").insert({ job_id: jobId, resource_type: resourceType, quantity, unit });
+  } catch (e) {
+    console.error(`[trackCost] Failed to track ${resourceType}:`, e);
+  }
+}
+
 // ─── SUPPORTED CITIES WHITELIST ─────────────────────────────────────────────
 
 const SUPPORTED_CITIES = [
