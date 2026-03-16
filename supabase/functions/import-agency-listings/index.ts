@@ -2524,99 +2524,101 @@ function isYad2AgencyUrl(url: string): boolean {
   }
 }
 
-function extractYad2BuildId(html: string): string | null {
-  const directMatch = html.match(/\/realestate\/_next\/static\/([^/]+)\/_buildManifest\.js/);
-  if (directMatch?.[1]) return directMatch[1];
-
-  const fallbackMatch = html.match(/\/_next\/static\/([^/]+)\/_buildManifest\.js/);
-  return fallbackMatch?.[1] || null;
+function normalizeImportType(importType?: string): "resale" | "rental" | "both" {
+  const normalized = (importType || "resale").toLowerCase();
+  if (normalized === "all" || normalized === "both") return "both";
+  if (normalized === "rent" || normalized === "rental") return "rental";
+  return "resale";
 }
 
 function getYad2AgencyDiscoveryUrls(rawUrl: string, importType: string): string[] {
   const parsed = new URL(rawUrl);
   const basePath = parsed.pathname.replace(/\/(forsale|rent)\/?$/i, "").replace(/\/$/, "");
+  const normalizedImportType = normalizeImportType(importType);
 
-  const listingModes = importType === "both"
+  const listingModes = normalizedImportType === "both"
     ? ["forsale", "rent"]
-    : [importType === "rental" ? "rent" : "forsale"];
+    : [normalizedImportType === "rental" ? "rent" : "forsale"];
 
   const urls = new Set<string>();
   for (const mode of listingModes) {
     const nextUrl = new URL(parsed.toString());
     nextUrl.pathname = `${basePath}/${mode}`;
+    nextUrl.searchParams.delete("page");
     urls.add(nextUrl.toString());
   }
 
   return Array.from(urls);
 }
 
-function buildYad2NextDataUrl(pageUrl: string, buildId: string, page: number): string {
+function buildYad2AgencyPageUrl(pageUrl: string, page: number): string {
   const parsed = new URL(pageUrl);
-  const routePath = parsed.pathname.replace(/^\/realestate/, "");
-  const dataUrl = new URL(`/realestate/_next/data/${buildId}${routePath}.json`, parsed.origin);
+  if (page <= 1) parsed.searchParams.delete("page");
+  else parsed.searchParams.set("page", String(page));
+  return parsed.toString();
+}
 
-  parsed.searchParams.forEach((value, key) => {
-    if (key !== "page") dataUrl.searchParams.set(key, value);
+function extractYad2AgencyItemUrls(html: string, pageUrl: string): string[] {
+  const urls = new Set<string>();
+
+  const hrefRegex = /href=["']([^"']*\/realestate\/item\/[^"'#<]+)["']/gi;
+  let hrefMatch: RegExpExecArray | null;
+  while ((hrefMatch = hrefRegex.exec(html)) !== null) {
+    try {
+      const absoluteUrl = new URL(hrefMatch[1].replace(/&amp;/g, "&"), pageUrl).toString();
+      urls.add(normalizeUrl(absoluteUrl));
+    } catch {
+      // ignore malformed URLs
+    }
+  }
+
+  if (urls.size === 0) {
+    const absoluteRegex = /https?:\/\/(?:www\.)?yad2\.co\.il\/realestate\/item\/[^"'()\s<]+/gi;
+    const absoluteMatches = html.match(absoluteRegex) || [];
+    for (const match of absoluteMatches) {
+      urls.add(normalizeUrl(match.replace(/&amp;/g, "&")));
+    }
+  }
+
+  return Array.from(urls);
+}
+
+function extractYad2AgencyTotalCount(html: string, listingMode: "forsale" | "rent"): number | null {
+  const patterns = listingMode === "rent"
+    ? [
+        /השכרה\s*\(([\d,]+)\)/u,
+        /([\d,]+)\s*נכסים\s*להשכרה/u,
+        /([\d,]+)\s*תוצאות/u,
+      ]
+    : [
+        /מכירה\s*\(([\d,]+)\)/u,
+        /([\d,]+)\s*נכסים\s*למכירה/u,
+        /([\d,]+)\s*תוצאות/u,
+      ];
+
+  for (const pattern of patterns) {
+    const match = html.match(pattern);
+    if (!match?.[1]) continue;
+    const value = Number(match[1].replace(/,/g, ""));
+    if (Number.isFinite(value) && value > 0) return value;
+  }
+
+  return null;
+}
+
+async function fetchYad2AgencyPageHtml(pageUrl: string): Promise<string> {
+  const response = await fetch(pageUrl, {
+    headers: {
+      "User-Agent": "Mozilla/5.0 (compatible; LovableImportBot/1.0)",
+      "Accept-Language": "he-IL,he;q=0.9,en;q=0.8",
+    },
   });
 
-  if (page > 1) dataUrl.searchParams.set("page", String(page));
-  return dataUrl.toString();
-}
+  if (!response.ok) {
+    throw new Error(`Failed to load Yad2 page (${response.status})`);
+  }
 
-function extractYad2FeedPageData(payload: any): { feed: any[]; totalPages: number; total: number } {
-  const pageProps = payload?.pageProps ?? {};
-  const source = pageProps.agencyData ?? pageProps.brokerData ?? {};
-  const feed = Array.isArray(source.feed) ? source.feed : [];
-  const totalPages = Number(source.pagination?.totalPages || 1);
-  const total = Number(source.pagination?.total || feed.length);
-
-  return { feed, totalPages, total };
-}
-
-function normalizeYad2AgencyFeedItem(item: any, listingMode: "forsale" | "rent") {
-  const token = typeof item?.token === "string" ? item.token.trim() : "";
-  if (!token) return null;
-
-  const city = item?.address?.city?.text || "";
-  const neighborhood = item?.address?.neighborhood?.text || "";
-  const street = item?.address?.street?.text || "";
-  const houseNumber = item?.address?.house?.number != null ? String(item.address.house.number) : "";
-  const address = [street, houseNumber].filter(Boolean).join(" ").trim();
-  const propertyText = item?.additionalDetails?.property?.text || "";
-  const roomsCount = item?.additionalDetails?.roomsCount;
-  const squareMeter = item?.additionalDetails?.squareMeter;
-  const floor = item?.address?.house?.floor;
-  const coverImage = item?.additionalDetails?.metaData?.coverImage || item?.metaData?.coverImage || null;
-  const tags = Array.isArray(item?.tags)
-    ? item.tags.map((tag: any) => tag?.name).filter((name: unknown) => typeof name === "string")
-    : [];
-
-  return {
-    url: `https://www.yad2.co.il/realestate/item/${token}`,
-    extracted_data: {
-      listing_category: "property",
-      title: [propertyText, neighborhood || city].filter(Boolean).join(", ") || city || "Imported from Yad2",
-      description: null,
-      price: Number(item?.price || 0),
-      currency: "ILS",
-      bedrooms: roomsCount != null ? Math.max(0, Math.round(Number(roomsCount) - 1)) : 0,
-      bathrooms: 1,
-      size_sqm: squareMeter != null ? Number(squareMeter) : null,
-      address,
-      city,
-      neighborhood,
-      property_type: mapYad2PropertyType(propertyText),
-      listing_status: listingMode === "rent" ? "for_rent" : "for_sale",
-      floor: floor != null && !Number.isNaN(Number(floor)) ? Number(floor) : null,
-      total_floors: null,
-      features: tags,
-      parking: 0,
-      condition: null,
-      image_urls: coverImage ? [coverImage] : [],
-      _source: "yad2",
-      _has_structured_data: true,
-    },
-  };
+  return await response.text();
 }
 
 async function handleYad2AgencyDiscover(body: any) {
@@ -2624,6 +2626,7 @@ async function handleYad2AgencyDiscover(body: any) {
   if (!agency_id || !website_url) throw new Error("agency_id and website_url required");
 
   const sb = supabaseAdmin();
+  const effectiveImportType = normalizeImportType(import_type);
 
   const { data: agency, error: agencyErr } = await sb
     .from("agencies")
@@ -2632,65 +2635,50 @@ async function handleYad2AgencyDiscover(body: any) {
     .single();
   if (agencyErr || !agency) throw new Error("Agency not found");
 
-  console.log(`Yad2 agency discovery: loading paginated feed for ${website_url}`);
+  console.log(`Yad2 agency discovery: loading paginated HTML pages for ${website_url} (${effectiveImportType})`);
 
-  const discoveryUrls = getYad2AgencyDiscoveryUrls(website_url, import_type);
-  const initialHtmlRes = await fetch(discoveryUrls[0]);
-  if (!initialHtmlRes.ok) {
-    throw new Error(`Failed to load Yad2 page (${initialHtmlRes.status})`);
-  }
-
-  const initialHtml = await initialHtmlRes.text();
-  const buildId = extractYad2BuildId(initialHtml);
-  if (!buildId) throw new Error("Could not determine Yad2 build ID for paginated discovery");
-
-  const discoveredItems: Array<{ url: string; extracted_data: Record<string, any> }> = [];
+  const discoveryUrls = getYad2AgencyDiscoveryUrls(website_url, effectiveImportType);
+  const discoveredUrls = new Set<string>();
   let totalDiscovered = 0;
 
   for (const discoveryUrl of discoveryUrls) {
     const listingMode = /\/rent\b/i.test(new URL(discoveryUrl).pathname) ? "rent" : "forsale";
-    const firstPageRes = await fetch(buildYad2NextDataUrl(discoveryUrl, buildId, 1));
-    if (!firstPageRes.ok) {
-      throw new Error(`Failed to load Yad2 feed page 1 (${firstPageRes.status})`);
-    }
+    const firstPageUrl = buildYad2AgencyPageUrl(discoveryUrl, 1);
+    const firstPageHtml = await fetchYad2AgencyPageHtml(firstPageUrl);
+    const firstPageItems = extractYad2AgencyItemUrls(firstPageHtml, firstPageUrl);
+    const totalCount = extractYad2AgencyTotalCount(firstPageHtml, listingMode) ?? firstPageItems.length;
+    const pageSize = Math.max(firstPageItems.length, 5);
+    const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
-    const firstPageData = await firstPageRes.json();
-    const firstPageMeta = extractYad2FeedPageData(firstPageData);
-    totalDiscovered += firstPageMeta.total;
+    totalDiscovered += totalCount;
+    firstPageItems.forEach((url) => discoveredUrls.add(url));
 
-    const pagesData: any[] = [firstPageData];
-    const pageNumbers = Array.from({ length: Math.max(0, firstPageMeta.totalPages - 1) }, (_, index) => index + 2);
+    console.log(`Yad2 agency ${listingMode}: page 1=${firstPageItems.length}, total=${totalCount}, pages=${totalPages}`);
 
-    for (let i = 0; i < pageNumbers.length; i += 5) {
-      const pageBatch = pageNumbers.slice(i, i + 5);
-      const batchResults = await Promise.all(
-        pageBatch.map(async (pageNumber) => {
-          const pageRes = await fetch(buildYad2NextDataUrl(discoveryUrl, buildId, pageNumber));
-          if (!pageRes.ok) {
-            throw new Error(`Failed to load Yad2 feed page ${pageNumber} (${pageRes.status})`);
-          }
-          return pageRes.json();
-        })
+    for (let startPage = 2; startPage <= totalPages; startPage += 5) {
+      const pageBatch = Array.from(
+        { length: Math.min(5, totalPages - startPage + 1) },
+        (_, index) => startPage + index
       );
-      pagesData.push(...batchResults);
-    }
 
-    for (const pageData of pagesData) {
-      const { feed } = extractYad2FeedPageData(pageData);
-      for (const item of feed) {
-        const normalized = normalizeYad2AgencyFeedItem(item, listingMode);
-        if (normalized) discoveredItems.push(normalized);
-      }
+      const pageHtmlBatch = await Promise.all(
+        pageBatch.map((pageNumber) => fetchYad2AgencyPageHtml(buildYad2AgencyPageUrl(discoveryUrl, pageNumber)))
+      );
+
+      pageHtmlBatch.forEach((pageHtml, index) => {
+        const pageNumber = pageBatch[index];
+        const pageUrl = buildYad2AgencyPageUrl(discoveryUrl, pageNumber);
+        const pageItems = extractYad2AgencyItemUrls(pageHtml, pageUrl);
+        pageItems.forEach((url) => discoveredUrls.add(url));
+      });
     }
   }
 
-  const dedupedItems = Array.from(
-    new Map(discoveredItems.map((item) => [normalizeUrl(item.url), item])).values()
-  );
+  const dedupedUrls = Array.from(discoveredUrls);
 
-  console.log(`Yad2 paginated discovery found ${dedupedItems.length} unique listings across ${discoveryUrls.length} feed(s)`);
+  console.log(`Yad2 agency HTML discovery found ${dedupedUrls.length} unique listings across ${discoveryUrls.length} page set(s)`);
 
-  if (dedupedItems.length === 0) {
+  if (dedupedUrls.length === 0) {
     return { job_id: null, total_listings: 0, total_discovered: 0, new_urls: 0, skipped_existing: 0 };
   }
 
@@ -2707,15 +2695,15 @@ async function handleYad2AgencyDiscover(body: any) {
     }
   }
 
-  const newItems = dedupedItems.filter((item) => !knownUrls.has(normalizeUrl(item.url)));
+  const newUrls = dedupedUrls.filter((url) => !knownUrls.has(normalizeUrl(url)));
 
-  if (newItems.length === 0) {
+  if (newUrls.length === 0) {
     return {
       job_id: null,
       total_listings: 0,
-      total_discovered: dedupedItems.length,
+      total_discovered: totalDiscovered || dedupedUrls.length,
       new_urls: 0,
-      skipped_existing: dedupedItems.length,
+      skipped_existing: dedupedUrls.length,
     };
   }
 
@@ -2725,30 +2713,29 @@ async function handleYad2AgencyDiscover(body: any) {
       agency_id,
       website_url,
       status: "ready",
-      total_urls: newItems.length,
-      discovered_urls: dedupedItems.map((item) => item.url),
-      import_type,
+      total_urls: newUrls.length,
+      discovered_urls: dedupedUrls,
+      import_type: effectiveImportType,
       source_type: "yad2",
     })
     .select("id")
     .single();
   if (jobErr) throw new Error(`Failed to create import job: ${jobErr.message}`);
 
-  const items = newItems.map((item) => ({
+  const items = newUrls.map((url) => ({
     job_id: job.id,
-    url: item.url,
+    url,
     status: "pending",
-    extracted_data: item.extracted_data,
   }));
   const { error: itemsErr } = await sb.from("import_job_items").insert(items);
   if (itemsErr) throw new Error(`Failed to create job items: ${itemsErr.message}`);
 
   return {
     job_id: job.id,
-    total_listings: newItems.length,
-    total_discovered: totalDiscovered || dedupedItems.length,
-    new_urls: newItems.length,
-    skipped_existing: dedupedItems.length - newItems.length,
+    total_listings: newUrls.length,
+    total_discovered: totalDiscovered || dedupedUrls.length,
+    new_urls: newUrls.length,
+    skipped_existing: dedupedUrls.length - newUrls.length,
   };
 }
 
