@@ -107,3 +107,16 @@ Based on Perplexity blueprint research. All changes in `import-agency-listings/i
 3. **Path structure** — `property-images/imports/{job_id}/{image_id}/thumb.webp|medium.webp|full.webp`. Thumbnails and full-size derivable from medium URL by path replacement.
 ### Phase 6.5: Review UI Enhancements — Pending
 - Cross-source dedup (Tier 3)
+
+## Phase 15: Sync Intelligence — Implemented ✅
+
+1. **DB Migration** — Added `last_sync_checked_at` (timestamptz) and `sync_status` (text) columns to `properties`.
+2. **`check_existing` action** in `import-agency-listings` — Receives batch of `{property_id, source_url, current_price}`, scrapes each via Firecrawl (markdown-only), detects:
+   - **Removal**: 404/410 status, index page redirect, or very short content → sets `sync_status='removed'`
+   - **Price change**: Extracts price via Hebrew-aware regex patterns (₪, NIS, ש"ח), updates `properties.price` if >1% diff → existing triggers handle `listing_price_history`, `notify_price_drop`, `listing_lifecycle`
+   - **No change**: Clears `sync_status`, updates `last_sync_checked_at`
+3. **`sync-agency-listings` orchestrator** — Added Pass 2 after discover+process:
+   - Queries published properties with `source_url` not checked in 7+ days (limit 50 per agency)
+   - Sends batches of 10 to `check_existing` action
+   - Logs price changes and removals per agency
+   - Response now includes `existing_checked`, `price_changes`, `removed` counts
