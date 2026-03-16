@@ -2844,8 +2844,9 @@ async function processYad2Item(
     // Dedup Tier 1
     if (listing.address && listing.city) {
       const normalizedAddr = normalizeAddressForDedup(listing.address);
+      const addrPattern = buildAddressQueryPattern(normalizedAddr);
       if (normalizedAddr.length > 0) {
-        const { data: dupes } = await sb.from("properties").select("id").eq("agent_id", agentId).ilike("address", normalizedAddr).ilike("city", listing.city.trim()).limit(1);
+        const { data: dupes } = await sb.from("properties").select("id").eq("agent_id", agentId).ilike("address", addrPattern).ilike("city", listing.city.trim()).limit(1);
         if (dupes && dupes.length > 0) {
           await sb.from("import_job_items").update({ status: "skipped", error_message: `Duplicate: matches property ${dupes[0].id}`, error_type: "permanent" }).eq("id", item.id);
           return { succeeded: false };
