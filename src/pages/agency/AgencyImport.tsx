@@ -352,10 +352,10 @@ export default function AgencyImport() {
                     Source: <span className="text-foreground font-medium">{currentJob.website_url}</span>
                   </span>
                   <Badge variant="outline" className={cn(
-                    isCompleted && 'bg-green-500/10 text-green-600',
-                    isStalled && 'bg-amber-500/10 text-amber-600',
-                    isProcessing && 'bg-blue-500/10 text-blue-600 animate-pulse',
-                    isReady && !isStalled && 'bg-yellow-500/10 text-yellow-600',
+                    isCompleted && 'bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]',
+                    isStalled && 'bg-[hsl(var(--warning))]/10 text-[hsl(var(--warning-foreground))]',
+                    isProcessing && 'bg-primary/10 text-primary animate-pulse',
+                    isReady && !isStalled && 'bg-[hsl(var(--warning))]/10 text-[hsl(var(--warning-foreground))]',
                   )}>
                     {isProcessing && <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />}
                     {isStalled ? 'Stalled' : currentJob.status}
