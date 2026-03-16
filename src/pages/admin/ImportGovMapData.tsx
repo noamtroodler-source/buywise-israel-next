@@ -70,7 +70,11 @@ const PROPERTY_TYPE_MAP: Record<string, string> = {
   "דירה בבית בודד": "house",
 };
 
-const NON_RESIDENTIAL_KEYWORDS = ["חניה", "מחסן", "קרקע", "ללא תיכנון", "משרד", "חנות", "מגרש", "תעשיה"];
+const NON_RESIDENTIAL_KEYWORDS = [
+  "חניה", "מחסן", "מחסנים", "קרקע", "ללא תיכנון", "משרד", "חנות", "מגרש", "תעשיה",
+  "קרקע למגורים", "מסחרי", "תעשייתי",
+];
+const NON_RESIDENTIAL_PROP_TYPES = ["קרקע", "בנין"]; // "בנין" = commercial building
 const NEW_CONSTRUCTION_KEYWORDS = ["מכירה ראשונה", "קבלן", "חברה קבלנית"];
 
 function parseFloor(floorStr: string): number | null {
