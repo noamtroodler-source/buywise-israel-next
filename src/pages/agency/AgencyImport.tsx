@@ -243,7 +243,7 @@ export default function AgencyImport() {
                   type="url"
                   value={websiteUrl}
                   onChange={e => setWebsiteUrl(e.target.value)}
-                  placeholder={sourceType === 'yad2' ? 'https://www.yad2.co.il/realestate/forsale?city=...' : 'https://your-agency-website.com'}
+                  placeholder={sourceType === 'yad2' ? 'https://www.yad2.co.il/realestate/forsale?city=... or /agency/...' : 'https://your-agency-website.com'}
                   className="rounded-xl flex-1"
                   required
                   disabled={isDiscovering}
