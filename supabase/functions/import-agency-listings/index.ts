@@ -149,6 +149,36 @@ const CITY_PRICE_RANGES: Record<string, { min: number; max: number; sqm_min: num
   "Zichron Yaakov": { min: 1_200_000, max: 5_000_000,  sqm_min: 20_000, sqm_max: 35_000 },
 };
 
+// ─── CITY RENTAL PRICE RANGES (NIS per month) ──────────────────────────────
+
+const CITY_RENTAL_RANGES: Record<string, { min: number; max: number }> = {
+  "Tel Aviv":       { min: 4_000, max: 25_000 },
+  "Jerusalem":      { min: 3_000, max: 18_000 },
+  "Haifa":          { min: 2_500, max: 10_000 },
+  "Ra'anana":       { min: 4_000, max: 15_000 },
+  "Herzliya":       { min: 4_500, max: 20_000 },
+  "Netanya":        { min: 3_000, max: 12_000 },
+  "Beer Sheva":     { min: 2_000, max: 7_000 },
+  "Ashkelon":       { min: 2_000, max: 8_000 },
+  "Ashdod":         { min: 2_500, max: 9_000 },
+  "Ramat Gan":      { min: 3_500, max: 14_000 },
+  "Petah Tikva":    { min: 3_000, max: 11_000 },
+  "Kfar Saba":      { min: 3_500, max: 13_000 },
+  "Modi'in":        { min: 3_500, max: 12_000 },
+  "Beit Shemesh":   { min: 3_000, max: 10_000 },
+  "Eilat":          { min: 2_500, max: 8_000 },
+  "Hod HaSharon":   { min: 3_500, max: 13_000 },
+  "Givat Shmuel":   { min: 4_000, max: 14_000 },
+  "Hadera":         { min: 2_500, max: 8_000 },
+  "Caesarea":       { min: 5_000, max: 25_000 },
+  "Efrat":          { min: 3_500, max: 12_000 },
+  "Gush Etzion":    { min: 3_000, max: 10_000 },
+  "Ma'ale Adumim":  { min: 3_000, max: 9_000 },
+  "Mevaseret Zion": { min: 4_000, max: 14_000 },
+  "Pardes Hanna":   { min: 2_500, max: 8_000 },
+  "Zichron Yaakov": { min: 3_000, max: 10_000 },
+};
+
 // Room-to-size ratio validation (Israeli apartments)
 const ROOM_SIZE_RANGES: Record<number, { flag_min: number; flag_max: number }> = {
   1: { flag_min: 15, flag_max: 50 },    // Studio
@@ -310,6 +340,23 @@ function isNonResalePage(markdown: string, importType: string = "resale"): { ski
     }
   }
 
+  // Sale indicators — skip in rental-only mode
+  if (importType === "rental") {
+    const salePatterns = [
+      /למכירה/, /מכירה/, /\bfor\s+sale\b/i, /\bbuy\b/i, /\bpurchase\b/i,
+    ];
+    let hasSaleSignal = false;
+    for (const p of salePatterns) {
+      if (p.test(snippet)) { hasSaleSignal = true; break; }
+    }
+    // Only skip if sale signals are present AND no rental signals
+    const rentalSignals = [/להשכרה/, /שכירות/, /\bfor\s+rent\b/i, /\brental\b/i, /\brent\b/i];
+    const hasRentalSignal = rentalSignals.some(p => p.test(snippet));
+    if (hasSaleSignal && !hasRentalSignal) {
+      return { skip: true, reason: "Pre-filter: sale listing (rental import only)" };
+    }
+  }
+
   // New construction / developer indicators
   const newDevPatterns = [
     /מקבלן/, /על\s+הנייר/, /חדש\s+מקבלן/, /פרויקט\s+חדש/,
@@ -395,23 +442,48 @@ function validatePropertyData(listing: Record<string, any>, importType: string =
     errors.push(`year_built ${listing.year_built} is out of range`);
   }
 
-  // ── City-specific price range validation (only for resale) ──
-  if (listing.city && listing.price && listing.price > 0 && importType === "resale") {
-    const cityRange = CITY_PRICE_RANGES[listing.city];
-    if (cityRange) {
-      if (listing.price < cityRange.min * 0.5) {
-        warnings.push(`price ${listing.price} is well below ${listing.city} range (${cityRange.min}–${cityRange.max})`);
-      } else if (listing.price > cityRange.max * 1.5) {
-        warnings.push(`price ${listing.price} is well above ${listing.city} range (${cityRange.min}–${cityRange.max})`);
-      }
+  // ── City-specific price range validation ──
+  if (listing.city && listing.price && listing.price > 0) {
+    if (importType === "resale") {
+      const cityRange = CITY_PRICE_RANGES[listing.city];
+      if (cityRange) {
+        if (listing.price < cityRange.min * 0.5) {
+          warnings.push(`price ${listing.price} is well below ${listing.city} range (${cityRange.min}–${cityRange.max})`);
+        } else if (listing.price > cityRange.max * 1.5) {
+          warnings.push(`price ${listing.price} is well above ${listing.city} range (${cityRange.min}–${cityRange.max})`);
+        }
 
-      // Price per sqm check
-      if (listing.size_sqm && listing.size_sqm > 0) {
-        const priceSqm = listing.price / listing.size_sqm;
-        if (priceSqm < cityRange.sqm_min * 0.5 || priceSqm > cityRange.sqm_max * 1.5) {
-          warnings.push(`price/sqm ${Math.round(priceSqm)} outside ${listing.city} range (${cityRange.sqm_min}–${cityRange.sqm_max})`);
+        // Price per sqm check
+        if (listing.size_sqm && listing.size_sqm > 0) {
+          const priceSqm = listing.price / listing.size_sqm;
+          if (priceSqm < cityRange.sqm_min * 0.5 || priceSqm > cityRange.sqm_max * 1.5) {
+            warnings.push(`price/sqm ${Math.round(priceSqm)} outside ${listing.city} range (${cityRange.sqm_min}–${cityRange.sqm_max})`);
+          }
         }
       }
+    } else if (importType === "rental") {
+      // Rental price validation
+      if (listing.price > 30_000) {
+        errors.push(`rental price ${listing.price} NIS/mo is suspiciously high — likely a sale price`);
+      }
+      const rentalRange = CITY_RENTAL_RANGES[listing.city];
+      if (rentalRange) {
+        if (listing.price < rentalRange.min * 0.5) {
+          warnings.push(`rental price ${listing.price} is well below ${listing.city} range (${rentalRange.min}–${rentalRange.max}/mo)`);
+        } else if (listing.price > rentalRange.max * 1.5) {
+          warnings.push(`rental price ${listing.price} is well above ${listing.city} range (${rentalRange.min}–${rentalRange.max}/mo)`);
+        }
+      }
+    }
+  }
+
+  // ── Rental-specific field warnings ──
+  if (importType === "rental" || listing.listing_status === "for_rent") {
+    if (!listing.furnished_status) {
+      warnings.push("rental listing missing furnished_status");
+    }
+    if (!listing.pets_policy) {
+      warnings.push("rental listing missing pets_policy");
     }
   }
 
@@ -550,6 +622,17 @@ function computeConfidenceScore(
   // Boost for CMS adapter extraction
   if (cmsExtracted) {
     score = Math.min(100, score + 15);
+  }
+
+  // Boost for rental field completeness when listing is a rental
+  if (listing.listing_status === "for_rent") {
+    let rentalFieldBoost = 0;
+    if (listing.furnished_status) rentalFieldBoost += 3;
+    if (listing.pets_policy) rentalFieldBoost += 3;
+    if (listing.lease_term) rentalFieldBoost += 2;
+    if (listing.subletting_allowed) rentalFieldBoost += 1;
+    if (listing.agent_fee_required != null) rentalFieldBoost += 1;
+    score = Math.min(100, score + rentalFieldBoost);
   }
 
   return Math.min(100, Math.max(0, score));
@@ -1199,6 +1282,16 @@ FLOOR ORDINALS (Hebrew → number):
 חמישית = 5 | שישית = 6 | שביעית = 7 | שמינית = 8 | תשיעית = 9
 עשירית = 10 | מרתף = -1
 
+RENTAL TERMS (Hebrew → BuyWise field):
+שכירות / להשכרה = listing_status: for_rent
+תקופת שכירות = lease_term | חוזה ל-12 חודשים = 12_months | חוזה ל-6 חודשים = 6_months | חוזה ל-24 חודשים = 24_months | גמיש = flexible
+מרוהט לגמרי / מרוהט = fully | מרוהט חלקית = semi | לא מרוהט / ללא ריהוט = unfurnished
+חיות מחמד / בע״ח = pets_policy | מותר חיות = allowed | לפי שיקול דעת = case_by_case | אין חיות = not_allowed
+סאבלט / השכרת משנה = subletting_allowed | מותר = allowed | אסור = not_allowed
+דמי תיווך = agent_fee_required (boolean)
+ערבות בנקאית = bank_guarantee_required (boolean)
+צ'קים / שיקים = checks_required (boolean)
+
 ═══ EXTRACTION RULES ═══
 
 FIRST, determine the CATEGORY of this page:
@@ -1213,8 +1306,10 @@ FOR PROPERTIES — extract these fields:
 - listing_status: for_sale if buying/מכירה, for_rent if renting/השכרה
 - Detect if sold (נמכר), rented (הושכר), under contract (בהסכם). Set is_sold_or_rented=true if so.
 - Price might appear as "₪1,500,000" or "1,500,000 ש״ח" or "$450,000"
+- For rentals, price is monthly rent (e.g., "₪5,500/חודש" or "5,500 ש״ח לחודש")
 - Extract ALL image URLs you can find
 - For floor: use the Hebrew ordinal map above
+- For rental listings: extract lease_term, furnished_status, pets_policy, subletting_allowed, agent_fee_required, bank_guarantee_required, checks_required if mentioned
 
 Page URL: ${url}
 Page content:
@@ -1665,6 +1760,14 @@ async function processOneItem(
                   condition: { type: "string", enum: ["new", "renovated", "good", "needs_renovation"] },
                   is_sold_or_rented: { type: "boolean" },
                   image_urls: { type: "array", items: { type: "string" } },
+                  // Rental-specific fields
+                  lease_term: { type: "string", enum: ["6_months", "12_months", "24_months", "flexible", "other"], description: "Lease duration" },
+                  furnished_status: { type: "string", enum: ["fully", "semi", "unfurnished"], description: "Furnishing level" },
+                  pets_policy: { type: "string", enum: ["allowed", "case_by_case", "not_allowed"], description: "Pet policy" },
+                  subletting_allowed: { type: "string", enum: ["allowed", "case_by_case", "not_allowed"], description: "Subletting policy" },
+                  agent_fee_required: { type: "boolean", description: "Whether agent/broker fee applies" },
+                  bank_guarantee_required: { type: "boolean", description: "Whether bank guarantee is required" },
+                  checks_required: { type: "boolean", description: "Whether post-dated checks are required" },
                 },
                 required: ["listing_category"],
                 additionalProperties: false,
@@ -1967,6 +2070,13 @@ async function processOneItem(
         condition: listing.condition || null,
         ac_type: listing.ac_type || null,
         entry_date: entryDate,
+        lease_term: listing.lease_term || null,
+        furnished_status: listing.furnished_status || null,
+        pets_policy: listing.pets_policy || null,
+        subletting_allowed: listing.subletting_allowed || null,
+        agent_fee_required: listing.agent_fee_required ?? null,
+        bank_guarantee_required: listing.bank_guarantee_required ?? null,
+        checks_required: listing.checks_required ?? null,
         is_published: false, is_featured: false, views_count: 0,
         verification_status: "draft",
         import_source: "website_scrape",
@@ -2226,6 +2336,13 @@ async function handleApproveItem(body: any) {
       condition: listing.condition || null,
       ac_type: listing.ac_type || null,
       entry_date: entryDate,
+      lease_term: listing.lease_term || null,
+      furnished_status: listing.furnished_status || null,
+      pets_policy: listing.pets_policy || null,
+      subletting_allowed: listing.subletting_allowed || null,
+      agent_fee_required: listing.agent_fee_required ?? null,
+      bank_guarantee_required: listing.bank_guarantee_required ?? null,
+      checks_required: listing.checks_required ?? null,
       is_published: false, is_featured: false, views_count: 0,
       verification_status: "draft",
       import_source: "website_scrape",
@@ -2530,6 +2647,13 @@ async function processYad2Item(
       features: listing.features || [], images: imageUrls.length > 0 ? imageUrls : null,
       parking: listing.parking ?? 0, condition: listing.condition || null,
       entry_date: entryDate,
+      lease_term: listing.lease_term || null,
+      furnished_status: listing.furnished_status || null,
+      pets_policy: listing.pets_policy || null,
+      subletting_allowed: listing.subletting_allowed || null,
+      agent_fee_required: listing.agent_fee_required ?? null,
+      bank_guarantee_required: listing.bank_guarantee_required ?? null,
+      checks_required: listing.checks_required ?? null,
       is_published: false, is_featured: false, views_count: 0,
       verification_status: "draft",
       import_source: "yad2", source_url: item.url,
