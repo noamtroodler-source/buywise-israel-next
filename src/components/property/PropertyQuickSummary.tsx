@@ -77,6 +77,33 @@ interface PropertyQuickSummaryProps {
    light_fixtures: 'Light Fixtures',
  };
  
+function NeighborhoodAvgPriceChip({ cityName, neighborhoodName, propertyPrice }: { cityName: string; neighborhoodName?: string; propertyPrice: number }) {
+  const { data: priceData } = useNeighborhoodAvgPrice(cityName, neighborhoodName);
+  if (!priceData?.avg_price) return null;
+
+  const avg = priceData.avg_price;
+  const formatted = avg >= 1_000_000
+    ? `₪${(avg / 1_000_000).toFixed(1)}M`
+    : `₪${Math.round(avg / 1_000)}K`;
+
+  const diff = Math.round(((propertyPrice - avg) / avg) * 100);
+  const diffLabel = diff > 0 ? `+${diff}%` : `${diff}%`;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="ml-1 text-xs font-medium text-primary cursor-help border-b border-dotted border-primary/50">
+          Neighborhood avg: {formatted}
+        </span>
+      </TooltipTrigger>
+      <TooltipContent>
+        <p className="text-xs">Average 4-room apartment price in {neighborhoodName}: {formatted}</p>
+        <p className="text-xs text-muted-foreground">This listing is {diffLabel} vs neighborhood average</p>
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
 // Generate highlights automatically from property data
 function generateHighlights(property: PropertyQuickSummaryProps['property']): Array<{ label: string; icon: React.ElementType }> {
   const highlights: Array<{ label: string; icon: React.ElementType }> = [];
