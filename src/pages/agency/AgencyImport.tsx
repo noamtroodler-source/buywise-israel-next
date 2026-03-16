@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import {
   ArrowLeft, Globe, Loader2, Download, CheckCircle2,
   XCircle, AlertCircle, FileText, RefreshCw, Trash2,
-  Info, MinusCircle, ShieldAlert,
+  Info, MinusCircle, ShieldAlert, Eye, ToggleLeft,
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Switch } from '@/components/ui/switch';
 import { useMyAgency, useAgencyStats } from '@/hooks/useAgencyManagement';
 import { InfoBanner } from '@/components/tools/shared/InfoBanner';
 import { EnhancedEmptyState } from '@/components/shared/EnhancedEmptyState';
@@ -23,6 +24,7 @@ import {
   useDeleteImportJob,
   useRetryFailed,
   useProcessAll,
+  useUpdateAutoSync,
 } from '@/hooks/useImportListings';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
