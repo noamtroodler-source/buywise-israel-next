@@ -940,6 +940,47 @@ async function optimizeImage(
   }
 }
 
+// ─── PHASH COMPUTATION (call compute-image-hash edge function) ──────────────
+
+async function computeImagePhash(imageUrl: string, propertyId: string | null, sb: any): Promise<{ sha256: string; phash: string; similar: any[] } | null> {
+  try {
+    const res = await fetch(
+      `${Deno.env.get("SUPABASE_URL")}/functions/v1/compute-image-hash`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ image_url: imageUrl, property_id: propertyId, store: !!propertyId }),
+      }
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data.success) return null;
+    return { sha256: data.sha256, phash: data.phash, similar: data.similar || [] };
+  } catch (e) {
+    console.error("computeImagePhash failed:", e);
+    return null;
+  }
+}
+
+async function registerImageHashes(propertyId: string, imageUrls: string[], sb: any): Promise<string[]> {
+  const warnings: string[] = [];
+  // Process first 5 images for pHash (cover photos most important for dedup)
+  const toCheck = imageUrls.slice(0, 5);
+  for (const url of toCheck) {
+    const result = await computeImagePhash(url, propertyId, sb);
+    if (result && result.similar.length > 0) {
+      const matchIds = result.similar.map((s: any) => s.property_id).filter((id: string) => id !== propertyId);
+      if (matchIds.length > 0) {
+        warnings.push(`pHash duplicate: image visually matches property ${matchIds[0]} (hamming=${result.similar[0].hamming_distance})`);
+      }
+    }
+  }
+  return warnings;
+}
+
 async function parallelImageDownload(
   sourceImages: string[], sb: any, bucketName: string, jobId: string, maxImages = 15
 ): Promise<{ urls: string[]; hashes: string[] }> {
