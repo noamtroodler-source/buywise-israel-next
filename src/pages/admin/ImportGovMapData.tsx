@@ -46,6 +46,8 @@ interface FilterStats {
   newConstruction: number;
   priceOutlier: number;
   sizeOutlier: number;
+  priceSqmOutlier: number;
+  zeroRooms: number;
   unknownCity: number;
   duplicateDealId: number;
   valid: number;
