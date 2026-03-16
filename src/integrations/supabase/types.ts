@@ -2316,6 +2316,7 @@ export type Database = {
           import_type: string
           is_incremental: boolean
           processed_count: number
+          source_type: string
           status: string
           total_urls: number
           updated_at: string
@@ -2330,6 +2331,7 @@ export type Database = {
           import_type?: string
           is_incremental?: boolean
           processed_count?: number
+          source_type?: string
           status?: string
           total_urls?: number
           updated_at?: string
@@ -2344,6 +2346,7 @@ export type Database = {
           import_type?: string
           is_incremental?: boolean
           processed_count?: number
+          source_type?: string
           status?: string
           total_urls?: number
           updated_at?: string
