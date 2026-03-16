@@ -2117,6 +2117,17 @@ async function processOneItem(
       }
     }
 
+    // Insert cross-source duplicate pair if detected
+    if (listing.cross_source_match_id && property?.id) {
+      const [pa, pb] = property.id < listing.cross_source_match_id
+        ? [property.id, listing.cross_source_match_id]
+        : [listing.cross_source_match_id, property.id];
+      await sb.from("duplicate_pairs").upsert({
+        property_a: pa, property_b: pb,
+        detection_method: "cross_source", similarity_score: null, status: "pending",
+      }, { onConflict: "property_a,property_b", ignoreDuplicates: true });
+    }
+
     await sb.from("import_job_items").update({ status: "done", property_id: property.id }).eq("id", item.id);
     return { succeeded: true };
   } catch (err) {
