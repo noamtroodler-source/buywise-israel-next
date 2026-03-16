@@ -438,7 +438,8 @@ function computeConfidenceScore(
   listing: Record<string, any>,
   cityMatchType: "exact" | "fuzzy" | "domain" | "none",
   validationWarnings: string[],
-  hasStructuredData: boolean = false
+  hasStructuredData: boolean = false,
+  cmsExtracted: string | null = null
 ): number {
   // Each field scores 1-3, weighted
   const weights = {
@@ -544,6 +545,11 @@ function computeConfidenceScore(
   // Boost for structured data confirmation
   if (hasStructuredData) {
     score = Math.min(100, score + 10);
+  }
+
+  // Boost for CMS adapter extraction
+  if (cmsExtracted) {
+    score = Math.min(100, score + 15);
   }
 
   return Math.min(100, Math.max(0, score));
@@ -1146,6 +1152,231 @@ Links found on page:
 ${pageLinks.slice(0, 50).join("\n")}`;
 }
 
+// ─── CMS ADAPTERS (WordPress + Wix) ─────────────────────────────────────────
+
+function detectCmsType(html: string, _url: string): "wordpress" | "wix" | "generic" {
+  if (!html || html.length < 100) return "generic";
+
+  // WordPress indicators
+  if (
+    html.includes("wp-content") ||
+    html.includes("wp-json") ||
+    /<meta\s+name\s*=\s*["']generator["']\s+content\s*=\s*["'][^"']*WordPress/i.test(html)
+  ) {
+    return "wordpress";
+  }
+
+  // Wix indicators
+  if (
+    html.includes("window.__INITIAL_STATE__") ||
+    html.includes("wix-warmup-data") ||
+    html.includes("_wixCssModules") ||
+    html.includes("X-Wix-Published-Version") ||
+    html.includes("static.wixstatic.com")
+  ) {
+    return "wix";
+  }
+
+  return "generic";
+}
+
+async function extractFromWordPress(url: string, _firecrawlKey: string): Promise<Record<string, any> | null> {
+  try {
+    const origin = new URL(url).origin;
+    const urlPath = new URL(url).pathname;
+    const slug = urlPath.split("/").filter(Boolean).pop();
+
+    const endpoints = [
+      `${origin}/wp-json/wp/v2/property?per_page=1&_embed`,
+      `${origin}/wp-json/wp/v2/listing?per_page=1&_embed`,
+      `${origin}/wp-json/wp/v2/properties?per_page=1&_embed`,
+      `${origin}/wp-json/wp/v2/listings?per_page=1&_embed`,
+      `${origin}/wp-json/wp/v2/real-estate?per_page=1&_embed`,
+    ];
+
+    for (const endpoint of endpoints) {
+      try {
+        const slugEndpoint = slug ? `${endpoint}&slug=${encodeURIComponent(slug)}` : endpoint;
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 5000);
+        const res = await fetch(slugEndpoint, {
+          headers: { "Accept": "application/json" },
+          signal: controller.signal,
+        });
+        clearTimeout(timeout);
+
+        if (!res.ok) continue;
+        const data = await res.json();
+        if (!Array.isArray(data) || data.length === 0) continue;
+
+        const post = data[0];
+        const result: Record<string, any> = {};
+        let fieldCount = 0;
+
+        if (post.title?.rendered) {
+          result.title = post.title.rendered.replace(/<[^>]+>/g, "").trim();
+          fieldCount++;
+        }
+        if (post.content?.rendered) {
+          result.description = post.content.rendered.replace(/<[^>]+>/g, "").trim().slice(0, 2000);
+          fieldCount++;
+        } else if (post.excerpt?.rendered) {
+          result.description = post.excerpt.rendered.replace(/<[^>]+>/g, "").trim();
+          fieldCount++;
+        }
+
+        const meta = post.acf || post.meta || post.custom_fields || {};
+
+        const priceField = meta.price || meta.property_price || meta._price || meta.listing_price;
+        if (priceField) {
+          const priceNum = parseFloat(String(priceField).replace(/[^\d.]/g, ""));
+          if (!isNaN(priceNum) && priceNum > 0) { result.price = priceNum; fieldCount++; }
+        }
+
+        const roomsField = meta.bedrooms || meta.rooms || meta.property_bedrooms || meta._bedrooms;
+        if (roomsField) {
+          const rooms = parseInt(String(roomsField));
+          if (!isNaN(rooms)) { result.bedrooms = rooms; fieldCount++; }
+        }
+
+        const sizeField = meta.size || meta.property_size || meta.area || meta.sqm || meta._size;
+        if (sizeField) {
+          const size = parseFloat(String(sizeField).replace(/[^\d.]/g, ""));
+          if (!isNaN(size) && size > 0) { result.size_sqm = size; fieldCount++; }
+        }
+
+        const addrField = meta.address || meta.property_address || meta.location || meta._address;
+        if (addrField) {
+          result.address = typeof addrField === "string" ? addrField : (addrField.address || JSON.stringify(addrField));
+          fieldCount++;
+        }
+
+        const cityField = meta.city || meta.property_city || meta._city;
+        if (cityField) {
+          const matched = matchSupportedCity(String(cityField));
+          if (matched) { result.city = matched; fieldCount++; }
+        }
+
+        const typeField = meta.property_type || meta.type || meta._property_type;
+        if (typeField) { result.property_type = String(typeField).toLowerCase(); fieldCount++; }
+
+        const embedded = post._embedded?.["wp:featuredmedia"] || [];
+        const images: string[] = [];
+        for (const media of embedded) {
+          if (media.source_url) images.push(media.source_url);
+        }
+        const galleryField = meta.gallery || meta.property_gallery || meta.images || meta._gallery;
+        if (Array.isArray(galleryField)) {
+          for (const img of galleryField) {
+            const imgUrl = typeof img === "string" ? img : (img?.url || img?.source_url);
+            if (imgUrl) images.push(imgUrl);
+          }
+        }
+        if (images.length > 0) { result.image_urls = images; fieldCount++; }
+
+        if (fieldCount >= 3) {
+          console.log(`WordPress adapter: extracted ${fieldCount} fields from REST API`);
+          return result;
+        }
+      } catch { /* try next endpoint */ }
+    }
+    return null;
+  } catch (err) {
+    console.warn(`WordPress extraction error: ${err}`);
+    return null;
+  }
+}
+
+function extractFromWixState(html: string): Record<string, any> | null {
+  try {
+    const patterns = [
+      /window\.__INITIAL_STATE__\s*=\s*({[\s\S]*?});\s*(?:<\/script>|window\.)/,
+      /window\.__PRELOADED_STATE__\s*=\s*({[\s\S]*?});\s*(?:<\/script>|window\.)/,
+    ];
+
+    for (const pattern of patterns) {
+      const match = pattern.exec(html);
+      if (!match) continue;
+
+      let stateData: any;
+      try { stateData = JSON.parse(match[1]); } catch { continue; }
+
+      const result: Record<string, any> = {};
+      let fieldCount = 0;
+
+      const findData = (obj: any, depth = 0): any => {
+        if (depth > 5 || !obj || typeof obj !== "object") return null;
+        if (obj.price && (obj.address || obj.city || obj.rooms || obj.bedrooms)) return obj;
+        if (obj.currentItem) return findData(obj.currentItem, depth + 1);
+        if (obj.dynamicPageData) return findData(obj.dynamicPageData, depth + 1);
+        if (obj.wixCodeProps) return findData(obj.wixCodeProps, depth + 1);
+        for (const key of Object.keys(obj)) {
+          if (["router", "navigation", "styles", "components", "platform"].includes(key)) continue;
+          const child = findData(obj[key], depth + 1);
+          if (child) return child;
+        }
+        return null;
+      };
+
+      const propertyData = findData(stateData);
+      if (!propertyData) continue;
+
+      if (propertyData.title || propertyData.name) { result.title = propertyData.title || propertyData.name; fieldCount++; }
+      if (propertyData.description) { result.description = String(propertyData.description).slice(0, 2000); fieldCount++; }
+
+      const price = propertyData.price || propertyData.listingPrice || propertyData.salePrice;
+      if (price) {
+        const priceNum = parseFloat(String(price).replace(/[^\d.]/g, ""));
+        if (!isNaN(priceNum) && priceNum > 0) { result.price = priceNum; fieldCount++; }
+      }
+
+      const rooms = propertyData.rooms || propertyData.bedrooms || propertyData.numberOfRooms;
+      if (rooms) {
+        const roomsNum = parseInt(String(rooms));
+        if (!isNaN(roomsNum)) { result.bedrooms = propertyData.bedrooms ? roomsNum : roomsNum - 1; fieldCount++; }
+      }
+
+      const size = propertyData.size || propertyData.area || propertyData.sqm || propertyData.size_sqm;
+      if (size) {
+        const sizeNum = parseFloat(String(size).replace(/[^\d.]/g, ""));
+        if (!isNaN(sizeNum) && sizeNum > 0) { result.size_sqm = sizeNum; fieldCount++; }
+      }
+
+      if (propertyData.address) { result.address = String(propertyData.address); fieldCount++; }
+
+      const city = propertyData.city || propertyData.location;
+      if (city) {
+        const matched = matchSupportedCity(String(city));
+        if (matched) { result.city = matched; fieldCount++; }
+      }
+
+      if (propertyData.propertyType || propertyData.property_type || propertyData.type) {
+        result.property_type = String(propertyData.propertyType || propertyData.property_type || propertyData.type).toLowerCase();
+        fieldCount++;
+      }
+
+      const images: string[] = [];
+      const imgField = propertyData.images || propertyData.photos || propertyData.gallery;
+      if (Array.isArray(imgField)) {
+        for (const img of imgField) {
+          const imgUrl = typeof img === "string" ? img : (img?.src || img?.url || img?.uri);
+          if (imgUrl) images.push(imgUrl.startsWith("//") ? `https:${imgUrl}` : imgUrl);
+        }
+      }
+      if (images.length > 0) { result.image_urls = images; fieldCount++; }
+
+      if (fieldCount >= 3) {
+        console.log(`Wix adapter: extracted ${fieldCount} fields from embedded state`);
+        return result;
+      }
+    }
+    return null;
+  } catch (err) {
+    console.warn(`Wix extraction error: ${err}`);
+    return null;
+  }
+}
+
 // ─── PROCESS SINGLE ITEM ────────────────────────────────────────────────────
 // ─── SIMPLIFIED PROMPT RETRY ────────────────────────────────────────────────
 
@@ -1298,116 +1529,144 @@ async function processOneItem(
       return { succeeded: false };
     }
 
-    // 2. AI extraction (with comprehensive Hebrew dictionary prompt)
+    // 1b. CMS detection + adapter extraction
+    const cmsType = detectCmsType(pageHtml, item.url);
+    let cmsData: Record<string, any> | null = null;
+    let cmsExtracted: string | null = null;
+
+    if (cmsType === "wordpress") {
+      console.log(`CMS detected: WordPress for ${item.url}`);
+      cmsData = await extractFromWordPress(item.url, firecrawlKey);
+    } else if (cmsType === "wix") {
+      console.log(`CMS detected: Wix for ${item.url}`);
+      cmsData = extractFromWixState(pageHtml);
+    }
+
+    // 2. AI extraction (or skip if CMS got enough data)
     const domain = getDomainFromUrl(item.url);
-    const extractionPrompt = buildExtractionPrompt(item.url, domain, markdown, pageLinks);
-
-    const extractRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [{ role: "user", content: extractionPrompt }],
-        tools: [{
-          type: "function",
-          function: {
-            name: "extract_listing",
-            description: "Extract structured data from a real estate listing page",
-            parameters: {
-              type: "object",
-              properties: {
-                listing_category: { type: "string", enum: ["property", "project", "not_listing"] },
-                title: { type: "string" },
-                description: { type: "string" },
-                price: { type: "number", description: "Price (0 if Price on Request)" },
-                currency: { type: "string", enum: ["ILS", "USD", "EUR"] },
-                bedrooms: { type: "number", description: "Bedrooms (rooms - 1)" },
-                bathrooms: { type: "number" },
-                size_sqm: { type: "number" },
-                address: { type: "string" },
-                city: { type: "string", description: "Must be one of the supported cities" },
-                neighborhood: { type: "string" },
-                property_type: { type: "string", enum: ["apartment", "garden_apartment", "penthouse", "mini_penthouse", "duplex", "house", "cottage", "land", "commercial"] },
-                listing_status: { type: "string", enum: ["for_sale", "for_rent"] },
-                floor: { type: "number" },
-                total_floors: { type: "number" },
-                features: { type: "array", items: { type: "string" } },
-                parking: { type: "number" },
-                entry_date: { type: "string" },
-                year_built: { type: "number" },
-                ac_type: { type: "string", enum: ["none", "split", "central", "mini_central"] },
-                condition: { type: "string", enum: ["new", "renovated", "good", "needs_renovation"] },
-                is_sold_or_rented: { type: "boolean" },
-                image_urls: { type: "array", items: { type: "string" } },
-              },
-              required: ["listing_category"],
-              additionalProperties: false,
-            },
-          },
-        }],
-        tool_choice: { type: "function", function: { name: "extract_listing" } },
-      }),
-    });
-
     let listing: any = null;
     let usedSimplifiedPrompt = false;
 
-    if (!extractRes.ok) {
-      const errText = await extractRes.text();
-      console.error("AI extraction error:", extractRes.status, errText);
-      if (extractRes.status === 429) {
-        await sb.from("import_job_items").update({ status: "pending", error_message: "Rate limited, will retry", error_type: "transient" }).eq("id", item.id);
-        return { succeeded: false };
-      }
-      // Try simplified prompt retry (non-429 failures)
-      const retryResult = await retryWithSimplifiedPrompt(item.url, markdown, lovableKey);
-      if (!retryResult) {
-        await sb.from("import_job_items").update({ status: "failed", error_message: `AI extraction failed (${extractRes.status})`, error_type: "transient" }).eq("id", item.id);
-        return { succeeded: false };
-      }
-      listing = retryResult;
-      usedSimplifiedPrompt = true;
-    }
+    // If CMS extracted all core fields, skip AI entirely
+    if (cmsData && cmsData.price && cmsData.city && cmsData.property_type) {
+      listing = { ...cmsData, listing_category: "property" };
+      cmsExtracted = cmsType;
+      console.log(`CMS adapter (${cmsType}) provided full extraction — skipping AI`);
+    } else {
+      // Normal AI extraction flow
+      const extractionPrompt = buildExtractionPrompt(item.url, domain, markdown, pageLinks);
 
-    if (!listing) {
-      const extractData = await extractRes.json();
-      const extractToolCall = extractData.choices?.[0]?.message?.tool_calls?.[0];
-      if (!extractToolCall?.function?.arguments) {
-        // Try simplified prompt retry
+      const extractRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [{ role: "user", content: extractionPrompt }],
+          tools: [{
+            type: "function",
+            function: {
+              name: "extract_listing",
+              description: "Extract structured data from a real estate listing page",
+              parameters: {
+                type: "object",
+                properties: {
+                  listing_category: { type: "string", enum: ["property", "project", "not_listing"] },
+                  title: { type: "string" },
+                  description: { type: "string" },
+                  price: { type: "number", description: "Price (0 if Price on Request)" },
+                  currency: { type: "string", enum: ["ILS", "USD", "EUR"] },
+                  bedrooms: { type: "number", description: "Bedrooms (rooms - 1)" },
+                  bathrooms: { type: "number" },
+                  size_sqm: { type: "number" },
+                  address: { type: "string" },
+                  city: { type: "string", description: "Must be one of the supported cities" },
+                  neighborhood: { type: "string" },
+                  property_type: { type: "string", enum: ["apartment", "garden_apartment", "penthouse", "mini_penthouse", "duplex", "house", "cottage", "land", "commercial"] },
+                  listing_status: { type: "string", enum: ["for_sale", "for_rent"] },
+                  floor: { type: "number" },
+                  total_floors: { type: "number" },
+                  features: { type: "array", items: { type: "string" } },
+                  parking: { type: "number" },
+                  entry_date: { type: "string" },
+                  year_built: { type: "number" },
+                  ac_type: { type: "string", enum: ["none", "split", "central", "mini_central"] },
+                  condition: { type: "string", enum: ["new", "renovated", "good", "needs_renovation"] },
+                  is_sold_or_rented: { type: "boolean" },
+                  image_urls: { type: "array", items: { type: "string" } },
+                },
+                required: ["listing_category"],
+                additionalProperties: false,
+              },
+            },
+          }],
+          tool_choice: { type: "function", function: { name: "extract_listing" } },
+        }),
+      });
+
+      if (!extractRes.ok) {
+        const errText = await extractRes.text();
+        console.error("AI extraction error:", extractRes.status, errText);
+        if (extractRes.status === 429) {
+          await sb.from("import_job_items").update({ status: "pending", error_message: "Rate limited, will retry", error_type: "transient" }).eq("id", item.id);
+          return { succeeded: false };
+        }
         const retryResult = await retryWithSimplifiedPrompt(item.url, markdown, lovableKey);
         if (!retryResult) {
-          await sb.from("import_job_items").update({ status: "failed", error_message: "AI returned no extraction data", error_type: "permanent" }).eq("id", item.id);
+          await sb.from("import_job_items").update({ status: "failed", error_message: `AI extraction failed (${extractRes.status})`, error_type: "transient" }).eq("id", item.id);
           return { succeeded: false };
         }
         listing = retryResult;
         usedSimplifiedPrompt = true;
-      } else {
-        listing = JSON.parse(extractToolCall.function.arguments);
+      }
+
+      if (!listing) {
+        const extractData = await extractRes.json();
+        const extractToolCall = extractData.choices?.[0]?.message?.tool_calls?.[0];
+        if (!extractToolCall?.function?.arguments) {
+          const retryResult = await retryWithSimplifiedPrompt(item.url, markdown, lovableKey);
+          if (!retryResult) {
+            await sb.from("import_job_items").update({ status: "failed", error_message: "AI returned no extraction data", error_type: "permanent" }).eq("id", item.id);
+            return { succeeded: false };
+          }
+          listing = retryResult;
+          usedSimplifiedPrompt = true;
+        } else {
+          listing = JSON.parse(extractToolCall.function.arguments);
+        }
+      }
+
+      // Merge partial CMS data into AI result (CMS takes priority for filling gaps)
+      if (cmsData) {
+        cmsExtracted = cmsType;
+        for (const [key, value] of Object.entries(cmsData)) {
+          if (value != null && (listing[key] == null || listing[key] === "" || listing[key] === 0)) {
+            listing[key] = value;
+          }
+        }
+        console.log(`CMS adapter (${cmsType}) merged partial data into AI extraction`);
       }
     }
 
-    const listing = JSON.parse(extractToolCall.function.arguments);
-
-    // Merge structured data from HTML (JSON-LD, OG tags) — takes priority for matching fields
+    // Merge structured data from HTML (JSON-LD, OG tags) — fills remaining gaps
     const structuredData = extractStructuredData(pageHtml);
     if (structuredData) {
       console.log(`Structured data found for ${item.url}: ${Object.keys(structuredData).join(", ")}`);
-      // Merge: structured data fills gaps, doesn't overwrite existing AI data
       for (const [key, value] of Object.entries(structuredData)) {
         if (key === "structured_images" || key === "og_title" || key === "og_description" || key === "city_hint") continue;
         if (value != null && (listing[key] == null || listing[key] === "" || listing[key] === 0)) {
           listing[key] = value;
         }
       }
-      // Add structured images if AI didn't find any
       if (structuredData.structured_images?.length && (!listing.image_urls || listing.image_urls.length === 0)) {
         listing.image_urls = structuredData.structured_images;
       }
-      // City hint from structured data
       if (!listing.city && structuredData.city_hint) {
         listing.city = structuredData.city_hint;
       }
       listing._has_structured_data = true;
+    }
+    if (cmsExtracted) {
+      listing._cms_extracted = cmsExtracted;
     }
 
     // Store raw extraction
@@ -1472,7 +1731,7 @@ async function processOneItem(
     }
 
     // ── CONFIDENCE SCORING ──
-    let confidenceScore = computeConfidenceScore(listing, cityMatchType, validationWarnings, !!listing._has_structured_data);
+    let confidenceScore = computeConfidenceScore(listing, cityMatchType, validationWarnings, !!listing._has_structured_data, cmsExtracted);
 
     // Apply penalty for simplified prompt extraction
     if (usedSimplifiedPrompt) {
