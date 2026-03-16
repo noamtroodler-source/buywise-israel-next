@@ -322,10 +322,11 @@ export default function AgencyImport() {
                   <Badge variant="outline" className={cn(
                     isCompleted && 'bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]',
                     isStalled && 'bg-[hsl(var(--warning))]/10 text-[hsl(var(--warning-foreground))]',
+                    isDiscovering && 'bg-primary/10 text-primary animate-pulse',
                     isProcessing && 'bg-primary/10 text-primary animate-pulse',
                     isReady && !isStalled && 'bg-[hsl(var(--warning))]/10 text-[hsl(var(--warning-foreground))]',
                   )}>
-                    {isProcessing && <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />}
+                    {(isDiscovering || isProcessing) && <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />}
                     {isStalled ? 'Stalled' : currentJob.status}
                   </Badge>
                 </div>
