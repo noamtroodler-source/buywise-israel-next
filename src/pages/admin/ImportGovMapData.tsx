@@ -350,7 +350,7 @@ export default function ImportGovMapData() {
       {filterStats && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><CheckCircle className="h-5 w-5 text-green-600" /> Step 2: Cleaning Results</CardTitle>
+            <CardTitle className="flex items-center gap-2"><CheckCircle className="h-5 w-5 text-primary" /> Step 2: Cleaning Results</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
