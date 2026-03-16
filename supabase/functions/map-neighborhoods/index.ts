@@ -159,10 +159,18 @@ serve(async (req) => {
     }
 
     // Get Anglo roster
+    // Get all cities from platform (we need to check normalized names)
+    const platformCityName = onlyCity ? (CBS_TO_PLATFORM[onlyCity] || onlyCity) : null;
     let citiesQuery = supabase.from("cities").select("name, slug, neighborhoods").order("name");
-    if (onlyCity) citiesQuery = citiesQuery.eq("name", onlyCity);
+    if (platformCityName) citiesQuery = citiesQuery.eq("name", platformCityName);
     const { data: cities, error: citiesErr } = await citiesQuery;
     if (citiesErr) throw new Error(`Cities query: ${citiesErr.message}`);
+
+    // Build reverse map: platform name → CBS name
+    const platformToCbs: Record<string, string> = {};
+    for (const [cbs, platform] of Object.entries(CBS_TO_PLATFORM)) {
+      platformToCbs[platform] = cbs;
+    }
 
     // Group by city
     const angloByCity: Record<string, { name: string; name_he?: string }[]> = {};
