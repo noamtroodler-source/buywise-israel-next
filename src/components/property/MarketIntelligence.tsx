@@ -108,7 +108,6 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
   }, []);
 
   const citySlug = property.city?.toLowerCase().replace(/['']/g, '').replace(/\s+/g, '-') || '';
-  const citySlug = property.city?.toLowerCase().replace(/['']/g, '').replace(/\s+/g, '-') || '';
 
   // Room-specific city average (overrides generic city avg when available)
   const { data: roomPrice } = useRoomSpecificCityPrice(property.city, property.bedrooms);
