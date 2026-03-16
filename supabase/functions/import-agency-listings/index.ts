@@ -1223,7 +1223,7 @@ ${truncatedContent}`;
   }
 }
 
-
+async function processOneItem(
   item: any, sb: any, job: any, agentId: string | null,
   firecrawlKey: string, lovableKey: string, jobId: string,
   domainCity: string | null = null, importType: string = "resale"
