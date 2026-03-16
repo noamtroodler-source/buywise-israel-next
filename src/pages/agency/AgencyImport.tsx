@@ -368,22 +368,6 @@ export default function AgencyImport() {
                   processedSoFar={processedSoFar}
                   isActive={isProcessingAll}
                 />
-                  ].map(stat => (
-                    <div key={stat.label} className={cn(
-                      "text-center p-3 rounded-xl bg-muted/30 transition-all relative group",
-                      stat.active && "bg-blue-500/10 ring-1 ring-blue-500/20"
-                    )}>
-                      <stat.icon className={cn('h-4 w-4 mx-auto mb-1', stat.color, stat.active && 'animate-spin')} />
-                      <p className={cn("text-lg font-bold", stat.active && "animate-pulse")}>{stat.value}</p>
-                      <p className="text-xs text-muted-foreground">{stat.label}</p>
-                      {stat.tooltip && (
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2 rounded-lg bg-popover text-popover-foreground text-xs shadow-lg border opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10">
-                          {stat.tooltip}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
 
                 {/* Action buttons */}
                 <div className="flex gap-3 flex-wrap">
