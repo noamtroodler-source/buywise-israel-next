@@ -2058,6 +2058,9 @@ async function handleProcessBatch(body: any) {
           console.log(`Concurrency recovered to ${currentConcurrency}`);
         }
       }
+
+      // Update heartbeat after each chunk
+      await sb.from("import_jobs").update({ last_heartbeat: new Date().toISOString() }).eq("id", job_id);
     }
   }
 
