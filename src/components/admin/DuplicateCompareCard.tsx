@@ -25,6 +25,7 @@ interface DuplicateCompareCardProps {
   propertyA: PropertySummary;
   propertyB: PropertySummary;
   similarityScore: number | null;
+  detectionMethod?: string;
   onKeep: (pairId: string, winnerId: string, loserId: string) => void;
   onDismiss: (pairId: string) => void;
   isLoading?: boolean;
