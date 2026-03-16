@@ -157,13 +157,18 @@ export default function MapNeighborhoods() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center gap-4">
-            <Button onClick={runMapping} disabled={isRunning} size="lg">
-              {isRunning ? (
+            <Button onClick={runMapping} disabled={isRunning || isLoadingCities || cbsCities.length === 0} size="lg">
+              {isLoadingCities ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {currentCity} ({completedCities}/{CBS_CITIES.length})
+                  Loading cities...
                 </>
-              ) : 'Run Mapping for All Cities'}
+              ) : isRunning ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {currentCity} ({completedCities}/{cbsCities.length})
+                </>
+              ) : `Run Mapping for All Cities (${cbsCities.length})`}
             </Button>
             {allMappings.length > 0 && (
               <Button variant="outline" onClick={copyJson}>
