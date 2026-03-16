@@ -389,11 +389,15 @@ function isNonResalePage(markdown: string, importType: string = "resale"): { ski
 const VALID_PROPERTY_TYPES = [
   "apartment", "garden_apartment", "penthouse", "mini_penthouse",
   "duplex", "house", "cottage", "land", "commercial",
+  "parking", "storage", "building", "agricultural_estate", "assisted_living",
 ];
 const VALID_LISTING_STATUSES = ["for_sale", "for_rent"];
 
-// Property types to skip during resale import
-const SKIP_PROPERTY_TYPES = new Set(["land", "commercial"]);
+// Property types to always skip during import (non-residential)
+const SKIP_PROPERTY_TYPES = new Set([
+  "land", "commercial", "parking", "storage",
+  "building", "agricultural_estate", "assisted_living",
+]);
 
 function validatePropertyData(listing: Record<string, any>, importType: string = "resale"): { errors: string[]; warnings: string[] } {
   const errors: string[] = [];
@@ -1331,7 +1335,9 @@ PROPERTY TYPES (Hebrew → BuyWise key):
 פנטהאוז = penthouse | מיני פנטהאוז = mini_penthouse | דירת גג = penthouse
 דופלקס = duplex | טריפלקס = duplex | לופט = apartment | דירת סטודיו = apartment
 יחידת דיור = apartment | בית דו-משפחתי = house | דירת מרתף = apartment
-מגרש = land | מחסן = commercial | חניה = commercial
+מגרש = land | מחסן = storage | חניה = parking | בניין = building | בניין שלם = building
+חקלאי = agricultural_estate | משק חקלאי = agricultural_estate | נחלה = agricultural_estate
+דיור מוגן = assisted_living
 
 AMENITIES (Hebrew → English feature name):
 ממ"ד = mamad/safe_room | מזגן/מזג אוויר = air_conditioning | חניה = parking
@@ -1627,7 +1633,7 @@ async function retryWithSimplifiedPrompt(
 - size_sqm (number)
 - city (must be one of: ${SUPPORTED_CITIES.join(", ")})
 - address (street name + number)
-- property_type (one of: apartment, house, penthouse, duplex, garden_apartment, cottage, land, commercial)
+- property_type (one of: apartment, house, penthouse, duplex, garden_apartment, cottage, land, commercial, parking, storage, building, agricultural_estate, assisted_living)
 - listing_status (for_sale or for_rent)
 - image_urls (array of image URLs)
 - listing_category (property, project, or not_listing)
@@ -1657,7 +1663,7 @@ ${truncatedContent}`;
                 size_sqm: { type: "number" },
                 address: { type: "string" },
                 city: { type: "string" },
-                property_type: { type: "string", enum: ["apartment", "garden_apartment", "penthouse", "mini_penthouse", "duplex", "house", "cottage", "land", "commercial"] },
+                property_type: { type: "string", enum: ["apartment", "garden_apartment", "penthouse", "mini_penthouse", "duplex", "house", "cottage", "land", "commercial", "parking", "storage", "building", "agricultural_estate", "assisted_living"] },
                 listing_status: { type: "string", enum: ["for_sale", "for_rent"] },
                 image_urls: { type: "array", items: { type: "string" } },
               },
@@ -1816,7 +1822,7 @@ async function processOneItem(
                   address: { type: "string" },
                   city: { type: "string", description: "Must be one of the supported cities" },
                   neighborhood: { type: "string" },
-                  property_type: { type: "string", enum: ["apartment", "garden_apartment", "penthouse", "mini_penthouse", "duplex", "house", "cottage", "land", "commercial"] },
+                  property_type: { type: "string", enum: ["apartment", "garden_apartment", "penthouse", "mini_penthouse", "duplex", "house", "cottage", "land", "commercial", "parking", "storage", "building", "agricultural_estate", "assisted_living"] },
                   listing_status: { type: "string", enum: ["for_sale", "for_rent"] },
                   floor: { type: "number" },
                   total_floors: { type: "number" },
@@ -2795,12 +2801,20 @@ function normalizeYad2Result(raw: any): Record<string, any> {
 
 function mapYad2PropertyType(type: string): string {
   const t = type.toLowerCase();
-  if (t.includes("דירה") || t.includes("apartment")) return "apartment";
+  // Non-residential types first (more specific matches)
+  if (t.includes("חניה") || t.includes("parking")) return "parking";
+  if (t.includes("מחסן") || t.includes("storage")) return "storage";
+  if (t.includes("בניין") || t.includes("building")) return "building";
+  if (t.includes("חקלאי") || t.includes("נחלה") || t.includes("agricultural")) return "agricultural_estate";
+  if (t.includes("דיור מוגן") || t.includes("assisted")) return "assisted_living";
+  if (t.includes("מגרש") || t.includes("land")) return "land";
+  // Residential types
   if (t.includes("דירת גן") || t.includes("garden")) return "garden_apartment";
   if (t.includes("פנטהאוז") || t.includes("penthouse")) return "penthouse";
   if (t.includes("דופלקס") || t.includes("duplex")) return "duplex";
   if (t.includes("בית") || t.includes("וילה") || t.includes("house") || t.includes("villa")) return "house";
   if (t.includes("קוטג") || t.includes("cottage")) return "cottage";
+  if (t.includes("דירה") || t.includes("apartment")) return "apartment";
   return "apartment";
 }
 
