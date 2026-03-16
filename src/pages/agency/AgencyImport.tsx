@@ -68,6 +68,7 @@ export default function AgencyImport() {
       : jobs.find(j => ['discovering', 'ready', 'processing'].includes(j.status)) || jobs[0];
 
   const { data: jobItems = [] } = useImportJobItems(currentJob?.id);
+  useRealtimeImportProgress(currentJob?.id);
 
   const handleDiscover = async (e: React.FormEvent) => {
     e.preventDefault();
