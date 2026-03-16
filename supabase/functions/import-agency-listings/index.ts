@@ -285,10 +285,10 @@ async function findSoldUrlsFromIndexPages(
 
 // ─── PRE-LLM SOLD/RENTED/RENTAL/NEW-DEV DETECTION ──────────────────────────
 
-function isNonResalePage(markdown: string): { skip: boolean; reason: string } {
+function isNonResalePage(markdown: string, importType: string = "resale"): { skip: boolean; reason: string } {
   const snippet = markdown.substring(0, 3000);
 
-  // Sold/rented patterns
+  // Sold/rented patterns — always skip
   const soldPatterns = [
     /נמכר[הו]?/, /הושכר[הו]?/, /בהסכם/, /לא\s*זמינ[הו]?/, /לא\s*פנוי[הו]?/, /אין\s*בנמצא/,
     /\bsold\b/i, /\brented\b/i, /\bleased\b/i, /\bunder\s+contract\b/i, /\bunder\s+offer\b/i,
@@ -299,13 +299,15 @@ function isNonResalePage(markdown: string): { skip: boolean; reason: string } {
     if (p.test(snippet)) return { skip: true, reason: "Pre-filter: listing appears sold/rented" };
   }
 
-  // Rental indicators
-  const rentalPatterns = [
-    /להשכרה/, /שכירות\s+חודשית/, /דמי\s*שכירות/, /שכ[\"״]ח/,
-    /\bfor\s+rent\b/i, /\bmonthly\s+rent\b/i, /\brental\b/i,
-  ];
-  for (const p of rentalPatterns) {
-    if (p.test(snippet)) return { skip: true, reason: "Pre-filter: rental listing (resale only)" };
+  // Rental indicators — only skip in resale-only mode
+  if (importType === "resale") {
+    const rentalPatterns = [
+      /להשכרה/, /שכירות\s+חודשית/, /דמי\s*שכירות/, /שכ[\"״]ח/,
+      /\bfor\s+rent\b/i, /\bmonthly\s+rent\b/i, /\brental\b/i,
+    ];
+    for (const p of rentalPatterns) {
+      if (p.test(snippet)) return { skip: true, reason: "Pre-filter: rental listing (resale only)" };
+    }
   }
 
   // New construction / developer indicators
