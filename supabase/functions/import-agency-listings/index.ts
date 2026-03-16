@@ -2518,8 +2518,17 @@ function isYad2AgencyUrl(url: string): boolean {
     const host = parsed.hostname.toLowerCase();
     if (!host.includes("yad2")) return false;
     const path = parsed.pathname.toLowerCase();
+
+    // URLs like /realestate/agency/:id/forsale behave like Yad2 result pages,
+    // so they should be sent directly to the Apify Yad2 search adapter.
+    if (/\/realestate\/agency\/[^/]+\/(forsale|rent)\b/.test(path)) {
+      return false;
+    }
+
     return /\/(agency|professionals|pro)\b/.test(path);
-  } catch { return false; }
+  } catch {
+    return false;
+  }
 }
 
 // Discover listings from a Yad2 agency profile page using Firecrawl → Apify
