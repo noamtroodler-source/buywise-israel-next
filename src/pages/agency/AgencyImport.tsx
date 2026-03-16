@@ -229,6 +229,22 @@ export default function AgencyImport() {
                 Paste your agency website URL or Yad2 search URL. We'll scan and find all property listing pages automatically.
               </p>
 
+              {/* Source type selector */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">Source:</span>
+                {(['website', 'yad2'] as const).map(type => (
+                  <Button
+                    key={type}
+                    variant={sourceType === type ? 'default' : 'outline'}
+                    size="sm"
+                    className="rounded-lg"
+                    onClick={() => setSourceType(type)}
+                  >
+                    {type === 'website' ? 'Agency Website' : 'Yad2'}
+                  </Button>
+                ))}
+              </div>
+
               {/* Import type selector */}
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium">Import type:</span>
