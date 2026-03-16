@@ -1905,6 +1905,11 @@ function normalizeYad2Result(raw: any): Record<string, any> {
   let city = raw.city || raw.cityName || raw.city_name || "";
   const matchedCity = matchSupportedCity(city);
 
+  // Extract coordinates from Apify result (avoids geocoding API call)
+  const rawLat = parseFloat(raw.latitude || raw.lat || raw.coordinates?.latitude || raw.coordinates?.lat || "");
+  const rawLng = parseFloat(raw.longitude || raw.lng || raw.lon || raw.coordinates?.longitude || raw.coordinates?.lng || raw.coordinates?.lon || "");
+  const hasCoords = !isNaN(rawLat) && !isNaN(rawLng) && rawLat >= 29 && rawLat <= 34 && rawLng >= 34 && rawLng <= 36;
+
   return {
     listing_category: "property",
     title: raw.title || raw.description?.slice(0, 80) || "",
@@ -1927,6 +1932,8 @@ function normalizeYad2Result(raw: any): Record<string, any> {
     image_urls: (raw.images || raw.imageUrls || raw.photos || []).filter((u: any) => typeof u === "string"),
     _source: "yad2",
     _has_structured_data: true,
+    _yad2_latitude: hasCoords ? rawLat : null,
+    _yad2_longitude: hasCoords ? rawLng : null,
   };
 }
 
