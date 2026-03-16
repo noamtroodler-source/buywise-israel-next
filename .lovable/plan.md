@@ -82,6 +82,17 @@ Based on Perplexity blueprint research. All changes in `import-agency-listings/i
 6. **DB Migration** — Added `import_type`, `is_incremental` to `import_jobs`; `auto_sync_url`, `auto_sync_enabled`, `last_sync_at` to `agencies`.
 
 ### Deferred to Phase 3:
-- Apify Yad2 adapter (needs account + API key)
 - Image pHash deduplication
+- Cross-source dedup (Tier 3)
+
+## Phase 6: Import System Optimization — In Progress 🔄
+
+### Phase 6.1: Validation + Yad2 Geocoding — Implemented ✅
+1. **Floor validation** — Added `floor <= total_floors` warning in `validatePropertyData`
+2. **Yad2 lat/lon passthrough** — `normalizeYad2Result` now extracts `_yad2_latitude`/`_yad2_longitude` from Apify results (supports `latitude`, `lat`, `coordinates.latitude` fields); `processYad2Item` uses these coordinates directly, skipping Nominatim geocoding when available (Israel bounds validated: lat 29-34, lng 34-36)
+
+### Phase 6.2: Dynamic Concurrency + AI Retry — Pending
+### Phase 6.3: CMS Adapters (WordPress + Wix) — Pending
+### Phase 6.4: Image Optimization (WebP + Resize) — Pending
+### Phase 6.5: Review UI Enhancements — Pending
 - Cross-source dedup (Tier 3)
