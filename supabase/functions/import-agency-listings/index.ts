@@ -2866,8 +2866,9 @@ async function processYad2Item(
     // Dedup Tier 3 (cross-source) — address match
     if (listing.address && listing.city) {
       const normalizedAddr = normalizeAddressForDedup(listing.address);
+      const addrPattern = buildAddressQueryPattern(normalizedAddr);
       if (normalizedAddr.length > 0) {
-        const { data: crossDupes } = await sb.from("properties").select("id").neq("agent_id", agentId).ilike("address", normalizedAddr).ilike("city", listing.city.trim()).limit(1);
+        const { data: crossDupes } = await sb.from("properties").select("id").neq("agent_id", agentId).ilike("address", addrPattern).ilike("city", listing.city.trim()).limit(1);
         if (crossDupes && crossDupes.length > 0) {
           listing.cross_source_match_id = crossDupes[0].id;
           warnings.push(`Potential cross-source duplicate with property ${crossDupes[0].id}`);
