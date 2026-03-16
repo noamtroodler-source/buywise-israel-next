@@ -1335,7 +1335,9 @@ PROPERTY TYPES (Hebrew → BuyWise key):
 פנטהאוז = penthouse | מיני פנטהאוז = mini_penthouse | דירת גג = penthouse
 דופלקס = duplex | טריפלקס = duplex | לופט = apartment | דירת סטודיו = apartment
 יחידת דיור = apartment | בית דו-משפחתי = house | דירת מרתף = apartment
-מגרש = land | מחסן = commercial | חניה = commercial
+מגרש = land | מחסן = storage | חניה = parking | בניין = building | בניין שלם = building
+חקלאי = agricultural_estate | משק חקלאי = agricultural_estate | נחלה = agricultural_estate
+דיור מוגן = assisted_living
 
 AMENITIES (Hebrew → English feature name):
 ממ"ד = mamad/safe_room | מזגן/מזג אוויר = air_conditioning | חניה = parking
