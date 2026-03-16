@@ -3115,7 +3115,14 @@ Deno.serve(async (req) => {
     let result;
     if (action === "discover") {
       // Route to Yad2 adapter if source_type is yad2
-      if (body.source_type === "yad2") result = await handleYad2Discover(body);
+      if (body.source_type === "yad2") {
+        // Auto-detect agency profile page vs search results
+        if (isYad2AgencyUrl(body.website_url)) {
+          result = await handleYad2AgencyDiscover(body);
+        } else {
+          result = await handleYad2Discover(body);
+        }
+      }
       else result = await handleDiscover(body);
     }
     else if (action === "process_batch") result = await handleProcessBatch(body);

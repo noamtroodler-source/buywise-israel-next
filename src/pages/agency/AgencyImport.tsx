@@ -203,7 +203,7 @@ export default function AgencyImport() {
             </CardHeader>
             <CardContent className="pt-4 space-y-4">
               <p className="text-sm text-muted-foreground">
-                Paste your agency website URL or Yad2 search URL. We'll scan and find all property listing pages automatically.
+                Paste your agency website URL, Yad2 search URL, or Yad2 agency profile page. We'll scan and find all property listing pages automatically.
               </p>
 
               {/* Source type selector */}
