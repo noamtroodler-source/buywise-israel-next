@@ -2608,13 +2608,13 @@ async function handleYad2AgencyDiscover(body: any) {
 
   // Step 4: Pass discovered URLs to Apify as startUrls
   console.log(`Passing ${newUrls.length} new listing URLs to Apify`);
-  const actorId = "dtrungtin~yad2-scraper";
+  const actorId = "amit123~yadscraper";
   const startUrls = newUrls.map(url => ({ url }));
 
   const runRes = await fetch(`https://api.apify.com/v2/acts/${actorId}/runs?token=${APIFY_API_KEY}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ startUrls, maxItems: newUrls.length }),
+    body: JSON.stringify({ start_urls: startUrls, maxRequestsPerCrawl: newUrls.length + 10 }),
   });
   if (!runRes.ok) {
     const errData = await runRes.text();
@@ -2708,16 +2708,17 @@ async function handleYad2Discover(body: any) {
   if (agencyErr || !agency) throw new Error("Agency not found");
 
   // Start Apify Yad2 scraper actor run
-  // Using a generic Yad2 scraper actor — the user's search URL is passed as input
-  const actorId = "dtrungtin~yad2-scraper"; // Common Apify Yad2 actor
+  // Using the amit123/yadscraper Apify actor for Yad2 listings
+  const actorId = "amit123~yadscraper";
   console.log(`Starting Apify actor ${actorId} for URL: ${website_url}`);
 
   const runRes = await fetch(`https://api.apify.com/v2/acts/${actorId}/runs?token=${APIFY_API_KEY}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      startUrls: [{ url: website_url }],
-      maxItems: 200,
+      start_urls: [{ url: website_url }],
+      maxPagesPerSearch: 10,
+      maxRequestsPerCrawl: 1000,
     }),
   });
 
