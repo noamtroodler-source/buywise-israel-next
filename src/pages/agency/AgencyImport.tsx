@@ -376,7 +376,7 @@ export default function AgencyImport() {
                       disabled={resumeJobMutation.isPending}
                       size="sm"
                       variant="outline"
-                      className="shrink-0 rounded-lg border-amber-500/30 text-amber-700 hover:bg-amber-500/10"
+                      className="shrink-0 rounded-lg border-[hsl(var(--warning))]/30 text-[hsl(var(--warning-foreground))] hover:bg-[hsl(var(--warning))]/10"
                     >
                       {resumeJobMutation.isPending ? (
                         <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
