@@ -352,10 +352,10 @@ export default function AgencyImport() {
                     Source: <span className="text-foreground font-medium">{currentJob.website_url}</span>
                   </span>
                   <Badge variant="outline" className={cn(
-                    isCompleted && 'bg-green-500/10 text-green-600',
-                    isStalled && 'bg-amber-500/10 text-amber-600',
-                    isProcessing && 'bg-blue-500/10 text-blue-600 animate-pulse',
-                    isReady && !isStalled && 'bg-yellow-500/10 text-yellow-600',
+                    isCompleted && 'bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]',
+                    isStalled && 'bg-[hsl(var(--warning))]/10 text-[hsl(var(--warning-foreground))]',
+                    isProcessing && 'bg-primary/10 text-primary animate-pulse',
+                    isReady && !isStalled && 'bg-[hsl(var(--warning))]/10 text-[hsl(var(--warning-foreground))]',
                   )}>
                     {isProcessing && <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />}
                     {isStalled ? 'Stalled' : currentJob.status}
@@ -364,10 +364,10 @@ export default function AgencyImport() {
 
                 {/* Stalled job warning + Resume button */}
                 {isStalled && (
-                  <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
-                    <AlertCircle className="h-4 w-4 text-amber-600 shrink-0" />
+                  <div className="flex items-center gap-3 p-3 rounded-xl bg-[hsl(var(--warning))]/10 border border-[hsl(var(--warning))]/20">
+                    <AlertCircle className="h-4 w-4 text-[hsl(var(--warning-foreground))] shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-amber-700">
+                      <p className="text-sm font-medium text-[hsl(var(--warning-foreground))]">
                         This import appears to have stalled. Some items may be stuck in processing.
                       </p>
                     </div>
@@ -376,7 +376,7 @@ export default function AgencyImport() {
                       disabled={resumeJobMutation.isPending}
                       size="sm"
                       variant="outline"
-                      className="shrink-0 rounded-lg border-amber-500/30 text-amber-700 hover:bg-amber-500/10"
+                      className="shrink-0 rounded-lg border-[hsl(var(--warning))]/30 text-[hsl(var(--warning-foreground))] hover:bg-[hsl(var(--warning))]/10"
                     >
                       {resumeJobMutation.isPending ? (
                         <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
@@ -520,8 +520,8 @@ export default function AgencyImport() {
                 </div>
 
                 {isCompleted && pendingCount === 0 && (
-                  <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-sm">
-                    <CheckCircle2 className="h-4 w-4 inline mr-2 text-green-600" />
+                  <div className="p-4 rounded-xl bg-[hsl(var(--success))]/10 border border-[hsl(var(--success))]/20 text-sm">
+                    <CheckCircle2 className="h-4 w-4 inline mr-2 text-[hsl(var(--success))]" />
                     Import complete! {doneCount} listings imported, {skippedCount} skipped{failedCount > 0 ? `, ${failedCount} failed` : ''}.
                     Review and publish them from your Listings page.
                   </div>
