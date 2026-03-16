@@ -1976,7 +1976,7 @@ async function handleProcessBatch(body: any) {
     return { processed: 0, succeeded: 0, failed: 0, remaining: 0, status: "completed" };
   }
 
-  await sb.from("import_jobs").update({ status: "processing" }).eq("id", job_id);
+  await sb.from("import_jobs").update({ status: "processing", last_heartbeat: new Date().toISOString() }).eq("id", job_id);
 
   const { data: agents } = await sb.from("agents").select("id").eq("agency_id", job.agency_id).limit(1);
   const agentId = agents?.[0]?.id || null;
@@ -2058,6 +2058,9 @@ async function handleProcessBatch(body: any) {
           console.log(`Concurrency recovered to ${currentConcurrency}`);
         }
       }
+
+      // Update heartbeat after each chunk
+      await sb.from("import_jobs").update({ last_heartbeat: new Date().toISOString() }).eq("id", job_id);
     }
   }
 
@@ -2488,6 +2491,31 @@ async function processYad2Item(
   }
 }
 
+// ─── RESUME STALLED JOB ─────────────────────────────────────────────────────
+
+async function handleResumeJob(body: any) {
+  const { job_id } = body;
+  if (!job_id) throw new Error("job_id required");
+
+  const sb = supabaseAdmin();
+
+  // Reset any items stuck in 'processing' back to 'pending'
+  const { data: resetItems, error: resetErr } = await sb
+    .from("import_job_items")
+    .update({ status: "pending", error_message: null, error_type: null })
+    .eq("job_id", job_id)
+    .eq("status", "processing")
+    .select("id");
+
+  if (resetErr) throw new Error(`Failed to reset processing items: ${resetErr.message}`);
+  const resetCount = resetItems?.length || 0;
+
+  // Set job back to ready
+  await sb.from("import_jobs").update({ status: "ready", last_heartbeat: null }).eq("id", job_id);
+
+  return { reset_count: resetCount };
+}
+
 // ─── MAIN ───────────────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
@@ -2508,6 +2536,7 @@ Deno.serve(async (req) => {
     else if (action === "process_batch") result = await handleProcessBatch(body);
     else if (action === "retry_failed") result = await handleRetryFailed(body);
     else if (action === "approve_item") result = await handleApproveItem(body);
+    else if (action === "resume_job") result = await handleResumeJob(body);
     else throw new Error(`Unknown action: ${action}`);
 
     return new Response(JSON.stringify(result), {

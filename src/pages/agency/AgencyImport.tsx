@@ -24,6 +24,7 @@ import {
   useRetryFailed,
   useProcessAll,
   useUpdateAutoSync,
+  useResumeJob,
 } from '@/hooks/useImportListings';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -54,6 +55,7 @@ export default function AgencyImport() {
   const deleteJobMutation = useDeleteImportJob();
   const retryFailedMutation = useRetryFailed();
   const updateAutoSyncMutation = useUpdateAutoSync();
+  const resumeJobMutation = useResumeJob();
   const { startProcessAll, stopProcessAll, isProcessingAll, processingStartTime, processedSoFar } = useProcessAll();
   const [websiteUrl, setWebsiteUrl] = useState('');
   const [importType, setImportType] = useState<'resale' | 'rental' | 'all'>('resale');
@@ -139,9 +141,17 @@ export default function AgencyImport() {
   const totalItems = jobItems.length;
   
 
+  // Stall detection: job says 'processing' but no heartbeat for 30+ minutes
+  const STALL_THRESHOLD_MS = 30 * 60 * 1000;
+  const isStalled = currentJob?.status === 'processing' && !isProcessingAll && (() => {
+    const heartbeat = (currentJob as any).last_heartbeat || (currentJob as any).updated_at;
+    if (!heartbeat) return false;
+    return Date.now() - new Date(heartbeat).getTime() > STALL_THRESHOLD_MS;
+  })();
+
   const isDiscovering = discoverMutation.isPending;
-  const isProcessing = processBatchMutation.isPending || currentJob?.status === 'processing' || isProcessingAll;
-  const isReady = currentJob?.status === 'ready' && pendingCount > 0;
+  const isProcessing = processBatchMutation.isPending || (currentJob?.status === 'processing' && !isStalled) || isProcessingAll;
+  const isReady = (currentJob?.status === 'ready' && pendingCount > 0) || isStalled;
   const isCompleted = currentJob?.status === 'completed';
 
   return (
@@ -323,13 +333,40 @@ export default function AgencyImport() {
                   </span>
                   <Badge variant="outline" className={cn(
                     isCompleted && 'bg-green-500/10 text-green-600',
+                    isStalled && 'bg-amber-500/10 text-amber-600',
                     isProcessing && 'bg-blue-500/10 text-blue-600 animate-pulse',
-                    isReady && 'bg-yellow-500/10 text-yellow-600',
+                    isReady && !isStalled && 'bg-yellow-500/10 text-yellow-600',
                   )}>
                     {isProcessing && <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />}
-                    {currentJob.status}
+                    {isStalled ? 'Stalled' : currentJob.status}
                   </Badge>
                 </div>
+
+                {/* Stalled job warning + Resume button */}
+                {isStalled && (
+                  <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                    <AlertCircle className="h-4 w-4 text-amber-600 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-amber-700">
+                        This import appears to have stalled. Some items may be stuck in processing.
+                      </p>
+                    </div>
+                    <Button
+                      onClick={() => resumeJobMutation.mutate(currentJob!.id)}
+                      disabled={resumeJobMutation.isPending}
+                      size="sm"
+                      variant="outline"
+                      className="shrink-0 rounded-lg border-amber-500/30 text-amber-700 hover:bg-amber-500/10"
+                    >
+                      {resumeJobMutation.isPending ? (
+                        <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-3 w-3 mr-1.5" />
+                      )}
+                      Resume
+                    </Button>
+                  </div>
+                )}
 
                 {/* Auto-import active indicator */}
                 {isProcessingAll && (

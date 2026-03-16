@@ -250,6 +250,30 @@ export function useSkipItem() {
   });
 }
 
+export function useResumeJob() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (jobId: string) => {
+      const { data, error } = await supabase.functions.invoke('import-agency-listings', {
+        body: { action: 'resume_job', job_id: jobId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data as { reset_count: number };
+    },
+    onSuccess: (data) => {
+      toast.success(`Job resumed — ${data.reset_count} item${data.reset_count !== 1 ? 's' : ''} reset for reprocessing`);
+      queryClient.invalidateQueries({ queryKey: ['importJobs'] });
+      queryClient.invalidateQueries({ queryKey: ['importJobItems'] });
+    },
+    onError: (err: Error) => {
+      toast.error(`Resume failed: ${err.message}`);
+    },
+  });
+}
+
+
 export function useProcessAll() {
   const queryClient = useQueryClient();
   const [isProcessingAll, setIsProcessingAll] = useState(false);

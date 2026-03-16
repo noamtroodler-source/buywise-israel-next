@@ -2315,6 +2315,7 @@ export type Database = {
           id: string
           import_type: string
           is_incremental: boolean
+          last_heartbeat: string | null
           processed_count: number
           source_type: string
           status: string
@@ -2330,6 +2331,7 @@ export type Database = {
           id?: string
           import_type?: string
           is_incremental?: boolean
+          last_heartbeat?: string | null
           processed_count?: number
           source_type?: string
           status?: string
@@ -2345,6 +2347,7 @@ export type Database = {
           id?: string
           import_type?: string
           is_incremental?: boolean
+          last_heartbeat?: string | null
           processed_count?: number
           source_type?: string
           status?: string
