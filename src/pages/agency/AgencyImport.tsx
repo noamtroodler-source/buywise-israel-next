@@ -109,6 +109,7 @@ export default function AgencyImport() {
     const result = await discoverMutation.mutateAsync({
       agencyId: agency.id,
       websiteUrl: websiteUrl.trim(),
+      importType,
     });
 
     // Only switch to job if one was created (new_urls > 0)
