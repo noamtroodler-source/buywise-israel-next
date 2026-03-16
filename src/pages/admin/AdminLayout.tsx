@@ -50,6 +50,7 @@ export function AdminLayout() {
     { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
     { href: '/admin/accuracy-audit', label: 'Accuracy Audit', icon: BarChart3 },
+    { href: '/admin/import-analytics', label: 'Import Health', icon: BarChart3 },
   ];
 
   const homepageItems = [
