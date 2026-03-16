@@ -1,0 +1,2 @@
+ALTER TABLE public.sold_transactions ADD COLUMN IF NOT EXISTS deal_id TEXT;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_sold_transactions_deal_id ON public.sold_transactions(deal_id) WHERE deal_id IS NOT NULL;

@@ -4708,6 +4708,7 @@ export type Database = {
           asset_condition: string | null
           city: string
           created_at: string | null
+          deal_id: string | null
           floor: number | null
           geocode_source: string | null
           geocoded_at: string | null
@@ -4733,6 +4734,7 @@ export type Database = {
           asset_condition?: string | null
           city: string
           created_at?: string | null
+          deal_id?: string | null
           floor?: number | null
           geocode_source?: string | null
           geocoded_at?: string | null
@@ -4758,6 +4760,7 @@ export type Database = {
           asset_condition?: string | null
           city?: string
           created_at?: string | null
+          deal_id?: string | null
           floor?: number | null
           geocode_source?: string | null
           geocoded_at?: string | null
