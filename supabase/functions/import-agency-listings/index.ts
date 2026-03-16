@@ -2519,29 +2519,33 @@ function isYad2AgencyUrl(url: string): boolean {
     if (!host.includes("yad2")) return false;
     const path = parsed.pathname.toLowerCase();
     return /\/(agency|professionals|pro)\b/.test(path);
-  } catch { return false; }
+  } catch {
+    return false;
+  }
 }
 
-// Discover listings from a Yad2 agency profile page using Firecrawl → Apify
+// Discover listings from a Yad2 agency profile page by extracting listing detail URLs directly.
+// We intentionally create standard URL-based import items here instead of waiting for Apify,
+// because Yad2 agency/profile pages expose detail links reliably while the actor expects
+// search/result pages and can return empty or take too long for edge execution.
 async function handleYad2AgencyDiscover(body: any) {
   const { agency_id, website_url, import_type = "resale" } = body;
   if (!agency_id || !website_url) throw new Error("agency_id and website_url required");
 
   const FIRECRAWL_KEY = Deno.env.get("FIRECRAWL_API_KEY");
   if (!FIRECRAWL_KEY) throw new Error("FIRECRAWL_API_KEY not configured");
-  const APIFY_API_KEY = Deno.env.get("APIFY_API_KEY");
-  if (!APIFY_API_KEY) throw new Error("APIFY_API_KEY not configured");
 
   const sb = supabaseAdmin();
 
-  // Validate agency
   const { data: agency, error: agencyErr } = await sb
-    .from("agencies").select("id, admin_user_id").eq("id", agency_id).single();
+    .from("agencies")
+    .select("id, admin_user_id")
+    .eq("id", agency_id)
+    .single();
   if (agencyErr || !agency) throw new Error("Agency not found");
 
   console.log(`Yad2 agency page discovery: scraping ${website_url} via Firecrawl`);
 
-  // Step 1: Scrape agency page with Firecrawl to get links
   const scrapeRes = await fetch("https://api.firecrawl.dev/v1/scrape", {
     method: "POST",
     headers: { Authorization: `Bearer ${FIRECRAWL_KEY}`, "Content-Type": "application/json" },
@@ -2556,34 +2560,30 @@ async function handleYad2AgencyDiscover(body: any) {
     const errText = await scrapeRes.text();
     throw new Error(`Firecrawl scrape failed (${scrapeRes.status}): ${errText.slice(0, 200)}`);
   }
+
   const scrapeData = await scrapeRes.json();
   const allLinks: string[] = scrapeData.data?.links || scrapeData.links || [];
 
-  // Step 2: Filter for Yad2 listing URLs
   const listingUrlPattern = /yad2\.co\.il\/(item|realestate\/item|property)\//i;
-  const listingUrls = [...new Set(
-    allLinks.filter(link => listingUrlPattern.test(link))
-  )];
+  const listingUrls = [...new Set(allLinks.filter((link) => listingUrlPattern.test(link)))];
 
   console.log(`Found ${listingUrls.length} listing links out of ${allLinks.length} total links`);
 
   if (listingUrls.length === 0) {
-    // Fallback: try Firecrawl map to discover more URLs
     console.log("No listing links found via scrape, trying Firecrawl map...");
     const mapRes = await fetch("https://api.firecrawl.dev/v1/map", {
       method: "POST",
       headers: { Authorization: `Bearer ${FIRECRAWL_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({ url: website_url, limit: 500, includeSubdomains: false }),
     });
+
     if (mapRes.ok) {
       const mapData = await mapRes.json();
       const mapLinks: string[] = mapData.links || [];
-      const mapListingUrls = mapLinks.filter(link => listingUrlPattern.test(link));
-      if (mapListingUrls.length > 0) {
-        listingUrls.push(...mapListingUrls);
-      }
+      const mapListingUrls = mapLinks.filter((link) => listingUrlPattern.test(link));
+      if (mapListingUrls.length > 0) listingUrls.push(...mapListingUrls);
     } else {
-      await mapRes.text(); // consume
+      await mapRes.text();
     }
   }
 
@@ -2591,104 +2591,60 @@ async function handleYad2AgencyDiscover(body: any) {
     return { job_id: null, total_listings: 0, total_discovered: 0, new_urls: 0, skipped_existing: 0 };
   }
 
-  // Step 3: Dedup against existing properties
   const { data: existingProperties } = await sb
-    .from("properties").select("source_url").eq("agency_id", agency_id).not("source_url", "is", null);
+    .from("properties")
+    .select("source_url")
+    .eq("agency_id", agency_id)
+    .not("source_url", "is", null);
+
   const knownUrls = new Set<string>();
   if (existingProperties) {
     for (const prop of existingProperties) {
       if (prop.source_url) knownUrls.add(normalizeUrl(prop.source_url));
     }
   }
-  const newUrls = listingUrls.filter(u => !knownUrls.has(normalizeUrl(u)));
+
+  const newUrls = listingUrls.filter((url) => !knownUrls.has(normalizeUrl(url)));
 
   if (newUrls.length === 0) {
-    return { job_id: null, total_listings: 0, total_discovered: listingUrls.length, new_urls: 0, skipped_existing: listingUrls.length };
+    return {
+      job_id: null,
+      total_listings: 0,
+      total_discovered: listingUrls.length,
+      new_urls: 0,
+      skipped_existing: listingUrls.length,
+    };
   }
 
-  // Step 4: Pass discovered URLs to Apify as startUrls
-  console.log(`Passing ${newUrls.length} new listing URLs to Apify`);
-  const actorId = "gWicCzGByyQlba0Ql";
-  const startUrls = newUrls.map(url => ({ url }));
-
-  const runRes = await fetch(`https://api.apify.com/v2/acts/${actorId}/runs?token=${APIFY_API_KEY}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ start_urls: startUrls, maxRequestsPerCrawl: newUrls.length + 10 }),
-  });
-  if (!runRes.ok) {
-    const errData = await runRes.text();
-    throw new Error(`Apify actor start failed (${runRes.status}): ${errData.slice(0, 200)}`);
-  }
-  const runData = await runRes.json();
-  const runId = runData.data?.id;
-  if (!runId) throw new Error("Apify run did not return an ID");
-
-  // Poll for completion (max 5 minutes)
-  const maxWait = 300_000;
-  const pollInterval = 5_000;
-  const startTime = Date.now();
-  let runStatus = "RUNNING";
-
-  while (Date.now() - startTime < maxWait && runStatus === "RUNNING") {
-    await delay(pollInterval);
-    const statusRes = await fetch(`https://api.apify.com/v2/actor-runs/${runId}?token=${APIFY_API_KEY}`);
-    if (statusRes.ok) {
-      const statusData = await statusRes.json();
-      runStatus = statusData.data?.status || "RUNNING";
-    } else {
-      await statusRes.text();
-    }
-  }
-
-  if (runStatus !== "SUCCEEDED") {
-    throw new Error(`Apify run ${runStatus === "RUNNING" ? "timed out" : `failed with status: ${runStatus}`}`);
-  }
-
-  // Fetch results
-  const datasetId = runData.data?.defaultDatasetId;
-  const resultsRes = await fetch(
-    `https://api.apify.com/v2/datasets/${datasetId}/items?token=${APIFY_API_KEY}&format=json&limit=500`
-  );
-  if (!resultsRes.ok) throw new Error("Failed to fetch Apify results");
-  const results: any[] = await resultsRes.json();
-
-  if (results.length === 0) {
-    return { job_id: null, total_listings: 0, total_discovered: newUrls.length, new_urls: 0, skipped_existing: listingUrls.length - newUrls.length };
-  }
-
-  console.log(`Apify returned ${results.length} listings from agency page`);
-
-  // Track Apify cost (will associate with job after creation)
-
-  // Create job
   const { data: job, error: jobErr } = await sb
     .from("import_jobs")
     .insert({
-      agency_id, website_url, status: "ready",
-      total_urls: results.length,
-      discovered_urls: results.map((r: any) => r.url || r.link || ""),
-      import_type, source_type: "yad2",
+      agency_id,
+      website_url,
+      status: "ready",
+      total_urls: newUrls.length,
+      discovered_urls: listingUrls,
+      import_type,
     })
-    .select("id").single();
+    .select("id")
+    .single();
   if (jobErr) throw new Error(`Failed to create import job: ${jobErr.message}`);
 
-  // Track Firecrawl scrape + Apify costs for Yad2 discovery
   await trackCost(sb, job.id, "firecrawl", 1, "credits");
-  await trackCost(sb, job.id, "apify", 1, "calls");
 
-  const items = results.map((r: any) => ({
+  const items = newUrls.map((url) => ({
     job_id: job.id,
-    url: r.url || r.link || `yad2-agency-${crypto.randomUUID()}`,
+    url,
     status: "pending",
-    extracted_data: normalizeYad2Result(r),
   }));
   const { error: itemsErr } = await sb.from("import_job_items").insert(items);
   if (itemsErr) throw new Error(`Failed to create job items: ${itemsErr.message}`);
 
   return {
-    job_id: job.id, total_listings: results.length,
-    total_discovered: listingUrls.length, new_urls: results.length,
+    job_id: job.id,
+    total_listings: newUrls.length,
+    total_discovered: listingUrls.length,
+    new_urls: newUrls.length,
     skipped_existing: listingUrls.length - newUrls.length,
   };
 }
