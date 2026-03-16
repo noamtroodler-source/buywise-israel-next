@@ -1,40 +1,29 @@
 
 
-## Plan: Roster Cleanup + New Neighborhoods + Bulk Approve/Reject Pending Mappings
+## Plan: Always Show All 3 Value Snapshot Cards (with "No Data" State)
 
-### What we're doing
+### Problem
+When CBS price data is missing for a city/neighborhood (e.g., Efrat, Ashkelon neighborhoods without CBS mappings), the "vs City Avg" and "12-Month Trend" cards are silently hidden. This leaves only 1 or 2 cards, which looks incomplete and gives no explanation.
 
-**1. Remove duplicate "South Pardes Hanna" from Pardes Hanna roster**
-- Keep "Pardes Hanna South" (has boundary coords)
-- Remove "South Pardes Hanna" (duplicate, no boundary coords)
-- Update via SQL: read current JSON, filter out the duplicate, write back
+### Solution
+Always render all 3 cards in the purchase view. When data is unavailable, show the card with a muted "No data yet" message instead of hiding it.
 
-**2. Add "Shikamim" to Ashkelon roster**
-- Add `{ name: "Shikamim", name_he: "שקמים", boundary_coords: [] }` to Ashkelon's neighborhoods JSON array
+### Changes — `PropertyValueSnapshot.tsx`
 
-**3. Add "Neve Sharet" to Zichron Yaakov roster**
-- Add `{ name: "Neve Sharet", name_he: "נווה שרת", boundary_coords: [] }` to Zichron's neighborhoods JSON array
+**Card 1 (This Property — Price/m²):** Already handles missing `sizeSqm` by not rendering. Change: show card with "Size not listed" message when `sizeSqm` is null.
 
-**4. Bulk approve 18 pending mappings**
-All pending mappings EXCEPT Shimshon→שקמים and Neve Shamir→נווה שרת:
-- Barnea ×3 (Ashkelon)
-- City Center (Ashkelon)
-- City Center (Ashdod)
-- Ganei Eilat (Eilat)
-- Armon HaNatziv, Ramat Beit HaKerem (Jerusalem)
-- Shikun Amidar (Kfar Saba)
-- Blue Bay, Ramat Efal, South Netanya (Netanya)
-- Pardes Hanna South + South Pardes Hanna (Pardes Hanna) — both approved for now
-- Jaffa ×4 (Tel Aviv)
+**Card 2 (vs City Avg):** Currently hidden when `purchaseComparisonPercent` is null or `averagePriceSqm` is missing. Change: always show the card. When data is unavailable, display the label "vs {city} Avg" with body text "No data yet" in muted styling and a subtitle like "City average unavailable".
 
-**5. Reject 2 incorrect mappings**
-- Shimshon → שקמים (Ashkelon) → reject
-- Neve Shamir → נווה שרת (Zichron) → reject
+**Card 3 (12-Month Trend):** Currently hidden when `priceChange` is null. Change: always show the card with "No data yet" and subtitle "Trend data unavailable" when missing.
 
-**6. Run mapping for new neighborhoods**
-- Trigger `map-neighborhoods` for Ashkelon and Zichron Yaakov to pick up Shikamim and Neve Sharet
-- Auto-approve any exact/high matches
+**Grid:** Always use `grid-cols-1 sm:grid-cols-3` for purchase properties (3 cards always present). Remove the dynamic `cardCount` logic.
 
-### Files changed
-None — all changes are data updates (city roster JSON + mapping statuses) via database operations and edge function calls.
+**Don't render guard:** Remove the `if (!hasPropertyPrice && !hasComparison && !hasTrend) return null` — always render for purchase listings since we always show all 3 cards now.
+
+### Visual style for empty state
+- Same card container (`p-4 rounded-xl bg-muted/30 border border-border/50`)
+- Icon: use a muted `Minus` icon
+- Title: same label (e.g., "vs Efrat Avg")
+- Body: "No data yet" in `text-lg font-semibold text-muted-foreground/60`
+- Subtitle: brief explanation like "City average unavailable" in `text-xs text-muted-foreground`
 
