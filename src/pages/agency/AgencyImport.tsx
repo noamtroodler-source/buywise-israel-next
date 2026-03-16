@@ -202,9 +202,29 @@ export default function AgencyImport() {
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-4 space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Paste your agency website URL, Yad2 search URL, or Yad2 agency profile page. We'll scan and find all property listing pages automatically.
-              </p>
+              {sourceType === 'website' ? (
+                <div className="text-sm text-muted-foreground space-y-2">
+                  <p>Paste your agency's <strong>homepage URL</strong> — the main page that links to all your property listings.</p>
+                  <div className="bg-muted/50 rounded-lg p-3 space-y-1 text-xs">
+                    <p className="font-medium text-foreground">✅ Good examples:</p>
+                    <code className="block text-primary">https://your-agency.com</code>
+                    <code className="block text-primary">https://your-agency.com/properties</code>
+                    <p className="font-medium text-foreground mt-2">❌ Don't paste:</p>
+                    <p>A single listing page — we need the page that <em>lists</em> all properties</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground space-y-2">
+                  <p>Paste your <strong>Yad2 agency profile page</strong> or a <strong>Yad2 search URL</strong> filtered to your listings.</p>
+                  <div className="bg-muted/50 rounded-lg p-3 space-y-1 text-xs">
+                    <p className="font-medium text-foreground">✅ Good examples:</p>
+                    <code className="block text-primary">https://www.yad2.co.il/agency/12345</code>
+                    <code className="block text-primary">https://www.yad2.co.il/realestate/forsale?city=1800000</code>
+                    <p className="font-medium text-foreground mt-2">💡 How to find your agency page:</p>
+                    <p>Go to yad2.co.il → click your profile icon → "My Listings" → copy the URL from the address bar</p>
+                  </div>
+                </div>
+              )}
 
               {/* Source type selector */}
               <div className="flex items-center gap-2">
