@@ -1765,6 +1765,294 @@ async function handleApproveItem(body: any) {
   return { property_id: property.id };
 }
 
+// ─── YAD2 ADAPTER ───────────────────────────────────────────────────────────
+
+async function handleYad2Discover(body: any) {
+  const { agency_id, website_url, import_type = "resale" } = body;
+  if (!agency_id || !website_url) throw new Error("agency_id and website_url required");
+
+  const APIFY_API_KEY = Deno.env.get("APIFY_API_KEY");
+  if (!APIFY_API_KEY) throw new Error("APIFY_API_KEY not configured. Add it in Settings → Secrets.");
+
+  const sb = supabaseAdmin();
+
+  // Validate agency
+  const { data: agency, error: agencyErr } = await sb
+    .from("agencies").select("id, admin_user_id").eq("id", agency_id).single();
+  if (agencyErr || !agency) throw new Error("Agency not found");
+
+  // Start Apify Yad2 scraper actor run
+  // Using a generic Yad2 scraper actor — the user's search URL is passed as input
+  const actorId = "dtrungtin~yad2-scraper"; // Common Apify Yad2 actor
+  console.log(`Starting Apify actor ${actorId} for URL: ${website_url}`);
+
+  const runRes = await fetch(`https://api.apify.com/v2/acts/${actorId}/runs?token=${APIFY_API_KEY}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      startUrls: [{ url: website_url }],
+      maxItems: 200,
+    }),
+  });
+
+  if (!runRes.ok) {
+    const errData = await runRes.text();
+    throw new Error(`Apify actor start failed (${runRes.status}): ${errData.slice(0, 200)}`);
+  }
+
+  const runData = await runRes.json();
+  const runId = runData.data?.id;
+  if (!runId) throw new Error("Apify run did not return an ID");
+
+  // Poll for completion (max 5 minutes)
+  const maxWait = 300_000;
+  const pollInterval = 5_000;
+  const startTime = Date.now();
+  let runStatus = "RUNNING";
+
+  while (Date.now() - startTime < maxWait && runStatus === "RUNNING") {
+    await delay(pollInterval);
+    const statusRes = await fetch(`https://api.apify.com/v2/actor-runs/${runId}?token=${APIFY_API_KEY}`);
+    if (statusRes.ok) {
+      const statusData = await statusRes.json();
+      runStatus = statusData.data?.status || "RUNNING";
+    }
+  }
+
+  if (runStatus !== "SUCCEEDED") {
+    throw new Error(`Apify run ${runStatus === "RUNNING" ? "timed out" : `failed with status: ${runStatus}`}`);
+  }
+
+  // Fetch results from dataset
+  const datasetId = runData.data?.defaultDatasetId;
+  const resultsRes = await fetch(
+    `https://api.apify.com/v2/datasets/${datasetId}/items?token=${APIFY_API_KEY}&format=json&limit=200`
+  );
+  if (!resultsRes.ok) throw new Error("Failed to fetch Apify results");
+  const results: any[] = await resultsRes.json();
+
+  if (results.length === 0) {
+    return { job_id: null, total_listings: 0, total_discovered: 0, new_urls: 0, skipped_existing: 0 };
+  }
+
+  console.log(`Apify returned ${results.length} Yad2 listings`);
+
+  // Gather known URLs for dedup
+  const { data: existingProperties } = await sb
+    .from("properties").select("source_url").eq("agency_id", agency_id).not("source_url", "is", null);
+  const knownUrls = new Set<string>();
+  if (existingProperties) {
+    for (const prop of existingProperties) {
+      if (prop.source_url) knownUrls.add(normalizeUrl(prop.source_url));
+    }
+  }
+
+  // Filter out known URLs
+  const newResults = results.filter(r => {
+    const url = r.url || r.link || "";
+    return url && !knownUrls.has(normalizeUrl(url));
+  });
+
+  if (newResults.length === 0) {
+    return { job_id: null, total_listings: 0, total_discovered: results.length, new_urls: 0, skipped_existing: results.length };
+  }
+
+  // Create job
+  const { data: job, error: jobErr } = await sb
+    .from("import_jobs")
+    .insert({
+      agency_id, website_url, status: "ready",
+      total_urls: newResults.length,
+      discovered_urls: newResults.map((r: any) => r.url || r.link || ""),
+      import_type, source_type: "yad2",
+    })
+    .select("id").single();
+  if (jobErr) throw new Error(`Failed to create import job: ${jobErr.message}`);
+
+  // Create job items with pre-extracted data from Yad2
+  const items = newResults.map((r: any) => ({
+    job_id: job.id,
+    url: r.url || r.link || `yad2-${crypto.randomUUID()}`,
+    status: "pending",
+    extracted_data: normalizeYad2Result(r),
+  }));
+  const { error: itemsErr } = await sb.from("import_job_items").insert(items);
+  if (itemsErr) throw new Error(`Failed to create job items: ${itemsErr.message}`);
+
+  return {
+    job_id: job.id, total_listings: newResults.length,
+    total_discovered: results.length, new_urls: newResults.length,
+    skipped_existing: results.length - newResults.length,
+  };
+}
+
+function normalizeYad2Result(raw: any): Record<string, any> {
+  // Map Yad2 structured fields to our schema
+  const price = parseFloat(String(raw.price || "0").replace(/[^\d.]/g, "")) || 0;
+  const rooms = parseInt(raw.rooms || raw.roomsCount || "0") || 0;
+  const bedrooms = Math.max(0, rooms - 1);
+  const sizeSqm = parseInt(raw.squareMeter || raw.size || raw.square_meters || "0") || null;
+  const floor = raw.floor != null ? parseInt(raw.floor) : null;
+
+  // City mapping
+  let city = raw.city || raw.cityName || raw.city_name || "";
+  const matchedCity = matchSupportedCity(city);
+
+  return {
+    listing_category: "property",
+    title: raw.title || raw.description?.slice(0, 80) || "",
+    description: raw.description || raw.info_text || "",
+    price,
+    currency: "ILS",
+    bedrooms,
+    bathrooms: parseInt(raw.bathrooms || "1") || 1,
+    size_sqm: sizeSqm,
+    address: raw.address || raw.street || "",
+    city: matchedCity || city,
+    neighborhood: raw.neighborhood || raw.area || "",
+    property_type: mapYad2PropertyType(raw.property_type || raw.type || ""),
+    listing_status: (raw.dealType === "rental" || raw.ad_type === "rental") ? "for_rent" : "for_sale",
+    floor: floor != null && !isNaN(floor) ? floor : null,
+    total_floors: raw.total_floors ? parseInt(raw.total_floors) : null,
+    features: raw.features || [],
+    parking: raw.parking ? parseInt(raw.parking) : 0,
+    condition: raw.condition || null,
+    image_urls: (raw.images || raw.imageUrls || raw.photos || []).filter((u: any) => typeof u === "string"),
+    _source: "yad2",
+    _has_structured_data: true,
+  };
+}
+
+function mapYad2PropertyType(type: string): string {
+  const t = type.toLowerCase();
+  if (t.includes("דירה") || t.includes("apartment")) return "apartment";
+  if (t.includes("דירת גן") || t.includes("garden")) return "garden_apartment";
+  if (t.includes("פנטהאוז") || t.includes("penthouse")) return "penthouse";
+  if (t.includes("דופלקס") || t.includes("duplex")) return "duplex";
+  if (t.includes("בית") || t.includes("וילה") || t.includes("house") || t.includes("villa")) return "house";
+  if (t.includes("קוטג") || t.includes("cottage")) return "cottage";
+  return "apartment";
+}
+
+// Process a Yad2 item (pre-extracted, skip AI — go straight to validation/dedup/insert)
+async function processYad2Item(
+  item: any, sb: any, job: any, agentId: string | null, jobId: string, importType: string = "resale"
+): Promise<{ succeeded: boolean }> {
+  try {
+    await sb.from("import_job_items").update({ status: "processing" }).eq("id", item.id);
+
+    const listing = item.extracted_data || {};
+    if (!listing.city || listing.listing_category !== "property") {
+      await sb.from("import_job_items").update({ status: "skipped", error_message: "Invalid Yad2 data or unsupported city", error_type: "permanent" }).eq("id", item.id);
+      return { succeeded: false };
+    }
+
+    // City whitelist
+    const matchedCity = matchSupportedCity(listing.city);
+    if (!matchedCity) {
+      await sb.from("import_job_items").update({ status: "skipped", error_message: `City not supported: "${listing.city}"`, error_type: "permanent" }).eq("id", item.id);
+      return { succeeded: false };
+    }
+    listing.city = matchedCity;
+
+    // Validation
+    const { errors, warnings } = validatePropertyData(listing, importType);
+    if (errors.length > 0) {
+      await sb.from("import_job_items").update({ status: "failed", error_message: `Validation: ${errors.join("; ")}`, error_type: "permanent", extracted_data: { ...listing, validation_errors: errors, validation_warnings: warnings } }).eq("id", item.id);
+      return { succeeded: false };
+    }
+
+    // Confidence scoring
+    const confidenceScore = computeConfidenceScore(listing, "exact", warnings, true);
+    await sb.from("import_job_items").update({ confidence_score: confidenceScore, extracted_data: { ...listing, confidence_score: confidenceScore, validation_warnings: warnings } }).eq("id", item.id);
+
+    if (confidenceScore < 40) {
+      await sb.from("import_job_items").update({ status: "skipped", error_message: `Low confidence (${confidenceScore}/100)`, error_type: "permanent" }).eq("id", item.id);
+      return { succeeded: false };
+    }
+
+    // Dedup Tier 1
+    if (listing.address && listing.city) {
+      const normalizedAddr = normalizeAddressForDedup(listing.address);
+      if (normalizedAddr.length > 0) {
+        const { data: dupes } = await sb.from("properties").select("id").eq("agent_id", agentId).ilike("address", normalizedAddr).ilike("city", listing.city.trim()).limit(1);
+        if (dupes && dupes.length > 0) {
+          await sb.from("import_job_items").update({ status: "skipped", error_message: `Duplicate: matches property ${dupes[0].id}`, error_type: "permanent" }).eq("id", item.id);
+          return { succeeded: false };
+        }
+      }
+    }
+
+    // Dedup Tier 2
+    if (listing.city && listing.bedrooms != null && listing.size_sqm && listing.price > 0) {
+      const { data: fuzzyDupes } = await sb.from("properties").select("id").eq("agent_id", agentId).ilike("city", listing.city.trim()).eq("bedrooms", Math.floor(listing.bedrooms)).gte("size_sqm", listing.size_sqm - 5).lte("size_sqm", listing.size_sqm + 5).gte("price", listing.price * 0.95).lte("price", listing.price * 1.05).limit(1);
+      if (fuzzyDupes && fuzzyDupes.length > 0) {
+        await sb.from("import_job_items").update({ status: "skipped", error_message: `Duplicate: matches property ${fuzzyDupes[0].id}`, error_type: "permanent" }).eq("id", item.id);
+        return { succeeded: false };
+      }
+    }
+
+    // Dedup Tier 3 (cross-source)
+    if (listing.address && listing.city) {
+      const normalizedAddr = normalizeAddressForDedup(listing.address);
+      if (normalizedAddr.length > 0) {
+        const { data: crossDupes } = await sb.from("properties").select("id").neq("agent_id", agentId).ilike("address", normalizedAddr).ilike("city", listing.city.trim()).limit(1);
+        if (crossDupes && crossDupes.length > 0) {
+          listing.cross_source_match_id = crossDupes[0].id;
+          warnings.push(`Potential cross-source duplicate with property ${crossDupes[0].id}`);
+        }
+      }
+    }
+
+    // Download images with SHA-256 dedup
+    const { urls: imageUrls, hashes: imageHashes } = await parallelImageDownload(listing.image_urls || [], sb, "property-images", jobId);
+    listing.image_hashes = imageHashes;
+
+    // Geocode
+    let latitude: number | null = null;
+    let longitude: number | null = null;
+    if (listing.address && listing.city) {
+      const coords = await geocodeWithRateLimit(listing.address, listing.city);
+      if (coords) { latitude = coords.lat; longitude = coords.lng; }
+    }
+
+    const entryDate = listing.entry_date === "immediate" ? new Date().toISOString().split("T")[0] : listing.entry_date || null;
+
+    const { data: property, error: propErr } = await sb.from("properties").insert({
+      agent_id: agentId,
+      title: listing.title || "Imported from Yad2",
+      description: listing.description || null,
+      property_type: listing.property_type || "apartment",
+      listing_status: listing.listing_status || "for_sale",
+      price: listing.price || 0, currency: "ILS",
+      address: listing.address || "", city: listing.city,
+      neighborhood: listing.neighborhood || null,
+      latitude, longitude,
+      bedrooms: Math.floor(listing.bedrooms ?? 0),
+      bathrooms: Math.floor(listing.bathrooms ?? 1),
+      size_sqm: listing.size_sqm || null,
+      floor: listing.floor ?? null, total_floors: listing.total_floors ?? null,
+      features: listing.features || [], images: imageUrls.length > 0 ? imageUrls : null,
+      parking: listing.parking ?? 0, condition: listing.condition || null,
+      entry_date: entryDate,
+      is_published: false, is_featured: false, views_count: 0,
+      verification_status: "draft",
+      import_source: "yad2", source_url: item.url,
+    }).select("id").single();
+
+    if (propErr) {
+      await sb.from("import_job_items").update({ status: "failed", error_message: `Insert failed: ${propErr.message}`, error_type: "transient" }).eq("id", item.id);
+      return { succeeded: false };
+    }
+
+    await sb.from("import_job_items").update({ status: "done", property_id: property.id }).eq("id", item.id);
+    return { succeeded: true };
+  } catch (err) {
+    await sb.from("import_job_items").update({ status: "failed", error_message: err instanceof Error ? err.message : "Unknown error", error_type: "transient" }).eq("id", item.id);
+    return { succeeded: false };
+  }
+}
+
 // ─── MAIN ───────────────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
@@ -1777,7 +2065,11 @@ Deno.serve(async (req) => {
     const { action } = body;
 
     let result;
-    if (action === "discover") result = await handleDiscover(body);
+    if (action === "discover") {
+      // Route to Yad2 adapter if source_type is yad2
+      if (body.source_type === "yad2") result = await handleYad2Discover(body);
+      else result = await handleDiscover(body);
+    }
     else if (action === "process_batch") result = await handleProcessBatch(body);
     else if (action === "retry_failed") result = await handleRetryFailed(body);
     else if (action === "approve_item") result = await handleApproveItem(body);
