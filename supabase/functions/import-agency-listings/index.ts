@@ -1147,8 +1147,83 @@ ${pageLinks.slice(0, 50).join("\n")}`;
 }
 
 // ─── PROCESS SINGLE ITEM ────────────────────────────────────────────────────
+// ─── SIMPLIFIED PROMPT RETRY ────────────────────────────────────────────────
 
-async function processOneItem(
+async function retryWithSimplifiedPrompt(
+  url: string, markdown: string, lovableKey: string
+): Promise<any | null> {
+  console.log(`Retrying with simplified prompt for ${url}`);
+  const truncatedContent = markdown.slice(0, 4000);
+  const simplifiedPrompt = `Extract ONLY these fields from this Israeli real estate listing page. Return values only if clearly present, otherwise omit.
+
+- price (number in NIS, 0 if "Price on Request")
+- bedrooms (number — Israeli "rooms" minus 1)
+- size_sqm (number)
+- city (must be one of: ${SUPPORTED_CITIES.join(", ")})
+- address (street name + number)
+- property_type (one of: apartment, house, penthouse, duplex, garden_apartment, cottage, land, commercial)
+- listing_status (for_sale or for_rent)
+- image_urls (array of image URLs)
+- listing_category (property, project, or not_listing)
+
+URL: ${url}
+Content:
+${truncatedContent}`;
+
+  try {
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash-lite",
+        messages: [{ role: "user", content: simplifiedPrompt }],
+        tools: [{
+          type: "function",
+          function: {
+            name: "extract_listing",
+            description: "Extract core listing data",
+            parameters: {
+              type: "object",
+              properties: {
+                listing_category: { type: "string", enum: ["property", "project", "not_listing"] },
+                price: { type: "number" },
+                bedrooms: { type: "number" },
+                size_sqm: { type: "number" },
+                address: { type: "string" },
+                city: { type: "string" },
+                property_type: { type: "string", enum: ["apartment", "garden_apartment", "penthouse", "mini_penthouse", "duplex", "house", "cottage", "land", "commercial"] },
+                listing_status: { type: "string", enum: ["for_sale", "for_rent"] },
+                image_urls: { type: "array", items: { type: "string" } },
+              },
+              required: ["listing_category"],
+              additionalProperties: false,
+            },
+          },
+        }],
+        tool_choice: { type: "function", function: { name: "extract_listing" } },
+      }),
+    });
+
+    if (!res.ok) {
+      console.error(`Simplified retry also failed: ${res.status}`);
+      return null;
+    }
+
+    const data = await res.json();
+    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+    if (!toolCall?.function?.arguments) return null;
+
+    const parsed = JSON.parse(toolCall.function.arguments);
+    parsed._simplified_retry = true;
+    console.log(`Simplified retry succeeded for ${url}`);
+    return parsed;
+  } catch (err) {
+    console.error(`Simplified retry error:`, err);
+    return null;
+  }
+}
+
+
   item: any, sb: any, job: any, agentId: string | null,
   firecrawlKey: string, lovableKey: string, jobId: string,
   domainCity: string | null = null, importType: string = "resale"
@@ -1274,6 +1349,9 @@ async function processOneItem(
       }),
     });
 
+    let listing: any = null;
+    let usedSimplifiedPrompt = false;
+
     if (!extractRes.ok) {
       const errText = await extractRes.text();
       console.error("AI extraction error:", extractRes.status, errText);
@@ -1281,15 +1359,31 @@ async function processOneItem(
         await sb.from("import_job_items").update({ status: "pending", error_message: "Rate limited, will retry", error_type: "transient" }).eq("id", item.id);
         return { succeeded: false };
       }
-      await sb.from("import_job_items").update({ status: "failed", error_message: `AI extraction failed (${extractRes.status})`, error_type: "transient" }).eq("id", item.id);
-      return { succeeded: false };
+      // Try simplified prompt retry (non-429 failures)
+      const retryResult = await retryWithSimplifiedPrompt(item.url, markdown, lovableKey);
+      if (!retryResult) {
+        await sb.from("import_job_items").update({ status: "failed", error_message: `AI extraction failed (${extractRes.status})`, error_type: "transient" }).eq("id", item.id);
+        return { succeeded: false };
+      }
+      listing = retryResult;
+      usedSimplifiedPrompt = true;
     }
 
-    const extractData = await extractRes.json();
-    const extractToolCall = extractData.choices?.[0]?.message?.tool_calls?.[0];
-    if (!extractToolCall?.function?.arguments) {
-      await sb.from("import_job_items").update({ status: "failed", error_message: "AI returned no extraction data", error_type: "permanent" }).eq("id", item.id);
-      return { succeeded: false };
+    if (!listing) {
+      const extractData = await extractRes.json();
+      const extractToolCall = extractData.choices?.[0]?.message?.tool_calls?.[0];
+      if (!extractToolCall?.function?.arguments) {
+        // Try simplified prompt retry
+        const retryResult = await retryWithSimplifiedPrompt(item.url, markdown, lovableKey);
+        if (!retryResult) {
+          await sb.from("import_job_items").update({ status: "failed", error_message: "AI returned no extraction data", error_type: "permanent" }).eq("id", item.id);
+          return { succeeded: false };
+        }
+        listing = retryResult;
+        usedSimplifiedPrompt = true;
+      } else {
+        listing = JSON.parse(extractToolCall.function.arguments);
+      }
     }
 
     const listing = JSON.parse(extractToolCall.function.arguments);
@@ -1378,8 +1472,16 @@ async function processOneItem(
     }
 
     // ── CONFIDENCE SCORING ──
-    const confidenceScore = computeConfidenceScore(listing, cityMatchType, validationWarnings, !!listing._has_structured_data);
-    console.log(`Confidence score for ${item.url}: ${confidenceScore}`);
+    let confidenceScore = computeConfidenceScore(listing, cityMatchType, validationWarnings, !!listing._has_structured_data);
+
+    // Apply penalty for simplified prompt extraction
+    if (usedSimplifiedPrompt) {
+      confidenceScore = Math.max(0, confidenceScore - 10);
+      validationWarnings.push("extracted_with_simplified_prompt");
+      console.log(`Confidence adjusted to ${confidenceScore} (simplified prompt penalty -10)`);
+    } else {
+      console.log(`Confidence score for ${item.url}: ${confidenceScore}`);
+    }
 
     // Store confidence score + warnings
     await sb.from("import_job_items").update({
@@ -1594,9 +1696,11 @@ async function handleProcessBatch(body: any) {
   _geoQueue = Promise.resolve();
   _batchImageUrlCounts.clear();
 
-  const CONCURRENCY = 3;
-  const REFILL_SIZE = 6;
-  const MAX_ITEMS = 9;
+  let currentConcurrency = 5;
+  const MAX_CONCURRENCY = 5;
+  const MIN_CONCURRENCY = 2;
+  const REFILL_SIZE = 10;
+  const MAX_ITEMS = 15;
   const TIME_LIMIT_MS = 120_000;
   const batchStartTime = Date.now();
 
@@ -1604,6 +1708,7 @@ async function handleProcessBatch(body: any) {
   let totalSucceeded = 0;
   let totalFailed = 0;
   let refillCycle = 0;
+  let consecutiveSuccessfulChunks = 0;
 
   while (true) {
     if (totalProcessed >= MAX_ITEMS) break;
@@ -1618,12 +1723,12 @@ async function handleProcessBatch(body: any) {
     if (itemsErr || !pendingItems || pendingItems.length === 0) break;
 
     refillCycle++;
-    console.log(`Refill ${refillCycle}: ${pendingItems.length} items`);
+    console.log(`Refill ${refillCycle}: ${pendingItems.length} items (concurrency: ${currentConcurrency})`);
 
-    for (let i = 0; i < pendingItems.length && totalProcessed < MAX_ITEMS; i += CONCURRENCY) {
+    for (let i = 0; i < pendingItems.length && totalProcessed < MAX_ITEMS; i += currentConcurrency) {
       if (Date.now() - batchStartTime > TIME_LIMIT_MS) break;
 
-      const chunk = pendingItems.slice(i, i + CONCURRENCY);
+      const chunk = pendingItems.slice(i, i + currentConcurrency);
       const isYad2 = job.source_type === "yad2";
       const results = await Promise.allSettled(
         chunk.map(item => isYad2
@@ -1632,10 +1737,36 @@ async function handleProcessBatch(body: any) {
         )
       );
 
+      let chunkHadTransientError = false;
       for (const result of results) {
         totalProcessed++;
-        if (result.status === "fulfilled" && result.value.succeeded) totalSucceeded++;
-        else totalFailed++;
+        if (result.status === "fulfilled" && result.value.succeeded) {
+          totalSucceeded++;
+        } else {
+          totalFailed++;
+          // Check for transient/rate-limit errors
+          if (result.status === "rejected" || (result.status === "fulfilled" && !result.value.succeeded)) {
+            chunkHadTransientError = true;
+          }
+        }
+      }
+
+      // Dynamic concurrency adjustment
+      if (chunkHadTransientError) {
+        if (currentConcurrency > MIN_CONCURRENCY) {
+          currentConcurrency = MIN_CONCURRENCY;
+          console.log(`Concurrency reduced to ${currentConcurrency} due to failures`);
+        }
+        consecutiveSuccessfulChunks = 0;
+        // Add a small delay to back off
+        await new Promise(r => setTimeout(r, 3000));
+      } else {
+        consecutiveSuccessfulChunks++;
+        if (consecutiveSuccessfulChunks >= 3 && currentConcurrency < MAX_CONCURRENCY) {
+          currentConcurrency = MAX_CONCURRENCY;
+          consecutiveSuccessfulChunks = 0;
+          console.log(`Concurrency recovered to ${currentConcurrency}`);
+        }
       }
     }
   }
