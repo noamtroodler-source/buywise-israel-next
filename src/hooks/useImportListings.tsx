@@ -18,7 +18,65 @@ export interface ImportJob {
   created_at: string;
   updated_at: string;
 }
-...
+
+export interface ImportJobItem {
+  id: string;
+  job_id: string;
+  url: string;
+  status: string;
+  property_id: string | null;
+  project_id: string | null;
+  error_message: string | null;
+  error_type: string | null;
+  extracted_data: any;
+  confidence_score: number | null;
+  created_at: string;
+}
+
+export function useImportJobs(agencyId: string | undefined) {
+  return useQuery({
+    queryKey: ['importJobs', agencyId],
+    queryFn: async () => {
+      if (!agencyId) return [];
+      const { data, error } = await supabase
+        .from('import_jobs')
+        .select('*')
+        .eq('agency_id', agencyId)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data as ImportJob[];
+    },
+    enabled: !!agencyId,
+  });
+}
+
+export function useImportJobItems(jobId: string | undefined) {
+  return useQuery({
+    queryKey: ['importJobItems', jobId],
+    queryFn: async () => {
+      if (!jobId) return [];
+      const { data, error } = await supabase
+        .from('import_job_items')
+        .select('*')
+        .eq('job_id', jobId)
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      return data as ImportJobItem[];
+    },
+    enabled: !!jobId,
+  });
+}
+
+export function useDiscoverListings() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ agencyId, websiteUrl, importType = 'resale', sourceType = 'website' }: { agencyId: string; websiteUrl: string; importType?: string; sourceType?: string }) => {
+      const { data, error } = await supabase.functions.invoke('import-agency-listings', {
+        body: { action: 'discover', agency_id: agencyId, website_url: websiteUrl, import_type: importType, source_type: sourceType },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
       return data as {
         job_id: string | null;
         total_listings: number;

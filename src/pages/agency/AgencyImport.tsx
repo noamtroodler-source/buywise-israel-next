@@ -155,18 +155,99 @@ export default function AgencyImport() {
   const isReady = (currentJob?.status === 'ready' && pendingCount > 0) || isStalled;
   const isCompleted = currentJob?.status === 'completed';
   const discoveringSourceType = isBackgroundDiscovering ? currentJob?.source_type : sourceType;
-...
-                  <Badge variant="outline" className={cn(
-                    isCompleted && 'bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]',
-                    isStalled && 'bg-[hsl(var(--warning))]/10 text-[hsl(var(--warning-foreground))]',
-                    isDiscovering && 'bg-primary/10 text-primary animate-pulse',
-                    isProcessing && 'bg-primary/10 text-primary animate-pulse',
-                    isReady && !isStalled && 'bg-[hsl(var(--warning))]/10 text-[hsl(var(--warning-foreground))]',
-                  )}>
-                    {(isDiscovering || isProcessing) && <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />}
-                    {isStalled ? 'Stalled' : currentJob.status}
-                  </Badge>
-...
+
+  return (
+    <Layout>
+      <div className="container py-8 max-w-4xl">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 0 + 1, y: 0 }} className="space-y-6">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" asChild className="rounded-xl">
+              <Link to="/agency"><ArrowLeft className="h-4 w-4" /></Link>
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold">Import Listings</h1>
+              <p className="text-muted-foreground">Import property listings from your website automatically</p>
+            </div>
+          </div>
+
+          {(stats?.activeListings || 0) > 0 && (
+            <InfoBanner variant="tip">
+              You already have {stats?.activeListings} listing{(stats?.activeListings || 0) !== 1 ? 's' : ''}. This tool is designed for first-time bulk imports. For new individual listings, the{' '}
+              <Link to="/agency/listings/new" className="font-medium text-primary hover:underline">
+                Add Listing
+              </Link>{' '}
+              wizard gives you more control and better accuracy.
+            </InfoBanner>
+          )}
+
+          <div className="flex items-start gap-3 p-4 rounded-xl bg-primary/5 border border-primary/10">
+            <Info className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+            <p className="text-sm text-muted-foreground">
+              New construction projects and developments are always skipped — add those via the{' '}
+              <Link to="/agency/projects/new" className="text-primary font-medium hover:underline">
+                Project Wizard
+              </Link>{' '}
+              for best results.
+            </p>
+          </div>
+
+          <Card className="rounded-2xl border-primary/10">
+            <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent rounded-t-2xl">
+              <CardTitle className="flex items-center gap-2">
+                <Globe className="h-5 w-5 text-primary" />
+                Step 1: Discover Listings
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4 space-y-4">
+              {sourceType === 'website' ? (
+                <div className="text-sm text-muted-foreground space-y-2">
+                  <p>Paste your agency's <strong className="text-foreground">homepage URL</strong> — the main page that links to all your property listings.</p>
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground space-y-2">
+                  <p>Paste your <strong className="text-foreground">Yad2 agency profile page</strong> or a <strong className="text-foreground">Yad2 search URL</strong> filtered to your listings.</p>
+                </div>
+              )}
+
+              <div className="flex flex-wrap gap-2">
+                {(['website', 'yad2'] as const).map((type) => (
+                  <Button
+                    key={type}
+                    type="button"
+                    variant={sourceType === type ? 'default' : 'outline'}
+                    size="sm"
+                    className="rounded-lg"
+                    onClick={() => setSourceType(type)}
+                  >
+                    {type === 'website' ? 'Agency Website' : 'Yad2'}
+                  </Button>
+                ))}
+              </div>
+
+              <form onSubmit={handleDiscover} className="flex flex-col sm:flex-row gap-3">
+                <Input
+                  value={websiteUrl}
+                  onChange={(e) => setWebsiteUrl(e.target.value)}
+                  placeholder={sourceType === 'yad2' ? 'https://www.yad2.co.il/realestate/agency/7783701/forsale?sort=price-desc' : 'https://your-agency-website.com'}
+                  className="rounded-xl flex-1"
+                  required
+                  disabled={isDiscovering}
+                />
+                <Button type="submit" disabled={isDiscovering || !websiteUrl.trim()} className="rounded-xl">
+                  {isDiscovering ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Scanning...
+                    </>
+                  ) : (
+                    <>
+                      <Globe className="h-4 w-4 mr-2" />
+                      Discover
+                    </>
+                  )}
+                </Button>
+              </form>
+
               {isDiscovering && (
                 <p className="text-sm text-muted-foreground mt-3 animate-pulse">
                   {discoveringSourceType === 'yad2'
