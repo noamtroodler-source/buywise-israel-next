@@ -624,6 +624,17 @@ function computeConfidenceScore(
     score = Math.min(100, score + 15);
   }
 
+  // Boost for rental field completeness when listing is a rental
+  if (listing.listing_status === "for_rent") {
+    let rentalFieldBoost = 0;
+    if (listing.furnished_status) rentalFieldBoost += 3;
+    if (listing.pets_policy) rentalFieldBoost += 3;
+    if (listing.lease_term) rentalFieldBoost += 2;
+    if (listing.subletting_allowed) rentalFieldBoost += 1;
+    if (listing.agent_fee_required != null) rentalFieldBoost += 1;
+    score = Math.min(100, score + rentalFieldBoost);
+  }
+
   return Math.min(100, Math.max(0, score));
 }
 
