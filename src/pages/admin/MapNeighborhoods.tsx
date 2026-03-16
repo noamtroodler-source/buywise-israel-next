@@ -79,10 +79,18 @@ export default function MapNeighborhoods() {
     fetchCities();
   }, []);
 
-    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+  const runMapping = async () => {
+    setIsRunning(true);
+    const cityResults: CityResult[] = cbsCities.map(city => ({
+      city, status: 'pending', mappings: [], unmapped_cbs: [], unmapped_anglo: [],
+    }));
+    setResults([...cityResults]);
 
-    for (let i = 0; i < CBS_CITIES.length; i++) {
-      const city = CBS_CITIES[i];
+    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+    const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+    for (let i = 0; i < cbsCities.length; i++) {
+      const city = cbsCities[i];
       setCurrentCity(city);
       cityResults[i].status = 'processing';
       setResults([...cityResults]);
@@ -90,7 +98,15 @@ export default function MapNeighborhoods() {
       try {
         const res = await fetch(
           `https://${projectId}.supabase.co/functions/v1/map-neighborhoods?city=${encodeURIComponent(city)}`,
-          { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': anonKey,
+              'Authorization': `Bearer ${anonKey}`,
+            },
+            body: '{}',
+          }
         );
 
         if (!res.ok) {
@@ -119,7 +135,7 @@ export default function MapNeighborhoods() {
 
     setIsRunning(false);
     setCurrentCity(null);
-    toast({ title: 'Mapping complete', description: `Processed ${CBS_CITIES.length} cities` });
+    toast({ title: 'Mapping complete', description: `Processed ${cbsCities.length} cities` });
   };
 
   const allMappings = results.flatMap(r => r.mappings);
