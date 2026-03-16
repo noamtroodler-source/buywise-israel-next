@@ -141,9 +141,17 @@ export default function AgencyImport() {
   const totalItems = jobItems.length;
   
 
+  // Stall detection: job says 'processing' but no heartbeat for 30+ minutes
+  const STALL_THRESHOLD_MS = 30 * 60 * 1000;
+  const isStalled = currentJob?.status === 'processing' && !isProcessingAll && (() => {
+    const heartbeat = (currentJob as any).last_heartbeat || (currentJob as any).updated_at;
+    if (!heartbeat) return false;
+    return Date.now() - new Date(heartbeat).getTime() > STALL_THRESHOLD_MS;
+  })();
+
   const isDiscovering = discoverMutation.isPending;
-  const isProcessing = processBatchMutation.isPending || currentJob?.status === 'processing' || isProcessingAll;
-  const isReady = currentJob?.status === 'ready' && pendingCount > 0;
+  const isProcessing = processBatchMutation.isPending || (currentJob?.status === 'processing' && !isStalled) || isProcessingAll;
+  const isReady = (currentJob?.status === 'ready' && pendingCount > 0) || isStalled;
   const isCompleted = currentJob?.status === 'completed';
 
   return (
