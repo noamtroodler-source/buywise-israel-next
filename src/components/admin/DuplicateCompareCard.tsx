@@ -25,6 +25,7 @@ interface DuplicateCompareCardProps {
   propertyA: PropertySummary;
   propertyB: PropertySummary;
   similarityScore: number | null;
+  detectionMethod?: string;
   onKeep: (pairId: string, winnerId: string, loserId: string) => void;
   onDismiss: (pairId: string) => void;
   isLoading?: boolean;
@@ -111,10 +112,18 @@ export function DuplicateCompareCard({
   propertyA,
   propertyB,
   similarityScore,
+  detectionMethod,
   onKeep,
   onDismiss,
   isLoading,
 }: DuplicateCompareCardProps) {
+  const methodLabel = detectionMethod === 'cross_source' ? 'Cross-Source' : detectionMethod === 'phash' ? 'Image Match' : 'Auto';
+  const methodColor = detectionMethod === 'cross_source'
+    ? 'bg-amber-100 text-amber-800 border-amber-200'
+    : detectionMethod === 'phash'
+      ? 'bg-blue-100 text-blue-800 border-blue-200'
+      : '';
+
   return (
     <Card>
       <CardContent className="p-4 space-y-3">
@@ -122,6 +131,11 @@ export function DuplicateCompareCard({
           <div className="flex items-center gap-2">
             <Merge className="h-4 w-4 text-amber-500" />
             <span className="text-sm font-medium">Potential Duplicate</span>
+            {detectionMethod && (
+              <Badge variant="outline" className={cn("text-xs", methodColor)}>
+                {methodLabel}
+              </Badge>
+            )}
             {similarityScore != null && (
               <Badge variant="outline" className="text-xs">
                 Distance: {similarityScore}
