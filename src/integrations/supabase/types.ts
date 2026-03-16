@@ -151,6 +151,8 @@ export type Database = {
           admin_user_id: string | null
           approved_at: string | null
           approved_by: string | null
+          auto_sync_enabled: boolean
+          auto_sync_url: string | null
           cities_covered: string[] | null
           created_at: string | null
           default_invite_code: string | null
@@ -160,6 +162,7 @@ export type Database = {
           id: string
           is_accepting_agents: boolean | null
           is_verified: boolean | null
+          last_sync_at: string | null
           logo_url: string | null
           name: string
           notify_email: boolean | null
@@ -180,6 +183,8 @@ export type Database = {
           admin_user_id?: string | null
           approved_at?: string | null
           approved_by?: string | null
+          auto_sync_enabled?: boolean
+          auto_sync_url?: string | null
           cities_covered?: string[] | null
           created_at?: string | null
           default_invite_code?: string | null
@@ -189,6 +194,7 @@ export type Database = {
           id?: string
           is_accepting_agents?: boolean | null
           is_verified?: boolean | null
+          last_sync_at?: string | null
           logo_url?: string | null
           name: string
           notify_email?: boolean | null
@@ -209,6 +215,8 @@ export type Database = {
           admin_user_id?: string | null
           approved_at?: string | null
           approved_by?: string | null
+          auto_sync_enabled?: boolean
+          auto_sync_url?: string | null
           cities_covered?: string[] | null
           created_at?: string | null
           default_invite_code?: string | null
@@ -218,6 +226,7 @@ export type Database = {
           id?: string
           is_accepting_agents?: boolean | null
           is_verified?: boolean | null
+          last_sync_at?: string | null
           logo_url?: string | null
           name?: string
           notify_email?: boolean | null
@@ -2304,6 +2313,8 @@ export type Database = {
           discovered_urls: string[] | null
           failed_count: number
           id: string
+          import_type: string
+          is_incremental: boolean
           processed_count: number
           status: string
           total_urls: number
@@ -2316,6 +2327,8 @@ export type Database = {
           discovered_urls?: string[] | null
           failed_count?: number
           id?: string
+          import_type?: string
+          is_incremental?: boolean
           processed_count?: number
           status?: string
           total_urls?: number
@@ -2328,6 +2341,8 @@ export type Database = {
           discovered_urls?: string[] | null
           failed_count?: number
           id?: string
+          import_type?: string
+          is_incremental?: boolean
           processed_count?: number
           status?: string
           total_urls?: number
