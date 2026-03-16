@@ -184,7 +184,9 @@ serve(async (req) => {
     for (const city of cities || []) {
       const raw = city.neighborhoods as any[];
       if (!Array.isArray(raw) || raw.length === 0) continue;
-      angloByCity[city.name] = raw
+      // Use CBS name as key (reverse lookup), fallback to platform name
+      const cbsName = platformToCbs[city.name] || city.name;
+      angloByCity[cbsName] = raw
         .filter((n: any) => n.name)
         .map((n: any) => ({ name: n.name, name_he: n.name_he || n.hebrew_name || undefined }));
     }
