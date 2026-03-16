@@ -285,10 +285,10 @@ async function findSoldUrlsFromIndexPages(
 
 // ─── PRE-LLM SOLD/RENTED/RENTAL/NEW-DEV DETECTION ──────────────────────────
 
-function isNonResalePage(markdown: string): { skip: boolean; reason: string } {
+function isNonResalePage(markdown: string, importType: string = "resale"): { skip: boolean; reason: string } {
   const snippet = markdown.substring(0, 3000);
 
-  // Sold/rented patterns
+  // Sold/rented patterns — always skip
   const soldPatterns = [
     /נמכר[הו]?/, /הושכר[הו]?/, /בהסכם/, /לא\s*זמינ[הו]?/, /לא\s*פנוי[הו]?/, /אין\s*בנמצא/,
     /\bsold\b/i, /\brented\b/i, /\bleased\b/i, /\bunder\s+contract\b/i, /\bunder\s+offer\b/i,
@@ -299,13 +299,15 @@ function isNonResalePage(markdown: string): { skip: boolean; reason: string } {
     if (p.test(snippet)) return { skip: true, reason: "Pre-filter: listing appears sold/rented" };
   }
 
-  // Rental indicators
-  const rentalPatterns = [
-    /להשכרה/, /שכירות\s+חודשית/, /דמי\s*שכירות/, /שכ[\"״]ח/,
-    /\bfor\s+rent\b/i, /\bmonthly\s+rent\b/i, /\brental\b/i,
-  ];
-  for (const p of rentalPatterns) {
-    if (p.test(snippet)) return { skip: true, reason: "Pre-filter: rental listing (resale only)" };
+  // Rental indicators — only skip in resale-only mode
+  if (importType === "resale") {
+    const rentalPatterns = [
+      /להשכרה/, /שכירות\s+חודשית/, /דמי\s*שכירות/, /שכ[\"״]ח/,
+      /\bfor\s+rent\b/i, /\bmonthly\s+rent\b/i, /\brental\b/i,
+    ];
+    for (const p of rentalPatterns) {
+      if (p.test(snippet)) return { skip: true, reason: "Pre-filter: rental listing (resale only)" };
+    }
   }
 
   // New construction / developer indicators
@@ -333,7 +335,7 @@ const VALID_LISTING_STATUSES = ["for_sale", "for_rent"];
 // Property types to skip during resale import
 const SKIP_PROPERTY_TYPES = new Set(["land", "commercial"]);
 
-function validatePropertyData(listing: Record<string, any>): { errors: string[]; warnings: string[] } {
+function validatePropertyData(listing: Record<string, any>, importType: string = "resale"): { errors: string[]; warnings: string[] } {
   const errors: string[] = [];
   const warnings: string[] = [];
   const currentYear = new Date().getFullYear();
@@ -344,13 +346,19 @@ function validatePropertyData(listing: Record<string, any>): { errors: string[];
   } else if (listing.price === 1) {
     errors.push("price=1 is a sold placeholder — skip");
   } else if (listing.price != null && listing.price > 0 && listing.price < 20_000) {
-    errors.push(`price ${listing.price} NIS appears to be rent, not sale price`);
+    if (importType === "resale") {
+      errors.push(`price ${listing.price} NIS appears to be rent, not sale price`);
+    } else {
+      warnings.push(`price ${listing.price} NIS — verify this is correct for a rental listing`);
+    }
   } else if (listing.price != null && listing.price > 0 && listing.price < 100_000) {
-    warnings.push(`price ${listing.price} seems unusually low for a property`);
+    if (importType === "resale") {
+      warnings.push(`price ${listing.price} seems unusually low for a property`);
+    }
   }
 
-  // Resale-only: skip rentals
-  if (listing.listing_status === "for_rent") {
+  // Skip rentals only in resale mode
+  if (listing.listing_status === "for_rent" && importType === "resale") {
     errors.push("rental listing — resale import only");
   }
 
@@ -384,8 +392,8 @@ function validatePropertyData(listing: Record<string, any>): { errors: string[];
     errors.push(`year_built ${listing.year_built} is out of range`);
   }
 
-  // ── City-specific price range validation ──
-  if (listing.city && listing.price && listing.price > 0) {
+  // ── City-specific price range validation (only for resale) ──
+  if (listing.city && listing.price && listing.price > 0 && importType === "resale") {
     const cityRange = CITY_PRICE_RANGES[listing.city];
     if (cityRange) {
       if (listing.price < cityRange.min * 0.5) {
@@ -406,7 +414,6 @@ function validatePropertyData(listing: Record<string, any>): { errors: string[];
 
   // ── Room-to-size ratio validation ──
   if (listing.bedrooms != null && listing.size_sqm && listing.size_sqm > 0) {
-    // Convert bedrooms back to Israeli room count for ratio check
     const rooms = listing.bedrooms + 1;
     const rangeKey = Math.min(rooms, 6);
     const sizeRange = ROOM_SIZE_RANGES[rangeKey];
@@ -427,7 +434,8 @@ function validatePropertyData(listing: Record<string, any>): { errors: string[];
 function computeConfidenceScore(
   listing: Record<string, any>,
   cityMatchType: "exact" | "fuzzy" | "domain" | "none",
-  validationWarnings: string[]
+  validationWarnings: string[],
+  hasStructuredData: boolean = false
 ): number {
   // Each field scores 1-3, weighted
   const weights = {
@@ -529,6 +537,11 @@ function computeConfidenceScore(
   // Penalize for validation warnings
   const warningPenalty = Math.min(validationWarnings.length * 5, 20);
   score = Math.max(0, score - warningPenalty);
+
+  // Boost for structured data confirmation
+  if (hasStructuredData) {
+    score = Math.min(100, score + 10);
+  }
 
   return Math.min(100, Math.max(0, score));
 }
@@ -654,7 +667,7 @@ function normalizeUrl(raw: string): string {
 }
 
 async function handleDiscover(body: any) {
-  const { agency_id, website_url } = body;
+  const { agency_id, website_url, import_type = "resale" } = body;
   if (!agency_id || !website_url) throw new Error("agency_id and website_url required");
 
   const sb = supabaseAdmin();
@@ -766,7 +779,7 @@ async function handleDiscover(body: any) {
 
   const { data: job, error: jobErr } = await sb
     .from("import_jobs")
-    .insert({ agency_id, website_url: formattedUrl, status: "ready", total_urls: listingUrls.length, discovered_urls: allUrls })
+    .insert({ agency_id, website_url: formattedUrl, status: "ready", total_urls: listingUrls.length, discovered_urls: allUrls, import_type })
     .select("id").single();
   if (jobErr) throw new Error(`Failed to create import job: ${jobErr.message}`);
 
@@ -985,6 +998,66 @@ async function preCheckUrl(url: string): Promise<{ ok: boolean; skipReason: stri
   }
 }
 
+// ─── STRUCTURED DATA EXTRACTION (JSON-LD, Open Graph) ───────────────────────
+
+function extractStructuredData(html: string): Record<string, any> | null {
+  if (!html || html.length < 100) return null;
+
+  const result: Record<string, any> = {};
+  let found = false;
+
+  // 1. JSON-LD extraction
+  const jsonLdRegex = /<script\s+type\s*=\s*["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+  let match: RegExpExecArray | null;
+  while ((match = jsonLdRegex.exec(html)) !== null) {
+    try {
+      const jsonData = JSON.parse(match[1].trim());
+      const items = Array.isArray(jsonData) ? jsonData : [jsonData];
+      for (const item of items) {
+        const type = (item["@type"] || "").toLowerCase();
+        if (type.includes("realestate") || type.includes("product") || type.includes("offer") || type.includes("apartment") || type.includes("house") || type.includes("residence")) {
+          if (item.name) { result.title = item.name; found = true; }
+          if (item.description) { result.description = item.description; found = true; }
+          if (item.floorSize?.value) { result.size_sqm = parseFloat(item.floorSize.value); found = true; }
+          if (item.numberOfRooms) { result.bedrooms = parseInt(item.numberOfRooms) - 1; found = true; }
+          if (item.numberOfBathroomsTotal) { result.bathrooms = parseInt(item.numberOfBathroomsTotal); found = true; }
+          const price = item.offers?.price || item.price;
+          if (price) { result.price = parseFloat(String(price).replace(/[^\d.]/g, "")); found = true; }
+          const currency = item.offers?.priceCurrency || item.priceCurrency;
+          if (currency) { result.currency = currency === "ILS" || currency === "₪" ? "ILS" : currency; }
+          if (item.address) {
+            if (typeof item.address === "string") { result.address = item.address; found = true; }
+            else if (item.address.streetAddress) { result.address = item.address.streetAddress; found = true; }
+            if (item.address?.addressLocality) { result.city_hint = item.address.addressLocality; }
+          }
+          if (item.image) {
+            const images = Array.isArray(item.image) ? item.image : [item.image];
+            result.structured_images = images.filter((img: any) => typeof img === "string");
+            found = true;
+          }
+          if (item.geo?.latitude) { result.latitude = parseFloat(item.geo.latitude); }
+          if (item.geo?.longitude) { result.longitude = parseFloat(item.geo.longitude); }
+        }
+      }
+    } catch { /* ignore invalid JSON-LD */ }
+  }
+
+  // 2. Open Graph tags
+  const ogTitle = html.match(/<meta\s+(?:property|name)\s*=\s*["']og:title["']\s+content\s*=\s*["']([^"']+)["']/i);
+  const ogDesc = html.match(/<meta\s+(?:property|name)\s*=\s*["']og:description["']\s+content\s*=\s*["']([^"']+)["']/i);
+  const ogImage = html.match(/<meta\s+(?:property|name)\s*=\s*["']og:image["']\s+content\s*=\s*["']([^"']+)["']/i);
+
+  if (ogTitle && !result.title) { result.og_title = ogTitle[1]; found = true; }
+  if (ogDesc && !result.description) { result.og_description = ogDesc[1]; found = true; }
+  if (ogImage) {
+    if (!result.structured_images) result.structured_images = [];
+    result.structured_images.push(ogImage[1]);
+    found = true;
+  }
+
+  return found ? result : null;
+}
+
 // ─── EXTRACTION PROMPT (with comprehensive Hebrew dictionary) ───────────────
 
 function buildExtractionPrompt(url: string, domain: string, markdown: string, pageLinks: string[]): string {
@@ -1056,7 +1129,7 @@ ${pageLinks.slice(0, 50).join("\n")}`;
 async function processOneItem(
   item: any, sb: any, job: any, agentId: string | null,
   firecrawlKey: string, lovableKey: string, jobId: string,
-  domainCity: string | null = null
+  domainCity: string | null = null, importType: string = "resale"
 ): Promise<{ succeeded: boolean }> {
   try {
     await sb.from("import_job_items").update({ status: "processing" }).eq("id", item.id);
@@ -1097,7 +1170,7 @@ async function processOneItem(
     const scrapeRes = await fetch("https://api.firecrawl.dev/v1/scrape", {
       method: "POST",
       headers: { Authorization: `Bearer ${firecrawlKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ url: item.url, formats: ["markdown", "links"], onlyMainContent: true }),
+      body: JSON.stringify({ url: item.url, formats: ["markdown", "links", "html"], onlyMainContent: true }),
     });
 
     const scrapeData = await scrapeRes.json();
@@ -1113,6 +1186,7 @@ async function processOneItem(
 
     const markdown = scrapeData.data?.markdown || scrapeData.markdown || "";
     const pageLinks = scrapeData.data?.links || scrapeData.links || [];
+    const pageHtml = scrapeData.data?.html || scrapeData.html || "";
 
     if (!markdown || markdown.length < 50) {
       await sb.from("import_job_items").update({ status: "skipped", error_message: "Page content too short", error_type: "permanent" }).eq("id", item.id);
@@ -1120,7 +1194,7 @@ async function processOneItem(
     }
 
     // Pre-LLM: sold/rented/rental/new-dev check (enhanced)
-    const preFilter = isNonResalePage(markdown);
+    const preFilter = isNonResalePage(markdown, importType);
     if (preFilter.skip) {
       console.log(`Pre-filter: ${preFilter.reason} for ${item.url}`);
       await sb.from("import_job_items").update({ status: "skipped", error_message: preFilter.reason, error_type: "permanent" }).eq("id", item.id);
@@ -1198,6 +1272,28 @@ async function processOneItem(
 
     const listing = JSON.parse(extractToolCall.function.arguments);
 
+    // Merge structured data from HTML (JSON-LD, OG tags) — takes priority for matching fields
+    const structuredData = extractStructuredData(pageHtml);
+    if (structuredData) {
+      console.log(`Structured data found for ${item.url}: ${Object.keys(structuredData).join(", ")}`);
+      // Merge: structured data fills gaps, doesn't overwrite existing AI data
+      for (const [key, value] of Object.entries(structuredData)) {
+        if (key === "structured_images" || key === "og_title" || key === "og_description" || key === "city_hint") continue;
+        if (value != null && (listing[key] == null || listing[key] === "" || listing[key] === 0)) {
+          listing[key] = value;
+        }
+      }
+      // Add structured images if AI didn't find any
+      if (structuredData.structured_images?.length && (!listing.image_urls || listing.image_urls.length === 0)) {
+        listing.image_urls = structuredData.structured_images;
+      }
+      // City hint from structured data
+      if (!listing.city && structuredData.city_hint) {
+        listing.city = structuredData.city_hint;
+      }
+      listing._has_structured_data = true;
+    }
+
     // Store raw extraction
     await sb.from("import_job_items").update({ extracted_data: listing }).eq("id", item.id);
 
@@ -1248,7 +1344,7 @@ async function processOneItem(
     }
 
     // ── VALIDATION (enhanced with city-specific outlier detection) ──
-    const { errors: propertyErrors, warnings: validationWarnings } = validatePropertyData(listing);
+    const { errors: propertyErrors, warnings: validationWarnings } = validatePropertyData(listing, importType);
     if (propertyErrors.length > 0) {
       await sb.from("import_job_items").update({
         status: "failed",
@@ -1260,7 +1356,7 @@ async function processOneItem(
     }
 
     // ── CONFIDENCE SCORING ──
-    const confidenceScore = computeConfidenceScore(listing, cityMatchType, validationWarnings);
+    const confidenceScore = computeConfidenceScore(listing, cityMatchType, validationWarnings, !!listing._has_structured_data);
     console.log(`Confidence score for ${item.url}: ${confidenceScore}`);
 
     // Store confidence score + warnings
@@ -1460,7 +1556,7 @@ async function handleProcessBatch(body: any) {
 
       const chunk = pendingItems.slice(i, i + CONCURRENCY);
       const results = await Promise.allSettled(
-        chunk.map(item => processOneItem(item, sb, job, agentId, FIRECRAWL_API_KEY, LOVABLE_API_KEY, job_id, cachedDomainCity))
+        chunk.map(item => processOneItem(item, sb, job, agentId, FIRECRAWL_API_KEY, LOVABLE_API_KEY, job_id, cachedDomainCity, job.import_type || "resale"))
       );
 
       for (const result of results) {
@@ -1515,6 +1611,94 @@ async function handleRetryFailed(body: any) {
   return { reset_count: resetCount, transient_count: resetCount, permanent_count: permanentCount || 0 };
 }
 
+// ─── APPROVE ITEM (manual review) ───────────────────────────────────────────
+
+async function handleApproveItem(body: any) {
+  const { item_id, extracted_data } = body;
+  if (!item_id) throw new Error("item_id required");
+
+  const sb = supabaseAdmin();
+
+  // Get the item and its job
+  const { data: item, error: itemErr } = await sb
+    .from("import_job_items").select("*, import_jobs!inner(agency_id, website_url)")
+    .eq("id", item_id).single();
+  if (itemErr || !item) throw new Error("Import job item not found");
+
+  const agencyId = item.import_jobs.agency_id;
+  const listing = extracted_data || item.extracted_data;
+  if (!listing) throw new Error("No extracted data to approve");
+
+  // Get agent for this agency
+  const { data: agents } = await sb.from("agents").select("id").eq("agency_id", agencyId).limit(1);
+  const agentId = agents?.[0]?.id || null;
+
+  // Validate city
+  const matchedCity = matchSupportedCity(listing.city);
+  if (!matchedCity) throw new Error(`City not supported: "${listing.city}"`);
+  listing.city = matchedCity;
+
+  // Download images if not already done
+  let imageUrls: string[] = [];
+  if (listing.image_urls?.length) {
+    imageUrls = await parallelImageDownload(listing.image_urls, sb, "property-images", item.job_id);
+  }
+
+  // Geocode
+  let latitude: number | null = null;
+  let longitude: number | null = null;
+  if (listing.address && listing.city) {
+    const coords = await geocodeWithRateLimit(listing.address, listing.city);
+    if (coords) { latitude = coords.lat; longitude = coords.lng; }
+  }
+
+  const entryDate = listing.entry_date === "immediate" ? new Date().toISOString().split("T")[0] : listing.entry_date || null;
+
+  const { data: property, error: propErr } = await sb
+    .from("properties")
+    .insert({
+      agent_id: agentId,
+      title: listing.title || `Imported from ${item.import_jobs.website_url}`,
+      description: listing.description || null,
+      property_type: listing.property_type || "apartment",
+      listing_status: listing.listing_status || "for_sale",
+      price: listing.price || 0,
+      currency: listing.currency || "ILS",
+      address: listing.address || "",
+      city: listing.city,
+      neighborhood: listing.neighborhood || null,
+      latitude, longitude,
+      bedrooms: Math.floor(listing.bedrooms ?? 0),
+      bathrooms: Math.floor(listing.bathrooms ?? 1),
+      size_sqm: listing.size_sqm || null,
+      floor: listing.floor ?? null,
+      total_floors: listing.total_floors ?? null,
+      year_built: listing.year_built ?? null,
+      features: listing.features || [],
+      images: imageUrls.length > 0 ? imageUrls : null,
+      parking: listing.parking ?? 0,
+      condition: listing.condition || null,
+      ac_type: listing.ac_type || null,
+      entry_date: entryDate,
+      is_published: false, is_featured: false, views_count: 0,
+      verification_status: "draft",
+      import_source: "website_scrape",
+      source_url: item.url,
+    })
+    .select("id")
+    .single();
+
+  if (propErr) throw new Error(`Insert failed: ${propErr.message}`);
+
+  await sb.from("import_job_items").update({
+    status: "done",
+    property_id: property.id,
+    extracted_data: listing,
+  }).eq("id", item_id);
+
+  return { property_id: property.id };
+}
+
 // ─── MAIN ───────────────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
@@ -1530,6 +1714,7 @@ Deno.serve(async (req) => {
     if (action === "discover") result = await handleDiscover(body);
     else if (action === "process_batch") result = await handleProcessBatch(body);
     else if (action === "retry_failed") result = await handleRetryFailed(body);
+    else if (action === "approve_item") result = await handleApproveItem(body);
     else throw new Error(`Unknown action: ${action}`);
 
     return new Response(JSON.stringify(result), {
