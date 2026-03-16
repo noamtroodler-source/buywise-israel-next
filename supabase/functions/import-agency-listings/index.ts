@@ -2236,6 +2236,14 @@ async function handleApproveItem(body: any) {
 
   if (propErr) throw new Error(`Insert failed: ${propErr.message}`);
 
+  // Register image pHashes for cross-listing dedup
+  if (imageUrls.length > 0 && property?.id) {
+    const phashWarnings = await registerImageHashes(property.id, imageUrls, sb);
+    if (phashWarnings.length > 0) {
+      console.log(`pHash warnings for approved item ${property.id}:`, phashWarnings);
+    }
+  }
+
   await sb.from("import_job_items").update({
     status: "done",
     property_id: property.id,
