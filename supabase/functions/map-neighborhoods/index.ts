@@ -147,7 +147,7 @@ async function persistMappings(
 
   const { error } = await supabase
     .from("neighborhood_cbs_mappings")
-    .upsert(rows, { onConflict: "city,anglo_name", ignoreDuplicates: false });
+    .upsert(rows, { onConflict: "city,anglo_name,cbs_neighborhood_id", ignoreDuplicates: false });
 
   if (error) {
     console.error(`Persist error for ${city}:`, error);
