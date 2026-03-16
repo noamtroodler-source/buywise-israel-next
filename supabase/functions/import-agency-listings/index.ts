@@ -388,6 +388,9 @@ function validatePropertyData(listing: Record<string, any>, importType: string =
   if (listing.floor != null && (typeof listing.floor !== "number" || listing.floor < -2 || listing.floor > 200)) {
     errors.push(`floor ${listing.floor} is out of range (-2 to 200)`);
   }
+  if (listing.floor != null && listing.total_floors != null && typeof listing.floor === "number" && typeof listing.total_floors === "number" && listing.floor > listing.total_floors) {
+    warnings.push(`floor ${listing.floor} exceeds total_floors ${listing.total_floors}`);
+  }
   if (listing.year_built != null && (typeof listing.year_built !== "number" || listing.year_built < 1800 || listing.year_built > currentYear + 5)) {
     errors.push(`year_built ${listing.year_built} is out of range`);
   }
@@ -1902,6 +1905,11 @@ function normalizeYad2Result(raw: any): Record<string, any> {
   let city = raw.city || raw.cityName || raw.city_name || "";
   const matchedCity = matchSupportedCity(city);
 
+  // Extract coordinates from Apify result (avoids geocoding API call)
+  const rawLat = parseFloat(raw.latitude || raw.lat || raw.coordinates?.latitude || raw.coordinates?.lat || "");
+  const rawLng = parseFloat(raw.longitude || raw.lng || raw.lon || raw.coordinates?.longitude || raw.coordinates?.lng || raw.coordinates?.lon || "");
+  const hasCoords = !isNaN(rawLat) && !isNaN(rawLng) && rawLat >= 29 && rawLat <= 34 && rawLng >= 34 && rawLng <= 36;
+
   return {
     listing_category: "property",
     title: raw.title || raw.description?.slice(0, 80) || "",
@@ -1924,6 +1932,8 @@ function normalizeYad2Result(raw: any): Record<string, any> {
     image_urls: (raw.images || raw.imageUrls || raw.photos || []).filter((u: any) => typeof u === "string"),
     _source: "yad2",
     _has_structured_data: true,
+    _yad2_latitude: hasCoords ? rawLat : null,
+    _yad2_longitude: hasCoords ? rawLng : null,
   };
 }
 
@@ -2012,10 +2022,10 @@ async function processYad2Item(
     const { urls: imageUrls, hashes: imageHashes } = await parallelImageDownload(listing.image_urls || [], sb, "property-images", jobId);
     listing.image_hashes = imageHashes;
 
-    // Geocode
-    let latitude: number | null = null;
-    let longitude: number | null = null;
-    if (listing.address && listing.city) {
+    // Use Yad2 coordinates if available, otherwise geocode
+    let latitude: number | null = listing._yad2_latitude || null;
+    let longitude: number | null = listing._yad2_longitude || null;
+    if (!latitude && !longitude && listing.address && listing.city) {
       const coords = await geocodeWithRateLimit(listing.address, listing.city);
       if (coords) { latitude = coords.lat; longitude = coords.lng; }
     }
