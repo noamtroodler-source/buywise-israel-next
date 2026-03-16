@@ -377,7 +377,7 @@ export default function ImportGovMapData() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              {stage === "uploading" ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle className="h-5 w-5 text-green-600" />}
+              {stage === "uploading" ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle className="h-5 w-5 text-primary" />}
               Step 3: Upload Progress
             </CardTitle>
           </CardHeader>
