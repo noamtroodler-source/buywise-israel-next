@@ -224,7 +224,7 @@ export default function ImportGovMapData() {
       }
       if (dealId) seenDealIds.add(dealId);
 
-      // 7. Build address
+      // 9. Build address
       const street = row.streetNameEng || "";
       const houseNum = row.houseNum || "";
       let address = street ? `${street}${houseNum ? " " + houseNum : ""}` : "";
