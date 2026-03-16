@@ -203,7 +203,7 @@ export default function AgencyImport() {
             </CardHeader>
             <CardContent className="pt-4 space-y-4">
               <p className="text-sm text-muted-foreground">
-                Paste your agency website URL or Yad2 search URL. We'll scan and find all property listing pages automatically.
+                Paste your agency website URL, Yad2 search URL, or Yad2 agency profile page. We'll scan and find all property listing pages automatically.
               </p>
 
               {/* Source type selector */}
@@ -243,7 +243,7 @@ export default function AgencyImport() {
                   type="url"
                   value={websiteUrl}
                   onChange={e => setWebsiteUrl(e.target.value)}
-                  placeholder={sourceType === 'yad2' ? 'https://www.yad2.co.il/realestate/forsale?city=...' : 'https://your-agency-website.com'}
+                  placeholder={sourceType === 'yad2' ? 'https://www.yad2.co.il/realestate/forsale?city=... or /agency/...' : 'https://your-agency-website.com'}
                   className="rounded-xl flex-1"
                   required
                   disabled={isDiscovering}
