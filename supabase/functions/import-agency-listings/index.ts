@@ -1356,7 +1356,7 @@ async function processOneItem(
     }
 
     // ── CONFIDENCE SCORING ──
-    const confidenceScore = computeConfidenceScore(listing, cityMatchType, validationWarnings);
+    const confidenceScore = computeConfidenceScore(listing, cityMatchType, validationWarnings, !!listing._has_structured_data);
     console.log(`Confidence score for ${item.url}: ${confidenceScore}`);
 
     // Store confidence score + warnings
