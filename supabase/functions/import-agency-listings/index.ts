@@ -1892,7 +1892,12 @@ async function processOneItem(
           listing = retryResult;
           usedSimplifiedPrompt = true;
         } else {
-          listing = JSON.parse(extractToolCall.function.arguments);
+        listing = JSON.parse(extractToolCall.function.arguments);
+
+          // Track AI token cost (estimate from prompt + response length)
+          const promptTokens = Math.ceil(extractionPrompt.length / 4);
+          const responseTokens = Math.ceil((extractToolCall.function.arguments?.length || 0) / 4);
+          await trackCost(sb, jobId, "ai_tokens", promptTokens + responseTokens, "tokens");
         }
       }
 
