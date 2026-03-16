@@ -1,35 +1,34 @@
-## Phase 1: Founding Partner Enrollment — Implemented ✅
 
-All changes from the plan have been implemented:
 
-1. **DB Migration** — Added `is_founding_partner`, `payplus_customer_id`, `payplus_subscription_id` to `subscriptions`; `payplus_subscription_id` to `featured_listings`. Updated FOUNDING2026 promo code (max_redemptions=15, cleared old discount/credit data).
-2. **`enroll-founding-partner` edge function** — 15-cap enforcement, trial creation (60 days), founding_partners insert, first month credit grant, promo redemption tracking.
-3. **`check-trial-expirations` edge function** — Daily cron (6 AM UTC) expires trialing subscriptions past trial_end.
-4. **`useFoundingSpots` hook** — Live spots remaining counter querying founding_partners.
-5. **`FoundingProgramSection`** — Updated benefits (2mo free, 3 featured/mo, early access, case study), spots counter badge.
-6. **`FoundingProgramModal`** — Updated benefits, spots counter, activates enrollment flow.
-7. **`Pricing.tsx`** — FOUNDING2026 code routes to `enroll-founding-partner` instead of Stripe; CTA changes to "Activate Founding Program".
-8. **`CheckoutSuccess.tsx`** — Founding partner variant with trial end date and featured listings CTA.
-9. **`grant-monthly-featured-credits`** — Already has 2-month duration cap logic.
-10. **`PlanCard`** — Added `ctaLabel` prop for custom CTA text.
+## Plan: Consistent "No Data" Communication Across Property Components
 
-### Deferred (PayPlus not yet set up):
-- `payplus-checkout`, `payplus-webhook`, `manage-billing` edge functions
-- `list-invoices` PayPlus integration
-- Featured listing ₪299/mo PayPlus recurring charge
-- Trial-to-paid automatic charge initiation
+### Problem
+Several components silently hide when data is missing, instead of keeping the layout consistent and communicating why data isn't available — which goes against the BuyWise "trusted guide" voice.
 
-## Phase 2: CBS Data Organization — Implemented ✅
+### Spots to Fix
 
-**Data Source:** All data in these tables originates from **Nadlan.gov.il — Ministry of Justice, Israel** (official government property transaction records). This is the same authoritative source used for `sold_transactions`.
+**1. Rental Snapshot cards (PropertyValueSnapshot.tsx, lines 95-175)**
+The rental view still conditionally hides cards 2 ("City Avg") and 3 ("vs Market Rate") when data is missing. Same fix as purchase: always show all 3 cards with "No data yet" fallback and a subtitle like "City rental data unavailable."
 
-1. **`city_price_history` table** — Quarterly avg transaction prices by city + room count (3/4/5), 2020-2025, with national comparison. ~1,625 rows from `market_data.csv`.
-2. **`neighborhood_price_history` table** — Quarterly prices by neighborhood + room count, with yield and YoY. ~52,398 rows from `neighborhood_data.csv`.
-3. **`import-cbs-data` edge function** — Admin-only bulk importer, accepts parsed CSV rows, upserts in batches of 500.
-4. **Admin import page** — `/admin/import-cbs-data` with file upload for both CSVs.
-5. **Public read-only RLS** — Both tables have SELECT-only policies (public government data).
+**2. NeighborhoodAvgPriceChip (PropertyQuickSummary.tsx, line 82)**
+Returns `null` when `priceData?.avg_price` is missing. This one is a small inline chip — not a card. Hiding it is actually fine here since showing "No neighborhood data" as a chip next to the price would be noisy, not helpful. **No change needed.**
 
-### Next steps (not yet built):
-- City page trend charts using `city_price_history`
-- Neighborhood comparison widgets using `neighborhood_price_history`
-- AI market insights grounded in neighborhood-level data
+**3. MarketIntelligence — no-coordinates guard (MarketIntelligence.tsx, line 207)**
+When `hasComps` is false (no lat/lng on the listing), the entire comps section + divider is hidden. The `RecentNearbySales` component already handles its own empty state nicely (line 348-387 — shows a styled empty box with "No nearby sales data yet" + CTA to city page). The issue is `MarketIntelligence` never renders it because of the `hasComps` guard. Fix: remove the `hasComps` guard and always render `RecentNearbySales` — when lat/lng is missing, show a similar styled empty state inside `RecentNearbySales` instead of returning null.
+
+**4. RecentNearbySales — no-coordinates early return (RecentNearbySales.tsx, lines 325-328)**
+Currently returns `null` when no lat/lng. Change to render an empty state card: "Location data not available for this listing — nearby sales comparison requires coordinates." with the same CTA to explore city data.
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `PropertyValueSnapshot.tsx` | Rental view: always show 3 cards, "No data yet" fallbacks for cards 2 & 3 |
+| `MarketIntelligence.tsx` | Remove `hasComps` conditional wrapper — always render divider + comps section |
+| `RecentNearbySales.tsx` | Replace `return null` for missing coords with styled empty state card |
+
+### Not changing
+- `NeighborhoodAvgPriceChip` — inline chip, hiding is appropriate
+- `AIMarketInsight` — returns null when no insight generated, but this is downstream of comps; once comps section always renders, insight will too when available
+- `AffordabilityBadge` — contextual badge, only relevant when user has saved budget settings
+
