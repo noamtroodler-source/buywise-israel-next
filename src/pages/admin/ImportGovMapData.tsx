@@ -146,6 +146,8 @@ export default function ImportGovMapData() {
       newConstruction: 0,
       priceOutlier: 0,
       sizeOutlier: 0,
+      priceSqmOutlier: 0,
+      zeroRooms: 0,
       unknownCity: 0,
       duplicateDealId: 0,
       valid: 0,
