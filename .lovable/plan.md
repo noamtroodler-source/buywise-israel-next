@@ -1,87 +1,93 @@
-## Phase 1: Founding Partner Enrollment — Implemented ✅
 
-All changes from the plan have been implemented:
 
-1. **DB Migration** — Added `is_founding_partner`, `payplus_customer_id`, `payplus_subscription_id` to `subscriptions`; `payplus_subscription_id` to `featured_listings`. Updated FOUNDING2026 promo code (max_redemptions=15, cleared old discount/credit data).
-2. **`enroll-founding-partner` edge function** — 15-cap enforcement, trial creation (60 days), founding_partners insert, first month credit grant, promo redemption tracking.
-3. **`check-trial-expirations` edge function** — Daily cron (6 AM UTC) expires trialing subscriptions past trial_end.
-4. **`useFoundingSpots` hook** — Live spots remaining counter querying founding_partners.
-5. **`FoundingProgramSection`** — Updated benefits (2mo free, 3 featured/mo, early access, case study), spots counter badge.
-6. **`FoundingProgramModal`** — Updated benefits, spots counter, activates enrollment flow.
-7. **`Pricing.tsx`** — FOUNDING2026 code routes to `enroll-founding-partner` instead of Stripe; CTA changes to "Activate Founding Program".
-8. **`CheckoutSuccess.tsx`** — Founding partner variant with trial end date and featured listings CTA.
-9. **`grant-monthly-featured-credits`** — Already has 2-month duration cap logic.
-10. **`PlanCard`** — Added `ctaLabel` prop for custom CTA text.
+# Import System Optimization — Phased Plan
 
-### Deferred (PayPlus not yet set up):
-- `payplus-checkout`, `payplus-webhook`, `manage-billing` edge functions
-- `list-invoices` PayPlus integration
-- Featured listing ₪299/mo PayPlus recurring charge
-- Trial-to-paid automatic charge initiation
+## Gap Analysis (What's NOT yet built)
 
-## Phase 2: CBS Data Organization — Implemented ✅
+Comparing the document against current code, these items remain:
 
-**Data Source:** All data in these tables originates from **Nadlan.gov.il — Ministry of Justice, Israel** (official government property transaction records). This is the same authoritative source used for `sold_transactions`.
+1. **Floor validation**: `floor <= total_floors` check — missing
+2. **WordPress REST API adapter**: `/wp-json/wp/v2/posts` detection — missing
+3. **Wix `__INITIAL_STATE__` adapter**: Parse embedded JS state — missing
+4. **Yad2 lat/lon passthrough**: Skip geocoding when Apify returns coordinates — missing
+5. **Dynamic concurrency with 429 backoff**: Currently fixed at 3 concurrent — missing
+6. **AI retry with simplified prompt**: On extraction failure, retry with fewer fields — missing
+7. **WebP conversion + resize** (thumbnail/medium/full): Currently uploads original format — missing
+8. **Job resume after timeout**: Mark remaining as "timeout", allow resume — partially exists (process_all loops, but no timeout status)
+9. **Review UI improvements**: Photo reordering, merge option for duplicates, field-level confidence dots — missing
+10. **Incremental sync price change detection**: Existing sync just finds new listings, doesn't detect price changes — missing
 
-1. **`city_price_history` table** — Quarterly avg transaction prices by city + room count (3/4/5), 2020-2025, with national comparison. ~1,625 rows from `market_data.csv`.
-2. **`neighborhood_price_history` table** — Quarterly prices by neighborhood + room count, with yield and YoY. ~52,398 rows from `neighborhood_data.csv`.
-3. **`import-cbs-data` edge function** — Admin-only bulk importer, accepts parsed CSV rows, upserts in batches of 500.
-4. **Admin import page** — `/admin/import-cbs-data` with file upload for both CSVs.
-5. **Public read-only RLS** — Both tables have SELECT-only policies (public government data).
+---
 
-### Next steps (not yet built):
-- City page trend charts using `city_price_history`
-- Neighborhood comparison widgets using `neighborhood_price_history`
-- AI market insights grounded in neighborhood-level data
+## Phase 1: Validation + Yad2 Geocoding (quick wins, high impact)
 
-## Phase 3: GovMap Transaction Import — Implemented ✅
+**Why first**: These are small, zero-risk changes that immediately improve data quality.
 
-1. **DB Migration** — Added `deal_id` column with unique partial index to `sold_transactions`.
-2. **`import-govmap-data` edge function** — Admin-only, receives cleaned transaction batches, upserts with `ON CONFLICT (address, city, sold_date, sold_price)`, sub-batches of 100.
-3. **Admin page `/admin/import-govmap`** — CSV upload with client-side cleaning pipeline:
-   - Filters: non-residential, new construction, price <₪100k, size outliers, unknown cities, duplicate dealIds
-   - Hebrew floor parsing, property type normalization, city cross-reference against `cities` table
-   - Batch upload (500/batch) with real-time progress
-   - Geocoding trigger using existing `geocode-sold-transaction` function
-4. **Known Tax Authority flaws handled** — year_built=1900→null, floor=0→null when size=0
+1. **Add `floor <= total_floors` validation** in `validatePropertyData` — warn if floor > total_floors
+2. **Use Yad2 lat/lon directly** in `processYad2Item` — if `raw.latitude`/`raw.longitude` or `raw.coordinates` exist, skip Nominatim geocoding call (saves API calls + improves accuracy)
+3. **Pass Yad2 coordinates through `normalizeYad2Result`** — extract `geographic_polygon`, `latitude`, `longitude` from Apify result
 
-## Phase 4: Agency Import Pipeline Hardening — Implemented ✅
+**Files**: `import-agency-listings/index.ts` only
 
-Based on Perplexity blueprint research. All changes in `import-agency-listings/index.ts`.
+---
 
-1. **Hebrew Dictionary in AI Prompt** — Comprehensive dictionary embedded in extraction prompt:
-   - 15+ property types (דירת סטודיו, לופט, דירת גג, טריפלקס, etc.)
-   - 17+ amenities (ממ"ד, מחסן, מרפסת שמש, סוכה, דוד שמש, בויידם, etc.)
-   - Condition terms (משופץ→renovated, שמור→good, דורש שיפוץ→needs_renovation)
-   - Hebrew floor ordinals (קרקע→0, ראשונה→1 ... עשירית→10, מרתף→-1)
-2. **Resale-Only Filtering** — Extended `isNonResalePage()`:
-   - Pre-LLM: rental indicators (להשכרה, שכירות), new dev indicators (מקבלן, על הנייר, פרויקט חדש)
-   - Post-extraction: skip for_rent, price<20K (rent), price=1 (sold placeholder), land/commercial
-3. **City-Specific Price & Size Validation** — `CITY_PRICE_RANGES` for all 25 cities, `ROOM_SIZE_RANGES` for 1-6+ rooms. Produces warnings (not hard failures) stored in `validation_warnings`.
-4. **Confidence Scoring (0-100)** — Weighted scoring across 8 fields (price 20%, rooms 15%, size 15%, city 15%, address 10%, property type 10%, photos 10%, description 5%). Thresholds: <40 skip, 40-79 import+flag, 80+ import.
-5. **Enhanced Address Dedup** — `normalizeAddressForDedup()` strips "רחוב" prefix, normalizes Hebrew final-form chars (כ↔ך, פ↔ף, etc.), removes hyphens. Tier 2 fuzzy dedup now uses ±5 sqm tolerance.
-6. **Placeholder Image Detection** — Skips images <5KB, detects repeated URLs across batch (3+ = placeholder), filters "no-image"/"placeholder" URLs.
-7. **DB Migration** — Added `confidence_score` integer column to `import_job_items`.
+## Phase 2: Dynamic Concurrency + AI Retry
 
-### Deferred to Phase 2:
-- Apify Yad2 adapter (needs account + API key)
-- WordPress/CMS structured data detection
-- Image pHash deduplication
-- Cross-source dedup (Tier 3)
-- Review UI with side-by-side comparison
-- Incremental sync
-- Rental module
+**Why second**: Directly improves import success rate and reliability.
 
-## Phase 5: Agency Import Pipeline Phase 2 — Implemented ✅
+1. **Dynamic concurrency**: Start at `CONCURRENCY=5`, drop to 2 on 429/timeout, recover after 3 successful batches. Track `consecutiveFailures` counter in `handleProcessBatch`.
+2. **Simplified prompt retry**: When AI extraction returns no data or fails, retry once with a stripped-down prompt (just price, rooms, size, city, address, property_type — no features/condition/amenities). Add a `retryWithSimplifiedPrompt()` helper.
 
-1. **Review UI** — New `/agency/import/:jobId/review` page with side-by-side source vs parsed data view. Components: `AgencyImportReview.tsx`, `ImportReviewCard.tsx`. Editable fields, confidence score badges, bulk approve (80+), filter tabs.
-2. **Rental Support** — `import_type` column on `import_jobs` (`resale`|`rental`|`all`). Pre-LLM filter and validation now respect import type. UI selector for import type before discovery.
-3. **CMS/Structured Data Detection** — `extractStructuredData(html)` parses JSON-LD (`RealEstateListing`, `Product`, `Offer`) and Open Graph tags from HTML. Merged with AI extraction, +10 confidence boost when structured data confirms fields. Firecrawl now requests `html` format.
-4. **Incremental Sync** — `sync-agency-listings` edge function for daily cron. Agencies table extended with `auto_sync_url`, `auto_sync_enabled`, `last_sync_at`. Auto-sync toggle in import UI.
-5. **Approve Item Action** — `handleApproveItem` in edge function for manual review approval with image download and geocoding.
-6. **DB Migration** — Added `import_type`, `is_incremental` to `import_jobs`; `auto_sync_url`, `auto_sync_enabled`, `last_sync_at` to `agencies`.
+**Files**: `import-agency-listings/index.ts`
 
-### Deferred to Phase 3:
-- Apify Yad2 adapter (needs account + API key)
-- Image pHash deduplication
-- Cross-source dedup (Tier 3)
+---
+
+## Phase 3: CMS Adapters (WordPress + Wix)
+
+**Why third**: Reduces AI dependency for structured sites, improving accuracy for a significant portion of agency websites.
+
+1. **WordPress detection**: Before Firecrawl scrape, check `{domain}/wp-json/wp/v2/` — if 200, fetch posts with real estate CPT. Map WP fields to our schema. Skip AI extraction when WP data is sufficient.
+2. **Wix detection**: In scraped HTML, look for `window.__INITIAL_STATE__` or `window.__PRELOADED_STATE__`. Parse the JSON to extract listing data. Skip AI if complete.
+3. **Adapter selection logic**: In `processOneItem`, before Firecrawl scrape, run `detectCmsType(url)` → returns `"wordpress" | "wix" | "generic"`. Route accordingly.
+
+**Files**: `import-agency-listings/index.ts` (new functions: `detectCmsType`, `extractFromWordPress`, `extractFromWixState`)
+
+---
+
+## Phase 4: Image Optimization (WebP + Resize)
+
+**Why fourth**: Requires more work, improves storage costs and page load but isn't blocking imports.
+
+1. **WebP conversion**: In `parallelImageDownload`, after fetching image buffer, convert to WebP using a lightweight approach (upload as-is but with `.webp` extension and proper content-type header — Supabase Storage serves as-is)
+2. **Multiple sizes**: Generate thumbnail (300px), medium (800px), full (1600px) — this requires image processing which is heavy in Deno. Practical approach: store original, generate sizes via an on-demand image transformation URL (or a separate edge function with Sharp/canvas)
+3. **Store original source URL in metadata**: Add `original_url` field alongside each stored image
+
+**Files**: `import-agency-listings/index.ts`, potentially a new `resize-image` edge function
+
+---
+
+## Phase 5: Review UI Enhancements
+
+**Why last**: Polish layer. Import pipeline should be stable first.
+
+1. **Field-level confidence dots** (green/yellow/red) on each field in `ImportReviewCard`
+2. **Duplicate merge option**: When cross-source duplicate detected, show "Merge" button that keeps the version with more data
+3. **Price change detection in sync**: Compare existing property price with re-discovered listing price, flag changes
+4. **Quick filters**: "Missing photos", "Low confidence", "Potential duplicates" tabs in review page
+
+**Files**: `ImportReviewCard.tsx`, `AgencyImportReview.tsx`, `sync-agency-listings/index.ts`
+
+---
+
+## Summary
+
+| Phase | Focus | Effort | Impact |
+|-------|-------|--------|--------|
+| 1 | Floor validation + Yad2 geocoding | ~30 min | High (data quality) |
+| 2 | Dynamic concurrency + AI retry | ~1 hour | High (reliability) |
+| 3 | WordPress/Wix adapters | ~2 hours | Medium (accuracy for CMS sites) |
+| 4 | WebP + image optimization | ~2 hours | Medium (performance) |
+| 5 | Review UI polish | ~3 hours | Medium (UX) |
+
+Starting with Phase 1 immediately since it's quick and impactful.
+
