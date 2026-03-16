@@ -3035,6 +3035,45 @@ export type Database = {
         }
         Relationships: []
       }
+      neighborhood_cbs_mappings: {
+        Row: {
+          anglo_name: string
+          cbs_hebrew: string | null
+          cbs_neighborhood_id: string
+          city: string
+          confidence: string
+          created_at: string
+          id: string
+          notes: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          anglo_name: string
+          cbs_hebrew?: string | null
+          cbs_neighborhood_id: string
+          city: string
+          confidence?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          anglo_name?: string
+          cbs_hebrew?: string | null
+          cbs_neighborhood_id?: string
+          city?: string
+          confidence?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       neighborhood_price_history: {
         Row: {
           avg_price_nis: number | null
