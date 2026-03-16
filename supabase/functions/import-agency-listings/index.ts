@@ -335,7 +335,7 @@ const VALID_LISTING_STATUSES = ["for_sale", "for_rent"];
 // Property types to skip during resale import
 const SKIP_PROPERTY_TYPES = new Set(["land", "commercial"]);
 
-function validatePropertyData(listing: Record<string, any>): { errors: string[]; warnings: string[] } {
+function validatePropertyData(listing: Record<string, any>, importType: string = "resale"): { errors: string[]; warnings: string[] } {
   const errors: string[] = [];
   const warnings: string[] = [];
   const currentYear = new Date().getFullYear();
@@ -346,13 +346,19 @@ function validatePropertyData(listing: Record<string, any>): { errors: string[];
   } else if (listing.price === 1) {
     errors.push("price=1 is a sold placeholder — skip");
   } else if (listing.price != null && listing.price > 0 && listing.price < 20_000) {
-    errors.push(`price ${listing.price} NIS appears to be rent, not sale price`);
+    if (importType === "resale") {
+      errors.push(`price ${listing.price} NIS appears to be rent, not sale price`);
+    } else {
+      warnings.push(`price ${listing.price} NIS — verify this is correct for a rental listing`);
+    }
   } else if (listing.price != null && listing.price > 0 && listing.price < 100_000) {
-    warnings.push(`price ${listing.price} seems unusually low for a property`);
+    if (importType === "resale") {
+      warnings.push(`price ${listing.price} seems unusually low for a property`);
+    }
   }
 
-  // Resale-only: skip rentals
-  if (listing.listing_status === "for_rent") {
+  // Skip rentals only in resale mode
+  if (listing.listing_status === "for_rent" && importType === "resale") {
     errors.push("rental listing — resale import only");
   }
 
@@ -386,8 +392,8 @@ function validatePropertyData(listing: Record<string, any>): { errors: string[];
     errors.push(`year_built ${listing.year_built} is out of range`);
   }
 
-  // ── City-specific price range validation ──
-  if (listing.city && listing.price && listing.price > 0) {
+  // ── City-specific price range validation (only for resale) ──
+  if (listing.city && listing.price && listing.price > 0 && importType === "resale") {
     const cityRange = CITY_PRICE_RANGES[listing.city];
     if (cityRange) {
       if (listing.price < cityRange.min * 0.5) {
@@ -408,7 +414,6 @@ function validatePropertyData(listing: Record<string, any>): { errors: string[];
 
   // ── Room-to-size ratio validation ──
   if (listing.bedrooms != null && listing.size_sqm && listing.size_sqm > 0) {
-    // Convert bedrooms back to Israeli room count for ratio check
     const rooms = listing.bedrooms + 1;
     const rangeKey = Math.min(rooms, 6);
     const sizeRange = ROOM_SIZE_RANGES[rangeKey];
