@@ -1731,7 +1731,7 @@ async function processOneItem(
     }
 
     // ── CONFIDENCE SCORING ──
-    let confidenceScore = computeConfidenceScore(listing, cityMatchType, validationWarnings, !!listing._has_structured_data);
+    let confidenceScore = computeConfidenceScore(listing, cityMatchType, validationWarnings, !!listing._has_structured_data, cmsExtracted);
 
     // Apply penalty for simplified prompt extraction
     if (usedSimplifiedPrompt) {
