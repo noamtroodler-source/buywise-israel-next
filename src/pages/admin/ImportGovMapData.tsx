@@ -180,14 +180,14 @@ export default function ImportGovMapData() {
 
       // 3. Price outlier — raised floor to ₪200k
       const price = parseFloat(row.dealAmount);
-      if (isNaN(price) || price < 200000) {
+      if (isNaN(price) || price < 400000) {
         stats.priceOutlier++;
         continue;
       }
 
       // 4. Size outlier
       const size = parseFloat(row.assetArea);
-      if (!isNaN(size) && (size < 20 || size > 400)) {
+      if (!isNaN(size) && (size < 30 || size > 400)) {
         stats.sizeOutlier++;
         continue;
       }
@@ -387,7 +387,7 @@ export default function ImportGovMapData() {
               <Stat label="Total Rows" value={filterStats.total} />
               <Stat label="Non-Residential" value={filterStats.nonResidential} negative />
               <Stat label="New Construction" value={filterStats.newConstruction} negative />
-              <Stat label="Price < ₪200k" value={filterStats.priceOutlier} negative />
+              <Stat label="Price < ₪400k" value={filterStats.priceOutlier} negative />
               <Stat label="Size Outlier" value={filterStats.sizeOutlier} negative />
               <Stat label="₪/sqm Outlier" value={filterStats.priceSqmOutlier} negative />
               <Stat label="Zero Rooms" value={filterStats.zeroRooms} negative />
