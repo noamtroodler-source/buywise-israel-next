@@ -2633,7 +2633,7 @@ async function processYad2Item(
       }
     }
 
-    // Dedup Tier 3 (cross-source)
+    // Dedup Tier 3 (cross-source) — address match
     if (listing.address && listing.city) {
       const normalizedAddr = normalizeAddressForDedup(listing.address);
       if (normalizedAddr.length > 0) {
@@ -2642,6 +2642,25 @@ async function processYad2Item(
           listing.cross_source_match_id = crossDupes[0].id;
           warnings.push(`Potential cross-source duplicate with property ${crossDupes[0].id}`);
         }
+      }
+    }
+    // Dedup Tier 3 (cross-source) — fuzzy specs match (rooms + size ±10sqm + price ±10%)
+    if (!listing.cross_source_match_id && listing.city && listing.bedrooms != null && listing.size_sqm && listing.price && listing.price > 0) {
+      const priceLow = listing.price * 0.90;
+      const priceHigh = listing.price * 1.10;
+      const sizeLow = listing.size_sqm - 10;
+      const sizeHigh = listing.size_sqm + 10;
+      const { data: crossFuzzy } = await sb
+        .from("properties").select("id")
+        .neq("agent_id", agentId)
+        .ilike("city", listing.city.trim())
+        .eq("bedrooms", Math.floor(listing.bedrooms))
+        .gte("size_sqm", sizeLow).lte("size_sqm", sizeHigh)
+        .gte("price", priceLow).lte("price", priceHigh)
+        .limit(1);
+      if (crossFuzzy && crossFuzzy.length > 0) {
+        listing.cross_source_match_id = crossFuzzy[0].id;
+        warnings.push(`Potential cross-source duplicate with property ${crossFuzzy[0].id} (similar specs, different agent)`);
       }
     }
 
