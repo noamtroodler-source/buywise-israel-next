@@ -2524,16 +2524,104 @@ function isYad2AgencyUrl(url: string): boolean {
   }
 }
 
-// Discover listings from a Yad2 agency profile page by extracting listing detail URLs directly.
-// We intentionally create standard URL-based import items here instead of waiting for Apify,
-// because Yad2 agency/profile pages expose detail links reliably while the actor expects
-// search/result pages and can return empty or take too long for edge execution.
+function extractYad2BuildId(html: string): string | null {
+  const directMatch = html.match(/\/realestate\/_next\/static\/([^/]+)\/_buildManifest\.js/);
+  if (directMatch?.[1]) return directMatch[1];
+
+  const fallbackMatch = html.match(/\/_next\/static\/([^/]+)\/_buildManifest\.js/);
+  return fallbackMatch?.[1] || null;
+}
+
+function getYad2AgencyDiscoveryUrls(rawUrl: string, importType: string): string[] {
+  const parsed = new URL(rawUrl);
+  const basePath = parsed.pathname.replace(/\/(forsale|rent)\/?$/i, "").replace(/\/$/, "");
+
+  const listingModes = importType === "both"
+    ? ["forsale", "rent"]
+    : [importType === "rental" ? "rent" : "forsale"];
+
+  const urls = new Set<string>();
+  for (const mode of listingModes) {
+    const nextUrl = new URL(parsed.toString());
+    nextUrl.pathname = `${basePath}/${mode}`;
+    urls.add(nextUrl.toString());
+  }
+
+  return Array.from(urls);
+}
+
+function buildYad2NextDataUrl(pageUrl: string, buildId: string, page: number): string {
+  const parsed = new URL(pageUrl);
+  const routePath = parsed.pathname.replace(/^\/realestate/, "");
+  const dataUrl = new URL(`/realestate/_next/data/${buildId}${routePath}.json`, parsed.origin);
+
+  parsed.searchParams.forEach((value, key) => {
+    if (key !== "page") dataUrl.searchParams.set(key, value);
+  });
+
+  if (page > 1) dataUrl.searchParams.set("page", String(page));
+  return dataUrl.toString();
+}
+
+function extractYad2FeedPageData(payload: any): { feed: any[]; totalPages: number; total: number } {
+  const pageProps = payload?.pageProps ?? {};
+  const source = pageProps.agencyData ?? pageProps.brokerData ?? {};
+  const feed = Array.isArray(source.feed) ? source.feed : [];
+  const totalPages = Number(source.pagination?.totalPages || 1);
+  const total = Number(source.pagination?.total || feed.length);
+
+  return { feed, totalPages, total };
+}
+
+function normalizeYad2AgencyFeedItem(item: any, listingMode: "forsale" | "rent") {
+  const token = typeof item?.token === "string" ? item.token.trim() : "";
+  if (!token) return null;
+
+  const city = item?.address?.city?.text || "";
+  const neighborhood = item?.address?.neighborhood?.text || "";
+  const street = item?.address?.street?.text || "";
+  const houseNumber = item?.address?.house?.number != null ? String(item.address.house.number) : "";
+  const address = [street, houseNumber].filter(Boolean).join(" ").trim();
+  const propertyText = item?.additionalDetails?.property?.text || "";
+  const roomsCount = item?.additionalDetails?.roomsCount;
+  const squareMeter = item?.additionalDetails?.squareMeter;
+  const floor = item?.address?.house?.floor;
+  const coverImage = item?.additionalDetails?.metaData?.coverImage || item?.metaData?.coverImage || null;
+  const tags = Array.isArray(item?.tags)
+    ? item.tags.map((tag: any) => tag?.name).filter((name: unknown) => typeof name === "string")
+    : [];
+
+  return {
+    url: `https://www.yad2.co.il/realestate/item/${token}`,
+    extracted_data: {
+      listing_category: "property",
+      title: [propertyText, neighborhood || city].filter(Boolean).join(", ") || city || "Imported from Yad2",
+      description: null,
+      price: Number(item?.price || 0),
+      currency: "ILS",
+      bedrooms: roomsCount != null ? Math.max(0, Math.round(Number(roomsCount) - 1)) : 0,
+      bathrooms: 1,
+      size_sqm: squareMeter != null ? Number(squareMeter) : null,
+      address,
+      city,
+      neighborhood,
+      property_type: mapYad2PropertyType(propertyText),
+      listing_status: listingMode === "rent" ? "for_rent" : "for_sale",
+      floor: floor != null && !Number.isNaN(Number(floor)) ? Number(floor) : null,
+      total_floors: null,
+      features: tags,
+      parking: 0,
+      condition: null,
+      image_urls: coverImage ? [coverImage] : [],
+      _source: "yad2",
+      _has_structured_data: true,
+    },
+  };
+}
+
 async function handleYad2AgencyDiscover(body: any) {
   const { agency_id, website_url, import_type = "resale" } = body;
   if (!agency_id || !website_url) throw new Error("agency_id and website_url required");
-
-  const FIRECRAWL_KEY = Deno.env.get("FIRECRAWL_API_KEY");
-  if (!FIRECRAWL_KEY) throw new Error("FIRECRAWL_API_KEY not configured");
 
   const sb = supabaseAdmin();
 
@@ -2544,50 +2632,65 @@ async function handleYad2AgencyDiscover(body: any) {
     .single();
   if (agencyErr || !agency) throw new Error("Agency not found");
 
-  console.log(`Yad2 agency page discovery: scraping ${website_url} via Firecrawl`);
+  console.log(`Yad2 agency discovery: loading paginated feed for ${website_url}`);
 
-  const scrapeRes = await fetch("https://api.firecrawl.dev/v1/scrape", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${FIRECRAWL_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      url: website_url,
-      formats: ["links"],
-      onlyMainContent: false,
-      waitFor: 3000,
-    }),
-  });
-  if (!scrapeRes.ok) {
-    const errText = await scrapeRes.text();
-    throw new Error(`Firecrawl scrape failed (${scrapeRes.status}): ${errText.slice(0, 200)}`);
+  const discoveryUrls = getYad2AgencyDiscoveryUrls(website_url, import_type);
+  const initialHtmlRes = await fetch(discoveryUrls[0]);
+  if (!initialHtmlRes.ok) {
+    throw new Error(`Failed to load Yad2 page (${initialHtmlRes.status})`);
   }
 
-  const scrapeData = await scrapeRes.json();
-  const allLinks: string[] = scrapeData.data?.links || scrapeData.links || [];
+  const initialHtml = await initialHtmlRes.text();
+  const buildId = extractYad2BuildId(initialHtml);
+  if (!buildId) throw new Error("Could not determine Yad2 build ID for paginated discovery");
 
-  const listingUrlPattern = /yad2\.co\.il\/(item|realestate\/item|property)\//i;
-  const listingUrls = [...new Set(allLinks.filter((link) => listingUrlPattern.test(link)))];
+  const discoveredItems: Array<{ url: string; extracted_data: Record<string, any> }> = [];
+  let totalDiscovered = 0;
 
-  console.log(`Found ${listingUrls.length} listing links out of ${allLinks.length} total links`);
+  for (const discoveryUrl of discoveryUrls) {
+    const listingMode = /\/rent\b/i.test(new URL(discoveryUrl).pathname) ? "rent" : "forsale";
+    const firstPageRes = await fetch(buildYad2NextDataUrl(discoveryUrl, buildId, 1));
+    if (!firstPageRes.ok) {
+      throw new Error(`Failed to load Yad2 feed page 1 (${firstPageRes.status})`);
+    }
 
-  if (listingUrls.length === 0) {
-    console.log("No listing links found via scrape, trying Firecrawl map...");
-    const mapRes = await fetch("https://api.firecrawl.dev/v1/map", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${FIRECRAWL_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ url: website_url, limit: 500, includeSubdomains: false }),
-    });
+    const firstPageData = await firstPageRes.json();
+    const firstPageMeta = extractYad2FeedPageData(firstPageData);
+    totalDiscovered += firstPageMeta.total;
 
-    if (mapRes.ok) {
-      const mapData = await mapRes.json();
-      const mapLinks: string[] = mapData.links || [];
-      const mapListingUrls = mapLinks.filter((link) => listingUrlPattern.test(link));
-      if (mapListingUrls.length > 0) listingUrls.push(...mapListingUrls);
-    } else {
-      await mapRes.text();
+    const pagesData: any[] = [firstPageData];
+    const pageNumbers = Array.from({ length: Math.max(0, firstPageMeta.totalPages - 1) }, (_, index) => index + 2);
+
+    for (let i = 0; i < pageNumbers.length; i += 5) {
+      const pageBatch = pageNumbers.slice(i, i + 5);
+      const batchResults = await Promise.all(
+        pageBatch.map(async (pageNumber) => {
+          const pageRes = await fetch(buildYad2NextDataUrl(discoveryUrl, buildId, pageNumber));
+          if (!pageRes.ok) {
+            throw new Error(`Failed to load Yad2 feed page ${pageNumber} (${pageRes.status})`);
+          }
+          return pageRes.json();
+        })
+      );
+      pagesData.push(...batchResults);
+    }
+
+    for (const pageData of pagesData) {
+      const { feed } = extractYad2FeedPageData(pageData);
+      for (const item of feed) {
+        const normalized = normalizeYad2AgencyFeedItem(item, listingMode);
+        if (normalized) discoveredItems.push(normalized);
+      }
     }
   }
 
-  if (listingUrls.length === 0) {
+  const dedupedItems = Array.from(
+    new Map(discoveredItems.map((item) => [normalizeUrl(item.url), item])).values()
+  );
+
+  console.log(`Yad2 paginated discovery found ${dedupedItems.length} unique listings across ${discoveryUrls.length} feed(s)`);
+
+  if (dedupedItems.length === 0) {
     return { job_id: null, total_listings: 0, total_discovered: 0, new_urls: 0, skipped_existing: 0 };
   }
 
@@ -2604,15 +2707,15 @@ async function handleYad2AgencyDiscover(body: any) {
     }
   }
 
-  const newUrls = listingUrls.filter((url) => !knownUrls.has(normalizeUrl(url)));
+  const newItems = dedupedItems.filter((item) => !knownUrls.has(normalizeUrl(item.url)));
 
-  if (newUrls.length === 0) {
+  if (newItems.length === 0) {
     return {
       job_id: null,
       total_listings: 0,
-      total_discovered: listingUrls.length,
+      total_discovered: dedupedItems.length,
       new_urls: 0,
-      skipped_existing: listingUrls.length,
+      skipped_existing: dedupedItems.length,
     };
   }
 
@@ -2622,30 +2725,30 @@ async function handleYad2AgencyDiscover(body: any) {
       agency_id,
       website_url,
       status: "ready",
-      total_urls: newUrls.length,
-      discovered_urls: listingUrls,
+      total_urls: newItems.length,
+      discovered_urls: dedupedItems.map((item) => item.url),
       import_type,
+      source_type: "yad2",
     })
     .select("id")
     .single();
   if (jobErr) throw new Error(`Failed to create import job: ${jobErr.message}`);
 
-  await trackCost(sb, job.id, "firecrawl", 1, "credits");
-
-  const items = newUrls.map((url) => ({
+  const items = newItems.map((item) => ({
     job_id: job.id,
-    url,
+    url: item.url,
     status: "pending",
+    extracted_data: item.extracted_data,
   }));
   const { error: itemsErr } = await sb.from("import_job_items").insert(items);
   if (itemsErr) throw new Error(`Failed to create job items: ${itemsErr.message}`);
 
   return {
     job_id: job.id,
-    total_listings: newUrls.length,
-    total_discovered: listingUrls.length,
-    new_urls: newUrls.length,
-    skipped_existing: listingUrls.length - newUrls.length,
+    total_listings: newItems.length,
+    total_discovered: totalDiscovered || dedupedItems.length,
+    new_urls: newItems.length,
+    skipped_existing: dedupedItems.length - newItems.length,
   };
 }
 
