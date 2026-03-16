@@ -187,7 +187,7 @@ export default function ImportGovMapData() {
 
       // 4. Size outlier
       const size = parseFloat(row.assetArea);
-      if (!isNaN(size) && (size < 20 || size > 400)) {
+      if (!isNaN(size) && (size < 30 || size > 400)) {
         stats.sizeOutlier++;
         continue;
       }
