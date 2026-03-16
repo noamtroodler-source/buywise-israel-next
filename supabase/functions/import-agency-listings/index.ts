@@ -1611,6 +1611,94 @@ async function handleRetryFailed(body: any) {
   return { reset_count: resetCount, transient_count: resetCount, permanent_count: permanentCount || 0 };
 }
 
+// ─── APPROVE ITEM (manual review) ───────────────────────────────────────────
+
+async function handleApproveItem(body: any) {
+  const { item_id, extracted_data } = body;
+  if (!item_id) throw new Error("item_id required");
+
+  const sb = supabaseAdmin();
+
+  // Get the item and its job
+  const { data: item, error: itemErr } = await sb
+    .from("import_job_items").select("*, import_jobs!inner(agency_id, website_url)")
+    .eq("id", item_id).single();
+  if (itemErr || !item) throw new Error("Import job item not found");
+
+  const agencyId = item.import_jobs.agency_id;
+  const listing = extracted_data || item.extracted_data;
+  if (!listing) throw new Error("No extracted data to approve");
+
+  // Get agent for this agency
+  const { data: agents } = await sb.from("agents").select("id").eq("agency_id", agencyId).limit(1);
+  const agentId = agents?.[0]?.id || null;
+
+  // Validate city
+  const matchedCity = matchSupportedCity(listing.city);
+  if (!matchedCity) throw new Error(`City not supported: "${listing.city}"`);
+  listing.city = matchedCity;
+
+  // Download images if not already done
+  let imageUrls: string[] = [];
+  if (listing.image_urls?.length) {
+    imageUrls = await parallelImageDownload(listing.image_urls, sb, "property-images", item.job_id);
+  }
+
+  // Geocode
+  let latitude: number | null = null;
+  let longitude: number | null = null;
+  if (listing.address && listing.city) {
+    const coords = await geocodeWithRateLimit(listing.address, listing.city);
+    if (coords) { latitude = coords.lat; longitude = coords.lng; }
+  }
+
+  const entryDate = listing.entry_date === "immediate" ? new Date().toISOString().split("T")[0] : listing.entry_date || null;
+
+  const { data: property, error: propErr } = await sb
+    .from("properties")
+    .insert({
+      agent_id: agentId,
+      title: listing.title || `Imported from ${item.import_jobs.website_url}`,
+      description: listing.description || null,
+      property_type: listing.property_type || "apartment",
+      listing_status: listing.listing_status || "for_sale",
+      price: listing.price || 0,
+      currency: listing.currency || "ILS",
+      address: listing.address || "",
+      city: listing.city,
+      neighborhood: listing.neighborhood || null,
+      latitude, longitude,
+      bedrooms: Math.floor(listing.bedrooms ?? 0),
+      bathrooms: Math.floor(listing.bathrooms ?? 1),
+      size_sqm: listing.size_sqm || null,
+      floor: listing.floor ?? null,
+      total_floors: listing.total_floors ?? null,
+      year_built: listing.year_built ?? null,
+      features: listing.features || [],
+      images: imageUrls.length > 0 ? imageUrls : null,
+      parking: listing.parking ?? 0,
+      condition: listing.condition || null,
+      ac_type: listing.ac_type || null,
+      entry_date: entryDate,
+      is_published: false, is_featured: false, views_count: 0,
+      verification_status: "draft",
+      import_source: "website_scrape",
+      source_url: item.url,
+    })
+    .select("id")
+    .single();
+
+  if (propErr) throw new Error(`Insert failed: ${propErr.message}`);
+
+  await sb.from("import_job_items").update({
+    status: "done",
+    property_id: property.id,
+    extracted_data: listing,
+  }).eq("id", item_id);
+
+  return { property_id: property.id };
+}
+
 // ─── MAIN ───────────────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
