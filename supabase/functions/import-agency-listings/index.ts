@@ -1147,8 +1147,83 @@ ${pageLinks.slice(0, 50).join("\n")}`;
 }
 
 // ─── PROCESS SINGLE ITEM ────────────────────────────────────────────────────
+// ─── SIMPLIFIED PROMPT RETRY ────────────────────────────────────────────────
 
-async function processOneItem(
+async function retryWithSimplifiedPrompt(
+  url: string, markdown: string, lovableKey: string
+): Promise<any | null> {
+  console.log(`Retrying with simplified prompt for ${url}`);
+  const truncatedContent = markdown.slice(0, 4000);
+  const simplifiedPrompt = `Extract ONLY these fields from this Israeli real estate listing page. Return values only if clearly present, otherwise omit.
+
+- price (number in NIS, 0 if "Price on Request")
+- bedrooms (number — Israeli "rooms" minus 1)
+- size_sqm (number)
+- city (must be one of: ${SUPPORTED_CITIES.join(", ")})
+- address (street name + number)
+- property_type (one of: apartment, house, penthouse, duplex, garden_apartment, cottage, land, commercial)
+- listing_status (for_sale or for_rent)
+- image_urls (array of image URLs)
+- listing_category (property, project, or not_listing)
+
+URL: ${url}
+Content:
+${truncatedContent}`;
+
+  try {
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash-lite",
+        messages: [{ role: "user", content: simplifiedPrompt }],
+        tools: [{
+          type: "function",
+          function: {
+            name: "extract_listing",
+            description: "Extract core listing data",
+            parameters: {
+              type: "object",
+              properties: {
+                listing_category: { type: "string", enum: ["property", "project", "not_listing"] },
+                price: { type: "number" },
+                bedrooms: { type: "number" },
+                size_sqm: { type: "number" },
+                address: { type: "string" },
+                city: { type: "string" },
+                property_type: { type: "string", enum: ["apartment", "garden_apartment", "penthouse", "mini_penthouse", "duplex", "house", "cottage", "land", "commercial"] },
+                listing_status: { type: "string", enum: ["for_sale", "for_rent"] },
+                image_urls: { type: "array", items: { type: "string" } },
+              },
+              required: ["listing_category"],
+              additionalProperties: false,
+            },
+          },
+        }],
+        tool_choice: { type: "function", function: { name: "extract_listing" } },
+      }),
+    });
+
+    if (!res.ok) {
+      console.error(`Simplified retry also failed: ${res.status}`);
+      return null;
+    }
+
+    const data = await res.json();
+    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+    if (!toolCall?.function?.arguments) return null;
+
+    const parsed = JSON.parse(toolCall.function.arguments);
+    parsed._simplified_retry = true;
+    console.log(`Simplified retry succeeded for ${url}`);
+    return parsed;
+  } catch (err) {
+    console.error(`Simplified retry error:`, err);
+    return null;
+  }
+}
+
+
   item: any, sb: any, job: any, agentId: string | null,
   firecrawlKey: string, lovableKey: string, jobId: string,
   domainCity: string | null = null, importType: string = "resale"
