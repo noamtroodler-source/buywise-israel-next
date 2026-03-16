@@ -104,3 +104,6 @@ verify_jwt = false
 
 [functions.map-neighborhoods]
 verify_jwt = false
+
+[functions.import-govmap-data]
+verify_jwt = false
