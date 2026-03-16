@@ -773,7 +773,7 @@ async function handleDiscover(body: any) {
 
   const { data: job, error: jobErr } = await sb
     .from("import_jobs")
-    .insert({ agency_id, website_url: formattedUrl, status: "ready", total_urls: listingUrls.length, discovered_urls: allUrls })
+    .insert({ agency_id, website_url: formattedUrl, status: "ready", total_urls: listingUrls.length, discovered_urls: allUrls, import_type })
     .select("id").single();
   if (jobErr) throw new Error(`Failed to create import job: ${jobErr.message}`);
 
