@@ -390,6 +390,11 @@ const App = () => (
                             <AgencyImport />
                           </ProtectedRoute>
                         } />
+                        <Route path="/agency/import/:jobId/review" element={
+                          <ProtectedRoute requiredRole="agent">
+                            <AgencyImportReview />
+                          </ProtectedRoute>
+                        } />
                         <Route path="/agency/team" element={
                           <ProtectedRoute requiredRole="agent">
                             <AgencyTeam />

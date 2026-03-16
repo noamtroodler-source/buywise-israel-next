@@ -12,6 +12,8 @@ export interface ImportJob {
   processed_count: number;
   failed_count: number;
   discovered_urls: string[];
+  import_type: string;
+  is_incremental: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -26,6 +28,7 @@ export interface ImportJobItem {
   error_message: string | null;
   error_type: string | null;
   extracted_data: any;
+  confidence_score: number | null;
   created_at: string;
 }
 
@@ -66,7 +69,6 @@ export function useImportJobItems(jobId: string | undefined) {
     },
     enabled: !!jobId,
     refetchInterval: (query) => {
-      // Auto-refresh while processing
       const data = query.state.data as ImportJobItem[] | undefined;
       const hasActive = data?.some(i => ['processing', 'pending'].includes(i.status));
       return hasActive ? 3000 : false;
@@ -78,9 +80,9 @@ export function useDiscoverListings() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ agencyId, websiteUrl }: { agencyId: string; websiteUrl: string }) => {
+    mutationFn: async ({ agencyId, websiteUrl, importType = 'resale' }: { agencyId: string; websiteUrl: string; importType?: string }) => {
       const { data, error } = await supabase.functions.invoke('import-agency-listings', {
-        body: { action: 'discover', agency_id: agencyId, website_url: websiteUrl },
+        body: { action: 'discover', agency_id: agencyId, website_url: websiteUrl, import_type: importType },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
@@ -183,6 +185,53 @@ export function useDeleteImportJob() {
     },
     onError: (err: Error) => {
       toast.error(`Delete failed: ${err.message}`);
+    },
+  });
+}
+
+export function useApproveItem() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ itemId, extractedData }: { itemId: string; extractedData: any }) => {
+      const { data, error } = await supabase.functions.invoke('import-agency-listings', {
+        body: { action: 'approve_item', item_id: itemId, extracted_data: extractedData },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data as { property_id: string };
+    },
+    onSuccess: () => {
+      toast.success('Listing approved and imported');
+      queryClient.invalidateQueries({ queryKey: ['importJobItems'] });
+      queryClient.invalidateQueries({ queryKey: ['importJobs'] });
+      queryClient.invalidateQueries({ queryKey: ['agencyListingsManagement'] });
+    },
+    onError: (err: Error) => {
+      toast.error(`Approve failed: ${err.message}`);
+    },
+  });
+}
+
+export function useUpdateAutoSync() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ agencyId, enabled, url }: { agencyId: string; enabled: boolean; url?: string }) => {
+      const updates: any = { auto_sync_enabled: enabled };
+      if (url !== undefined) updates.auto_sync_url = url;
+      const { error } = await supabase
+        .from('agencies')
+        .update(updates)
+        .eq('id', agencyId);
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      toast.success(vars.enabled ? 'Auto-sync enabled' : 'Auto-sync disabled');
+      queryClient.invalidateQueries({ queryKey: ['myAgency'] });
+    },
+    onError: (err: Error) => {
+      toast.error(`Failed to update sync: ${err.message}`);
     },
   });
 }
