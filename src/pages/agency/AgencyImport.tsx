@@ -91,6 +91,7 @@ export default function AgencyImport() {
   const { startProcessAll, stopProcessAll, isProcessingAll, processingStartTime, processedSoFar } = useProcessAll();
   const [websiteUrl, setWebsiteUrl] = useState('');
   const [importType, setImportType] = useState<'resale' | 'rental' | 'all'>('resale');
+  const [sourceType, setSourceType] = useState<'website' | 'yad2'>('website');
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
 
   // Use the most recent active job or the one selected
