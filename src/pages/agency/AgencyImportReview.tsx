@@ -28,6 +28,7 @@ export default function AgencyImportReview() {
   const { data: agency, isLoading: agencyLoading } = useMyAgency();
   const { data: jobs = [] } = useImportJobs(agency?.id);
   const { data: items = [], isLoading: itemsLoading } = useImportJobItems(jobId);
+  useRealtimeImportProgress(jobId);
   const approveMutation = useApproveItem();
   const skipMutation = useSkipItem();
   const [filterTab, setFilterTab] = useState<FilterTab>('all');
