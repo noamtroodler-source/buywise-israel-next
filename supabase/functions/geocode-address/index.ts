@@ -12,6 +12,7 @@ interface GeocodeRequest {
   address: string;
   city: string;
   neighborhood?: string;
+  skipDbSave?: boolean;
 }
 
 interface GeocodeResponse {
