@@ -1266,6 +1266,28 @@ async function processOneItem(
 
     const listing = JSON.parse(extractToolCall.function.arguments);
 
+    // Merge structured data from HTML (JSON-LD, OG tags) — takes priority for matching fields
+    const structuredData = extractStructuredData(pageHtml);
+    if (structuredData) {
+      console.log(`Structured data found for ${item.url}: ${Object.keys(structuredData).join(", ")}`);
+      // Merge: structured data fills gaps, doesn't overwrite existing AI data
+      for (const [key, value] of Object.entries(structuredData)) {
+        if (key === "structured_images" || key === "og_title" || key === "og_description" || key === "city_hint") continue;
+        if (value != null && (listing[key] == null || listing[key] === "" || listing[key] === 0)) {
+          listing[key] = value;
+        }
+      }
+      // Add structured images if AI didn't find any
+      if (structuredData.structured_images?.length && (!listing.image_urls || listing.image_urls.length === 0)) {
+        listing.image_urls = structuredData.structured_images;
+      }
+      // City hint from structured data
+      if (!listing.city && structuredData.city_hint) {
+        listing.city = structuredData.city_hint;
+      }
+      listing._has_structured_data = true;
+    }
+
     // Store raw extraction
     await sb.from("import_job_items").update({ extracted_data: listing }).eq("id", item.id);
 
