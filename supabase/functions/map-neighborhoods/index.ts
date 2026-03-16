@@ -7,7 +7,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// CBS city names → platform city names (for querying the cities table)
 const CBS_TO_PLATFORM: Record<string, string> = {
   "Maale Adumim": "Ma'ale Adumim",
   "Modiin": "Modi'in",
@@ -128,6 +127,36 @@ Rules:
   return JSON.parse(toolCall.function.arguments);
 }
 
+async function persistMappings(
+  supabase: any,
+  city: string,
+  mappings: any[]
+) {
+  if (mappings.length === 0) return;
+
+  const rows = mappings.map((m: any) => ({
+    city,
+    anglo_name: m.anglo_name,
+    cbs_neighborhood_id: m.cbs_id,
+    cbs_hebrew: m.cbs_hebrew || null,
+    confidence: m.confidence,
+    status: 'pending',
+    notes: m.notes || null,
+    updated_at: new Date().toISOString(),
+  }));
+
+  const { error } = await supabase
+    .from("neighborhood_cbs_mappings")
+    .upsert(rows, { onConflict: "city,anglo_name", ignoreDuplicates: false });
+
+  if (error) {
+    console.error(`Persist error for ${city}:`, error);
+    throw new Error(`Failed to persist mappings for ${city}: ${error.message}`);
+  }
+
+  console.log(`Persisted ${rows.length} mappings for ${city}`);
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -140,7 +169,6 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Optional: process a single city via query param
     const url = new URL(req.url);
     const onlyCity = url.searchParams.get("city");
 
@@ -166,25 +194,21 @@ serve(async (req) => {
     }
 
     // Get Anglo roster
-    // Get all cities from platform (we need to check normalized names)
     const platformCityName = onlyCity ? (CBS_TO_PLATFORM[onlyCity] || onlyCity) : null;
     let citiesQuery = supabase.from("cities").select("name, slug, neighborhoods").order("name");
     if (platformCityName) citiesQuery = citiesQuery.eq("name", platformCityName);
     const { data: cities, error: citiesErr } = await citiesQuery;
     if (citiesErr) throw new Error(`Cities query: ${citiesErr.message}`);
 
-    // Build reverse map: platform name → CBS name
     const platformToCbs: Record<string, string> = {};
     for (const [cbs, platform] of Object.entries(CBS_TO_PLATFORM)) {
       platformToCbs[platform] = cbs;
     }
 
-    // Group by city
     const angloByCity: Record<string, { name: string; name_he?: string }[]> = {};
     for (const city of cities || []) {
       const raw = city.neighborhoods as any[];
       if (!Array.isArray(raw) || raw.length === 0) continue;
-      // Use CBS name as key (reverse lookup), fallback to platform name
       const cbsName = platformToCbs[city.name] || city.name;
       angloByCity[cbsName] = raw
         .filter((n: any) => n.name)
@@ -204,14 +228,12 @@ serve(async (req) => {
     const allUnmappedAnglo: any[] = [];
     const cityResults: Record<string, string> = {};
 
-    // Process cities sequentially to avoid rate limits
     for (const city of allCities) {
       const anglo = angloByCity[city] || [];
       const cbs = cbsByCity[city] || [];
       
       if (anglo.length === 0 && cbs.length === 0) continue;
 
-      // If one side is empty, skip AI call
       if (anglo.length === 0) {
         for (const c of cbs) {
           allUnmappedCbs.push({ city, cbs_hebrew: c.neighborhood_he, cbs_id: c.neighborhood_id });
@@ -235,13 +257,15 @@ serve(async (req) => {
         const unmappedCbs = (result.unmapped_cbs || []).map((m: any) => ({ ...m, city }));
         const unmappedAnglo = (result.unmapped_anglo || []).map((m: any) => ({ ...m, city }));
         
+        // Persist mappings to database
+        await persistMappings(supabase, city, result.mappings || []);
+        
         allMappings.push(...mappings);
         allUnmappedCbs.push(...unmappedCbs);
         allUnmappedAnglo.push(...unmappedAnglo);
         
         cityResults[city] = `${mappings.length} mapped, ${unmappedCbs.length} unmapped CBS, ${unmappedAnglo.length} unmapped Anglo`;
         
-        // Small delay between cities to avoid rate limiting
         await new Promise(r => setTimeout(r, 500));
       } catch (e) {
         console.error(`Error for ${city}:`, e);

@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Check, X, AlertCircle, Copy } from 'lucide-react';
+import { Loader2, Check, X, AlertCircle, Copy, CheckCircle2, XCircle, Filter } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Mapping {
   city: string;
@@ -39,11 +40,30 @@ interface CityResult {
   error?: string;
 }
 
+interface DbMapping {
+  id: string;
+  city: string;
+  anglo_name: string;
+  cbs_neighborhood_id: string;
+  cbs_hebrew: string | null;
+  confidence: string;
+  status: string;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 const confidenceColor: Record<string, string> = {
   exact: 'bg-green-100 text-green-800',
   high: 'bg-blue-100 text-blue-800',
   likely: 'bg-yellow-100 text-yellow-800',
   none: 'bg-red-100 text-red-800',
+};
+
+const statusColor: Record<string, string> = {
+  approved: 'bg-green-100 text-green-800',
+  pending: 'bg-yellow-100 text-yellow-800',
+  rejected: 'bg-red-100 text-red-800',
 };
 
 export default function MapNeighborhoods() {
@@ -52,12 +72,44 @@ export default function MapNeighborhoods() {
   const [isRunning, setIsRunning] = useState(false);
   const [isLoadingCities, setIsLoadingCities] = useState(true);
   const [currentCity, setCurrentCity] = useState<string | null>(null);
+  const [dbMappings, setDbMappings] = useState<DbMapping[]>([]);
+  const [isLoadingDb, setIsLoadingDb] = useState(true);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [updatingIds, setUpdatingIds] = useState<Set<string>>(new Set());
   const { toast } = useToast();
+
+  // Load persisted mappings from DB
+  useEffect(() => {
+    loadDbMappings();
+  }, []);
+
+  async function loadDbMappings() {
+    setIsLoadingDb(true);
+    const allMappings: DbMapping[] = [];
+    let page = 0;
+    while (true) {
+      const { data, error } = await supabase
+        .from('neighborhood_cbs_mappings' as any)
+        .select('*')
+        .order('city')
+        .order('anglo_name')
+        .range(page * 1000, (page + 1) * 1000 - 1);
+      if (error) {
+        console.error('Failed to load mappings:', error);
+        break;
+      }
+      if (!data || data.length === 0) break;
+      allMappings.push(...(data as unknown as DbMapping[]));
+      if (data.length < 1000) break;
+      page++;
+    }
+    setDbMappings(allMappings);
+    setIsLoadingDb(false);
+  }
 
   useEffect(() => {
     async function fetchCities() {
       setIsLoadingCities(true);
-      // Fetch all distinct city_en values, paginated
       const allCities = new Set<string>();
       let page = 0;
       while (true) {
@@ -135,9 +187,60 @@ export default function MapNeighborhoods() {
 
     setIsRunning(false);
     setCurrentCity(null);
-    toast({ title: 'Mapping complete', description: `Processed ${cbsCities.length} cities` });
+    toast({ title: 'Mapping complete', description: `Processed ${cbsCities.length} cities. Reloading DB mappings...` });
+    await loadDbMappings();
   };
 
+  const updateMappingStatus = async (id: string, newStatus: 'approved' | 'rejected') => {
+    setUpdatingIds(prev => new Set(prev).add(id));
+    const { error } = await supabase
+      .from('neighborhood_cbs_mappings' as any)
+      .update({ status: newStatus, updated_at: new Date().toISOString() } as any)
+      .eq('id', id);
+
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } else {
+      setDbMappings(prev => prev.map(m => m.id === id ? { ...m, status: newStatus } : m));
+    }
+    setUpdatingIds(prev => { const s = new Set(prev); s.delete(id); return s; });
+  };
+
+  const bulkApprove = async (confidenceLevels: string[]) => {
+    const toApprove = dbMappings.filter(
+      m => m.status === 'pending' && confidenceLevels.includes(m.confidence)
+    );
+    if (toApprove.length === 0) {
+      toast({ title: 'Nothing to approve', description: 'No pending mappings with selected confidence levels' });
+      return;
+    }
+
+    const ids = toApprove.map(m => m.id);
+    const { error } = await supabase
+      .from('neighborhood_cbs_mappings' as any)
+      .update({ status: 'approved', updated_at: new Date().toISOString() } as any)
+      .in('id', ids);
+
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } else {
+      setDbMappings(prev => prev.map(m => ids.includes(m.id) ? { ...m, status: 'approved' } : m));
+      toast({ title: `Approved ${ids.length} mappings` });
+    }
+  };
+
+  const filteredMappings = statusFilter === 'all'
+    ? dbMappings
+    : dbMappings.filter(m => m.status === statusFilter);
+
+  const counts = {
+    total: dbMappings.length,
+    approved: dbMappings.filter(m => m.status === 'approved').length,
+    pending: dbMappings.filter(m => m.status === 'pending').length,
+    rejected: dbMappings.filter(m => m.status === 'rejected').length,
+  };
+
+  // Edge function run results
   const allMappings = results.flatMap(r => r.mappings);
   const allUnmappedCbs = results.flatMap(r => r.unmapped_cbs);
   const allUnmappedAnglo = results.flatMap(r => r.unmapped_anglo);
@@ -151,23 +254,18 @@ export default function MapNeighborhoods() {
 
   return (
     <div className="container py-8 max-w-6xl space-y-6">
+      {/* Run Mapping Section */}
       <Card>
         <CardHeader>
           <CardTitle>Map Neighborhoods (CBS ↔ Anglo)</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-wrap">
             <Button onClick={runMapping} disabled={isRunning || isLoadingCities || cbsCities.length === 0} size="lg">
               {isLoadingCities ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Loading cities...
-                </>
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Loading cities...</>
               ) : isRunning ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {currentCity} ({completedCities}/{cbsCities.length})
-                </>
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{currentCity} ({completedCities}/{cbsCities.length})</>
               ) : `Run Mapping for All Cities (${cbsCities.length})`}
             </Button>
             {allMappings.length > 0 && (
@@ -177,7 +275,6 @@ export default function MapNeighborhoods() {
             )}
           </div>
 
-          {/* Progress */}
           {results.length > 0 && (
             <div className="grid grid-cols-4 md:grid-cols-6 gap-2">
               {results.map(r => (
@@ -198,89 +295,140 @@ export default function MapNeighborhoods() {
         </CardContent>
       </Card>
 
-      {/* Summary */}
-      {completedCities > 0 && (
-        <Card>
-          <CardHeader><CardTitle>Summary</CardTitle></CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-              <div>
-                <div className="text-2xl font-bold">{allMappings.length}</div>
-                <div className="text-sm text-muted-foreground">Total Mappings</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-green-600">
-                  {allMappings.filter(m => m.confidence === 'exact').length}
+      {/* Persisted Mappings Review Section */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <CardTitle className="flex items-center gap-2">
+              Persisted Mappings
+              {isLoadingDb && <Loader2 className="h-4 w-4 animate-spin" />}
+            </CardTitle>
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                <div>
+                  <span className="font-bold text-green-600">{counts.approved}</span>
+                  <span className="text-muted-foreground ml-1">approved</span>
                 </div>
-                <div className="text-sm text-muted-foreground">Exact</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-blue-600">
-                  {allMappings.filter(m => m.confidence === 'high').length}
+                <div>
+                  <span className="font-bold text-yellow-600">{counts.pending}</span>
+                  <span className="text-muted-foreground ml-1">pending</span>
                 </div>
-                <div className="text-sm text-muted-foreground">High</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-yellow-600">
-                  {allMappings.filter(m => m.confidence === 'likely').length}
+                <div>
+                  <span className="font-bold text-red-600">{counts.rejected}</span>
+                  <span className="text-muted-foreground ml-1">rejected</span>
                 </div>
-                <div className="text-sm text-muted-foreground">Likely</div>
               </div>
             </div>
-            <div className="mt-4 flex gap-4">
-              <div className="flex items-center gap-1">
-                <AlertCircle className="h-4 w-4 text-orange-500" />
-                <span className="text-sm">{allUnmappedCbs.length} unmapped CBS</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <AlertCircle className="h-4 w-4 text-purple-500" />
-                <span className="text-sm">{allUnmappedAnglo.length} unmapped Anglo</span>
-              </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Bulk Actions & Filter */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => bulkApprove(['exact', 'high'])}
+              disabled={counts.pending === 0}
+            >
+              <CheckCircle2 className="mr-1 h-4 w-4" />
+              Bulk Approve Exact + High ({dbMappings.filter(m => m.status === 'pending' && ['exact', 'high'].includes(m.confidence)).length})
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => bulkApprove(['exact'])}
+              disabled={counts.pending === 0}
+            >
+              Approve Exact Only ({dbMappings.filter(m => m.status === 'pending' && m.confidence === 'exact').length})
+            </Button>
+            <div className="flex items-center gap-2 ml-auto">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[140px] h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All ({counts.total})</SelectItem>
+                  <SelectItem value="pending">Pending ({counts.pending})</SelectItem>
+                  <SelectItem value="approved">Approved ({counts.approved})</SelectItem>
+                  <SelectItem value="rejected">Rejected ({counts.rejected})</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          </div>
 
-      {/* Mappings Table */}
-      {allMappings.length > 0 && (
-        <Card>
-          <CardHeader><CardTitle>Mappings ({allMappings.length})</CardTitle></CardHeader>
-          <CardContent>
+          {/* Mappings Table */}
+          {filteredMappings.length > 0 && (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b">
                     <th className="text-left p-2">City</th>
                     <th className="text-left p-2">Anglo Name</th>
-                    <th className="text-left p-2">Our Hebrew</th>
                     <th className="text-left p-2">CBS Hebrew</th>
                     <th className="text-left p-2">CBS ID</th>
                     <th className="text-left p-2">Confidence</th>
-                    <th className="text-left p-2">Notes</th>
+                    <th className="text-left p-2">Status</th>
+                    <th className="text-left p-2">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {allMappings.map((m, i) => (
-                    <tr key={i} className="border-b hover:bg-muted/50">
+                  {filteredMappings.map((m) => (
+                    <tr key={m.id} className="border-b hover:bg-muted/50">
                       <td className="p-2">{m.city}</td>
                       <td className="p-2 font-medium">{m.anglo_name}</td>
-                      <td className="p-2 text-right" dir="rtl">{m.our_hebrew || '—'}</td>
-                      <td className="p-2 text-right" dir="rtl">{m.cbs_hebrew}</td>
-                      <td className="p-2 font-mono text-xs">{m.cbs_id}</td>
+                      <td className="p-2 text-right" dir="rtl">{m.cbs_hebrew || '—'}</td>
+                      <td className="p-2 font-mono text-xs">{m.cbs_neighborhood_id}</td>
                       <td className="p-2">
-                        <Badge className={confidenceColor[m.confidence]}>{m.confidence}</Badge>
+                        <Badge className={confidenceColor[m.confidence] || ''}>{m.confidence}</Badge>
                       </td>
-                      <td className="p-2 text-xs text-muted-foreground max-w-[200px] truncate">{m.notes || ''}</td>
+                      <td className="p-2">
+                        <Badge className={statusColor[m.status] || ''}>{m.status}</Badge>
+                      </td>
+                      <td className="p-2">
+                        <div className="flex items-center gap-1">
+                          {m.status !== 'approved' && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+                              onClick={() => updateMappingStatus(m.id, 'approved')}
+                              disabled={updatingIds.has(m.id)}
+                            >
+                              <CheckCircle2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {m.status !== 'rejected' && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => updateMappingStatus(m.id, 'rejected')}
+                              disabled={updatingIds.has(m.id)}
+                            >
+                              <XCircle className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          )}
 
-      {/* Unmapped CBS */}
+          {filteredMappings.length === 0 && !isLoadingDb && (
+            <p className="text-sm text-muted-foreground text-center py-8">
+              {dbMappings.length === 0
+                ? 'No mappings yet. Run the mapping above to generate and persist them.'
+                : 'No mappings match the current filter.'}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Unmapped sections from latest run */}
       {allUnmappedCbs.length > 0 && (
         <Card>
           <CardHeader><CardTitle>Unmapped CBS ({allUnmappedCbs.length})</CardTitle></CardHeader>
@@ -311,7 +459,6 @@ export default function MapNeighborhoods() {
         </Card>
       )}
 
-      {/* Unmapped Anglo */}
       {allUnmappedAnglo.length > 0 && (
         <Card>
           <CardHeader><CardTitle>Unmapped Anglo ({allUnmappedAnglo.length})</CardTitle></CardHeader>

@@ -1,4 +1,4 @@
-import { MapPin } from 'lucide-react';
+import { MapPin, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
@@ -20,8 +20,45 @@ const priceTierConfig: Record<PriceTier, { label: string; className: string }> =
   'ultra-premium': { label: 'Ultra-premium', className: uniformBadgeStyle },
 };
 
+function formatCompactPrice(price: number): string {
+  if (price >= 1_000_000) {
+    const m = price / 1_000_000;
+    return `₪${m % 1 === 0 ? m.toFixed(0) : m.toFixed(1)}M`;
+  }
+  if (price >= 1_000) {
+    return `₪${Math.round(price / 1_000)}K`;
+  }
+  return `₪${price.toLocaleString()}`;
+}
+
+function TrendIndicator({ yoyChange }: { yoyChange: number }) {
+  if (yoyChange > 0.5) {
+    return (
+      <span className="inline-flex items-center gap-0.5 text-xs font-medium text-semantic-green">
+        <TrendingUp className="h-3 w-3" />
+        +{yoyChange}%
+      </span>
+    );
+  }
+  if (yoyChange < -0.5) {
+    return (
+      <span className="inline-flex items-center gap-0.5 text-xs font-medium text-destructive">
+        <TrendingDown className="h-3 w-3" />
+        {yoyChange}%
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-0.5 text-xs font-medium text-muted-foreground">
+      <Minus className="h-3 w-3" />
+      Stable
+    </span>
+  );
+}
+
 function NeighborhoodCard({ neighborhood }: { neighborhood: FeaturedNeighborhood }) {
   const tierConfig = priceTierConfig[neighborhood.price_tier];
+  const hasPrice = neighborhood.avg_price != null;
   
   return (
     <Card className="min-w-[280px] max-w-[320px] flex-shrink-0 sm:min-w-0 sm:max-w-none sm:flex-shrink border-border/50 bg-card/50 backdrop-blur-sm">
@@ -44,10 +81,23 @@ function NeighborhoodCard({ neighborhood }: { neighborhood: FeaturedNeighborhood
         </div>
         <p className="text-sm font-medium text-primary">{neighborhood.vibe}</p>
       </CardHeader>
-      <CardContent className="pt-0">
+      <CardContent className="pt-0 space-y-2">
         <p className="text-sm text-muted-foreground leading-relaxed">
           {neighborhood.description}
         </p>
+        {hasPrice && (
+          <div className="flex items-center justify-between pt-2 border-t border-border/50">
+            <div className="text-sm">
+              <span className="text-muted-foreground">Avg. </span>
+              <span className="font-semibold text-foreground">
+                {formatCompactPrice(neighborhood.avg_price!)}
+              </span>
+            </div>
+            {neighborhood.yoy_change_percent != null && (
+              <TrendIndicator yoyChange={neighborhood.yoy_change_percent} />
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -73,16 +123,13 @@ export function CityNeighborhoodHighlights({ cityName, neighborhoods }: CityNeig
 
         {/* Cards Layout */}
         {useGrid ? (
-          // Grid layout for 4+ neighborhoods
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {neighborhoods.map((neighborhood) => (
               <NeighborhoodCard key={neighborhood.name} neighborhood={neighborhood} />
             ))}
           </div>
         ) : (
-          // Horizontal scroll for 2-3 neighborhoods on mobile, flex on desktop
           <>
-            {/* Mobile: Horizontal scroll */}
             <div className="sm:hidden">
               <ScrollArea className="w-full">
                 <div className="flex gap-4 pb-4">
@@ -94,7 +141,6 @@ export function CityNeighborhoodHighlights({ cityName, neighborhoods }: CityNeig
               </ScrollArea>
             </div>
             
-            {/* Desktop: Flex layout */}
             <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {neighborhoods.map((neighborhood) => (
                 <NeighborhoodCard key={neighborhood.name} neighborhood={neighborhood} />
