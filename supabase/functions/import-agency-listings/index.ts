@@ -1128,7 +1128,7 @@ async function processOneItem(
     }
 
     // Pre-LLM: sold/rented/rental/new-dev check (enhanced)
-    const preFilter = isNonResalePage(markdown);
+    const preFilter = isNonResalePage(markdown, importType);
     if (preFilter.skip) {
       console.log(`Pre-filter: ${preFilter.reason} for ${item.url}`);
       await sb.from("import_job_items").update({ status: "skipped", error_message: preFilter.reason, error_type: "permanent" }).eq("id", item.id);
