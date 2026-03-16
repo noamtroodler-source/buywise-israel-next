@@ -1,17 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Check, X, AlertCircle, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-
-const CBS_CITIES = [
-  "Ashdod", "Ashkelon", "Beer Sheva", "Beit Shemesh", "Caesarea",
-  "Givatayim", "Haifa", "Herzliya", "Jerusalem", "Karmiel",
-  "Kfar Saba", "Modiin", "Nahariya", "Netanya", "Petah Tikva",
-  "Raanana", "Ramat Gan", "Rehovot", "Rishon LeZion", "Tel Aviv",
-  "Zichron Yaakov", "Hadera"
-];
+import { supabase } from '@/integrations/supabase/client';
 
 interface Mapping {
   city: string;
