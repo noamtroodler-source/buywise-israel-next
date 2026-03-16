@@ -187,6 +187,8 @@ const CITY_RENTAL_RANGES: Record<string, { min: number; max: number }> = {
   "Ma'ale Adumim":  { min: 3_000, max: 9_000 },
   "Mevaseret Zion": { min: 4_000, max: 14_000 },
   "Pardes Hanna":   { min: 2_500, max: 8_000 },
+  "Rehovot":        { min: 2_500, max: 9_000 },
+  "Rishon LeZion":  { min: 3_000, max: 11_000 },
   "Zichron Yaakov": { min: 3_000, max: 10_000 },
 };
 

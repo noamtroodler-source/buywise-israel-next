@@ -39,6 +39,8 @@ const cityAliases: Record<string, string[]> = {
   "Yokneam": ["yokneam", "yoqneam", "yokne'am"],
   "Kiryat Tivon": ["kiryat-tivon", "kiryattivon", "qiryat tivon"],
   "Pardes Hanna": ["pardes hanna", "pardes-hanna", "pardeshanna", "pardes hana", "pardeshana", "pardes hanna-karkur", "pardes hanna karkur"],
+  "Rehovot": ["rechovot", "rehovoth", "רחובות"],
+  "Rishon LeZion": ["rishon lezion", "rishon le zion", "rishon le-zion", "rishonlezion", "rishon", "ראשון לציון"],
 };
 
 /**
