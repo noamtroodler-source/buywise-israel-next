@@ -916,6 +916,30 @@ async function computeSha256(buffer: ArrayBuffer): Promise<string> {
   return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
+async function optimizeImage(
+  sourceUrl: string, bucket: string, basePath: string
+): Promise<{ thumb?: string; medium?: string; full?: string } | null> {
+  try {
+    const res = await fetch(
+      `${Deno.env.get("SUPABASE_URL")}/functions/v1/optimize-image`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+        },
+        body: JSON.stringify({ source_url: sourceUrl, bucket, base_path: basePath }),
+      }
+    );
+    if (!res.ok) { await res.text(); return null; }
+    const data = await res.json();
+    return data.optimized ? data.urls : null;
+  } catch (e) {
+    console.error("optimizeImage call failed:", e);
+    return null;
+  }
+}
+
 async function parallelImageDownload(
   sourceImages: string[], sb: any, bucketName: string, jobId: string, maxImages = 15
 ): Promise<{ urls: string[]; hashes: string[] }> {
@@ -956,7 +980,8 @@ async function parallelImageDownload(
         }
         seenHashes.add(hash);
 
-        const fileName = `imports/${jobId}/${crypto.randomUUID()}.${ext}`;
+        const imageId = crypto.randomUUID();
+        const fileName = `imports/${jobId}/${imageId}.${ext}`;
         const { error: uploadErr } = await sb.storage
           .from(bucketName).upload(fileName, imgBuffer, { contentType, upsert: false });
 
@@ -964,8 +989,14 @@ async function parallelImageDownload(
           const { data: urlData } = sb.storage.from(bucketName).getPublicUrl(fileName);
           const publicUrl = urlData?.publicUrl || null;
           if (!publicUrl) return null;
+
           // Only enhance the first image (cover photo)
-          const finalUrl = globalIdx === 0 ? await enhanceImage(publicUrl, sb, bucketName, jobId) : publicUrl;
+          const enhancedUrl = globalIdx === 0 ? await enhanceImage(publicUrl, sb, bucketName, jobId) : publicUrl;
+
+          // Optimize: convert to WebP + generate size variants
+          const optimized = await optimizeImage(enhancedUrl, bucketName, `imports/${jobId}/${imageId}`);
+          const finalUrl = optimized?.medium || enhancedUrl;
+
           return { url: finalUrl, hash };
         }
         return null;
