@@ -2701,9 +2701,11 @@ async function handleYad2AgencyDiscover(body: any) {
 
     console.log(`Yad2 agency ${listingMode}: page 1=${firstPageItems.length}, total=${totalCount}, pages=${totalPages}`);
 
-    for (let startPage = 2; startPage <= totalPages; startPage += 5) {
+    // Process pages in small batches (Firecrawl has rate limits)
+    const PAGE_BATCH_SIZE = 2;
+    for (let startPage = 2; startPage <= totalPages; startPage += PAGE_BATCH_SIZE) {
       const pageBatch = Array.from(
-        { length: Math.min(5, totalPages - startPage + 1) },
+        { length: Math.min(PAGE_BATCH_SIZE, totalPages - startPage + 1) },
         (_, index) => startPage + index
       );
 
@@ -2712,11 +2714,16 @@ async function handleYad2AgencyDiscover(body: any) {
       );
 
       pageHtmlBatch.forEach((pageHtml, index) => {
-        const pageNumber = pageBatch[index];
-        const pageUrl = buildYad2AgencyPageUrl(discoveryUrl, pageNumber);
+        const pageUrl = buildYad2AgencyPageUrl(discoveryUrl, pageBatch[index]);
         const pageItems = extractYad2AgencyItemUrls(pageHtml, pageUrl);
+        console.log(`[Yad2] page ${pageBatch[index]}: ${pageItems.length} items`);
         pageItems.forEach((url) => discoveredUrls.add(url));
       });
+
+      // Small delay between batches to respect rate limits
+      if (startPage + PAGE_BATCH_SIZE <= totalPages) {
+        await new Promise(r => setTimeout(r, 1000));
+      }
     }
   }
 
