@@ -94,16 +94,7 @@ export function PropertyValueSnapshot({
 
   // Rental-specific cards
   if (isRental) {
-    const hasCityAvg = !!cityAvgTotalMonthly;
-    const hasComparison = rentalComparisonPercent !== null;
-    // Always show Total Monthly card for rentals
-    const cardCount = [true, hasCityAvg, hasComparison].filter(Boolean).length;
-    
-    const gridCols = cardCount === 3 
-      ? 'grid-cols-1 sm:grid-cols-3' 
-      : cardCount === 2
-        ? 'grid-cols-1 sm:grid-cols-2'
-        : 'grid-cols-1';
+    // Always show all 3 cards for rentals
 
     return (
       <div className="space-y-4">
@@ -114,7 +105,7 @@ export function PropertyValueSnapshot({
           </div>
         )}
         
-        <div className={`grid ${gridCols} gap-4`}>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {/* Total Monthly Commitment */}
           <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
             <div className="flex items-center gap-2 text-muted-foreground mb-1">
@@ -130,46 +121,64 @@ export function PropertyValueSnapshot({
           </div>
 
           {/* City Average Total Monthly */}
-          {cityAvgTotalMonthly && (
-            <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
-              <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                <Home className="h-4 w-4" />
-                <span className="text-sm">{city} {bedrooms || 3}-Room Avg</span>
-              </div>
-              <p className="text-2xl font-bold text-foreground">
-                {formatPrice(cityAvgTotalMonthly, 'ILS')}/mo
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Rent + Arnona + Va'ad
-              </p>
+          <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
+            <div className="flex items-center gap-2 text-muted-foreground mb-1">
+              <Home className="h-4 w-4" />
+              <span className="text-sm">{city} {bedrooms || 3}-Room Avg</span>
             </div>
-          )}
+            {cityAvgTotalMonthly ? (
+              <>
+                <p className="text-2xl font-bold text-foreground">
+                  {formatPrice(cityAvgTotalMonthly, 'ILS')}/mo
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Rent + Arnona + Va'ad
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-lg font-semibold text-muted-foreground/60">No data yet</p>
+                <p className="text-xs text-muted-foreground mt-1">City rental data unavailable</p>
+              </>
+            )}
+          </div>
 
           {/* Comparison to Market */}
-          {rentalComparisonPercent !== null && (
-            <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
-              <div className="flex items-center gap-2 text-muted-foreground mb-1">
-              {rentalComparisonPercent > 0 ? (
-                <TrendingUp className="h-4 w-4 text-semantic-red" />
-              ) : rentalComparisonPercent < 0 ? (
-                <TrendingDown className="h-4 w-4 text-semantic-green" />
+          <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
+            <div className="flex items-center gap-2 text-muted-foreground mb-1">
+              {rentalComparisonPercent !== null ? (
+                rentalComparisonPercent > 0 ? (
+                  <TrendingUp className="h-4 w-4 text-semantic-red" />
+                ) : rentalComparisonPercent < 0 ? (
+                  <TrendingDown className="h-4 w-4 text-semantic-green" />
+                ) : (
+                  <Minus className="h-4 w-4" />
+                )
               ) : (
-                <Minus className="h-4 w-4" />
+                <Minus className="h-4 w-4 text-muted-foreground/40" />
               )}
-                <span className="text-sm">vs Market Rate</span>
-              </div>
-              <p className="text-2xl font-bold text-foreground">
-                {rentalComparisonPercent > 0 ? '+' : ''}{rentalComparisonPercent}%
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                {rentalComparisonPercent > 0 
-                  ? 'Above market rate' 
-                  : rentalComparisonPercent < 0 
-                    ? 'Below market rate' 
-                    : 'At market rate'}
-              </p>
+              <span className="text-sm">vs Market Rate</span>
             </div>
-          )}
+            {rentalComparisonPercent !== null ? (
+              <>
+                <p className="text-2xl font-bold text-foreground">
+                  {rentalComparisonPercent > 0 ? '+' : ''}{rentalComparisonPercent}%
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {rentalComparisonPercent > 0 
+                    ? 'Above market rate' 
+                    : rentalComparisonPercent < 0 
+                      ? 'Below market rate' 
+                      : 'At market rate'}
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-lg font-semibold text-muted-foreground/60">No data yet</p>
+                <p className="text-xs text-muted-foreground mt-1">Market comparison unavailable</p>
+              </>
+            )}
+          </div>
         </div>
       </div>
     );

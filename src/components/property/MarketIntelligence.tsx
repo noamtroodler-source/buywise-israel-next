@@ -108,7 +108,6 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
   }, []);
 
   const citySlug = property.city?.toLowerCase().replace(/['']/g, '').replace(/\s+/g, '-') || '';
-  const hasComps = property.latitude && property.longitude;
 
   // Room-specific city average (overrides generic city avg when available)
   const { data: roomPrice } = useRoomSpecificCityPrice(property.city, property.bedrooms);
@@ -204,33 +203,29 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
         />
 
         {/* Divider with evidence count */}
-        {hasComps && (
-          <>
-            <div className="flex items-center gap-3">
-              <Separator className="flex-1" />
-              <span className="text-xs text-muted-foreground whitespace-nowrap">
-                {verdictData.compsCount > 0 
-                  ? `Based on ${verdictData.compsCount} verified sale${verdictData.compsCount > 1 ? 's' : ''} within 500m`
-                  : 'Nearby sales within 500m'
-                }
-              </span>
-              <Separator className="flex-1" />
-            </div>
+        <div className="flex items-center gap-3">
+          <Separator className="flex-1" />
+          <span className="text-xs text-muted-foreground whitespace-nowrap">
+            {verdictData.compsCount > 0 
+              ? `Based on ${verdictData.compsCount} verified sale${verdictData.compsCount > 1 ? 's' : ''} within 500m`
+              : 'Nearby sales within 500m'
+            }
+          </span>
+          <Separator className="flex-1" />
+        </div>
 
-            {/* Comps List (no header, no verdict) */}
-            <RecentNearbySales
-              latitude={property.latitude}
-              longitude={property.longitude}
-              city={property.city}
-              propertyRooms={property.bedrooms ?? undefined}
-              propertyPrice={property.price}
-              propertySizeSqm={property.size_sqm ?? undefined}
-              hideHeader
-              hideVerdict
-              onVerdictComputed={handleVerdictComputed}
-            />
-          </>
-        )}
+        {/* Comps List (no header, no verdict) */}
+        <RecentNearbySales
+          latitude={property.latitude}
+          longitude={property.longitude}
+          city={property.city}
+          propertyRooms={property.bedrooms ?? undefined}
+          propertyPrice={property.price}
+          propertySizeSqm={property.size_sqm ?? undefined}
+          hideHeader
+          hideVerdict
+          onVerdictComputed={handleVerdictComputed}
+        />
 
         {/* AI Market Insight — placed after evidence so it reads as a conclusion */}
         <AIMarketInsight insight={insight} isLoading={insightLoading} />
