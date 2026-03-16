@@ -1,17 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Check, X, AlertCircle, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-
-const CBS_CITIES = [
-  "Ashdod", "Ashkelon", "Beer Sheva", "Beit Shemesh", "Caesarea",
-  "Givatayim", "Haifa", "Herzliya", "Jerusalem", "Karmiel",
-  "Kfar Saba", "Modiin", "Nahariya", "Netanya", "Petah Tikva",
-  "Raanana", "Ramat Gan", "Rehovot", "Rishon LeZion", "Tel Aviv",
-  "Zichron Yaakov", "Hadera"
-];
+import { supabase } from '@/integrations/supabase/client';
 
 interface Mapping {
   city: string;
@@ -54,22 +47,50 @@ const confidenceColor: Record<string, string> = {
 };
 
 export default function MapNeighborhoods() {
+  const [cbsCities, setCbsCities] = useState<string[]>([]);
   const [results, setResults] = useState<CityResult[]>([]);
   const [isRunning, setIsRunning] = useState(false);
+  const [isLoadingCities, setIsLoadingCities] = useState(true);
   const [currentCity, setCurrentCity] = useState<string | null>(null);
   const { toast } = useToast();
 
+  useEffect(() => {
+    async function fetchCities() {
+      setIsLoadingCities(true);
+      // Fetch all distinct city_en values, paginated
+      const allCities = new Set<string>();
+      let page = 0;
+      while (true) {
+        const { data, error } = await supabase
+          .from('neighborhood_price_history')
+          .select('city_en')
+          .order('city_en')
+          .range(page * 1000, (page + 1) * 1000 - 1);
+        if (error || !data || data.length === 0) break;
+        for (const row of data) {
+          if (row.city_en) allCities.add(row.city_en);
+        }
+        if (data.length < 1000) break;
+        page++;
+      }
+      setCbsCities([...allCities].sort());
+      setIsLoadingCities(false);
+    }
+    fetchCities();
+  }, []);
+
   const runMapping = async () => {
     setIsRunning(true);
-    const cityResults: CityResult[] = CBS_CITIES.map(city => ({
+    const cityResults: CityResult[] = cbsCities.map(city => ({
       city, status: 'pending', mappings: [], unmapped_cbs: [], unmapped_anglo: [],
     }));
     setResults([...cityResults]);
 
     const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+    const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-    for (let i = 0; i < CBS_CITIES.length; i++) {
-      const city = CBS_CITIES[i];
+    for (let i = 0; i < cbsCities.length; i++) {
+      const city = cbsCities[i];
       setCurrentCity(city);
       cityResults[i].status = 'processing';
       setResults([...cityResults]);
@@ -77,7 +98,15 @@ export default function MapNeighborhoods() {
       try {
         const res = await fetch(
           `https://${projectId}.supabase.co/functions/v1/map-neighborhoods?city=${encodeURIComponent(city)}`,
-          { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': anonKey,
+              'Authorization': `Bearer ${anonKey}`,
+            },
+            body: '{}',
+          }
         );
 
         if (!res.ok) {
@@ -106,7 +135,7 @@ export default function MapNeighborhoods() {
 
     setIsRunning(false);
     setCurrentCity(null);
-    toast({ title: 'Mapping complete', description: `Processed ${CBS_CITIES.length} cities` });
+    toast({ title: 'Mapping complete', description: `Processed ${cbsCities.length} cities` });
   };
 
   const allMappings = results.flatMap(r => r.mappings);
@@ -128,13 +157,18 @@ export default function MapNeighborhoods() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center gap-4">
-            <Button onClick={runMapping} disabled={isRunning} size="lg">
-              {isRunning ? (
+            <Button onClick={runMapping} disabled={isRunning || isLoadingCities || cbsCities.length === 0} size="lg">
+              {isLoadingCities ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {currentCity} ({completedCities}/{CBS_CITIES.length})
+                  Loading cities...
                 </>
-              ) : 'Run Mapping for All Cities'}
+              ) : isRunning ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {currentCity} ({completedCities}/{cbsCities.length})
+                </>
+              ) : `Run Mapping for All Cities (${cbsCities.length})`}
             </Button>
             {allMappings.length > 0 && (
               <Button variant="outline" onClick={copyJson}>

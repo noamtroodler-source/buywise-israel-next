@@ -7,6 +7,13 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// CBS city names → platform city names (for querying the cities table)
+const CBS_TO_PLATFORM: Record<string, string> = {
+  "Maale Adumim": "Ma'ale Adumim",
+  "Modiin": "Modi'in",
+  "Raanana": "Ra'anana",
+};
+
 async function matchCity(
   city: string,
   anglo: { name: string; name_he?: string }[],
@@ -159,17 +166,27 @@ serve(async (req) => {
     }
 
     // Get Anglo roster
+    // Get all cities from platform (we need to check normalized names)
+    const platformCityName = onlyCity ? (CBS_TO_PLATFORM[onlyCity] || onlyCity) : null;
     let citiesQuery = supabase.from("cities").select("name, slug, neighborhoods").order("name");
-    if (onlyCity) citiesQuery = citiesQuery.eq("name", onlyCity);
+    if (platformCityName) citiesQuery = citiesQuery.eq("name", platformCityName);
     const { data: cities, error: citiesErr } = await citiesQuery;
     if (citiesErr) throw new Error(`Cities query: ${citiesErr.message}`);
+
+    // Build reverse map: platform name → CBS name
+    const platformToCbs: Record<string, string> = {};
+    for (const [cbs, platform] of Object.entries(CBS_TO_PLATFORM)) {
+      platformToCbs[platform] = cbs;
+    }
 
     // Group by city
     const angloByCity: Record<string, { name: string; name_he?: string }[]> = {};
     for (const city of cities || []) {
       const raw = city.neighborhoods as any[];
       if (!Array.isArray(raw) || raw.length === 0) continue;
-      angloByCity[city.name] = raw
+      // Use CBS name as key (reverse lookup), fallback to platform name
+      const cbsName = platformToCbs[city.name] || city.name;
+      angloByCity[cbsName] = raw
         .filter((n: any) => n.name)
         .map((n: any) => ({ name: n.name, name_he: n.name_he || n.hebrew_name || undefined }));
     }
