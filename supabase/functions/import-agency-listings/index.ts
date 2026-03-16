@@ -389,11 +389,15 @@ function isNonResalePage(markdown: string, importType: string = "resale"): { ski
 const VALID_PROPERTY_TYPES = [
   "apartment", "garden_apartment", "penthouse", "mini_penthouse",
   "duplex", "house", "cottage", "land", "commercial",
+  "parking", "storage", "building", "agricultural_estate", "assisted_living",
 ];
 const VALID_LISTING_STATUSES = ["for_sale", "for_rent"];
 
-// Property types to skip during resale import
-const SKIP_PROPERTY_TYPES = new Set(["land", "commercial"]);
+// Property types to always skip during import (non-residential)
+const SKIP_PROPERTY_TYPES = new Set([
+  "land", "commercial", "parking", "storage",
+  "building", "agricultural_estate", "assisted_living",
+]);
 
 function validatePropertyData(listing: Record<string, any>, importType: string = "resale"): { errors: string[]; warnings: string[] } {
   const errors: string[] = [];
