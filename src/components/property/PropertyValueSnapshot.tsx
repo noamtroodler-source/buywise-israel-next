@@ -176,22 +176,6 @@ export function PropertyValueSnapshot({
   }
 
   // Purchase properties (for_sale, sold)
-  // Count available cards dynamically
-  const hasPropertyPrice = !!propertyPricePerSqm;
-  const hasComparison = purchaseComparisonPercent !== null && averagePriceSqm;
-  const hasTrend = priceChange !== null && priceChange !== undefined;
-  
-  // Don't render if no data at all
-  if (!hasPropertyPrice && !hasComparison && !hasTrend) return null;
-  
-  // Dynamic grid based on card count (max 3 cards)
-  const cardCount = [hasPropertyPrice, hasComparison, hasTrend].filter(Boolean).length;
-  const gridCols = cardCount === 3 
-    ? 'grid-cols-1 sm:grid-cols-3' 
-    : cardCount === 2
-      ? 'grid-cols-1 sm:grid-cols-2'
-      : 'grid-cols-1';
-
   return (
     <div className={hideHeader ? undefined : "space-y-4"}>
       {!hideHeader && (
@@ -201,94 +185,123 @@ export function PropertyValueSnapshot({
         </div>
       )}
       
-      <div className={`grid ${gridCols} gap-4`}>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* Card 1: This Property (Price/m²) */}
-        {propertyPricePerSqm && (
-          <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
-            <div className="flex items-center gap-2 text-muted-foreground mb-1">
-              <DollarSign className="h-4 w-4" />
-              <span className="text-sm">This Property</span>
-            </div>
-            <p className="text-2xl font-bold text-foreground">
-              {formatPricePerArea(propertyPricePerSqm, 'ILS')}
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Price per m²
-            </p>
+        <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
+          <div className="flex items-center gap-2 text-muted-foreground mb-1">
+            <DollarSign className="h-4 w-4" />
+            <span className="text-sm">This Property</span>
           </div>
-        )}
+          {propertyPricePerSqm ? (
+            <>
+              <p className="text-2xl font-bold text-foreground">
+                {formatPricePerArea(propertyPricePerSqm, 'ILS')}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Price per m²
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-lg font-semibold text-muted-foreground/60">No data yet</p>
+              <p className="text-xs text-muted-foreground mt-1">Size not listed</p>
+            </>
+          )}
+        </div>
 
-        {/* Card 2: vs City Average (combines comparison % with city avg as subtext) */}
-        {purchaseComparisonPercent !== null && averagePriceSqm && (
-          <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
-            <div className="flex items-center gap-2 text-muted-foreground mb-1">
-              {purchaseComparisonPercent > 0 ? (
+        {/* Card 2: vs City Average */}
+        <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
+          <div className="flex items-center gap-2 text-muted-foreground mb-1">
+            {purchaseComparisonPercent !== null ? (
+              purchaseComparisonPercent > 0 ? (
                 <TrendingUp className="h-4 w-4 text-semantic-red" />
               ) : purchaseComparisonPercent < 0 ? (
                 <TrendingDown className="h-4 w-4 text-semantic-green" />
               ) : (
                 <Minus className="h-4 w-4" />
-              )}
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="text-sm cursor-help border-b border-dotted border-muted-foreground/30">
-                      vs {city} {roomCount ? `${roomCount}-Room ` : ''}Avg
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-xs">
-                    <p className="font-medium mb-1">Price vs {roomCount ? `${roomCount}-Room ` : 'City '}Average</p>
-                    <p className="text-xs text-muted-foreground">
-                      Compares this property's price per m² against the average {roomCount ? `${roomCount}-room ` : ''}sale price in {city}, based on recent government-recorded transactions. A positive % means priced above average; negative means below.
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-            <p className="text-2xl font-bold text-foreground">
-              {purchaseComparisonPercent > 0 ? '+' : ''}{purchaseComparisonPercent}%
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              {city}: {formatPricePerArea(averagePriceSqm, 'ILS')}
-            </p>
+              )
+            ) : (
+              <Minus className="h-4 w-4 text-muted-foreground/40" />
+            )}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="text-sm cursor-help border-b border-dotted border-muted-foreground/30">
+                    vs {city} {roomCount ? `${roomCount}-Room ` : ''}Avg
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs">
+                  <p className="font-medium mb-1">Price vs {roomCount ? `${roomCount}-Room ` : 'City '}Average</p>
+                  <p className="text-xs text-muted-foreground">
+                    Compares this property's price per m² against the average {roomCount ? `${roomCount}-room ` : ''}sale price in {city}, based on recent government-recorded transactions. A positive % means priced above average; negative means below.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
-        )}
+          {purchaseComparisonPercent !== null && averagePriceSqm ? (
+            <>
+              <p className="text-2xl font-bold text-foreground">
+                {purchaseComparisonPercent > 0 ? '+' : ''}{purchaseComparisonPercent}%
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {city}: {formatPricePerArea(averagePriceSqm, 'ILS')}
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-lg font-semibold text-muted-foreground/60">No data yet</p>
+              <p className="text-xs text-muted-foreground mt-1">City average unavailable</p>
+            </>
+          )}
+        </div>
 
-        {/* 12-Month Trend */}
-        {priceChange !== null && priceChange !== undefined && (
-          <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
-            <div className="flex items-center gap-2 text-muted-foreground mb-1">
-              {priceChange > 0 ? (
+        {/* Card 3: 12-Month Trend */}
+        <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
+          <div className="flex items-center gap-2 text-muted-foreground mb-1">
+            {priceChange !== null && priceChange !== undefined ? (
+              priceChange > 0 ? (
                 <TrendingUp className="h-4 w-4 text-semantic-green" />
               ) : priceChange < 0 ? (
                 <TrendingDown className="h-4 w-4 text-semantic-red" />
               ) : (
                 <Minus className="h-4 w-4" />
-              )}
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="text-sm cursor-help border-b border-dotted border-muted-foreground/30">
-                      12-Month Trend
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-xs">
-                    <p className="font-medium mb-1">Area Price Trend</p>
-                    <p className="text-xs text-muted-foreground">
-                      How much property prices in {city} have changed over the past 12 months, based on government transaction data.
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-            <p className="text-2xl font-bold text-foreground">
-              {priceChange > 0 ? '+' : ''}{priceChange}%
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              {city} avg prices
-            </p>
+              )
+            ) : (
+              <Minus className="h-4 w-4 text-muted-foreground/40" />
+            )}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="text-sm cursor-help border-b border-dotted border-muted-foreground/30">
+                    12-Month Trend
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs">
+                  <p className="font-medium mb-1">Area Price Trend</p>
+                  <p className="text-xs text-muted-foreground">
+                    How much property prices in {city} have changed over the past 12 months, based on government transaction data.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
-        )}
+          {priceChange !== null && priceChange !== undefined ? (
+            <>
+              <p className="text-2xl font-bold text-foreground">
+                {priceChange > 0 ? '+' : ''}{priceChange}%
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {city} avg prices
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-lg font-semibold text-muted-foreground/60">No data yet</p>
+              <p className="text-xs text-muted-foreground mt-1">Trend data unavailable</p>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
