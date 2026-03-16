@@ -150,7 +150,7 @@ export function ImageDedupPanel() {
               <ExternalLink className="h-3 w-3" />
               Review All Duplicates
             </Link>
-          <div className="space-y-4 max-h-[400px] overflow-y-auto">
+            <div className="space-y-4 max-h-[400px] overflow-y-auto">
             {groups.map((group, idx) => (
               <div
                 key={idx}
