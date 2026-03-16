@@ -13,6 +13,7 @@ export interface ImportJob {
   failed_count: number;
   discovered_urls: string[];
   import_type: string;
+  source_type?: string | null;
   is_incremental: boolean;
   created_at: string;
   updated_at: string;
@@ -46,7 +47,6 @@ export function useImportJobs(agencyId: string | undefined) {
       return data as ImportJob[];
     },
     enabled: !!agencyId,
-    // Realtime handles live updates via useRealtimeImportProgress hook
   });
 }
 
@@ -64,7 +64,6 @@ export function useImportJobItems(jobId: string | undefined) {
       return data as ImportJobItem[];
     },
     enabled: !!jobId,
-    // Realtime handles live updates via useRealtimeImportProgress hook
   });
 }
 
@@ -85,10 +84,13 @@ export function useDiscoverListings() {
         new_urls?: number;
         skipped_existing?: number;
         resumed?: boolean;
+        started_async?: boolean;
       };
     },
     onSuccess: (data) => {
-      if (data.new_urls === 0 || (!data.job_id && data.skipped_existing)) {
+      if (data.started_async) {
+        toast.success('Discovery started — scanning continues in the background. This may take 2-5 minutes.');
+      } else if (data.new_urls === 0 || (!data.job_id && data.skipped_existing)) {
         toast.info(`Your site is up to date — no new listings found. (${data.total_discovered} URLs scanned, ${data.skipped_existing || 0} already imported)`);
       } else if (data.skipped_existing && data.skipped_existing > 0) {
         toast.success(`Found ${data.new_urls || data.total_listings} new listing pages (${data.skipped_existing} already imported)`);
