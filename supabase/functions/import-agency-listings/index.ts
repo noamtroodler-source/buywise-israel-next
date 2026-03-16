@@ -21,7 +21,7 @@ const SUPPORTED_CITIES = [
   "Haifa", "Herzliya", "Hod HaSharon", "Jerusalem", "Kfar Saba",
   "Ma'ale Adumim", "Mevaseret Zion", "Modi'in", "Netanya",
   "Pardes Hanna", "Petah Tikva", "Ra'anana", "Ramat Gan",
-  "Tel Aviv", "Zichron Yaakov",
+  "Rehovot", "Rishon LeZion", "Tel Aviv", "Zichron Yaakov",
 ];
 
 // Common aliases/transliterations for supported cities
