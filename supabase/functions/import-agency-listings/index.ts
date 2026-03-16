@@ -2801,12 +2801,20 @@ function normalizeYad2Result(raw: any): Record<string, any> {
 
 function mapYad2PropertyType(type: string): string {
   const t = type.toLowerCase();
-  if (t.includes("דירה") || t.includes("apartment")) return "apartment";
+  // Non-residential types first (more specific matches)
+  if (t.includes("חניה") || t.includes("parking")) return "parking";
+  if (t.includes("מחסן") || t.includes("storage")) return "storage";
+  if (t.includes("בניין") || t.includes("building")) return "building";
+  if (t.includes("חקלאי") || t.includes("נחלה") || t.includes("agricultural")) return "agricultural_estate";
+  if (t.includes("דיור מוגן") || t.includes("assisted")) return "assisted_living";
+  if (t.includes("מגרש") || t.includes("land")) return "land";
+  // Residential types
   if (t.includes("דירת גן") || t.includes("garden")) return "garden_apartment";
   if (t.includes("פנטהאוז") || t.includes("penthouse")) return "penthouse";
   if (t.includes("דופלקס") || t.includes("duplex")) return "duplex";
   if (t.includes("בית") || t.includes("וילה") || t.includes("house") || t.includes("villa")) return "house";
   if (t.includes("קוטג") || t.includes("cottage")) return "cottage";
+  if (t.includes("דירה") || t.includes("apartment")) return "apartment";
   return "apartment";
 }
 
