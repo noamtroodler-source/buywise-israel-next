@@ -655,14 +655,64 @@ function computeConfidenceScore(
 
 function normalizeAddressForDedup(address: string): string {
   let norm = address.trim().toLowerCase();
-  // Strip Hebrew "רחוב" (street) prefix
-  norm = norm.replace(/^רחוב\s+/, "");
+
+  // 1. Strip apartment/floor/unit suffixes (Hebrew + English)
+  // e.g. "דירה 5", "קומה 3", "apt 4", "floor 2", "unit 12", "#3"
+  norm = norm.replace(/(,?\s*)(דירה|דירת|קומה|כניסה|apt\.?|apartment|floor|unit|suite|ste\.?|#)\s*\d*\s*/gi, " ");
+
+  // 2. Strip Hebrew street prefixes
+  norm = norm.replace(/^(רחוב|רח[׳']|שדרות|שד[׳']|סמטת|סמ[׳']|ככר)\s+/u, "");
+  // Strip English street type words
+  norm = norm.replace(/\b(street|st\.?|avenue|ave\.?|boulevard|blvd\.?|road|rd\.?|drive|dr\.?|lane|ln\.?)\b/gi, "");
+  // Strip transliterated Hebrew prefix
   norm = norm.replace(/^rechov\s+/i, "");
-  // Normalize Hebrew final-form characters
+  norm = norm.replace(/^sderot\s+/i, "");
+
+  // 3. Strip leading Hebrew definite article "ה" when standalone prefix before a name
+  norm = norm.replace(/^ה(?=[א-ת])/, "");
+
+  // 4. Normalize Hebrew final-form characters → base form
   norm = norm.replace(/ך/g, "כ").replace(/ם/g, "מ").replace(/ן/g, "נ").replace(/ף/g, "פ").replace(/ץ/g, "צ");
-  // Remove extra spaces and hyphens in house numbers
+
+  // 5. Normalize punctuation: remove quotes, periods, commas
+  norm = norm.replace(/['"״׳,.]/g, "");
+
+  // 6. Normalize common transliteration variants
+  norm = norm.replace(/ch/g, "kh").replace(/tz/g, "ts");
+  // Collapse double letters
+  norm = norm.replace(/(.)\1+/g, "$1");
+
+  // 7. Remove extra spaces and hyphens
   norm = norm.replace(/\s+/g, " ").replace(/-/g, "").trim();
+
   return norm;
+}
+
+/** Clean address for storage — strips apartment/floor info and street prefixes for consistency */
+function normalizeAddressForStorage(address: string): string {
+  let norm = address.trim();
+  // Strip apartment/floor suffixes (preserve casing for display)
+  norm = norm.replace(/(,?\s*)(דירה|דירת|קומה|כניסה|apt\.?|apartment|floor|unit|suite|ste\.?|#)\s*\d*\s*/gi, " ");
+  // Strip Hebrew street prefixes
+  norm = norm.replace(/^(רחוב|רח[׳']|שדרות|שד[׳']|סמטת|סמ[׳']|ככר)\s+/u, "");
+  // Strip English street prefixes
+  norm = norm.replace(/^(street|st\.?|avenue|ave\.?|boulevard|blvd\.?)\s+/i, "");
+  // Clean up spacing
+  norm = norm.replace(/\s+/g, " ").trim();
+  return norm;
+}
+
+/** Build a looser ilike pattern to match against raw DB addresses */
+function buildAddressQueryPattern(normalizedAddr: string): string {
+  // Extract the core: street name + house number (first number found)
+  const numberMatch = normalizedAddr.match(/\d+/);
+  const streetPart = normalizedAddr.replace(/\d+.*$/, "").trim();
+  if (!streetPart) return `%${normalizedAddr}%`;
+  if (numberMatch) {
+    // Match: anything...street...number...anything
+    return `%${streetPart}%${numberMatch[0]}%`;
+  }
+  return `%${streetPart}%`;
 }
 
 // ─── AI URL CLASSIFICATION (BATCHED) ────────────────────────────────────────
