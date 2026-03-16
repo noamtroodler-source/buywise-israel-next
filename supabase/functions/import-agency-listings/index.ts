@@ -1822,7 +1822,7 @@ async function processOneItem(
                   address: { type: "string" },
                   city: { type: "string", description: "Must be one of the supported cities" },
                   neighborhood: { type: "string" },
-                  property_type: { type: "string", enum: ["apartment", "garden_apartment", "penthouse", "mini_penthouse", "duplex", "house", "cottage", "land", "commercial"] },
+                  property_type: { type: "string", enum: ["apartment", "garden_apartment", "penthouse", "mini_penthouse", "duplex", "house", "cottage", "land", "commercial", "parking", "storage", "building", "agricultural_estate", "assisted_living"] },
                   listing_status: { type: "string", enum: ["for_sale", "for_rent"] },
                   floor: { type: "number" },
                   total_floors: { type: "number" },
