@@ -110,9 +110,7 @@ Deno.serve(async (req) => {
         source: "govmap_gov_il",
         is_new_construction: false,
         raw_data: txn.raw_data,
-        price_per_sqm: txn.size_sqm && txn.size_sqm > 0
-          ? Math.round(txn.sold_price / txn.size_sqm)
-          : null,
+        // price_per_sqm is a GENERATED ALWAYS column — do NOT include it
       }));
 
       const { data, error } = await serviceClient
