@@ -113,6 +113,16 @@ export function ImportReviewCard({ item, isExpanded, onToggle, onApprove, isAppr
                 </div>
               )}
 
+              {data.cross_source_match_id && (
+                <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-sm">
+                  <AlertTriangle className="h-3.5 w-3.5 inline mr-1.5 text-yellow-600" />
+                  <span className="text-yellow-700 font-medium">Cross-source duplicate detected</span>
+                  <p className="text-xs text-yellow-600/80 mt-1">
+                    This listing may already exist under a different agent (property ID: {data.cross_source_match_id}).
+                  </p>
+                </div>
+              )}
+
               {/* Raw JSON Preview */}
               <details className="text-xs">
                 <summary className="cursor-pointer text-muted-foreground hover:text-foreground">

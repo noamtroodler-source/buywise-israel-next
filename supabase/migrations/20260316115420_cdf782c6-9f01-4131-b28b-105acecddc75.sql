@@ -1,0 +1,1 @@
+ALTER TABLE public.import_jobs ADD COLUMN IF NOT EXISTS source_type text NOT NULL DEFAULT 'website';

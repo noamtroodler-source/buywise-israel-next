@@ -91,6 +91,7 @@ export default function AgencyImport() {
   const { startProcessAll, stopProcessAll, isProcessingAll, processingStartTime, processedSoFar } = useProcessAll();
   const [websiteUrl, setWebsiteUrl] = useState('');
   const [importType, setImportType] = useState<'resale' | 'rental' | 'all'>('resale');
+  const [sourceType, setSourceType] = useState<'website' | 'yad2'>('website');
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
 
   // Use the most recent active job or the one selected
@@ -110,6 +111,7 @@ export default function AgencyImport() {
       agencyId: agency.id,
       websiteUrl: websiteUrl.trim(),
       importType,
+      sourceType,
     });
 
     // Only switch to job if one was created (new_urls > 0)
@@ -224,8 +226,24 @@ export default function AgencyImport() {
             </CardHeader>
             <CardContent className="pt-4 space-y-4">
               <p className="text-sm text-muted-foreground">
-                Paste your agency website URL. We'll scan it and find all property listing pages automatically.
+                Paste your agency website URL or Yad2 search URL. We'll scan and find all property listing pages automatically.
               </p>
+
+              {/* Source type selector */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">Source:</span>
+                {(['website', 'yad2'] as const).map(type => (
+                  <Button
+                    key={type}
+                    variant={sourceType === type ? 'default' : 'outline'}
+                    size="sm"
+                    className="rounded-lg"
+                    onClick={() => setSourceType(type)}
+                  >
+                    {type === 'website' ? 'Agency Website' : 'Yad2'}
+                  </Button>
+                ))}
+              </div>
 
               {/* Import type selector */}
               <div className="flex items-center gap-2">
@@ -248,7 +266,7 @@ export default function AgencyImport() {
                   type="url"
                   value={websiteUrl}
                   onChange={e => setWebsiteUrl(e.target.value)}
-                  placeholder="https://your-agency-website.com"
+                  placeholder={sourceType === 'yad2' ? 'https://www.yad2.co.il/realestate/forsale?city=...' : 'https://your-agency-website.com'}
                   className="rounded-xl flex-1"
                   required
                   disabled={isDiscovering}
