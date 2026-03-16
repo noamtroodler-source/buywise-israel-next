@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import {
-  CheckCircle2, XCircle, AlertTriangle, ExternalLink, ChevronDown, ChevronUp, Edit2,
+  CheckCircle2, XCircle, AlertTriangle, ExternalLink, ChevronDown, ChevronUp, Edit2, Eye, SkipForward,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { FieldConfidenceDot, getFieldConfidence } from './FieldConfidenceDot';
+import { PhotoGrid } from './PhotoGrid';
 import type { ImportJobItem } from '@/hooks/useImportListings';
 
 function ConfidenceBadge({ score }: { score: number | null }) {
@@ -26,15 +28,18 @@ interface ImportReviewCardProps {
   isExpanded: boolean;
   onToggle: () => void;
   onApprove: (editedData?: any) => void;
+  onSkip?: () => void;
   isApproving: boolean;
+  isSkipping?: boolean;
 }
 
-export function ImportReviewCard({ item, isExpanded, onToggle, onApprove, isApproving }: ImportReviewCardProps) {
+export function ImportReviewCard({ item, isExpanded, onToggle, onApprove, onSkip, isApproving, isSkipping }: ImportReviewCardProps) {
   const data = item.extracted_data || {};
   const confidence = item.confidence_score ?? data.confidence_score ?? null;
   const warnings = data.validation_warnings || [];
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState(data);
+  const [showSourcePreview, setShowSourcePreview] = useState(false);
 
   const statusIcon = item.status === 'done'
     ? <CheckCircle2 className="h-4 w-4 text-green-600" />
@@ -51,6 +56,22 @@ export function ImportReviewCard({ item, isExpanded, onToggle, onApprove, isAppr
     onApprove(editData);
     setIsEditing(false);
   };
+
+  const parsedFields = [
+    { key: 'title', label: 'Title', value: data.title },
+    { key: 'city', label: 'City', value: data.city },
+    { key: 'address', label: 'Address', value: data.address },
+    { key: 'neighborhood', label: 'Neighborhood', value: data.neighborhood },
+    { key: 'price', label: 'Price', value: data.price ? `₪${data.price.toLocaleString()}` : null, rawValue: data.price },
+    { key: 'bedrooms', label: 'Bedrooms', value: data.bedrooms, rawValue: data.bedrooms },
+    { key: 'bathrooms', label: 'Bathrooms', value: data.bathrooms, rawValue: data.bathrooms },
+    { key: 'size_sqm', label: 'Size', value: data.size_sqm ? `${data.size_sqm}m²` : null, rawValue: data.size_sqm },
+    { key: 'floor', label: 'Floor', value: data.floor },
+    { key: 'property_type', label: 'Type', value: data.property_type },
+    { key: 'listing_status', label: 'Status', value: data.listing_status },
+    { key: 'condition', label: 'Condition', value: data.condition },
+    { key: 'Photos', label: 'Photos', value: data.image_urls?.length || 0, rawValue: data.image_urls?.length || 0 },
+  ];
 
   return (
     <Card className="rounded-2xl border-primary/10 overflow-hidden">
@@ -85,15 +106,38 @@ export function ImportReviewCard({ item, isExpanded, onToggle, onApprove, isAppr
             {/* Left: Source Info */}
             <div className="space-y-3">
               <h4 className="text-sm font-semibold text-muted-foreground">Source</h4>
-              <a
-                href={item.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm text-primary hover:underline flex items-center gap-1"
-              >
-                <ExternalLink className="h-3 w-3" />
-                {item.url}
-              </a>
+              <div className="flex items-center gap-2">
+                <a
+                  href={item.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-primary hover:underline flex items-center gap-1 min-w-0 truncate"
+                >
+                  <ExternalLink className="h-3 w-3 shrink-0" />
+                  <span className="truncate">{item.url}</span>
+                </a>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="shrink-0 text-xs rounded-lg"
+                  onClick={() => setShowSourcePreview(!showSourcePreview)}
+                >
+                  <Eye className="h-3 w-3 mr-1" />
+                  {showSourcePreview ? 'Hide' : 'Preview'}
+                </Button>
+              </div>
+
+              {showSourcePreview && (
+                <div className="rounded-lg border overflow-hidden bg-background" style={{ height: 300 }}>
+                  <iframe
+                    src={item.url}
+                    title="Source preview"
+                    sandbox="allow-scripts allow-same-origin"
+                    className="w-full h-full"
+                    loading="lazy"
+                  />
+                </div>
+              )}
 
               {item.error_message && (
                 <div className="p-3 rounded-lg bg-destructive/10 text-sm text-destructive">
@@ -120,6 +164,20 @@ export function ImportReviewCard({ item, isExpanded, onToggle, onApprove, isAppr
                   <p className="text-xs text-yellow-600/80 mt-1">
                     This listing may already exist under a different agent (property ID: {data.cross_source_match_id}).
                   </p>
+                </div>
+              )}
+
+              {/* Photo Gallery */}
+              {data.image_urls && data.image_urls.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold text-muted-foreground">
+                    Photos ({data.image_urls.length})
+                  </h4>
+                  <PhotoGrid
+                    imageUrls={isEditing ? editData.image_urls || [] : data.image_urls}
+                    editable={isEditing}
+                    onChange={(urls) => setEditData({ ...editData, image_urls: urls })}
+                  />
                 </div>
               )}
 
@@ -161,6 +219,7 @@ export function ImportReviewCard({ item, isExpanded, onToggle, onApprove, isAppr
                     { key: 'property_type', label: 'Property Type' },
                   ].map(field => (
                     <div key={field.key} className="flex items-center gap-2">
+                      <FieldConfidenceDot level={getFieldConfidence(field.key, editData[field.key], editData)} />
                       <label className="text-xs text-muted-foreground w-24 shrink-0">{field.label}</label>
                       <Input
                         className="h-8 text-sm rounded-lg"
@@ -185,26 +244,17 @@ export function ImportReviewCard({ item, isExpanded, onToggle, onApprove, isAppr
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-2 text-sm">
-                  {[
-                    { label: 'Title', value: data.title },
-                    { label: 'City', value: data.city },
-                    { label: 'Address', value: data.address },
-                    { label: 'Neighborhood', value: data.neighborhood },
-                    { label: 'Price', value: data.price ? `₪${data.price.toLocaleString()}` : 'N/A' },
-                    { label: 'Bedrooms', value: data.bedrooms },
-                    { label: 'Bathrooms', value: data.bathrooms },
-                    { label: 'Size', value: data.size_sqm ? `${data.size_sqm}m²` : null },
-                    { label: 'Floor', value: data.floor },
-                    { label: 'Type', value: data.property_type },
-                    { label: 'Status', value: data.listing_status },
-                    { label: 'Condition', value: data.condition },
-                    { label: 'Photos', value: data.image_urls?.length || 0 },
-                  ].filter(f => f.value != null && f.value !== '').map(field => (
-                    <div key={field.label}>
-                      <p className="text-xs text-muted-foreground">{field.label}</p>
-                      <p className="font-medium">{field.value}</p>
-                    </div>
-                  ))}
+                  {parsedFields
+                    .filter(f => f.value != null && f.value !== '')
+                    .map(field => (
+                      <div key={field.label} className="flex items-start gap-1.5">
+                        <FieldConfidenceDot level={getFieldConfidence(field.key, field.rawValue ?? field.value, data)} />
+                        <div>
+                          <p className="text-xs text-muted-foreground">{field.label}</p>
+                          <p className="font-medium">{field.value}</p>
+                        </div>
+                      </div>
+                    ))}
                 </div>
               )}
 
@@ -215,6 +265,12 @@ export function ImportReviewCard({ item, isExpanded, onToggle, onApprove, isAppr
                     <CheckCircle2 className="h-3 w-3 mr-1" />
                     Approve
                   </Button>
+                  {onSkip && (
+                    <Button size="sm" variant="outline" className="rounded-lg" onClick={onSkip} disabled={isSkipping}>
+                      <SkipForward className="h-3 w-3 mr-1" />
+                      Skip
+                    </Button>
+                  )}
                 </div>
               )}
             </div>

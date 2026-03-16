@@ -236,6 +236,28 @@ export function useUpdateAutoSync() {
   });
 }
 
+export function useSkipItem() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (itemId: string) => {
+      const { error } = await supabase
+        .from('import_job_items')
+        .update({ status: 'skipped' } as any)
+        .eq('id', itemId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Item skipped');
+      queryClient.invalidateQueries({ queryKey: ['importJobItems'] });
+      queryClient.invalidateQueries({ queryKey: ['importJobs'] });
+    },
+    onError: (err: Error) => {
+      toast.error(`Skip failed: ${err.message}`);
+    },
+  });
+}
+
 export function useProcessAll() {
   const queryClient = useQueryClient();
   const [isProcessingAll, setIsProcessingAll] = useState(false);

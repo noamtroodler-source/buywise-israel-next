@@ -3,10 +3,10 @@ import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft, Loader2, CheckCircle2, XCircle, AlertTriangle,
-  ExternalLink, Eye, Filter,
+  Filter, SkipForward, ImageOff, AlertCircle, Copy,
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -15,12 +15,12 @@ import {
   useImportJobItems,
   useImportJobs,
   useApproveItem,
+  useSkipItem,
   ImportJobItem,
 } from '@/hooks/useImportListings';
 import { ImportReviewCard } from '@/components/agency/ImportReviewCard';
-import { cn } from '@/lib/utils';
 
-type FilterTab = 'all' | 'pending' | 'done' | 'failed';
+type FilterTab = 'all' | 'pending' | 'done' | 'failed' | 'low_confidence' | 'no_photos' | 'duplicates';
 
 export default function AgencyImportReview() {
   const { jobId } = useParams<{ jobId: string }>();
@@ -28,16 +28,24 @@ export default function AgencyImportReview() {
   const { data: jobs = [] } = useImportJobs(agency?.id);
   const { data: items = [], isLoading: itemsLoading } = useImportJobItems(jobId);
   const approveMutation = useApproveItem();
+  const skipMutation = useSkipItem();
   const [filterTab, setFilterTab] = useState<FilterTab>('all');
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
 
   const job = jobs.find(j => j.id === jobId);
+
+  const getConfidence = (i: ImportJobItem) => i.confidence_score ?? i.extracted_data?.confidence_score ?? 0;
+  const getPhotoCount = (i: ImportJobItem) => i.extracted_data?.image_urls?.length || 0;
+  const hasDuplicate = (i: ImportJobItem) => !!i.extracted_data?.cross_source_match_id;
 
   const filteredItems = useMemo(() => {
     switch (filterTab) {
       case 'pending': return items.filter(i => ['pending', 'processing'].includes(i.status));
       case 'done': return items.filter(i => i.status === 'done');
       case 'failed': return items.filter(i => ['failed', 'skipped'].includes(i.status));
+      case 'low_confidence': return items.filter(i => i.status === 'pending' && getConfidence(i) < 60);
+      case 'no_photos': return items.filter(i => i.status === 'pending' && getPhotoCount(i) === 0);
+      case 'duplicates': return items.filter(i => hasDuplicate(i));
       default: return items;
     }
   }, [items, filterTab]);
@@ -47,6 +55,9 @@ export default function AgencyImportReview() {
     pending: items.filter(i => ['pending', 'processing'].includes(i.status)).length,
     done: items.filter(i => i.status === 'done').length,
     failed: items.filter(i => ['failed', 'skipped'].includes(i.status)).length,
+    low_confidence: items.filter(i => i.status === 'pending' && getConfidence(i) < 60).length,
+    no_photos: items.filter(i => i.status === 'pending' && getPhotoCount(i) === 0).length,
+    duplicates: items.filter(i => hasDuplicate(i)).length,
   }), [items]);
 
   const handleApprove = (item: ImportJobItem, editedData?: any) => {
@@ -54,13 +65,27 @@ export default function AgencyImportReview() {
     approveMutation.mutate({ itemId: item.id, extractedData: data });
   };
 
+  const handleSkip = (item: ImportJobItem) => {
+    skipMutation.mutate(item.id);
+  };
+
   const handleBulkApprove = () => {
     const highConfidence = items.filter(
-      i => i.status === 'pending' && (i.confidence_score ?? i.extracted_data?.confidence_score ?? 0) >= 80
+      i => i.status === 'pending' && getConfidence(i) >= 80
     );
     if (highConfidence.length === 0) return;
     for (const item of highConfidence) {
       approveMutation.mutate({ itemId: item.id, extractedData: item.extracted_data });
+    }
+  };
+
+  const handleBulkSkipLow = () => {
+    const lowConfidence = items.filter(
+      i => i.status === 'pending' && getConfidence(i) < 40
+    );
+    if (lowConfidence.length === 0) return;
+    for (const item of lowConfidence) {
+      skipMutation.mutate(item.id);
     }
   };
 
@@ -75,7 +100,11 @@ export default function AgencyImportReview() {
   }
 
   const highConfidenceCount = items.filter(
-    i => i.status === 'pending' && (i.confidence_score ?? i.extracted_data?.confidence_score ?? 0) >= 80
+    i => i.status === 'pending' && getConfidence(i) >= 80
+  ).length;
+
+  const lowConfidenceCount = items.filter(
+    i => i.status === 'pending' && getConfidence(i) < 40
   ).length;
 
   return (
@@ -115,27 +144,60 @@ export default function AgencyImportReview() {
                     <p className="text-xs text-muted-foreground">Failed/Skipped</p>
                   </div>
                 </div>
-                {highConfidenceCount > 0 && (
-                  <Button
-                    onClick={handleBulkApprove}
-                    disabled={approveMutation.isPending}
-                    className="rounded-xl"
-                  >
-                    <CheckCircle2 className="h-4 w-4 mr-2" />
-                    Approve All High Confidence ({highConfidenceCount})
-                  </Button>
-                )}
+                <div className="flex gap-2 flex-wrap">
+                  {highConfidenceCount > 0 && (
+                    <Button
+                      onClick={handleBulkApprove}
+                      disabled={approveMutation.isPending}
+                      className="rounded-xl"
+                      size="sm"
+                    >
+                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                      Approve High Confidence ({highConfidenceCount})
+                    </Button>
+                  )}
+                  {lowConfidenceCount > 0 && (
+                    <Button
+                      onClick={handleBulkSkipLow}
+                      disabled={skipMutation.isPending}
+                      variant="outline"
+                      className="rounded-xl"
+                      size="sm"
+                    >
+                      <SkipForward className="h-4 w-4 mr-2" />
+                      Skip Low Confidence ({lowConfidenceCount})
+                    </Button>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Filter Tabs */}
           <Tabs value={filterTab} onValueChange={(v) => setFilterTab(v as FilterTab)}>
-            <TabsList className="rounded-xl">
-              <TabsTrigger value="all" className="rounded-lg">All ({counts.all})</TabsTrigger>
-              <TabsTrigger value="pending" className="rounded-lg">Pending ({counts.pending})</TabsTrigger>
-              <TabsTrigger value="done" className="rounded-lg">Approved ({counts.done})</TabsTrigger>
-              <TabsTrigger value="failed" className="rounded-lg">Failed ({counts.failed})</TabsTrigger>
+            <TabsList className="rounded-xl flex-wrap h-auto gap-1 p-1">
+              <TabsTrigger value="all" className="rounded-lg text-xs">All ({counts.all})</TabsTrigger>
+              <TabsTrigger value="pending" className="rounded-lg text-xs">Pending ({counts.pending})</TabsTrigger>
+              <TabsTrigger value="done" className="rounded-lg text-xs">Approved ({counts.done})</TabsTrigger>
+              <TabsTrigger value="failed" className="rounded-lg text-xs">Failed ({counts.failed})</TabsTrigger>
+              {counts.low_confidence > 0 && (
+                <TabsTrigger value="low_confidence" className="rounded-lg text-xs">
+                  <AlertCircle className="h-3 w-3 mr-1" />
+                  Low Conf ({counts.low_confidence})
+                </TabsTrigger>
+              )}
+              {counts.no_photos > 0 && (
+                <TabsTrigger value="no_photos" className="rounded-lg text-xs">
+                  <ImageOff className="h-3 w-3 mr-1" />
+                  No Photos ({counts.no_photos})
+                </TabsTrigger>
+              )}
+              {counts.duplicates > 0 && (
+                <TabsTrigger value="duplicates" className="rounded-lg text-xs">
+                  <Copy className="h-3 w-3 mr-1" />
+                  Duplicates ({counts.duplicates})
+                </TabsTrigger>
+              )}
             </TabsList>
           </Tabs>
 
@@ -156,7 +218,9 @@ export default function AgencyImportReview() {
                 isExpanded={expandedItemId === item.id}
                 onToggle={() => setExpandedItemId(expandedItemId === item.id ? null : item.id)}
                 onApprove={(editedData) => handleApprove(item, editedData)}
+                onSkip={() => handleSkip(item)}
                 isApproving={approveMutation.isPending}
+                isSkipping={skipMutation.isPending}
               />
             ))}
           </div>
