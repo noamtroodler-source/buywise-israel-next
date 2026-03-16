@@ -16,6 +16,7 @@ import { useSavesCount } from '@/hooks/useSavesCount';
 import { useBuyerProfile } from '@/hooks/useBuyerProfile';
 import { useAuth } from '@/hooks/useAuth';
 import { useMortgageEstimate } from '@/hooks/useMortgagePreferences';
+import { useNeighborhoodAvgPrice } from '@/hooks/useNeighborhoodPrices';
 interface PropertyQuickSummaryProps {
   property: {
     id: string;
