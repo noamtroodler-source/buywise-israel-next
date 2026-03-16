@@ -170,6 +170,8 @@ export default function AdminDashboard() {
             </div>
           </CardContent>
         </Card>
+        <ImageDedupPanel />
+        </div>
       </div>
 
       {/* System Status */}
