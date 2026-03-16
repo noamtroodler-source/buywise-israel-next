@@ -2338,6 +2338,41 @@ export type Database = {
           },
         ]
       }
+      import_job_costs: {
+        Row: {
+          created_at: string | null
+          id: string
+          job_id: string
+          quantity: number
+          resource_type: string
+          unit: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          job_id: string
+          quantity?: number
+          resource_type: string
+          unit?: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          job_id?: string
+          quantity?: number
+          resource_type?: string
+          unit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_job_costs_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "import_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       import_job_items: {
         Row: {
           confidence_score: number | null
