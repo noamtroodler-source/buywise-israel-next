@@ -2916,7 +2916,7 @@ async function processYad2Item(
       property_type: listing.property_type || "apartment",
       listing_status: listing.listing_status || "for_sale",
       price: listing.price || 0, currency: "ILS",
-      address: listing.address || "", city: listing.city,
+      address: listing.address ? normalizeAddressForStorage(listing.address) : "", city: listing.city,
       neighborhood: listing.neighborhood || null,
       latitude, longitude,
       bedrooms: Math.floor(listing.bedrooms ?? 0),
