@@ -94,16 +94,7 @@ export function PropertyValueSnapshot({
 
   // Rental-specific cards
   if (isRental) {
-    const hasCityAvg = !!cityAvgTotalMonthly;
-    const hasComparison = rentalComparisonPercent !== null;
-    // Always show Total Monthly card for rentals
-    const cardCount = [true, hasCityAvg, hasComparison].filter(Boolean).length;
-    
-    const gridCols = cardCount === 3 
-      ? 'grid-cols-1 sm:grid-cols-3' 
-      : cardCount === 2
-        ? 'grid-cols-1 sm:grid-cols-2'
-        : 'grid-cols-1';
+    // Always show all 3 cards for rentals
 
     return (
       <div className="space-y-4">
