@@ -2667,6 +2667,113 @@ async function fetchYad2AgencyPageHtml(pageUrl: string): Promise<string> {
   return await response.text();
 }
 
+async function runYad2AgencyDiscoverJob(params: {
+  jobId: string;
+  agencyId: string;
+  websiteUrl: string;
+  effectiveImportType: "resale" | "rental" | "both";
+}) {
+  const { jobId, agencyId, websiteUrl, effectiveImportType } = params;
+  const sb = supabaseAdmin();
+
+  try {
+    console.log(`[Yad2] background discovery started for job ${jobId}: ${websiteUrl} (${effectiveImportType})`);
+
+    const discoveryUrls = getYad2AgencyDiscoveryUrls(websiteUrl, effectiveImportType);
+    const discoveredUrls = new Set<string>();
+    let totalDiscovered = 0;
+
+    for (const discoveryUrl of discoveryUrls) {
+      const listingMode = /\/rent\b/i.test(new URL(discoveryUrl).pathname) ? "rent" : "forsale";
+      const firstPageUrl = buildYad2AgencyPageUrl(discoveryUrl, 1);
+      const firstPageHtml = await fetchYad2AgencyPageHtml(firstPageUrl);
+      const firstPageItems = extractYad2AgencyItemUrls(firstPageHtml, firstPageUrl);
+      const totalCount = extractYad2AgencyTotalCount(firstPageHtml, listingMode) ?? firstPageItems.length;
+      const pageSize = Math.max(firstPageItems.length, 5);
+      const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+
+      totalDiscovered += totalCount;
+      firstPageItems.forEach((url) => discoveredUrls.add(url));
+
+      console.log(`Yad2 agency ${listingMode}: page 1=${firstPageItems.length}, total=${totalCount}, pages=${totalPages}`);
+
+      const PAGE_BATCH_SIZE = 2;
+      for (let startPage = 2; startPage <= totalPages; startPage += PAGE_BATCH_SIZE) {
+        const pageBatch = Array.from(
+          { length: Math.min(PAGE_BATCH_SIZE, totalPages - startPage + 1) },
+          (_, index) => startPage + index
+        );
+
+        const pageHtmlBatch = await Promise.all(
+          pageBatch.map((pageNumber) => fetchYad2AgencyPageHtml(buildYad2AgencyPageUrl(discoveryUrl, pageNumber)))
+        );
+
+        pageHtmlBatch.forEach((pageHtml, index) => {
+          const pageUrl = buildYad2AgencyPageUrl(discoveryUrl, pageBatch[index]);
+          const pageItems = extractYad2AgencyItemUrls(pageHtml, pageUrl);
+          console.log(`[Yad2] page ${pageBatch[index]}: ${pageItems.length} items`);
+          pageItems.forEach((url) => discoveredUrls.add(url));
+        });
+
+        if (startPage + PAGE_BATCH_SIZE <= totalPages) {
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+      }
+    }
+
+    const dedupedUrls = Array.from(discoveredUrls);
+    console.log(`Yad2 agency HTML discovery found ${dedupedUrls.length} unique listings across ${discoveryUrls.length} page set(s)`);
+
+    const { data: existingProperties } = await sb
+      .from("properties")
+      .select("source_url")
+      .eq("agency_id", agencyId)
+      .not("source_url", "is", null);
+
+    const knownUrls = new Set<string>();
+    if (existingProperties) {
+      for (const prop of existingProperties) {
+        if (prop.source_url) knownUrls.add(normalizeUrl(prop.source_url));
+      }
+    }
+
+    const newUrls = dedupedUrls.filter((url) => !knownUrls.has(normalizeUrl(url)));
+
+    if (newUrls.length > 0) {
+      const INSERT_BATCH_SIZE = 200;
+      for (let i = 0; i < newUrls.length; i += INSERT_BATCH_SIZE) {
+        const items = newUrls.slice(i, i + INSERT_BATCH_SIZE).map((url) => ({
+          job_id: jobId,
+          url,
+          status: "pending",
+        }));
+        const { error: itemsErr } = await sb.from("import_job_items").insert(items);
+        if (itemsErr) throw new Error(`Failed to create job items: ${itemsErr.message}`);
+      }
+    }
+
+    const { error: updateErr } = await sb
+      .from("import_jobs")
+      .update({
+        status: newUrls.length > 0 ? "ready" : "completed",
+        total_urls: newUrls.length,
+        discovered_urls: dedupedUrls,
+        processed_count: 0,
+        failed_count: 0,
+      })
+      .eq("id", jobId);
+
+    if (updateErr) throw new Error(`Failed to finalize import job: ${updateErr.message}`);
+
+    console.log(
+      `[Yad2] background discovery finished for job ${jobId}: ${newUrls.length} new URLs, ${dedupedUrls.length} discovered, ${dedupedUrls.length - newUrls.length} existing`
+    );
+  } catch (err) {
+    console.error(`[Yad2] background discovery failed for job ${jobId}:`, err);
+    await sb.from("import_jobs").update({ status: "failed" }).eq("id", jobId);
+  }
+}
+
 async function handleYad2AgencyDiscover(body: any) {
   const { agency_id, website_url, import_type = "resale" } = body;
   if (!agency_id || !website_url) throw new Error("agency_id and website_url required");
@@ -2681,114 +2788,39 @@ async function handleYad2AgencyDiscover(body: any) {
     .single();
   if (agencyErr || !agency) throw new Error("Agency not found");
 
-  console.log(`Yad2 agency discovery: loading paginated HTML pages for ${website_url} (${effectiveImportType})`);
-
-  const discoveryUrls = getYad2AgencyDiscoveryUrls(website_url, effectiveImportType);
-  const discoveredUrls = new Set<string>();
-  let totalDiscovered = 0;
-
-  for (const discoveryUrl of discoveryUrls) {
-    const listingMode = /\/rent\b/i.test(new URL(discoveryUrl).pathname) ? "rent" : "forsale";
-    const firstPageUrl = buildYad2AgencyPageUrl(discoveryUrl, 1);
-    const firstPageHtml = await fetchYad2AgencyPageHtml(firstPageUrl);
-    const firstPageItems = extractYad2AgencyItemUrls(firstPageHtml, firstPageUrl);
-    const totalCount = extractYad2AgencyTotalCount(firstPageHtml, listingMode) ?? firstPageItems.length;
-    const pageSize = Math.max(firstPageItems.length, 5);
-    const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
-
-    totalDiscovered += totalCount;
-    firstPageItems.forEach((url) => discoveredUrls.add(url));
-
-    console.log(`Yad2 agency ${listingMode}: page 1=${firstPageItems.length}, total=${totalCount}, pages=${totalPages}`);
-
-    // Process pages in small batches (Firecrawl has rate limits)
-    const PAGE_BATCH_SIZE = 2;
-    for (let startPage = 2; startPage <= totalPages; startPage += PAGE_BATCH_SIZE) {
-      const pageBatch = Array.from(
-        { length: Math.min(PAGE_BATCH_SIZE, totalPages - startPage + 1) },
-        (_, index) => startPage + index
-      );
-
-      const pageHtmlBatch = await Promise.all(
-        pageBatch.map((pageNumber) => fetchYad2AgencyPageHtml(buildYad2AgencyPageUrl(discoveryUrl, pageNumber)))
-      );
-
-      pageHtmlBatch.forEach((pageHtml, index) => {
-        const pageUrl = buildYad2AgencyPageUrl(discoveryUrl, pageBatch[index]);
-        const pageItems = extractYad2AgencyItemUrls(pageHtml, pageUrl);
-        console.log(`[Yad2] page ${pageBatch[index]}: ${pageItems.length} items`);
-        pageItems.forEach((url) => discoveredUrls.add(url));
-      });
-
-      // Small delay between batches to respect rate limits
-      if (startPage + PAGE_BATCH_SIZE <= totalPages) {
-        await new Promise(r => setTimeout(r, 1000));
-      }
-    }
-  }
-
-  const dedupedUrls = Array.from(discoveredUrls);
-
-  console.log(`Yad2 agency HTML discovery found ${dedupedUrls.length} unique listings across ${discoveryUrls.length} page set(s)`);
-
-  if (dedupedUrls.length === 0) {
-    return { job_id: null, total_listings: 0, total_discovered: 0, new_urls: 0, skipped_existing: 0 };
-  }
-
-  const { data: existingProperties } = await sb
-    .from("properties")
-    .select("source_url")
-    .eq("agency_id", agency_id)
-    .not("source_url", "is", null);
-
-  const knownUrls = new Set<string>();
-  if (existingProperties) {
-    for (const prop of existingProperties) {
-      if (prop.source_url) knownUrls.add(normalizeUrl(prop.source_url));
-    }
-  }
-
-  const newUrls = dedupedUrls.filter((url) => !knownUrls.has(normalizeUrl(url)));
-
-  if (newUrls.length === 0) {
-    return {
-      job_id: null,
-      total_listings: 0,
-      total_discovered: totalDiscovered || dedupedUrls.length,
-      new_urls: 0,
-      skipped_existing: dedupedUrls.length,
-    };
-  }
-
   const { data: job, error: jobErr } = await sb
     .from("import_jobs")
     .insert({
       agency_id,
       website_url,
-      status: "ready",
-      total_urls: newUrls.length,
-      discovered_urls: dedupedUrls,
+      status: "discovering",
+      total_urls: 0,
+      discovered_urls: [],
+      processed_count: 0,
+      failed_count: 0,
       import_type: effectiveImportType,
       source_type: "yad2",
     })
     .select("id")
     .single();
-  if (jobErr) throw new Error(`Failed to create import job: ${jobErr.message}`);
+  if (jobErr || !job) throw new Error(`Failed to create import job: ${jobErr?.message || 'Unknown error'}`);
 
-  const items = newUrls.map((url) => ({
-    job_id: job.id,
-    url,
-    status: "pending",
-  }));
-  const { error: itemsErr } = await sb.from("import_job_items").insert(items);
-  if (itemsErr) throw new Error(`Failed to create job items: ${itemsErr.message}`);
+  EdgeRuntime.waitUntil(
+    runYad2AgencyDiscoverJob({
+      jobId: job.id,
+      agencyId: agency_id,
+      websiteUrl: website_url,
+      effectiveImportType,
+    })
+  );
 
   return {
     job_id: job.id,
-    total_listings: newUrls.length,
-    total_discovered: totalDiscovered || dedupedUrls.length,
-    new_urls: newUrls.length,
-    skipped_existing: dedupedUrls.length - newUrls.length,
+    total_listings: 0,
+    total_discovered: 0,
+    new_urls: 0,
+    skipped_existing: 0,
+    started_async: true,
   };
 }
 

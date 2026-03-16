@@ -149,162 +149,27 @@ export default function AgencyImport() {
     return Date.now() - new Date(heartbeat).getTime() > STALL_THRESHOLD_MS;
   })();
 
-  const isDiscovering = discoverMutation.isPending;
+  const isBackgroundDiscovering = currentJob?.status === 'discovering';
+  const isDiscovering = discoverMutation.isPending || isBackgroundDiscovering;
   const isProcessing = processBatchMutation.isPending || (currentJob?.status === 'processing' && !isStalled) || isProcessingAll;
   const isReady = (currentJob?.status === 'ready' && pendingCount > 0) || isStalled;
   const isCompleted = currentJob?.status === 'completed';
-
-  return (
-    <Layout>
-      <div className="container py-8 max-w-4xl">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-
-          {/* Header */}
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" asChild className="rounded-xl">
-              <Link to="/agency"><ArrowLeft className="h-4 w-4" /></Link>
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold">Import Listings</h1>
-              <p className="text-muted-foreground">Import property listings from your website automatically</p>
-            </div>
-          </div>
-
-          {/* Nudge for agencies that already have listings */}
-          {(stats?.activeListings || 0) > 0 && (
-            <InfoBanner variant="tip">
-              You already have {stats?.activeListings} listing{(stats?.activeListings || 0) !== 1 ? 's' : ''}. 
-              This tool is designed for first-time bulk imports. For new individual listings, the{' '}
-              <Link to="/agency/listings/new" className="font-medium text-primary hover:underline">
-                Add Listing
-              </Link>{' '}
-              wizard gives you more control and better accuracy.
-            </InfoBanner>
-          )}
-
-          {/* Resale & Rental notice */}
-          <div className="flex items-start gap-3 p-4 rounded-xl bg-primary/5 border border-primary/10">
-            <Info className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-            <p className="text-sm text-muted-foreground">
-              New construction projects and developments are always skipped — add those via the{' '}
-              <Link to="/agency/projects/new" className="text-primary font-medium hover:underline">
-                Project Wizard
-              </Link> for best results.
-            </p>
-          </div>
-
-          {/* Step 1: Discover */}
-          <Card className="rounded-2xl border-primary/10">
-            <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent rounded-t-2xl">
-              <CardTitle className="flex items-center gap-2">
-                <Globe className="h-5 w-5 text-primary" />
-                Step 1: Discover Listings
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4 space-y-4">
-              {sourceType === 'website' ? (
-                <div className="text-sm text-muted-foreground space-y-2">
-                  <p>Paste your agency's <strong className="text-foreground">homepage URL</strong> — the main page that links to all your property listings.</p>
-                  <div className="border border-border rounded-lg p-4 space-y-2 text-xs bg-card">
-                    <div className="flex items-center gap-1.5">
-                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[hsl(var(--success))]/15 text-[hsl(var(--success))]">
-                        <CheckCircle2 className="h-3.5 w-3.5" />
-                      </span>
-                      <span className="font-medium text-foreground">Good examples:</span>
-                    </div>
-                    <code className="block text-primary ml-6.5">https://your-agency.com</code>
-                    <code className="block text-primary ml-6.5">https://your-agency.com/properties</code>
-                    <div className="flex items-center gap-1.5 mt-3">
-                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-destructive/15 text-destructive">
-                        <XCircle className="h-3.5 w-3.5" />
-                      </span>
-                      <span className="font-medium text-foreground">Don't paste:</span>
-                    </div>
-                    <p className="ml-6.5">A single listing page — we need the page that <em>lists</em> all properties</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-sm text-muted-foreground space-y-2">
-                  <p>Paste your <strong className="text-foreground">Yad2 agency profile page</strong> or a <strong className="text-foreground">Yad2 search URL</strong> filtered to your listings.</p>
-                  <div className="border border-border rounded-lg p-4 space-y-2 text-xs bg-card">
-                    <div className="flex items-center gap-1.5">
-                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[hsl(var(--success))]/15 text-[hsl(var(--success))]">
-                        <CheckCircle2 className="h-3.5 w-3.5" />
-                      </span>
-                      <span className="font-medium text-foreground">Good examples:</span>
-                    </div>
-                    <code className="block text-primary ml-6.5">https://www.yad2.co.il/agency/12345</code>
-                    <code className="block text-primary ml-6.5">https://www.yad2.co.il/realestate/forsale?city=1800000</code>
-                    <div className="flex items-center gap-1.5 mt-3">
-                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[hsl(var(--warning))]/15 text-[hsl(var(--warning))]">
-                        <Lightbulb className="h-3.5 w-3.5" />
-                      </span>
-                      <span className="font-medium text-foreground">How to find your agency page:</span>
-                    </div>
-                    <p className="ml-6.5">Go to yad2.co.il → click your profile icon → "My Listings" → copy the URL from the address bar</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Source type selector */}
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">Source:</span>
-                {(['website', 'yad2'] as const).map(type => (
-                  <Button
-                    key={type}
-                    variant={sourceType === type ? 'default' : 'outline'}
-                    size="sm"
-                    className="rounded-lg"
-                    onClick={() => setSourceType(type)}
-                  >
-                    {type === 'website' ? 'Agency Website' : 'Yad2'}
-                  </Button>
-                ))}
-              </div>
-
-              {/* Import type selector */}
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">Import type:</span>
-                {(['resale', 'rental', 'all'] as const).map(type => (
-                  <Button
-                    key={type}
-                    variant={importType === type ? 'default' : 'outline'}
-                    size="sm"
-                    className="rounded-lg capitalize"
-                    onClick={() => setImportType(type)}
-                  >
-                    {type === 'all' ? 'Both' : type}
-                  </Button>
-                ))}
-              </div>
-
-              <form onSubmit={handleDiscover} className="flex gap-3">
-                <Input
-                  type="url"
-                  value={websiteUrl}
-                  onChange={e => setWebsiteUrl(e.target.value)}
-                  placeholder={sourceType === 'yad2' ? 'https://www.yad2.co.il/realestate/forsale?city=... or /agency/...' : 'https://your-agency-website.com'}
-                  className="rounded-xl flex-1"
-                  required
-                  disabled={isDiscovering}
-                />
-                <Button type="submit" disabled={isDiscovering || !websiteUrl.trim()} className="rounded-xl">
-                  {isDiscovering ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Scanning...
-                    </>
-                  ) : (
-                    <>
-                      <Globe className="h-4 w-4 mr-2" />
-                      Discover
-                    </>
-                  )}
-                </Button>
-              </form>
+  const discoveringSourceType = isBackgroundDiscovering ? currentJob?.source_type : sourceType;
+...
+                  <Badge variant="outline" className={cn(
+                    isCompleted && 'bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]',
+                    isStalled && 'bg-[hsl(var(--warning))]/10 text-[hsl(var(--warning-foreground))]',
+                    isDiscovering && 'bg-primary/10 text-primary animate-pulse',
+                    isProcessing && 'bg-primary/10 text-primary animate-pulse',
+                    isReady && !isStalled && 'bg-[hsl(var(--warning))]/10 text-[hsl(var(--warning-foreground))]',
+                  )}>
+                    {(isDiscovering || isProcessing) && <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />}
+                    {isStalled ? 'Stalled' : currentJob.status}
+                  </Badge>
+...
               {isDiscovering && (
                 <p className="text-sm text-muted-foreground mt-3 animate-pulse">
-                  {sourceType === 'yad2'
+                  {discoveringSourceType === 'yad2'
                     ? 'Scanning your agency page on Yad2... This may take 2-5 minutes.'
                     : 'Scanning your website for listing pages... This may take 2-5 minutes.'}
                 </p>
