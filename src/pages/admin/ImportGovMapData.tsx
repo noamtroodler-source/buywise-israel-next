@@ -160,33 +160,55 @@ export default function ImportGovMapData() {
       const dealNature = row.dealNatureDescription || "";
       const propType = row.propertyTypeDescription || "";
 
-      // 1. Non-residential filter
-      if (NON_RESIDENTIAL_KEYWORDS.some((kw) => dealNature.includes(kw) || propType.includes(kw))) {
+      // 1. Non-residential filter (check both dealNature AND propertyType)
+      if (
+        NON_RESIDENTIAL_KEYWORDS.some((kw) => dealNature.includes(kw) || propType.includes(kw)) ||
+        NON_RESIDENTIAL_PROP_TYPES.some((kw) => propType === kw)
+      ) {
         stats.nonResidential++;
         continue;
       }
 
-      // 2. New construction filter
-      if (NEW_CONSTRUCTION_KEYWORDS.some((kw) => dealNature.includes(kw))) {
+      // 2. New construction filter — keyword match OR heuristic (both fields empty = unclassified bulk developer sale)
+      if (
+        NEW_CONSTRUCTION_KEYWORDS.some((kw) => dealNature.includes(kw)) ||
+        (!dealNature && !propType) // Both empty = likely developer/new construction batch
+      ) {
         stats.newConstruction++;
         continue;
       }
 
-      // 3. Price outlier
+      // 3. Price outlier — raised floor to ₪200k
       const price = parseFloat(row.dealAmount);
-      if (isNaN(price) || price < 100000) {
+      if (isNaN(price) || price < 200000) {
         stats.priceOutlier++;
         continue;
       }
 
       // 4. Size outlier
       const size = parseFloat(row.assetArea);
-      if (!isNaN(size) && (size < 15 || size > 500)) {
+      if (!isNaN(size) && (size < 20 || size > 400)) {
         stats.sizeOutlier++;
         continue;
       }
 
-      // 5. City validation
+      // 5. Price per sqm outlier (catch misclassified parking/storage/land)
+      if (!isNaN(size) && size > 0) {
+        const priceSqm = price / size;
+        if (priceSqm < 3000 || priceSqm > 85000) {
+          stats.priceSqmOutlier++;
+          continue;
+        }
+      }
+
+      // 6. Rooms = 0 → commercial unit
+      const rooms = row.assetRoomNum ? parseFloat(row.assetRoomNum) : null;
+      if (rooms !== null && rooms === 0) {
+        stats.zeroRooms++;
+        continue;
+      }
+
+      // 7. City validation
       const cityKey = (row.cityNameEng || "").replace(/['']/g, "").toLowerCase();
       const canonicalCity = cityLookup.get(cityKey);
       if (!canonicalCity) {
