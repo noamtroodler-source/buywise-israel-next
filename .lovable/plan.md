@@ -71,3 +71,17 @@ Based on Perplexity blueprint research. All changes in `import-agency-listings/i
 - Review UI with side-by-side comparison
 - Incremental sync
 - Rental module
+
+## Phase 5: Agency Import Pipeline Phase 2 — Implemented ✅
+
+1. **Review UI** — New `/agency/import/:jobId/review` page with side-by-side source vs parsed data view. Components: `AgencyImportReview.tsx`, `ImportReviewCard.tsx`. Editable fields, confidence score badges, bulk approve (80+), filter tabs.
+2. **Rental Support** — `import_type` column on `import_jobs` (`resale`|`rental`|`all`). Pre-LLM filter and validation now respect import type. UI selector for import type before discovery.
+3. **CMS/Structured Data Detection** — `extractStructuredData(html)` parses JSON-LD (`RealEstateListing`, `Product`, `Offer`) and Open Graph tags from HTML. Merged with AI extraction, +10 confidence boost when structured data confirms fields. Firecrawl now requests `html` format.
+4. **Incremental Sync** — `sync-agency-listings` edge function for daily cron. Agencies table extended with `auto_sync_url`, `auto_sync_enabled`, `last_sync_at`. Auto-sync toggle in import UI.
+5. **Approve Item Action** — `handleApproveItem` in edge function for manual review approval with image download and geocoding.
+6. **DB Migration** — Added `import_type`, `is_incremental` to `import_jobs`; `auto_sync_url`, `auto_sync_enabled`, `last_sync_at` to `agencies`.
+
+### Deferred to Phase 3:
+- Apify Yad2 adapter (needs account + API key)
+- Image pHash deduplication
+- Cross-source dedup (Tier 3)

@@ -487,18 +487,20 @@ export default function AgencyImport() {
                   )}
 
                   {doneCount > 0 && (
-                    <Button variant="outline" asChild className="rounded-xl">
-                      <Link to={`/agency/import/${currentJob!.id}/review`}>
-                        <Eye className="h-4 w-4 mr-2" />
-                        Review Imported ({doneCount})
-                      </Link>
-                    </Button>
-                    <Button variant="outline" asChild className="rounded-xl">
-                      <Link to="/agency/listings">
-                        <FileText className="h-4 w-4 mr-2" />
-                        View Drafts
-                      </Link>
-                    </Button>
+                    <>
+                      <Button variant="outline" asChild className="rounded-xl">
+                        <Link to={`/agency/import/${currentJob!.id}/review`}>
+                          <Eye className="h-4 w-4 mr-2" />
+                          Review Imported ({doneCount})
+                        </Link>
+                      </Button>
+                      <Button variant="outline" asChild className="rounded-xl">
+                        <Link to="/agency/listings">
+                          <FileText className="h-4 w-4 mr-2" />
+                          View Drafts
+                        </Link>
+                      </Button>
+                    </>
                   )}
                 </div>
 
