@@ -344,10 +344,6 @@ export default function AgencyImport() {
                       <p className="text-sm font-medium text-primary">
                         Importing listings…
                       </p>
-                     <p className="text-xs text-muted-foreground">
-                        {doneCount} imported · {skippedCount} skipped{failedCount > 0 ? ` · ${failedCount} failed` : ''} · {pendingCount} remaining
-                      </p>
-                      <ImportEta startTime={processingStartTime} processedSoFar={processedSoFar} remaining={pendingCount} />
                     </div>
                     <Button
                       onClick={stopProcessAll}
@@ -361,24 +357,17 @@ export default function AgencyImport() {
                 )}
 
                 {/* Progress bar */}
-                <div>
-                  <div className="flex justify-between text-sm mb-2">
-                    <span>{doneCount + skippedCount + failedCount} of {totalItems} processed</span>
-                    <span>{progressPercent}%</span>
-                  </div>
-                  <Progress
-                    value={progressPercent}
-                    className="h-3"
-                    indicatorClassName={isProcessingAll ? 'animate-pulse' : ''}
-                  />
-                </div>
-
-                {/* Stats */}
-                <div className="grid grid-cols-3 gap-3">
-                  {[
-                    { label: 'Imported', value: doneCount, icon: CheckCircle2, color: 'text-green-600', active: false, tooltip: '' },
-                    { label: 'Skipped', value: skippedCount, icon: MinusCircle, color: 'text-muted-foreground', active: false, tooltip: 'Listings are skipped when they are duplicates of ones already imported, or when they have been marked as sold or rented.' },
-                    { label: 'Failed', value: failedCount, icon: XCircle, color: 'text-red-500', active: false, tooltip: '' },
+                <ImportProgressBar
+                  totalItems={totalItems}
+                  doneCount={doneCount}
+                  skippedCount={skippedCount}
+                  failedCount={failedCount}
+                  pendingCount={pendingCount}
+                  processingCount={processingCount}
+                  startTime={processingStartTime}
+                  processedSoFar={processedSoFar}
+                  isActive={isProcessingAll}
+                />
                   ].map(stat => (
                     <div key={stat.label} className={cn(
                       "text-center p-3 rounded-xl bg-muted/30 transition-all relative group",

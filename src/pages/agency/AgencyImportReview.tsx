@@ -19,6 +19,7 @@ import {
   ImportJobItem,
 } from '@/hooks/useImportListings';
 import { ImportReviewCard } from '@/components/agency/ImportReviewCard';
+import { useRealtimeImportProgress } from '@/hooks/useRealtimeImportProgress';
 
 type FilterTab = 'all' | 'pending' | 'done' | 'failed' | 'low_confidence' | 'no_photos' | 'duplicates';
 
