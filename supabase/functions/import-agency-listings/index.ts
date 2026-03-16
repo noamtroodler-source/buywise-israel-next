@@ -21,33 +21,38 @@ const SUPPORTED_CITIES = [
   "Haifa", "Herzliya", "Hod HaSharon", "Jerusalem", "Kfar Saba",
   "Ma'ale Adumim", "Mevaseret Zion", "Modi'in", "Netanya",
   "Pardes Hanna", "Petah Tikva", "Ra'anana", "Ramat Gan",
-  "Tel Aviv", "Zichron Yaakov",
+  "Rehovot", "Rishon LeZion", "Tel Aviv", "Zichron Yaakov",
 ];
 
 // Common aliases/transliterations for supported cities
 const CITY_ALIASES: Record<string, string[]> = {
-  "Beer Sheva": ["beersheva", "beersheba", "beer sheba", "bersheva", "bersheba", "be'er sheva"],
-  "Beit Shemesh": ["beit shemesh", "bet shemesh", "beth shemesh", "beitschemesh"],
-  "Caesarea": ["kesaria", "cesaria", "qesaria", "kaisaria", "cesarea", "kesarya", "qesarya"],
-  "Givat Shmuel": ["givat shmuel", "givat shemuel", "givat shmu'el"],
-  "Gush Etzion": ["gush etzion", "gush ezion"],
-  "Haifa": ["haipha", "hafia", "hefa", "heifa"],
-  "Herzliya": ["herzeliya", "herzelia", "herzlia", "hertzeliya", "hertzlia", "hertzliya"],
-  "Hod HaSharon": ["hod hasharon", "hod sharon"],
-  "Jerusalem": ["yerushalayim", "jeruslaem", "jerusalm", "yerushalaim"],
-  "Kfar Saba": ["kfar saba", "kfar sabba", "kfar sava"],
-  "Ma'ale Adumim": ["maale adumim", "maaleh adumim", "male adumim", "ma'aleh adummim"],
-  "Mevaseret Zion": ["mevaseret zion", "mevasseret zion", "mevasseret", "mevaseret tzion"],
-  "Modi'in": ["modiin", "modin", "modein", "modiin maccabim reut"],
-  "Netanya": ["natanya", "netaniya", "netanyah", "netania", "nathanya"],
-  "Pardes Hanna": ["pardes hanna", "pardes hana", "pardes hanna karkur", "pardes hanna-karkur", "pardes chana"],
-  "Petah Tikva": ["petach tikva", "petah tikwa", "petachtikva", "petach tikvah"],
-  "Ra'anana": ["raanana", "ranana", "rannana", "raananah"],
-  "Ramat Gan": ["ramat gan", "ramatgan", "ramat-gan"],
-  "Tel Aviv": ["telaviv", "tel aviv", "tlv", "tel avive", "tel-aviv", "tel aviv-yafo", "tel aviv yafo"],
-  "Zichron Yaakov": ["zichron yaakov", "zichron yakov", "zichron jacob", "zichron ya'akov", "zikhron"],
-  "Ashkelon": ["ashqelon"],
-  "Eilat": ["elat", "eliat"],
+  "Ashdod": ["asdod", "ashod", "אשדוד"],
+  "Ashkelon": ["ashqelon", "ashkalon", "askelon", "אשקלון"],
+  "Beer Sheva": ["beersheva", "beersheba", "beer sheba", "bersheva", "bersheba", "be'er sheva", "באר שבע", "באר-שבע"],
+  "Beit Shemesh": ["beit shemesh", "bet shemesh", "beth shemesh", "beitschemesh", "בית שמש"],
+  "Caesarea": ["kesaria", "cesaria", "qesaria", "kaisaria", "cesarea", "kesarya", "qesarya", "קיסריה"],
+  "Efrat": ["ephrat", "efrata", "אפרת"],
+  "Eilat": ["elat", "eliat", "אילת"],
+  "Givat Shmuel": ["givat shmuel", "givat shemuel", "givat shmu'el", "גבעת שמואל"],
+  "Gush Etzion": ["gush etzion", "gush ezion", "גוש עציון"],
+  "Hadera": ["hadeira", "hedera", "חדרה"],
+  "Haifa": ["haipha", "hafia", "hefa", "heifa", "חיפה"],
+  "Herzliya": ["herzeliya", "herzelia", "herzlia", "hertzeliya", "hertzlia", "hertzliya", "הרצליה"],
+  "Hod HaSharon": ["hod hasharon", "hod sharon", "הוד השרון"],
+  "Jerusalem": ["yerushalayim", "jeruslaem", "jerusalm", "yerushalaim", "ירושלים"],
+  "Kfar Saba": ["kfar saba", "kfar sabba", "kfar sava", "כפר סבא"],
+  "Ma'ale Adumim": ["maale adumim", "maaleh adumim", "male adumim", "ma'aleh adummim", "מעלה אדומים"],
+  "Mevaseret Zion": ["mevaseret zion", "mevasseret zion", "mevasseret", "mevaseret tzion", "מבשרת ציון"],
+  "Modi'in": ["modiin", "modin", "modein", "modiin maccabim reut", "מודיעין", "מודיעין מכבים רעות"],
+  "Netanya": ["natanya", "netaniya", "netanyah", "netania", "nathanya", "נתניה"],
+  "Pardes Hanna": ["pardes hanna", "pardes hana", "pardes hanna karkur", "pardes hanna-karkur", "pardes chana", "פרדס חנה", "פרדס חנה כרכור"],
+  "Petah Tikva": ["petach tikva", "petah tikwa", "petachtikva", "petach tikvah", "פתח תקווה", "פתח תקוה"],
+  "Ra'anana": ["raanana", "ranana", "rannana", "raananah", "רעננה"],
+  "Ramat Gan": ["ramat gan", "ramatgan", "ramat-gan", "רמת גן", "רמת-גן"],
+  "Rehovot": ["rechovot", "rehovoth", "רחובות"],
+  "Rishon LeZion": ["rishon lezion", "rishon le zion", "rishon le-zion", "rishon", "ראשון לציון"],
+  "Tel Aviv": ["telaviv", "tel aviv", "tlv", "tel avive", "tel-aviv", "tel aviv-yafo", "tel aviv yafo", "תל אביב", "תל אביב יפו", "תל-אביב"],
+  "Zichron Yaakov": ["zichron yaakov", "zichron yakov", "zichron jacob", "zichron ya'akov", "zikhron", "זכרון יעקב"],
 };
 
 // Domain keywords → city mapping for inferring city from URL
@@ -79,6 +84,10 @@ const DOMAIN_CITY_HINTS: Record<string, string> = {
   "givatshmuel": "Givat Shmuel",
   "maaleadumim": "Ma'ale Adumim",
   "gushetzion": "Gush Etzion",
+  "rehovot": "Rehovot",
+  "rechovot": "Rehovot",
+  "rishon": "Rishon LeZion",
+  "rishonlezion": "Rishon LeZion",
 };
 
 function normalizeCityStr(str: string): string {
@@ -146,6 +155,8 @@ const CITY_PRICE_RANGES: Record<string, { min: number; max: number; sqm_min: num
   "Ma'ale Adumim":  { min: 1_000_000, max: 3_500_000,  sqm_min: 15_000, sqm_max: 28_000 },
   "Mevaseret Zion": { min: 1_500_000, max: 5_000_000,  sqm_min: 25_000, sqm_max: 40_000 },
   "Pardes Hanna":   { min: 800_000,   max: 3_500_000,  sqm_min: 15_000, sqm_max: 28_000 },
+  "Rehovot":        { min: 1_000_000, max: 4_000_000,  sqm_min: 18_000, sqm_max: 30_000 },
+  "Rishon LeZion":  { min: 1_200_000, max: 5_000_000,  sqm_min: 20_000, sqm_max: 35_000 },
   "Zichron Yaakov": { min: 1_200_000, max: 5_000_000,  sqm_min: 20_000, sqm_max: 35_000 },
 };
 
@@ -176,6 +187,8 @@ const CITY_RENTAL_RANGES: Record<string, { min: number; max: number }> = {
   "Ma'ale Adumim":  { min: 3_000, max: 9_000 },
   "Mevaseret Zion": { min: 4_000, max: 14_000 },
   "Pardes Hanna":   { min: 2_500, max: 8_000 },
+  "Rehovot":        { min: 2_500, max: 9_000 },
+  "Rishon LeZion":  { min: 3_000, max: 11_000 },
   "Zichron Yaakov": { min: 3_000, max: 10_000 },
 };
 

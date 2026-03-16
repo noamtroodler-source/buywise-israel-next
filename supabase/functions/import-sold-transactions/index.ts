@@ -84,6 +84,8 @@ function normalizeCity(city: string): string {
     "זכרון יעקב": "Zichron Ya'akov",
     "מעלה אדומים": "Ma'ale Adumim",
     "אפרת": "Efrat",
+    "רחובות": "Rehovot",
+    "ראשון לציון": "Rishon LeZion",
   };
   
   return cityMap[city] || city;
