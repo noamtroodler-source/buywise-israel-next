@@ -1613,9 +1613,11 @@ async function handleProcessBatch(body: any) {
   _geoQueue = Promise.resolve();
   _batchImageUrlCounts.clear();
 
-  const CONCURRENCY = 3;
-  const REFILL_SIZE = 6;
-  const MAX_ITEMS = 9;
+  let currentConcurrency = 5;
+  const MAX_CONCURRENCY = 5;
+  const MIN_CONCURRENCY = 2;
+  const REFILL_SIZE = 10;
+  const MAX_ITEMS = 15;
   const TIME_LIMIT_MS = 120_000;
   const batchStartTime = Date.now();
 
@@ -1623,6 +1625,7 @@ async function handleProcessBatch(body: any) {
   let totalSucceeded = 0;
   let totalFailed = 0;
   let refillCycle = 0;
+  let consecutiveSuccessfulChunks = 0;
 
   while (true) {
     if (totalProcessed >= MAX_ITEMS) break;
@@ -1637,12 +1640,12 @@ async function handleProcessBatch(body: any) {
     if (itemsErr || !pendingItems || pendingItems.length === 0) break;
 
     refillCycle++;
-    console.log(`Refill ${refillCycle}: ${pendingItems.length} items`);
+    console.log(`Refill ${refillCycle}: ${pendingItems.length} items (concurrency: ${currentConcurrency})`);
 
-    for (let i = 0; i < pendingItems.length && totalProcessed < MAX_ITEMS; i += CONCURRENCY) {
+    for (let i = 0; i < pendingItems.length && totalProcessed < MAX_ITEMS; i += currentConcurrency) {
       if (Date.now() - batchStartTime > TIME_LIMIT_MS) break;
 
-      const chunk = pendingItems.slice(i, i + CONCURRENCY);
+      const chunk = pendingItems.slice(i, i + currentConcurrency);
       const isYad2 = job.source_type === "yad2";
       const results = await Promise.allSettled(
         chunk.map(item => isYad2
@@ -1651,10 +1654,36 @@ async function handleProcessBatch(body: any) {
         )
       );
 
+      let chunkHadTransientError = false;
       for (const result of results) {
         totalProcessed++;
-        if (result.status === "fulfilled" && result.value.succeeded) totalSucceeded++;
-        else totalFailed++;
+        if (result.status === "fulfilled" && result.value.succeeded) {
+          totalSucceeded++;
+        } else {
+          totalFailed++;
+          // Check for transient/rate-limit errors
+          if (result.status === "rejected" || (result.status === "fulfilled" && !result.value.succeeded)) {
+            chunkHadTransientError = true;
+          }
+        }
+      }
+
+      // Dynamic concurrency adjustment
+      if (chunkHadTransientError) {
+        if (currentConcurrency > MIN_CONCURRENCY) {
+          currentConcurrency = MIN_CONCURRENCY;
+          console.log(`Concurrency reduced to ${currentConcurrency} due to failures`);
+        }
+        consecutiveSuccessfulChunks = 0;
+        // Add a small delay to back off
+        await new Promise(r => setTimeout(r, 3000));
+      } else {
+        consecutiveSuccessfulChunks++;
+        if (consecutiveSuccessfulChunks >= 3 && currentConcurrency < MAX_CONCURRENCY) {
+          currentConcurrency = MAX_CONCURRENCY;
+          consecutiveSuccessfulChunks = 0;
+          console.log(`Concurrency recovered to ${currentConcurrency}`);
+        }
       }
     }
   }
