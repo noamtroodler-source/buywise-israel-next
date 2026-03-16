@@ -286,13 +286,19 @@ export default function ImportGovMapData() {
         if (res.error) {
           console.error(`[GovMap Import] Batch ${batchNum} error:`, res.error);
           totalFailed += batch.length;
+          toast({ title: `Batch ${batchNum} failed`, description: String(res.error?.message || res.error), variant: "destructive" });
         } else if (res.data?.error) {
           console.error(`[GovMap Import] Batch ${batchNum} server error:`, res.data.error);
           totalFailed += batch.length;
+          toast({ title: `Batch ${batchNum} rejected`, description: res.data.error, variant: "destructive" });
         } else {
           totalImported += res.data.imported || 0;
           totalFailed += res.data.failed || 0;
           totalSkipped += res.data.skipped || 0;
+          if (res.data.errors?.length) {
+            console.warn(`[GovMap Import] Batch ${batchNum} partial errors:`, res.data.errors);
+            toast({ title: `Batch ${batchNum} partial errors`, description: res.data.errors[0], variant: "destructive" });
+          }
         }
       } catch (err) {
         console.error(`[GovMap Import] Batch ${batchNum} exception:`, err);
