@@ -1063,7 +1063,7 @@ ${pageLinks.slice(0, 50).join("\n")}`;
 async function processOneItem(
   item: any, sb: any, job: any, agentId: string | null,
   firecrawlKey: string, lovableKey: string, jobId: string,
-  domainCity: string | null = null
+  domainCity: string | null = null, importType: string = "resale"
 ): Promise<{ succeeded: boolean }> {
   try {
     await sb.from("import_job_items").update({ status: "processing" }).eq("id", item.id);
