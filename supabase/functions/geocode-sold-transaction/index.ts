@@ -17,69 +17,101 @@ interface GeocodeResult {
   source: string;
 }
 
-// Geocode using Google Maps API (primary, more accurate for Israel)
-async function geocodeWithGoogle(address: string, city: string): Promise<GeocodeResult | null> {
+// Validate coordinates are within Israel bounds
+function isWithinIsrael(lat: number, lng: number): boolean {
+  return lat >= 29 && lat <= 34 && lng >= 34 && lng <= 36;
+}
+
+// Primary: Google Maps Geocoding API
+async function geocodeWithGoogle(query: string): Promise<GeocodeResult | null> {
   const apiKey = Deno.env.get("GOOGLE_MAPS_API_KEY");
   if (!apiKey) return null;
 
-  const fullAddress = `${address}, ${city}, Israel`;
-  const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(fullAddress)}&key=${apiKey}`;
-
   try {
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&key=${apiKey}&region=il`;
     const response = await fetch(url);
     const data = await response.json();
 
     if (data.status === "OK" && data.results?.[0]) {
-      const location = data.results[0].geometry.location;
-      return {
-        lat: location.lat,
-        lng: location.lng,
-        source: "google_maps",
-      };
+      const { lat, lng } = data.results[0].geometry.location;
+      if (isWithinIsrael(lat, lng)) {
+        return { lat, lng, source: "google_maps" };
+      }
+      console.warn("Google result outside Israel bounds:", lat, lng);
     }
   } catch (error) {
     console.error("Google geocoding error:", error);
   }
-
   return null;
 }
 
-// Geocode using Nominatim (fallback, free)
-async function geocodeWithNominatim(address: string, city: string): Promise<GeocodeResult | null> {
-  const fullAddress = `${address}, ${city}, Israel`;
-  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}&limit=1`;
-
+// Fallback: Nominatim (free, OSM-based)
+async function geocodeWithNominatim(query: string): Promise<GeocodeResult | null> {
   try {
-    const response = await fetch(url, {
-      headers: { "User-Agent": "BuyWiseIsrael/1.0" },
-    });
-    const data = await response.json();
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=il&limit=1`,
+      { headers: { "User-Agent": "BuyWiseIsrael/1.0" } }
+    );
 
+    if (!response.ok) return null;
+
+    const data = await response.json();
     if (data?.[0]) {
-      return {
-        lat: parseFloat(data[0].lat),
-        lng: parseFloat(data[0].lon),
-        source: "nominatim",
-      };
+      const lat = parseFloat(data[0].lat);
+      const lng = parseFloat(data[0].lon);
+      if (isWithinIsrael(lat, lng)) {
+        return { lat, lng, source: "nominatim" };
+      }
+      console.warn("Nominatim result outside Israel bounds:", lat, lng);
     }
   } catch (error) {
     console.error("Nominatim geocoding error:", error);
   }
-
   return null;
 }
 
-// Combined geocoding with fallback
-async function geocodeAddress(address: string, city: string): Promise<GeocodeResult | null> {
-  // Try Google first (more accurate for Israeli addresses)
-  const googleResult = await geocodeWithGoogle(address, city);
-  if (googleResult) return googleResult;
+// Build address variations for multi-format attempts
+function buildAddressVariations(address: string, city: string, neighborhood?: string): string[] {
+  const variations: string[] = [];
+  const streetMatch = address.match(/^(.+?)\s+(\d+)$/);
+  const reverseMatch = address.match(/^(\d+)\s+(.+)$/);
 
-  // Fallback to Nominatim
-  const nominatimResult = await geocodeWithNominatim(address, city);
-  if (nominatimResult) return nominatimResult;
+  if (neighborhood) {
+    variations.push(`${address}, ${neighborhood}, ${city}, Israel`);
+  }
+  variations.push(`${address}, ${city}, Israel`);
 
-  return null;
+  if (streetMatch) {
+    variations.push(`${streetMatch[2]} ${streetMatch[1]}, ${city}, Israel`);
+  }
+  if (reverseMatch) {
+    variations.push(`${reverseMatch[2]} ${reverseMatch[1]}, ${city}, Israel`);
+  }
+  if (streetMatch) {
+    variations.push(`${streetMatch[1]}, ${city}, Israel`);
+  }
+
+  return variations;
+}
+
+// Combined geocoding: Google first, then Nominatim with multiple formats
+async function geocodeAddress(address: string, city: string, neighborhood?: string): Promise<GeocodeResult | null> {
+  const variations = buildAddressVariations(address, city, neighborhood);
+
+  // Try Google with most specific variations
+  for (const query of variations.slice(0, 2)) {
+    const result = await geocodeWithGoogle(query);
+    if (result) return result;
+  }
+
+  // Fall back to Nominatim with all variations
+  for (const query of variations) {
+    const result = await geocodeWithNominatim(query);
+    if (result) return result;
+  }
+
+  // Last resort: city only
+  return await geocodeWithNominatim(`${city}, Israel`);
 }
 
 Deno.serve(async (req) => {
@@ -88,7 +120,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Verify admin authentication
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(
@@ -111,13 +142,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    const userId = user.id;
-
-    // Check admin role
     const { data: roleData } = await supabase
       .from("user_roles")
       .select("role")
-      .eq("user_id", userId)
+      .eq("user_id", user.id)
       .eq("role", "admin")
       .maybeSingle();
 
@@ -131,13 +159,11 @@ Deno.serve(async (req) => {
     const body: GeocodeRequest = await req.json();
     const { transactionIds, city, limit = 50 } = body;
 
-    // Use service role for updates
     const serviceClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Build query for transactions needing geocoding
     let query = serviceClient
       .from("sold_transactions")
       .select("id, address, city, neighborhood")
@@ -170,13 +196,12 @@ Deno.serve(async (req) => {
     let failed = 0;
     const results: { id: string; success: boolean; source?: string }[] = [];
 
-    // Process with rate limiting (1 request per 100ms for Nominatim)
     for (const txn of transactions) {
-      const fullAddress = txn.neighborhood 
+      const fullAddress = txn.neighborhood
         ? `${txn.address}, ${txn.neighborhood}`
         : txn.address;
 
-      const result = await geocodeAddress(fullAddress, txn.city);
+      const result = await geocodeAddress(fullAddress, txn.city, txn.neighborhood);
 
       if (result) {
         const { error: updateError } = await serviceClient
@@ -201,18 +226,12 @@ Deno.serve(async (req) => {
         results.push({ id: txn.id, success: false });
       }
 
-      // Rate limiting: wait 100ms between requests
+      // Rate limiting between requests
       await new Promise(resolve => setTimeout(resolve, 100));
     }
 
     return new Response(
-      JSON.stringify({
-        success: true,
-        total: transactions.length,
-        geocoded,
-        failed,
-        results,
-      }),
+      JSON.stringify({ success: true, total: transactions.length, geocoded, failed, results }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
