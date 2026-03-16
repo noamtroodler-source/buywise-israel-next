@@ -105,7 +105,7 @@ export function PropertyValueSnapshot({
           </div>
         )}
         
-        <div className={`grid ${gridCols} gap-4`}>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {/* Total Monthly Commitment */}
           <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
             <div className="flex items-center gap-2 text-muted-foreground mb-1">
