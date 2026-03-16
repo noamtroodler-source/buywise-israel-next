@@ -141,7 +141,7 @@ serve(async (req) => {
   }
 
   try {
-    const { entityType, entityId, address, city, neighborhood } = await req.json() as GeocodeRequest;
+    const { entityType, entityId, address, city, neighborhood, skipDbSave } = await req.json() as GeocodeRequest;
 
     if (!entityType || !entityId || !address || !city) {
       return new Response(
