@@ -2607,9 +2607,55 @@ function extractYad2AgencyTotalCount(html: string, listingMode: "forsale" | "ren
 }
 
 async function fetchYad2AgencyPageHtml(pageUrl: string): Promise<string> {
+  // Yad2 is a JS-rendered SPA — raw fetch only returns ~5 server-rendered items.
+  // Use Firecrawl's headless browser to get the fully rendered HTML.
+  const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
+  
+  if (FIRECRAWL_API_KEY) {
+    try {
+      console.log(`[Yad2] Firecrawl scraping: ${pageUrl}`);
+      const res = await fetch("https://api.firecrawl.dev/v1/scrape", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${FIRECRAWL_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          url: pageUrl,
+          formats: ["html"],
+          onlyMainContent: false,
+          waitFor: 5000, // Wait 5s for JS to render all listing cards
+        }),
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        const html = data?.data?.html || data?.html || "";
+        if (html.length > 500) {
+          // Verify we got listing content, not just a shell
+          const itemCount = (html.match(/\/realestate\/item\//gi) || []).length;
+          console.log(`[Yad2] Firecrawl returned ${html.length} chars, ${itemCount} item links`);
+          if (itemCount > 0) return html;
+          console.warn(`[Yad2] Firecrawl HTML has no item links, falling back to raw fetch`);
+        } else {
+          console.warn(`[Yad2] Firecrawl returned very short HTML (${html.length} chars), falling back`);
+        }
+      } else {
+        const errText = await res.text();
+        console.warn(`[Yad2] Firecrawl failed (${res.status}): ${errText.slice(0, 200)}`);
+      }
+    } catch (e) {
+      console.warn(`[Yad2] Firecrawl error:`, e);
+    }
+  } else {
+    console.warn(`[Yad2] FIRECRAWL_API_KEY not set — using raw fetch (will only get ~5 items)`);
+  }
+
+  // Fallback: raw fetch (will only get server-rendered items, typically ~5)
   const response = await fetch(pageUrl, {
     headers: {
-      "User-Agent": "Mozilla/5.0 (compatible; LovableImportBot/1.0)",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
       "Accept-Language": "he-IL,he;q=0.9,en;q=0.8",
     },
   });
@@ -2655,9 +2701,11 @@ async function handleYad2AgencyDiscover(body: any) {
 
     console.log(`Yad2 agency ${listingMode}: page 1=${firstPageItems.length}, total=${totalCount}, pages=${totalPages}`);
 
-    for (let startPage = 2; startPage <= totalPages; startPage += 5) {
+    // Process pages in small batches (Firecrawl has rate limits)
+    const PAGE_BATCH_SIZE = 2;
+    for (let startPage = 2; startPage <= totalPages; startPage += PAGE_BATCH_SIZE) {
       const pageBatch = Array.from(
-        { length: Math.min(5, totalPages - startPage + 1) },
+        { length: Math.min(PAGE_BATCH_SIZE, totalPages - startPage + 1) },
         (_, index) => startPage + index
       );
 
@@ -2666,11 +2714,16 @@ async function handleYad2AgencyDiscover(body: any) {
       );
 
       pageHtmlBatch.forEach((pageHtml, index) => {
-        const pageNumber = pageBatch[index];
-        const pageUrl = buildYad2AgencyPageUrl(discoveryUrl, pageNumber);
+        const pageUrl = buildYad2AgencyPageUrl(discoveryUrl, pageBatch[index]);
         const pageItems = extractYad2AgencyItemUrls(pageHtml, pageUrl);
+        console.log(`[Yad2] page ${pageBatch[index]}: ${pageItems.length} items`);
         pageItems.forEach((url) => discoveredUrls.add(url));
       });
+
+      // Small delay between batches to respect rate limits
+      if (startPage + PAGE_BATCH_SIZE <= totalPages) {
+        await new Promise(r => setTimeout(r, 1000));
+      }
     }
   }
 
