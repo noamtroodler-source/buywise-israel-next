@@ -901,10 +901,18 @@ function isPlaceholderImage(url: string): boolean {
   return false;
 }
 
+async function computeSha256(buffer: ArrayBuffer): Promise<string> {
+  const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
 async function parallelImageDownload(
   sourceImages: string[], sb: any, bucketName: string, jobId: string, maxImages = 15
-): Promise<string[]> {
+): Promise<{ urls: string[]; hashes: string[] }> {
   const imageUrls: string[] = [];
+  const imageHashes: string[] = [];
+  const seenHashes = new Set<string>();
   // Filter out placeholder images first
   const validImages = sourceImages.filter(url => !isPlaceholderImage(url)).slice(0, maxImages);
   const BATCH_SIZE = 5;
@@ -931,6 +939,14 @@ async function parallelImageDownload(
         // Double-check size after download
         if (imgBuffer.byteLength < 5000) return null;
 
+        // SHA-256 dedup: skip exact byte-match duplicates
+        const hash = await computeSha256(imgBuffer);
+        if (seenHashes.has(hash)) {
+          console.log(`Skipping duplicate image (SHA-256 match): ${imgUrl.slice(0, 80)}`);
+          return null;
+        }
+        seenHashes.add(hash);
+
         const fileName = `imports/${jobId}/${crypto.randomUUID()}.${ext}`;
         const { error: uploadErr } = await sb.storage
           .from(bucketName).upload(fileName, imgBuffer, { contentType, upsert: false });
@@ -940,17 +956,20 @@ async function parallelImageDownload(
           const publicUrl = urlData?.publicUrl || null;
           if (!publicUrl) return null;
           // Only enhance the first image (cover photo)
-          if (globalIdx === 0) return await enhanceImage(publicUrl, sb, bucketName, jobId);
-          return publicUrl;
+          const finalUrl = globalIdx === 0 ? await enhanceImage(publicUrl, sb, bucketName, jobId) : publicUrl;
+          return { url: finalUrl, hash };
         }
         return null;
       })
     );
     for (const r of results) {
-      if (r.status === "fulfilled" && r.value) imageUrls.push(r.value);
+      if (r.status === "fulfilled" && r.value) {
+        imageUrls.push(r.value.url);
+        imageHashes.push(r.value.hash);
+      }
     }
   }
-  return imageUrls;
+  return { urls: imageUrls, hashes: imageHashes };
 }
 
 // ─── PRE-CHECK ──────────────────────────────────────────────────────────────
