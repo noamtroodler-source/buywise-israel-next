@@ -2235,6 +2235,7 @@ export type Database = {
       }
       import_job_items: {
         Row: {
+          confidence_score: number | null
           created_at: string
           error_message: string | null
           error_type: string | null
@@ -2247,6 +2248,7 @@ export type Database = {
           url: string
         }
         Insert: {
+          confidence_score?: number | null
           created_at?: string
           error_message?: string | null
           error_type?: string | null
@@ -2259,6 +2261,7 @@ export type Database = {
           url: string
         }
         Update: {
+          confidence_score?: number | null
           created_at?: string
           error_message?: string | null
           error_type?: string | null

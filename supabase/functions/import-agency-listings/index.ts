@@ -28,24 +28,26 @@ const SUPPORTED_CITIES = [
 const CITY_ALIASES: Record<string, string[]> = {
   "Beer Sheva": ["beersheva", "beersheba", "beer sheba", "bersheva", "bersheba", "be'er sheva"],
   "Beit Shemesh": ["beit shemesh", "bet shemesh", "beth shemesh", "beitschemesh"],
-  "Caesarea": ["kesaria", "cesaria", "qesaria", "kaisaria", "cesarea"],
-  "Givat Shmuel": ["givat shmuel", "givat shemuel"],
+  "Caesarea": ["kesaria", "cesaria", "qesaria", "kaisaria", "cesarea", "kesarya", "qesarya"],
+  "Givat Shmuel": ["givat shmuel", "givat shemuel", "givat shmu'el"],
   "Gush Etzion": ["gush etzion", "gush ezion"],
   "Haifa": ["haipha", "hafia", "hefa", "heifa"],
-  "Herzliya": ["herzeliya", "herzelia", "herzlia", "hertzeliya"],
+  "Herzliya": ["herzeliya", "herzelia", "herzlia", "hertzeliya", "hertzlia", "hertzliya"],
   "Hod HaSharon": ["hod hasharon", "hod sharon"],
-  "Jerusalem": ["yerushalayim", "jeruslaem", "jerusalm"],
+  "Jerusalem": ["yerushalayim", "jeruslaem", "jerusalm", "yerushalaim"],
   "Kfar Saba": ["kfar saba", "kfar sabba", "kfar sava"],
-  "Ma'ale Adumim": ["maale adumim", "maaleh adumim", "male adumim"],
-  "Mevaseret Zion": ["mevaseret zion", "mevasseret zion", "mevasseret"],
-  "Modi'in": ["modiin", "modin", "modein"],
-  "Netanya": ["natanya", "netaniya", "netanyah"],
-  "Pardes Hanna": ["pardes hanna", "pardes hana", "pardes hanna karkur"],
-  "Petah Tikva": ["petach tikva", "petah tikwa", "petachtikva"],
-  "Ra'anana": ["raanana", "ranana", "rannana"],
-  "Ramat Gan": ["ramat gan", "ramatgan"],
-  "Tel Aviv": ["telaviv", "tel aviv", "tlv", "tel avive"],
-  "Zichron Yaakov": ["zichron yaakov", "zichron yakov", "zichron jacob"],
+  "Ma'ale Adumim": ["maale adumim", "maaleh adumim", "male adumim", "ma'aleh adummim"],
+  "Mevaseret Zion": ["mevaseret zion", "mevasseret zion", "mevasseret", "mevaseret tzion"],
+  "Modi'in": ["modiin", "modin", "modein", "modiin maccabim reut"],
+  "Netanya": ["natanya", "netaniya", "netanyah", "netania", "nathanya"],
+  "Pardes Hanna": ["pardes hanna", "pardes hana", "pardes hanna karkur", "pardes hanna-karkur", "pardes chana"],
+  "Petah Tikva": ["petach tikva", "petah tikwa", "petachtikva", "petach tikvah"],
+  "Ra'anana": ["raanana", "ranana", "rannana", "raananah"],
+  "Ramat Gan": ["ramat gan", "ramatgan", "ramat-gan"],
+  "Tel Aviv": ["telaviv", "tel aviv", "tlv", "tel avive", "tel-aviv", "tel aviv-yafo", "tel aviv yafo"],
+  "Zichron Yaakov": ["zichron yaakov", "zichron yakov", "zichron jacob", "zichron ya'akov", "zikhron"],
+  "Ashkelon": ["ashqelon"],
+  "Eilat": ["elat", "eliat"],
 };
 
 // Domain keywords → city mapping for inferring city from URL
@@ -83,97 +85,99 @@ function normalizeCityStr(str: string): string {
   return str.toLowerCase().replace(/['-]/g, "").replace(/\s+/g, "").trim();
 }
 
-/**
- * Match a city name against the supported cities list.
- * Returns canonical city name or null if not matched.
- */
 function matchSupportedCity(city: string | undefined | null): string | null {
   if (!city || typeof city !== "string" || city.trim() === "") return null;
-
   const normalized = normalizeCityStr(city);
-
-  // 1. Direct match (normalized)
   for (const supported of SUPPORTED_CITIES) {
     if (normalizeCityStr(supported) === normalized) return supported;
   }
-
-  // 2. Alias match
   for (const [canonical, aliases] of Object.entries(CITY_ALIASES)) {
     for (const alias of aliases) {
       if (normalizeCityStr(alias) === normalized) return canonical;
     }
   }
-
-  // 3. Substring / contains match (e.g. "Tel Aviv-Yafo" → "Tel Aviv")
   for (const supported of SUPPORTED_CITIES) {
     const normSupported = normalizeCityStr(supported);
     if (normalized.includes(normSupported) || normSupported.includes(normalized)) {
       return supported;
     }
   }
-
   return null;
 }
 
-/**
- * Try to infer a city from the URL domain name.
- */
 function inferCityFromDomain(url: string): string | null {
   try {
     const hostname = new URL(url).hostname.toLowerCase().replace(/\./g, "");
     for (const [keyword, city] of Object.entries(DOMAIN_CITY_HINTS)) {
       if (hostname.includes(keyword)) return city;
     }
-  } catch {
-    // ignore invalid URLs
-  }
+  } catch { /* ignore */ }
   return null;
 }
 
-/**
- * Extract domain name from URL for AI context.
- */
 function getDomainFromUrl(url: string): string {
-  try {
-    return new URL(url).hostname;
-  } catch {
-    return "";
-  }
+  try { return new URL(url).hostname; } catch { return ""; }
 }
+
+// ─── CITY PRICE RANGES (NIS, Resale Apartments) ────────────────────────────
+
+const CITY_PRICE_RANGES: Record<string, { min: number; max: number; sqm_min: number; sqm_max: number }> = {
+  "Tel Aviv":       { min: 2_000_000, max: 15_000_000, sqm_min: 52_000, sqm_max: 95_000 },
+  "Jerusalem":      { min: 1_200_000, max: 10_000_000, sqm_min: 35_000, sqm_max: 80_000 },
+  "Haifa":          { min: 600_000,   max: 3_500_000,  sqm_min: 18_000, sqm_max: 35_000 },
+  "Ra'anana":       { min: 1_800_000, max: 7_000_000,  sqm_min: 30_000, sqm_max: 45_000 },
+  "Herzliya":       { min: 2_000_000, max: 12_000_000, sqm_min: 35_000, sqm_max: 60_000 },
+  "Netanya":        { min: 1_000_000, max: 5_000_000,  sqm_min: 20_000, sqm_max: 35_000 },
+  "Beer Sheva":     { min: 500_000,   max: 2_200_000,  sqm_min: 10_000, sqm_max: 18_000 },
+  "Ashkelon":       { min: 500_000,   max: 2_500_000,  sqm_min: 12_000, sqm_max: 20_000 },
+  "Ashdod":         { min: 800_000,   max: 3_500_000,  sqm_min: 15_000, sqm_max: 25_000 },
+  "Ramat Gan":      { min: 1_500_000, max: 7_000_000,  sqm_min: 30_000, sqm_max: 45_000 },
+  "Petah Tikva":    { min: 1_200_000, max: 5_000_000,  sqm_min: 20_000, sqm_max: 35_000 },
+  "Kfar Saba":      { min: 1_500_000, max: 6_000_000,  sqm_min: 25_000, sqm_max: 40_000 },
+  "Modi'in":        { min: 1_200_000, max: 5_000_000,  sqm_min: 22_000, sqm_max: 35_000 },
+  "Beit Shemesh":   { min: 1_000_000, max: 4_000_000,  sqm_min: 18_000, sqm_max: 30_000 },
+  "Eilat":          { min: 600_000,   max: 2_800_000,  sqm_min: 12_000, sqm_max: 22_000 },
+  "Hod HaSharon":   { min: 1_500_000, max: 6_000_000,  sqm_min: 25_000, sqm_max: 40_000 },
+  "Givat Shmuel":   { min: 1_800_000, max: 6_500_000,  sqm_min: 30_000, sqm_max: 45_000 },
+  "Hadera":         { min: 800_000,   max: 3_000_000,  sqm_min: 15_000, sqm_max: 28_000 },
+  "Caesarea":       { min: 2_000_000, max: 15_000_000, sqm_min: 25_000, sqm_max: 50_000 },
+  "Efrat":          { min: 1_500_000, max: 5_000_000,  sqm_min: 20_000, sqm_max: 35_000 },
+  "Gush Etzion":    { min: 1_000_000, max: 4_000_000,  sqm_min: 15_000, sqm_max: 30_000 },
+  "Ma'ale Adumim":  { min: 1_000_000, max: 3_500_000,  sqm_min: 15_000, sqm_max: 28_000 },
+  "Mevaseret Zion": { min: 1_500_000, max: 5_000_000,  sqm_min: 25_000, sqm_max: 40_000 },
+  "Pardes Hanna":   { min: 800_000,   max: 3_500_000,  sqm_min: 15_000, sqm_max: 28_000 },
+  "Zichron Yaakov": { min: 1_200_000, max: 5_000_000,  sqm_min: 20_000, sqm_max: 35_000 },
+};
+
+// Room-to-size ratio validation (Israeli apartments)
+const ROOM_SIZE_RANGES: Record<number, { flag_min: number; flag_max: number }> = {
+  1: { flag_min: 15, flag_max: 50 },    // Studio
+  2: { flag_min: 25, flag_max: 70 },    // 2 rooms = 1 bed
+  3: { flag_min: 45, flag_max: 110 },   // 3 rooms = 2 bed
+  4: { flag_min: 65, flag_max: 150 },   // 4 rooms = 3 bed
+  5: { flag_min: 85, flag_max: 200 },   // 5 rooms = 4 bed
+  6: { flag_min: 100, flag_max: 350 },  // 6+ rooms
+};
 
 // ─── INDEX PAGE SOLD-URL PRE-FILTER ─────────────────────────────────────────
 
 const INDEX_PAGE_PATTERNS = [
   /\/(properties|listings|for-sale|for-rent|our-listings|all-listings|catalog|portfolio|real-estate|homes)/i,
   /\/(נכסים|דירות|למכירה|להשכרה|נדלן|דירות-למכירה|דירות-להשכרה)/,
-  /\/(page|p)\/\d+/i, // pagination pages
+  /\/(page|p)\/\d+/i,
 ];
 
 const SOLD_BADGE_PATTERNS = [
-  // English
-  /\bsold\b/i,
-  /\brented\b/i,
-  /\bleased\b/i,
-  /\bunder\s+contract\b/i,
-  /\boff[\s-]?market\b/i,
-  /\bno\s+longer\s+available\b/i,
-  /\bsale\s+agreed\b/i,
-  /\blet\s+agreed\b/i,
-  /\bunavailable\b/i,
-  // Hebrew
-  /נמכר[הו]?/,
-  /הושכר[הו]?/,
-  /בהסכם/,
-  /לא\s*זמינ[הו]?/,
-  /לא\s*פנוי[הו]?/,
+  /\bsold\b/i, /\brented\b/i, /\bleased\b/i, /\bunder\s+contract\b/i,
+  /\boff[\s-]?market\b/i, /\bno\s+longer\s+available\b/i,
+  /\bsale\s+agreed\b/i, /\blet\s+agreed\b/i, /\bunavailable\b/i,
+  /נמכר[הו]?/, /הושכר[הו]?/, /בהסכם/, /לא\s*זמינ[הו]?/, /לא\s*פנוי[הו]?/,
 ];
 
 const SOLD_CSS_CLASS_PATTERN = /class\s*=\s*"[^"]*\b(sold|rented|unavailable|off-market|leased|inactive|expired)\b[^"]*"/gi;
 
 function identifyIndexPages(allUrls: string[], websiteUrl: string): string[] {
   const candidates = new Set<string>();
-  
-  // Always include the homepage
   try {
     const homeUrl = new URL(websiteUrl);
     homeUrl.pathname = "/";
@@ -186,28 +190,18 @@ function identifyIndexPages(allUrls: string[], websiteUrl: string): string[] {
       const parsed = new URL(url);
       const path = decodeURIComponent(parsed.pathname);
       for (const pattern of INDEX_PAGE_PATTERNS) {
-        if (pattern.test(path)) {
-          candidates.add(url);
-          break;
-        }
+        if (pattern.test(path)) { candidates.add(url); break; }
       }
     } catch { /* ignore */ }
   }
-
-  // Cap at 8 pages to limit Firecrawl credits
   return Array.from(candidates).slice(0, 8);
 }
 
 function extractSoldUrlsFromHtml(html: string, pageUrl: string, knownUrls: Set<string>): Set<string> {
   const soldUrls = new Set<string>();
   let baseUrl: URL;
-  try {
-    baseUrl = new URL(pageUrl);
-  } catch {
-    return soldUrls;
-  }
+  try { baseUrl = new URL(pageUrl); } catch { return soldUrls; }
 
-  // Strategy 1: Find <a> tags and check surrounding context for sold signals
   const linkRegex = /<a\s[^>]*href\s*=\s*["']([^"'#]+)["'][^>]*>([\s\S]*?)<\/a>/gi;
   let match: RegExpExecArray | null;
 
@@ -217,41 +211,24 @@ function extractSoldUrlsFromHtml(html: string, pageUrl: string, knownUrls: Set<s
     const linkOuterEnd = Math.min(html.length, match.index + match[0].length + 300);
     const surroundingContext = html.substring(linkOuterStart, linkOuterEnd);
 
-    // Check if surrounding context has sold/rented signals
     let hasSoldSignal = false;
-
     for (const pattern of SOLD_BADGE_PATTERNS) {
-      if (pattern.test(surroundingContext)) {
-        hasSoldSignal = true;
-        break;
-      }
+      if (pattern.test(surroundingContext)) { hasSoldSignal = true; break; }
     }
-
     if (!hasSoldSignal && SOLD_CSS_CLASS_PATTERN.test(surroundingContext)) {
       hasSoldSignal = true;
     }
-    // Reset lastIndex since we used the global flag
     SOLD_CSS_CLASS_PATTERN.lastIndex = 0;
 
     if (hasSoldSignal) {
-      // Normalize href to absolute URL
       let absoluteUrl: string;
-      try {
-        absoluteUrl = new URL(href, baseUrl).toString();
-      } catch {
-        continue;
-      }
-      // Normalize and check if it's in our known URLs
+      try { absoluteUrl = new URL(href, baseUrl).toString(); } catch { continue; }
       const normalized = normalizeUrl(absoluteUrl);
-      if (knownUrls.has(normalized)) {
-        soldUrls.add(normalized);
-      }
+      if (knownUrls.has(normalized)) soldUrls.add(normalized);
     }
   }
 
-  // Strategy 2: Find elements with sold CSS classes and extract their child links
   const soldContainerRegex = /<(?:div|article|li|section)\s[^>]*class\s*=\s*"[^"]*\b(sold|rented|unavailable|off-market|leased)\b[^"]*"[^>]*>([\s\S]*?)<\/(?:div|article|li|section)>/gi;
-  
   while ((match = soldContainerRegex.exec(html)) !== null) {
     const containerHtml = match[2];
     const innerLinkRegex = /href\s*=\s*["']([^"'#]+)["']/gi;
@@ -260,9 +237,7 @@ function extractSoldUrlsFromHtml(html: string, pageUrl: string, knownUrls: Set<s
       try {
         const absoluteUrl = new URL(innerMatch[1], baseUrl).toString();
         const normalized = normalizeUrl(absoluteUrl);
-        if (knownUrls.has(normalized)) {
-          soldUrls.add(normalized);
-        }
+        if (knownUrls.has(normalized)) soldUrls.add(normalized);
       } catch { /* ignore */ }
     }
   }
@@ -271,25 +246,16 @@ function extractSoldUrlsFromHtml(html: string, pageUrl: string, knownUrls: Set<s
 }
 
 async function findSoldUrlsFromIndexPages(
-  allUrls: string[],
-  websiteUrl: string,
-  firecrawlKey: string
+  allUrls: string[], websiteUrl: string, firecrawlKey: string
 ): Promise<Set<string>> {
   const soldUrls = new Set<string>();
-
   const indexPages = identifyIndexPages(allUrls, websiteUrl);
-  if (indexPages.length === 0) {
-    console.log("No index pages identified for sold-URL pre-filter");
-    return soldUrls;
-  }
+  if (indexPages.length === 0) return soldUrls;
 
-  console.log(`Index page pre-filter: scraping ${indexPages.length} pages: ${indexPages.join(", ")}`);
-
-  // Build a Set of normalized known URLs for fast lookup
+  console.log(`Index page pre-filter: scraping ${indexPages.length} pages`);
   const knownUrlSet = new Set(allUrls.map(u => normalizeUrl(u)));
-
-  // Scrape index pages in parallel (batches of 4 to avoid rate limits)
   const batchSize = 4;
+
   for (let i = 0; i < indexPages.length; i += batchSize) {
     const batch = indexPages.slice(i, i + batchSize);
     const results = await Promise.allSettled(
@@ -297,121 +263,106 @@ async function findSoldUrlsFromIndexPages(
         try {
           const res = await fetch("https://api.firecrawl.dev/v1/scrape", {
             method: "POST",
-            headers: {
-              Authorization: `Bearer ${firecrawlKey}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              url: pageUrl,
-              formats: ["html"],
-              onlyMainContent: false, // Need full page to see badges in grid
-              waitFor: 2000, // Wait for JS-rendered badges
-            }),
+            headers: { Authorization: `Bearer ${firecrawlKey}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ url: pageUrl, formats: ["html"], onlyMainContent: false, waitFor: 2000 }),
           });
-
-          if (!res.ok) {
-            const errData = await res.text();
-            console.warn(`Index page scrape failed for ${pageUrl}: ${res.status} ${errData.substring(0, 200)}`);
-            return null;
-          }
-
+          if (!res.ok) { console.warn(`Index scrape failed for ${pageUrl}: ${res.status}`); return null; }
           const data = await res.json();
           const html = data.data?.html || data.html || "";
-          if (!html || html.length < 100) {
-            console.warn(`Index page ${pageUrl}: empty HTML response`);
-            return null;
-          }
-
-          const found = extractSoldUrlsFromHtml(html, pageUrl, knownUrlSet);
-          if (found.size > 0) {
-            console.log(`Index page ${pageUrl}: found ${found.size} sold URLs`);
-          }
-          return found;
-        } catch (err) {
-          console.warn(`Index page scrape error for ${pageUrl}: ${err}`);
-          return null;
-        }
+          if (!html || html.length < 100) return null;
+          return extractSoldUrlsFromHtml(html, pageUrl, knownUrlSet);
+        } catch (err) { console.warn(`Index scrape error: ${err}`); return null; }
       })
     );
-
     for (const result of results) {
       if (result.status === "fulfilled" && result.value) {
-        for (const url of result.value) {
-          soldUrls.add(url);
-        }
+        for (const url of result.value) soldUrls.add(url);
       }
     }
   }
-
   return soldUrls;
 }
 
-// ─── PRE-LLM SOLD/RENTED DETECTION ─────────────────────────────────────────
+// ─── PRE-LLM SOLD/RENTED/RENTAL/NEW-DEV DETECTION ──────────────────────────
 
-function isSoldOrRentedPage(markdown: string): boolean {
-  const hebrewPatterns = [
-    /נמכר[הו]?/,
-    /הושכר[הו]?/,
-    /בהסכם/,
-    /לא\s*זמינ[הו]?/,
-    /לא\s*פנוי[הו]?/,
-    /אין\s*בנמצא/,
+function isNonResalePage(markdown: string): { skip: boolean; reason: string } {
+  const snippet = markdown.substring(0, 3000);
+
+  // Sold/rented patterns
+  const soldPatterns = [
+    /נמכר[הו]?/, /הושכר[הו]?/, /בהסכם/, /לא\s*זמינ[הו]?/, /לא\s*פנוי[הו]?/, /אין\s*בנמצא/,
+    /\bsold\b/i, /\brented\b/i, /\bleased\b/i, /\bunder\s+contract\b/i, /\bunder\s+offer\b/i,
+    /\bsale\s+agreed\b/i, /\blet\s+agreed\b/i, /\boff\s*market\b/i,
+    /\bno\s+longer\s+available\b/i, /\bunavailable\b/i,
   ];
+  for (const p of soldPatterns) {
+    if (p.test(snippet)) return { skip: true, reason: "Pre-filter: listing appears sold/rented" };
+  }
 
-  const englishPatterns = [
-    /\bsold\b/i,
-    /\brented\b/i,
-    /\bleased\b/i,
-    /\bunder\s+contract\b/i,
-    /\bunder\s+offer\b/i,
-    /\bsale\s+agreed\b/i,
-    /\blet\s+agreed\b/i,
-    /\boff\s*market\b/i,
-    /\bno\s+longer\s+available\b/i,
-    /\bunavailable\b/i,
+  // Rental indicators
+  const rentalPatterns = [
+    /להשכרה/, /שכירות\s+חודשית/, /דמי\s*שכירות/, /שכ[\"״]ח/,
+    /\bfor\s+rent\b/i, /\bmonthly\s+rent\b/i, /\brental\b/i,
   ];
-
-  const snippet = markdown.substring(0, 2000);
-
-  for (const p of hebrewPatterns) {
-    if (p.test(snippet)) return true;
+  for (const p of rentalPatterns) {
+    if (p.test(snippet)) return { skip: true, reason: "Pre-filter: rental listing (resale only)" };
   }
-  for (const p of englishPatterns) {
-    if (p.test(snippet)) return true;
+
+  // New construction / developer indicators
+  const newDevPatterns = [
+    /מקבלן/, /על\s+הנייר/, /חדש\s+מקבלן/, /פרויקט\s+חדש/,
+    /דירות\s+חדשות\s+מקבלן/, /בנייה\s+חדשה/,
+    /\bnew\s+construction\b/i, /\boff[\s-]?plan\b/i,
+    /\bfrom\s+developer\b/i, /\bpre[\s-]?sale\b/i,
+  ];
+  for (const p of newDevPatterns) {
+    if (p.test(snippet)) return { skip: true, reason: "Pre-filter: new construction/developer listing" };
   }
-  return false;
+
+  return { skip: false, reason: "" };
 }
 
-// ─── DATA VALIDATION ────────────────────────────────────────────────────────
+// ─── DATA VALIDATION (Enhanced with outlier detection) ──────────────────────
 
 const VALID_PROPERTY_TYPES = [
   "apartment", "garden_apartment", "penthouse", "mini_penthouse",
   "duplex", "house", "cottage", "land", "commercial",
 ];
 const VALID_LISTING_STATUSES = ["for_sale", "for_rent"];
-const VALID_CONSTRUCTION_STATUSES = [
-  "planning", "pre_sale", "foundation", "structure", "finishing", "delivery", "completed",
-];
 
-function validatePropertyData(listing: Record<string, any>): string[] {
+// Property types to skip during resale import
+const SKIP_PROPERTY_TYPES = new Set(["land", "commercial"]);
+
+function validatePropertyData(listing: Record<string, any>): { errors: string[]; warnings: string[] } {
   const errors: string[] = [];
+  const warnings: string[] = [];
   const currentYear = new Date().getFullYear();
 
-  // Price validation — allow 0 (Price on Request) and null/undefined
+  // Price validation
   if (listing.price != null && listing.price < 0) {
     errors.push("price cannot be negative");
-  } else if (listing.price != null && listing.price > 0 && listing.price < 1000) {
-    errors.push(`price ${listing.price} seems too low (likely extraction error)`);
+  } else if (listing.price === 1) {
+    errors.push("price=1 is a sold placeholder — skip");
+  } else if (listing.price != null && listing.price > 0 && listing.price < 20_000) {
+    errors.push(`price ${listing.price} NIS appears to be rent, not sale price`);
+  } else if (listing.price != null && listing.price > 0 && listing.price < 100_000) {
+    warnings.push(`price ${listing.price} seems unusually low for a property`);
   }
-  // price === 0 or null/undefined is allowed (Price on Request)
 
-  // City is no longer validated here — handled by city whitelist gate after extraction
+  // Resale-only: skip rentals
+  if (listing.listing_status === "for_rent") {
+    errors.push("rental listing — resale import only");
+  }
+
+  // Skip non-resale property types
+  if (listing.property_type && SKIP_PROPERTY_TYPES.has(listing.property_type)) {
+    errors.push(`property type '${listing.property_type}' not imported in resale mode`);
+  }
 
   // Enum validation
   if (listing.property_type && !VALID_PROPERTY_TYPES.includes(listing.property_type)) {
     errors.push(`invalid property_type '${listing.property_type}'`);
   }
-
   if (listing.listing_status && !VALID_LISTING_STATUSES.includes(listing.listing_status)) {
     errors.push(`invalid listing_status '${listing.listing_status}'`);
   }
@@ -430,20 +381,175 @@ function validatePropertyData(listing: Record<string, any>): string[] {
     errors.push(`floor ${listing.floor} is out of range (-2 to 200)`);
   }
   if (listing.year_built != null && (typeof listing.year_built !== "number" || listing.year_built < 1800 || listing.year_built > currentYear + 5)) {
-    errors.push(`year_built ${listing.year_built} is out of range (1800–${currentYear + 5})`);
+    errors.push(`year_built ${listing.year_built} is out of range`);
   }
 
-  return errors;
+  // ── City-specific price range validation ──
+  if (listing.city && listing.price && listing.price > 0) {
+    const cityRange = CITY_PRICE_RANGES[listing.city];
+    if (cityRange) {
+      if (listing.price < cityRange.min * 0.5) {
+        warnings.push(`price ${listing.price} is well below ${listing.city} range (${cityRange.min}–${cityRange.max})`);
+      } else if (listing.price > cityRange.max * 1.5) {
+        warnings.push(`price ${listing.price} is well above ${listing.city} range (${cityRange.min}–${cityRange.max})`);
+      }
+
+      // Price per sqm check
+      if (listing.size_sqm && listing.size_sqm > 0) {
+        const priceSqm = listing.price / listing.size_sqm;
+        if (priceSqm < cityRange.sqm_min * 0.5 || priceSqm > cityRange.sqm_max * 1.5) {
+          warnings.push(`price/sqm ${Math.round(priceSqm)} outside ${listing.city} range (${cityRange.sqm_min}–${cityRange.sqm_max})`);
+        }
+      }
+    }
+  }
+
+  // ── Room-to-size ratio validation ──
+  if (listing.bedrooms != null && listing.size_sqm && listing.size_sqm > 0) {
+    // Convert bedrooms back to Israeli room count for ratio check
+    const rooms = listing.bedrooms + 1;
+    const rangeKey = Math.min(rooms, 6);
+    const sizeRange = ROOM_SIZE_RANGES[rangeKey];
+    if (sizeRange) {
+      if (listing.size_sqm < sizeRange.flag_min) {
+        warnings.push(`size ${listing.size_sqm}sqm seems small for ${rooms} rooms (expected >${sizeRange.flag_min})`);
+      } else if (listing.size_sqm > sizeRange.flag_max) {
+        warnings.push(`size ${listing.size_sqm}sqm seems large for ${rooms} rooms (expected <${sizeRange.flag_max})`);
+      }
+    }
+  }
+
+  return { errors, warnings };
 }
 
-// validateProjectData removed — projects are no longer imported (add via Project Wizard)
+// ─── CONFIDENCE SCORING ─────────────────────────────────────────────────────
+
+function computeConfidenceScore(
+  listing: Record<string, any>,
+  cityMatchType: "exact" | "fuzzy" | "domain" | "none",
+  validationWarnings: string[]
+): number {
+  // Each field scores 1-3, weighted
+  const weights = {
+    price: 0.20,
+    rooms: 0.15,
+    size: 0.15,
+    city: 0.15,
+    address: 0.10,
+    propertyType: 0.10,
+    photos: 0.10,
+    description: 0.05,
+  };
+
+  const scores: Record<string, number> = {};
+
+  // Price
+  if (!listing.price || listing.price === 0) {
+    scores.price = 1;
+  } else {
+    const cityRange = listing.city ? CITY_PRICE_RANGES[listing.city] : null;
+    if (cityRange && listing.price >= cityRange.min * 0.5 && listing.price <= cityRange.max * 1.5) {
+      scores.price = 3;
+    } else if (cityRange) {
+      scores.price = 2;
+    } else {
+      scores.price = listing.price > 100_000 ? 3 : 2;
+    }
+  }
+
+  // Rooms
+  if (listing.bedrooms == null) {
+    scores.rooms = 1;
+  } else if (listing.bedrooms >= 0 && listing.bedrooms <= 9) {
+    scores.rooms = 3;
+  } else {
+    scores.rooms = 2;
+  }
+
+  // Size
+  if (!listing.size_sqm || listing.size_sqm <= 0) {
+    scores.size = 1;
+  } else if (listing.bedrooms != null) {
+    const rooms = listing.bedrooms + 1;
+    const rangeKey = Math.min(rooms, 6);
+    const sizeRange = ROOM_SIZE_RANGES[rangeKey];
+    if (sizeRange && listing.size_sqm >= sizeRange.flag_min && listing.size_sqm <= sizeRange.flag_max) {
+      scores.size = 3;
+    } else {
+      scores.size = 2;
+    }
+  } else {
+    scores.size = 2;
+  }
+
+  // City
+  if (cityMatchType === "exact") scores.city = 3;
+  else if (cityMatchType === "fuzzy") scores.city = 2;
+  else if (cityMatchType === "domain") scores.city = 1;
+  else scores.city = 1;
+
+  // Address
+  if (listing.address && listing.address.trim().length > 0) {
+    const hasNumber = /\d/.test(listing.address);
+    scores.address = hasNumber ? 3 : 2;
+  } else {
+    scores.address = 1;
+  }
+
+  // Property type
+  if (listing.property_type && VALID_PROPERTY_TYPES.includes(listing.property_type)) {
+    scores.propertyType = 3;
+  } else if (listing.property_type) {
+    scores.propertyType = 2;
+  } else {
+    scores.propertyType = 1;
+  }
+
+  // Photos
+  const photoCount = listing.image_urls?.length || 0;
+  if (photoCount >= 3) scores.photos = 3;
+  else if (photoCount >= 1) scores.photos = 2;
+  else scores.photos = 1;
+
+  // Description
+  const descLen = (listing.description || "").length;
+  if (descLen >= 50) scores.description = 3;
+  else if (descLen >= 10) scores.description = 2;
+  else scores.description = 1;
+
+  // Compute weighted score (0-100)
+  let total = 0;
+  for (const [key, weight] of Object.entries(weights)) {
+    total += (scores[key] || 1) * weight;
+  }
+
+  // Scale: 1→0, 3→100
+  let score = Math.round(((total - 1) / 2) * 100);
+
+  // Penalize for validation warnings
+  const warningPenalty = Math.min(validationWarnings.length * 5, 20);
+  score = Math.max(0, score - warningPenalty);
+
+  return Math.min(100, Math.max(0, score));
+}
+
+// ─── ADDRESS NORMALIZATION FOR DEDUP ────────────────────────────────────────
+
+function normalizeAddressForDedup(address: string): string {
+  let norm = address.trim().toLowerCase();
+  // Strip Hebrew "רחוב" (street) prefix
+  norm = norm.replace(/^רחוב\s+/, "");
+  norm = norm.replace(/^rechov\s+/i, "");
+  // Normalize Hebrew final-form characters
+  norm = norm.replace(/ך/g, "כ").replace(/ם/g, "מ").replace(/ן/g, "נ").replace(/ף/g, "פ").replace(/ץ/g, "צ");
+  // Remove extra spaces and hyphens in house numbers
+  norm = norm.replace(/\s+/g, " ").replace(/-/g, "").trim();
+  return norm;
+}
 
 // ─── AI URL CLASSIFICATION (BATCHED) ────────────────────────────────────────
 
-async function classifyUrlChunk(
-  urls: string[],
-  lovableKey: string
-): Promise<string[]> {
+async function classifyUrlChunk(urls: string[], lovableKey: string): Promise<string[]> {
   try {
     const filterPrompt = `You are analyzing URLs from a real estate agency website. 
 Given this list of URLs, identify which ones are individual property/listing detail pages ONLY (not category pages, contact pages, about pages, blog posts, etc.).
@@ -466,44 +572,30 @@ ${urls.join("\n")}`;
 
     const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${lovableKey}`,
-        "Content-Type": "application/json",
-      },
+      headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [{ role: "user", content: filterPrompt }],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "return_listing_urls",
-              description: "Return the filtered listing and project URLs",
-              parameters: {
-                type: "object",
-                properties: {
-                  listing_urls: {
-                    type: "array",
-                    items: { type: "string" },
-                    description: "Array of URLs that are individual listing pages only (no projects/developments)",
-                  },
-                },
-                required: ["listing_urls"],
-                additionalProperties: false,
+        tools: [{
+          type: "function",
+          function: {
+            name: "return_listing_urls",
+            description: "Return the filtered listing URLs",
+            parameters: {
+              type: "object",
+              properties: {
+                listing_urls: { type: "array", items: { type: "string" }, description: "Array of individual listing page URLs" },
               },
+              required: ["listing_urls"],
+              additionalProperties: false,
             },
           },
-        ],
+        }],
         tool_choice: { type: "function", function: { name: "return_listing_urls" } },
       }),
     });
 
-    if (!aiRes.ok) {
-      const errText = await aiRes.text();
-      console.warn(`AI chunk classification failed (${aiRes.status}): ${errText}`);
-      return [];
-    }
-
+    if (!aiRes.ok) { console.warn(`AI classification failed (${aiRes.status})`); return []; }
     const aiData = await aiRes.json();
     const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
     if (toolCall?.function?.arguments) {
@@ -512,57 +604,35 @@ ${urls.join("\n")}`;
     }
     return [];
   } catch (err) {
-    console.warn(`classifyUrlChunk failed (non-fatal): ${err}`);
+    console.warn(`classifyUrlChunk failed: ${err}`);
     return [];
   }
 }
 
-async function classifyUrlsInBatches(
-  allUrls: string[],
-  lovableKey: string,
-  chunkSize = 80,
-  concurrency = 3
-): Promise<string[]> {
-  // Split into chunks
+async function classifyUrlsInBatches(allUrls: string[], lovableKey: string, chunkSize = 80, concurrency = 3): Promise<string[]> {
   const chunks: string[][] = [];
-  for (let i = 0; i < allUrls.length; i += chunkSize) {
-    chunks.push(allUrls.slice(i, i + chunkSize));
-  }
+  for (let i = 0; i < allUrls.length; i += chunkSize) chunks.push(allUrls.slice(i, i + chunkSize));
 
-  console.log(`Classifying ${allUrls.length} URLs in ${chunks.length} chunk(s) (concurrency=${concurrency})`);
-
+  console.log(`Classifying ${allUrls.length} URLs in ${chunks.length} chunk(s)`);
   const allResults = new Set<string>();
   let totalFailed = 0;
 
-  // Process chunks in parallel groups
   for (let i = 0; i < chunks.length; i += concurrency) {
     const group = chunks.slice(i, i + concurrency);
-    const results = await Promise.allSettled(
-      group.map(chunk => classifyUrlChunk(chunk, lovableKey))
-    );
-
+    const results = await Promise.allSettled(group.map(chunk => classifyUrlChunk(chunk, lovableKey)));
     for (const r of results) {
       if (r.status === "fulfilled" && r.value.length > 0) {
         for (const url of r.value) allResults.add(url);
-      } else if (r.status === "rejected") {
-        totalFailed++;
-        console.warn(`Chunk classification rejected: ${r.reason}`);
-      } else if (r.status === "fulfilled" && r.value.length === 0) {
-        // Could be a failure that returned [] or genuinely no listings in chunk
-        totalFailed++;
-      }
+      } else { totalFailed++; }
     }
   }
 
   const listingUrls = Array.from(allResults);
-
-  // If ALL chunks failed, fall back to first 100 URLs
   if (listingUrls.length === 0) {
     console.log("All AI classification chunks returned 0 results, using fallback (first 100 URLs)");
     return allUrls.slice(0, 100);
   }
-
-  console.log(`Batch classification complete: ${listingUrls.length} unique listing URLs from ${chunks.length} chunks (${totalFailed} returned empty)`);
+  console.log(`Batch classification complete: ${listingUrls.length} listing URLs (${totalFailed} empty chunks)`);
   return listingUrls;
 }
 
@@ -591,195 +661,123 @@ async function handleDiscover(body: any) {
   const normalizedUrl = normalizeUrl(website_url);
 
   const { data: agency, error: agencyErr } = await sb
-    .from("agencies")
-    .select("id, admin_user_id")
-    .eq("id", agency_id)
-    .single();
+    .from("agencies").select("id, admin_user_id").eq("id", agency_id).single();
   if (agencyErr || !agency) throw new Error("Agency not found");
 
-  // Gather all previously-known URLs for this agency + website combo (for incremental dedup)
+  // Gather previously-known URLs
   const { data: previousJobIds } = await sb
-    .from("import_jobs")
-    .select("id")
-    .eq("agency_id", agency_id)
-    .eq("website_url", normalizedUrl);
+    .from("import_jobs").select("id").eq("agency_id", agency_id).eq("website_url", normalizedUrl);
 
   let knownUrlSet = new Set<string>();
   if (previousJobIds && previousJobIds.length > 0) {
     const jobIds = previousJobIds.map((j: any) => j.id);
-    // Fetch all URLs from previous job items in batches (Supabase 1000-row limit)
     for (let i = 0; i < jobIds.length; i += 50) {
       const batch = jobIds.slice(i, i + 50);
-      const { data: prevItems } = await sb
-        .from("import_job_items")
-        .select("url")
-        .in("job_id", batch);
-      if (prevItems) {
-        for (const item of prevItems) {
-          knownUrlSet.add(normalizeUrl(item.url));
-        }
-      }
+      const { data: prevItems } = await sb.from("import_job_items").select("url").in("job_id", batch);
+      if (prevItems) for (const item of prevItems) knownUrlSet.add(normalizeUrl(item.url));
     }
-    console.log(`Found ${knownUrlSet.size} previously-known URLs across ${previousJobIds.length} past jobs`);
   }
 
-  // Also check properties table for source_url matches (catches listings from deleted jobs)
   const { data: existingProperties } = await sb
-    .from("properties")
-    .select("source_url")
-    .eq("agency_id", agency_id)
-    .not("source_url", "is", null);
+    .from("properties").select("source_url").eq("agency_id", agency_id).not("source_url", "is", null);
   if (existingProperties) {
     for (const prop of existingProperties) {
       if (prop.source_url) knownUrlSet.add(normalizeUrl(prop.source_url));
     }
-    console.log(`Added ${existingProperties.length} source_urls from properties table, total known: ${knownUrlSet.size}`);
   }
 
   const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
   if (!FIRECRAWL_API_KEY) throw new Error("FIRECRAWL_API_KEY not configured");
 
-  let formattedUrl = normalizedUrl;
-
+  const formattedUrl = normalizedUrl;
   console.log("Mapping URL:", formattedUrl);
+
   const mapRes = await fetch("https://api.firecrawl.dev/v1/map", {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${FIRECRAWL_API_KEY}`,
-      "Content-Type": "application/json",
-    },
+    headers: { Authorization: `Bearer ${FIRECRAWL_API_KEY}`, "Content-Type": "application/json" },
     body: JSON.stringify({ url: formattedUrl, limit: 500, includeSubdomains: false }),
   });
-
   const mapData = await mapRes.json();
   if (!mapRes.ok) throw new Error(`Firecrawl MAP failed: ${JSON.stringify(mapData)}`);
 
   const rawUrls: string[] = mapData.links || mapData.data || [];
   if (rawUrls.length === 0) throw new Error("No URLs discovered on this website");
-
   console.log(`Discovered ${rawUrls.length} total URLs`);
 
-  // Pre-filter: remove URLs that contain sold/rented keywords
+  // Pre-filter: remove sold/rented keyword URLs
   const SOLD_URL_KEYWORDS = [
     'sold', 'rented', 'leased', 'archived', 'completed',
     'past-sale', 'under-contract', 'off-market',
     'נמכר', 'הושכר', 'בהסכם',
-    '%D7%A0%D7%9E%D7%9B%D7%A8',  // נמכר URL-encoded
-    '%D7%94%D7%95%D7%A9%D7%9B%D7%A8', // הושכר URL-encoded
+    '%D7%A0%D7%9E%D7%9B%D7%A8', '%D7%94%D7%95%D7%A9%D7%9B%D7%A8',
   ];
 
   const allUrls = rawUrls.filter(url => {
     try {
       const decoded = decodeURIComponent(url).toLowerCase();
       return !SOLD_URL_KEYWORDS.some(kw => decoded.includes(kw));
-    } catch {
-      return true; // keep URL if decode fails
-    }
+    } catch { return true; }
   });
 
   const urlFilteredOut = rawUrls.length - allUrls.length;
-  if (urlFilteredOut > 0) {
-    console.log(`URL keyword filter: removed ${urlFilteredOut} sold/rented URLs, ${allUrls.length} remaining`);
-  }
+  if (urlFilteredOut > 0) console.log(`URL keyword filter: removed ${urlFilteredOut} sold/rented URLs`);
 
-  // Index page sold-URL pre-filter: scrape listing grid pages to find sold badges
-  let indexFilteredOut = 0;
+  // Index page sold-URL pre-filter
   try {
     const soldUrlsFromIndex = await findSoldUrlsFromIndexPages(allUrls, normalizedUrl, FIRECRAWL_API_KEY);
     if (soldUrlsFromIndex.size > 0) {
       const beforeCount = allUrls.length;
       const filteredUrls = allUrls.filter(url => !soldUrlsFromIndex.has(normalizeUrl(url)));
-      indexFilteredOut = beforeCount - filteredUrls.length;
-      // Replace allUrls contents
       allUrls.length = 0;
       allUrls.push(...filteredUrls);
-      console.log(`Index page filter: removed ${indexFilteredOut} sold/rented URLs, ${allUrls.length} remaining`);
+      console.log(`Index page filter: removed ${beforeCount - allUrls.length} sold URLs`);
     }
-  } catch (err) {
-    console.warn(`Index page pre-filter failed (non-blocking): ${err}`);
-  }
+  } catch (err) { console.warn(`Index page pre-filter failed: ${err}`); }
 
-  // Non-listing URL pattern pre-filter (before AI classification)
+  // Non-listing URL pattern filter
   const { listingCandidates, removed: nonListingRemoved } = filterNonListingUrls(allUrls);
   if (nonListingRemoved > 0 && listingCandidates.length > 0) {
     allUrls.length = 0;
     allUrls.push(...listingCandidates);
-    console.log(`Non-listing pattern filter: removed ${nonListingRemoved} URLs, ${allUrls.length} remaining`);
-  } else if (nonListingRemoved > 0 && listingCandidates.length === 0) {
-    console.warn(`Non-listing filter would remove ALL ${allUrls.length} URLs — skipping filter (safety check)`);
+    console.log(`Non-listing filter: removed ${nonListingRemoved}, ${allUrls.length} remaining`);
   }
 
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-  // Subtract already-known URLs BEFORE AI classification to save AI calls
+  // Subtract already-known URLs BEFORE AI classification
   const newUrls = knownUrlSet.size > 0
     ? allUrls.filter(url => !knownUrlSet.has(normalizeUrl(url)))
     : allUrls;
   const skippedExisting = allUrls.length - newUrls.length;
-  
-  if (skippedExisting > 0) {
-    console.log(`Incremental dedup: ${skippedExisting} URLs already known, ${newUrls.length} new URLs to classify`);
-  }
 
-  // If no new URLs, return early without creating a job
+  if (skippedExisting > 0) console.log(`Incremental dedup: ${skippedExisting} known, ${newUrls.length} new`);
+
   if (newUrls.length === 0) {
-    console.log(`All ${allUrls.length} discovered URLs already known — site is up to date`);
-    return {
-      job_id: null,
-      total_listings: 0,
-      total_discovered: allUrls.length,
-      new_urls: 0,
-      skipped_existing: skippedExisting,
-    };
+    return { job_id: null, total_listings: 0, total_discovered: allUrls.length, new_urls: 0, skipped_existing: skippedExisting };
   }
 
   const listingUrls = await classifyUrlsInBatches(newUrls, LOVABLE_API_KEY);
-  console.log(`AI identified ${listingUrls.length} listing URLs from ${newUrls.length} new candidates`);
+  console.log(`AI identified ${listingUrls.length} listing URLs`);
 
   if (listingUrls.length === 0) {
-    console.log(`No new listing URLs found after classification`);
-    return {
-      job_id: null,
-      total_listings: 0,
-      total_discovered: allUrls.length,
-      new_urls: 0,
-      skipped_existing: skippedExisting,
-    };
+    return { job_id: null, total_listings: 0, total_discovered: allUrls.length, new_urls: 0, skipped_existing: skippedExisting };
   }
 
   const { data: job, error: jobErr } = await sb
     .from("import_jobs")
-    .insert({
-      agency_id,
-      website_url: formattedUrl,
-      status: "ready",
-      total_urls: listingUrls.length,
-      discovered_urls: allUrls,
-    })
-    .select("id")
-    .single();
+    .insert({ agency_id, website_url: formattedUrl, status: "ready", total_urls: listingUrls.length, discovered_urls: allUrls })
+    .select("id").single();
   if (jobErr) throw new Error(`Failed to create import job: ${jobErr.message}`);
 
-  const items = listingUrls.map((url) => ({
-    job_id: job.id,
-    url,
-    status: "pending",
-  }));
-
+  const items = listingUrls.map((url) => ({ job_id: job.id, url, status: "pending" }));
   const { error: itemsErr } = await sb.from("import_job_items").insert(items);
   if (itemsErr) throw new Error(`Failed to create job items: ${itemsErr.message}`);
 
-  return {
-    job_id: job.id,
-    total_listings: listingUrls.length,
-    total_discovered: allUrls.length,
-    new_urls: listingUrls.length,
-    skipped_existing: skippedExisting,
-  };
+  return { job_id: job.id, total_listings: listingUrls.length, total_discovered: allUrls.length, new_urls: listingUrls.length, skipped_existing: skippedExisting };
 }
 
-// ─── HELPERS: PARALLEL PROCESSING ───────────────────────────────────────────
+// ─── HELPERS ────────────────────────────────────────────────────────────────
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -793,7 +791,6 @@ const NON_LISTING_SEGMENTS = new Set([
   "checkout", "payment", "subscribe", "unsubscribe", "partners", "affiliates",
   "investors", "testimonials", "reviews", "awards", "archive", "category",
   "tag", "tags", "author", "feed", "wp-admin", "wp-login", "wp-content",
-  // Project/development segments — skip entirely (agencies add projects manually)
   "project", "projects", "development", "developments", "new-construction",
   "new-building", "new-homes", "new-development",
   "פרויקט", "פרויקטים", "בנייה-חדשה", "דירות-חדשות", "מתחם", "מתחמים",
@@ -811,63 +808,37 @@ function filterNonListingUrls(urls: string[]): { listingCandidates: string[]; re
 
   for (const url of urls) {
     let pathname: string;
-    try {
-      const parsed = new URL(url);
-      pathname = parsed.pathname;
-    } catch {
-      // If URL can't be parsed, keep it (let AI decide)
-      listingCandidates.push(url);
-      continue;
-    }
+    try { pathname = new URL(url).pathname; } catch { listingCandidates.push(url); continue; }
 
-    // Decode for Hebrew/encoded URLs
     let decodedPath: string;
-    try {
-      decodedPath = decodeURIComponent(pathname).toLowerCase();
-    } catch {
-      decodedPath = pathname.toLowerCase();
-    }
+    try { decodedPath = decodeURIComponent(pathname).toLowerCase(); } catch { decodedPath = pathname.toLowerCase(); }
 
-    // Check file extension
     const lastDot = decodedPath.lastIndexOf(".");
     if (lastDot > decodedPath.lastIndexOf("/")) {
       const ext = decodedPath.slice(lastDot);
-      if (NON_LISTING_EXTENSIONS.has(ext)) {
-        removed++;
-        continue;
-      }
+      if (NON_LISTING_EXTENSIONS.has(ext)) { removed++; continue; }
     }
 
-    // Check path segments (exact match only)
     const segments = decodedPath.split("/").filter(Boolean);
-    const hasBlockedSegment = segments.some(seg => NON_LISTING_SEGMENTS.has(seg));
-    if (hasBlockedSegment) {
-      removed++;
-      continue;
-    }
+    if (segments.some(seg => NON_LISTING_SEGMENTS.has(seg))) { removed++; continue; }
 
     listingCandidates.push(url);
   }
-
   return { listingCandidates, removed };
 }
 
+// ─── GEOCODING ──────────────────────────────────────────────────────────────
 
 let _lastGeoTime = 0;
 let _geoQueue: Promise<void> = Promise.resolve();
 
-async function geocodeWithRateLimit(
-  address: string,
-  city: string
-): Promise<{ lat: number; lng: number } | null> {
-  // Chain onto the shared queue to serialize
+async function geocodeWithRateLimit(address: string, city: string): Promise<{ lat: number; lng: number } | null> {
   const result = await new Promise<{ lat: number; lng: number } | null>((resolve) => {
     _geoQueue = _geoQueue.then(async () => {
       const now = Date.now();
       const wait = Math.max(0, 1100 - (now - _lastGeoTime));
       if (wait > 0) await delay(wait);
       _lastGeoTime = Date.now();
-
       try {
         const geoQuery = encodeURIComponent(`${address}, ${city}, Israel`);
         const geoRes = await fetch(
@@ -876,261 +847,257 @@ async function geocodeWithRateLimit(
         );
         const geoData = await geoRes.json();
         if (geoData?.[0]) {
-          resolve({
-            lat: parseFloat(geoData[0].lat),
-            lng: parseFloat(geoData[0].lon),
-          });
-        } else {
-          resolve(null);
-        }
-      } catch (geoErr) {
-        console.warn("Geocoding failed:", geoErr);
-        resolve(null);
-      }
+          resolve({ lat: parseFloat(geoData[0].lat), lng: parseFloat(geoData[0].lon) });
+        } else { resolve(null); }
+      } catch { resolve(null); }
     });
   });
   return result;
 }
 
-// Enhance a single image via AI (best-effort, returns original on failure)
-async function enhanceImage(
-  imagePublicUrl: string,
-  sb: any,
-  bucketName: string,
-  jobId: string,
-): Promise<string> {
+// ─── IMAGE HANDLING (with placeholder detection) ────────────────────────────
+
+async function enhanceImage(imagePublicUrl: string, sb: any, bucketName: string, jobId: string): Promise<string> {
   try {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) return imagePublicUrl;
-
     const enhancePath = `imports/${jobId}/${crypto.randomUUID()}-enhanced.png`;
-
-    const res = await fetch(
-      `${Deno.env.get("SUPABASE_URL")}/functions/v1/enhance-image`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          image_url: imagePublicUrl,
-          bucket: bucketName,
-          path: enhancePath,
-        }),
-      }
-    );
-
-    if (!res.ok) {
-      console.log(`Enhancement failed (${res.status}), keeping original`);
-      return imagePublicUrl;
-    }
-
+    const res = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/enhance-image`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ image_url: imagePublicUrl, bucket: bucketName, path: enhancePath }),
+    });
+    if (!res.ok) return imagePublicUrl;
     const data = await res.json();
-    if (data.success && data.enhanced && data.image_url) {
-      console.log(`Image enhanced: ${data.image_url.slice(0, 80)}`);
-      return data.image_url;
-    }
-    return imagePublicUrl;
-  } catch (err) {
-    console.log(`Enhancement error, keeping original:`, err);
-    return imagePublicUrl;
-  }
+    return (data.success && data.enhanced && data.image_url) ? data.image_url : imagePublicUrl;
+  } catch { return imagePublicUrl; }
 }
 
-// Parallel image download — batches of 5
+// Track image URLs across a batch to detect repeated placeholder images
+const _batchImageUrlCounts = new Map<string, number>();
+
+function isPlaceholderImage(url: string): boolean {
+  // Count how many times this URL has been seen across the batch
+  const count = (_batchImageUrlCounts.get(url) || 0) + 1;
+  _batchImageUrlCounts.set(url, count);
+  // If same URL used in 3+ listings, it's likely a default/placeholder
+  if (count >= 3) return true;
+  // Skip tiny images (common placeholder patterns)
+  const lcUrl = url.toLowerCase();
+  if (lcUrl.includes("placeholder") || lcUrl.includes("no-image") || lcUrl.includes("default")) return true;
+  return false;
+}
+
 async function parallelImageDownload(
-  sourceImages: string[],
-  sb: any,
-  bucketName: string,
-  jobId: string,
-  maxImages = 15
+  sourceImages: string[], sb: any, bucketName: string, jobId: string, maxImages = 15
 ): Promise<string[]> {
   const imageUrls: string[] = [];
-  const images = sourceImages.slice(0, maxImages);
+  // Filter out placeholder images first
+  const validImages = sourceImages.filter(url => !isPlaceholderImage(url)).slice(0, maxImages);
   const BATCH_SIZE = 5;
 
-  for (let i = 0; i < images.length; i += BATCH_SIZE) {
-    const batch = images.slice(i, i + BATCH_SIZE);
+  for (let i = 0; i < validImages.length; i += BATCH_SIZE) {
+    const batch = validImages.slice(i, i + BATCH_SIZE);
     const results = await Promise.allSettled(
       batch.map(async (imgUrl, batchIdx) => {
         const globalIdx = i + batchIdx;
         const imgRes = await fetch(imgUrl);
         if (!imgRes.ok) return null;
 
+        // Skip tiny images (< 5KB — likely placeholders)
+        const contentLength = imgRes.headers.get("content-length");
+        if (contentLength && parseInt(contentLength) < 5000) {
+          console.log(`Skipping tiny image (${contentLength} bytes): ${imgUrl.slice(0, 80)}`);
+          return null;
+        }
+
         const contentType = imgRes.headers.get("content-type") || "image/jpeg";
         const ext = contentType.includes("png") ? "png" : contentType.includes("webp") ? "webp" : "jpg";
         const imgBuffer = await imgRes.arrayBuffer();
-        const fileName = `imports/${jobId}/${crypto.randomUUID()}.${ext}`;
 
+        // Double-check size after download
+        if (imgBuffer.byteLength < 5000) return null;
+
+        const fileName = `imports/${jobId}/${crypto.randomUUID()}.${ext}`;
         const { error: uploadErr } = await sb.storage
-          .from(bucketName)
-          .upload(fileName, imgBuffer, { contentType, upsert: false });
+          .from(bucketName).upload(fileName, imgBuffer, { contentType, upsert: false });
 
         if (!uploadErr) {
           const { data: urlData } = sb.storage.from(bucketName).getPublicUrl(fileName);
           const publicUrl = urlData?.publicUrl || null;
           if (!publicUrl) return null;
-
-          // Only enhance the first image (cover photo) to reduce costs
-          if (globalIdx === 0) {
-            const enhanced = await enhanceImage(publicUrl, sb, bucketName, jobId);
-            return enhanced;
-          }
+          // Only enhance the first image (cover photo)
+          if (globalIdx === 0) return await enhanceImage(publicUrl, sb, bucketName, jobId);
           return publicUrl;
         }
         return null;
       })
     );
-
     for (const r of results) {
-      if (r.status === "fulfilled" && r.value) {
-        imageUrls.push(r.value);
-      }
+      if (r.status === "fulfilled" && r.value) imageUrls.push(r.value);
     }
   }
-
   return imageUrls;
 }
 
-// Lightweight pre-check: HEAD request to detect dead links before using a Firecrawl credit
-async function preCheckUrl(url: string): Promise<{
-  ok: boolean;
-  skipReason: string | null;
-  finalUrl: string | null;
-}> {
+// ─── PRE-CHECK ──────────────────────────────────────────────────────────────
+
+async function preCheckUrl(url: string): Promise<{ ok: boolean; skipReason: string | null; finalUrl: string | null }> {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 8000);
 
     let response = await fetch(url, {
-      method: "HEAD",
-      redirect: "follow",
-      signal: controller.signal,
-      headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; PropertyImporter/1.0)",
-      },
+      method: "HEAD", redirect: "follow", signal: controller.signal,
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; PropertyImporter/1.0)" },
     });
 
-    // Some servers reject HEAD requests
     if (response.status === 405 || response.status === 403) {
       response = await fetch(url, {
-        method: "GET",
-        redirect: "follow",
-        signal: controller.signal,
-        headers: {
-          "User-Agent": "Mozilla/5.0 (compatible; PropertyImporter/1.0)",
-        },
+        method: "GET", redirect: "follow", signal: controller.signal,
+        headers: { "User-Agent": "Mozilla/5.0 (compatible; PropertyImporter/1.0)" },
       });
     }
-
     clearTimeout(timeout);
 
     const status = response.status;
     const finalUrl = response.url;
 
-    // Dead links
     if (status === 404 || status === 410 || status === 451) {
       return { ok: false, skipReason: `HTTP ${status} — page not found`, finalUrl };
     }
-
-    // Server errors
     if (status >= 500) {
       return { ok: false, skipReason: `HTTP ${status} — server error`, finalUrl };
     }
-
-    // Check if redirect landed on homepage (common for deleted listings)
     if (finalUrl !== url) {
       try {
         const originalPath = new URL(url).pathname;
         const finalPath = new URL(finalUrl).pathname;
         if (finalPath === "/" && originalPath !== "/") {
-          return { ok: false, skipReason: `Redirected to homepage (listing removed)`, finalUrl };
+          return { ok: false, skipReason: "Redirected to homepage (listing removed)", finalUrl };
         }
-      } catch { /* URL parse failed, continue anyway */ }
+      } catch { /* ignore */ }
     }
-
     return { ok: true, skipReason: null, finalUrl };
   } catch (err: any) {
-    if (err.name === "AbortError") {
-      return { ok: false, skipReason: "Pre-check timed out (8s)", finalUrl: null };
-    }
+    if (err.name === "AbortError") return { ok: false, skipReason: "Pre-check timed out (8s)", finalUrl: null };
     return { ok: false, skipReason: `Pre-check network error: ${err.message?.slice(0, 100)}`, finalUrl: null };
   }
 }
 
-// Process a single item end-to-end
+// ─── EXTRACTION PROMPT (with comprehensive Hebrew dictionary) ───────────────
+
+function buildExtractionPrompt(url: string, domain: string, markdown: string, pageLinks: string[]): string {
+  return `You are extracting structured data from a scraped Israeli real estate page.
+
+IMPORTANT CONTEXT:
+- Website domain: ${domain}
+- Supported cities (return city as one of these EXACT names): ${SUPPORTED_CITIES.join(", ")}
+- If the city is not explicitly stated on the page, INFER it from:
+  1. The website domain name (e.g., "jerusalem-real-estate.co" → Jerusalem)
+  2. The URL path
+  3. Neighborhood context (e.g., Arnona, Baka, Talbieh → Jerusalem; Neve Tzedek → Tel Aviv)
+- If no price is listed (e.g., "Price on Request"), set price to 0.
+- Return city as one of the supported cities listed above.
+
+═══ HEBREW REAL ESTATE DICTIONARY ═══
+
+PROPERTY TYPES (Hebrew → BuyWise key):
+דירה = apartment | דירת גן = garden_apartment | בית פרטי / וילה = house | קוטג' = cottage
+פנטהאוז = penthouse | מיני פנטהאוז = mini_penthouse | דירת גג = penthouse
+דופלקס = duplex | טריפלקס = duplex | לופט = apartment | דירת סטודיו = apartment
+יחידת דיור = apartment | בית דו-משפחתי = house | דירת מרתף = apartment
+מגרש = land | מחסן = commercial | חניה = commercial
+
+AMENITIES (Hebrew → English feature name):
+ממ"ד = mamad/safe_room | מזגן/מזג אוויר = air_conditioning | חניה = parking
+מעלית = elevator | מחסן = storage | מרפסת = balcony | מרפסת שמש = sun_balcony
+סוכה = sukkah_balcony | מרוהט = furnished | סורגים = window_bars
+דלתות פנדור = security_doors | נגיש לנכים = accessible | גינה = garden
+דוד שמש = solar_heater | בלעדי = exclusive | תריסים = shutters
+ממ"ק = floor_safe_room | בויידם = storage_above_door
+
+CONDITION (Hebrew → BuyWise value):
+חדש מקבלן / חדש = new | משופץ = renovated | במצב טוב / שמור = good
+דורש שיפוץ = needs_renovation | ישן = needs_renovation
+
+FLOOR ORDINALS (Hebrew → number):
+קרקע = 0 | ראשונה = 1 | שנייה = 2 | שלישית = 3 | רביעית = 4
+חמישית = 5 | שישית = 6 | שביעית = 7 | שמינית = 8 | תשיעית = 9
+עשירית = 10 | מרתף = -1
+
+═══ EXTRACTION RULES ═══
+
+FIRST, determine the CATEGORY of this page:
+- "property": A single unit for sale or rent (resale, rental listing)
+- "project": A new construction project / development — SKIP
+- "not_listing": Not a property listing page
+
+FOR PROPERTIES — extract these fields:
+- In Israel, "rooms" (חדרים) = bedrooms + 1 living room. So 4 rooms = 3 bedrooms. Always subtract 1 for bedrooms.
+- Default currency is ILS (₪) unless explicitly stated otherwise.
+- Use the dictionary above for property types, not your own guess.
+- listing_status: for_sale if buying/מכירה, for_rent if renting/השכרה
+- Detect if sold (נמכר), rented (הושכר), under contract (בהסכם). Set is_sold_or_rented=true if so.
+- Price might appear as "₪1,500,000" or "1,500,000 ש״ח" or "$450,000"
+- Extract ALL image URLs you can find
+- For floor: use the Hebrew ordinal map above
+
+Page URL: ${url}
+Page content:
+${markdown.substring(0, 8000)}
+
+Links found on page:
+${pageLinks.slice(0, 50).join("\n")}`;
+}
+
+// ─── PROCESS SINGLE ITEM ────────────────────────────────────────────────────
+
 async function processOneItem(
-  item: any,
-  sb: any,
-  job: any,
-  agentId: string | null,
-  firecrawlKey: string,
-  lovableKey: string,
-  jobId: string,
-  domainCity: string | null = null,
+  item: any, sb: any, job: any, agentId: string | null,
+  firecrawlKey: string, lovableKey: string, jobId: string,
+  domainCity: string | null = null
 ): Promise<{ succeeded: boolean }> {
   try {
     await sb.from("import_job_items").update({ status: "processing" }).eq("id", item.id);
 
-    // 0a. Skip duplicate URLs early (free, no Firecrawl credit or AI call)
+    // 0a. Source URL dedup
     const { data: existingByUrl } = await sb
-      .from("properties")
-      .select("id")
-      .eq("source_url", item.url)
-      .limit(1);
-
+      .from("properties").select("id").eq("source_url", item.url).limit(1);
     if (existingByUrl && existingByUrl.length > 0) {
-      console.log(`URL duplicate skip: ${item.url} → existing property ${existingByUrl[0].id}`);
       await sb.from("import_job_items")
         .update({ status: "skipped", error_message: `Duplicate: URL already imported as property ${existingByUrl[0].id}`, error_type: "permanent" })
         .eq("id", item.id);
       return { succeeded: false };
     }
 
-    // 0b. Also check if another item in the same job already imported this URL
+    // 0b. In-job URL dedup
     const { data: existingJobItem } = await sb
-      .from("import_job_items")
-      .select("id, property_id")
-      .eq("job_id", jobId)
-      .eq("url", item.url)
-      .eq("status", "done")
-      .neq("id", item.id)
-      .limit(1);
-
+      .from("import_job_items").select("id, property_id")
+      .eq("job_id", jobId).eq("url", item.url).eq("status", "done").neq("id", item.id).limit(1);
     if (existingJobItem && existingJobItem.length > 0) {
-      console.log(`In-job duplicate skip: ${item.url} → already done as item ${existingJobItem[0].id}`);
       await sb.from("import_job_items")
-        .update({ status: "skipped", error_message: `Duplicate: same URL already processed in this job`, error_type: "permanent" })
+        .update({ status: "skipped", error_message: "Duplicate: same URL already processed in this job", error_type: "permanent" })
         .eq("id", item.id);
       return { succeeded: false };
     }
 
-    // 0c. Lightweight pre-check (free, no Firecrawl credit)
+    // 0c. Pre-check
     const preCheck = await preCheckUrl(item.url);
     if (!preCheck.ok) {
-      console.log(`Pre-check skip: ${item.url} — ${preCheck.skipReason}`);
-      // Timeouts and network errors are transient; 404s/redirects are permanent
-      const preCheckErrorType = (preCheck.skipReason?.includes("timed out") || preCheck.skipReason?.includes("network error")) ? "transient" : "permanent";
+      const errorType = (preCheck.skipReason?.includes("timed out") || preCheck.skipReason?.includes("network error")) ? "transient" : "permanent";
       await sb.from("import_job_items")
-        .update({ status: "skipped", error_message: preCheck.skipReason, error_type: preCheckErrorType })
+        .update({ status: "skipped", error_message: preCheck.skipReason, error_type: errorType })
         .eq("id", item.id);
       return { succeeded: false };
     }
 
-    // 1. Scrape the page
+    // 1. Scrape
     console.log(`Scraping: ${item.url}`);
     const scrapeRes = await fetch("https://api.firecrawl.dev/v1/scrape", {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${firecrawlKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        url: item.url,
-        formats: ["markdown", "links"],
-        onlyMainContent: true,
-      }),
+      headers: { Authorization: `Bearer ${firecrawlKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ url: item.url, formats: ["markdown", "links"], onlyMainContent: true }),
     });
 
     const scrapeData = await scrapeRes.json();
@@ -1140,7 +1107,6 @@ async function processOneItem(
         await sb.from("import_job_items").update({ status: "skipped", error_message: `Page not found (${statusCode})`, error_type: "permanent" }).eq("id", item.id);
         return { succeeded: false };
       }
-      // 5xx and other scrape failures are transient
       await sb.from("import_job_items").update({ status: "failed", error_message: `Scrape failed (${statusCode})`, error_type: "transient" }).eq("id", item.id);
       return { succeeded: false };
     }
@@ -1149,110 +1115,65 @@ async function processOneItem(
     const pageLinks = scrapeData.data?.links || scrapeData.links || [];
 
     if (!markdown || markdown.length < 50) {
-      await sb.from("import_job_items").update({ status: "skipped", error_message: "Page content too short — likely not a listing", error_type: "permanent" }).eq("id", item.id);
+      await sb.from("import_job_items").update({ status: "skipped", error_message: "Page content too short", error_type: "permanent" }).eq("id", item.id);
       return { succeeded: false };
     }
 
-    // Pre-LLM sold/rented keyword check
-    if (isSoldOrRentedPage(markdown)) {
-      console.log(`Pre-filter: sold/rented detected for ${item.url}`);
-      await sb.from("import_job_items").update({ status: "skipped", error_message: "Pre-filter: listing appears sold/rented", error_type: "permanent" }).eq("id", item.id);
+    // Pre-LLM: sold/rented/rental/new-dev check (enhanced)
+    const preFilter = isNonResalePage(markdown);
+    if (preFilter.skip) {
+      console.log(`Pre-filter: ${preFilter.reason} for ${item.url}`);
+      await sb.from("import_job_items").update({ status: "skipped", error_message: preFilter.reason, error_type: "permanent" }).eq("id", item.id);
       return { succeeded: false };
     }
 
-    // 2. AI extraction
+    // 2. AI extraction (with comprehensive Hebrew dictionary prompt)
     const domain = getDomainFromUrl(item.url);
-
-    const extractionPrompt = `You are extracting structured data from a scraped Israeli real estate page.
-
-IMPORTANT CONTEXT:
-- Website domain: ${domain}
-- Supported cities (return city as one of these EXACT names): ${SUPPORTED_CITIES.join(", ")}
-- If the city is not explicitly stated on the page, INFER it from:
-  1. The website domain name (e.g., "jerusalem-real-estate.co" → Jerusalem)
-  2. The URL path
-  3. Neighborhood context (e.g., Arnona, Baka, Talbieh → Jerusalem; Neve Tzedek → Tel Aviv)
-- If no price is listed (e.g., "Price on Request", "Call for price", "Contact us for pricing"), set price to 0.
-- Return city as one of the supported cities listed above.
-
-FIRST, determine the CATEGORY of this page:
-- "property": A single unit for sale or rent (resale, rental listing for one apartment/house)
-- "project": A new construction project / development with multiple units — these should be SKIPPED
-- "not_listing": Not a property listing page (blog, about, contact, category page, etc.)
-
-FOR PROPERTIES — extract these fields:
-- In Israel, "rooms" (חדרים) = bedrooms + 1 living room. So 4 rooms = 3 bedrooms. Always subtract 1 for bedrooms.
-- Default currency is ILS (₪) unless explicitly stated otherwise.
-- Property types: דירה=apartment, פנטהאוז=penthouse, דופלקס=duplex, בית/וילה=house, קוטג'=cottage, דירת גן=garden_apartment, מיני פנטהאוז=mini_penthouse
-- listing_status: for_sale if buying/מכירה, for_rent if renting/השכרה
-- Detect if sold (נמכר), rented (הושכר), under contract (בהסכם). Set is_sold_or_rented=true if so.
-- Price might appear as "₪1,500,000" or "1,500,000 ש״ח" or "$450,000"
-- Extract ALL image URLs you can find
-- For floor: "קומה 3" = floor 3, "קרקע" = floor 0
-
-If this is a project/development page, just set listing_category to "project" — no other fields needed.
-
-Page URL: ${item.url}
-Page content:
-${markdown.substring(0, 8000)}
-
-Links found on page:
-${pageLinks.slice(0, 50).join("\n")}`;
+    const extractionPrompt = buildExtractionPrompt(item.url, domain, markdown, pageLinks);
 
     const extractRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${lovableKey}`,
-        "Content-Type": "application/json",
-      },
+      headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [{ role: "user", content: extractionPrompt }],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "extract_listing",
-              description: "Extract structured data from a real estate listing page (resale/rental only)",
-              parameters: {
-                type: "object",
-                properties: {
-                  listing_category: {
-                    type: "string",
-                    enum: ["property", "project", "not_listing"],
-                    description: "The category of the page: property (single listing), project (new development — will be skipped), or not_listing",
-                  },
-                  title: { type: "string", description: "Listing title (for properties)" },
-                  description: { type: "string", description: "Property description" },
-                  price: { type: "number", description: "Price as number (0 if Price on Request)" },
-                  currency: { type: "string", enum: ["ILS", "USD", "EUR"], description: "Currency code" },
-                  bedrooms: { type: "number", description: "Number of bedrooms (rooms - 1)" },
-                  bathrooms: { type: "number", description: "Number of bathrooms" },
-                  size_sqm: { type: "number", description: "Size in square meters" },
-                  address: { type: "string", description: "Street address" },
-                  city: { type: "string", description: "City name — must be one of the supported cities" },
-                  neighborhood: { type: "string", description: "Neighborhood name" },
-                  property_type: {
-                    type: "string",
-                    enum: ["apartment", "garden_apartment", "penthouse", "mini_penthouse", "duplex", "house", "cottage", "land", "commercial"],
-                  },
-                  listing_status: { type: "string", enum: ["for_sale", "for_rent"] },
-                  floor: { type: "number", description: "Floor number" },
-                  total_floors: { type: "number", description: "Total floors in building" },
-                  features: { type: "array", items: { type: "string" }, description: "Features like balcony, elevator, etc." },
-                  parking: { type: "number", description: "Number of parking spots" },
-                  entry_date: { type: "string", description: "Entry date (YYYY-MM-DD or 'immediate')" },
-                  year_built: { type: "number", description: "Year built" },
-                  ac_type: { type: "string", enum: ["none", "split", "central", "mini_central"] },
-                  is_sold_or_rented: { type: "boolean", description: "True if listing is sold/rented/under contract" },
-                  image_urls: { type: "array", items: { type: "string" }, description: "All image URLs found" },
-                },
-                required: ["listing_category"],
-                additionalProperties: false,
+        tools: [{
+          type: "function",
+          function: {
+            name: "extract_listing",
+            description: "Extract structured data from a real estate listing page",
+            parameters: {
+              type: "object",
+              properties: {
+                listing_category: { type: "string", enum: ["property", "project", "not_listing"] },
+                title: { type: "string" },
+                description: { type: "string" },
+                price: { type: "number", description: "Price (0 if Price on Request)" },
+                currency: { type: "string", enum: ["ILS", "USD", "EUR"] },
+                bedrooms: { type: "number", description: "Bedrooms (rooms - 1)" },
+                bathrooms: { type: "number" },
+                size_sqm: { type: "number" },
+                address: { type: "string" },
+                city: { type: "string", description: "Must be one of the supported cities" },
+                neighborhood: { type: "string" },
+                property_type: { type: "string", enum: ["apartment", "garden_apartment", "penthouse", "mini_penthouse", "duplex", "house", "cottage", "land", "commercial"] },
+                listing_status: { type: "string", enum: ["for_sale", "for_rent"] },
+                floor: { type: "number" },
+                total_floors: { type: "number" },
+                features: { type: "array", items: { type: "string" } },
+                parking: { type: "number" },
+                entry_date: { type: "string" },
+                year_built: { type: "number" },
+                ac_type: { type: "string", enum: ["none", "split", "central", "mini_central"] },
+                condition: { type: "string", enum: ["new", "renovated", "good", "needs_renovation"] },
+                is_sold_or_rented: { type: "boolean" },
+                image_urls: { type: "array", items: { type: "string" } },
               },
+              required: ["listing_category"],
+              additionalProperties: false,
             },
           },
-        ],
+        }],
         tool_choice: { type: "function", function: { name: "extract_listing" } },
       }),
     });
@@ -1264,14 +1185,12 @@ ${pageLinks.slice(0, 50).join("\n")}`;
         await sb.from("import_job_items").update({ status: "pending", error_message: "Rate limited, will retry", error_type: "transient" }).eq("id", item.id);
         return { succeeded: false };
       }
-      // Other AI failures are transient (might work on retry)
       await sb.from("import_job_items").update({ status: "failed", error_message: `AI extraction failed (${extractRes.status})`, error_type: "transient" }).eq("id", item.id);
       return { succeeded: false };
     }
 
     const extractData = await extractRes.json();
     const extractToolCall = extractData.choices?.[0]?.message?.tool_calls?.[0];
-
     if (!extractToolCall?.function?.arguments) {
       await sb.from("import_job_items").update({ status: "failed", error_message: "AI returned no extraction data", error_type: "permanent" }).eq("id", item.id);
       return { succeeded: false };
@@ -1284,23 +1203,22 @@ ${pageLinks.slice(0, 50).join("\n")}`;
 
     const category = listing.listing_category || (listing.is_listing_page === false ? "not_listing" : "property");
 
-    // ── NOT A LISTING ──
     if (category === "not_listing") {
       await sb.from("import_job_items").update({ status: "skipped", error_message: "Not a listing page", error_type: "permanent" }).eq("id", item.id);
       return { succeeded: false };
     }
 
-    // ── PROJECT/DEVELOPMENT — skip (add manually via Project Wizard) ──
     if (category === "project") {
-      console.log(`Project page skipped: ${item.url}`);
-      await sb.from("import_job_items").update({ status: "skipped", error_message: "Project/development page — skipped (add projects manually via Project Wizard)", error_type: "permanent" }).eq("id", item.id);
+      await sb.from("import_job_items").update({ status: "skipped", error_message: "Project/development page — skipped", error_type: "permanent" }).eq("id", item.id);
       return { succeeded: false };
     }
 
-    // ── POST-EXTRACTION CITY INFERENCE (cached at batch level) ──
+    // ── POST-EXTRACTION CITY INFERENCE ──
+    let cityMatchType: "exact" | "fuzzy" | "domain" | "none" = "none";
     if (!listing.city || listing.city.trim() === "") {
       if (domainCity) {
         listing.city = domainCity;
+        cityMatchType = "domain";
       }
     }
 
@@ -1314,44 +1232,68 @@ ${pageLinks.slice(0, 50).join("\n")}`;
       }).eq("id", item.id);
       return { succeeded: false };
     }
+
+    // Determine city match type for confidence scoring
+    if (cityMatchType !== "domain") {
+      const normalizedInput = normalizeCityStr(listing.city || "");
+      const normalizedMatched = normalizeCityStr(matchedCity);
+      cityMatchType = normalizedInput === normalizedMatched ? "exact" : "fuzzy";
+    }
     listing.city = matchedCity;
 
-    // Project path removed — projects are now skipped above before reaching this point
-
-    // ── PROPERTY PATH ──
-
+    // ── SOLD/RENTED POST-EXTRACTION CHECK ──
     if (listing.is_sold_or_rented) {
       await sb.from("import_job_items").update({ status: "skipped", error_message: "Listing is sold or rented", error_type: "permanent" }).eq("id", item.id);
       return { succeeded: false };
     }
 
-    const propertyErrors = validatePropertyData(listing);
+    // ── VALIDATION (enhanced with city-specific outlier detection) ──
+    const { errors: propertyErrors, warnings: validationWarnings } = validatePropertyData(listing);
     if (propertyErrors.length > 0) {
       await sb.from("import_job_items").update({
         status: "failed",
         error_message: `Validation failed: ${propertyErrors.join("; ")}`,
         error_type: "permanent",
+        extracted_data: { ...listing, validation_errors: propertyErrors, validation_warnings: validationWarnings },
       }).eq("id", item.id);
       return { succeeded: false };
     }
 
-    // ── Duplicate detection (two-tier) ──
-    // Tier 1: Same address + city
+    // ── CONFIDENCE SCORING ──
+    const confidenceScore = computeConfidenceScore(listing, cityMatchType, validationWarnings);
+    console.log(`Confidence score for ${item.url}: ${confidenceScore}`);
+
+    // Store confidence score + warnings
+    await sb.from("import_job_items").update({
+      confidence_score: confidenceScore,
+      extracted_data: { ...listing, confidence_score: confidenceScore, validation_warnings: validationWarnings },
+    }).eq("id", item.id);
+
+    // Below 40: skip with low confidence
+    if (confidenceScore < 40) {
+      await sb.from("import_job_items").update({
+        status: "skipped",
+        error_message: `Low confidence (${confidenceScore}/100): insufficient data quality for import`,
+        error_type: "permanent",
+      }).eq("id", item.id);
+      return { succeeded: false };
+    }
+
+    // ── DEDUP: Tier 1 — Normalized address + city ──
     if (listing.address && listing.city) {
-      const trimmedAddr = listing.address.trim();
-      if (trimmedAddr.length > 0) {
+      const normalizedAddr = normalizeAddressForDedup(listing.address);
+      if (normalizedAddr.length > 0) {
         const { data: dupes } = await sb
-          .from("properties")
-          .select("id")
+          .from("properties").select("id")
           .eq("agent_id", agentId)
-          .ilike("address", trimmedAddr)
+          .ilike("address", normalizedAddr)
           .ilike("city", listing.city.trim())
           .limit(1);
 
         if (dupes && dupes.length > 0) {
           await sb.from("import_job_items").update({
             status: "skipped",
-            error_message: `Duplicate: matches existing property ${dupes[0].id} (same address + city)`,
+            error_message: `Duplicate: matches property ${dupes[0].id} (same address + city)`,
             error_type: "permanent",
           }).eq("id", item.id);
           return { succeeded: false };
@@ -1359,18 +1301,20 @@ ${pageLinks.slice(0, 50).join("\n")}`;
       }
     }
 
-    // Tier 2: Fuzzy match
+    // ── DEDUP: Tier 2 — Fuzzy match with tolerance bands ──
     if (listing.city && listing.bedrooms != null && listing.size_sqm && listing.price && listing.price > 0) {
       const priceLow = listing.price * 0.95;
       const priceHigh = listing.price * 1.05;
+      const sizeLow = listing.size_sqm - 5;
+      const sizeHigh = listing.size_sqm + 5;
 
       const { data: fuzzyDupes } = await sb
-        .from("properties")
-        .select("id")
+        .from("properties").select("id")
         .eq("agent_id", agentId)
         .ilike("city", listing.city.trim())
         .eq("bedrooms", Math.floor(listing.bedrooms))
-        .eq("size_sqm", listing.size_sqm)
+        .gte("size_sqm", sizeLow)
+        .lte("size_sqm", sizeHigh)
         .gte("price", priceLow)
         .lte("price", priceHigh)
         .limit(1);
@@ -1378,28 +1322,22 @@ ${pageLinks.slice(0, 50).join("\n")}`;
       if (fuzzyDupes && fuzzyDupes.length > 0) {
         await sb.from("import_job_items").update({
           status: "skipped",
-          error_message: `Duplicate: matches existing property ${fuzzyDupes[0].id} (same city, rooms, size, ~price)`,
+          error_message: `Duplicate: matches property ${fuzzyDupes[0].id} (same city, rooms, ~size, ~price)`,
           error_type: "permanent",
         }).eq("id", item.id);
         return { succeeded: false };
       }
     }
 
-    // Download and re-host images (parallel)
-    const imageUrls = await parallelImageDownload(
-      listing.image_urls || [], sb, "property-images", jobId
-    );
+    // Download and re-host images (with placeholder detection)
+    const imageUrls = await parallelImageDownload(listing.image_urls || [], sb, "property-images", jobId);
 
-    // Geocode (rate-limited)
+    // Geocode
     let latitude: number | null = null;
     let longitude: number | null = null;
-
     if (listing.address && listing.city) {
       const coords = await geocodeWithRateLimit(listing.address, listing.city);
-      if (coords) {
-        latitude = coords.lat;
-        longitude = coords.lng;
-      }
+      if (coords) { latitude = coords.lat; longitude = coords.lng; }
     }
 
     // Insert property
@@ -1428,6 +1366,7 @@ ${pageLinks.slice(0, 50).join("\n")}`;
         features: listing.features || [],
         images: imageUrls.length > 0 ? imageUrls : null,
         parking: listing.parking ?? 0,
+        condition: listing.condition || null,
         ac_type: listing.ac_type || null,
         entry_date: entryDate,
         is_published: false, is_featured: false, views_count: 0,
@@ -1448,8 +1387,7 @@ ${pageLinks.slice(0, 50).join("\n")}`;
     return { succeeded: true };
   } catch (err) {
     console.error(`Error processing ${item.url}:`, err);
-    await sb
-      .from("import_job_items")
+    await sb.from("import_job_items")
       .update({ status: "failed", error_message: err instanceof Error ? err.message : "Unknown error", error_type: "transient" })
       .eq("id", item.id);
     return { succeeded: false };
@@ -1467,25 +1405,14 @@ async function handleProcessBatch(body: any) {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
 
   const { data: job, error: jobErr } = await sb
-    .from("import_jobs")
-    .select("*, agencies!inner(id, admin_user_id)")
-    .eq("id", job_id)
-    .single();
+    .from("import_jobs").select("*, agencies!inner(id, admin_user_id)").eq("id", job_id).single();
   if (jobErr || !job) throw new Error("Import job not found");
 
-  // Cache domain→city inference once for the entire batch
   const cachedDomainCity = inferCityFromDomain(job.website_url);
-  if (cachedDomainCity) {
-    console.log(`Domain city cached for job: ${cachedDomainCity} (from ${job.website_url})`);
-  }
+  if (cachedDomainCity) console.log(`Domain city: ${cachedDomainCity}`);
 
-  // Check if there's any pending work before setting up
   const { data: initialCheck } = await sb
-    .from("import_job_items")
-    .select("id")
-    .eq("job_id", job_id)
-    .eq("status", "pending")
-    .limit(1);
+    .from("import_job_items").select("id").eq("job_id", job_id).eq("status", "pending").limit(1);
 
   if (!initialCheck || initialCheck.length === 0) {
     await sb.from("import_jobs").update({ status: "completed" }).eq("id", job_id);
@@ -1494,20 +1421,17 @@ async function handleProcessBatch(body: any) {
 
   await sb.from("import_jobs").update({ status: "processing" }).eq("id", job_id);
 
-  const { data: agents } = await sb
-    .from("agents")
-    .select("id")
-    .eq("agency_id", job.agency_id)
-    .limit(1);
+  const { data: agents } = await sb.from("agents").select("id").eq("agency_id", job.agency_id).limit(1);
   const agentId = agents?.[0]?.id || null;
 
-  // Reset geocode rate limiter for this batch
+  // Reset per-batch state
   _lastGeoTime = 0;
   _geoQueue = Promise.resolve();
+  _batchImageUrlCounts.clear();
 
   const CONCURRENCY = 3;
   const REFILL_SIZE = 6;
-  const MAX_ITEMS = 9; // Hard cap per single batch call (3 concurrency × 3 chunks)
+  const MAX_ITEMS = 9;
   const TIME_LIMIT_MS = 120_000;
   const batchStartTime = Date.now();
 
@@ -1517,91 +1441,47 @@ async function handleProcessBatch(body: any) {
   let refillCycle = 0;
 
   while (true) {
-    // Check item cap
-    if (totalProcessed >= MAX_ITEMS) {
-      console.log(`Item cap (${MAX_ITEMS}) reached after ${refillCycle} refill cycles, ${totalProcessed} items processed`);
-      break;
-    }
-    // Time check before fetching more work
-    if (Date.now() - batchStartTime > TIME_LIMIT_MS) {
-      console.log(`Time limit reached after ${refillCycle} refill cycles, ${totalProcessed} items processed`);
-      break;
-    }
+    if (totalProcessed >= MAX_ITEMS) break;
+    if (Date.now() - batchStartTime > TIME_LIMIT_MS) break;
 
-    // Fetch next batch of pending items
     const { data: pendingItems, error: itemsErr } = await sb
-      .from("import_job_items")
-      .select("*")
-      .eq("job_id", job_id)
-      .eq("status", "pending")
+      .from("import_job_items").select("*")
+      .eq("job_id", job_id).eq("status", "pending")
       .order("created_at", { ascending: true })
       .limit(Math.min(REFILL_SIZE, MAX_ITEMS - totalProcessed));
 
-    if (itemsErr) {
-      console.error(`Failed to fetch pending items on refill ${refillCycle}:`, itemsErr.message);
-      break;
-    }
-
-    if (!pendingItems || pendingItems.length === 0) {
-      console.log(`No more pending items after ${refillCycle} refill cycles, ${totalProcessed} items processed`);
-      break;
-    }
+    if (itemsErr || !pendingItems || pendingItems.length === 0) break;
 
     refillCycle++;
-    console.log(`Refill cycle ${refillCycle}: fetched ${pendingItems.length} pending items`);
+    console.log(`Refill ${refillCycle}: ${pendingItems.length} items`);
 
-    // Process in chunks of CONCURRENCY
     for (let i = 0; i < pendingItems.length && totalProcessed < MAX_ITEMS; i += CONCURRENCY) {
-      if (Date.now() - batchStartTime > TIME_LIMIT_MS) {
-        console.log(`Time limit reached mid-refill at chunk ${i}, stopping`);
-        break;
-      }
+      if (Date.now() - batchStartTime > TIME_LIMIT_MS) break;
 
       const chunk = pendingItems.slice(i, i + CONCURRENCY);
-      console.log(`Refill ${refillCycle}, chunk ${Math.floor(i / CONCURRENCY) + 1}: ${chunk.length} items`);
-
       const results = await Promise.allSettled(
         chunk.map(item => processOneItem(item, sb, job, agentId, FIRECRAWL_API_KEY, LOVABLE_API_KEY, job_id, cachedDomainCity))
       );
 
       for (const result of results) {
         totalProcessed++;
-        if (result.status === "fulfilled" && result.value.succeeded) {
-          totalSucceeded++;
-        } else {
-          totalFailed++;
-        }
+        if (result.status === "fulfilled" && result.value.succeeded) totalSucceeded++;
+        else totalFailed++;
       }
     }
   }
 
-  const elapsedSec = ((Date.now() - batchStartTime) / 1000).toFixed(1);
-  console.log(`Batch complete: ${totalProcessed} processed (${totalSucceeded} ok, ${totalFailed} failed) in ${elapsedSec}s across ${refillCycle} refills`);
+  console.log(`Batch: ${totalProcessed} processed (${totalSucceeded} ok, ${totalFailed} failed) in ${((Date.now() - batchStartTime) / 1000).toFixed(1)}s`);
 
-  // Update job counts from DB (source of truth)
-  const { data: counts } = await sb
-    .from("import_job_items")
-    .select("status")
-    .eq("job_id", job_id);
-
+  const { data: counts } = await sb.from("import_job_items").select("status").eq("job_id", job_id);
   const doneCount = counts?.filter((c) => c.status === "done").length || 0;
   const failedCount = counts?.filter((c) => ["failed", "skipped"].includes(c.status)).length || 0;
   const remainingCount = counts?.filter((c) => c.status === "pending").length || 0;
-
   const newStatus = remainingCount === 0 ? "completed" : "ready";
 
-  await sb
-    .from("import_jobs")
-    .update({ processed_count: doneCount, failed_count: failedCount, status: newStatus })
-    .eq("id", job_id);
+  await sb.from("import_jobs").update({ processed_count: doneCount, failed_count: failedCount, status: newStatus }).eq("id", job_id);
 
-  return {
-    processed: totalProcessed,
-    succeeded: totalSucceeded,
-    failed: totalFailed,
-    remaining: remainingCount,
-    status: newStatus,
-  };
+  return { processed: totalProcessed, succeeded: totalSucceeded, failed: totalFailed, remaining: remainingCount, status: newStatus };
 }
 
 // ─── RETRY FAILED ───────────────────────────────────────────────────────────
@@ -1612,20 +1492,17 @@ async function handleRetryFailed(body: any) {
 
   const sb = supabaseAdmin();
 
-  // Only reset transient failures (worth retrying)
   const { data: resetItems, error: resetErr } = await sb
     .from("import_job_items")
-    .update({ status: "pending", error_message: null, error_type: null })
+    .update({ status: "pending", error_message: null, error_type: null, confidence_score: null })
     .eq("job_id", job_id)
     .in("status", ["failed", "skipped"])
     .eq("error_type", "transient")
     .select("id");
 
   if (resetErr) throw new Error(`Failed to reset items: ${resetErr.message}`);
-
   const resetCount = resetItems?.length || 0;
 
-  // Count permanent failures for UI feedback
   const { count: permanentCount } = await sb
     .from("import_job_items")
     .select("id", { count: "exact", head: true })
@@ -1633,9 +1510,7 @@ async function handleRetryFailed(body: any) {
     .in("status", ["failed", "skipped"])
     .eq("error_type", "permanent");
 
-  if (resetCount > 0) {
-    await sb.from("import_jobs").update({ status: "ready" }).eq("id", job_id);
-  }
+  if (resetCount > 0) await sb.from("import_jobs").update({ status: "ready" }).eq("id", job_id);
 
   return { reset_count: resetCount, transient_count: resetCount, permanent_count: permanentCount || 0 };
 }
@@ -1652,15 +1527,10 @@ Deno.serve(async (req) => {
     const { action } = body;
 
     let result;
-    if (action === "discover") {
-      result = await handleDiscover(body);
-    } else if (action === "process_batch") {
-      result = await handleProcessBatch(body);
-    } else if (action === "retry_failed") {
-      result = await handleRetryFailed(body);
-    } else {
-      throw new Error(`Unknown action: ${action}`);
-    }
+    if (action === "discover") result = await handleDiscover(body);
+    else if (action === "process_batch") result = await handleProcessBatch(body);
+    else if (action === "retry_failed") result = await handleRetryFailed(body);
+    else throw new Error(`Unknown action: ${action}`);
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
