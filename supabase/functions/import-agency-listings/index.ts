@@ -438,7 +438,8 @@ function computeConfidenceScore(
   listing: Record<string, any>,
   cityMatchType: "exact" | "fuzzy" | "domain" | "none",
   validationWarnings: string[],
-  hasStructuredData: boolean = false
+  hasStructuredData: boolean = false,
+  cmsExtracted: string | null = null
 ): number {
   // Each field scores 1-3, weighted
   const weights = {
