@@ -9,8 +9,8 @@ import { Activity, Target, CheckCircle, AlertTriangle, TrendingUp, Database, Use
 function KpiCard({ title, value, target, icon: Icon, description }: {
   title: string; value: number; target: number; icon: React.ElementType; description: string;
 }) {
-  const color = value >= target ? 'text-green-600' : value >= target - 5 ? 'text-amber-500' : 'text-destructive';
-  const bgColor = value >= target ? 'bg-green-50' : value >= target - 5 ? 'bg-amber-50' : 'bg-red-50';
+  const color = value >= target ? 'text-[hsl(var(--success))]' : value >= target - 5 ? 'text-[hsl(var(--warning))]' : 'text-destructive';
+  const bgColor = value >= target ? 'bg-[hsl(var(--success))]/10' : value >= target - 5 ? 'bg-[hsl(var(--warning))]/10' : 'bg-destructive/10';
   return (
     <Card>
       <CardHeader className="pb-2">
