@@ -47,17 +47,37 @@ const confidenceColor: Record<string, string> = {
 };
 
 export default function MapNeighborhoods() {
+  const [cbsCities, setCbsCities] = useState<string[]>([]);
   const [results, setResults] = useState<CityResult[]>([]);
   const [isRunning, setIsRunning] = useState(false);
+  const [isLoadingCities, setIsLoadingCities] = useState(true);
   const [currentCity, setCurrentCity] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const runMapping = async () => {
-    setIsRunning(true);
-    const cityResults: CityResult[] = CBS_CITIES.map(city => ({
-      city, status: 'pending', mappings: [], unmapped_cbs: [], unmapped_anglo: [],
-    }));
-    setResults([...cityResults]);
+  useEffect(() => {
+    async function fetchCities() {
+      setIsLoadingCities(true);
+      // Fetch all distinct city_en values, paginated
+      const allCities = new Set<string>();
+      let page = 0;
+      while (true) {
+        const { data, error } = await supabase
+          .from('neighborhood_price_history')
+          .select('city_en')
+          .order('city_en')
+          .range(page * 1000, (page + 1) * 1000 - 1);
+        if (error || !data || data.length === 0) break;
+        for (const row of data) {
+          if (row.city_en) allCities.add(row.city_en);
+        }
+        if (data.length < 1000) break;
+        page++;
+      }
+      setCbsCities([...allCities].sort());
+      setIsLoadingCities(false);
+    }
+    fetchCities();
+  }, []);
 
     const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
 
