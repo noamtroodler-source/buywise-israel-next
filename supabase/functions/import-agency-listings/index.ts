@@ -1472,8 +1472,16 @@ ${truncatedContent}`;
     }
 
     // ── CONFIDENCE SCORING ──
-    const confidenceScore = computeConfidenceScore(listing, cityMatchType, validationWarnings, !!listing._has_structured_data);
-    console.log(`Confidence score for ${item.url}: ${confidenceScore}`);
+    let confidenceScore = computeConfidenceScore(listing, cityMatchType, validationWarnings, !!listing._has_structured_data);
+
+    // Apply penalty for simplified prompt extraction
+    if (usedSimplifiedPrompt) {
+      confidenceScore = Math.max(0, confidenceScore - 10);
+      validationWarnings.push("extracted_with_simplified_prompt");
+      console.log(`Confidence adjusted to ${confidenceScore} (simplified prompt penalty -10)`);
+    } else {
+      console.log(`Confidence score for ${item.url}: ${confidenceScore}`);
+    }
 
     // Store confidence score + warnings
     await sb.from("import_job_items").update({
