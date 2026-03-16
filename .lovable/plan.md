@@ -44,3 +44,30 @@ All changes from the plan have been implemented:
    - Batch upload (500/batch) with real-time progress
    - Geocoding trigger using existing `geocode-sold-transaction` function
 4. **Known Tax Authority flaws handled** — year_built=1900→null, floor=0→null when size=0
+
+## Phase 4: Agency Import Pipeline Hardening — Implemented ✅
+
+Based on Perplexity blueprint research. All changes in `import-agency-listings/index.ts`.
+
+1. **Hebrew Dictionary in AI Prompt** — Comprehensive dictionary embedded in extraction prompt:
+   - 15+ property types (דירת סטודיו, לופט, דירת גג, טריפלקס, etc.)
+   - 17+ amenities (ממ"ד, מחסן, מרפסת שמש, סוכה, דוד שמש, בויידם, etc.)
+   - Condition terms (משופץ→renovated, שמור→good, דורש שיפוץ→needs_renovation)
+   - Hebrew floor ordinals (קרקע→0, ראשונה→1 ... עשירית→10, מרתף→-1)
+2. **Resale-Only Filtering** — Extended `isNonResalePage()`:
+   - Pre-LLM: rental indicators (להשכרה, שכירות), new dev indicators (מקבלן, על הנייר, פרויקט חדש)
+   - Post-extraction: skip for_rent, price<20K (rent), price=1 (sold placeholder), land/commercial
+3. **City-Specific Price & Size Validation** — `CITY_PRICE_RANGES` for all 25 cities, `ROOM_SIZE_RANGES` for 1-6+ rooms. Produces warnings (not hard failures) stored in `validation_warnings`.
+4. **Confidence Scoring (0-100)** — Weighted scoring across 8 fields (price 20%, rooms 15%, size 15%, city 15%, address 10%, property type 10%, photos 10%, description 5%). Thresholds: <40 skip, 40-79 import+flag, 80+ import.
+5. **Enhanced Address Dedup** — `normalizeAddressForDedup()` strips "רחוב" prefix, normalizes Hebrew final-form chars (כ↔ך, פ↔ף, etc.), removes hyphens. Tier 2 fuzzy dedup now uses ±5 sqm tolerance.
+6. **Placeholder Image Detection** — Skips images <5KB, detects repeated URLs across batch (3+ = placeholder), filters "no-image"/"placeholder" URLs.
+7. **DB Migration** — Added `confidence_score` integer column to `import_job_items`.
+
+### Deferred to Phase 2:
+- Apify Yad2 adapter (needs account + API key)
+- WordPress/CMS structured data detection
+- Image pHash deduplication
+- Cross-source dedup (Tier 3)
+- Review UI with side-by-side comparison
+- Incremental sync
+- Rental module
