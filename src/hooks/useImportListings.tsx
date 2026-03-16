@@ -46,11 +46,7 @@ export function useImportJobs(agencyId: string | undefined) {
       return data as ImportJob[];
     },
     enabled: !!agencyId,
-    refetchInterval: (query) => {
-      const data = query.state.data as ImportJob[] | undefined;
-      const hasActive = data?.some(j => ['discovering', 'ready', 'processing'].includes(j.status));
-      return hasActive ? 3000 : false;
-    },
+    // Realtime handles live updates via useRealtimeImportProgress hook
   });
 }
 
@@ -68,11 +64,7 @@ export function useImportJobItems(jobId: string | undefined) {
       return data as ImportJobItem[];
     },
     enabled: !!jobId,
-    refetchInterval: (query) => {
-      const data = query.state.data as ImportJobItem[] | undefined;
-      const hasActive = data?.some(i => ['processing', 'pending'].includes(i.status));
-      return hasActive ? 3000 : false;
-    },
+    // Realtime handles live updates via useRealtimeImportProgress hook
   });
 }
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -11,7 +11,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { Switch } from '@/components/ui/switch';
 import { useMyAgency, useAgencyStats } from '@/hooks/useAgencyManagement';
 import { InfoBanner } from '@/components/tools/shared/InfoBanner';
@@ -28,41 +27,8 @@ import {
 } from '@/hooks/useImportListings';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-
-function formatEta(seconds: number): string {
-  if (seconds < 60) return 'less than a minute';
-  const m = Math.floor(seconds / 60);
-  const s = Math.round(seconds % 60);
-  if (m >= 60) {
-    const h = Math.floor(m / 60);
-    const rm = m % 60;
-    return `~${h}h ${rm}m`;
-  }
-  return s > 0 ? `~${m}m ${s}s` : `~${m}m`;
-}
-
-function ImportEta({ startTime, processedSoFar, remaining }: { startTime: number | null; processedSoFar: number; remaining: number }) {
-  const [, setTick] = useState(0);
-
-  useEffect(() => {
-    if (!startTime || processedSoFar < 2) return;
-    const id = setInterval(() => setTick(t => t + 1), 3000);
-    return () => clearInterval(id);
-  }, [startTime, processedSoFar]);
-
-  if (!startTime || remaining <= 0) return null;
-  if (processedSoFar < 2) return <p className="text-xs text-muted-foreground">Calculating…</p>;
-
-  const elapsed = (Date.now() - startTime) / 1000;
-  const avgPerItem = elapsed / processedSoFar;
-  const etaSeconds = avgPerItem * remaining;
-
-  return (
-    <p className="text-xs text-muted-foreground">
-      {formatEta(etaSeconds)} remaining <span className="opacity-60">(avg {Math.round(avgPerItem)}s per listing)</span>
-    </p>
-  );
-}
+import { useRealtimeImportProgress } from '@/hooks/useRealtimeImportProgress';
+import { ImportProgressBar } from '@/components/agency/ImportProgressBar';
 
 function normalizeUrl(raw: string): string {
   let url = raw.trim();
@@ -102,6 +68,7 @@ export default function AgencyImport() {
       : jobs.find(j => ['discovering', 'ready', 'processing'].includes(j.status)) || jobs[0];
 
   const { data: jobItems = [] } = useImportJobItems(currentJob?.id);
+  useRealtimeImportProgress(currentJob?.id);
 
   const handleDiscover = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -170,7 +137,7 @@ export default function AgencyImport() {
   const pendingCount = jobItems.filter(i => i.status === 'pending').length;
   const processingCount = jobItems.filter(i => i.status === 'processing').length;
   const totalItems = jobItems.length;
-  const progressPercent = totalItems > 0 ? Math.round(((doneCount + skippedCount + failedCount) / totalItems) * 100) : 0;
+  
 
   const isDiscovering = discoverMutation.isPending;
   const isProcessing = processBatchMutation.isPending || currentJob?.status === 'processing' || isProcessingAll;
@@ -377,10 +344,6 @@ export default function AgencyImport() {
                       <p className="text-sm font-medium text-primary">
                         Importing listings…
                       </p>
-                     <p className="text-xs text-muted-foreground">
-                        {doneCount} imported · {skippedCount} skipped{failedCount > 0 ? ` · ${failedCount} failed` : ''} · {pendingCount} remaining
-                      </p>
-                      <ImportEta startTime={processingStartTime} processedSoFar={processedSoFar} remaining={pendingCount} />
                     </div>
                     <Button
                       onClick={stopProcessAll}
@@ -394,40 +357,17 @@ export default function AgencyImport() {
                 )}
 
                 {/* Progress bar */}
-                <div>
-                  <div className="flex justify-between text-sm mb-2">
-                    <span>{doneCount + skippedCount + failedCount} of {totalItems} processed</span>
-                    <span>{progressPercent}%</span>
-                  </div>
-                  <Progress
-                    value={progressPercent}
-                    className="h-3"
-                    indicatorClassName={isProcessingAll ? 'animate-pulse' : ''}
-                  />
-                </div>
-
-                {/* Stats */}
-                <div className="grid grid-cols-3 gap-3">
-                  {[
-                    { label: 'Imported', value: doneCount, icon: CheckCircle2, color: 'text-green-600', active: false, tooltip: '' },
-                    { label: 'Skipped', value: skippedCount, icon: MinusCircle, color: 'text-muted-foreground', active: false, tooltip: 'Listings are skipped when they are duplicates of ones already imported, or when they have been marked as sold or rented.' },
-                    { label: 'Failed', value: failedCount, icon: XCircle, color: 'text-red-500', active: false, tooltip: '' },
-                  ].map(stat => (
-                    <div key={stat.label} className={cn(
-                      "text-center p-3 rounded-xl bg-muted/30 transition-all relative group",
-                      stat.active && "bg-blue-500/10 ring-1 ring-blue-500/20"
-                    )}>
-                      <stat.icon className={cn('h-4 w-4 mx-auto mb-1', stat.color, stat.active && 'animate-spin')} />
-                      <p className={cn("text-lg font-bold", stat.active && "animate-pulse")}>{stat.value}</p>
-                      <p className="text-xs text-muted-foreground">{stat.label}</p>
-                      {stat.tooltip && (
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2 rounded-lg bg-popover text-popover-foreground text-xs shadow-lg border opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10">
-                          {stat.tooltip}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                <ImportProgressBar
+                  totalItems={totalItems}
+                  doneCount={doneCount}
+                  skippedCount={skippedCount}
+                  failedCount={failedCount}
+                  pendingCount={pendingCount}
+                  processingCount={processingCount}
+                  startTime={processingStartTime}
+                  processedSoFar={processedSoFar}
+                  isActive={isProcessingAll}
+                />
 
                 {/* Action buttons */}
                 <div className="flex gap-3 flex-wrap">
