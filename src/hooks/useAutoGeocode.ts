@@ -6,11 +6,12 @@ interface AutoGeocodeResult {
   longitude: number | null;
   isLoading: boolean;
   error: string | null;
+  source: string | null;
 }
 
 /**
  * Hook that auto-geocodes a property/project address if lat/lng are missing.
- * Uses a backend edge function for reliable server-side geocoding.
+ * Uses Google Maps as primary provider with Nominatim fallback.
  */
 export function useAutoGeocode(
   entityType: 'property' | 'project',
@@ -25,35 +26,24 @@ export function useAutoGeocode(
   const [longitude, setLongitude] = useState<number | null>(existingLng ?? null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [source, setSource] = useState<string | null>(null);
 
   useEffect(() => {
-    // If we already have coordinates, use them
     if (existingLat != null && existingLng != null) {
       setLatitude(existingLat);
       setLongitude(existingLng);
       return;
     }
 
-    // Don't geocode if we don't have required info
-    if (!entityId || !address || !city) {
-      return;
-    }
+    if (!entityId || !address || !city) return;
 
     const geocodeAddress = async () => {
       setIsLoading(true);
       setError(null);
 
       try {
-
-        // Call the backend geocoding function
         const { data, error: fnError } = await supabase.functions.invoke('geocode-address', {
-          body: {
-            entityType,
-            entityId,
-            address,
-            city,
-            neighborhood
-          }
+          body: { entityType, entityId, address, city, neighborhood }
         });
 
         if (fnError) {
@@ -66,10 +56,10 @@ export function useAutoGeocode(
           throw new Error(data.error || 'Failed to geocode address');
         }
 
-        // Successfully geocoded
         setLatitude(data.latitude);
         setLongitude(data.longitude);
-
+        setSource(data.source || null);
+        console.log(`[useAutoGeocode] Geocoded via ${data.source}: ${data.latitude}, ${data.longitude}`);
       } catch (err) {
         console.error('[useAutoGeocode] Error:', err);
         setError(err instanceof Error ? err.message : 'Geocoding failed');
@@ -78,10 +68,9 @@ export function useAutoGeocode(
       }
     };
 
-    // Small delay to avoid rapid calls on navigation
     const timeoutId = setTimeout(geocodeAddress, 300);
     return () => clearTimeout(timeoutId);
   }, [entityId, address, city, neighborhood, existingLat, existingLng, entityType]);
 
-  return { latitude, longitude, isLoading, error };
+  return { latitude, longitude, isLoading, error, source };
 }
