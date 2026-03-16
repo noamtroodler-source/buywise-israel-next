@@ -340,6 +340,23 @@ function isNonResalePage(markdown: string, importType: string = "resale"): { ski
     }
   }
 
+  // Sale indicators — skip in rental-only mode
+  if (importType === "rental") {
+    const salePatterns = [
+      /למכירה/, /מכירה/, /\bfor\s+sale\b/i, /\bbuy\b/i, /\bpurchase\b/i,
+    ];
+    let hasSaleSignal = false;
+    for (const p of salePatterns) {
+      if (p.test(snippet)) { hasSaleSignal = true; break; }
+    }
+    // Only skip if sale signals are present AND no rental signals
+    const rentalSignals = [/להשכרה/, /שכירות/, /\bfor\s+rent\b/i, /\brental\b/i, /\brent\b/i];
+    const hasRentalSignal = rentalSignals.some(p => p.test(snippet));
+    if (hasSaleSignal && !hasRentalSignal) {
+      return { skip: true, reason: "Pre-filter: sale listing (rental import only)" };
+    }
+  }
+
   // New construction / developer indicators
   const newDevPatterns = [
     /מקבלן/, /על\s+הנייר/, /חדש\s+מקבלן/, /פרויקט\s+חדש/,
