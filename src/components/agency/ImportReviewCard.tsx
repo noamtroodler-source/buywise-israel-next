@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import {
-  CheckCircle2, XCircle, AlertTriangle, ExternalLink, ChevronDown, ChevronUp, Edit2, Eye, SkipForward,
+  CheckCircle2, XCircle, AlertTriangle, ExternalLink, ChevronDown, ChevronUp, Edit2, Eye, SkipForward, Merge, X,
 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { FieldConfidenceDot, getFieldConfidence } from './FieldConfidenceDot';
 import { PhotoGrid } from './PhotoGrid';
+import { supabase } from '@/integrations/supabase/client';
 import type { ImportJobItem } from '@/hooks/useImportListings';
 
 function ConfidenceBadge({ score }: { score: number | null }) {
@@ -31,15 +33,55 @@ interface ImportReviewCardProps {
   onSkip?: () => void;
   isApproving: boolean;
   isSkipping?: boolean;
+  onMergeDuplicate?: (winnerId: string, loserId: string, pairId: string) => void;
+  onDismissDuplicate?: (pairId: string) => void;
 }
 
-export function ImportReviewCard({ item, isExpanded, onToggle, onApprove, onSkip, isApproving, isSkipping }: ImportReviewCardProps) {
+export function ImportReviewCard({ item, isExpanded, onToggle, onApprove, onSkip, isApproving, isSkipping, onMergeDuplicate, onDismissDuplicate }: ImportReviewCardProps) {
   const data = item.extracted_data || {};
   const confidence = item.confidence_score ?? data.confidence_score ?? null;
   const warnings = data.validation_warnings || [];
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState(data);
   const [showSourcePreview, setShowSourcePreview] = useState(false);
+
+  const matchId = data.cross_source_match_id;
+  const hasPropertyId = !!item.property_id;
+
+  // Fetch matched property details for inline merge
+  const { data: matchedProperty } = useQuery({
+    queryKey: ['matchedProperty', matchId],
+    queryFn: async () => {
+      const { data: prop, error } = await supabase
+        .from('properties')
+        .select('id, title, city, price, bedrooms, size_sqm, main_image_url, listing_status')
+        .eq('id', matchId)
+        .single();
+      if (error) return null;
+      return prop;
+    },
+    enabled: !!matchId && isExpanded,
+  });
+
+  // Fetch duplicate pair record
+  const { data: duplicatePair } = useQuery({
+    queryKey: ['duplicatePair', item.property_id, matchId],
+    queryFn: async () => {
+      if (!item.property_id || !matchId) return null;
+      const [pa, pb] = item.property_id < matchId
+        ? [item.property_id, matchId]
+        : [matchId, item.property_id];
+      const { data: pair } = await supabase
+        .from('duplicate_pairs')
+        .select('id, status')
+        .eq('property_a', pa)
+        .eq('property_b', pb)
+        .eq('status', 'pending')
+        .maybeSingle();
+      return pair;
+    },
+    enabled: !!matchId && hasPropertyId && isExpanded,
+  });
 
   const statusIcon = item.status === 'done'
     ? <CheckCircle2 className="h-4 w-4 text-green-600" />
@@ -157,14 +199,17 @@ export function ImportReviewCard({ item, isExpanded, onToggle, onApprove, onSkip
                 </div>
               )}
 
-              {data.cross_source_match_id && (
-                <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-sm">
-                  <AlertTriangle className="h-3.5 w-3.5 inline mr-1.5 text-yellow-600" />
-                  <span className="text-yellow-700 font-medium">Cross-source duplicate detected</span>
-                  <p className="text-xs text-yellow-600/80 mt-1">
-                    This listing may already exist under a different agent (property ID: {data.cross_source_match_id}).
-                  </p>
-                </div>
+              {/* Cross-source duplicate with inline merge */}
+              {matchId && (
+                <DuplicateSection
+                  matchId={matchId}
+                  matchedProperty={matchedProperty}
+                  duplicatePair={duplicatePair}
+                  currentPropertyId={item.property_id}
+                  hasPropertyId={hasPropertyId}
+                  onMerge={onMergeDuplicate}
+                  onDismiss={onDismissDuplicate}
+                />
               )}
 
               {/* Photo Gallery */}
@@ -278,5 +323,99 @@ export function ImportReviewCard({ item, isExpanded, onToggle, onApprove, onSkip
         </CardContent>
       )}
     </Card>
+  );
+}
+
+/* ────────────────────────────────────────────
+   Inline Duplicate Merge Section
+   ──────────────────────────────────────────── */
+
+interface DuplicateSectionProps {
+  matchId: string;
+  matchedProperty: any | null;
+  duplicatePair: { id: string; status: string } | null;
+  currentPropertyId: string | null;
+  hasPropertyId: boolean;
+  onMerge?: (winnerId: string, loserId: string, pairId: string) => void;
+  onDismiss?: (pairId: string) => void;
+}
+
+function DuplicateSection({ matchId, matchedProperty, duplicatePair, currentPropertyId, hasPropertyId, onMerge, onDismiss }: DuplicateSectionProps) {
+  if (!matchedProperty && !duplicatePair) {
+    // Fallback: just show the warning
+    return (
+      <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-sm">
+        <AlertTriangle className="h-3.5 w-3.5 inline mr-1.5 text-yellow-600" />
+        <span className="text-yellow-700 font-medium">Cross-source duplicate detected</span>
+        <p className="text-xs text-yellow-600/80 mt-1">
+          Property ID: {matchId}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20 space-y-3">
+      <div className="flex items-center gap-1.5">
+        <AlertTriangle className="h-3.5 w-3.5 text-yellow-600" />
+        <span className="text-sm text-yellow-700 font-medium">Cross-source duplicate detected</span>
+      </div>
+
+      {/* Mini comparison card for matched property */}
+      {matchedProperty && (
+        <div className="rounded-lg border border-yellow-500/20 bg-background p-3 flex gap-3">
+          {matchedProperty.main_image_url && (
+            <img
+              src={matchedProperty.main_image_url}
+              alt=""
+              className="w-16 h-16 rounded-md object-cover shrink-0"
+            />
+          )}
+          <div className="flex-1 min-w-0 text-xs space-y-0.5">
+            <p className="font-medium text-sm truncate">{matchedProperty.title || 'Existing listing'}</p>
+            {matchedProperty.city && <p className="text-muted-foreground">{matchedProperty.city}</p>}
+            <div className="flex gap-3 text-muted-foreground">
+              {matchedProperty.price > 0 && <span>₪{matchedProperty.price?.toLocaleString()}</span>}
+              {matchedProperty.bedrooms != null && <span>{matchedProperty.bedrooms} bed</span>}
+              {matchedProperty.size_sqm && <span>{matchedProperty.size_sqm}m²</span>}
+            </div>
+            <Badge variant="outline" className="text-[10px] mt-1">{matchedProperty.listing_status}</Badge>
+          </div>
+        </div>
+      )}
+
+      {/* Merge / Dismiss buttons — only when both properties exist */}
+      {hasPropertyId && duplicatePair && onMerge && onDismiss && (
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            className="rounded-lg text-xs border-yellow-500/30 hover:bg-yellow-500/10"
+            onClick={() => onMerge(currentPropertyId!, matchId, duplicatePair.id)}
+          >
+            <Merge className="h-3 w-3 mr-1" />
+            Keep This
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="rounded-lg text-xs border-yellow-500/30 hover:bg-yellow-500/10"
+            onClick={() => onMerge(matchId, currentPropertyId!, duplicatePair.id)}
+          >
+            <Merge className="h-3 w-3 mr-1" />
+            Keep Other
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="rounded-lg text-xs"
+            onClick={() => onDismiss(duplicatePair.id)}
+          >
+            <X className="h-3 w-3 mr-1" />
+            Not a Duplicate
+          </Button>
+        </div>
+      )}
+    </div>
   );
 }

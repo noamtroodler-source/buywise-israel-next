@@ -10,6 +10,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { useMyAgency } from '@/hooks/useAgencyManagement';
 import {
   useImportJobItems,
@@ -20,11 +25,17 @@ import {
 } from '@/hooks/useImportListings';
 import { ImportReviewCard } from '@/components/agency/ImportReviewCard';
 import { useRealtimeImportProgress } from '@/hooks/useRealtimeImportProgress';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
-type FilterTab = 'all' | 'pending' | 'done' | 'failed' | 'low_confidence' | 'no_photos' | 'duplicates';
+type FilterTab = 'all' | 'pending' | 'done' | 'failed' | 'low_confidence' | 'no_photos' | 'duplicates' | 'needs_attention';
 
 export default function AgencyImportReview() {
   const { jobId } = useParams<{ jobId: string }>();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const { data: agency, isLoading: agencyLoading } = useMyAgency();
   const { data: jobs = [] } = useImportJobs(agency?.id);
   const { data: items = [], isLoading: itemsLoading } = useImportJobItems(jobId);
@@ -39,6 +50,15 @@ export default function AgencyImportReview() {
   const getConfidence = (i: ImportJobItem) => i.confidence_score ?? i.extracted_data?.confidence_score ?? 0;
   const getPhotoCount = (i: ImportJobItem) => i.extracted_data?.image_urls?.length || 0;
   const hasDuplicate = (i: ImportJobItem) => !!i.extracted_data?.cross_source_match_id;
+  const hasWarnings = (i: ImportJobItem) => (i.extracted_data?.validation_warnings?.length || 0) > 0;
+
+  const needsAttention = (i: ImportJobItem) =>
+    i.status === 'pending' && (
+      getConfidence(i) < 60 ||
+      getPhotoCount(i) === 0 ||
+      hasDuplicate(i) ||
+      hasWarnings(i)
+    );
 
   const filteredItems = useMemo(() => {
     switch (filterTab) {
@@ -48,6 +68,7 @@ export default function AgencyImportReview() {
       case 'low_confidence': return items.filter(i => i.status === 'pending' && getConfidence(i) < 60);
       case 'no_photos': return items.filter(i => i.status === 'pending' && getPhotoCount(i) === 0);
       case 'duplicates': return items.filter(i => hasDuplicate(i));
+      case 'needs_attention': return items.filter(i => needsAttention(i));
       default: return items;
     }
   }, [items, filterTab]);
@@ -60,7 +81,42 @@ export default function AgencyImportReview() {
     low_confidence: items.filter(i => i.status === 'pending' && getConfidence(i) < 60).length,
     no_photos: items.filter(i => i.status === 'pending' && getPhotoCount(i) === 0).length,
     duplicates: items.filter(i => hasDuplicate(i)).length,
+    needs_attention: items.filter(i => needsAttention(i)).length,
   }), [items]);
+
+  // Merge duplicate mutation
+  const mergeMutation = useMutation({
+    mutationFn: async ({ winnerId, loserId, pairId }: { winnerId: string; loserId: string; pairId: string }) => {
+      const { error } = await supabase.rpc('merge_properties', {
+        p_winner_id: winnerId,
+        p_loser_id: loserId,
+        p_pair_id: pairId,
+        p_admin_id: user?.id ?? '',
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Properties merged successfully');
+      queryClient.invalidateQueries({ queryKey: ['importJobItems'] });
+    },
+    onError: (err: Error) => toast.error(`Merge failed: ${err.message}`),
+  });
+
+  // Dismiss duplicate mutation
+  const dismissDuplicateMutation = useMutation({
+    mutationFn: async (pairId: string) => {
+      const { error } = await supabase
+        .from('duplicate_pairs')
+        .update({ status: 'dismissed', resolved_by: user?.id, resolved_at: new Date().toISOString() })
+        .eq('id', pairId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Duplicate dismissed');
+      queryClient.invalidateQueries({ queryKey: ['importJobItems'] });
+    },
+    onError: (err: Error) => toast.error(`Dismiss failed: ${err.message}`),
+  });
 
   const handleApprove = (item: ImportJobItem, editedData?: any) => {
     const data = editedData || item.extracted_data;
@@ -89,6 +145,14 @@ export default function AgencyImportReview() {
     for (const item of lowConfidence) {
       skipMutation.mutate(item.id);
     }
+  };
+
+  const handleMergeDuplicate = (winnerId: string, loserId: string, pairId: string) => {
+    mergeMutation.mutate({ winnerId, loserId, pairId });
+  };
+
+  const handleDismissDuplicate = (pairId: string) => {
+    dismissDuplicateMutation.mutate(pairId);
   };
 
   if (agencyLoading || itemsLoading) {
@@ -148,27 +212,52 @@ export default function AgencyImportReview() {
                 </div>
                 <div className="flex gap-2 flex-wrap">
                   {highConfidenceCount > 0 && (
-                    <Button
-                      onClick={handleBulkApprove}
-                      disabled={approveMutation.isPending}
-                      className="rounded-xl"
-                      size="sm"
-                    >
-                      <CheckCircle2 className="h-4 w-4 mr-2" />
-                      Approve High Confidence ({highConfidenceCount})
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button className="rounded-xl" size="sm" disabled={approveMutation.isPending}>
+                          <CheckCircle2 className="h-4 w-4 mr-2" />
+                          Approve High Confidence ({highConfidenceCount})
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Bulk Approve Listings</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will approve {highConfidenceCount} listings with confidence ≥80%. They will be published immediately. This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleBulkApprove}>
+                            Approve {highConfidenceCount} Listings
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   )}
                   {lowConfidenceCount > 0 && (
-                    <Button
-                      onClick={handleBulkSkipLow}
-                      disabled={skipMutation.isPending}
-                      variant="outline"
-                      className="rounded-xl"
-                      size="sm"
-                    >
-                      <SkipForward className="h-4 w-4 mr-2" />
-                      Skip Low Confidence ({lowConfidenceCount})
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" className="rounded-xl" size="sm" disabled={skipMutation.isPending}>
+                          <SkipForward className="h-4 w-4 mr-2" />
+                          Skip Low Confidence ({lowConfidenceCount})
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Bulk Skip Listings</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will skip {lowConfidenceCount} listings with confidence &lt;40%. They won't be imported. You can review them individually later.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleBulkSkipLow}>
+                            Skip {lowConfidenceCount} Listings
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   )}
                 </div>
               </div>
@@ -182,6 +271,12 @@ export default function AgencyImportReview() {
               <TabsTrigger value="pending" className="rounded-lg text-xs">Pending ({counts.pending})</TabsTrigger>
               <TabsTrigger value="done" className="rounded-lg text-xs">Approved ({counts.done})</TabsTrigger>
               <TabsTrigger value="failed" className="rounded-lg text-xs">Failed ({counts.failed})</TabsTrigger>
+              {counts.needs_attention > 0 && (
+                <TabsTrigger value="needs_attention" className="rounded-lg text-xs">
+                  <AlertTriangle className="h-3 w-3 mr-1 text-orange-500" />
+                  Needs Attention ({counts.needs_attention})
+                </TabsTrigger>
+              )}
               {counts.low_confidence > 0 && (
                 <TabsTrigger value="low_confidence" className="rounded-lg text-xs">
                   <AlertCircle className="h-3 w-3 mr-1" />
@@ -223,6 +318,8 @@ export default function AgencyImportReview() {
                 onSkip={() => handleSkip(item)}
                 isApproving={approveMutation.isPending}
                 isSkipping={skipMutation.isPending}
+                onMergeDuplicate={handleMergeDuplicate}
+                onDismissDuplicate={handleDismissDuplicate}
               />
             ))}
           </div>
