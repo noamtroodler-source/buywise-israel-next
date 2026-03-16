@@ -142,6 +142,14 @@ export function ImageDedupPanel() {
             No cross-listing image duplicates detected
           </p>
         ) : (
+          <div className="space-y-3">
+            <Link
+              to="/admin/duplicates"
+              className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+            >
+              <ExternalLink className="h-3 w-3" />
+              Review All Duplicates
+            </Link>
           <div className="space-y-4 max-h-[400px] overflow-y-auto">
             {groups.map((group, idx) => (
               <div
