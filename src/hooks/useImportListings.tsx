@@ -64,11 +64,7 @@ export function useImportJobItems(jobId: string | undefined) {
       return data as ImportJobItem[];
     },
     enabled: !!jobId,
-    refetchInterval: (query) => {
-      const data = query.state.data as ImportJobItem[] | undefined;
-      const hasActive = data?.some(i => ['processing', 'pending'].includes(i.status));
-      return hasActive ? 3000 : false;
-    },
+    // Realtime handles live updates via useRealtimeImportProgress hook
   });
 }
 
