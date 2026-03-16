@@ -953,6 +953,9 @@ async function handleDiscover(body: any) {
     .select("id").single();
   if (jobErr) throw new Error(`Failed to create import job: ${jobErr.message}`);
 
+  // Track Firecrawl map cost
+  await trackCost(sb, job.id, "firecrawl", 1, "credits");
+
   const items = listingUrls.map((url) => ({ job_id: job.id, url, status: "pending" }));
   const { error: itemsErr } = await sb.from("import_job_items").insert(items);
   if (itemsErr) throw new Error(`Failed to create job items: ${itemsErr.message}`);
