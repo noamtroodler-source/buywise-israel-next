@@ -434,7 +434,8 @@ function validatePropertyData(listing: Record<string, any>, importType: string =
 function computeConfidenceScore(
   listing: Record<string, any>,
   cityMatchType: "exact" | "fuzzy" | "domain" | "none",
-  validationWarnings: string[]
+  validationWarnings: string[],
+  hasStructuredData: boolean = false
 ): number {
   // Each field scores 1-3, weighted
   const weights = {
