@@ -500,6 +500,7 @@ const App = () => (
                           <Route path="errors" element={<AdminClientErrors />} />
                           <Route path="enterprise-inquiries" element={<AdminEnterpriseInquiries />} />
                           <Route path="warm-leads" element={<AdminWarmLeads />} />
+                          <Route path="duplicates" element={<AdminDuplicates />} />
                         </Route>
                         
                         <Route path="*" element={<NotFound />} />

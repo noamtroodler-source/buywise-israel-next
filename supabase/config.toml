@@ -113,3 +113,6 @@ verify_jwt = false
 
 [functions.compute-image-hash]
 verify_jwt = false
+
+[functions.detect-duplicates]
+verify_jwt = false

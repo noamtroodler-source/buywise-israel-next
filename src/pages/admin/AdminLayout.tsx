@@ -67,8 +67,22 @@ export function AdminLayout() {
     { href: '/admin/blog-review', label: 'Blog Posts', icon: PenLine, badge: pendingBlogCount || 0 },
   ];
 
+  const { data: pendingDuplicateCount = 0 } = useQuery({
+    queryKey: ['duplicate-pairs-pending-count'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('duplicate_pairs')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending');
+      if (error) throw error;
+      return count ?? 0;
+    },
+    refetchInterval: 60_000,
+  });
+
   const contentItems = [
     { href: '/admin/properties', label: 'Properties', icon: Home },
+    { href: '/admin/duplicates', label: 'Duplicates', icon: Building, badge: pendingDuplicateCount },
     { href: '/admin/blog', label: 'Blog Posts', icon: FileText },
     { href: '/admin/glossary', label: 'Glossary', icon: BookOpen },
   ];
