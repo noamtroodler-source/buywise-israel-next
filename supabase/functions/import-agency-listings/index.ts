@@ -149,6 +149,36 @@ const CITY_PRICE_RANGES: Record<string, { min: number; max: number; sqm_min: num
   "Zichron Yaakov": { min: 1_200_000, max: 5_000_000,  sqm_min: 20_000, sqm_max: 35_000 },
 };
 
+// ─── CITY RENTAL PRICE RANGES (NIS per month) ──────────────────────────────
+
+const CITY_RENTAL_RANGES: Record<string, { min: number; max: number }> = {
+  "Tel Aviv":       { min: 4_000, max: 25_000 },
+  "Jerusalem":      { min: 3_000, max: 18_000 },
+  "Haifa":          { min: 2_500, max: 10_000 },
+  "Ra'anana":       { min: 4_000, max: 15_000 },
+  "Herzliya":       { min: 4_500, max: 20_000 },
+  "Netanya":        { min: 3_000, max: 12_000 },
+  "Beer Sheva":     { min: 2_000, max: 7_000 },
+  "Ashkelon":       { min: 2_000, max: 8_000 },
+  "Ashdod":         { min: 2_500, max: 9_000 },
+  "Ramat Gan":      { min: 3_500, max: 14_000 },
+  "Petah Tikva":    { min: 3_000, max: 11_000 },
+  "Kfar Saba":      { min: 3_500, max: 13_000 },
+  "Modi'in":        { min: 3_500, max: 12_000 },
+  "Beit Shemesh":   { min: 3_000, max: 10_000 },
+  "Eilat":          { min: 2_500, max: 8_000 },
+  "Hod HaSharon":   { min: 3_500, max: 13_000 },
+  "Givat Shmuel":   { min: 4_000, max: 14_000 },
+  "Hadera":         { min: 2_500, max: 8_000 },
+  "Caesarea":       { min: 5_000, max: 25_000 },
+  "Efrat":          { min: 3_500, max: 12_000 },
+  "Gush Etzion":    { min: 3_000, max: 10_000 },
+  "Ma'ale Adumim":  { min: 3_000, max: 9_000 },
+  "Mevaseret Zion": { min: 4_000, max: 14_000 },
+  "Pardes Hanna":   { min: 2_500, max: 8_000 },
+  "Zichron Yaakov": { min: 3_000, max: 10_000 },
+};
+
 // Room-to-size ratio validation (Israeli apartments)
 const ROOM_SIZE_RANGES: Record<number, { flag_min: number; flag_max: number }> = {
   1: { flag_min: 15, flag_max: 50 },    // Studio
