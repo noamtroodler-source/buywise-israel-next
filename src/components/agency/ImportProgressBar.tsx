@@ -85,7 +85,7 @@ export function ImportProgressBar({
       {/* Status breakdown */}
       <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
         <span className="flex items-center gap-1">
-          <CheckCircle2 className="h-3 w-3 text-green-600" />
+          <CheckCircle2 className="h-3 w-3 text-[hsl(var(--success))]" />
           {doneCount} imported
         </span>
         {skippedCount > 0 && (
