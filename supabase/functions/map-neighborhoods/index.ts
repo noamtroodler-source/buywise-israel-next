@@ -7,6 +7,13 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// CBS city names → platform city names (for querying the cities table)
+const CBS_TO_PLATFORM: Record<string, string> = {
+  "Maale Adumim": "Ma'ale Adumim",
+  "Modiin": "Modi'in",
+  "Raanana": "Ra'anana",
+};
+
 async function matchCity(
   city: string,
   anglo: { name: string; name_he?: string }[],
