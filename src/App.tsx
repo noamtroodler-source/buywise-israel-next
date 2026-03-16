@@ -502,6 +502,7 @@ const App = () => (
                           <Route path="enterprise-inquiries" element={<AdminEnterpriseInquiries />} />
                           <Route path="warm-leads" element={<AdminWarmLeads />} />
                           <Route path="duplicates" element={<AdminDuplicates />} />
+                          <Route path="import-analytics" element={<AdminImportAnalytics />} />
                         </Route>
                         
                         <Route path="*" element={<NotFound />} />
