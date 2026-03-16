@@ -284,13 +284,18 @@ export default function ImportGovMapData() {
         });
 
         if (res.error) {
+          console.error(`[GovMap Import] Batch ${batchNum} error:`, res.error);
+          totalFailed += batch.length;
+        } else if (res.data?.error) {
+          console.error(`[GovMap Import] Batch ${batchNum} server error:`, res.data.error);
           totalFailed += batch.length;
         } else {
           totalImported += res.data.imported || 0;
           totalFailed += res.data.failed || 0;
           totalSkipped += res.data.skipped || 0;
         }
-      } catch {
+      } catch (err) {
+        console.error(`[GovMap Import] Batch ${batchNum} exception:`, err);
         totalFailed += batch.length;
       }
     }
