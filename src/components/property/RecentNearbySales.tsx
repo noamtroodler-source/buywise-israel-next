@@ -322,9 +322,34 @@ export function RecentNearbySales({
     }
   }, [avgComparison, comps?.length, onVerdictComputed]);
 
-  // Don't render if we don't have coordinates
+  // Show empty state if we don't have coordinates
   if (!latitude || !longitude) {
-    return null;
+    return (
+      <TooltipProvider>
+        <div className="space-y-4">
+          {!hideHeader && (
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-primary" />
+              <h3 className="text-lg font-semibold text-foreground">Recent Nearby Sales</h3>
+            </div>
+          )}
+          <div className="rounded-lg border border-border bg-muted/30 p-6 text-center">
+            <MapPin className="mx-auto h-10 w-10 text-muted-foreground/50 mb-3" />
+            <p className="text-sm font-medium text-foreground mb-1">
+              Location data not available
+            </p>
+            <p className="text-xs text-muted-foreground mb-3">
+              This listing doesn't include exact coordinates, so we can't show nearby sales comparisons. Explore the city overview for market data.
+            </p>
+            <Button variant="outline" size="sm" asChild>
+              <Link to={`/areas/${citySlug}`}>
+                View {city} Market Data
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </TooltipProvider>
+    );
   }
 
   if (isLoading) {
