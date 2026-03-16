@@ -2643,7 +2643,10 @@ async function handleYad2AgencyDiscover(body: any) {
     .select("id").single();
   if (jobErr) throw new Error(`Failed to create import job: ${jobErr.message}`);
 
-  // Create items with pre-extracted data
+  // Track Firecrawl scrape + Apify costs for Yad2 discovery
+  await trackCost(sb, job.id, "firecrawl", 1, "credits");
+  await trackCost(sb, job.id, "apify", 1, "calls");
+
   const items = results.map((r: any) => ({
     job_id: job.id,
     url: r.url || r.link || `yad2-agency-${crypto.randomUUID()}`,
