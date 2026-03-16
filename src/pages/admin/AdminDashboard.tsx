@@ -12,6 +12,7 @@ import { ViewsTrendChart } from '@/components/admin/ViewsTrendChart';
 import { InquiryBreakdownChart } from '@/components/admin/InquiryBreakdownChart';
 import { ActivityFeed } from '@/components/admin/ActivityFeed';
 import { LiveIndicator } from '@/components/admin/LiveIndicator';
+import { ImageDedupPanel } from '@/components/admin/ImageDedupPanel';
 import { usePlatformStats, useViewsTrend, useInquiryBreakdown } from '@/hooks/useAdminAnalytics';
 import { useRecentActivity } from '@/hooks/useRecentActivity';
 
@@ -143,10 +144,11 @@ export default function AdminDashboard() {
         <InquiryBreakdownChart data={inquiryBreakdown || []} isLoading={inquiryLoading} />
       </div>
 
-      {/* Activity & Quick Actions */}
+      {/* Activity, Quick Actions & Image Dedup */}
       <div className="grid gap-6 lg:grid-cols-2">
         <ActivityFeed activities={recentActivity || []} isLoading={activityLoading} />
         
+        <div className="space-y-6">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-semibold">Quick Actions</CardTitle>
@@ -168,6 +170,8 @@ export default function AdminDashboard() {
             </div>
           </CardContent>
         </Card>
+        <ImageDedupPanel />
+        </div>
       </div>
 
       {/* System Status */}

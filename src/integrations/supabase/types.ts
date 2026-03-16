@@ -2242,6 +2242,41 @@ export type Database = {
         }
         Relationships: []
       }
+      image_hashes: {
+        Row: {
+          created_at: string | null
+          id: string
+          image_url: string
+          phash: string
+          property_id: string | null
+          sha256: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          image_url: string
+          phash: string
+          property_id?: string | null
+          sha256: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          image_url?: string
+          phash?: string
+          property_id?: string | null
+          sha256?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "image_hashes_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       import_job_items: {
         Row: {
           confidence_score: number | null
@@ -5389,6 +5424,21 @@ export type Database = {
       can_agent_view_profile: {
         Args: { _agent_user_id: string; _profile_id: string }
         Returns: boolean
+      }
+      find_similar_images: {
+        Args: {
+          p_exclude_property_id?: string
+          p_limit?: number
+          p_phash: string
+          p_threshold?: number
+        }
+        Returns: {
+          hamming_distance: number
+          id: string
+          image_url: string
+          phash: string
+          property_id: string
+        }[]
       }
       get_city_property_counts: {
         Args: { p_listing_status: string }

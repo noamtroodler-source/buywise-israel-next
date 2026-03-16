@@ -110,3 +110,6 @@ verify_jwt = false
 
 [functions.optimize-image]
 verify_jwt = false
+
+[functions.compute-image-hash]
+verify_jwt = false
