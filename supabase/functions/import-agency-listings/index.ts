@@ -661,7 +661,7 @@ function normalizeUrl(raw: string): string {
 }
 
 async function handleDiscover(body: any) {
-  const { agency_id, website_url } = body;
+  const { agency_id, website_url, import_type = "resale" } = body;
   if (!agency_id || !website_url) throw new Error("agency_id and website_url required");
 
   const sb = supabaseAdmin();
