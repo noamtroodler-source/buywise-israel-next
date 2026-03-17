@@ -1578,6 +1578,12 @@ FOR PROPERTIES — extract these fields:
   Examples: "Spacious 4-Bedroom Apartment in Arnona", "Renovated Penthouse in Neve Tzedek", "3-Bedroom Garden Apartment in Rehavia"
   If the page already has a good English title (not just an address, street name, or Hebrew text), keep it with Title Case.
   Do NOT just use the street address as the title. Do NOT return a Hebrew title.
+- description: Translate the property description into fluent, professional English for international buyers.
+  Keep all factual details (rooms, features, location highlights, renovation info, floor, views, parking, storage).
+  Rephrase marketing fluff into clear, compelling English. Make it informative and appealing.
+  If the description is already in good English, keep it as-is.
+  Do NOT include the agent's name, phone number, or any Hebrew text in the description.
+  Aim for 150-400 words. Write in paragraph form, not bullet points.
 - In Israel, "rooms" (חדרים) = bedrooms + 1 living room. So 4 rooms = 3 bedrooms. Always subtract 1 for bedrooms.
 - Default currency is ILS (₪) unless explicitly stated otherwise.
 - Use the dictionary above for property types, not your own guess.
