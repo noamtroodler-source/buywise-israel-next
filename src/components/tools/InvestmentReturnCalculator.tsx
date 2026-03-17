@@ -121,14 +121,15 @@ function calculatePrincipalPaid(principal: number, annualRate: number, termYears
   return principal - Math.max(0, remainingBalance);
 }
 
-function computeResults(v: FormValues, useItemized: boolean): CalculationResults {
+function computeResults(v: FormValues, useItemized: boolean, constants?: CalculatorConstant[]): CalculationResults {
   const purchasePrice = v.purchasePrice;
   const downPayment = purchasePrice * (v.downPaymentPercent / 100);
   const mortgageAmount = purchasePrice - downPayment;
+  const vatMultiplier = getVatMultiplier(constants);
 
   const purchaseTax = v.includePurchaseTax ? calculateTaxAmount(purchasePrice, 'investor') : 0;
-  const buyingAgentFee = v.includeBuyingAgentFee ? Math.round(purchasePrice * 0.02 * 1.17) : 0;
-  const lawyerFees = v.includeLawyerFees ? Math.round(10000 * 1.17) : 0;
+  const buyingAgentFee = v.includeBuyingAgentFee ? Math.round(purchasePrice * getConstant(constants, 'AGENT_RATE') * vatMultiplier) : 0;
+  const lawyerFees = v.includeLawyerFees ? Math.round(10000 * vatMultiplier) : 0;
   const renovationCosts = v.includeRenovation && v.renovationCosts ? v.renovationCosts : 0;
   const totalTransactionCosts = purchaseTax + buyingAgentFee + lawyerFees;
   const totalDayOneCash = downPayment + totalTransactionCosts + renovationCosts;
