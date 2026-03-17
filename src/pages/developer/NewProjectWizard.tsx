@@ -39,7 +39,7 @@ const itemVariants = {
 
 function WizardContent() {
   const navigate = useNavigate();
-  const { data, currentStep, setCurrentStep, goNext, goBack, canGoNext, isLastStep } = useProjectWizard();
+  const { data, currentStep, setCurrentStep, goNext, goBack, canGoNext, isLastStep, getStepErrors, getAllErrors } = useProjectWizard();
   const { data: developerProfile } = useDeveloperProfile();
   const createProject = useCreateProject();
   const [isSubmitting, setIsSubmitting] = useState(false);
