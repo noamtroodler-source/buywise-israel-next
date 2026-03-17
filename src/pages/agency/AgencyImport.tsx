@@ -478,10 +478,10 @@ export default function AgencyImport() {
                           View Imported Drafts ({doneCount})
                         </Link>
                       </Button>
-                      <p className="text-xs text-muted-foreground flex items-start gap-1.5">
-                        <span className="shrink-0">💡</span>
-                        <span><strong>Next step:</strong> Assign imported listings to your agents from the Listings table. Once assigned, agents can review, edit, and submit them for approval.</span>
-                      </p>
+                      <div className="flex items-start gap-2 p-3 rounded-xl bg-primary/5 border border-primary/15 text-xs text-muted-foreground">
+                        <ArrowLeftRight className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
+                        <span><strong className="text-foreground">Next step:</strong> Assign imported listings to your agents from the Listings table. Once assigned, agents can review, edit, and submit them for approval.</span>
+                      </div>
                     </div>
                   )}
                 </div>
