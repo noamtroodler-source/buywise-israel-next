@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { InlineSourceBadge } from '@/components/shared/InlineSourceBadge';
+import { BuyWiseEstimateBadge } from '@/components/shared/BuyWiseEstimateBadge';
 import { useFormatPrice, useCurrencySymbol, useAreaUnitLabel, useFormatPricePerArea } from '@/contexts/PreferencesContext';
 import { NATIONAL_AVG_PRICE_SQM } from '@/lib/constants/marketAverages';
+import { useCityVerification } from '@/hooks/useCityVerification';
 
 interface CityQuickStatsProps {
   cityData?: {
