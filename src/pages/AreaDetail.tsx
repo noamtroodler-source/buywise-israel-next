@@ -232,13 +232,7 @@ export default function CityDetail() {
           />
         )}
 
-        {/* 2.6. Neighborhood Price Table */}
-        {priceTableRows.length > 0 && (
-          <CityNeighborhoodPriceTable
-            cityName={city.name}
-            rows={priceTableRows}
-          />
-        )}
+        {/* Neighborhood Price Table moved below Price by Apartment Size */}
 
         {/* 3. Market Overview - 3 Card Grid */}
         <section id="market">
