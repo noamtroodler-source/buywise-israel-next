@@ -2358,7 +2358,7 @@ async function processOneItem(
       .insert({
         agent_id: agentId,
         title: generateListingTitle(listing, new URL(item.url).hostname),
-        description: listing.description || null,
+        description: generateListingDescription(listing) || listing.description || null,
         property_type: listing.property_type || "apartment",
         listing_status: listing.listing_status || "for_sale",
         price: listing.price || 0,
