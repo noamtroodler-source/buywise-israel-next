@@ -152,8 +152,7 @@ export function MarketRealityTabs({
               <div className="text-center">
                 <p className="text-sm text-muted-foreground mb-2">Average Price per Square Meter</p>
                 <p className="text-4xl font-bold text-foreground">
-                  ₪{pricePerSqm.toLocaleString()}
-                  <span className="text-lg font-normal text-muted-foreground">/m²</span>
+                  {formatPricePerAreaFn(pricePerSqm, 'ILS')}
                 </p>
                 <p className={`text-sm mt-2 font-medium ${percentAboveNational >= 0 ? 'text-amber-600' : 'text-primary'}`}>
                   {percentAboveNational >= 0 ? '+' : ''}{percentAboveNational.toFixed(0)}% vs national average
