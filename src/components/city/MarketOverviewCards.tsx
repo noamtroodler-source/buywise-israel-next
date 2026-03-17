@@ -30,6 +30,7 @@ export function MarketOverviewCards({
 }: MarketOverviewCardsProps) {
   const [apartmentSize, setApartmentSize] = useState(80);
   const { data: buyerProfile } = useBuyerProfile();
+  const formatPricePerAreaFn = useFormatPricePerArea();
   
   // Use cityData directly — cities table is the single source of truth
   const pricePerSqm = cityData?.average_price_sqm ?? 0;

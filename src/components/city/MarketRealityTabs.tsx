@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { NATIONAL_AVG_PRICE_SQM, NATIONAL_AVG_ARNONA } from '@/lib/constants/marketAverages';
+import { useFormatPricePerArea, useAreaUnitLabel } from '@/contexts/PreferencesContext';
 
 interface MarketRealityTabsProps {
   marketData: MarketData[];
