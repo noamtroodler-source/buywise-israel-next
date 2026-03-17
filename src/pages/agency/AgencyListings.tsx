@@ -288,6 +288,9 @@ export default function AgencyListings() {
             ))}
           </div>
 
+          {/* Imported drafts guidance banner */}
+          <ImportedDraftsGuidance listings={listings} />
+
           {/* Filters */}
           <Card className="rounded-2xl border-primary/10">
             <CardContent className="p-4">
