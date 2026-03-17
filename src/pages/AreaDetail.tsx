@@ -273,6 +273,21 @@ export default function CityDetail() {
           />
         )}
 
+        {/* 3. Market Overview */}
+        <MarketOverviewCards
+          cityName={city.name}
+          arnonaRateSqm={city.arnona_rate_sqm}
+          dataSources={(city as any).data_sources}
+          lastVerified={city.updated_at}
+          cityData={{ average_price_sqm: city.average_price_sqm }}
+        />
+
+        {/* 4. Price History */}
+        <HistoricalPriceChart citySlug={slug || ''} cityName={city.name} />
+
+        {/* 5. Price by Apartment Size */}
+        <PriceByApartmentSize citySlug={slug || ''} cityName={city.name} />
+
         {/* 6. Worth Watching */}
         <section id="watching">
           {worthWatching.length > 0 ? (
