@@ -117,7 +117,7 @@ const agencyMobileNav = {
     { icon: LayoutDashboard, label: 'Dashboard', to: '/agency' },
     { icon: FileText, label: 'Listings', to: '/agency/listings' },
     { icon: Users, label: 'Team', to: '/agency/team' },
-    { icon: MessageSquare, label: 'Leads', to: '/agency/leads' },
+    { icon: BarChart3, label: 'Analytics', to: '/agency/analytics' },
   ],
   more: [
     { label: 'Import Listings', to: '/agency/import', icon: FileText },
