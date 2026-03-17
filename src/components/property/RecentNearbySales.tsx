@@ -538,7 +538,7 @@ export function RecentNearbySales({
                             {comp.price_per_sqm && (
                               <span className="flex items-center gap-1">
                                 <BarChart3 className="h-3 w-3" />
-                                {formatPrice(comp.price_per_sqm, 'ILS')}/m²
+                                {formatPricePerAreaFn(comp.price_per_sqm, 'ILS')}
                               </span>
                             )}
                           </div>
