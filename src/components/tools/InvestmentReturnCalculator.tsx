@@ -38,7 +38,7 @@ import { useFormatPrice, useCurrencySymbol } from '@/contexts/PreferencesContext
 import { useSavePromptTrigger } from '@/hooks/useSavePromptTrigger';
 
 const STOCK_MARKET_BENCHMARK = 0.07;
-const SELLING_AGENT_PERCENT = 2;
+// SELLING_AGENT_PERCENT now pulled from DB constants via getConstant
 const CAPITAL_GAINS_TAX_PERCENT = 25;
 
 type VacancyPreset = 'low' | 'average' | 'high';
