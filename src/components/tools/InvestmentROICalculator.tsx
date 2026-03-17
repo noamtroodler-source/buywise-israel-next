@@ -24,6 +24,7 @@ import { useCities } from '@/hooks/useCities';
 
 export function InvestmentROICalculator() {
   const { showPrompt: showSavePrompt, dismissPrompt: dismissSavePrompt, trackChange } = useSavePromptTrigger();
+  const { data: calcConstants } = useCalculatorConstants();
   
   const [purchasePrice, setPurchasePrice] = useState(2000000);
   const [monthlyRent, setMonthlyRent] = useState(7000);
