@@ -1169,19 +1169,9 @@ async function computeImagePhash(imageUrl: string, propertyId: string | null, sb
 }
 
 async function registerImageHashes(propertyId: string, imageUrls: string[], sb: any): Promise<string[]> {
-  const warnings: string[] = [];
-  // Process first 5 images for pHash (cover photos most important for dedup)
-  const toCheck = imageUrls.slice(0, 5);
-  for (const url of toCheck) {
-    const result = await computeImagePhash(url, propertyId, sb);
-    if (result && result.similar.length > 0) {
-      const matchIds = result.similar.map((s: any) => s.property_id).filter((id: string) => id !== propertyId);
-      if (matchIds.length > 0) {
-        warnings.push(`pHash duplicate: image visually matches property ${matchIds[0]} (hamming=${result.similar[0].hamming_distance})`);
-      }
-    }
-  }
-  return warnings;
+  // DISABLED: compute-image-hash crashes with magick.wasm URL error in edge runtime.
+  // Skip pHash registration until the WASM issue is resolved.
+  return [];
 }
 
 async function parallelImageDownload(
@@ -1234,12 +1224,9 @@ async function parallelImageDownload(
           const publicUrl = urlData?.publicUrl || null;
           if (!publicUrl) return null;
 
-          // Only enhance the first image (cover photo)
-          const enhancedUrl = globalIdx === 0 ? await enhanceImage(publicUrl, sb, bucketName, jobId) : publicUrl;
-
-          // Optimize: convert to WebP + generate size variants
-          const optimized = await optimizeImage(enhancedUrl, bucketName, `imports/${jobId}/${imageId}`);
-          const finalUrl = optimized?.medium || enhancedUrl;
+          // DISABLED: enhanceImage and optimizeImage crash with magick.wasm URL error.
+          // Use the uploaded public URL directly until WASM issue is resolved.
+          const finalUrl = publicUrl;
 
           return { url: finalUrl, hash };
         }
@@ -2214,7 +2201,19 @@ async function processOneItem(
     }
 
     // Insert property
-    const entryDate = listing.entry_date === "immediate" ? new Date().toISOString().split("T")[0] : listing.entry_date || null;
+    // Sanitize entry_date: only accept valid ISO dates, convert "immediate"/Hebrew equivalents to today
+    const entryDate = (() => {
+      const raw = listing.entry_date;
+      if (!raw || typeof raw !== "string") return null;
+      const trimmed = raw.trim().toLowerCase();
+      if (trimmed === "immediate" || trimmed === "מיידי" || trimmed === "מיידית") {
+        return new Date().toISOString().split("T")[0];
+      }
+      if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+      const match = trimmed.match(/^(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})$/);
+      if (match) return `${match[3]}-${match[2].padStart(2,'0')}-${match[1].padStart(2,'0')}`;
+      return null; // Hebrew text like "גמישה" → null
+    })();
 
     const { data: property, error: propErr } = await sb
       .from("properties")
@@ -2332,7 +2331,7 @@ async function handleProcessBatch(body: any) {
   const MAX_CONCURRENCY = 5;
   const MIN_CONCURRENCY = 2;
   const REFILL_SIZE = 10;
-  const MAX_ITEMS = 15;
+  const MAX_ITEMS = 25;
   const TIME_LIMIT_MS = 120_000;
   const batchStartTime = Date.now();
 
