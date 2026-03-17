@@ -380,7 +380,7 @@ function EditWizardContent({ projectId }: { projectId: string }) {
                             <span>
                               <Button
                                 onClick={handleResubmit}
-                                disabled={isSubmitting || !isDeveloperVerified || !canCreateListing}
+                                disabled={isSubmitting || getAllErrors().length > 0 || !isDeveloperVerified || !canCreateListing}
                                 className="rounded-xl h-11 px-6"
                               >
                                 {isSubmitting ? (
