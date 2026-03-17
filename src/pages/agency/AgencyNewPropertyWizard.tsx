@@ -53,7 +53,14 @@ interface AgencyWizardMetadata {
 
 function AgencyWizardContent() {
   const navigate = useNavigate();
-  const { data, currentStep, setCurrentStep, goNext, goBack, canGoNext, isLastStep, setStepOffset, loadFromSaved } = usePropertyWizard();
+  const { data, currentStep, setCurrentStep, goNext, goBack, canGoNext, isLastStep, setStepOffset, loadFromSaved, getStepErrors, getAllErrors } = usePropertyWizard();
+
+  // Compute step errors for progress bar (step 0 = Assign Agent has no validation here)
+  const stepErrors: Record<number, number> = {};
+  for (let i = 0; i < 5; i++) {
+    const errs = getStepErrors(i);
+    if (errs.length > 0) stepErrors[i + 1] = errs.length; // offset by 1 for Assign Agent step
+  }
 
   useEffect(() => {
     setStepOffset(1);
@@ -195,7 +202,7 @@ function AgencyWizardContent() {
       case 3: return <StepFeatures />;
       case 4: return <StepPhotos />;
       case 5: return <StepDescription />;
-      case 6: return <StepReview onEditStep={(s) => setCurrentStep(s + 1)} />;
+      case 6: return <StepReview onEditStep={(s) => setCurrentStep(s)} stepOffset={1} />;
       default: return null;
     }
   };
@@ -237,7 +244,7 @@ function AgencyWizardContent() {
 
             {/* Progress */}
             <motion.div variants={itemVariants}>
-              <WizardProgress currentStep={currentStep} steps={steps} onStepClick={setCurrentStep} />
+              <WizardProgress currentStep={currentStep} steps={steps} onStepClick={setCurrentStep} stepErrors={stepErrors} />
             </motion.div>
 
             {/* Step Content */}
@@ -285,7 +292,7 @@ function AgencyWizardContent() {
                     </Button>
                     <Button
                       onClick={handleSubmitForReview}
-                      disabled={isSubmitting || !canGoNextAgency || !assignedAgentId}
+                      disabled={isSubmitting || getAllErrors().length > 0 || !assignedAgentId}
                       className="gap-2 rounded-xl h-11 px-6"
                     >
                       {isSubmitting ? (
@@ -302,7 +309,7 @@ function AgencyWizardContent() {
                 ) : (
                   <Button
                     onClick={goNext}
-                    disabled={!canGoNextAgency}
+                    disabled={currentStep === 0 && !assignedAgentId}
                     className="rounded-xl h-11 px-6"
                   >
                     Next

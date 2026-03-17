@@ -58,7 +58,14 @@ const statusConfig: Record<VerificationStatus, {
 function AgencyEditWizardContent({ propertyId }: { propertyId: string }) {
   const navigate = useNavigate();
   const { data: property, isLoading } = useProperty(propertyId);
-  const { data, currentStep, setCurrentStep, goNext, goBack, canGoNext, isLastStep, loadFromSaved } = usePropertyWizard();
+  const { data, currentStep, setCurrentStep, goNext, goBack, isLastStep, loadFromSaved, getStepErrors, getAllErrors } = usePropertyWizard();
+
+  // Compute step errors for progress bar
+  const stepErrors: Record<number, number> = {};
+  for (let i = 0; i < 5; i++) {
+    const errs = getStepErrors(i);
+    if (errs.length > 0) stepErrors[i] = errs.length;
+  }
   const updateProperty = useUpdatePropertyForAgency();
   const submitForReview = useSubmitForReview();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -268,7 +275,7 @@ function AgencyEditWizardContent({ propertyId }: { propertyId: string }) {
 
             {/* Progress */}
             <motion.div variants={itemVariants}>
-              <WizardProgress currentStep={currentStep} steps={steps} onStepClick={setCurrentStep} />
+              <WizardProgress currentStep={currentStep} steps={steps} onStepClick={setCurrentStep} stepErrors={stepErrors} />
             </motion.div>
 
             {/* Step Content */}
@@ -310,7 +317,7 @@ function AgencyEditWizardContent({ propertyId }: { propertyId: string }) {
                       Save Changes
                     </Button>
                     {canResubmit && (
-                      <Button onClick={handleSubmitForReview} disabled={isSubmitting || !canGoNext} className="gap-2 rounded-xl h-11 px-6">
+                      <Button onClick={handleSubmitForReview} disabled={isSubmitting || getAllErrors().length > 0} className="gap-2 rounded-xl h-11 px-6">
                         {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : (
                           <>
                             <Send className="h-4 w-4" />
@@ -321,7 +328,7 @@ function AgencyEditWizardContent({ propertyId }: { propertyId: string }) {
                     )}
                   </div>
                 ) : (
-                  <Button onClick={goNext} disabled={!canGoNext} className="rounded-xl h-11 px-6">
+                  <Button onClick={goNext} className="rounded-xl h-11 px-6">
                     Next
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>

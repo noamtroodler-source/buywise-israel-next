@@ -8,14 +8,18 @@ import {
   Thermometer, CheckCircle, Edit2, Eye
 } from 'lucide-react';
 import { PropertyPreviewDialog } from './PropertyPreviewDialog';
+import { ValidationSummary } from './ValidationSummary';
 
 interface StepReviewProps {
   onEditStep: (step: number) => void;
+  stepOffset?: number;
 }
 
-export function StepReview({ onEditStep }: StepReviewProps) {
-  const { data } = usePropertyWizard();
+export function StepReview({ onEditStep, stepOffset = 0 }: StepReviewProps) {
+  const { data, getAllErrors } = usePropertyWizard();
   const [showPreview, setShowPreview] = useState(false);
+
+  const allErrors = getAllErrors();
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('he-IL', {
@@ -66,6 +70,9 @@ export function StepReview({ onEditStep }: StepReviewProps) {
         </Button>
       </div>
 
+      {/* Validation Summary */}
+      <ValidationSummary errors={allErrors} onGoToStep={onEditStep} stepOffset={stepOffset} />
+
       <PropertyPreviewDialog open={showPreview} onOpenChange={setShowPreview} />
 
       {/* Preview Card */}
@@ -102,7 +109,7 @@ export function StepReview({ onEditStep }: StepReviewProps) {
                 <p className="text-sm text-muted-foreground">/month</p>
               )}
             </div>
-            <Button variant="ghost" size="sm" onClick={() => onEditStep(0)} className="rounded-lg">
+            <Button variant="ghost" size="sm" onClick={() => onEditStep(0 + stepOffset)} className="rounded-lg">
               <Edit2 className="h-4 w-4" />
             </Button>
           </div>
@@ -135,7 +142,7 @@ export function StepReview({ onEditStep }: StepReviewProps) {
                 <span>{data.parking} parking</span>
               </div>
             )}
-            <Button variant="ghost" size="sm" onClick={() => onEditStep(1)} className="rounded-lg ml-auto">
+            <Button variant="ghost" size="sm" onClick={() => onEditStep(1 + stepOffset)} className="rounded-lg ml-auto">
               <Edit2 className="h-4 w-4" />
             </Button>
           </div>
@@ -152,7 +159,7 @@ export function StepReview({ onEditStep }: StepReviewProps) {
           <div>
             <div className="flex items-center justify-between mb-3">
               <h4 className="font-semibold">Features</h4>
-              <Button variant="ghost" size="sm" onClick={() => onEditStep(2)} className="rounded-lg">
+              <Button variant="ghost" size="sm" onClick={() => onEditStep(2 + stepOffset)} className="rounded-lg">
                 <Edit2 className="h-4 w-4" />
               </Button>
             </div>
@@ -182,7 +189,7 @@ export function StepReview({ onEditStep }: StepReviewProps) {
           <div>
             <div className="flex items-center justify-between mb-3">
               <h4 className="font-semibold">Photos ({data.images.length})</h4>
-              <Button variant="ghost" size="sm" onClick={() => onEditStep(3)} className="rounded-lg">
+              <Button variant="ghost" size="sm" onClick={() => onEditStep(3 + stepOffset)} className="rounded-lg">
                 <Edit2 className="h-4 w-4" />
               </Button>
             </div>
@@ -202,7 +209,7 @@ export function StepReview({ onEditStep }: StepReviewProps) {
           <div>
             <div className="flex items-center justify-between mb-3">
               <h4 className="font-semibold">Description</h4>
-              <Button variant="ghost" size="sm" onClick={() => onEditStep(4)} className="rounded-lg">
+              <Button variant="ghost" size="sm" onClick={() => onEditStep(4 + stepOffset)} className="rounded-lg">
                 <Edit2 className="h-4 w-4" />
               </Button>
             </div>

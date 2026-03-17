@@ -49,7 +49,14 @@ interface WizardMetadata {
 
 function WizardContent() {
   const navigate = useNavigate();
-  const { data, currentStep, setCurrentStep, goNext, goBack, canGoNext, isLastStep, loadFromSaved } = usePropertyWizard();
+  const { data, currentStep, setCurrentStep, goNext, goBack, canGoNext, isLastStep, loadFromSaved, getStepErrors, getAllErrors } = usePropertyWizard();
+
+  // Compute step errors for progress bar
+  const stepErrors: Record<number, number> = {};
+  for (let i = 0; i < 5; i++) {
+    const errs = getStepErrors(i);
+    if (errs.length > 0) stepErrors[i] = errs.length;
+  }
   const { data: agentProfile } = useAgentProfile();
   const createProperty = useCreateProperty();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -233,7 +240,7 @@ function WizardContent() {
 
             {/* Progress */}
             <motion.div variants={itemVariants}>
-              <WizardProgress currentStep={currentStep} steps={steps} onStepClick={setCurrentStep} />
+              <WizardProgress currentStep={currentStep} steps={steps} onStepClick={setCurrentStep} stepErrors={stepErrors} />
             </motion.div>
 
             {/* Step Content */}
@@ -296,7 +303,7 @@ function WizardContent() {
                              <span>
                                <Button
                                  onClick={handleSubmitForReview}
-                                 disabled={isSubmitting || !canGoNext || !isAgentVerified || !canCreateListing || (isOverLimit && !overageAccepted)}
+                                 disabled={isSubmitting || getAllErrors().length > 0 || !isAgentVerified || !canCreateListing || (isOverLimit && !overageAccepted)}
                                  className="gap-2 rounded-xl h-11 px-6"
                                >
                                  {isSubmitting ? (
@@ -322,7 +329,6 @@ function WizardContent() {
                   ) : (
                     <Button
                       onClick={goNext}
-                      disabled={!canGoNext}
                       className="rounded-xl h-11 px-6"
                     >
                       Next

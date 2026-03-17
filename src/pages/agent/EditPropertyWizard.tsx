@@ -95,7 +95,14 @@ interface EditWizardContentProps {
 function EditWizardContent({ propertyId }: EditWizardContentProps) {
   const navigate = useNavigate();
   const { data: property, isLoading } = useProperty(propertyId);
-  const { data, currentStep, setCurrentStep, goNext, goBack, canGoNext, isLastStep, loadFromSaved, updateData } = usePropertyWizard();
+  const { data, currentStep, setCurrentStep, goNext, goBack, isLastStep, loadFromSaved, updateData, getStepErrors, getAllErrors } = usePropertyWizard();
+
+  // Compute step errors for progress bar
+  const stepErrors: Record<number, number> = {};
+  for (let i = 0; i < 5; i++) {
+    const errs = getStepErrors(i);
+    if (errs.length > 0) stepErrors[i] = errs.length;
+  }
   const { data: agentProfile } = useAgentProfile();
   const updateProperty = useUpdateProperty();
   const submitForReview = useSubmitForReview();
@@ -390,7 +397,7 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
 
             {/* Progress */}
             <motion.div variants={itemVariants}>
-              <WizardProgress currentStep={currentStep} steps={steps} onStepClick={setCurrentStep} />
+              <WizardProgress currentStep={currentStep} steps={steps} onStepClick={setCurrentStep} stepErrors={stepErrors} />
             </motion.div>
 
             {/* Step Content */}
@@ -454,7 +461,7 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
                               <span>
                                 <Button
                                   onClick={handleSubmitForReview}
-                                  disabled={isSubmitting || !canGoNext || !isAgentVerified || !canCreateListing}
+                                  disabled={isSubmitting || getAllErrors().length > 0 || !isAgentVerified || !canCreateListing}
                                   className="gap-2 rounded-xl h-11 px-6"
                                 >
                                   {isSubmitting ? (
@@ -480,7 +487,6 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
                   ) : (
                     <Button
                       onClick={goNext}
-                      disabled={!canGoNext}
                       className="rounded-xl h-11 px-6"
                     >
                       Next
