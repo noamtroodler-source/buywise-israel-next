@@ -4,10 +4,12 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Mail, MessageCircle, CheckCircle, ExternalLink, Building2, Globe, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useState } from 'react';
 import { trackProjectInquiry } from '@/hooks/useProjectInquiryTracking';
 import { useAuth } from '@/hooks/useAuth';
 import { buildWhatsAppUrl, openWhatsApp } from '@/lib/whatsapp';
 import { PermissionStatement } from '@/components/shared/PermissionStatement';
+import { InquiryModal, InquiryChannel, InquiryFormData } from '@/components/shared/InquiryModal';
 
 interface RepresentingAgent {
   id: string;
@@ -31,43 +33,42 @@ interface ProjectAgentCardProps {
 
 export function ProjectAgentCard({ agent, projectName, projectId, developerId }: ProjectAgentCardProps) {
   const { user } = useAuth();
+  const [inquiryChannel, setInquiryChannel] = useState<InquiryChannel | null>(null);
 
-  const whatsappMessage = projectName 
-    ? `Hi ${agent.name}, I'm interested in ${projectName} and would like more information.`
-    : `Hi ${agent.name}, I'm interested in learning more about a project you represent.`;
+  const canWhatsApp = !!(agent.phone);
 
-  const whatsappUrl = agent.phone 
-    ? buildWhatsAppUrl(agent.phone, whatsappMessage)
-    : '';
+  const handleInquirySubmit = (data: InquiryFormData) => {
+    const channel = inquiryChannel!;
+    setInquiryChannel(null);
 
-  const handleWhatsAppClick = () => {
     if (projectId && developerId) {
       trackProjectInquiry({
         projectId,
         developerId,
-        inquiryType: 'whatsapp',
+        inquiryType: channel,
         projectName,
         userId: user?.id,
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        message: data.message,
+        buyerContextSnapshot: data.buyerContextSnapshot,
       });
     }
-    openWhatsApp(whatsappUrl);
-  };
 
-  const handleEmail = () => {
-    // Track inquiry
-    if (projectId && developerId) {
-      trackProjectInquiry({
-        projectId,
-        developerId,
-        inquiryType: 'email',
-        projectName,
-        userId: user?.id,
-      });
+    if (channel === 'whatsapp' && agent.phone) {
+      const whatsappMessage = data.message || (projectName 
+        ? `Hi ${agent.name}, I'm interested in ${projectName} and would like more information.`
+        : `Hi ${agent.name}, I'm interested in learning more about a project you represent.`);
+      const url = buildWhatsAppUrl(agent.phone, whatsappMessage);
+      openWhatsApp(url);
+    } else if (channel === 'email') {
+      const subject = projectName 
+        ? `Inquiry about ${projectName}`
+        : 'Project Inquiry';
+      const body = data.message || '';
+      window.location.href = `mailto:${agent.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     }
-    const subject = projectName 
-      ? `Inquiry about ${projectName}`
-      : 'Project Inquiry';
-    window.location.href = `mailto:${agent.email}?subject=${encodeURIComponent(subject)}`;
   };
 
   const initials = agent.name
@@ -78,101 +79,115 @@ export function ProjectAgentCard({ agent, projectName, projectId, developerId }:
     .slice(0, 2);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg flex items-center gap-2">
-          <MessageCircle className="h-5 w-5 text-primary" />
-          Your Sales Contact
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Agent Info */}
-        <div className="flex items-start gap-4">
-          <Avatar className="h-16 w-16 ring-2 ring-border">
-            <AvatarImage 
-              src={agent.avatar_url || undefined} 
-              alt={agent.name}
-              className="object-cover"
-            />
-            <AvatarFallback className="bg-gradient-to-br from-primary/10 to-primary/20 text-primary font-semibold text-lg">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="font-semibold text-foreground">{agent.name}</h3>
-              {agent.is_verified && (
-                <Badge variant="secondary" className="gap-1">
-                  <CheckCircle className="h-3 w-3" />
-                  Verified
-                </Badge>
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <MessageCircle className="h-5 w-5 text-primary" />
+            Your Sales Contact
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Agent Info */}
+          <div className="flex items-start gap-4">
+            <Avatar className="h-16 w-16 ring-2 ring-border">
+              <AvatarImage 
+                src={agent.avatar_url || undefined} 
+                alt={agent.name}
+                className="object-cover"
+              />
+              <AvatarFallback className="bg-gradient-to-br from-primary/10 to-primary/20 text-primary font-semibold text-lg">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="font-semibold text-foreground">{agent.name}</h3>
+                {agent.is_verified && (
+                  <Badge variant="secondary" className="gap-1">
+                    <CheckCircle className="h-3 w-3" />
+                    Verified
+                  </Badge>
+                )}
+              </div>
+              {agent.agency_name && (
+                <p className="text-sm text-muted-foreground flex items-center gap-1 mt-0.5">
+                  <Building2 className="h-3.5 w-3.5" />
+                  {agent.agency_name}
+                </p>
               )}
-            </div>
-            {agent.agency_name && (
-              <p className="text-sm text-muted-foreground flex items-center gap-1 mt-0.5">
-                <Building2 className="h-3.5 w-3.5" />
-                {agent.agency_name}
-              </p>
-            )}
-            <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
-              {agent.years_experience && (
-                <span className="flex items-center gap-1">
-                  <Clock className="h-3.5 w-3.5" />
-                  {agent.years_experience} years exp.
-                </span>
-              )}
-              {agent.languages && agent.languages.length > 0 && (
-                <span className="flex items-center gap-1">
-                  <Globe className="h-3.5 w-3.5" />
-                  {agent.languages.slice(0, 2).join(', ')}
-                </span>
-              )}
+              <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
+                {agent.years_experience && (
+                  <span className="flex items-center gap-1">
+                    <Clock className="h-3.5 w-3.5" />
+                    {agent.years_experience} years exp.
+                  </span>
+                )}
+                {agent.languages && agent.languages.length > 0 && (
+                  <span className="flex items-center gap-1">
+                    <Globe className="h-3.5 w-3.5" />
+                    {agent.languages.slice(0, 2).join(', ')}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Bio */}
-        {agent.bio && (
-          <p className="text-sm text-muted-foreground line-clamp-2">
-            {agent.bio}
-          </p>
-        )}
-
-        {/* Contact Buttons */}
-        <div className="grid grid-cols-2 gap-2">
-          {agent.phone && whatsappUrl && (
-            <Button onClick={handleWhatsAppClick} className="gap-2">
-              <MessageCircle className="h-4 w-4" />
-              WhatsApp
-            </Button>
+          {/* Bio */}
+          {agent.bio && (
+            <p className="text-sm text-muted-foreground line-clamp-2">
+              {agent.bio}
+            </p>
           )}
-          <Button 
-            variant="outline" 
-            onClick={handleEmail} 
-            className={agent.phone ? "" : "col-span-2"}
+
+          {/* Contact Buttons */}
+          <div className="grid grid-cols-2 gap-2">
+            {canWhatsApp && (
+              <Button onClick={() => setInquiryChannel('whatsapp')} className="gap-2">
+                <MessageCircle className="h-4 w-4" />
+                WhatsApp
+              </Button>
+            )}
+            <Button 
+              variant="outline" 
+              onClick={() => setInquiryChannel('email')} 
+              className={canWhatsApp ? "" : "col-span-2"}
+            >
+              <Mail className="h-4 w-4 mr-2" />
+              Email
+            </Button>
+          </div>
+
+          {/* Link to Agent Profile */}
+          <Link 
+            to={`/agents/${agent.id}`}
+            className="flex items-center justify-center gap-1 text-sm text-primary hover:underline pt-2"
           >
-            <Mail className="h-4 w-4 mr-2" />
-            Email
-          </Button>
-        </div>
+            View Agent Profile
+            <ExternalLink className="h-3.5 w-3.5" />
+          </Link>
 
-        {/* Link to Agent Profile */}
-        <Link 
-          to={`/agents/${agent.id}`}
-          className="flex items-center justify-center gap-1 text-sm text-primary hover:underline pt-2"
-        >
-          View Agent Profile
-          <ExternalLink className="h-3.5 w-3.5" />
-        </Link>
+          {/* Permission Statement */}
+          <PermissionStatement 
+            variant="inline"
+            showSaveButton={false}
+            guideLink="/guides/new-vs-resale"
+            guideLinkText="Read the guide first"
+          />
+        </CardContent>
+      </Card>
 
-        {/* Permission Statement */}
-        <PermissionStatement 
-          variant="inline"
-          showSaveButton={false}
-          guideLink="/guides/new-vs-resale"
-          guideLinkText="Read the guide first"
+      {/* Inquiry Modal */}
+      {inquiryChannel && (
+        <InquiryModal
+          isOpen={true}
+          onClose={() => setInquiryChannel(null)}
+          channel={inquiryChannel}
+          agentName={agent.name}
+          propertyTitle={projectName || 'this project'}
+          onSubmit={handleInquirySubmit}
         />
-      </CardContent>
-    </Card>
+      )}
+    </>
   );
 }
