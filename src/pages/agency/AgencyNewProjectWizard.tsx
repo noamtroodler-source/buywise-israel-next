@@ -252,7 +252,7 @@ function AgencyProjectWizardContent() {
                             <span>
                               <Button
                                 onClick={handleSubmitForReview}
-                                disabled={isSubmitting || !canGoNextAgency || !assignedAgentId || !isAgencyVerified}
+                                disabled={isSubmitting || getAllErrors().length > 0 || !assignedAgentId || !isAgencyVerified}
                                 className="gap-2 rounded-xl h-11 px-6"
                               >
                                 {isSubmitting ? (
