@@ -275,10 +275,11 @@ export default function CityDetail() {
 
         {/* 3. Market Overview */}
         <MarketOverviewCards
-          cityData={city}
-          medianPrice={medianPrice}
-          grossYield={grossYield}
-          yoyChange={yoyChange}
+          cityName={city.name}
+          arnonaRateSqm={city.arnona_rate_sqm}
+          dataSources={(city as any).data_sources}
+          lastVerified={city.updated_at}
+          cityData={{ average_price_sqm: city.average_price_sqm }}
         />
 
         {/* 4. Price History */}
