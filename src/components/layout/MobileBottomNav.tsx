@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, Heart, Menu, X, Building, User, ChevronRight, LayoutDashboard, FileText, MessageSquare, Settings, Users, Landmark, UserCircle } from 'lucide-react';
+import { Home, Search, Heart, Menu, X, Building, User, ChevronRight, LayoutDashboard, FileText, MessageSquare, Settings, Users, Landmark, UserCircle, BarChart3 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useFavoritesContext } from '@/contexts/FavoritesContext';
