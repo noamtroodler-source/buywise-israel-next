@@ -311,7 +311,7 @@ function EditWizardContent({ projectId }: { projectId: string }) {
 
           {/* Progress */}
           <motion.div variants={itemVariants}>
-            <WizardProgress currentStep={currentStep} steps={steps} onStepClick={setCurrentStep} />
+            <WizardProgress currentStep={currentStep} steps={steps} onStepClick={setCurrentStep} stepErrors={Object.fromEntries(steps.map((_, i) => [i, getStepErrors(i).length]).filter(([, c]) => c > 0))} />
           </motion.div>
 
           {/* Step Content */}
