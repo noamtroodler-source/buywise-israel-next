@@ -7,6 +7,7 @@ import { useProperties } from '@/hooks/useProperties';
 import { useCityMarketFactors } from '@/hooks/useCityMarketFactors';
 import { useCityNeighborhoods } from '@/hooks/useCityNeighborhoods';
 import { getDistrictForCity } from '@/lib/utils/districtMapping';
+import { useNeighborhoodPriceTable } from '@/hooks/useNeighborhoodPriceTable';
 // New guide-style components
 import { CityHeroGuide } from '@/components/city/CityHeroGuide';
 import { CitySourceAttribution } from '@/components/city/CitySourceAttribution';
