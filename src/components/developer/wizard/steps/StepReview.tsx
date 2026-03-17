@@ -92,6 +92,14 @@ export function StepReview({ onEditStep }: StepReviewProps) {
 
       <ProjectPreviewDialog open={showPreview} onOpenChange={setShowPreview} />
 
+      {allErrors.length > 0 && (
+        <ValidationSummary
+          errors={allErrors}
+          onGoToStep={onEditStep}
+          stepOffset={stepOffset}
+        />
+      )}
+
       {/* Featured Selling Point Preview */}
       {data.featured_highlight && (
         <div className="flex items-center gap-2 border-l-2 border-primary/40 pl-3">
