@@ -69,16 +69,14 @@ export function StepBasics() {
           <div>
             <h3 className="font-semibold text-sm mb-1">Quality Standards</h3>
             <p className="text-sm text-muted-foreground mb-2">
-              BuyWise Israel maintains high listing standards to ensure the best experience for buyers. All listings are reviewed before publication.
+              All listings are reviewed before publication. To speed up approval:
             </p>
-            <div className="text-xs text-muted-foreground space-y-0.5">
-              <p className="font-medium text-foreground/80">Listings may be returned for revision if:</p>
-              <ul className="list-disc list-inside ml-1 space-y-0.5">
-                <li>Photos are low quality or insufficient</li>
-                <li>Description contains errors or lacks detail</li>
-                <li>Information appears incomplete or inaccurate</li>
-              </ul>
-            </div>
+            <ul className="text-xs text-muted-foreground list-disc list-inside ml-1 space-y-0.5">
+              <li>Use high-resolution photos (exterior, interior, amenities)</li>
+              <li>Write a detailed description highlighting key selling points</li>
+              <li>Include unit types with accurate pricing and floor plans</li>
+              <li>Ensure address and map pin are accurate</li>
+            </ul>
           </div>
         </div>
       </div>
