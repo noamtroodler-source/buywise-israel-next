@@ -487,7 +487,6 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
                   ) : (
                     <Button
                       onClick={goNext}
-                      disabled={!canGoNext}
                       className="rounded-xl h-11 px-6"
                     >
                       Next
