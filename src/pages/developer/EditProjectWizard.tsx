@@ -120,7 +120,7 @@ function EditWizardContent({ projectId }: { projectId: string }) {
   const updateProjectWithUnits = useUpdateProjectWithUnits();
   const submitForReview = useSubmitProjectForReview();
   
-  const { data, currentStep, setCurrentStep, goNext, goBack, canGoNext, isLastStep, loadFromSaved } = useProjectWizard();
+  const { data, currentStep, setCurrentStep, goNext, goBack, canGoNext, isLastStep, loadFromSaved, getStepErrors, getAllErrors } = useProjectWizard();
   const [hasLoaded, setHasLoaded] = useState(false);
 
   // Load project data and units into wizard context
