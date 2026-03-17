@@ -49,7 +49,14 @@ interface WizardMetadata {
 
 function WizardContent() {
   const navigate = useNavigate();
-  const { data, currentStep, setCurrentStep, goNext, goBack, canGoNext, isLastStep, loadFromSaved } = usePropertyWizard();
+  const { data, currentStep, setCurrentStep, goNext, goBack, canGoNext, isLastStep, loadFromSaved, getStepErrors, getAllErrors } = usePropertyWizard();
+
+  // Compute step errors for progress bar
+  const stepErrors: Record<number, number> = {};
+  for (let i = 0; i < 5; i++) {
+    const errs = getStepErrors(i);
+    if (errs.length > 0) stepErrors[i] = errs.length;
+  }
   const { data: agentProfile } = useAgentProfile();
   const createProperty = useCreateProperty();
   const [isSubmitting, setIsSubmitting] = useState(false);
