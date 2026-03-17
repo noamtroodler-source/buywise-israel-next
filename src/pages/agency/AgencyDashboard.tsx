@@ -4,7 +4,7 @@ import {
   Building2, Users, Home, Eye, Plus, Loader2, 
   Settings, ExternalLink, ArrowLeft, BadgeCheck, Clock,
   FileText, Megaphone, PenLine, CreditCard, Star,
-  BarChart3, AlertCircle
+  BarChart3, AlertCircle, Info
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
