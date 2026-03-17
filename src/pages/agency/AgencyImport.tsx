@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import {
   ArrowLeft, Globe, Loader2, Download, CheckCircle2,
   XCircle, AlertCircle, FileText, RefreshCw, Trash2,
-  Info, MinusCircle, ShieldAlert, Eye, ToggleLeft, Lightbulb,
+  Info, MinusCircle, ShieldAlert, ToggleLeft, Lightbulb,
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -471,20 +471,12 @@ export default function AgencyImport() {
                   )}
 
                   {doneCount > 0 && (
-                    <>
-                      <Button variant="outline" asChild className="rounded-xl">
-                        <Link to={`/agency/import/${currentJob!.id}/review`}>
-                          <Eye className="h-4 w-4 mr-2" />
-                          Review Imported ({doneCount})
-                        </Link>
-                      </Button>
-                      <Button variant="outline" asChild className="rounded-xl">
-                        <Link to="/agency/listings">
-                          <FileText className="h-4 w-4 mr-2" />
-                          View Drafts
-                        </Link>
-                      </Button>
-                    </>
+                    <Button variant="outline" asChild className="rounded-xl">
+                      <Link to="/agency/listings">
+                        <FileText className="h-4 w-4 mr-2" />
+                        View Imported Drafts ({doneCount})
+                      </Link>
+                    </Button>
                   )}
                 </div>
 

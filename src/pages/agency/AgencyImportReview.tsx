@@ -1,159 +1,29 @@
-import { useState, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft, Loader2, CheckCircle2, XCircle, AlertTriangle,
-  Filter, SkipForward, ImageOff, AlertCircle, Copy,
+  ExternalLink, ChevronDown,
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useMyAgency } from '@/hooks/useAgencyManagement';
 import {
   useImportJobItems,
   useImportJobs,
-  useApproveItem,
-  useSkipItem,
-  ImportJobItem,
 } from '@/hooks/useImportListings';
-import { ImportReviewCard } from '@/components/agency/ImportReviewCard';
 import { useRealtimeImportProgress } from '@/hooks/useRealtimeImportProgress';
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
-
-type FilterTab = 'all' | 'pending' | 'done' | 'failed' | 'low_confidence' | 'no_photos' | 'duplicates' | 'needs_attention';
 
 export default function AgencyImportReview() {
   const { jobId } = useParams<{ jobId: string }>();
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
   const { data: agency, isLoading: agencyLoading } = useMyAgency();
   const { data: jobs = [] } = useImportJobs(agency?.id);
   const { data: items = [], isLoading: itemsLoading } = useImportJobItems(jobId);
   useRealtimeImportProgress(jobId);
-  const approveMutation = useApproveItem();
-  const skipMutation = useSkipItem();
-  const [filterTab, setFilterTab] = useState<FilterTab>('all');
-  const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
 
   const job = jobs.find(j => j.id === jobId);
-
-  const getConfidence = (i: ImportJobItem) => i.confidence_score ?? i.extracted_data?.confidence_score ?? 0;
-  const getPhotoCount = (i: ImportJobItem) => i.extracted_data?.image_urls?.length || 0;
-  const hasDuplicate = (i: ImportJobItem) => !!i.extracted_data?.cross_source_match_id;
-  const hasWarnings = (i: ImportJobItem) => (i.extracted_data?.validation_warnings?.length || 0) > 0;
-
-  const needsAttention = (i: ImportJobItem) =>
-    i.status === 'pending' && (
-      getConfidence(i) < 60 ||
-      getPhotoCount(i) === 0 ||
-      hasDuplicate(i) ||
-      hasWarnings(i)
-    );
-
-  const filteredItems = useMemo(() => {
-    switch (filterTab) {
-      case 'pending': return items.filter(i => ['pending', 'processing'].includes(i.status));
-      case 'done': return items.filter(i => i.status === 'done');
-      case 'failed': return items.filter(i => ['failed', 'skipped'].includes(i.status));
-      case 'low_confidence': return items.filter(i => i.status === 'pending' && getConfidence(i) < 60);
-      case 'no_photos': return items.filter(i => i.status === 'pending' && getPhotoCount(i) === 0);
-      case 'duplicates': return items.filter(i => hasDuplicate(i));
-      case 'needs_attention': return items.filter(i => needsAttention(i));
-      default: return items;
-    }
-  }, [items, filterTab]);
-
-  const counts = useMemo(() => ({
-    all: items.length,
-    pending: items.filter(i => ['pending', 'processing'].includes(i.status)).length,
-    done: items.filter(i => i.status === 'done').length,
-    failed: items.filter(i => ['failed', 'skipped'].includes(i.status)).length,
-    low_confidence: items.filter(i => i.status === 'pending' && getConfidence(i) < 60).length,
-    no_photos: items.filter(i => i.status === 'pending' && getPhotoCount(i) === 0).length,
-    duplicates: items.filter(i => hasDuplicate(i)).length,
-    needs_attention: items.filter(i => needsAttention(i)).length,
-  }), [items]);
-
-  // Merge duplicate mutation
-  const mergeMutation = useMutation({
-    mutationFn: async ({ winnerId, loserId, pairId }: { winnerId: string; loserId: string; pairId: string }) => {
-      const { error } = await supabase.rpc('merge_properties', {
-        p_winner_id: winnerId,
-        p_loser_id: loserId,
-        p_pair_id: pairId,
-        p_admin_id: user?.id ?? '',
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success('Properties merged successfully');
-      queryClient.invalidateQueries({ queryKey: ['importJobItems'] });
-    },
-    onError: (err: Error) => toast.error(`Merge failed: ${err.message}`),
-  });
-
-  // Dismiss duplicate mutation
-  const dismissDuplicateMutation = useMutation({
-    mutationFn: async (pairId: string) => {
-      const { error } = await supabase
-        .from('duplicate_pairs')
-        .update({ status: 'dismissed', resolved_by: user?.id, resolved_at: new Date().toISOString() })
-        .eq('id', pairId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success('Duplicate dismissed');
-      queryClient.invalidateQueries({ queryKey: ['importJobItems'] });
-    },
-    onError: (err: Error) => toast.error(`Dismiss failed: ${err.message}`),
-  });
-
-  const handleApprove = (item: ImportJobItem, editedData?: any) => {
-    const data = editedData || item.extracted_data;
-    approveMutation.mutate({ itemId: item.id, extractedData: data });
-  };
-
-  const handleSkip = (item: ImportJobItem) => {
-    skipMutation.mutate(item.id);
-  };
-
-  const handleBulkApprove = () => {
-    const highConfidence = items.filter(
-      i => i.status === 'pending' && getConfidence(i) >= 80
-    );
-    if (highConfidence.length === 0) return;
-    for (const item of highConfidence) {
-      approveMutation.mutate({ itemId: item.id, extractedData: item.extracted_data });
-    }
-  };
-
-  const handleBulkSkipLow = () => {
-    const lowConfidence = items.filter(
-      i => i.status === 'pending' && getConfidence(i) < 40
-    );
-    if (lowConfidence.length === 0) return;
-    for (const item of lowConfidence) {
-      skipMutation.mutate(item.id);
-    }
-  };
-
-  const handleMergeDuplicate = (winnerId: string, loserId: string, pairId: string) => {
-    mergeMutation.mutate({ winnerId, loserId, pairId });
-  };
-
-  const handleDismissDuplicate = (pairId: string) => {
-    dismissDuplicateMutation.mutate(pairId);
-  };
 
   if (agencyLoading || itemsLoading) {
     return (
@@ -165,17 +35,15 @@ export default function AgencyImportReview() {
     );
   }
 
-  const highConfidenceCount = items.filter(
-    i => i.status === 'pending' && getConfidence(i) >= 80
-  ).length;
-
-  const lowConfidenceCount = items.filter(
-    i => i.status === 'pending' && getConfidence(i) < 40
-  ).length;
+  const doneCount = items.filter(i => i.status === 'done').length;
+  const failedCount = items.filter(i => i.status === 'failed').length;
+  const skippedCount = items.filter(i => i.status === 'skipped').length;
+  const pendingCount = items.filter(i => ['pending', 'processing'].includes(i.status)).length;
+  const failedItems = items.filter(i => i.status === 'failed');
 
   return (
     <Layout>
-      <div className="container py-8 max-w-5xl">
+      <div className="container py-8 max-w-3xl">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
           {/* Header */}
           <div className="flex items-center gap-4">
@@ -183,145 +51,112 @@ export default function AgencyImportReview() {
               <Link to="/agency/import"><ArrowLeft className="h-4 w-4" /></Link>
             </Button>
             <div className="flex-1">
-              <h1 className="text-2xl font-bold">Review Imported Listings</h1>
+              <h1 className="text-2xl font-bold">Import Summary</h1>
               {job && (
-                <p className="text-muted-foreground text-sm">
-                  {job.website_url} · {items.length} items
-                </p>
+                <p className="text-muted-foreground text-sm">{job.website_url}</p>
               )}
             </div>
           </div>
 
-          {/* Stats + Bulk Actions */}
-          <Card className="rounded-2xl border-primary/10">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between flex-wrap gap-4">
-                <div className="flex gap-4">
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-green-600">{counts.done}</p>
-                    <p className="text-xs text-muted-foreground">Approved</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-yellow-600">{counts.pending}</p>
-                    <p className="text-xs text-muted-foreground">Pending</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-red-500">{counts.failed}</p>
-                    <p className="text-xs text-muted-foreground">Failed/Skipped</p>
-                  </div>
-                </div>
-                <div className="flex gap-2 flex-wrap">
-                  {highConfidenceCount > 0 && (
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button className="rounded-xl" size="sm" disabled={approveMutation.isPending}>
-                          <CheckCircle2 className="h-4 w-4 mr-2" />
-                          Approve High Confidence ({highConfidenceCount})
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Bulk Approve Listings</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This will approve {highConfidenceCount} listings with confidence ≥80%. They will be published immediately. This action cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={handleBulkApprove}>
-                            Approve {highConfidenceCount} Listings
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  )}
-                  {lowConfidenceCount > 0 && (
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="outline" className="rounded-xl" size="sm" disabled={skipMutation.isPending}>
-                          <SkipForward className="h-4 w-4 mr-2" />
-                          Skip Low Confidence ({lowConfidenceCount})
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Bulk Skip Listings</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This will skip {lowConfidenceCount} listings with confidence &lt;40%. They won't be imported. You can review them individually later.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={handleBulkSkipLow}>
-                            Skip {lowConfidenceCount} Listings
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Stats */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <Card className="rounded-2xl border-primary/10">
+              <CardContent className="p-4 text-center">
+                <CheckCircle2 className="h-5 w-5 text-green-600 mx-auto mb-1" />
+                <p className="text-2xl font-bold">{doneCount}</p>
+                <p className="text-xs text-muted-foreground">Imported as Drafts</p>
+              </CardContent>
+            </Card>
+            <Card className="rounded-2xl border-primary/10">
+              <CardContent className="p-4 text-center">
+                <XCircle className="h-5 w-5 text-red-500 mx-auto mb-1" />
+                <p className="text-2xl font-bold">{failedCount}</p>
+                <p className="text-xs text-muted-foreground">Failed</p>
+              </CardContent>
+            </Card>
+            <Card className="rounded-2xl border-primary/10">
+              <CardContent className="p-4 text-center">
+                <AlertTriangle className="h-5 w-5 text-yellow-500 mx-auto mb-1" />
+                <p className="text-2xl font-bold">{skippedCount}</p>
+                <p className="text-xs text-muted-foreground">Skipped</p>
+              </CardContent>
+            </Card>
+            <Card className="rounded-2xl border-primary/10">
+              <CardContent className="p-4 text-center">
+                <Loader2 className={`h-5 w-5 mx-auto mb-1 text-muted-foreground ${pendingCount > 0 ? 'animate-spin text-primary' : ''}`} />
+                <p className="text-2xl font-bold">{pendingCount}</p>
+                <p className="text-xs text-muted-foreground">Remaining</p>
+              </CardContent>
+            </Card>
+          </div>
 
-          {/* Filter Tabs */}
-          <Tabs value={filterTab} onValueChange={(v) => setFilterTab(v as FilterTab)}>
-            <TabsList className="rounded-xl flex-wrap h-auto gap-1 p-1">
-              <TabsTrigger value="all" className="rounded-lg text-xs">All ({counts.all})</TabsTrigger>
-              <TabsTrigger value="pending" className="rounded-lg text-xs">Pending ({counts.pending})</TabsTrigger>
-              <TabsTrigger value="done" className="rounded-lg text-xs">Approved ({counts.done})</TabsTrigger>
-              <TabsTrigger value="failed" className="rounded-lg text-xs">Failed ({counts.failed})</TabsTrigger>
-              {counts.needs_attention > 0 && (
-                <TabsTrigger value="needs_attention" className="rounded-lg text-xs">
-                  <AlertTriangle className="h-3 w-3 mr-1 text-orange-500" />
-                  Needs Attention ({counts.needs_attention})
-                </TabsTrigger>
-              )}
-              {counts.low_confidence > 0 && (
-                <TabsTrigger value="low_confidence" className="rounded-lg text-xs">
-                  <AlertCircle className="h-3 w-3 mr-1" />
-                  Low Conf ({counts.low_confidence})
-                </TabsTrigger>
-              )}
-              {counts.no_photos > 0 && (
-                <TabsTrigger value="no_photos" className="rounded-lg text-xs">
-                  <ImageOff className="h-3 w-3 mr-1" />
-                  No Photos ({counts.no_photos})
-                </TabsTrigger>
-              )}
-              {counts.duplicates > 0 && (
-                <TabsTrigger value="duplicates" className="rounded-lg text-xs">
-                  <Copy className="h-3 w-3 mr-1" />
-                  Duplicates ({counts.duplicates})
-                </TabsTrigger>
-              )}
-            </TabsList>
-          </Tabs>
+          {/* Primary CTA */}
+          {doneCount > 0 && (
+            <Card className="rounded-2xl border-green-500/20 bg-green-500/5">
+              <CardContent className="p-6 text-center space-y-3">
+                <CheckCircle2 className="h-8 w-8 text-green-600 mx-auto" />
+                <div>
+                  <p className="font-semibold text-lg">
+                    {doneCount} listing{doneCount !== 1 ? 's' : ''} imported as drafts
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Review and edit them in your listings page using the property wizard, then submit for review when ready.
+                  </p>
+                </div>
+                <Button asChild className="rounded-xl" size="lg">
+                  <Link to="/agency/listings">
+                    Go to Listings
+                    <ExternalLink className="h-4 w-4 ml-2" />
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+          )}
 
-          {/* Items List */}
-          <div className="space-y-4">
-            {filteredItems.length === 0 && (
-              <Card className="rounded-2xl">
-                <CardContent className="py-12 text-center text-muted-foreground">
-                  <Filter className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p>No items match this filter</p>
-                </CardContent>
+          {/* Failed items (collapsible) */}
+          {failedItems.length > 0 && (
+            <Collapsible>
+              <Card className="rounded-2xl border-red-500/10">
+                <CollapsibleTrigger asChild>
+                  <CardContent className="p-4 cursor-pointer hover:bg-muted/30 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <XCircle className="h-4 w-4 text-red-500" />
+                        <span className="font-medium text-sm">
+                          {failedItems.length} failed item{failedItems.length !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                  </CardContent>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="px-4 pb-4 space-y-2">
+                    {failedItems.map(item => (
+                      <div key={item.id} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 text-sm">
+                        <div className="flex-1 min-w-0">
+                          <p className="truncate text-muted-foreground font-mono text-xs">{item.url}</p>
+                          <p className="text-red-600 mt-0.5">{item.error_message || 'Unknown error'}</p>
+                        </div>
+                        <Badge variant="outline" className="text-xs shrink-0">
+                          {item.error_type || 'error'}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </CollapsibleContent>
               </Card>
-            )}
-            {filteredItems.map(item => (
-              <ImportReviewCard
-                key={item.id}
-                item={item}
-                isExpanded={expandedItemId === item.id}
-                onToggle={() => setExpandedItemId(expandedItemId === item.id ? null : item.id)}
-                onApprove={(editedData) => handleApprove(item, editedData)}
-                onSkip={() => handleSkip(item)}
-                isApproving={approveMutation.isPending}
-                isSkipping={skipMutation.isPending}
-                onMergeDuplicate={handleMergeDuplicate}
-                onDismissDuplicate={handleDismissDuplicate}
-              />
-            ))}
+            </Collapsible>
+          )}
+
+          {/* Back to import link */}
+          <div className="text-center">
+            <Button variant="ghost" asChild className="rounded-xl text-muted-foreground">
+              <Link to="/agency/import">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Import
+              </Link>
+            </Button>
           </div>
         </motion.div>
       </div>
