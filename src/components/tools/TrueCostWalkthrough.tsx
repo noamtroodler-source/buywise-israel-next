@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { getConstant, getVatMultiplier } from '@/lib/calculations/constants';
+import { useCalculatorConstants } from '@/hooks/useCalculatorConstants';
 import { 
   ArrowRight, ArrowLeft, CheckCircle2, Receipt,
   Calculator, Home, Landmark, Users, FileText, Download
