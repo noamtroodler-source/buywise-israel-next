@@ -28,9 +28,10 @@ interface CityQuickStatsProps {
   lastVerified?: string | null;
 }
 
-export function CityQuickStats({ cityData, dataSources, lastVerified }: CityQuickStatsProps) {
+export function CityQuickStats({ citySlug, cityData, dataSources, lastVerified }: CityQuickStatsProps) {
   const hasVerifiedData = !!(dataSources && Object.keys(dataSources).length > 0);
   const [selectedRooms, setSelectedRooms] = useState<number>(3);
+  const { data: verification } = useCityVerification(citySlug);
   
   const formatPriceHook = useFormatPrice();
   const currencySymbol = useCurrencySymbol();
