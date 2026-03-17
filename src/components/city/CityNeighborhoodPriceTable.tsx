@@ -171,15 +171,12 @@ function NeighborhoodDrawerTable({ rows, cityName }: { rows: NeighborhoodPriceRo
                       <SortIcon active={sortKey === 'yoy_change_percent'} direction={sortDir} />
                     </span>
                   </th>
-                  <th className="h-10 px-3 text-left align-middle font-medium text-muted-foreground min-w-[100px]">
-                    Tier
-                  </th>
                 </tr>
               </thead>
               <tbody className="[&_tr:last-child]:border-0">
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="p-6 text-center text-sm text-muted-foreground">
+                    <td colSpan={3} className="p-6 text-center text-sm text-muted-foreground">
                       No neighborhoods match "{search}"
                     </td>
                   </tr>
@@ -199,18 +196,6 @@ function NeighborhoodDrawerTable({ rows, cityName }: { rows: NeighborhoodPriceRo
                       </td>
                       <td className="p-3 align-middle text-right">
                         <TrendIndicator yoyChange={row.yoy_change_percent} />
-                      </td>
-                      <td className="p-3 align-middle">
-                        {row.price_tier ? (
-                          <Badge
-                            variant="outline"
-                            className={cn('text-[10px] px-1.5 py-0 h-5 whitespace-nowrap', uniformBadgeStyle)}
-                          >
-                            {priceTierLabels[row.price_tier]}
-                          </Badge>
-                        ) : (
-                          <span className="text-muted-foreground/50">—</span>
-                        )}
                       </td>
                     </tr>
                   ))

@@ -72,12 +72,6 @@ function NeighborhoodCard({ neighborhood }: { neighborhood: FeaturedNeighborhood
               </p>
             )}
           </div>
-          <Badge 
-            variant="outline" 
-            className={cn('text-[10px] px-1.5 py-0 h-5 whitespace-nowrap', tierConfig.className)}
-          >
-            {tierConfig.label}
-          </Badge>
         </div>
         <p className="text-sm font-medium text-primary">{neighborhood.vibe}</p>
       </CardHeader>
