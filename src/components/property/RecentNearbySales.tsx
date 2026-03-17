@@ -32,12 +32,14 @@ function DesktopCompsList({
   comps,
   getComparison,
   formatPrice,
+  formatPricePerArea,
   formatDistance,
   formatSoldDate,
 }: {
   comps: SoldComp[];
   getComparison: (priceSqm: number | null) => number | null;
   formatPrice: (price: number, currency: string) => string;
+  formatPricePerArea: (price: number, currency?: string) => string;
   formatDistance: (meters: number) => string;
   formatSoldDate: (date: string) => string;
 }) {
