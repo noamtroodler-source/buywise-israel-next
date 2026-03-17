@@ -12,6 +12,7 @@ import { useNeighborhoodPriceTable } from '@/hooks/useNeighborhoodPriceTable';
 import { CityHeroGuide } from '@/components/city/CityHeroGuide';
 import { CitySourceAttribution } from '@/components/city/CitySourceAttribution';
 import { CityNeighborhoodHighlights } from '@/components/city/CityNeighborhoodHighlights';
+import { CityNeighborhoodPriceTable } from '@/components/city/CityNeighborhoodPriceTable';
 // Existing components (kept)
 import { CityQuickStats } from '@/components/city/CityQuickStats';
 import { MarketOverviewCards } from '@/components/city/MarketOverviewCards';
