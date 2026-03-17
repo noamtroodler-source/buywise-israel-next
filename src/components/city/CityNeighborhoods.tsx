@@ -16,6 +16,7 @@ export interface UnifiedNeighborhood {
   yoy_change_percent: number | null;
   is_featured: boolean;
   sort_order?: number;
+  anglo_tag?: boolean;
 }
 
 interface CityNeighborhoodsProps {
