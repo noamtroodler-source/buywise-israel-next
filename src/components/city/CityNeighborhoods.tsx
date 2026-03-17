@@ -90,14 +90,6 @@ function NeighborhoodCard({ n }: { n: UnifiedNeighborhood }) {
             </span>
           )}
         </div>
-        {n.price_tier && (
-          <Badge
-            variant="outline"
-            className={cn('text-[10px] px-1.5 py-0 h-5 whitespace-nowrap shrink-0', uniformBadgeStyle)}
-          >
-            {priceTierLabels[n.price_tier]}
-          </Badge>
-        )}
       </div>
 
       {n.is_featured && n.vibe && (
