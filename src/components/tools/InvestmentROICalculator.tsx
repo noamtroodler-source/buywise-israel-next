@@ -42,7 +42,7 @@ export function InvestmentROICalculator() {
   
   // Monthly costs
   const [monthlyArnona, setMonthlyArnona] = useState(500);
-  const [monthlyVaadBayit, setMonthlyVaadBayit] = useState(FALLBACK_CONSTANTS.VAAD_BAYIT_DEFAULT);
+  const [monthlyVaadBayit, setMonthlyVaadBayit] = useState<number>(FALLBACK_CONSTANTS.VAAD_BAYIT_DEFAULT);
   const [monthlyInsurance, setMonthlyInsurance] = useState(150);
   
   // Tax method
