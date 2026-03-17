@@ -273,6 +273,20 @@ export default function CityDetail() {
           />
         )}
 
+        {/* 3. Market Overview */}
+        <MarketOverviewCards
+          cityData={city}
+          medianPrice={medianPrice}
+          grossYield={grossYield}
+          yoyChange={yoyChange}
+        />
+
+        {/* 4. Price History */}
+        <HistoricalPriceChart citySlug={slug || ''} cityName={city.name} />
+
+        {/* 5. Price by Apartment Size */}
+        <PriceByApartmentSize citySlug={slug || ''} cityName={city.name} />
+
         {/* 6. Worth Watching */}
         <section id="watching">
           {worthWatching.length > 0 ? (
