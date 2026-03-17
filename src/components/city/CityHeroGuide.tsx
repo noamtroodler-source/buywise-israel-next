@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { MapPin, ChevronDown, Clock } from 'lucide-react';
+import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { DualNavigation } from '@/components/shared/DualNavigation';
 
@@ -7,13 +8,18 @@ interface CityHeroGuideProps {
   cityName: string;
   heroImage: string;
   identitySentence: string;
+  lastUpdated?: string;
 }
 
 export function CityHeroGuide({ 
   cityName, 
   heroImage, 
-  identitySentence
+  identitySentence,
+  lastUpdated,
 }: CityHeroGuideProps) {
+  const updatedLabel = lastUpdated
+    ? `Updated ${format(new Date(lastUpdated), 'MMM yyyy')}`
+    : `Updated ${new Date().getFullYear()}`;
   const scrollToContent = () => {
     window.scrollTo({ top: window.innerHeight * 0.6, behavior: 'smooth' });
   };
@@ -95,7 +101,7 @@ export function CityHeroGuide({
             <Clock className="h-4 w-4" />
             ~5 min read
           </span>
-          <span>Updated 2025</span>
+          <span>{updatedLabel}</span>
         </motion.div>
       </div>
 
