@@ -67,8 +67,9 @@ interface StepReviewProps {
 }
 
 export function StepReview({ onEditStep }: StepReviewProps) {
-  const { data } = useProjectWizard();
+  const { data, getAllErrors, stepOffset } = useProjectWizard();
   const [showPreview, setShowPreview] = useState(false);
+  const allErrors = useMemo(() => getAllErrors(), [getAllErrors]);
 
   const formatPrice = (price: number) => {
     return `₪${price.toLocaleString()}`;
