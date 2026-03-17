@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import type { BuyerContextSnapshot } from '@/components/shared/InquiryModal';
 
 export type ProjectInquiryType = 'whatsapp' | 'email' | 'form';
 
@@ -15,6 +16,8 @@ interface TrackProjectInquiryParams {
   message?: string;
   budgetRange?: string;
   preferredUnitType?: string;
+  buyerContextSnapshot?: BuyerContextSnapshot | null;
+  sessionId?: string;
 }
 
 async function sendProjectInquiryNotification(params: TrackProjectInquiryParams) {
@@ -35,14 +38,39 @@ async function sendProjectInquiryNotification(params: TrackProjectInquiryParams)
   }
 }
 
+function getSessionId(): string {
+  const key = 'analytics_session_id';
+  let sid = sessionStorage.getItem(key);
+  if (!sid) {
+    sid = crypto.randomUUID();
+    sessionStorage.setItem(key, sid);
+  }
+  return sid;
+}
+
 /**
- * Hook to track project inquiries (WhatsApp clicks, calls, emails, form submissions)
+ * Hook to track project inquiries with buyer context and dedupe
  */
 export function useProjectInquiryTracking() {
   const { user } = useAuth();
 
   return useMutation({
     mutationFn: async (params: TrackProjectInquiryParams) => {
+      const sessionId = getSessionId();
+
+      // Dedupe check
+      const { data: isDupe } = await supabase.rpc('check_project_inquiry_dedupe', {
+        p_user_id: user?.id || null,
+        p_project_id: params.projectId,
+        p_inquiry_type: params.inquiryType,
+        p_session_id: !user ? sessionId : null,
+      });
+
+      if (isDupe) {
+        console.debug('Duplicate project inquiry suppressed');
+        return null;
+      }
+
       const { data, error } = await supabase
         .from('project_inquiries')
         .insert({
@@ -55,16 +83,15 @@ export function useProjectInquiryTracking() {
           message: params.message || `${params.inquiryType} inquiry from website`,
           budget_range: params.budgetRange || null,
           preferred_unit_type: params.preferredUnitType || null,
+          buyer_context_snapshot: params.buyerContextSnapshot || null,
+          session_id: !user ? sessionId : null,
         });
 
       if (error) throw error;
 
-      // Send notification to developer (async, don't wait)
       sendProjectInquiryNotification(params);
-
       return data;
     },
-    // Silent tracking - don't show errors to users
     onError: (error) => {
       console.error('Failed to track project inquiry:', error);
     },
@@ -73,10 +100,23 @@ export function useProjectInquiryTracking() {
 
 /**
  * Simple function to track a project inquiry without needing the full hook
- * Useful for quick tracking in event handlers
  */
 export async function trackProjectInquiry(params: TrackProjectInquiryParams & { userId?: string }) {
   try {
+    const sessionId = getSessionId();
+
+    const { data: isDupe } = await supabase.rpc('check_project_inquiry_dedupe', {
+      p_user_id: params.userId || null,
+      p_project_id: params.projectId,
+      p_inquiry_type: params.inquiryType,
+      p_session_id: !params.userId ? sessionId : null,
+    });
+
+    if (isDupe) {
+      console.debug('Duplicate project inquiry suppressed');
+      return;
+    }
+
     await supabase
       .from('project_inquiries')
       .insert({
@@ -89,9 +129,10 @@ export async function trackProjectInquiry(params: TrackProjectInquiryParams & { 
         message: params.message || `${params.inquiryType} inquiry from website`,
         budget_range: params.budgetRange || null,
         preferred_unit_type: params.preferredUnitType || null,
+        buyer_context_snapshot: params.buyerContextSnapshot || null,
+        session_id: !params.userId ? sessionId : null,
       });
 
-    // Send notification to developer (async, don't wait)
     sendProjectInquiryNotification(params);
   } catch (error) {
     console.error('Failed to track project inquiry:', error);
