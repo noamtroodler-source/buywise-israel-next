@@ -140,7 +140,8 @@ function InquiryForm({
   const isLoggedIn = !!user;
   const hasBuyerProfile = !!buyerProfile;
 
-  const defaultMessage = `Hi${agentName ? ` ${agentName}` : ''}, I'm interested in ${propertyTitle}. I'd love to learn more.`;
+  const agentFirstName = agentName.split(' ')[0];
+  const defaultMessage = `Hi${agentFirstName ? ` ${agentFirstName}` : ''}, I'm interested in ${propertyTitle}. I'd love to learn more.`;
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
