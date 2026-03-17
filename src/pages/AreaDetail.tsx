@@ -107,6 +107,7 @@ export default function CityDetail() {
   const { data: dbMarketFactors = [] } = useCityMarketFactors(slug || '');
   const { data: neighborhoods = [] } = useCityNeighborhoods(slug || '');
   const { data: properties = [] } = useProperties(city ? { city: city.name } : undefined);
+  const { data: priceTableRows = [] } = useNeighborhoodPriceTable(slug || '', city?.name);
   const districtName = city ? getDistrictForCity(city.name) : null;
 
   if (cityLoading) {
