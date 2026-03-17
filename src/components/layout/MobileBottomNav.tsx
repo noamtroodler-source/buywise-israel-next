@@ -130,7 +130,7 @@ const agentMobileNav = {
   tabs: [
     { icon: LayoutDashboard, label: 'Dashboard', to: '/agent' },
     { icon: FileText, label: 'Listings', to: '/agent/properties' },
-    { icon: MessageSquare, label: 'Leads', to: '/agent/leads' },
+    { icon: BarChart3, label: 'Analytics', to: '/agent/analytics' },
     { icon: UserCircle, label: 'Profile', to: '/agent/profile' },
   ],
   more: [
