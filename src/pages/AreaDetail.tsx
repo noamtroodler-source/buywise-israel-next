@@ -223,59 +223,11 @@ export default function CityDetail() {
           lastVerified={city.updated_at}
         />
 
-        {/* 2.5. Neighborhood Highlights */}
-        {neighborhoods.length > 0 && (
-          <CityNeighborhoodHighlights 
+        {/* 2.5. Unified Neighborhood Explorer */}
+        {unifiedNeighborhoods.length > 0 && (
+          <CityNeighborhoods 
             cityName={city.name}
-            neighborhoods={neighborhoods}
-          />
-        )}
-
-        {/* Neighborhood Price Table moved below Price by Apartment Size */}
-
-        {/* 3. Market Overview - 3 Card Grid */}
-        <section id="market">
-          <MarketOverviewCards
-            cityName={city.name}
-            arnonaRateSqm={city.arnona_rate_sqm}
-            propertyTypes={[
-              { name: 'Resale', value: (city as any).resale_percent || 55 },
-              { name: 'New Projects', value: (city as any).new_projects_percent || 30 },
-              { name: 'Rentals', value: (city as any).rentals_percent || 15 },
-            ]}
-            dataSources={(city as any).data_sources}
-            lastVerified={city.updated_at}
-            cityData={{
-              average_price_sqm: city.average_price_sqm,
-            }}
-          />
-        </section>
-
-        {/* 5. Historical Price Chart */}
-        <section id="price-history">
-          <HistoricalPriceChart
-            citySlug={slug || ''}
-            cityName={city.name}
-            dataSources={(city as any).data_sources}
-            lastVerified={city.updated_at}
-          />
-        </section>
-
-        {/* 5.5. Price by Apartment Size */}
-        <section id="price-by-size">
-          <PriceByApartmentSize
-            citySlug={slug || ''}
-            cityName={city.name}
-            dataSources={(city as any).data_sources}
-            lastVerified={city.updated_at}
-          />
-        </section>
-
-        {/* 5.6. Neighborhood Price Snapshot + Drawer */}
-        {priceTableRows.length > 0 && (
-          <CityNeighborhoodPriceTable
-            cityName={city.name}
-            rows={priceTableRows}
+            neighborhoods={unifiedNeighborhoods}
           />
         )}
 
