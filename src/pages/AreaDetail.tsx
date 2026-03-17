@@ -7,10 +7,12 @@ import { useProperties } from '@/hooks/useProperties';
 import { useCityMarketFactors } from '@/hooks/useCityMarketFactors';
 import { useCityNeighborhoods } from '@/hooks/useCityNeighborhoods';
 import { getDistrictForCity } from '@/lib/utils/districtMapping';
+import { useNeighborhoodPriceTable } from '@/hooks/useNeighborhoodPriceTable';
 // New guide-style components
 import { CityHeroGuide } from '@/components/city/CityHeroGuide';
 import { CitySourceAttribution } from '@/components/city/CitySourceAttribution';
 import { CityNeighborhoodHighlights } from '@/components/city/CityNeighborhoodHighlights';
+import { CityNeighborhoodPriceTable } from '@/components/city/CityNeighborhoodPriceTable';
 // Existing components (kept)
 import { CityQuickStats } from '@/components/city/CityQuickStats';
 import { MarketOverviewCards } from '@/components/city/MarketOverviewCards';
@@ -105,6 +107,7 @@ export default function CityDetail() {
   const { data: dbMarketFactors = [] } = useCityMarketFactors(slug || '');
   const { data: neighborhoods = [] } = useCityNeighborhoods(slug || '');
   const { data: properties = [] } = useProperties(city ? { city: city.name } : undefined);
+  const { data: priceTableRows = [] } = useNeighborhoodPriceTable(slug || '', city?.name);
   const districtName = city ? getDistrictForCity(city.name) : null;
 
   if (cityLoading) {
@@ -226,6 +229,14 @@ export default function CityDetail() {
           <CityNeighborhoodHighlights 
             cityName={city.name}
             neighborhoods={neighborhoods}
+          />
+        )}
+
+        {/* 2.6. Neighborhood Price Table */}
+        {priceTableRows.length > 0 && (
+          <CityNeighborhoodPriceTable
+            cityName={city.name}
+            rows={priceTableRows}
           />
         )}
 
