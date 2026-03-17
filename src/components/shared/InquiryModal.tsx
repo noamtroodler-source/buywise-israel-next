@@ -153,6 +153,7 @@ function InquiryForm({
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [subject, setSubject] = useState(`Inquiry about the ${propertyTitle}`);
   const [message, setMessage] = useState(buildDefaultMessage(channel, userName));
   const [includeBuyerProfile, setIncludeBuyerProfile] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -202,11 +203,15 @@ function InquiryForm({
       ? buildBuyerContextSnapshot(buyerProfile!)
       : null;
 
+    const fullMessage = channel === 'email'
+      ? `Subject: ${subject.trim()}\n\n${message.trim()}`
+      : message.trim();
+
     onSubmit({
       name: isLoggedIn ? (user?.user_metadata?.full_name || name) : name,
       email: isLoggedIn ? (user?.email || email) : email,
       phone,
-      message: message.trim(),
+      message: fullMessage,
       includeBuyerProfile,
       buyerContextSnapshot: snapshot,
     });
@@ -257,16 +262,30 @@ function InquiryForm({
         </div>
       )}
 
-      {/* Message */}
+      {/* Subject (email only) */}
+      {channel === 'email' && (
+        <div>
+          <Label htmlFor="inquiry-subject">Subject</Label>
+          <Input
+            id="inquiry-subject"
+            value={subject}
+            onChange={e => setSubject(e.target.value)}
+            placeholder="Subject line"
+            maxLength={150}
+          />
+        </div>
+      )}
+
+      {/* Body / Message */}
       <div>
-        <Label htmlFor="inquiry-message">Message</Label>
+        <Label htmlFor="inquiry-message">{channel === 'email' ? 'Body' : 'Message'}</Label>
         <Textarea
           id="inquiry-message"
           value={message}
           onChange={e => setMessage(e.target.value)}
-          placeholder="Write a message..."
+          placeholder={channel === 'email' ? 'Write your email body...' : 'Write a message...'}
           maxLength={500}
-          rows={3}
+          rows={channel === 'email' ? 5 : 3}
           className="resize-none"
         />
         <p className="text-xs text-muted-foreground mt-1 text-right">{message.length}/500</p>
