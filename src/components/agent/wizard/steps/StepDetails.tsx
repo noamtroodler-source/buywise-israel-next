@@ -182,6 +182,16 @@ export function StepDetails() {
                   <Calendar className="h-4 w-4 text-primary" />
                 </div>
                 <h3 className="font-semibold">Year Built</h3>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-[240px] text-xs">
+                      Helps buyers assess renovation needs, TAMA 38 eligibility, and building quality. Especially useful for pre-2000 buildings.
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
               <Input
                 id="year_built"
