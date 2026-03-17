@@ -119,21 +119,23 @@ export async function trackProjectInquiry(params: TrackProjectInquiryParams & { 
       return;
     }
 
+    const insertData = {
+      project_id: params.projectId,
+      developer_id: params.developerId,
+      user_id: params.userId || null,
+      name: params.name || 'Website Visitor',
+      email: params.email || 'not-provided@placeholder.com',
+      phone: params.phone || null,
+      message: params.message || `${params.inquiryType} inquiry from website`,
+      budget_range: params.budgetRange || null,
+      preferred_unit_type: params.preferredUnitType || null,
+      buyer_context_snapshot: (params.buyerContextSnapshot || null) as any,
+      session_id: !params.userId ? sessionId : null,
+    };
+
     await supabase
       .from('project_inquiries')
-      .insert({
-        project_id: params.projectId,
-        developer_id: params.developerId,
-        user_id: params.userId || null,
-        name: params.name || 'Website Visitor',
-        email: params.email || 'not-provided@placeholder.com',
-        phone: params.phone || null,
-        message: params.message || `${params.inquiryType} inquiry from website`,
-        budget_range: params.budgetRange || null,
-        preferred_unit_type: params.preferredUnitType || null,
-        buyer_context_snapshot: params.buyerContextSnapshot || null,
-        session_id: !params.userId ? sessionId : null,
-      });
+      .insert(insertData as any);
 
     sendProjectInquiryNotification(params);
   } catch (error) {

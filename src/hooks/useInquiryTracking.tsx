@@ -119,20 +119,22 @@ export async function trackInquiry(params: TrackInquiryParams & { userId?: strin
       return;
     }
 
+    const insertData = {
+      property_id: params.propertyId,
+      agent_id: params.agentId,
+      inquiry_type: params.inquiryType,
+      user_id: params.userId || null,
+      name: params.name || null,
+      email: params.email || null,
+      phone: params.phone || null,
+      message: params.message || null,
+      buyer_context_snapshot: (params.buyerContextSnapshot || null) as any,
+      session_id: !params.userId ? sessionId : null,
+    };
+
     await supabase
       .from('property_inquiries')
-      .insert({
-        property_id: params.propertyId,
-        agent_id: params.agentId,
-        inquiry_type: params.inquiryType,
-        user_id: params.userId || null,
-        name: params.name || null,
-        email: params.email || null,
-        phone: params.phone || null,
-        message: params.message || null,
-        buyer_context_snapshot: params.buyerContextSnapshot || null,
-        session_id: !params.userId ? sessionId : null,
-      });
+      .insert(insertData as any);
 
     // Send notification to agent (async, don't wait)
     sendInquiryNotification(params);
