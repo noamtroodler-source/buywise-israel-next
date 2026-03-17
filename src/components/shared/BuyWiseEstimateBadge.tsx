@@ -27,16 +27,15 @@ export function BuyWiseEstimateBadge({
   };
 
   const tooltipContent = hasMethodology
-    ? `Calculated from avg 4-room rent ${formatPrice(rental4RoomMin, 'ILS')}–${formatPrice(rental4RoomMax, 'ILS')}/mo ÷ median purchase price ${formatPrice(medianPrice, 'ILS')}.${sources ? ` Sources: ${sources}.` : ''}${verifiedAt ? ` Verified ${formatVerifiedDate(verifiedAt)}.` : ''}`
-    : `BuyWise editorial estimate based on market research.${sources ? ` Sources: ${sources}.` : ''}${verifiedAt ? ` Verified ${formatVerifiedDate(verifiedAt)}.` : ''}`;
+    ? `BuyWise Estimate · Calculated from avg 4-room rent ${formatPrice(rental4RoomMin, 'ILS')}–${formatPrice(rental4RoomMax, 'ILS')}/mo ÷ median purchase price ${formatPrice(medianPrice, 'ILS')}.${sources ? ` Sources: ${sources}.` : ''}${verifiedAt ? ` Verified ${formatVerifiedDate(verifiedAt)}.` : ''}`
+    : `BuyWise Estimate · Editorial estimate based on market research.${sources ? ` Sources: ${sources}.` : ''}${verifiedAt ? ` Verified ${formatVerifiedDate(verifiedAt)}.` : ''}`;
 
   return (
     <TooltipProvider delayDuration={200}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 cursor-help whitespace-nowrap">
-            <Lightbulb className="h-3 w-3" />
-            BuyWise Estimate
+          <span className="inline-flex items-center justify-center h-5 w-5 rounded bg-amber-50 dark:bg-amber-950/40 cursor-help">
+            <Lightbulb className="h-3 w-3 text-amber-600 dark:text-amber-400" />
           </span>
         </TooltipTrigger>
         <TooltipContent side="bottom" className="max-w-xs text-xs leading-relaxed">
