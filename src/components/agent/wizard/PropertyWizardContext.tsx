@@ -52,8 +52,11 @@ export interface PropertyWizardData {
    // Featured highlight - agent's standout feature
    featured_highlight: string;
    
-   // Edit mode: the saved/published price for comparison
-   savedPrice?: number;
+    // Edit mode: the saved/published price for comparison
+    savedPrice?: number;
+    
+    // Import source (e.g. 'yad2', 'website_scrape') — set for imported listings
+    import_source?: string;
   
   // Step 4: Photos
   images: string[];

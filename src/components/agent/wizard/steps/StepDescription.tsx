@@ -112,6 +112,19 @@ export function StepDescription() {
       </div>
 
       <div className="space-y-6">
+        {/* Import notice for translated descriptions */}
+        {data.import_source && (
+          <div className="flex items-start gap-3 rounded-xl bg-primary/5 border border-primary/20 p-4">
+            <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+            <div className="text-sm">
+              <span className="font-medium text-foreground">Translated description:</span>{' '}
+              <span className="text-muted-foreground">
+                This description was automatically translated and adapted from the original Hebrew listing for international buyers. Please review it carefully for accuracy and adjust the tone to match your style.
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* Quality Reminder */}
         <div className="flex items-start gap-2 p-3 rounded-xl bg-muted/50 border border-border/50">
           <Info className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />

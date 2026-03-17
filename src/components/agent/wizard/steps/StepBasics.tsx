@@ -123,6 +123,14 @@ export function StepBasics() {
                 Capitalize Each Word and double-check spelling — clean titles stand out to buyers.
               </p>
             </div>
+            {data.import_source && (
+              <div className="flex items-start gap-2 rounded-lg bg-primary/5 border border-primary/20 px-3 py-2.5">
+                <AlertCircle className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
+                <p className="text-xs text-primary">
+                  <span className="font-medium">AI-generated title:</span> This title was automatically created based on the original listing data. Please review and adjust as needed.
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">

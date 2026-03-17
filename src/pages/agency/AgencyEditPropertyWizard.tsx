@@ -117,6 +117,7 @@ function AgencyEditWizardContent({ propertyId }: { propertyId: string }) {
         furniture_items: (property as any).furniture_items || [],
         featured_highlight: (property as any).featured_highlight || '',
         savedPrice: property.price || undefined,
+        import_source: (property as any).import_source || undefined,
       };
       loadFromSaved(wizardData);
       setHasLoaded(true);

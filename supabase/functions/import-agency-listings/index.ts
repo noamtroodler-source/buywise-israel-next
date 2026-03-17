@@ -67,6 +67,79 @@ function generateListingTitle(listing: any, fallbackDomain?: string): string {
   return toTitleCase(`${type} for ${listing.listing_status === "for_rent" ? "Rent" : "Sale"} in ${location}`);
 }
 
+// ─── DESCRIPTION GENERATION HELPERS ─────────────────────────────────────────
+
+function isGoodEnglishDescription(desc: string | undefined): boolean {
+  if (!desc || desc.length < 50) return false;
+  // Check first 100 chars are mostly Latin (not Hebrew)
+  const sample = desc.substring(0, 100);
+  const hebrewChars = (sample.match(/[\u0590-\u05FF]/g) || []).length;
+  return hebrewChars < sample.length * 0.2;
+}
+
+function generateListingDescription(listing: any): string | null {
+  // If already good English, keep it
+  if (isGoodEnglishDescription(listing.description)) {
+    return listing.description;
+  }
+  // Build a basic English description from extracted fields
+  const type = formatPropertyType(listing.property_type).toLowerCase();
+  const parts: string[] = [];
+
+  if (listing.bedrooms && listing.bedrooms > 0) {
+    parts.push(`${listing.bedrooms}-bedroom ${type}`);
+  } else {
+    parts.push(type.charAt(0).toUpperCase() + type.slice(1));
+  }
+
+  if (listing.size_sqm && listing.size_sqm > 0) {
+    parts.push(`${listing.size_sqm} sqm`);
+  }
+
+  const location = listing.neighborhood && listing.city
+    ? `in ${listing.neighborhood}, ${listing.city}`
+    : listing.city ? `in ${listing.city}` : "";
+  if (location) parts.push(location);
+
+  if (listing.floor != null && listing.floor >= 0) {
+    parts.push(`on floor ${listing.floor}`);
+  }
+
+  if (listing.condition) {
+    const condMap: Record<string, string> = {
+      new: "new condition", renovated: "recently renovated",
+      good: "good condition", needs_renovation: "needs renovation",
+    };
+    if (condMap[listing.condition]) parts.push(condMap[listing.condition]);
+  }
+
+  const featureNames: string[] = [];
+  if (listing.features && Array.isArray(listing.features)) {
+    const featureMap: Record<string, string> = {
+      elevator: "elevator", balcony: "balcony", parking: "parking",
+      storage: "storage room", mamad: "safe room (mamad)",
+      air_conditioning: "air conditioning", garden: "private garden",
+      sun_balcony: "sun balcony", sukkah_balcony: "sukkah balcony",
+      accessible: "wheelchair accessible",
+    };
+    for (const f of listing.features) {
+      if (featureMap[f]) featureNames.push(featureMap[f]);
+    }
+  }
+  if (featureNames.length > 0) {
+    parts.push(`featuring ${featureNames.slice(0, 4).join(", ")}`);
+  }
+
+  if (listing.listing_status === "for_rent" && listing.price) {
+    parts.push(`available for ₪${listing.price.toLocaleString("en-US")}/month`);
+  } else if (listing.price) {
+    parts.push(`listed at ₪${listing.price.toLocaleString("en-US")}`);
+  }
+
+  return parts.length > 1 ? (parts.join(", ") + ".").replace(/^./, c => c.toUpperCase()) : null;
+}
+
+
 // ─── COST TRACKING ──────────────────────────────────────────────────────────
 async function trackCost(sb: any, jobId: string, resourceType: string, quantity: number, unit: string) {
   try {
@@ -1505,6 +1578,12 @@ FOR PROPERTIES — extract these fields:
   Examples: "Spacious 4-Bedroom Apartment in Arnona", "Renovated Penthouse in Neve Tzedek", "3-Bedroom Garden Apartment in Rehavia"
   If the page already has a good English title (not just an address, street name, or Hebrew text), keep it with Title Case.
   Do NOT just use the street address as the title. Do NOT return a Hebrew title.
+- description: Translate the property description into fluent, professional English for international buyers.
+  Keep all factual details (rooms, features, location highlights, renovation info, floor, views, parking, storage).
+  Rephrase marketing fluff into clear, compelling English. Make it informative and appealing.
+  If the description is already in good English, keep it as-is.
+  Do NOT include the agent's name, phone number, or any Hebrew text in the description.
+  Aim for 150-400 words. Write in paragraph form, not bullet points.
 - In Israel, "rooms" (חדרים) = bedrooms + 1 living room. So 4 rooms = 3 bedrooms. Always subtract 1 for bedrooms.
 - Default currency is ILS (₪) unless explicitly stated otherwise.
 - Use the dictionary above for property types, not your own guess.
@@ -2279,7 +2358,7 @@ async function processOneItem(
       .insert({
         agent_id: agentId,
         title: generateListingTitle(listing, new URL(item.url).hostname),
-        description: listing.description || null,
+        description: generateListingDescription(listing) || listing.description || null,
         property_type: listing.property_type || "apartment",
         listing_status: listing.listing_status || "for_sale",
         price: listing.price || 0,
