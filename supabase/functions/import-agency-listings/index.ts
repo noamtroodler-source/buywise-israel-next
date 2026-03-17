@@ -1363,16 +1363,53 @@ function extractStructuredData(html: string): Record<string, any> | null {
 
 // ─── EXTRACTION PROMPT (with comprehensive Hebrew dictionary) ───────────────
 
+function inferYad2RegionHint(url: string): string {
+  const YAD2_REGION_CITIES: Record<string, string[]> = {
+    "center-and-sharon": ["Petah Tikva", "Ra'anana", "Hod HaSharon", "Herzliya", "Netanya", "Kfar Saba", "Givat Shmuel", "Ramat Gan", "Rehovot", "Rishon LeZion"],
+    "jerusalem-and-periphery": ["Jerusalem", "Beit Shemesh", "Ma'ale Adumim", "Mevaseret Zion", "Efrat", "Gush Etzion"],
+    "south": ["Beer Sheva", "Ashdod", "Ashkelon", "Eilat"],
+    "north": ["Hadera", "Pardes Hanna", "Zichron Yaakov", "Caesarea"],
+    "haifa-and-krayot": ["Haifa"],
+    "sharon": ["Netanya", "Ra'anana", "Kfar Saba", "Hod HaSharon", "Herzliya"],
+    "shfela": ["Modi'in", "Rehovot", "Rishon LeZion"],
+    "dan": ["Tel Aviv", "Ramat Gan", "Givat Shmuel", "Petah Tikva"],
+  };
+  try {
+    const path = new URL(url).pathname;
+    for (const [region, cities] of Object.entries(YAD2_REGION_CITIES)) {
+      if (path.includes(region)) {
+        return `This is a Yad2 listing from the "${region}" region. Likely cities: ${cities.join(", ")}.`;
+      }
+    }
+  } catch {}
+  return "";
+}
+
+// Build a Hebrew city name → English mapping for post-extraction fallback
+function inferCityFromHebrew(text: string): string | null {
+  for (const [canonical, aliases] of Object.entries(CITY_ALIASES)) {
+    for (const alias of aliases) {
+      // Only check Hebrew aliases (contain Hebrew chars)
+      if (/[\u0590-\u05FF]/.test(alias) && text.includes(alias)) {
+        return canonical;
+      }
+    }
+  }
+  return null;
+}
+
 function buildExtractionPrompt(url: string, domain: string, markdown: string, pageLinks: string[]): string {
+  const yad2Hint = url.includes("yad2.co.il") ? `\n${inferYad2RegionHint(url)}` : "";
   return `You are extracting structured data from a scraped Israeli real estate page.
 
 IMPORTANT CONTEXT:
-- Website domain: ${domain}
+- Website domain: ${domain}${yad2Hint}
 - Supported cities (return city as one of these EXACT names): ${SUPPORTED_CITIES.join(", ")}
 - If the city is not explicitly stated on the page, INFER it from:
   1. The website domain name (e.g., "jerusalem-real-estate.co" → Jerusalem)
   2. The URL path
   3. Neighborhood context (e.g., Arnona, Baka, Talbieh → Jerusalem; Neve Tzedek → Tel Aviv)
+  4. Hebrew city names in the content (e.g., תל אביב → Tel Aviv, ירושלים → Jerusalem, פתח תקווה → Petah Tikva)
 - If no price is listed (e.g., "Price on Request"), set price to 0.
 - Return city as one of the supported cities listed above.
 
