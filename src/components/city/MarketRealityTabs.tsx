@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { NATIONAL_AVG_PRICE_SQM, NATIONAL_AVG_ARNONA } from '@/lib/constants/marketAverages';
+import { useFormatPricePerArea, useAreaUnitLabel } from '@/contexts/PreferencesContext';
 
 interface MarketRealityTabsProps {
   marketData: MarketData[];
@@ -31,6 +32,8 @@ export function MarketRealityTabs({
   arnonaRateSqm
 }: MarketRealityTabsProps) {
   const [apartmentSize, setApartmentSize] = useState(80);
+  const formatPricePerAreaFn = useFormatPricePerArea();
+  const areaLabel = useAreaUnitLabel();
   const [selectedCities, setSelectedCities] = useState<string[]>([cityName]);
   const [searchQuery, setSearchQuery] = useState('');
   const [popoverOpen, setPopoverOpen] = useState(false);
@@ -149,8 +152,7 @@ export function MarketRealityTabs({
               <div className="text-center">
                 <p className="text-sm text-muted-foreground mb-2">Average Price per Square Meter</p>
                 <p className="text-4xl font-bold text-foreground">
-                  ₪{pricePerSqm.toLocaleString()}
-                  <span className="text-lg font-normal text-muted-foreground">/m²</span>
+                  {formatPricePerAreaFn(pricePerSqm, 'ILS')}
                 </p>
                 <p className={`text-sm mt-2 font-medium ${percentAboveNational >= 0 ? 'text-amber-600' : 'text-primary'}`}>
                   {percentAboveNational >= 0 ? '+' : ''}{percentAboveNational.toFixed(0)}% vs national average
@@ -175,7 +177,7 @@ export function MarketRealityTabs({
                       </TooltipTrigger>
                       <TooltipContent className="bg-background border-border">
                         <p className="font-medium">{cityName}</p>
-                        <p className="text-primary">₪{pricePerSqm.toLocaleString()}/m²</p>
+                        <p className="text-primary">{formatPricePerAreaFn(pricePerSqm, 'ILS')}</p>
                       </TooltipContent>
                     </UITooltip>
                     
@@ -190,7 +192,7 @@ export function MarketRealityTabs({
                         </TooltipTrigger>
                         <TooltipContent className="bg-background border-border">
                           <p className="font-medium">{city.name}</p>
-                          <p className="text-muted-foreground">₪{city.pricePerSqm.toLocaleString()}/m²</p>
+                          <p className="text-muted-foreground">{formatPricePerAreaFn(city.pricePerSqm, 'ILS')}</p>
                         </TooltipContent>
                       </UITooltip>
                     ))}
@@ -396,8 +398,8 @@ export function MarketRealityTabs({
               {/* Comparison */}
               <div className="bg-muted/50 rounded-lg p-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Rate per m²</span>
-                  <span className="font-medium text-foreground">₪{rate.toFixed(0)}/m²</span>
+                  <span className="text-sm text-muted-foreground">Rate per {areaLabel === 'sqft' ? 'sqft' : 'm²'}</span>
+                  <span className="font-medium text-foreground">₪{rate.toFixed(0)}/{areaLabel === 'sqft' ? 'sqft' : 'm²'}</span>
                 </div>
                 <div className="flex items-center justify-between mt-2">
                   <span className="text-sm text-muted-foreground">vs National Avg</span>

@@ -11,7 +11,7 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/comp
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { CarouselDots } from '@/components/shared/CarouselDots';
 import { format } from 'date-fns';
-import { useFormatPrice } from '@/contexts/PreferencesContext';
+import { useFormatPrice, useFormatPricePerArea } from '@/contexts/PreferencesContext';
 import { cn } from '@/lib/utils';
 
 // Types for sold comps
@@ -32,12 +32,14 @@ function DesktopCompsList({
   comps,
   getComparison,
   formatPrice,
+  formatPricePerArea,
   formatDistance,
   formatSoldDate,
 }: {
   comps: SoldComp[];
   getComparison: (priceSqm: number | null) => number | null;
   formatPrice: (price: number, currency: string) => string;
+  formatPricePerArea: (price: number, currency?: string) => string;
   formatDistance: (meters: number) => string;
   formatSoldDate: (date: string) => string;
 }) {
@@ -112,7 +114,7 @@ function DesktopCompsList({
                 <TooltipTrigger asChild>
                   <span className="flex items-center gap-1 cursor-help border-b border-dotted border-muted-foreground/50">
                     <BarChart3 className="h-3 w-3" />
-                    {formatPrice(comp.price_per_sqm, 'ILS')}/m²
+                    {formatPricePerArea(comp.price_per_sqm, 'ILS')}
                   </span>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-xs">
@@ -226,6 +228,7 @@ export function RecentNearbySales({
   onVerdictComputed,
 }: RecentNearbySalesProps) {
   const formatPrice = useFormatPrice();
+  const formatPricePerAreaFn = useFormatPricePerArea();
   const isMobile = useIsMobile();
   const [selectedIndex, setSelectedIndex] = useState(0);
   
@@ -535,7 +538,7 @@ export function RecentNearbySales({
                             {comp.price_per_sqm && (
                               <span className="flex items-center gap-1">
                                 <BarChart3 className="h-3 w-3" />
-                                {formatPrice(comp.price_per_sqm, 'ILS')}/m²
+                                {formatPricePerAreaFn(comp.price_per_sqm, 'ILS')}
                               </span>
                             )}
                           </div>
@@ -583,6 +586,7 @@ export function RecentNearbySales({
             comps={comps} 
             getComparison={getComparison} 
             formatPrice={formatPrice}
+            formatPricePerArea={formatPricePerAreaFn}
             formatDistance={formatDistance}
             formatSoldDate={formatSoldDate}
           />

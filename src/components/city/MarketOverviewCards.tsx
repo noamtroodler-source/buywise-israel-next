@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { DollarSign, Receipt, Info, TrendingUp, TrendingDown, User, HelpCircle } from 'lucide-react';
+import { useFormatPricePerArea } from '@/contexts/PreferencesContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -29,6 +30,7 @@ export function MarketOverviewCards({
 }: MarketOverviewCardsProps) {
   const [apartmentSize, setApartmentSize] = useState(80);
   const { data: buyerProfile } = useBuyerProfile();
+  const formatPricePerAreaFn = useFormatPricePerArea();
   
   // Use cityData directly — cities table is the single source of truth
   const pricePerSqm = cityData?.average_price_sqm ?? 0;
@@ -109,7 +111,7 @@ export function MarketOverviewCards({
                     </p>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    National average: ₪{NATIONAL_AVG_PRICE_SQM.toLocaleString()}/m²
+                    National average: {formatPricePerAreaFn(NATIONAL_AVG_PRICE_SQM, 'ILS')}
                   </p>
                 </div>
                 
