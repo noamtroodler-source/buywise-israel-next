@@ -2553,7 +2553,7 @@ async function handleApproveItem(body: any) {
     .from("properties")
     .insert({
       agent_id: agentId,
-      title: listing.title || `Imported from ${item.import_jobs.website_url}`,
+      title: generateListingTitle(listing, item.import_jobs?.website_url),
       description: listing.description || null,
       property_type: listing.property_type || "apartment",
       listing_status: listing.listing_status || "for_sale",
