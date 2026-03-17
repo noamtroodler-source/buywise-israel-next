@@ -1,5 +1,7 @@
 // True Cost Calculator - Unified Side-by-Side Layout for BuyWise Israel
 import { useState, useMemo, useCallback, useEffect } from 'react';
+import { getVatMultiplier } from '@/lib/calculations/constants';
+import { useCalculatorConstants } from '@/hooks/useCalculatorConstants';
 import { motion } from 'framer-motion';
 import { 
   Calculator, 
@@ -132,6 +134,7 @@ function InfoTooltip({ content }: { content: string }) {
 
 export function TrueCostCalculator() {
   const { data: buyerProfile } = useBuyerProfile();
+  const { data: calcConstants } = useCalculatorConstants();
   const { data: cities } = useCities();
   const { areaUnit, currency, exchangeRate } = usePreferences();
   const formatPrice = useFormatPrice();
@@ -421,7 +424,7 @@ export function TrueCostCalculator() {
     
     // Agent fee negotiation tip
     if (calculations.agentFeeMin > 30000) {
-      const halfPercentSaving = Math.round(price * 0.005 * 1.18);
+      const halfPercentSaving = Math.round(price * 0.005 * getVatMultiplier(calcConstants));
       messages.push(`Agent fees are negotiable — even 0.5% less saves you ${formatPrice(halfPercentSaving)}.`);
     }
     

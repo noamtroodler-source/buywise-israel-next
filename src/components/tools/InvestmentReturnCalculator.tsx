@@ -1,4 +1,6 @@
 import { useMemo, useState, useCallback } from 'react';
+import { getConstant, getVatMultiplier } from '@/lib/calculations/constants';
+import { useCalculatorConstants, type CalculatorConstant } from '@/hooks/useCalculatorConstants';
 import { Link } from 'react-router-dom';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -36,7 +38,7 @@ import { useFormatPrice, useCurrencySymbol } from '@/contexts/PreferencesContext
 import { useSavePromptTrigger } from '@/hooks/useSavePromptTrigger';
 
 const STOCK_MARKET_BENCHMARK = 0.07;
-const SELLING_AGENT_PERCENT = 2;
+// SELLING_AGENT_PERCENT now pulled from DB constants via getConstant
 const CAPITAL_GAINS_TAX_PERCENT = 25;
 
 type VacancyPreset = 'low' | 'average' | 'high';
@@ -119,14 +121,15 @@ function calculatePrincipalPaid(principal: number, annualRate: number, termYears
   return principal - Math.max(0, remainingBalance);
 }
 
-function computeResults(v: FormValues, useItemized: boolean): CalculationResults {
+function computeResults(v: FormValues, useItemized: boolean, constants?: CalculatorConstant[]): CalculationResults {
   const purchasePrice = v.purchasePrice;
   const downPayment = purchasePrice * (v.downPaymentPercent / 100);
   const mortgageAmount = purchasePrice - downPayment;
+  const vatMultiplier = getVatMultiplier(constants);
 
   const purchaseTax = v.includePurchaseTax ? calculateTaxAmount(purchasePrice, 'investor') : 0;
-  const buyingAgentFee = v.includeBuyingAgentFee ? Math.round(purchasePrice * 0.02 * 1.17) : 0;
-  const lawyerFees = v.includeLawyerFees ? Math.round(10000 * 1.17) : 0;
+  const buyingAgentFee = v.includeBuyingAgentFee ? Math.round(purchasePrice * getConstant(constants, 'AGENT_RATE') * vatMultiplier) : 0;
+  const lawyerFees = v.includeLawyerFees ? Math.round(10000 * vatMultiplier) : 0;
   const renovationCosts = v.includeRenovation && v.renovationCosts ? v.renovationCosts : 0;
   const totalTransactionCosts = purchaseTax + buyingAgentFee + lawyerFees;
   const totalDayOneCash = downPayment + totalTransactionCosts + renovationCosts;
@@ -157,7 +160,7 @@ function computeResults(v: FormValues, useItemized: boolean): CalculationResults
   }
   totalExpenses = Math.round(totalExpenses);
 
-  const sellingAgentFee = v.includeSellingCosts ? Math.round(futurePropertyValue * (SELLING_AGENT_PERCENT / 100) * 1.17) : 0;
+  const sellingAgentFee = v.includeSellingCosts ? Math.round(futurePropertyValue * getConstant(constants, 'SELLING_AGENT_RATE') * vatMultiplier) : 0;
   const capitalGainsTax = v.includeSellingCosts && totalAppreciation > 0 ? Math.round(totalAppreciation * (CAPITAL_GAINS_TAX_PERCENT / 100)) : 0;
   const totalSellingCosts = sellingAgentFee + capitalGainsTax;
 
@@ -222,6 +225,7 @@ function generateInsights(v: FormValues, r: CalculationResults, formatCurrency: 
 export function InvestmentReturnCalculator() {
   const formatCurrency = useFormatPrice();
   const currencySymbol = useCurrencySymbol();
+  const { data: calcConstants } = useCalculatorConstants();
   const [showExpenseDetails, setShowExpenseDetails] = useState(false);
   const [showBreakdown, setShowBreakdown] = useState(false);
   const [vacancyPreset, setVacancyPreset] = useState<VacancyPreset>('average');
@@ -278,11 +282,11 @@ export function InvestmentReturnCalculator() {
   const results = useMemo(() => {
     try {
       if (!watchedValues.purchasePrice || watchedValues.purchasePrice <= 0) return null;
-      return computeResults(watchedValues, showExpenseDetails);
+      return computeResults(watchedValues, showExpenseDetails, calcConstants);
     } catch {
       return null;
     }
-  }, [watchedValues, showExpenseDetails]);
+  }, [watchedValues, showExpenseDetails, calcConstants]);
 
   const insights = useMemo(() => {
     if (!results) return [];

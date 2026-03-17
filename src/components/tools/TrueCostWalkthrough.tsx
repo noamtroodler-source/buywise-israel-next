@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { getConstant, getVatMultiplier } from '@/lib/calculations/constants';
+import { useCalculatorConstants } from '@/hooks/useCalculatorConstants';
 import { 
   ArrowRight, ArrowLeft, CheckCircle2, Receipt,
   Calculator, Home, Landmark, Users, FileText, Download
@@ -24,6 +26,7 @@ interface CostBreakdown {
 }
 
 export function TrueCostWalkthrough() {
+  const { data: calcConstants } = useCalculatorConstants();
   const [currentStep, setCurrentStep] = useState(0);
   const [propertyPrice, setPropertyPrice] = useState(2500000);
   const [buyerType, setBuyerType] = useState<'first_time' | 'additional' | 'foreign'>('first_time');
@@ -66,9 +69,10 @@ export function TrueCostWalkthrough() {
   };
 
   const calculateCosts = (): CostBreakdown => {
+    const vatMultiplier = getVatMultiplier(calcConstants);
     const purchaseTax = calculatePurchaseTax(propertyPrice);
-    const lawyerFees = Math.max(propertyPrice * 0.01, 15000) * 1.18; // 1% + VAT (18%), min 15k
-    const agentFees = usesAgent ? propertyPrice * 0.02 * 1.18 : 0; // 2% + VAT (18%)
+    const lawyerFees = Math.max(propertyPrice * 0.01, 15000) * vatMultiplier; // 1% + VAT, min 15k
+    const agentFees = usesAgent ? propertyPrice * getConstant(calcConstants, 'AGENT_RATE') * vatMultiplier : 0; // Agent + VAT
     const mortgageFees = 5000; // Approximate: appraisal + opening fees
     const registrationFees = 2000; // Tabu registration
 
@@ -202,7 +206,7 @@ export function TrueCostWalkthrough() {
                   <p className="text-xs text-muted-foreground">0.5-1.5% + VAT, minimum ~₪15,000</p>
                 </div>
                 <span className="font-semibold text-primary">
-                  {formatCurrency(Math.max(propertyPrice * 0.01, 15000) * 1.18)}
+                  {formatCurrency(Math.max(propertyPrice * 0.01, 15000) * getVatMultiplier(calcConstants))}
                 </span>
               </div>
             </div>
@@ -230,7 +234,7 @@ export function TrueCostWalkthrough() {
                   </RadioGroup>
                   {usesAgent && (
                     <span className="text-sm font-semibold text-primary">
-                      {formatCurrency(propertyPrice * 0.02 * 1.18)}
+                      {formatCurrency(propertyPrice * getConstant(calcConstants, 'AGENT_RATE') * getVatMultiplier(calcConstants))}
                     </span>
                   )}
                 </div>

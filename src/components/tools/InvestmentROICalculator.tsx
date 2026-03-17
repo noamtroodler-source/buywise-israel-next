@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
-import { FALLBACK_CONSTANTS } from '@/lib/calculations/constants';
+import { FALLBACK_CONSTANTS, getConstant } from '@/lib/calculations/constants';
+import { useCalculatorConstants } from '@/hooks/useCalculatorConstants';
 import { useSavePromptTrigger } from '@/hooks/useSavePromptTrigger';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -23,6 +24,7 @@ import { useCities } from '@/hooks/useCities';
 
 export function InvestmentROICalculator() {
   const { showPrompt: showSavePrompt, dismissPrompt: dismissSavePrompt, trackChange } = useSavePromptTrigger();
+  const { data: calcConstants } = useCalculatorConstants();
   
   const [purchasePrice, setPurchasePrice] = useState(2000000);
   const [monthlyRent, setMonthlyRent] = useState(7000);
@@ -41,9 +43,9 @@ export function InvestmentROICalculator() {
   const [maintenancePercent, setMaintenancePercent] = useState(1);
   
   // Monthly costs
-  const [monthlyArnona, setMonthlyArnona] = useState(500);
-  const [monthlyVaadBayit, setMonthlyVaadBayit] = useState<number>(FALLBACK_CONSTANTS.VAAD_BAYIT_DEFAULT);
-  const [monthlyInsurance, setMonthlyInsurance] = useState(150);
+  const [monthlyArnona, setMonthlyArnona] = useState<number>(getConstant(calcConstants, 'ARNONA_DEFAULT_MONTHLY'));
+  const [monthlyVaadBayit, setMonthlyVaadBayit] = useState<number>(getConstant(calcConstants, 'VAAD_BAYIT_DEFAULT'));
+  const [monthlyInsurance, setMonthlyInsurance] = useState<number>(getConstant(calcConstants, 'HOME_INSURANCE_MONTHLY'));
   
   // Tax method
   const [taxMethod, setTaxMethod] = useState<'exemption' | 'flat_10' | 'progressive'>('flat_10');

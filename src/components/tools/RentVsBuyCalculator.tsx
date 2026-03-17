@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { FALLBACK_CONSTANTS } from '@/lib/calculations/constants';
+import { FALLBACK_CONSTANTS, getConstant, getVatMultiplier } from '@/lib/calculations/constants';
+import { useCalculatorConstants } from '@/hooks/useCalculatorConstants';
 import { Link } from 'react-router-dom';
 import { useSavePromptTrigger } from '@/hooks/useSavePromptTrigger';
 import { 
@@ -80,17 +81,7 @@ const STORAGE_KEY = 'buywise_rent_vs_buy_inputs';
 
 type BuyerCategory = 'first_time' | 'oleh' | 'additional' | 'non_resident';
 
-// Fee estimates
-const FEES = {
-  lawyerRate: 0.005, // 0.5% of price
-  lawyerMinimum: 5000,
-  agentRate: 0.02, // 2% + VAT
-  vatRate: 0.18, // Updated to 18% as of Jan 2025
-  arnonaDefault: 400, // Monthly estimate when city data not available
-  vaadBayitDefault: FALLBACK_CONSTANTS.VAAD_BAYIT_DEFAULT,
-  homeInsurance: 150, // Monthly
-  maintenanceRate: 0.005, // 0.5% of property value annually
-};
+// Fee estimates now pulled from DB via useCalculatorConstants() — see calculations useMemo
 
 // Time horizon options
 const TIME_HORIZONS = [5, 10, 15, 20, 25];
@@ -189,6 +180,7 @@ export function RentVsBuyCalculator() {
   const { user } = useAuth();
   const saveToProfile = useSaveCalculatorResult();
   const { showPrompt: showSavePrompt, dismissPrompt: dismissSavePrompt, trackChange } = useSavePromptTrigger();
+  const { data: calcConstants } = useCalculatorConstants();
   
   // Form state - initialized with defaults for immediate results
   const [selectedCity, setSelectedCity] = useState('');
@@ -346,17 +338,18 @@ export function RentVsBuyCalculator() {
         (Math.pow(1 + monthlyRate, totalMortgagePayments_count) - 1)
       : loanAmount / totalMortgagePayments_count;
     
-    // One-time purchase costs
+    // One-time purchase costs (DB-first via calcConstants)
+    const vatMultiplier = getVatMultiplier(calcConstants);
     const purchaseTax = calculateTaxAmount(price, mapCategoryToBuyerType(buyerType));
-    const lawyerFee = Math.max(price * FEES.lawyerRate * (1 + FEES.vatRate), FEES.lawyerMinimum);
-    const agentFee = price * FEES.agentRate * (1 + FEES.vatRate);
+    const lawyerFee = Math.max(price * getConstant(calcConstants, 'LAWYER_RATE_MIN') * vatMultiplier, getConstant(calcConstants, 'LAWYER_MIN_FEE'));
+    const agentFee = price * getConstant(calcConstants, 'AGENT_RATE') * vatMultiplier;
     const totalPurchaseCosts = purchaseTax + lawyerFee + agentFee;
     
     // Monthly ownership costs (beyond mortgage) — at purchase time
-    const monthlyArnona = cityMetrics?.arnona_monthly_avg || FEES.arnonaDefault;
-    const monthlyVaadBayit = FEES.vaadBayitDefault;
-    const monthlyInsurance = FEES.homeInsurance;
-    const monthlyMaintenanceYear0 = (price * FEES.maintenanceRate) / 12;
+    const monthlyArnona = cityMetrics?.arnona_monthly_avg || getConstant(calcConstants, 'ARNONA_DEFAULT_MONTHLY');
+    const monthlyVaadBayit = getConstant(calcConstants, 'VAAD_BAYIT_DEFAULT');
+    const monthlyInsurance = getConstant(calcConstants, 'HOME_INSURANCE_MONTHLY');
+    const monthlyMaintenanceYear0 = (price * getConstant(calcConstants, 'MAINTENANCE_RATE')) / 12;
     
     // Shared costs: paid by BOTH renters and buyers — excluded from comparison
     const monthlySharedCosts = monthlyArnona + monthlyVaadBayit;
@@ -540,7 +533,7 @@ export function RentVsBuyCalculator() {
       monthlyEquityBuilding, priceToRentRatio,
       sellingCosts, capitalGainsTax, equityBuiltGross,
     };
-  }, [propertyPrice, monthlyRent, downPaymentPercent, interestRate, mortgageTerm, timeHorizon, appreciation, rentIncrease, investmentReturn, buyerType, cityMetrics, rooms]);
+  }, [propertyPrice, monthlyRent, downPaymentPercent, interestRate, mortgageTerm, timeHorizon, appreciation, rentIncrease, investmentReturn, buyerType, cityMetrics, rooms, calcConstants]);
 
   // Generate personalized insights
   const insights = useMemo(() => {

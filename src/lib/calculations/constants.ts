@@ -54,6 +54,21 @@ export const FALLBACK_CONSTANTS = {
   
   // Va'ad Bayit (building maintenance) - national median ₪350/mo
   VAAD_BAYIT_DEFAULT: 350,
+  
+  // Home insurance - typical monthly estimate
+  HOME_INSURANCE_MONTHLY: 150,
+  
+  // Arnona default monthly (when city-specific data unavailable)
+  ARNONA_DEFAULT_MONTHLY: 500,
+  
+  // Maintenance rate (% of property value per year)
+  MAINTENANCE_RATE: 0.01,
+  
+  // Vacancy rate default (5%)
+  VACANCY_RATE_DEFAULT: 0.05,
+  
+  // Selling agent rate (2%)
+  SELLING_AGENT_RATE: 0.02,
 } as const;
 
 export type ConstantKey = keyof typeof FALLBACK_CONSTANTS;
