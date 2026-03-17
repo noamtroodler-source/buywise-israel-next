@@ -242,6 +242,7 @@ export default function CityDetail() {
           cityName={city.name}
           heroImage={heroImage}
           identitySentence={identitySentence}
+          lastUpdated={city.updated_at}
         />
 
         {/* 2. Quick Stats Strip */}

@@ -101,7 +101,7 @@ export function CityHeroGuide({
             <Clock className="h-4 w-4" />
             ~5 min read
           </span>
-          <span>Updated 2025</span>
+          <span>{updatedLabel}</span>
         </motion.div>
       </div>
 
