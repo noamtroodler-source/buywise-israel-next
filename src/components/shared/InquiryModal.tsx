@@ -157,11 +157,13 @@ function InquiryForm({
   const [includeBuyerProfile, setIncludeBuyerProfile] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Pre-fill from user metadata
+  // Pre-fill from user metadata and rebuild message with name
   useEffect(() => {
     if (user) {
-      setName(user.user_metadata?.full_name || '');
+      const uName = user.user_metadata?.full_name || '';
+      setName(uName);
       setEmail(user.email || '');
+      setMessage(buildDefaultMessage(channel, uName));
     }
   }, [user]);
 
