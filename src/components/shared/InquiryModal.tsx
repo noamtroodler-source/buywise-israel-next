@@ -153,6 +153,7 @@ function InquiryForm({
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [subject, setSubject] = useState(`Inquiry about the ${propertyTitle}`);
   const [message, setMessage] = useState(buildDefaultMessage(channel, userName));
   const [includeBuyerProfile, setIncludeBuyerProfile] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
