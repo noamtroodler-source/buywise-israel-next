@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { MapPin, ChevronDown, Clock } from 'lucide-react';
+import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { DualNavigation } from '@/components/shared/DualNavigation';
 
