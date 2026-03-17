@@ -180,6 +180,7 @@ export function RentVsBuyCalculator() {
   const { user } = useAuth();
   const saveToProfile = useSaveCalculatorResult();
   const { showPrompt: showSavePrompt, dismissPrompt: dismissSavePrompt, trackChange } = useSavePromptTrigger();
+  const { data: calcConstants } = useCalculatorConstants();
   
   // Form state - initialized with defaults for immediate results
   const [selectedCity, setSelectedCity] = useState('');
