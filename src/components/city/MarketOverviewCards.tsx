@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { DollarSign, Building2, Receipt, Info, TrendingUp, TrendingDown, User, HelpCircle } from 'lucide-react';
+import { DollarSign, Receipt, Info, TrendingUp, TrendingDown, User, HelpCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
-import { useBuyerProfile, BuyerProfile } from '@/hooks/useBuyerProfile';
+import { useBuyerProfile } from '@/hooks/useBuyerProfile';
 import { calculateArnonaWithDiscount } from '@/lib/calculations/arnona';
 import { ARNONA_AREA_TOOLTIP } from '@/lib/content/areaTooltips';
 import { InlineSourceBadge } from '@/components/shared/InlineSourceBadge';
