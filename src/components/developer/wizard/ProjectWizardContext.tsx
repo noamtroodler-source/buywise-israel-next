@@ -144,9 +144,11 @@ export function ProjectWizardProvider({ children, totalSteps }: { children: Reac
         if (!data.name) errors.push('Project name is required');
         if (!data.city) errors.push('City is required');
         if (!data.neighborhood) errors.push('Neighborhood is required');
-        if (!data.address) errors.push('Address is required');
-        else if (!/\d+/.test(data.address)) errors.push('Address must include a street number');
-        if (!data.latitude || !data.longitude) errors.push('Valid map coordinates are required');
+        if (!data.address || !data.latitude || !data.longitude) {
+          errors.push('A valid address with map pin is required');
+        } else if (!/\d+/.test(data.address)) {
+          errors.push('Address must include a street number');
+        }
         break;
       case 1: // Details
         if (data.construction_start && data.completion_date) {
