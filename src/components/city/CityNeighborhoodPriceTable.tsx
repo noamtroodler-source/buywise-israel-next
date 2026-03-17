@@ -171,9 +171,6 @@ function NeighborhoodDrawerTable({ rows, cityName }: { rows: NeighborhoodPriceRo
                       <SortIcon active={sortKey === 'yoy_change_percent'} direction={sortDir} />
                     </span>
                   </th>
-                  <th className="h-10 px-3 text-left align-middle font-medium text-muted-foreground min-w-[100px]">
-                    Tier
-                  </th>
                 </tr>
               </thead>
               <tbody className="[&_tr:last-child]:border-0">
