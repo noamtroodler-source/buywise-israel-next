@@ -283,15 +283,6 @@ export function HistoricalPriceChart({
                 How {cityName} apartment prices have moved over time
               </p>
             </div>
-            {!hasNoData && (
-              <Tabs value={period} onValueChange={(v) => setPeriod(v as Period)}>
-                <TabsList className="bg-background">
-                  <TabsTrigger value="5y" className="text-xs">5 Years</TabsTrigger>
-                  <TabsTrigger value="10y" className="text-xs">10 Years</TabsTrigger>
-                  <TabsTrigger value="all" className="text-xs">All Time</TabsTrigger>
-                </TabsList>
-              </Tabs>
-            )}
           </div>
 
           {/* City Comparison Selector */}
