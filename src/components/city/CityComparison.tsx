@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Scale, TrendingUp, TrendingDown, Minus, Crown } from 'lucide-react';
 import { useCities } from '@/hooks/useCities';
 import { CityComparisonSelector } from './CityComparisonSelector';
+import { useFormatPricePerArea, useAreaUnitLabel } from '@/contexts/PreferencesContext';
 
 interface CityComparisonProps {
   currentCitySlug: string;
@@ -17,42 +18,44 @@ type ComparisonMetric = {
   higherIsBetter: boolean;
 };
 
-const metrics: ComparisonMetric[] = [
-  { 
-    label: 'Avg. Price/m²', 
-    key: 'average_price_sqm', 
-    format: (v) => v ? `₪${v.toLocaleString()}` : 'N/A',
-    higherIsBetter: false 
-  },
-  { 
-    label: 'Gross Yield', 
-    key: 'gross_yield_percent', 
-    format: (v) => v ? `${v}%` : 'N/A',
-    higherIsBetter: true 
-  },
-  { 
-    label: 'Commute to TLV', 
-    key: 'commute_time_tel_aviv', 
-    format: (v) => v === 0 ? 'In TLV' : v ? `${v} min` : 'N/A',
-    higherIsBetter: false 
-  },
-  { 
-    label: 'Arnona Rate', 
-    key: 'arnona_rate_sqm', 
-    format: (v) => v ? `₪${v}/m²` : 'N/A',
-    higherIsBetter: false 
-  },
-  { 
-    label: 'Socioeconomic', 
-    key: 'socioeconomic_rank', 
-    format: (v) => v ? `${v}/10` : 'N/A',
-    higherIsBetter: true 
-  },
-];
-
 export function CityComparison({ currentCitySlug, currentCityName }: CityComparisonProps) {
   const { data: allCities = [] } = useCities();
   const [selectedCities, setSelectedCities] = useState<string[]>([currentCityName]);
+  const formatPricePerAreaFn = useFormatPricePerArea();
+  const areaLabel = useAreaUnitLabel();
+
+  const metrics: ComparisonMetric[] = useMemo(() => [
+    { 
+      label: `Avg. Price/${areaLabel === 'sqft' ? 'sqft' : 'm²'}`, 
+      key: 'average_price_sqm', 
+      format: (v: number | null) => v ? formatPricePerAreaFn(v, 'ILS') : 'N/A',
+      higherIsBetter: false 
+    },
+    { 
+      label: 'Gross Yield', 
+      key: 'gross_yield_percent', 
+      format: (v: number | null) => v ? `${v}%` : 'N/A',
+      higherIsBetter: true 
+    },
+    { 
+      label: 'Commute to TLV', 
+      key: 'commute_time_tel_aviv', 
+      format: (v: number | null) => v === 0 ? 'In TLV' : v ? `${v} min` : 'N/A',
+      higherIsBetter: false 
+    },
+    { 
+      label: 'Arnona Rate', 
+      key: 'arnona_rate_sqm', 
+      format: (v: number | null) => v ? `₪${v}/${areaLabel === 'sqft' ? 'sqft' : 'm²'}` : 'N/A',
+      higherIsBetter: false 
+    },
+    { 
+      label: 'Socioeconomic', 
+      key: 'socioeconomic_rank', 
+      format: (v: number | null) => v ? `${v}/10` : 'N/A',
+      higherIsBetter: true 
+    },
+  ], [formatPricePerAreaFn, areaLabel]);
   
   const availableCities = useMemo(() => 
     allCities.map(c => ({ name: c.name, slug: c.slug })),
