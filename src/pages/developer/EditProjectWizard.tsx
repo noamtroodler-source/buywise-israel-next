@@ -402,7 +402,7 @@ function EditWizardContent({ projectId }: { projectId: string }) {
                     )}
                   </div>
                 ) : (
-                  <Button onClick={goNext} disabled={!canGoNext} className="rounded-xl h-11 px-6">
+                  <Button onClick={goNext} className="rounded-xl h-11 px-6">
                     Next
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>

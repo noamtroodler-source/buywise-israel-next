@@ -245,6 +245,8 @@ export function ProjectWizardProvider({ children, totalSteps }: { children: Reac
         loadFromSaved,
         stepOffset,
         setStepOffset,
+        getStepErrors,
+        getAllErrors,
       }}
     >
       {children}

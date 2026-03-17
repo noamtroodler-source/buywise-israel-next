@@ -276,7 +276,7 @@ function AgencyProjectWizardContent() {
                   ) : (
                     <Button
                       onClick={goNext}
-                      disabled={!canGoNextAgency}
+                      disabled={currentStep === 0 && !assignedAgentId}
                       className="rounded-xl h-11 px-6"
                     >
                       Next
