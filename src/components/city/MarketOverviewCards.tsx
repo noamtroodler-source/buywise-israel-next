@@ -81,7 +81,7 @@ export function MarketOverviewCards({
         <div className="mb-10">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
-              <h2 className="text-2xl font-semibold text-foreground">Market Overview</h2>
+              <h2 className="text-2xl font-semibold text-foreground">City Overview</h2>
               <p className="text-muted-foreground mt-1">Key numbers to understand {cityName}'s real estate market</p>
             </div>
             {/* Inline Source Attribution */}
