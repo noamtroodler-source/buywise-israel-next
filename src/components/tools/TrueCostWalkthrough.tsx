@@ -26,6 +26,7 @@ interface CostBreakdown {
 }
 
 export function TrueCostWalkthrough() {
+  const { data: calcConstants } = useCalculatorConstants();
   const [currentStep, setCurrentStep] = useState(0);
   const [propertyPrice, setPropertyPrice] = useState(2500000);
   const [buyerType, setBuyerType] = useState<'first_time' | 'additional' | 'foreign'>('first_time');
