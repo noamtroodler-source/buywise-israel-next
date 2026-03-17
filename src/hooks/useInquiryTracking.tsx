@@ -69,20 +69,22 @@ export function useInquiryTracking() {
         return null;
       }
 
+      const insertData = {
+        property_id: params.propertyId,
+        agent_id: params.agentId,
+        inquiry_type: params.inquiryType,
+        user_id: user?.id || null,
+        name: params.name || null,
+        email: params.email || null,
+        phone: params.phone || null,
+        message: params.message || null,
+        buyer_context_snapshot: (params.buyerContextSnapshot || null) as any,
+        session_id: !user ? sessionId : null,
+      };
+
       const { data, error } = await supabase
         .from('property_inquiries')
-        .insert({
-          property_id: params.propertyId,
-          agent_id: params.agentId,
-          inquiry_type: params.inquiryType,
-          user_id: user?.id || null,
-          name: params.name || null,
-          email: params.email || null,
-          phone: params.phone || null,
-          message: params.message || null,
-          buyer_context_snapshot: params.buyerContextSnapshot || null,
-          session_id: !user ? sessionId : null,
-        });
+        .insert(insertData as any);
 
       if (error) throw error;
 
