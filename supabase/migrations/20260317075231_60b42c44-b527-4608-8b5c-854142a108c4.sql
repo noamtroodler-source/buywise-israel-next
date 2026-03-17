@@ -1,0 +1,1 @@
+UPDATE import_job_items SET status = 'pending', error_message = NULL, error_type = NULL WHERE job_id = '44ae3deb-0f25-4cc7-a25e-60d91ba0217f' AND status IN ('skipped', 'failed')
