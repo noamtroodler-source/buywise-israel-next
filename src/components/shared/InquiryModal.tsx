@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { z } from 'zod';
-import { MessageCircle, Mail, User, Sparkles } from 'lucide-react';
+import { MessageCircle, Mail, User, Sparkles, Search } from 'lucide-react';
+import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,6 +46,7 @@ export interface InquiryFormData {
   phone: string;
   message: string;
   includeBuyerProfile: boolean;
+  openToSimilar: boolean;
   buyerContextSnapshot: BuyerContextSnapshot | null;
 }
 
@@ -156,6 +158,7 @@ function InquiryForm({
   const [subject, setSubject] = useState(`Inquiry about the ${propertyTitle}`);
   const [message, setMessage] = useState(buildDefaultMessage(channel, userName));
   const [includeBuyerProfile, setIncludeBuyerProfile] = useState(true);
+  const [openToSimilar, setOpenToSimilar] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Pre-fill from user metadata and rebuild message with name
@@ -203,9 +206,13 @@ function InquiryForm({
       ? buildBuyerContextSnapshot(buyerProfile!)
       : null;
 
-    const fullMessage = channel === 'email'
+    let fullMessage = channel === 'email'
       ? `Subject: ${subject.trim()}\n\n${message.trim()}`
       : message.trim();
+
+    if (openToSimilar) {
+      fullMessage += '\n\nI\'m also open to similar listings in this area.';
+    }
 
     onSubmit({
       name: isLoggedIn ? (user?.user_metadata?.full_name || name) : name,
@@ -213,7 +220,12 @@ function InquiryForm({
       phone,
       message: fullMessage,
       includeBuyerProfile,
+      openToSimilar,
       buyerContextSnapshot: snapshot,
+    });
+
+    toast.success('Inquiry sent!', {
+      description: 'Most agents reply within 24 hours.',
     });
   };
 
@@ -327,6 +339,19 @@ function InquiryForm({
           Complete your buyer profile for personalized service
         </Link>
       )}
+
+      {/* Open to similar listings */}
+      <div className="flex items-center gap-2">
+        <Checkbox
+          id="open-to-similar"
+          checked={openToSimilar}
+          onCheckedChange={(checked) => setOpenToSimilar(!!checked)}
+        />
+        <Label htmlFor="open-to-similar" className="text-sm font-normal cursor-pointer flex items-center gap-1.5">
+          <Search className="h-3.5 w-3.5 text-muted-foreground" />
+          I'm also open to similar listings in this area
+        </Label>
+      </div>
 
       {/* Form error */}
       {errors._form && (
