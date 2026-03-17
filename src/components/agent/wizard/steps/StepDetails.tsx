@@ -2,7 +2,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { FormattedNumberInput } from '@/components/ui/formatted-number-input';
 import { usePropertyWizard } from '../PropertyWizardContext';
-import { Bed, Bath, Ruler, Building, Calendar, Car, LandPlot } from 'lucide-react';
+import { Bed, Bath, Ruler, Building, Calendar, Car, LandPlot, Info } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export function StepDetails() {
   const { data, updateData } = usePropertyWizard();
