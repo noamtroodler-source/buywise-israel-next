@@ -51,7 +51,7 @@ function TrendIndicator({ yoyChange }: { yoyChange: number | null }) {
     return (
       <span className="inline-flex items-center gap-0.5 text-xs font-medium text-semantic-green">
         <TrendingUp className="h-3 w-3" />
-        +{yoyChange}%
+        +{yoyChange}% <span className="text-muted-foreground/60 font-normal ml-0.5">3Y</span>
       </span>
     );
   }
@@ -59,14 +59,14 @@ function TrendIndicator({ yoyChange }: { yoyChange: number | null }) {
     return (
       <span className="inline-flex items-center gap-0.5 text-xs font-medium text-destructive">
         <TrendingDown className="h-3 w-3" />
-        {yoyChange}%
+        {yoyChange}% <span className="text-muted-foreground/60 font-normal ml-0.5">3Y</span>
       </span>
     );
   }
   return (
     <span className="inline-flex items-center gap-0.5 text-xs font-medium text-muted-foreground">
       <Minus className="h-3 w-3" />
-      Stable
+      Stable <span className="text-muted-foreground/60 font-normal ml-0.5">3Y</span>
     </span>
   );
 }
@@ -222,7 +222,7 @@ export function CityNeighborhoods({ cityName, neighborhoods }: CityNeighborhoods
 
         {/* Source note */}
         <p className="text-[11px] text-muted-foreground/60 mt-4 text-center">
-          Prices: CBS (Central Bureau of Statistics) · 4-room apartment averages
+          Prices: CBS (Central Bureau of Statistics) · 4-room avg · 3-year trend
         </p>
       </div>
     </section>

@@ -36,7 +36,7 @@ function TrendIndicator({ yoyChange }: { yoyChange: number }) {
     return (
       <span className="inline-flex items-center gap-0.5 text-xs font-medium text-semantic-green">
         <TrendingUp className="h-3 w-3" />
-        +{yoyChange}%
+        +{yoyChange}% <span className="text-muted-foreground/60 font-normal ml-0.5">3Y</span>
       </span>
     );
   }
@@ -44,14 +44,14 @@ function TrendIndicator({ yoyChange }: { yoyChange: number }) {
     return (
       <span className="inline-flex items-center gap-0.5 text-xs font-medium text-destructive">
         <TrendingDown className="h-3 w-3" />
-        {yoyChange}%
+        {yoyChange}% <span className="text-muted-foreground/60 font-normal ml-0.5">3Y</span>
       </span>
     );
   }
   return (
     <span className="inline-flex items-center gap-0.5 text-xs font-medium text-muted-foreground">
       <Minus className="h-3 w-3" />
-      Stable
+      Stable <span className="text-muted-foreground/60 font-normal ml-0.5">3Y</span>
     </span>
   );
 }
