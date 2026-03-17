@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { FormattedNumberInput } from '@/components/ui/formatted-number-input';
 import { usePropertyWizard } from '../PropertyWizardContext';
-import { Thermometer, Calendar, Wrench, Sparkles, Building, FileText, Home, Banknote, Star, Lightbulb } from 'lucide-react';
+import { Thermometer, Calendar, Wrench, Sparkles, Building, FileText, Home, Banknote, Star, Lightbulb, Info } from 'lucide-react';
  import { Armchair } from 'lucide-react';
  import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -491,6 +491,12 @@ export function StepFeatures() {
             </div>
             <h3 className="font-semibold">Property Features</h3>
           </div>
+          {data.import_source && (
+            <div className="flex items-start gap-2 p-3 rounded-xl bg-primary/5 border border-primary/15 text-sm text-muted-foreground">
+              <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+              <span>Features were auto-detected from import and may be incomplete. Please review and toggle any that are missing or incorrect.</span>
+            </div>
+          )}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {commonFeatures.map((feature) => (
               <label
