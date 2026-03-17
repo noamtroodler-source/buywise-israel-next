@@ -83,12 +83,11 @@ export function StepDetails() {
                   placeholder="0"
                   className="h-11 rounded-xl"
                 />
-                <p className="text-xs text-muted-foreground">Mamad, living room, office — helps Anglo buyers understand your listing</p>
-                {data.additional_rooms === 0 && (data.bedrooms ?? 0) >= 3 && (
-                  <p className="text-xs text-destructive/80 mt-1">
-                    Most {data.bedrooms}+ bedroom apartments have at least 1 additional room (living room, mamad). Is this correct?
-                  </p>
-                )}
+                <p className="text-xs text-muted-foreground">
+                  {data.additional_rooms === 0 && (data.bedrooms ?? 0) >= 3
+                    ? 'Living room, mamad, office — most 3+ bed apartments have at least 1'
+                    : 'Mamad, living room, office — helps buyers understand your listing'}
+                </p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="bathrooms">Bathrooms *</Label>
