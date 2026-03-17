@@ -13,7 +13,6 @@ import { NATIONAL_AVG_PRICE_SQM, NATIONAL_AVG_ARNONA } from '@/lib/constants/mar
 interface MarketOverviewCardsProps {
   cityName: string;
   arnonaRateSqm?: number | null;
-  propertyTypes?: { name: string; value: number }[];
   dataSources?: Record<string, string> | null;
   lastVerified?: string | null;
   cityData?: {
