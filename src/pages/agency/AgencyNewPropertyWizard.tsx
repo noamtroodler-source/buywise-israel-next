@@ -292,7 +292,7 @@ function AgencyWizardContent() {
                     </Button>
                     <Button
                       onClick={handleSubmitForReview}
-                      disabled={isSubmitting || !canGoNextAgency || !assignedAgentId}
+                      disabled={isSubmitting || getAllErrors().length > 0 || !assignedAgentId}
                       className="gap-2 rounded-xl h-11 px-6"
                     >
                       {isSubmitting ? (
