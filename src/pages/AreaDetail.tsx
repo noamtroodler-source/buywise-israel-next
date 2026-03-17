@@ -272,6 +272,14 @@ export default function CityDetail() {
           />
         </section>
 
+        {/* 5.6. Neighborhood Price Snapshot + Drawer */}
+        {priceTableRows.length > 0 && (
+          <CityNeighborhoodPriceTable
+            cityName={city.name}
+            rows={priceTableRows}
+          />
+        )}
+
         {/* 6. Worth Watching */}
         <section id="watching">
           {worthWatching.length > 0 ? (
