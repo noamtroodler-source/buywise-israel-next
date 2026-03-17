@@ -222,7 +222,7 @@ export function CityNeighborhoods({ cityName, neighborhoods }: CityNeighborhoods
 
         {/* Source note */}
         <p className="text-[11px] text-muted-foreground/60 mt-4 text-center">
-          Prices: CBS (Central Bureau of Statistics) · 4-room apartment averages
+          Prices: CBS (Central Bureau of Statistics) · 4-room avg · 3-year trend
         </p>
       </div>
     </section>

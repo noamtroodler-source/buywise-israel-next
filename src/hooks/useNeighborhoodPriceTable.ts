@@ -105,7 +105,7 @@ export function useNeighborhoodPriceTable(citySlug: string, cityName: string | u
         } else {
           existing.latestPrices.push(latest.avg_price_nis);
           const prevYear = prices.find(
-            (p: any) => p.year === latest.year - 1 && p.quarter === latest.quarter
+            (p: any) => p.year === latest.year - 3 && p.quarter === latest.quarter
           ) as any;
           if (prevYear?.avg_price_nis) existing.prevPrices.push(prevYear.avg_price_nis);
         }

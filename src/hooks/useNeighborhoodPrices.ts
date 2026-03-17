@@ -102,8 +102,9 @@ export function useNeighborhoodPrices(cityName: string | undefined) {
         const latestPrice = latest.avg_price_nis;
 
         // Find same quarter previous year for YoY
+        // Compare against 3 years ago for a more stable trend
         const prevYear = prices.find(
-          (p: any) => p.year === latestYear - 1 && p.quarter === latestQuarter
+          (p: any) => p.year === latestYear - 3 && p.quarter === latestQuarter
         ) as any;
 
         const yoyChange = prevYear?.avg_price_nis && latestPrice
