@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { z } from 'zod';
-import { MessageCircle, Mail, User, Sparkles, Search } from 'lucide-react';
+import { MessageCircle, Mail, User, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -347,8 +347,7 @@ function InquiryForm({
           checked={openToSimilar}
           onCheckedChange={(checked) => setOpenToSimilar(!!checked)}
         />
-        <Label htmlFor="open-to-similar" className="text-sm font-normal cursor-pointer flex items-center gap-1.5">
-          <Search className="h-3.5 w-3.5 text-muted-foreground" />
+        <Label htmlFor="open-to-similar" className="text-sm font-normal cursor-pointer">
           I'm also open to similar listings in this area
         </Label>
       </div>
