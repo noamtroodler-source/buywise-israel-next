@@ -46,6 +46,7 @@ export interface InquiryFormData {
   phone: string;
   message: string;
   includeBuyerProfile: boolean;
+  openToSimilar: boolean;
   buyerContextSnapshot: BuyerContextSnapshot | null;
 }
 
