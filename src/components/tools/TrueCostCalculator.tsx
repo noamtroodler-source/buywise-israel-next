@@ -1,5 +1,7 @@
 // True Cost Calculator - Unified Side-by-Side Layout for BuyWise Israel
 import { useState, useMemo, useCallback, useEffect } from 'react';
+import { getVatMultiplier } from '@/lib/calculations/constants';
+import { useCalculatorConstants } from '@/hooks/useCalculatorConstants';
 import { motion } from 'framer-motion';
 import { 
   Calculator, 
