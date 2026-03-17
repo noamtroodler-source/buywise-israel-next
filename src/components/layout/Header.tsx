@@ -1,5 +1,5 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { Home, User, LogOut, Heart, Building2, Shield, Users, Landmark, Search } from 'lucide-react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Home, User, LogOut, Heart, Building2, Shield, Users, Landmark, Search, LayoutDashboard, MessageSquare, Settings, FileText, Import, UserCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -25,11 +25,52 @@ import { MegaMenu } from './MegaMenu';
 import { NAV_CONFIG } from '@/lib/navigationConfig';
 import { CommandPalette } from './CommandPalette';
 import { useCommandPalette } from '@/hooks/useCommandPalette';
+import { cn } from '@/lib/utils';
+
+const agencyNavItems = [
+  { label: 'Dashboard', to: '/agency', end: true },
+  { label: 'Listings', to: '/agency/listings' },
+  { label: 'Team', to: '/agency/team' },
+  { label: 'Leads', to: '/agency/leads' },
+  { label: 'Settings', to: '/agency/settings' },
+];
+
+const agentNavItems = [
+  { label: 'Dashboard', to: '/agent', end: true },
+  { label: 'My Listings', to: '/agent/properties' },
+  { label: 'Leads', to: '/agent/leads' },
+  { label: 'Profile', to: '/agent/profile' },
+];
+
+const developerNavItems = [
+  { label: 'Dashboard', to: '/developer', end: true },
+  { label: 'Projects', to: '/developer/projects' },
+  { label: 'Leads', to: '/developer/leads' },
+  { label: 'Settings', to: '/developer/settings' },
+];
+
+function PortalNavLink({ to, label, end, pathname }: { to: string; label: string; end?: boolean; pathname: string }) {
+  const isActive = end ? pathname === to : pathname.startsWith(to);
+  return (
+    <Link
+      to={to}
+      className={cn(
+        'text-sm font-medium transition-colors px-3 py-1.5 rounded-lg',
+        isActive
+          ? 'text-primary bg-primary/10'
+          : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+      )}
+    >
+      {label}
+    </Link>
+  );
+}
 
 export function Header() {
   const { user, signOut } = useAuth();
   const { isAgent, isAdmin, isDeveloper } = useUserRole();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toggle: toggleCommandPalette } = useCommandPalette();
   
   // These hooks already have internal `enabled: !!user` checks for performance
@@ -42,6 +83,20 @@ export function Header() {
   const isAgencyAdmin = !!myAgency;
   const hasDeveloperProfile = !!developerProfile;
   const hasProfessionalRole = isAgent || isAgencyAdmin || hasDeveloperProfile || isDeveloper || isAdmin;
+
+  const pathname = location.pathname;
+  const isInAgencyPortal = pathname.startsWith('/agency');
+  const isInAgentPortal = pathname.startsWith('/agent');
+  const isInDeveloperPortal = pathname.startsWith('/developer');
+  const isInPortal = isInAgencyPortal || isInAgentPortal || isInDeveloperPortal;
+
+  const portalNavItems = isInAgencyPortal
+    ? agencyNavItems
+    : isInAgentPortal
+    ? agentNavItems
+    : isInDeveloperPortal
+    ? developerNavItems
+    : [];
 
   const handleSignOut = async () => {
     await signOut();
@@ -63,12 +118,20 @@ export function Header() {
         </Link>
 
         {/* Desktop Navigation - True Center */}
-        <nav className="hidden lg:flex items-center justify-center gap-6">
-          <MegaMenu config={NAV_CONFIG.buy} />
-          <MegaMenu config={NAV_CONFIG.projects} />
-          <MegaMenu config={NAV_CONFIG.rent} />
-          <LearnNav />
-          <MoreNav />
+        <nav className="hidden lg:flex items-center justify-center gap-1">
+          {isInPortal ? (
+            portalNavItems.map((item) => (
+              <PortalNavLink key={item.to} {...item} pathname={pathname} />
+            ))
+          ) : (
+            <div className="flex items-center gap-6">
+              <MegaMenu config={NAV_CONFIG.buy} />
+              <MegaMenu config={NAV_CONFIG.projects} />
+              <MegaMenu config={NAV_CONFIG.rent} />
+              <LearnNav />
+              <MoreNav />
+            </div>
+          )}
         </nav>
 
         {/* Right Side */}

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, Heart, Menu, X, Building, User, ChevronRight } from 'lucide-react';
+import { Home, Search, Heart, Menu, X, Building, User, ChevronRight, LayoutDashboard, FileText, MessageSquare, Settings, Users, Landmark, UserCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useFavoritesContext } from '@/contexts/FavoritesContext';
@@ -28,7 +28,6 @@ function NavItem({ icon: Icon, label, to, isActive, badge, onClick }: NavItemPro
 
   const content = (
     <div className="flex flex-col items-center justify-center gap-0.5 min-w-[64px] relative">
-      {/* Active indicator dot */}
       <AnimatePresence>
         {isActive && (
           <motion.div
@@ -86,7 +85,7 @@ function NavItem({ icon: Icon, label, to, isActive, badge, onClick }: NavItemPro
   );
 }
 
-const menuSections = [
+const publicMenuSections = [
   {
     title: 'Browse',
     links: [
@@ -113,6 +112,44 @@ const menuSections = [
   },
 ];
 
+const agencyMobileNav = {
+  tabs: [
+    { icon: LayoutDashboard, label: 'Dashboard', to: '/agency' },
+    { icon: FileText, label: 'Listings', to: '/agency/listings' },
+    { icon: Users, label: 'Team', to: '/agency/team' },
+    { icon: MessageSquare, label: 'Leads', to: '/agency/leads' },
+  ],
+  more: [
+    { label: 'Import Listings', to: '/agency/import', icon: FileText },
+    { label: 'Settings', to: '/agency/settings', icon: Settings },
+    { label: 'Back to BuyWise', to: '/', icon: Home },
+  ],
+};
+
+const agentMobileNav = {
+  tabs: [
+    { icon: LayoutDashboard, label: 'Dashboard', to: '/agent' },
+    { icon: FileText, label: 'Listings', to: '/agent/properties' },
+    { icon: MessageSquare, label: 'Leads', to: '/agent/leads' },
+    { icon: UserCircle, label: 'Profile', to: '/agent/profile' },
+  ],
+  more: [
+    { label: 'Back to BuyWise', to: '/', icon: Home },
+  ],
+};
+
+const developerMobileNav = {
+  tabs: [
+    { icon: LayoutDashboard, label: 'Dashboard', to: '/developer' },
+    { icon: Landmark, label: 'Projects', to: '/developer/projects' },
+    { icon: MessageSquare, label: 'Leads', to: '/developer/leads' },
+    { icon: Settings, label: 'Settings', to: '/developer/settings' },
+  ],
+  more: [
+    { label: 'Back to BuyWise', to: '/', icon: Home },
+  ],
+};
+
 export function MobileBottomNav() {
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -121,14 +158,32 @@ export function MobileBottomNav() {
   const { light } = useHapticFeedback();
   
   const totalFavorites = guestFavorites.length + guestProjectFavoriteIds.length;
+  const pathname = location.pathname;
+
+  const isInAgencyPortal = pathname.startsWith('/agency');
+  const isInAgentPortal = pathname.startsWith('/agent');
+  const isInDeveloperPortal = pathname.startsWith('/developer');
+  const isInPortal = isInAgencyPortal || isInAgentPortal || isInDeveloperPortal;
+
+  const portalNav = isInAgencyPortal
+    ? agencyMobileNav
+    : isInAgentPortal
+    ? agentMobileNav
+    : isInDeveloperPortal
+    ? developerMobileNav
+    : null;
   
   const isActive = (path: string) => {
-    if (path === '/') return location.pathname === '/';
+    if (path === '/') return pathname === '/';
+    // Exact match for portal roots
+    if (path === '/agency' && isInAgencyPortal) return pathname === '/agency';
+    if (path === '/agent' && isInAgentPortal) return pathname === '/agent';
+    if (path === '/developer' && isInDeveloperPortal) return pathname === '/developer';
     if (path.includes('?')) {
       const basePath = path.split('?')[0];
-      return location.pathname === basePath && location.search.includes(path.split('?')[1]);
+      return pathname === basePath && location.search.includes(path.split('?')[1]);
     }
-    return location.pathname.startsWith(path);
+    return pathname.startsWith(path) && path !== '/';
   };
 
   const handleMenuOpen = (open: boolean) => {
@@ -136,6 +191,69 @@ export function MobileBottomNav() {
     setMenuOpen(open);
   };
 
+  // Portal mobile nav
+  if (isInPortal && portalNav) {
+    return (
+      <nav className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-md border-t border-border z-50 lg:hidden pb-safe">
+        <div className="flex items-center h-16">
+          {portalNav.tabs.map((tab) => (
+            <NavItem
+              key={tab.to}
+              icon={tab.icon}
+              label={tab.label}
+              to={tab.to}
+              isActive={isActive(tab.to)}
+            />
+          ))}
+          <Sheet open={menuOpen} onOpenChange={handleMenuOpen}>
+            <SheetTrigger asChild>
+              <div className="flex-1">
+                <NavItem
+                  icon={menuOpen ? X : Menu}
+                  label="More"
+                  onClick={() => setMenuOpen(true)}
+                />
+              </div>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="h-auto max-h-[60vh] rounded-t-3xl px-0 pb-safe">
+              <div className="flex justify-center pt-2 pb-4">
+                <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+              </div>
+              <div className="overflow-y-auto pb-8">
+                <div>
+                  <p className="px-6 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Navigation
+                  </p>
+                  {portalNav.more.map((link) => (
+                    <SheetClose asChild key={link.to}>
+                      <Link
+                        to={link.to}
+                        className={cn(
+                          "flex items-center justify-between px-6 py-3.5 text-base font-medium transition-colors touch-manipulation",
+                          isActive(link.to)
+                            ? "text-primary bg-primary/5"
+                            : "text-foreground hover:bg-muted active:bg-muted/80"
+                        )}
+                        onClick={() => light()}
+                      >
+                        <div className="flex items-center gap-3">
+                          {link.icon && <link.icon className="h-5 w-5 text-muted-foreground" />}
+                          <span>{link.label}</span>
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                      </Link>
+                    </SheetClose>
+                  ))}
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+      </nav>
+    );
+  }
+
+  // Public mobile nav
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-md border-t border-border z-50 lg:hidden pb-safe">
       <div className="flex items-center h-16">
@@ -176,13 +294,12 @@ export function MobileBottomNav() {
             </div>
           </SheetTrigger>
           <SheetContent side="bottom" className="h-[75vh] rounded-t-3xl px-0 pb-safe">
-            {/* Handle bar */}
             <div className="flex justify-center pt-2 pb-4">
               <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
             </div>
             
             <div className="overflow-y-auto pb-8">
-              {menuSections.map((section, sectionIndex) => (
+              {publicMenuSections.map((section, sectionIndex) => (
                 <div key={section.title} className={cn(sectionIndex > 0 && "mt-4")}>
                   <p className="px-6 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     {section.title}
@@ -210,7 +327,6 @@ export function MobileBottomNav() {
                 </div>
               ))}
               
-              {/* Quick Actions Footer */}
               {!user && (
                 <div className="mt-6 mx-4 p-4 bg-muted/50 rounded-xl">
                   <p className="text-sm text-muted-foreground mb-3">
