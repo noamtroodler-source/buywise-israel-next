@@ -171,6 +171,7 @@ export function CityQuickStats({ citySlug, cityData, dataSources, lastVerified }
           {/* Rent with selector */}
           {rentalRange && (
             <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground/70 uppercase tracking-wide mr-1">Rent</span>
               <span className="text-lg font-semibold text-foreground">{rentalRange}</span>
               <span className="text-sm text-muted-foreground">/mo</span>
               <Select
