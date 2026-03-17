@@ -3,6 +3,8 @@
  * For Israeli real estate investment analysis
  */
 
+import { FALLBACK_CONSTANTS } from '@/lib/calculations/constants';
+
 export interface YieldResult {
   grossYield: number;
   netYield: number;

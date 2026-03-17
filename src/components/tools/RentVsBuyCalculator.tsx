@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
+import { FALLBACK_CONSTANTS } from '@/lib/calculations/constants';
 import { Link } from 'react-router-dom';
 import { useSavePromptTrigger } from '@/hooks/useSavePromptTrigger';
 import { 

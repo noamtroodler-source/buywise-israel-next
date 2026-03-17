@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils';
 import { BuyerProfileDimensions, deriveEffectiveBuyerType } from '@/lib/calculations/buyerProfile';
 import { BuyerType } from '@/lib/calculations/purchaseTax';
 import { calculateArnonaWithDiscount, type ArnonaEstimate } from '@/lib/calculations/arnona';
+import { FALLBACK_CONSTANTS } from '@/lib/calculations/constants';
 
 interface PropertyCostBreakdownProps {
   price: number;
