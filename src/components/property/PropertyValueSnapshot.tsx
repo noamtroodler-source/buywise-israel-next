@@ -2,6 +2,7 @@ import { TrendingUp, TrendingDown, Minus, DollarSign, BarChart3, Home, Calendar 
 import { useFormatPrice, useFormatPricePerArea } from '@/contexts/PreferencesContext';
 import { useMemo } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { FALLBACK_CONSTANTS } from '@/lib/calculations/constants';
 
 interface PropertyValueSnapshotProps {
   price: number;
