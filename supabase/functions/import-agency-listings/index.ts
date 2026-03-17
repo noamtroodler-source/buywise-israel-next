@@ -1224,12 +1224,9 @@ async function parallelImageDownload(
           const publicUrl = urlData?.publicUrl || null;
           if (!publicUrl) return null;
 
-          // Only enhance the first image (cover photo)
-          const enhancedUrl = globalIdx === 0 ? await enhanceImage(publicUrl, sb, bucketName, jobId) : publicUrl;
-
-          // Optimize: convert to WebP + generate size variants
-          const optimized = await optimizeImage(enhancedUrl, bucketName, `imports/${jobId}/${imageId}`);
-          const finalUrl = optimized?.medium || enhancedUrl;
+          // DISABLED: enhanceImage and optimizeImage crash with magick.wasm URL error.
+          // Use the uploaded public URL directly until WASM issue is resolved.
+          const finalUrl = publicUrl;
 
           return { url: finalUrl, hash };
         }
