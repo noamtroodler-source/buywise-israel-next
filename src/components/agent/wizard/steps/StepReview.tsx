@@ -49,6 +49,7 @@ export function StepReview({ onEditStep, stepOffset = 0 }: StepReviewProps) {
 
   const conditionLabels: Record<string, string> = {
     new: 'New',
+    shell: 'Shell / Under Construction',
     like_new: 'Like New',
     renovated: 'Renovated',
     good: 'Good Condition',

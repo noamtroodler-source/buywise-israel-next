@@ -12,6 +12,7 @@ import { LeaseTermOption, SublettingOption, FurnishedStatus, PetsPolicy } from '
 
 const conditions = [
   { value: 'new', label: 'New (from developer)' },
+  { value: 'shell', label: 'Shell / Under Construction' },
   { value: 'like_new', label: 'Like New' },
   { value: 'renovated', label: 'Renovated' },
   { value: 'good', label: 'Good Condition' },
