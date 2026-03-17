@@ -339,3 +339,42 @@ export function useBlogCategories() {
     },
   });
 }
+
+// Fetch blog posts from agents belonging to an agency
+export function useAgencyTeamBlogPosts(agencyId: string | undefined) {
+  return useQuery({
+    queryKey: ['agency-team-blog-posts', agencyId],
+    queryFn: async () => {
+      if (!agencyId) return [];
+
+      // Step 1: Get agent IDs + names for this agency
+      const { data: agents, error: agentErr } = await supabase
+        .from('agents')
+        .select('id, name, avatar_url')
+        .eq('agency_id', agencyId);
+
+      if (agentErr) throw agentErr;
+      if (!agents || agents.length === 0) return [];
+
+      const agentIds = agents.map(a => a.id);
+      const agentMap = Object.fromEntries(agents.map(a => [a.id, { name: a.name, avatar_url: a.avatar_url }]));
+
+      // Step 2: Fetch blog posts authored by those agents
+      const { data: posts, error: postErr } = await supabase
+        .from('blog_posts')
+        .select(`*, category:blog_categories(id, name, slug)`)
+        .eq('author_type', 'agent')
+        .in('author_profile_id', agentIds)
+        .order('created_at', { ascending: false });
+
+      if (postErr) throw postErr;
+
+      return (posts ?? []).map(p => ({
+        ...p,
+        agent_name: agentMap[p.author_profile_id ?? '']?.name ?? 'Unknown',
+        agent_avatar: agentMap[p.author_profile_id ?? '']?.avatar_url ?? null,
+      })) as (ProfessionalBlogPost & { agent_name: string; agent_avatar: string | null })[];
+    },
+    enabled: !!agencyId,
+  });
+}
