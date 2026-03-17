@@ -206,7 +206,7 @@ export function TrueCostWalkthrough() {
                   <p className="text-xs text-muted-foreground">0.5-1.5% + VAT, minimum ~₪15,000</p>
                 </div>
                 <span className="font-semibold text-primary">
-                  {formatCurrency(Math.max(propertyPrice * 0.01, 15000) * 1.18)}
+                  {formatCurrency(Math.max(propertyPrice * 0.01, 15000) * getVatMultiplier(calcConstants))}
                 </span>
               </div>
             </div>
