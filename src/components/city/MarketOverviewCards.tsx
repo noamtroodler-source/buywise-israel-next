@@ -84,7 +84,7 @@ export function MarketOverviewCards({
           initial="hidden"
           animate="show"
         >
-          {/* Card 1: Prices */}
+          {/* Card 1: Price Position */}
           <motion.div variants={item}>
             <Card className="h-full border-border/50 hover:shadow-md transition-shadow">
               <CardHeader className="pb-2">
@@ -92,25 +92,25 @@ export function MarketOverviewCards({
                   <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center">
                     <DollarSign className="h-5 w-5 text-primary" />
                   </div>
-                  <CardTitle className="text-lg font-semibold">Prices</CardTitle>
+                  <CardTitle className="text-lg font-semibold">Price Position</CardTitle>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <p className="text-3xl font-bold text-foreground">
-                    ₪{pricePerSqm.toLocaleString()}
-                    <span className="text-base font-normal text-muted-foreground">/m²</span>
-                  </p>
-                  <div className="flex items-center gap-1.5 mt-1">
+                  <div className="flex items-center gap-1.5">
                     {percentDiff >= 0 ? (
-                      <TrendingUp className="h-4 w-4 text-primary" />
+                      <TrendingUp className="h-5 w-5 text-primary" />
                     ) : (
-                      <TrendingDown className="h-4 w-4 text-primary" />
+                      <TrendingDown className="h-5 w-5 text-primary" />
                     )}
-                    <span className="text-sm text-muted-foreground">
-                      {percentDiff >= 0 ? '+' : ''}{percentDiff.toFixed(0)}% vs national avg
-                    </span>
+                    <p className="text-2xl font-bold text-foreground">
+                      {percentDiff >= 0 ? '+' : ''}{percentDiff.toFixed(0)}%
+                      <span className="text-base font-normal text-muted-foreground ml-1.5">vs national avg</span>
+                    </p>
                   </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    National average: ₪{NATIONAL_AVG_PRICE_SQM.toLocaleString()}/m²
+                  </p>
                 </div>
                 
                 {/* Affordability Bar */}
