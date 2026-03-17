@@ -152,9 +152,11 @@ function computeStepErrors(data: PropertyWizardData, adjustedStep: number): stri
       if (data.price <= 0) errors.push('Price is required');
       if (!data.city) errors.push('City is required');
       if (!data.neighborhood) errors.push('Neighborhood is required');
-      if (!data.address) errors.push('Address is required');
-      if (!data.latitude || !data.longitude) errors.push('Valid location coordinates required');
-      if (data.address && !/\d+/.test(data.address)) errors.push('Address must include a street number');
+      if (!data.address || !data.latitude || !data.longitude) {
+        errors.push('A valid address with map pin is required');
+      } else if (!/\d+/.test(data.address)) {
+        errors.push('Address must include a street number');
+      }
       break;
     }
     case 1: { // Details
