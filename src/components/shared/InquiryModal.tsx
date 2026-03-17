@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { z } from 'zod';
-import { MessageCircle, Mail, User, Sparkles } from 'lucide-react';
+import { MessageCircle, Mail, User, Sparkles, Search } from 'lucide-react';
+import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
