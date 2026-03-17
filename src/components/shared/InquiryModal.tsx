@@ -203,11 +203,15 @@ function InquiryForm({
       ? buildBuyerContextSnapshot(buyerProfile!)
       : null;
 
+    const fullMessage = channel === 'email'
+      ? `Subject: ${subject.trim()}\n\n${message.trim()}`
+      : message.trim();
+
     onSubmit({
       name: isLoggedIn ? (user?.user_metadata?.full_name || name) : name,
       email: isLoggedIn ? (user?.email || email) : email,
       phone,
-      message: message.trim(),
+      message: fullMessage,
       includeBuyerProfile,
       buyerContextSnapshot: snapshot,
     });
