@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { FormattedNumberInput } from '@/components/ui/formatted-number-input';
 import { usePropertyWizard } from '../PropertyWizardContext';
-import { Thermometer, Calendar, Wrench, Sparkles, Building, FileText, Home, Banknote, Star, Lightbulb } from 'lucide-react';
+import { Thermometer, Calendar, Wrench, Sparkles, Building, FileText, Home, Banknote, Star, Lightbulb, Info } from 'lucide-react';
  import { Armchair } from 'lucide-react';
  import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
