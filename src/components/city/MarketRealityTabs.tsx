@@ -398,8 +398,8 @@ export function MarketRealityTabs({
               {/* Comparison */}
               <div className="bg-muted/50 rounded-lg p-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Rate per m²</span>
-                  <span className="font-medium text-foreground">₪{rate.toFixed(0)}/m²</span>
+                  <span className="text-sm text-muted-foreground">Rate per {areaLabel === 'sqft' ? 'sqft' : 'm²'}</span>
+                  <span className="font-medium text-foreground">₪{rate.toFixed(0)}/{areaLabel === 'sqft' ? 'sqft' : 'm²'}</span>
                 </div>
                 <div className="flex items-center justify-between mt-2">
                   <span className="text-sm text-muted-foreground">vs National Avg</span>

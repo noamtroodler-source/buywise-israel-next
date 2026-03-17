@@ -112,7 +112,7 @@ function DesktopCompsList({
                 <TooltipTrigger asChild>
                   <span className="flex items-center gap-1 cursor-help border-b border-dotted border-muted-foreground/50">
                     <BarChart3 className="h-3 w-3" />
-                    {formatPrice(comp.price_per_sqm, 'ILS')}/m²
+                    {formatPricePerArea(comp.price_per_sqm, 'ILS')}
                   </span>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-xs">
