@@ -1,4 +1,6 @@
 import { useMemo, useState, useCallback } from 'react';
+import { getConstant, getVatMultiplier } from '@/lib/calculations/constants';
+import { useCalculatorConstants, type CalculatorConstant } from '@/hooks/useCalculatorConstants';
 import { Link } from 'react-router-dom';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
