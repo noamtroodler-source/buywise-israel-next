@@ -2165,10 +2165,10 @@ async function processOneItem(
     const { urls: imageUrls, hashes: imageHashes } = await parallelImageDownload(listing.image_urls || [], sb, "property-images", jobId);
     listing.image_hashes = imageHashes;
 
-    // Geocode
-    let latitude: number | null = null;
-    let longitude: number | null = null;
-    if (listing.address && listing.city) {
+    // Geocode — use Yad2 coordinates if available
+    let latitude: number | null = listing._yad2_latitude || null;
+    let longitude: number | null = listing._yad2_longitude || null;
+    if (!latitude && !longitude && listing.address && listing.city) {
       const coords = await geocodeWithRateLimit(listing.address, listing.city);
       if (coords) { latitude = coords.lat; longitude = coords.lng; }
     }
