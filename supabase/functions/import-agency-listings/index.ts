@@ -2278,7 +2278,7 @@ async function processOneItem(
       .from("properties")
       .insert({
         agent_id: agentId,
-        title: listing.title || `Imported from ${new URL(item.url).hostname}`,
+        title: generateListingTitle(listing, new URL(item.url).hostname),
         description: listing.description || null,
         property_type: listing.property_type || "apartment",
         listing_status: listing.listing_status || "for_sale",
