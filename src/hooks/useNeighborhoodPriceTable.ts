@@ -93,7 +93,7 @@ export function useNeighborhoodPriceTable(citySlug: string, cityName: string | u
 
         if (!existing) {
           const prevYear = prices.find(
-            (p: any) => p.year === latest.year - 1 && p.quarter === latest.quarter
+            (p: any) => p.year === latest.year - 3 && p.quarter === latest.quarter
           ) as any;
 
           neighborhoodPrices.set(mapping.anglo_name, {
