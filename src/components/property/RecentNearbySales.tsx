@@ -226,6 +226,7 @@ export function RecentNearbySales({
   onVerdictComputed,
 }: RecentNearbySalesProps) {
   const formatPrice = useFormatPrice();
+  const formatPricePerAreaFn = useFormatPricePerArea();
   const isMobile = useIsMobile();
   const [selectedIndex, setSelectedIndex] = useState(0);
   

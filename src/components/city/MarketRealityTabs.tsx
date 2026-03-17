@@ -32,6 +32,8 @@ export function MarketRealityTabs({
   arnonaRateSqm
 }: MarketRealityTabsProps) {
   const [apartmentSize, setApartmentSize] = useState(80);
+  const formatPricePerAreaFn = useFormatPricePerArea();
+  const areaLabel = useAreaUnitLabel();
   const [selectedCities, setSelectedCities] = useState<string[]>([cityName]);
   const [searchQuery, setSearchQuery] = useState('');
   const [popoverOpen, setPopoverOpen] = useState(false);
