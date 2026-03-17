@@ -95,7 +95,14 @@ interface EditWizardContentProps {
 function EditWizardContent({ propertyId }: EditWizardContentProps) {
   const navigate = useNavigate();
   const { data: property, isLoading } = useProperty(propertyId);
-  const { data, currentStep, setCurrentStep, goNext, goBack, canGoNext, isLastStep, loadFromSaved, updateData } = usePropertyWizard();
+  const { data, currentStep, setCurrentStep, goNext, goBack, isLastStep, loadFromSaved, updateData, getStepErrors, getAllErrors } = usePropertyWizard();
+
+  // Compute step errors for progress bar
+  const stepErrors: Record<number, number> = {};
+  for (let i = 0; i < 5; i++) {
+    const errs = getStepErrors(i);
+    if (errs.length > 0) stepErrors[i] = errs.length;
+  }
   const { data: agentProfile } = useAgentProfile();
   const updateProperty = useUpdateProperty();
   const submitForReview = useSubmitForReview();
