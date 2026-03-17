@@ -53,7 +53,14 @@ interface AgencyWizardMetadata {
 
 function AgencyWizardContent() {
   const navigate = useNavigate();
-  const { data, currentStep, setCurrentStep, goNext, goBack, canGoNext, isLastStep, setStepOffset, loadFromSaved } = usePropertyWizard();
+  const { data, currentStep, setCurrentStep, goNext, goBack, canGoNext, isLastStep, setStepOffset, loadFromSaved, getStepErrors, getAllErrors } = usePropertyWizard();
+
+  // Compute step errors for progress bar (step 0 = Assign Agent has no validation here)
+  const stepErrors: Record<number, number> = {};
+  for (let i = 0; i < 5; i++) {
+    const errs = getStepErrors(i);
+    if (errs.length > 0) stepErrors[i + 1] = errs.length; // offset by 1 for Assign Agent step
+  }
 
   useEffect(() => {
     setStepOffset(1);
