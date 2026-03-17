@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, ReactNode, useCallback } from 'react';
 import { scrollToTopInstant } from '@/lib/scrollToTop';
 import { PropertyType, ListingStatus, LeaseTermOption, SublettingOption, FurnishedStatus, PetsPolicy } from '@/types/database';
 
@@ -66,6 +66,12 @@ export interface PropertyWizardData {
   highlights: string[];
 }
 
+export interface StepValidationError {
+  step: number;
+  stepName: string;
+  errors: string[];
+}
+
 interface PropertyWizardContextType {
   data: PropertyWizardData;
   updateData: (updates: Partial<PropertyWizardData>) => void;
@@ -81,6 +87,9 @@ interface PropertyWizardContextType {
   // New save-related properties
   resetWizard: () => void;
   loadFromSaved: (savedData: PropertyWizardData) => void;
+  // Validation helpers for free navigation
+  getStepErrors: (adjustedStep: number) => string[];
+  getAllErrors: () => StepValidationError[];
 }
 
 export const defaultPropertyData: PropertyWizardData = {
@@ -133,6 +142,54 @@ const PropertyWizardContext = createContext<PropertyWizardContextType | undefine
 const DEFAULT_TOTAL_STEPS = 6;
 export const PROPERTY_WIZARD_STORAGE_KEY = 'property-wizard-draft';
 
+const STEP_NAMES = ['Basics', 'Details', 'Features', 'Photos', 'Description'];
+
+function computeStepErrors(data: PropertyWizardData, adjustedStep: number): string[] {
+  const errors: string[] = [];
+  switch (adjustedStep) {
+    case 0: { // Basics
+      if (!data.title || data.title.length < 20) errors.push('Title must be at least 20 characters');
+      if (data.price <= 0) errors.push('Price is required');
+      if (!data.city) errors.push('City is required');
+      if (!data.neighborhood) errors.push('Neighborhood is required');
+      if (!data.address) errors.push('Address is required');
+      if (!data.latitude || !data.longitude) errors.push('Valid location coordinates required');
+      if (data.address && !/\d+/.test(data.address)) errors.push('Address must include a street number');
+      break;
+    }
+    case 1: { // Details
+      if (data.property_type === 'land') {
+        if ((data.lot_size_sqm ?? 0) <= 0) errors.push('Lot size is required');
+      } else {
+        if ((data.size_sqm ?? 0) <= 0) errors.push('Size (sqm) is required');
+        const needsFloor = ['apartment', 'penthouse', 'mini_penthouse', 'duplex', 'garden_apartment'].includes(data.property_type);
+        if (needsFloor && data.floor === undefined) errors.push('Floor number is required');
+        if (needsFloor && data.total_floors === undefined) errors.push('Total floors is required');
+      }
+      break;
+    }
+    case 2: { // Features
+      if (!data.is_immediate_entry && !data.entry_date) errors.push('Entry date is required');
+      if (data.listing_status === 'for_rent') {
+        if (!data.furnished_status) errors.push('Furnished status is required');
+        if (!data.pets_policy) errors.push('Pets policy is required');
+        if (!data.lease_term) errors.push('Lease term is required');
+      }
+      break;
+    }
+    case 3: { // Photos
+      const minPhotos = Math.max(data.bedrooms + (data.additional_rooms || 0) + data.bathrooms, 3);
+      if (data.images.length < minPhotos) errors.push(`At least ${minPhotos} photos required (have ${data.images.length})`);
+      break;
+    }
+    case 4: { // Description
+      if (data.description.length < 100) errors.push(`Description must be at least 100 characters (${data.description.length}/100)`);
+      break;
+    }
+  }
+  return errors;
+}
+
 export function PropertyWizardProvider({ children, totalSteps = DEFAULT_TOTAL_STEPS }: { children: ReactNode; totalSteps?: number }) {
   const [data, setData] = useState<PropertyWizardData>(defaultPropertyData);
   const [currentStep, setCurrentStep] = useState(0);
@@ -170,41 +227,24 @@ export function PropertyWizardProvider({ children, totalSteps = DEFAULT_TOTAL_ST
     }
   };
 
-  // Validation for each step — use adjusted step to account for offset (e.g., agency wizard's Assign Agent step)
-  const adjustedStep = currentStep - stepOffset;
-  const canGoNext = (() => {
-    switch (adjustedStep) {
-      case 0: // Basics
-        const hasStreetNumber = /\d+/.test(data.address);
-        return !!(data.title && data.title.length >= 20 && data.price > 0 && data.city && data.neighborhood && data.address && data.latitude && data.longitude && hasStreetNumber);
-      case 1: { // Details
-        if (data.property_type === 'land') {
-          return (data.lot_size_sqm ?? 0) > 0;
-        }
-        const needsFloor = ['apartment', 'penthouse', 'mini_penthouse', 'duplex', 'garden_apartment'].includes(data.property_type);
-        return data.bedrooms >= 0 && data.bathrooms >= 0
-          && (data.size_sqm ?? 0) > 0
-          && (!needsFloor || (data.floor !== undefined && data.total_floors !== undefined));
+  const getStepErrors = useCallback((adjustedStep: number): string[] => {
+    return computeStepErrors(data, adjustedStep);
+  }, [data]);
+
+  const getAllErrors = useCallback((): StepValidationError[] => {
+    const allErrors: StepValidationError[] = [];
+    for (let i = 0; i < 5; i++) {
+      const errors = computeStepErrors(data, i);
+      if (errors.length > 0) {
+        allErrors.push({ step: i, stepName: STEP_NAMES[i], errors });
       }
-      case 2: { // Features
-        const entryValid = data.is_immediate_entry || !!data.entry_date;
-        if (data.listing_status === 'for_rent') {
-          return !!data.furnished_status && !!data.pets_policy && !!data.lease_term && entryValid;
-        }
-        return entryValid;
-      }
-      case 3: { // Photos
-        const minPhotos = Math.max(data.bedrooms + (data.additional_rooms || 0) + data.bathrooms, 3);
-        return data.images.length >= minPhotos;
-      }
-      case 4: // Description
-        return data.description.length >= 100;
-      case 5: // Review
-        return true;
-      default:
-        return false;
     }
-  })();
+    return allErrors;
+  }, [data]);
+
+  // canGoNext stays for backward compat / submit gating
+  const adjustedStep = currentStep - stepOffset;
+  const canGoNext = computeStepErrors(data, adjustedStep).length === 0;
 
   const isLastStep = currentStep === totalSteps - 1;
 
@@ -223,6 +263,8 @@ export function PropertyWizardProvider({ children, totalSteps = DEFAULT_TOTAL_ST
         setStepOffset,
         resetWizard,
         loadFromSaved,
+        getStepErrors,
+        getAllErrors,
       }}
     >
       {children}
