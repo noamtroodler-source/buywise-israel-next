@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { FALLBACK_CONSTANTS } from '@/lib/calculations/constants';
+import { FALLBACK_CONSTANTS, getConstant, getVatMultiplier } from '@/lib/calculations/constants';
+import { useCalculatorConstants } from '@/hooks/useCalculatorConstants';
 import { Link } from 'react-router-dom';
 import { useSavePromptTrigger } from '@/hooks/useSavePromptTrigger';
 import { 
