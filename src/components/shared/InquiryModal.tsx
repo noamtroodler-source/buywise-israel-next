@@ -158,6 +158,7 @@ function InquiryForm({
   const [subject, setSubject] = useState(`Inquiry about the ${propertyTitle}`);
   const [message, setMessage] = useState(buildDefaultMessage(channel, userName));
   const [includeBuyerProfile, setIncludeBuyerProfile] = useState(true);
+  const [openToSimilar, setOpenToSimilar] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Pre-fill from user metadata and rebuild message with name
