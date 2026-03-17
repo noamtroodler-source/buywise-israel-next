@@ -13,6 +13,60 @@ function supabaseAdmin() {
   );
 }
 
+// ─── TITLE GENERATION HELPERS ───────────────────────────────────────────────
+
+function toTitleCase(str: string): string {
+  const minor = new Set(["in", "at", "on", "the", "a", "an", "and", "or", "of", "for", "with"]);
+  return str.split(" ").filter(Boolean).map((w, i) =>
+    i === 0 || !minor.has(w.toLowerCase())
+      ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()
+      : w.toLowerCase()
+  ).join(" ");
+}
+
+function formatPropertyType(type: string | undefined): string {
+  const map: Record<string, string> = {
+    apartment: "Apartment", garden_apartment: "Garden Apartment",
+    penthouse: "Penthouse", mini_penthouse: "Mini Penthouse",
+    duplex: "Duplex", house: "House", cottage: "Cottage",
+    land: "Land", commercial: "Commercial",
+  };
+  return map[type || "apartment"] || "Apartment";
+}
+
+function isGoodEnglishTitle(title: string | undefined): boolean {
+  if (!title) return false;
+  // Must have Latin chars, be 20-60 chars, and not be just an address/number pattern
+  if (!/[a-zA-Z]{3,}/.test(title)) return false;
+  if (title.length < 20 || title.length > 60) return false;
+  // Reject if mostly Hebrew
+  const hebrewChars = (title.match(/[\u0590-\u05FF]/g) || []).length;
+  if (hebrewChars > title.length * 0.3) return false;
+  // Reject if it's just a street address pattern like "123 Some Street"
+  if (/^\d+\s+\w+\s+(street|st|road|rd|ave|blvd)/i.test(title)) return false;
+  return true;
+}
+
+function generateListingTitle(listing: any, fallbackDomain?: string): string {
+  // If existing title is already good English, just title-case it
+  if (isGoodEnglishTitle(listing.title)) {
+    return toTitleCase(listing.title);
+  }
+
+  const type = formatPropertyType(listing.property_type);
+  const location = listing.neighborhood && listing.city
+    ? `${listing.neighborhood}, ${listing.city}`
+    : listing.city || listing.neighborhood || fallbackDomain || "Israel";
+
+  if (listing.bedrooms && listing.bedrooms > 0) {
+    return toTitleCase(`${listing.bedrooms}-Bedroom ${type} in ${location}`);
+  }
+  if (listing.size_sqm && listing.size_sqm > 0) {
+    return toTitleCase(`${listing.size_sqm}sqm ${type} in ${location}`);
+  }
+  return toTitleCase(`${type} for ${listing.listing_status === "for_rent" ? "Rent" : "Sale"} in ${location}`);
+}
+
 // ─── COST TRACKING ──────────────────────────────────────────────────────────
 async function trackCost(sb: any, jobId: string, resourceType: string, quantity: number, unit: string) {
   try {
@@ -1446,6 +1500,11 @@ FIRST, determine the CATEGORY of this page:
 - "not_listing": Not a property listing page
 
 FOR PROPERTIES — extract these fields:
+- title: Generate a professional English listing title (20-60 characters, Title Case).
+  Format: "[Bedrooms]-Bedroom [Type] in [Neighborhood]" or "Spacious [Size]sqm [Type] in [City]"
+  Examples: "Spacious 4-Bedroom Apartment in Arnona", "Renovated Penthouse in Neve Tzedek", "3-Bedroom Garden Apartment in Rehavia"
+  If the page already has a good English title (not just an address, street name, or Hebrew text), keep it with Title Case.
+  Do NOT just use the street address as the title. Do NOT return a Hebrew title.
 - In Israel, "rooms" (חדרים) = bedrooms + 1 living room. So 4 rooms = 3 bedrooms. Always subtract 1 for bedrooms.
 - Default currency is ILS (₪) unless explicitly stated otherwise.
 - Use the dictionary above for property types, not your own guess.
@@ -2219,7 +2278,7 @@ async function processOneItem(
       .from("properties")
       .insert({
         agent_id: agentId,
-        title: listing.title || `Imported from ${new URL(item.url).hostname}`,
+        title: generateListingTitle(listing, new URL(item.url).hostname),
         description: listing.description || null,
         property_type: listing.property_type || "apartment",
         listing_status: listing.listing_status || "for_sale",
@@ -2494,7 +2553,7 @@ async function handleApproveItem(body: any) {
     .from("properties")
     .insert({
       agent_id: agentId,
-      title: listing.title || `Imported from ${item.import_jobs.website_url}`,
+      title: generateListingTitle(listing, item.import_jobs?.website_url),
       description: listing.description || null,
       property_type: listing.property_type || "apartment",
       listing_status: listing.listing_status || "for_sale",
