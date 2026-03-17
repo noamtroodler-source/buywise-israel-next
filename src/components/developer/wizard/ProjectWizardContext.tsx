@@ -58,6 +58,12 @@ export interface ProjectWizardData {
   featured_highlight: string;
 }
 
+export interface ProjectStepValidationError {
+  step: number;
+  stepName: string;
+  errors: string[];
+}
+
 interface ProjectWizardContextType {
   data: ProjectWizardData;
   updateData: (updates: Partial<ProjectWizardData>) => void;
@@ -73,6 +79,9 @@ interface ProjectWizardContextType {
   // Step offset for agency wizard (prepends steps)
   stepOffset: number;
   setStepOffset: (offset: number) => void;
+  // Validation
+  getStepErrors: (step: number) => string[];
+  getAllErrors: () => ProjectStepValidationError[];
 }
 
 export const defaultProjectData: ProjectWizardData = {
