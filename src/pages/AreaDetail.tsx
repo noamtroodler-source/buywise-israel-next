@@ -232,13 +232,7 @@ export default function CityDetail() {
           />
         )}
 
-        {/* 2.6. Neighborhood Price Table */}
-        {priceTableRows.length > 0 && (
-          <CityNeighborhoodPriceTable
-            cityName={city.name}
-            rows={priceTableRows}
-          />
-        )}
+        {/* Neighborhood Price Table moved below Price by Apartment Size */}
 
         {/* 3. Market Overview - 3 Card Grid */}
         <section id="market">
@@ -277,6 +271,14 @@ export default function CityDetail() {
             lastVerified={city.updated_at}
           />
         </section>
+
+        {/* 5.6. Neighborhood Price Snapshot + Drawer */}
+        {priceTableRows.length > 0 && (
+          <CityNeighborhoodPriceTable
+            cityName={city.name}
+            rows={priceTableRows}
+          />
+        )}
 
         {/* 6. Worth Watching */}
         <section id="watching">

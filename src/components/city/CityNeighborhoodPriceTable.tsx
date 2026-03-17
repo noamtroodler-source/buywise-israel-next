@@ -1,9 +1,11 @@
 import { useState, useMemo } from 'react';
-import { BarChart3, ArrowUp, ArrowDown, ArrowUpDown, MapPin, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { BarChart3, ArrowUp, ArrowDown, ArrowUpDown, MapPin, TrendingUp, TrendingDown, Minus, Search, ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from '@/components/ui/table';
+  Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerTrigger, DrawerFooter,
+} from '@/components/ui/drawer';
 import { cn } from '@/lib/utils';
 import { NeighborhoodPriceRow } from '@/hooks/useNeighborhoodPriceTable';
 import { PriceTier } from '@/types/neighborhood';
@@ -69,7 +71,26 @@ function SortIcon({ active, direction }: { active: boolean; direction: SortDir }
     : <ArrowDown className="h-3.5 w-3.5 text-primary" />;
 }
 
-export function CityNeighborhoodPriceTable({ cityName, rows }: CityNeighborhoodPriceTableProps) {
+/* ─── Inline Summary Strip ─── */
+function useStripStats(rows: NeighborhoodPriceRow[]) {
+  return useMemo(() => {
+    if (rows.length === 0) return null;
+    const prices = rows.map(r => r.avg_price).sort((a, b) => a - b);
+    const min = prices[0];
+    const max = prices[prices.length - 1];
+
+    // Top riser: highest positive YoY
+    const withYoy = rows.filter(r => r.yoy_change_percent != null && r.yoy_change_percent > 0);
+    withYoy.sort((a, b) => (b.yoy_change_percent ?? 0) - (a.yoy_change_percent ?? 0));
+    const topRiser = withYoy[0] || null;
+
+    return { count: rows.length, min, max, topRiser };
+  }, [rows]);
+}
+
+/* ─── Searchable Drawer Table ─── */
+function NeighborhoodDrawerTable({ rows, cityName }: { rows: NeighborhoodPriceRow[]; cityName: string }) {
+  const [search, setSearch] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('avg_price');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
 
@@ -82,128 +103,181 @@ export function CityNeighborhoodPriceTable({ cityName, rows }: CityNeighborhoodP
     }
   };
 
-  const sorted = useMemo(() => {
-    return [...rows].sort((a, b) => {
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    let result = q ? rows.filter(r => r.name.toLowerCase().includes(q)) : rows;
+    return [...result].sort((a, b) => {
       let cmp = 0;
-      if (sortKey === 'name') {
-        cmp = a.name.localeCompare(b.name);
-      } else if (sortKey === 'avg_price') {
-        cmp = a.avg_price - b.avg_price;
-      } else {
-        const aVal = a.yoy_change_percent ?? -999;
-        const bVal = b.yoy_change_percent ?? -999;
-        cmp = aVal - bVal;
+      if (sortKey === 'name') cmp = a.name.localeCompare(b.name);
+      else if (sortKey === 'avg_price') cmp = a.avg_price - b.avg_price;
+      else {
+        cmp = (a.yoy_change_percent ?? -999) - (b.yoy_change_percent ?? -999);
       }
       return sortDir === 'asc' ? cmp : -cmp;
     });
-  }, [rows, sortKey, sortDir]);
-
-  if (rows.length === 0) return null;
-
-  // Determine data period from first row
-  const period = rows[0] ? `Q${rows[0].latest_quarter} ${rows[0].latest_year}` : '';
+  }, [rows, search, sortKey, sortDir]);
 
   return (
-    <section className="py-10 bg-background">
-      <div className="container">
-        {/* Header */}
-        <div className="mb-6 space-y-1">
-          <div className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-semibold">
-              Neighborhood Prices in {cityName}
-            </h2>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Average 4-room apartment prices based on recent transactions
-            {period && <span className="ml-1">· {period}</span>}
-          </p>
+    <div className="flex flex-col h-full">
+      {/* Sticky search */}
+      <div className="sticky top-0 z-10 bg-background px-4 pb-3 pt-1">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search neighborhoods…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="pl-9 h-9 text-sm"
+          />
         </div>
+        {search && (
+          <p className="text-xs text-muted-foreground mt-1.5">
+            {filtered.length} result{filtered.length !== 1 ? 's' : ''}
+          </p>
+        )}
+      </div>
 
-        {/* Table */}
+      {/* Scrollable table */}
+      <div className="flex-1 overflow-y-auto px-4 pb-2">
         <div className="rounded-lg border border-border/60 overflow-hidden">
           <div className="relative w-full overflow-x-auto">
             <table className="w-full caption-bottom text-sm">
               <thead className="[&_tr]:border-b">
                 <tr className="border-b transition-colors">
                   <th
-                    className="h-11 px-4 text-left align-middle font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors sticky left-0 bg-muted/30 z-10 min-w-[160px]"
+                    className="h-10 px-3 text-left align-middle font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors min-w-[140px]"
                     onClick={() => handleSort('name')}
                   >
-                    <span className="inline-flex items-center gap-1.5">
+                    <span className="inline-flex items-center gap-1">
                       Neighborhood
                       <SortIcon active={sortKey === 'name'} direction={sortDir} />
                     </span>
                   </th>
                   <th
-                    className="h-11 px-4 text-right align-middle font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors min-w-[130px]"
+                    className="h-10 px-3 text-right align-middle font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors min-w-[100px]"
                     onClick={() => handleSort('avg_price')}
                   >
-                    <span className="inline-flex items-center gap-1.5 justify-end">
+                    <span className="inline-flex items-center gap-1 justify-end">
                       Avg Price
                       <SortIcon active={sortKey === 'avg_price'} direction={sortDir} />
                     </span>
                   </th>
                   <th
-                    className="h-11 px-4 text-right align-middle font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors min-w-[110px]"
+                    className="h-10 px-3 text-right align-middle font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors min-w-[90px]"
                     onClick={() => handleSort('yoy_change_percent')}
                   >
-                    <span className="inline-flex items-center gap-1.5 justify-end">
-                      YoY Change
+                    <span className="inline-flex items-center gap-1 justify-end">
+                      YoY
                       <SortIcon active={sortKey === 'yoy_change_percent'} direction={sortDir} />
                     </span>
                   </th>
-                  <th className="h-11 px-4 text-left align-middle font-medium text-muted-foreground min-w-[120px]">
-                    Price Tier
+                  <th className="h-10 px-3 text-left align-middle font-medium text-muted-foreground min-w-[100px]">
+                    Tier
                   </th>
                 </tr>
               </thead>
               <tbody className="[&_tr:last-child]:border-0">
-                {sorted.map((row) => (
-                  <tr
-                    key={row.name}
-                    className="border-b transition-colors hover:bg-muted/50"
-                  >
-                    <td className="p-4 align-middle sticky left-0 bg-background z-10 font-medium">
-                      <span className="inline-flex items-center gap-1.5">
-                        {row.name}
-                        {row.is_featured && (
-                          <MapPin className="h-3.5 w-3.5 text-primary/60 shrink-0" />
-                        )}
-                      </span>
-                    </td>
-                    <td className="p-4 align-middle text-right font-semibold tabular-nums">
-                      {formatCompactPrice(row.avg_price)}
-                    </td>
-                    <td className="p-4 align-middle text-right">
-                      <TrendIndicator yoyChange={row.yoy_change_percent} />
-                    </td>
-                    <td className="p-4 align-middle">
-                      {row.price_tier ? (
-                        <Badge
-                          variant="outline"
-                          className={cn('text-[10px] px-1.5 py-0 h-5 whitespace-nowrap', uniformBadgeStyle)}
-                        >
-                          {priceTierLabels[row.price_tier]}
-                        </Badge>
-                      ) : (
-                        <span className="text-muted-foreground/50">—</span>
-                      )}
+                {filtered.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="p-6 text-center text-sm text-muted-foreground">
+                      No neighborhoods match "{search}"
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  filtered.map((row) => (
+                    <tr key={row.name} className="border-b transition-colors hover:bg-muted/50">
+                      <td className="p-3 align-middle font-medium">
+                        <span className="inline-flex items-center gap-1.5">
+                          {row.name}
+                          {row.is_featured && (
+                            <MapPin className="h-3 w-3 text-primary/60 shrink-0" />
+                          )}
+                        </span>
+                      </td>
+                      <td className="p-3 align-middle text-right font-semibold tabular-nums">
+                        {formatCompactPrice(row.avg_price)}
+                      </td>
+                      <td className="p-3 align-middle text-right">
+                        <TrendIndicator yoyChange={row.yoy_change_percent} />
+                      </td>
+                      <td className="p-3 align-middle">
+                        {row.price_tier ? (
+                          <Badge
+                            variant="outline"
+                            className={cn('text-[10px] px-1.5 py-0 h-5 whitespace-nowrap', uniformBadgeStyle)}
+                          >
+                            {priceTierLabels[row.price_tier]}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground/50">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
         </div>
+      </div>
 
-        {/* Footer */}
-        <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
-          <span>
-            Showing {rows.length} neighborhood{rows.length !== 1 ? 's' : ''} with price data
-          </span>
-          <span>Source: CBS (Central Bureau of Statistics)</span>
-        </div>
+      {/* Footer */}
+      <div className="px-4 py-3 border-t text-xs text-muted-foreground text-center">
+        Source: CBS (Central Bureau of Statistics) · 4-room apartment averages
+      </div>
+    </div>
+  );
+}
+
+/* ─── Main Export ─── */
+export function CityNeighborhoodPriceTable({ cityName, rows }: CityNeighborhoodPriceTableProps) {
+  const stats = useStripStats(rows);
+
+  if (!stats) return null;
+
+  return (
+    <section className="py-4 bg-background">
+      <div className="container">
+        <Drawer>
+          <div className="flex items-center justify-between gap-4 rounded-lg border border-border/60 bg-muted/30 px-4 py-3">
+            {/* Left: stats summary */}
+            <div className="flex items-center gap-2 min-w-0 text-sm">
+              <BarChart3 className="h-4 w-4 text-primary shrink-0" />
+              <span className="text-muted-foreground truncate">
+                <span className="font-medium text-foreground">{stats.count}</span> neighborhoods
+                <span className="mx-1.5">·</span>
+                {formatCompactPrice(stats.min)} – {formatCompactPrice(stats.max)}
+                {stats.topRiser && (
+                  <>
+                    <span className="mx-1.5 hidden sm:inline">·</span>
+                    <span className="hidden sm:inline">
+                      Top: <span className="font-medium text-foreground">{stats.topRiser.name}</span>{' '}
+                      <span className="text-semantic-green">+{stats.topRiser.yoy_change_percent}%</span>
+                    </span>
+                  </>
+                )}
+              </span>
+            </div>
+
+            {/* Right: browse button */}
+            <DrawerTrigger asChild>
+              <Button variant="ghost" size="sm" className="shrink-0 text-primary hover:text-primary gap-1 text-xs font-medium">
+                Browse all
+                <ChevronRight className="h-3.5 w-3.5" />
+              </Button>
+            </DrawerTrigger>
+          </div>
+
+          <DrawerContent className="max-h-[75vh]">
+            <DrawerHeader className="pb-2">
+              <DrawerTitle>Neighborhoods in {cityName}</DrawerTitle>
+              <DrawerDescription>
+                Average 4-room apartment prices based on recent CBS transactions
+              </DrawerDescription>
+            </DrawerHeader>
+            <NeighborhoodDrawerTable rows={rows} cityName={cityName} />
+          </DrawerContent>
+        </Drawer>
       </div>
     </section>
   );
