@@ -244,7 +244,7 @@ function WizardContent() {
                              <span>
                                <Button
                                  onClick={handleSubmitForReview}
-                                 disabled={isSubmitting || !canGoNext || !isDeveloperVerified || !canCreateListing || (isOverLimit && !overageAccepted)}
+                                 disabled={isSubmitting || getAllErrors().length > 0 || !isDeveloperVerified || !canCreateListing || (isOverLimit && !overageAccepted)}
                                  className="gap-2 rounded-xl h-11 px-6"
                                >
                                  {isSubmitting ? (
