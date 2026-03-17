@@ -225,6 +225,7 @@ function generateInsights(v: FormValues, r: CalculationResults, formatCurrency: 
 export function InvestmentReturnCalculator() {
   const formatCurrency = useFormatPrice();
   const currencySymbol = useCurrencySymbol();
+  const { data: calcConstants } = useCalculatorConstants();
   const [showExpenseDetails, setShowExpenseDetails] = useState(false);
   const [showBreakdown, setShowBreakdown] = useState(false);
   const [vacancyPreset, setVacancyPreset] = useState<VacancyPreset>('average');
