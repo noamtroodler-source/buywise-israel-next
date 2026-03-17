@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { TrendingUp, TrendingDown } from 'lucide-react';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   CartesianGrid,
   Line,
@@ -28,7 +27,7 @@ interface HistoricalPriceChartProps {
   lastVerified?: string | null;
 }
 
-type Period = '5y' | '10y' | 'all';
+// Period toggle removed — all cities currently have 2020–2025 data only
 
 const COMPARE_COLORS = ['#1FA3A3', '#6366F1'];
 
@@ -59,7 +58,7 @@ export function HistoricalPriceChart({
   dataSources,
   lastVerified,
 }: HistoricalPriceChartProps) {
-  const [period, setPeriod] = useState<Period>('10y');
+  // Show all available data (currently 2020–2025 for all cities)
   const [compareCities, setCompareCities] = useState<string[]>([cityName]);
   const { data: cityPrices = [] } = useHistoricalPrices(citySlug);
   const { data: nationalAvg = [] } = useNationalAveragePrices();
@@ -117,14 +116,8 @@ export function HistoricalPriceChart({
     });
   }, [cityPrices, nationalAvg, comparisonData, comparisonCityNames]);
 
-  // Filter by period
-  const filteredData = useMemo(() => {
-    if (mergedData.length === 0) return [];
-    const currentYear = new Date().getFullYear();
-    if (period === '5y') return mergedData.filter((d) => d.year >= currentYear - 5);
-    if (period === '10y') return mergedData.filter((d) => d.year >= currentYear - 10);
-    return mergedData;
-  }, [mergedData, period]);
+  // Use all available data (no period filtering)
+  const filteredData = mergedData;
 
   // Metrics for current city only
   const metrics = useMemo(() => {
@@ -289,15 +282,6 @@ export function HistoricalPriceChart({
                 How {cityName} apartment prices have moved over time
               </p>
             </div>
-            {!hasNoData && (
-              <Tabs value={period} onValueChange={(v) => setPeriod(v as Period)}>
-                <TabsList className="bg-background">
-                  <TabsTrigger value="5y" className="text-xs">5 Years</TabsTrigger>
-                  <TabsTrigger value="10y" className="text-xs">10 Years</TabsTrigger>
-                  <TabsTrigger value="all" className="text-xs">All Time</TabsTrigger>
-                </TabsList>
-              </Tabs>
-            )}
           </div>
 
           {/* City Comparison Selector */}
