@@ -317,7 +317,7 @@ function AgencyEditWizardContent({ propertyId }: { propertyId: string }) {
                       Save Changes
                     </Button>
                     {canResubmit && (
-                      <Button onClick={handleSubmitForReview} disabled={isSubmitting || !canGoNext} className="gap-2 rounded-xl h-11 px-6">
+                      <Button onClick={handleSubmitForReview} disabled={isSubmitting || getAllErrors().length > 0} className="gap-2 rounded-xl h-11 px-6">
                         {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : (
                           <>
                             <Send className="h-4 w-4" />
