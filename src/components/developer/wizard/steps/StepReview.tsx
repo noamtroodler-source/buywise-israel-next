@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Edit2, MapPin, Building, DollarSign, Calendar, Sparkles, Eye, Home, Bed, Bath, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useProjectWizard } from '../ProjectWizardContext';
 import { ProjectPreviewDialog } from './ProjectPreviewDialog';
+import { ValidationSummary } from '@/components/agent/wizard/steps/ValidationSummary';
 
 const statusLabels: Record<string, string> = {
   planning: 'Planning Phase',
