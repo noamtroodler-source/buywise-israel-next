@@ -8,6 +8,7 @@ import { NATIONAL_AVG_PRICE_SQM } from '@/lib/constants/marketAverages';
 import { useCityVerification } from '@/hooks/useCityVerification';
 
 interface CityQuickStatsProps {
+  citySlug?: string;
   cityData?: {
     average_price_sqm?: number | null;
     average_price_sqm_min?: number | null;
