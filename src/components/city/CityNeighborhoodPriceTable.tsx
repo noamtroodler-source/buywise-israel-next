@@ -176,7 +176,7 @@ function NeighborhoodDrawerTable({ rows, cityName }: { rows: NeighborhoodPriceRo
               <tbody className="[&_tr:last-child]:border-0">
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="p-6 text-center text-sm text-muted-foreground">
+                    <td colSpan={3} className="p-6 text-center text-sm text-muted-foreground">
                       No neighborhoods match "{search}"
                     </td>
                   </tr>
