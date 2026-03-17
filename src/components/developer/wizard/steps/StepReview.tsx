@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Edit2, MapPin, Building, DollarSign, Calendar, Sparkles, Eye, Home, Bed, Bath, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useProjectWizard } from '../ProjectWizardContext';
 import { ProjectPreviewDialog } from './ProjectPreviewDialog';
+import { ValidationSummary } from '@/components/agent/wizard/steps/ValidationSummary';
 
 const statusLabels: Record<string, string> = {
   planning: 'Planning Phase',
@@ -66,8 +67,9 @@ interface StepReviewProps {
 }
 
 export function StepReview({ onEditStep }: StepReviewProps) {
-  const { data } = useProjectWizard();
+  const { data, getAllErrors, stepOffset } = useProjectWizard();
   const [showPreview, setShowPreview] = useState(false);
+  const allErrors = useMemo(() => getAllErrors(), [getAllErrors]);
 
   const formatPrice = (price: number) => {
     return `₪${price.toLocaleString()}`;
@@ -89,6 +91,14 @@ export function StepReview({ onEditStep }: StepReviewProps) {
       </div>
 
       <ProjectPreviewDialog open={showPreview} onOpenChange={setShowPreview} />
+
+      {allErrors.length > 0 && (
+        <ValidationSummary
+          errors={allErrors}
+          onGoToStep={onEditStep}
+          stepOffset={stepOffset}
+        />
+      )}
 
       {/* Featured Selling Point Preview */}
       {data.featured_highlight && (

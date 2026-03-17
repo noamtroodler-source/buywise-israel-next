@@ -41,7 +41,7 @@ const itemVariants = {
 
 function AgencyProjectWizardContent() {
   const navigate = useNavigate();
-  const { data, currentStep, setCurrentStep, goNext, goBack, canGoNext, isLastStep, setStepOffset } = useProjectWizard();
+  const { data, currentStep, setCurrentStep, goNext, goBack, canGoNext, isLastStep, setStepOffset, getStepErrors, getAllErrors } = useProjectWizard();
 
   // Agency wizard has an extra "Assign Agent" step at index 0, so offset validation by 1
   useEffect(() => {
@@ -185,7 +185,11 @@ function AgencyProjectWizardContent() {
 
             {/* Progress */}
             <motion.div variants={itemVariants}>
-              <WizardProgress currentStep={currentStep} steps={steps} onStepClick={setCurrentStep} />
+              <WizardProgress currentStep={currentStep} steps={steps} onStepClick={setCurrentStep} stepErrors={Object.fromEntries(steps.map((_, i) => {
+                // Step 0 is Assign Agent (no project validation), steps 1+ map to project steps 0+
+                const errorCount = i === 0 ? (assignedAgentId ? 0 : 1) : getStepErrors(i - 1).length;
+                return [i, errorCount];
+              }).filter(([, c]) => c > 0))} />
             </motion.div>
 
             {/* Step Content */}
@@ -248,7 +252,7 @@ function AgencyProjectWizardContent() {
                             <span>
                               <Button
                                 onClick={handleSubmitForReview}
-                                disabled={isSubmitting || !canGoNextAgency || !assignedAgentId || !isAgencyVerified}
+                                disabled={isSubmitting || getAllErrors().length > 0 || !assignedAgentId || !isAgencyVerified}
                                 className="gap-2 rounded-xl h-11 px-6"
                               >
                                 {isSubmitting ? (
@@ -272,7 +276,7 @@ function AgencyProjectWizardContent() {
                   ) : (
                     <Button
                       onClick={goNext}
-                      disabled={!canGoNextAgency}
+                      disabled={currentStep === 0 && !assignedAgentId}
                       className="rounded-xl h-11 px-6"
                     >
                       Next

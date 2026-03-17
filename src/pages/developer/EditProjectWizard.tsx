@@ -120,7 +120,7 @@ function EditWizardContent({ projectId }: { projectId: string }) {
   const updateProjectWithUnits = useUpdateProjectWithUnits();
   const submitForReview = useSubmitProjectForReview();
   
-  const { data, currentStep, setCurrentStep, goNext, goBack, canGoNext, isLastStep, loadFromSaved } = useProjectWizard();
+  const { data, currentStep, setCurrentStep, goNext, goBack, canGoNext, isLastStep, loadFromSaved, getStepErrors, getAllErrors } = useProjectWizard();
   const [hasLoaded, setHasLoaded] = useState(false);
 
   // Load project data and units into wizard context
@@ -311,7 +311,7 @@ function EditWizardContent({ projectId }: { projectId: string }) {
 
           {/* Progress */}
           <motion.div variants={itemVariants}>
-            <WizardProgress currentStep={currentStep} steps={steps} onStepClick={setCurrentStep} />
+            <WizardProgress currentStep={currentStep} steps={steps} onStepClick={setCurrentStep} stepErrors={Object.fromEntries(steps.map((_, i) => [i, getStepErrors(i).length]).filter(([, c]) => c > 0))} />
           </motion.div>
 
           {/* Step Content */}
@@ -380,7 +380,7 @@ function EditWizardContent({ projectId }: { projectId: string }) {
                             <span>
                               <Button
                                 onClick={handleResubmit}
-                                disabled={isSubmitting || !isDeveloperVerified || !canCreateListing}
+                                disabled={isSubmitting || getAllErrors().length > 0 || !isDeveloperVerified || !canCreateListing}
                                 className="rounded-xl h-11 px-6"
                               >
                                 {isSubmitting ? (
@@ -402,7 +402,7 @@ function EditWizardContent({ projectId }: { projectId: string }) {
                     )}
                   </div>
                 ) : (
-                  <Button onClick={goNext} disabled={!canGoNext} className="rounded-xl h-11 px-6">
+                  <Button onClick={goNext} className="rounded-xl h-11 px-6">
                     Next
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>

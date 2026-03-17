@@ -39,7 +39,7 @@ const itemVariants = {
 
 function WizardContent() {
   const navigate = useNavigate();
-  const { data, currentStep, setCurrentStep, goNext, goBack, canGoNext, isLastStep } = useProjectWizard();
+  const { data, currentStep, setCurrentStep, goNext, goBack, canGoNext, isLastStep, getStepErrors, getAllErrors } = useProjectWizard();
   const { data: developerProfile } = useDeveloperProfile();
   const createProject = useCreateProject();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -181,7 +181,7 @@ function WizardContent() {
 
             {/* Progress */}
             <motion.div variants={itemVariants}>
-              <WizardProgress currentStep={currentStep} steps={steps} onStepClick={setCurrentStep} />
+              <WizardProgress currentStep={currentStep} steps={steps} onStepClick={setCurrentStep} stepErrors={Object.fromEntries(steps.map((_, i) => [i, getStepErrors(i).length]).filter(([, c]) => c > 0))} />
             </motion.div>
 
             {/* Step Content */}
@@ -244,7 +244,7 @@ function WizardContent() {
                              <span>
                                <Button
                                  onClick={handleSubmitForReview}
-                                 disabled={isSubmitting || !canGoNext || !isDeveloperVerified || !canCreateListing || (isOverLimit && !overageAccepted)}
+                                 disabled={isSubmitting || getAllErrors().length > 0 || !isDeveloperVerified || !canCreateListing || (isOverLimit && !overageAccepted)}
                                  className="gap-2 rounded-xl h-11 px-6"
                                >
                                  {isSubmitting ? (
@@ -270,7 +270,6 @@ function WizardContent() {
                   ) : (
                     <Button
                       onClick={goNext}
-                      disabled={!canGoNext}
                       className="rounded-xl h-11 px-6"
                     >
                       Next
