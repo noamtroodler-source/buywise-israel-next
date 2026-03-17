@@ -1500,6 +1500,11 @@ FIRST, determine the CATEGORY of this page:
 - "not_listing": Not a property listing page
 
 FOR PROPERTIES — extract these fields:
+- title: Generate a professional English listing title (20-60 characters, Title Case).
+  Format: "[Bedrooms]-Bedroom [Type] in [Neighborhood]" or "Spacious [Size]sqm [Type] in [City]"
+  Examples: "Spacious 4-Bedroom Apartment in Arnona", "Renovated Penthouse in Neve Tzedek", "3-Bedroom Garden Apartment in Rehavia"
+  If the page already has a good English title (not just an address, street name, or Hebrew text), keep it with Title Case.
+  Do NOT just use the street address as the title. Do NOT return a Hebrew title.
 - In Israel, "rooms" (חדרים) = bedrooms + 1 living room. So 4 rooms = 3 bedrooms. Always subtract 1 for bedrooms.
 - Default currency is ILS (₪) unless explicitly stated otherwise.
 - Use the dictionary above for property types, not your own guess.
