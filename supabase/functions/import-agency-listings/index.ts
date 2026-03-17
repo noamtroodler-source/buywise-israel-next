@@ -2165,10 +2165,10 @@ async function processOneItem(
     const { urls: imageUrls, hashes: imageHashes } = await parallelImageDownload(listing.image_urls || [], sb, "property-images", jobId);
     listing.image_hashes = imageHashes;
 
-    // Geocode
-    let latitude: number | null = null;
-    let longitude: number | null = null;
-    if (listing.address && listing.city) {
+    // Geocode — use Yad2 coordinates if available
+    let latitude: number | null = listing._yad2_latitude || null;
+    let longitude: number | null = listing._yad2_longitude || null;
+    if (!latitude && !longitude && listing.address && listing.city) {
       const coords = await geocodeWithRateLimit(listing.address, listing.city);
       if (coords) { latitude = coords.lat; longitude = coords.lng; }
     }
@@ -2211,7 +2211,7 @@ async function processOneItem(
         checks_required: listing.checks_required ?? null,
         is_published: false, is_featured: false, views_count: 0,
         verification_status: "draft",
-        import_source: "website_scrape",
+        import_source: job.source_type === "yad2" ? "yad2" : "website_scrape",
         source_url: item.url,
       })
       .select("id")
@@ -2321,11 +2321,9 @@ async function handleProcessBatch(body: any) {
       if (Date.now() - batchStartTime > TIME_LIMIT_MS) break;
 
       const chunk = pendingItems.slice(i, i + currentConcurrency);
-      const isYad2 = job.source_type === "yad2";
       const results = await Promise.allSettled(
-        chunk.map(item => isYad2
-          ? processYad2Item(item, sb, job, agentId, job_id, job.import_type || "resale")
-          : processOneItem(item, sb, job, agentId, FIRECRAWL_API_KEY, LOVABLE_API_KEY, job_id, cachedDomainCity, job.import_type || "resale")
+        chunk.map(item =>
+          processOneItem(item, sb, job, agentId, FIRECRAWL_API_KEY, LOVABLE_API_KEY, job_id, cachedDomainCity, job.import_type || "resale")
         )
       );
 
