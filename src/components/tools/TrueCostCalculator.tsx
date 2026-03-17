@@ -424,7 +424,7 @@ export function TrueCostCalculator() {
     
     // Agent fee negotiation tip
     if (calculations.agentFeeMin > 30000) {
-      const halfPercentSaving = Math.round(price * 0.005 * 1.18);
+      const halfPercentSaving = Math.round(price * 0.005 * getVatMultiplier(calcConstants));
       messages.push(`Agent fees are negotiable — even 0.5% less saves you ${formatPrice(halfPercentSaving)}.`);
     }
     

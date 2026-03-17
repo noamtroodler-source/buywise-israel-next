@@ -104,7 +104,7 @@ export function estimateAnnualExpenses(
   const vaadBayit = FALLBACK_CONSTANTS.VAAD_BAYIT_DEFAULT * 12;
   
   // Home insurance - 100-200/month
-  const insurance = 150 * 12;
+  const insurance = FALLBACK_CONSTANTS.HOME_INSURANCE_MONTHLY * 12;
   
   // Maintenance reserve - typically 5-10% of rent
   const maintenance = Math.round(monthlyRent * 12 * 0.05);

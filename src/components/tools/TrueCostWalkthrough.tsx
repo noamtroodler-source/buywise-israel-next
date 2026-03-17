@@ -234,7 +234,7 @@ export function TrueCostWalkthrough() {
                   </RadioGroup>
                   {usesAgent && (
                     <span className="text-sm font-semibold text-primary">
-                      {formatCurrency(propertyPrice * 0.02 * 1.18)}
+                      {formatCurrency(propertyPrice * getConstant(calcConstants, 'AGENT_RATE') * getVatMultiplier(calcConstants))}
                     </span>
                   )}
                 </div>

@@ -282,11 +282,11 @@ export function InvestmentReturnCalculator() {
   const results = useMemo(() => {
     try {
       if (!watchedValues.purchasePrice || watchedValues.purchasePrice <= 0) return null;
-      return computeResults(watchedValues, showExpenseDetails);
+      return computeResults(watchedValues, showExpenseDetails, calcConstants);
     } catch {
       return null;
     }
-  }, [watchedValues, showExpenseDetails]);
+  }, [watchedValues, showExpenseDetails, calcConstants]);
 
   const insights = useMemo(() => {
     if (!results) return [];

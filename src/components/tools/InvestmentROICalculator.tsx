@@ -43,9 +43,9 @@ export function InvestmentROICalculator() {
   const [maintenancePercent, setMaintenancePercent] = useState(1);
   
   // Monthly costs
-  const [monthlyArnona, setMonthlyArnona] = useState(500);
-  const [monthlyVaadBayit, setMonthlyVaadBayit] = useState<number>(FALLBACK_CONSTANTS.VAAD_BAYIT_DEFAULT);
-  const [monthlyInsurance, setMonthlyInsurance] = useState(150);
+  const [monthlyArnona, setMonthlyArnona] = useState<number>(getConstant(calcConstants, 'ARNONA_DEFAULT_MONTHLY'));
+  const [monthlyVaadBayit, setMonthlyVaadBayit] = useState<number>(getConstant(calcConstants, 'VAAD_BAYIT_DEFAULT'));
+  const [monthlyInsurance, setMonthlyInsurance] = useState<number>(getConstant(calcConstants, 'HOME_INSURANCE_MONTHLY'));
   
   // Tax method
   const [taxMethod, setTaxMethod] = useState<'exemption' | 'flat_10' | 'progressive'>('flat_10');

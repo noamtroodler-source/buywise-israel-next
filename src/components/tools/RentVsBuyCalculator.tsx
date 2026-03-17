@@ -533,7 +533,7 @@ export function RentVsBuyCalculator() {
       monthlyEquityBuilding, priceToRentRatio,
       sellingCosts, capitalGainsTax, equityBuiltGross,
     };
-  }, [propertyPrice, monthlyRent, downPaymentPercent, interestRate, mortgageTerm, timeHorizon, appreciation, rentIncrease, investmentReturn, buyerType, cityMetrics, rooms]);
+  }, [propertyPrice, monthlyRent, downPaymentPercent, interestRate, mortgageTerm, timeHorizon, appreciation, rentIncrease, investmentReturn, buyerType, cityMetrics, rooms, calcConstants]);
 
   // Generate personalized insights
   const insights = useMemo(() => {
