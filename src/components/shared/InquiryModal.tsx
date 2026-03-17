@@ -262,16 +262,30 @@ function InquiryForm({
         </div>
       )}
 
-      {/* Message */}
+      {/* Subject (email only) */}
+      {channel === 'email' && (
+        <div>
+          <Label htmlFor="inquiry-subject">Subject</Label>
+          <Input
+            id="inquiry-subject"
+            value={subject}
+            onChange={e => setSubject(e.target.value)}
+            placeholder="Subject line"
+            maxLength={150}
+          />
+        </div>
+      )}
+
+      {/* Body / Message */}
       <div>
-        <Label htmlFor="inquiry-message">Message</Label>
+        <Label htmlFor="inquiry-message">{channel === 'email' ? 'Body' : 'Message'}</Label>
         <Textarea
           id="inquiry-message"
           value={message}
           onChange={e => setMessage(e.target.value)}
-          placeholder="Write a message..."
+          placeholder={channel === 'email' ? 'Write your email body...' : 'Write a message...'}
           maxLength={500}
-          rows={3}
+          rows={channel === 'email' ? 5 : 3}
           className="resize-none"
         />
         <p className="text-xs text-muted-foreground mt-1 text-right">{message.length}/500</p>
