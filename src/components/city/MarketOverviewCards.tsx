@@ -23,7 +23,6 @@ interface MarketOverviewCardsProps {
 export function MarketOverviewCards({
   cityName, 
   arnonaRateSqm,
-  propertyTypes = [],
   dataSources,
   lastVerified,
   cityData
@@ -47,18 +46,6 @@ export function MarketOverviewCards({
     } : null
   );
   
-  const arnonaVsNational = ((rate - NATIONAL_AVG_ARNONA) / NATIONAL_AVG_ARNONA) * 100;
-  
-  // Default listing types if none provided
-  const defaultListingTypes = [
-    { name: 'Resale', value: 55 },
-    { name: 'New Projects', value: 30 },
-    { name: 'Rentals', value: 15 },
-  ];
-  
-  const typesData = propertyTypes.length > 0 ? propertyTypes : defaultListingTypes;
-  const COLORS = ['hsl(var(--primary))', 'hsl(var(--primary) / 0.6)', 'hsl(var(--primary) / 0.3)'];
-
   const container = {
     hidden: { opacity: 0 },
     show: {
@@ -82,7 +69,6 @@ export function MarketOverviewCards({
               <h2 className="text-2xl font-semibold text-foreground">City Overview</h2>
               <p className="text-muted-foreground mt-1">Key numbers to understand {cityName}'s real estate market</p>
             </div>
-            {/* Inline Source Attribution */}
             <InlineSourceBadge 
               sources={dataSources} 
               lastVerified={lastVerified}
@@ -91,9 +77,9 @@ export function MarketOverviewCards({
           </div>
         </div>
 
-        {/* 3-Card Grid */}
+        {/* 2-Card Grid */}
         <motion.div 
-          className="grid gap-6 md:grid-cols-3"
+          className="grid gap-6 md:grid-cols-2"
           variants={container}
           initial="hidden"
           animate="show"
@@ -155,64 +141,7 @@ export function MarketOverviewCards({
             </Card>
           </motion.div>
 
-          {/* Card 2: Property Mix */}
-          <motion.div variants={item}>
-            <Card className="h-full border-border/50 hover:shadow-md transition-shadow">
-              <CardHeader className="pb-2">
-                <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <Building2 className="h-5 w-5 text-primary" />
-                  </div>
-                  <CardTitle className="text-lg font-semibold">Property Mix</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="h-[140px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={typesData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={35}
-                        outerRadius={55}
-                        paddingAngle={2}
-                        dataKey="value"
-                      >
-                        {typesData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <RechartsTooltip 
-                        formatter={(value: number) => `${value}%`}
-                        contentStyle={{ 
-                          backgroundColor: 'hsl(var(--card))', 
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: '8px',
-                          fontSize: '12px'
-                        }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-
-                {/* Legend */}
-                <div className="flex flex-wrap gap-3 justify-center">
-                  {typesData.map((entry, index) => (
-                    <div key={entry.name} className="flex items-center gap-1.5">
-                      <div 
-                        className="w-2.5 h-2.5 rounded-full" 
-                        style={{ backgroundColor: COLORS[index] }}
-                      />
-                      <span className="text-xs text-muted-foreground">{entry.name}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          {/* Card 3: Arnona */}
+          {/* Card 2: Arnona */}
           <motion.div variants={item}>
             <Card className="h-full border-border/50 hover:shadow-md transition-shadow">
               <CardHeader className="pb-2">
@@ -242,7 +171,6 @@ export function MarketOverviewCards({
                       ₪{arnonaEstimate.discountedMonthly.toLocaleString()}
                       <span className="text-base font-normal text-muted-foreground">/mo</span>
                     </p>
-                    {/* Show Personalized badge for any discount OR for Oleh users */}
                     {(arnonaEstimate.discountPercent > 0 || arnonaEstimate.olehStatusChecked) && (
                       <TooltipProvider delayDuration={0}>
                         <Tooltip>
