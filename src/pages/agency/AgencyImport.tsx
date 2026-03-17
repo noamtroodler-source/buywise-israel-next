@@ -471,12 +471,18 @@ export default function AgencyImport() {
                   )}
 
                   {doneCount > 0 && (
-                    <Button variant="outline" asChild className="rounded-xl">
-                      <Link to="/agency/listings">
-                        <FileText className="h-4 w-4 mr-2" />
-                        View Imported Drafts ({doneCount})
-                      </Link>
-                    </Button>
+                    <div className="space-y-2">
+                      <Button variant="outline" asChild className="rounded-xl">
+                        <Link to="/agency/listings">
+                          <FileText className="h-4 w-4 mr-2" />
+                          View Imported Drafts ({doneCount})
+                        </Link>
+                      </Button>
+                      <p className="text-xs text-muted-foreground flex items-start gap-1.5">
+                        <span className="shrink-0">💡</span>
+                        <span><strong>Next step:</strong> Assign imported listings to your agents from the Listings table. Once assigned, agents can review, edit, and submit them for approval.</span>
+                      </p>
+                    </div>
                   )}
                 </div>
 

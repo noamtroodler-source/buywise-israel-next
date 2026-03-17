@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -39,6 +39,44 @@ import { cn } from '@/lib/utils';
 import { exportToCSV } from '@/lib/csvExport';
 import { AgencyListingsSkeleton } from '@/components/agency/skeletons/AgencyPageSkeletons';
 import { EnhancedEmptyState } from '@/components/shared/EnhancedEmptyState';
+
+const IMPORTED_BANNER_KEY = 'agency_imported_drafts_banner_dismissed';
+
+function ImportedDraftsGuidance({ listings }: { listings: any[] }) {
+  const [dismissed, setDismissed] = useState(true);
+
+  useEffect(() => {
+    setDismissed(localStorage.getItem(IMPORTED_BANNER_KEY) === 'true');
+  }, []);
+
+  const hasImportedDrafts = listings.some(
+    l => l.import_source && l.verification_status === 'draft'
+  );
+
+  if (dismissed || !hasImportedDrafts) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex items-start gap-3 p-3 rounded-xl bg-primary/5 border border-primary/15 text-sm"
+    >
+      <ArrowLeftRight className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+      <p className="flex-1 text-muted-foreground">
+        <strong className="text-foreground">Imported listings</strong> are drafts assigned to you. Use the <strong>Agent</strong> column to reassign them to team members for review and submission.
+      </p>
+      <button
+        onClick={() => {
+          localStorage.setItem(IMPORTED_BANNER_KEY, 'true');
+          setDismissed(true);
+        }}
+        className="text-muted-foreground hover:text-foreground shrink-0"
+      >
+        <X className="h-4 w-4" />
+      </button>
+    </motion.div>
+  );
+}
 
 const statusConfig = {
   draft: { label: 'Draft', color: 'bg-muted text-muted-foreground' },
@@ -287,6 +325,9 @@ export default function AgencyListings() {
               </motion.div>
             ))}
           </div>
+
+          {/* Imported drafts guidance banner */}
+          <ImportedDraftsGuidance listings={listings} />
 
           {/* Filters */}
           <Card className="rounded-2xl border-primary/10">
