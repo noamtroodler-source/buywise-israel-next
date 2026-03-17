@@ -586,6 +586,7 @@ export function RecentNearbySales({
             comps={comps} 
             getComparison={getComparison} 
             formatPrice={formatPrice}
+            formatPricePerArea={formatPricePerAreaFn}
             formatDistance={formatDistance}
             formatSoldDate={formatSoldDate}
           />
