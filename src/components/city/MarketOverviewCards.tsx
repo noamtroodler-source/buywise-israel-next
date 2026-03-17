@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { DollarSign, Receipt, Info, TrendingUp, TrendingDown, User, HelpCircle } from 'lucide-react';
+import { useFormatPricePerArea } from '@/contexts/PreferencesContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
