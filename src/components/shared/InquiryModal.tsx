@@ -347,8 +347,7 @@ function InquiryForm({
           checked={openToSimilar}
           onCheckedChange={(checked) => setOpenToSimilar(!!checked)}
         />
-        <Label htmlFor="open-to-similar" className="text-sm font-normal cursor-pointer flex items-center gap-1.5">
-          <Search className="h-3.5 w-3.5 text-muted-foreground" />
+        <Label htmlFor="open-to-similar" className="text-sm font-normal cursor-pointer">
           I'm also open to similar listings in this area
         </Label>
       </div>
