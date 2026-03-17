@@ -1,22 +1,38 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { isAngloNeighborhood } from '@/lib/angloNeighborhoodTags';
+
+export interface NeighborhoodItem {
+  name: string;
+  isAnglo: boolean;
+}
 
 export interface NeighborhoodInfo {
   name: string;
   city: string;
+  isAnglo: boolean;
+}
+
+function sortAngloFirst(items: NeighborhoodItem[]): NeighborhoodItem[] {
+  return [...items].sort((a, b) => {
+    if (a.isAnglo && !b.isAnglo) return -1;
+    if (!a.isAnglo && b.isAnglo) return 1;
+    return a.name.localeCompare(b.name);
+  });
 }
 
 /**
  * Fetch neighborhood names for a specific city from the cities table.
+ * Returns objects with anglo tagging, sorted anglo-first.
  */
 export function useNeighborhoodNames(cityName: string | null | undefined) {
   return useQuery({
     queryKey: ['neighborhood-names', cityName],
-    queryFn: async () => {
+    queryFn: async (): Promise<NeighborhoodItem[]> => {
       if (!cityName) return [];
       const { data, error } = await supabase
         .from('cities')
-        .select('neighborhoods')
+        .select('slug, neighborhoods')
         .eq('name', cityName)
         .single();
 
@@ -24,10 +40,14 @@ export function useNeighborhoodNames(cityName: string | null | undefined) {
       const raw = data.neighborhoods as any[];
       if (!Array.isArray(raw)) return [];
 
-      return raw
+      const items: NeighborhoodItem[] = raw
         .filter((n: any) => n.name)
-        .map((n: any) => n.name as string)
-        .sort();
+        .map((n: any) => ({
+          name: n.name as string,
+          isAnglo: isAngloNeighborhood(data.slug, n.name as string),
+        }));
+
+      return sortAngloFirst(items);
     },
     enabled: !!cityName,
     staleTime: 10 * 60 * 1000,
@@ -40,10 +60,10 @@ export function useNeighborhoodNames(cityName: string | null | undefined) {
 export function useAllNeighborhoods() {
   return useQuery({
     queryKey: ['all-neighborhood-names'],
-    queryFn: async () => {
+    queryFn: async (): Promise<NeighborhoodInfo[]> => {
       const { data, error } = await supabase
         .from('cities')
-        .select('name, neighborhoods')
+        .select('name, slug, neighborhoods')
         .order('name');
 
       if (error || !data) return [];
@@ -54,7 +74,11 @@ export function useAllNeighborhoods() {
         if (!Array.isArray(raw)) continue;
         for (const n of raw) {
           if (n.name) {
-            results.push({ name: n.name as string, city: city.name });
+            results.push({
+              name: n.name as string,
+              city: city.name,
+              isAnglo: isAngloNeighborhood(city.slug, n.name as string),
+            });
           }
         }
       }

@@ -12,6 +12,14 @@ interface NeighborhoodAutocompleteProps {
   className?: string;
 }
 
+function AngloBadge() {
+  return (
+    <span className="text-[10px] font-medium text-primary/70 bg-primary/[0.08] border border-primary/15 rounded-full px-1.5 py-0.5 whitespace-nowrap">
+      Anglo hub
+    </span>
+  );
+}
+
 export function NeighborhoodAutocomplete({
   value,
   onValueChange,
@@ -26,7 +34,7 @@ export function NeighborhoodAutocomplete({
 
   const filtered = inputValue.trim()
     ? neighborhoods.filter((n) =>
-        n.toLowerCase().includes(inputValue.toLowerCase())
+        n.name.toLowerCase().includes(inputValue.toLowerCase())
       )
     : neighborhoods;
 
@@ -34,13 +42,6 @@ export function NeighborhoodAutocomplete({
   React.useEffect(() => {
     setInputValue(value);
   }, [value]);
-
-  // Reset when city changes and current value isn't valid
-  React.useEffect(() => {
-    if (neighborhoods.length > 0 && value && !neighborhoods.includes(value)) {
-      // Keep the value in the input but don't auto-clear — agent can override
-    }
-  }, [neighborhoods, value]);
 
   // Close on outside click
   React.useEffect(() => {
@@ -98,21 +99,22 @@ export function NeighborhoodAutocomplete({
               Loading neighborhoods…
             </div>
           ) : filtered.length > 0 ? (
-            filtered.map((neighborhood) => (
+            filtered.map(({ name, isAnglo }) => (
               <button
-                key={neighborhood}
+                key={name}
                 type="button"
-                onClick={() => handleSelect(neighborhood)}
+                onClick={() => handleSelect(name)}
                 className={cn(
                   'w-full px-3 py-2.5 text-left text-sm hover:bg-muted/50 flex items-center gap-2 first:rounded-t-xl last:rounded-b-xl transition-colors',
-                  value === neighborhood && 'bg-primary/10'
+                  value === name && 'bg-primary/10'
                 )}
               >
-                {value === neighborhood && (
+                {value === name && (
                   <Check className="h-4 w-4 text-primary shrink-0" />
                 )}
-                <span className={cn(value !== neighborhood && 'ml-6')}>
-                  {neighborhood}
+                <span className={cn('flex items-center gap-1.5', value !== name && 'ml-6')}>
+                  <span>{name}</span>
+                  {isAnglo && <AngloBadge />}
                 </span>
               </button>
             ))
@@ -130,4 +132,3 @@ export function NeighborhoodAutocomplete({
     </div>
   );
 }
-
