@@ -49,7 +49,7 @@ export function OnboardingChecklist({
   agentProfile, 
   properties, 
 }: OnboardingChecklistProps) {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const profileEnhancements = [
     Boolean(agentProfile?.avatar_url),
