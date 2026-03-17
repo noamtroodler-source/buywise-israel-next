@@ -86,6 +86,7 @@ export function PropertyPreviewDialog({ open, onOpenChange }: PropertyPreviewDia
 
   const conditionLabels: Record<string, string> = {
     new: 'New',
+    shell: 'Shell / Under Construction',
     like_new: 'Like New',
     renovated: 'Renovated',
     good: 'Good Condition',
