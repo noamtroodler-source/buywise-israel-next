@@ -432,9 +432,16 @@ export default function AgencyListings() {
                               />
                             </TableCell>
                             <TableCell>
-                              <Badge variant="outline" className={cn('text-xs', status.color)}>
-                                {status.label}
-                              </Badge>
+                              <div className="flex items-center gap-1.5">
+                                <Badge variant="outline" className={cn('text-xs', status.color)}>
+                                  {status.label}
+                                </Badge>
+                                {(listing as any).import_source && (
+                                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                                    Imported
+                                  </Badge>
+                                )}
+                              </div>
                             </TableCell>
                             <TableCell className="text-right font-medium">
                               {formatPrice(listing.price, listing.currency)}
