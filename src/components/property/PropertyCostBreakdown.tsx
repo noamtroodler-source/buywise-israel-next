@@ -186,7 +186,7 @@ export function PropertyCostBreakdown({
   }, [cityData, sizeSqm]);
   
   // Use actual Va'ad if provided, otherwise estimate from city data
-  const vaadBayit = vaadBayitMonthly ?? cityData?.average_vaad_bayit ?? 300;
+  const vaadBayit = vaadBayitMonthly ?? cityData?.average_vaad_bayit ?? FALLBACK_CONSTANTS.VAAD_BAYIT_DEFAULT;
   const isVaadActual = vaadBayitMonthly !== null && vaadBayitMonthly !== undefined;
   const insurance = 150;
   

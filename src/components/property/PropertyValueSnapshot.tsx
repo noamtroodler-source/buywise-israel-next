@@ -76,7 +76,7 @@ export function PropertyValueSnapshot({
     : 0;
 
   // City average va'ad bayit (use actual or default)
-  const cityVaad = cityAvgVaadBayit ?? 450;
+  const cityVaad = cityAvgVaadBayit ?? FALLBACK_CONSTANTS.VAAD_BAYIT_DEFAULT;
 
   // City average TOTAL monthly (rent + arnona + va'ad)
   const cityAvgTotalMonthly = cityAvgRent 
