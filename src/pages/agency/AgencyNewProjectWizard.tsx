@@ -41,7 +41,7 @@ const itemVariants = {
 
 function AgencyProjectWizardContent() {
   const navigate = useNavigate();
-  const { data, currentStep, setCurrentStep, goNext, goBack, canGoNext, isLastStep, setStepOffset } = useProjectWizard();
+  const { data, currentStep, setCurrentStep, goNext, goBack, canGoNext, isLastStep, setStepOffset, getStepErrors, getAllErrors } = useProjectWizard();
 
   // Agency wizard has an extra "Assign Agent" step at index 0, so offset validation by 1
   useEffect(() => {
