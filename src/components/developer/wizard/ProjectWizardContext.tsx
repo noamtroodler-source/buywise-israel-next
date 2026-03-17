@@ -135,6 +135,53 @@ export function ProjectWizardProvider({ children, totalSteps }: { children: Reac
     setData(savedData);
   }, []);
 
+  const STEP_NAMES = ['Basics', 'Details', 'Amenities', 'Unit Types', 'Gallery', 'Description', 'Review'];
+
+  const getStepErrors = useCallback((effectiveStep: number): string[] => {
+    const errors: string[] = [];
+    switch (effectiveStep) {
+      case 0: // Basics
+        if (!data.name) errors.push('Project name is required');
+        if (!data.city) errors.push('City is required');
+        if (!data.neighborhood) errors.push('Neighborhood is required');
+        if (!data.address) errors.push('Address is required');
+        else if (!/\d+/.test(data.address)) errors.push('Address must include a street number');
+        if (!data.latitude || !data.longitude) errors.push('Valid map coordinates are required');
+        break;
+      case 1: // Details
+        if (data.construction_start && data.completion_date) {
+          if (new Date(data.completion_date) <= new Date(data.construction_start)) {
+            errors.push('Completion date must be after construction start');
+          }
+        }
+        break;
+      case 2: // Amenities - optional
+        break;
+      case 3: // Unit Types - optional
+        break;
+      case 4: // Photos
+        if (data.images.length < 1) errors.push('At least 1 project image is required');
+        break;
+      case 5: // Description
+        if (!data.description) errors.push('Project description is required');
+        break;
+      case 6: // Review - no validation
+        break;
+    }
+    return errors;
+  }, [data]);
+
+  const getAllErrors = useCallback((): ProjectStepValidationError[] => {
+    const allErrors: ProjectStepValidationError[] = [];
+    for (let i = 0; i < STEP_NAMES.length; i++) {
+      const errors = getStepErrors(i);
+      if (errors.length > 0) {
+        allErrors.push({ step: i, stepName: STEP_NAMES[i], errors });
+      }
+    }
+    return allErrors;
+  }, [getStepErrors]);
+
   const goNext = () => {
     if (currentStep < TOTAL_STEPS - 1) {
       setCurrentStep(prev => prev + 1);
