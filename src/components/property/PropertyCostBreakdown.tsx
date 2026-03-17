@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils';
 import { BuyerProfileDimensions, deriveEffectiveBuyerType } from '@/lib/calculations/buyerProfile';
 import { BuyerType } from '@/lib/calculations/purchaseTax';
 import { calculateArnonaWithDiscount, type ArnonaEstimate } from '@/lib/calculations/arnona';
+import { FALLBACK_CONSTANTS } from '@/lib/calculations/constants';
 
 interface PropertyCostBreakdownProps {
   price: number;
@@ -186,7 +187,7 @@ export function PropertyCostBreakdown({
   }, [cityData, sizeSqm]);
   
   // Use actual Va'ad if provided, otherwise estimate from city data
-  const vaadBayit = vaadBayitMonthly ?? cityData?.average_vaad_bayit ?? 300;
+  const vaadBayit = vaadBayitMonthly ?? cityData?.average_vaad_bayit ?? FALLBACK_CONSTANTS.VAAD_BAYIT_DEFAULT;
   const isVaadActual = vaadBayitMonthly !== null && vaadBayitMonthly !== undefined;
   const insurance = 150;
   

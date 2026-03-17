@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { FALLBACK_CONSTANTS } from '@/lib/calculations/constants';
 import { useSavePromptTrigger } from '@/hooks/useSavePromptTrigger';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -41,7 +42,7 @@ export function InvestmentROICalculator() {
   
   // Monthly costs
   const [monthlyArnona, setMonthlyArnona] = useState(500);
-  const [monthlyVaadBayit, setMonthlyVaadBayit] = useState(350);
+  const [monthlyVaadBayit, setMonthlyVaadBayit] = useState<number>(FALLBACK_CONSTANTS.VAAD_BAYIT_DEFAULT);
   const [monthlyInsurance, setMonthlyInsurance] = useState(150);
   
   // Tax method

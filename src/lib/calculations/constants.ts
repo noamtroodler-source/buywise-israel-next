@@ -51,6 +51,9 @@ export const FALLBACK_CONSTANTS = {
   ARNONA_RESIDENTIAL_MIN: 40.30,
   ARNONA_RESIDENTIAL_MAX: 139.63,
   ARNONA_ANNUAL_INCREASE_2025: 0.0529,
+  
+  // Va'ad Bayit (building maintenance) - national median ₪350/mo
+  VAAD_BAYIT_DEFAULT: 350,
 } as const;
 
 export type ConstantKey = keyof typeof FALLBACK_CONSTANTS;

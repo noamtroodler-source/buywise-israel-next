@@ -2,6 +2,7 @@ import { TrendingUp, TrendingDown, Minus, DollarSign, BarChart3, Home, Calendar 
 import { useFormatPrice, useFormatPricePerArea } from '@/contexts/PreferencesContext';
 import { useMemo } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { FALLBACK_CONSTANTS } from '@/lib/calculations/constants';
 
 interface PropertyValueSnapshotProps {
   price: number;
@@ -52,7 +53,7 @@ export function PropertyValueSnapshot({
     return Math.round((cityArnonaRate * sizeSqm) / 12); // Monthly arnona
   }, [sizeSqm, cityArnonaRate]);
 
-  const vaadBayit = vaadBayitMonthly ?? 450; // Default ₪450 if not specified
+  const vaadBayit = vaadBayitMonthly ?? FALLBACK_CONSTANTS.VAAD_BAYIT_DEFAULT;
   const totalMonthlyCommitment = price + arnonaEstimate + vaadBayit;
   
   // For rentals: calculate city average rent and comparison
@@ -75,7 +76,7 @@ export function PropertyValueSnapshot({
     : 0;
 
   // City average va'ad bayit (use actual or default)
-  const cityVaad = cityAvgVaadBayit ?? 450;
+  const cityVaad = cityAvgVaadBayit ?? FALLBACK_CONSTANTS.VAAD_BAYIT_DEFAULT;
 
   // City average TOTAL monthly (rent + arnona + va'ad)
   const cityAvgTotalMonthly = cityAvgRent 

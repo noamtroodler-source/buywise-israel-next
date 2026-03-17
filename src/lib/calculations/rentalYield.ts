@@ -3,6 +3,8 @@
  * For Israeli real estate investment analysis
  */
 
+import { FALLBACK_CONSTANTS } from '@/lib/calculations/constants';
+
 export interface YieldResult {
   grossYield: number;
   netYield: number;
@@ -99,7 +101,7 @@ export function estimateAnnualExpenses(
   const arnona = Math.round(sizeSqm * 20); // ~₪20/sqm/year average
   
   // Vaad Bayit (building maintenance) - 200-500/month
-  const vaadBayit = 350 * 12;
+  const vaadBayit = FALLBACK_CONSTANTS.VAAD_BAYIT_DEFAULT * 12;
   
   // Home insurance - 100-200/month
   const insurance = 150 * 12;

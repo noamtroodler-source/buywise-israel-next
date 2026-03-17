@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
+import { FALLBACK_CONSTANTS } from '@/lib/calculations/constants';
 import { Link } from 'react-router-dom';
 import { useSavePromptTrigger } from '@/hooks/useSavePromptTrigger';
 import { 
@@ -86,7 +87,7 @@ const FEES = {
   agentRate: 0.02, // 2% + VAT
   vatRate: 0.18, // Updated to 18% as of Jan 2025
   arnonaDefault: 400, // Monthly estimate when city data not available
-  vaadBayitDefault: 350, // Monthly building maintenance
+  vaadBayitDefault: FALLBACK_CONSTANTS.VAAD_BAYIT_DEFAULT,
   homeInsurance: 150, // Monthly
   maintenanceRate: 0.005, // 0.5% of property value annually
 };

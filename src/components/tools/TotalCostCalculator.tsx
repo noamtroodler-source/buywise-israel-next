@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { FALLBACK_CONSTANTS } from '@/lib/calculations/constants';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
@@ -78,7 +79,7 @@ export function TotalCostCalculator() {
       (propertySizeSqm * (selectedCityData?.arnona_rate_sqm || 25));
 
     // Vaad Bayit estimate
-    const monthlyVaadBayit = selectedCityData?.average_vaad_bayit || 350;
+    const monthlyVaadBayit = selectedCityData?.average_vaad_bayit || FALLBACK_CONSTANTS.VAAD_BAYIT_DEFAULT;
 
     const totalAdditionalCosts = 
       costs.totalOneTimeCosts + 
