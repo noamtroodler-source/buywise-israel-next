@@ -85,7 +85,7 @@ export function StepDetails() {
                 />
                 <p className="text-xs text-muted-foreground">Mamad, living room, office — helps Anglo buyers understand your listing</p>
                 {data.additional_rooms === 0 && (data.bedrooms ?? 0) >= 3 && (
-                  <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                  <p className="text-xs text-destructive/80 mt-1">
                     Most {data.bedrooms}+ bedroom apartments have at least 1 additional room (living room, mamad). Is this correct?
                   </p>
                 )}
