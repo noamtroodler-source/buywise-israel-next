@@ -338,17 +338,18 @@ export function RentVsBuyCalculator() {
         (Math.pow(1 + monthlyRate, totalMortgagePayments_count) - 1)
       : loanAmount / totalMortgagePayments_count;
     
-    // One-time purchase costs
+    // One-time purchase costs (DB-first via calcConstants)
+    const vatMultiplier = getVatMultiplier(calcConstants);
     const purchaseTax = calculateTaxAmount(price, mapCategoryToBuyerType(buyerType));
-    const lawyerFee = Math.max(price * FEES.lawyerRate * (1 + FEES.vatRate), FEES.lawyerMinimum);
-    const agentFee = price * FEES.agentRate * (1 + FEES.vatRate);
+    const lawyerFee = Math.max(price * getConstant(calcConstants, 'LAWYER_RATE_MIN') * vatMultiplier, getConstant(calcConstants, 'LAWYER_MIN_FEE'));
+    const agentFee = price * getConstant(calcConstants, 'AGENT_RATE') * vatMultiplier;
     const totalPurchaseCosts = purchaseTax + lawyerFee + agentFee;
     
     // Monthly ownership costs (beyond mortgage) — at purchase time
-    const monthlyArnona = cityMetrics?.arnona_monthly_avg || FEES.arnonaDefault;
-    const monthlyVaadBayit = FEES.vaadBayitDefault;
-    const monthlyInsurance = FEES.homeInsurance;
-    const monthlyMaintenanceYear0 = (price * FEES.maintenanceRate) / 12;
+    const monthlyArnona = cityMetrics?.arnona_monthly_avg || getConstant(calcConstants, 'ARNONA_DEFAULT_MONTHLY');
+    const monthlyVaadBayit = getConstant(calcConstants, 'VAAD_BAYIT_DEFAULT');
+    const monthlyInsurance = getConstant(calcConstants, 'HOME_INSURANCE_MONTHLY');
+    const monthlyMaintenanceYear0 = (price * getConstant(calcConstants, 'MAINTENANCE_RATE')) / 12;
     
     // Shared costs: paid by BOTH renters and buyers — excluded from comparison
     const monthlySharedCosts = monthlyArnona + monthlyVaadBayit;
