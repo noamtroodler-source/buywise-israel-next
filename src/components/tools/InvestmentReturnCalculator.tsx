@@ -160,7 +160,7 @@ function computeResults(v: FormValues, useItemized: boolean, constants?: Calcula
   }
   totalExpenses = Math.round(totalExpenses);
 
-  const sellingAgentFee = v.includeSellingCosts ? Math.round(futurePropertyValue * (SELLING_AGENT_PERCENT / 100) * 1.17) : 0;
+  const sellingAgentFee = v.includeSellingCosts ? Math.round(futurePropertyValue * getConstant(constants, 'SELLING_AGENT_RATE') * vatMultiplier) : 0;
   const capitalGainsTax = v.includeSellingCosts && totalAppreciation > 0 ? Math.round(totalAppreciation * (CAPITAL_GAINS_TAX_PERCENT / 100)) : 0;
   const totalSellingCosts = sellingAgentFee + capitalGainsTax;
 
