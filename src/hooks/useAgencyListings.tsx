@@ -55,6 +55,7 @@ export function useAgencyListingsManagement(agencyId: string | undefined) {
           total_saves,
           images,
           agent_id,
+          import_source,
           created_at,
           updated_at
         `)
