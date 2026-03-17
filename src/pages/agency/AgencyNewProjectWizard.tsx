@@ -185,7 +185,11 @@ function AgencyProjectWizardContent() {
 
             {/* Progress */}
             <motion.div variants={itemVariants}>
-              <WizardProgress currentStep={currentStep} steps={steps} onStepClick={setCurrentStep} />
+              <WizardProgress currentStep={currentStep} steps={steps} onStepClick={setCurrentStep} stepErrors={Object.fromEntries(steps.map((_, i) => {
+                // Step 0 is Assign Agent (no project validation), steps 1+ map to project steps 0+
+                const errorCount = i === 0 ? (assignedAgentId ? 0 : 1) : getStepErrors(i - 1).length;
+                return [i, errorCount];
+              }).filter(([, c]) => c > 0))} />
             </motion.div>
 
             {/* Step Content */}
