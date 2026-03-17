@@ -197,6 +197,13 @@ export function CityQuickStats({ citySlug, cityData, dataSources, lastVerified }
                   ))}
                 </SelectContent>
               </Select>
+              <BuyWiseEstimateBadge
+                rental4RoomMin={verification?.rental4Room?.rent_min}
+                rental4RoomMax={verification?.rental4Room?.rent_max}
+                medianPrice={cityData?.median_apartment_price}
+                sources={verification?.sources}
+                verifiedAt={verification?.verifiedAt}
+              />
             </div>
           )}
 

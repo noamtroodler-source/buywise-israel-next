@@ -246,6 +246,7 @@ export default function CityDetail() {
 
         {/* 2. Quick Stats Strip */}
         <CityQuickStats
+          citySlug={slug}
           cityData={{
             average_price_sqm: city.average_price_sqm,
             average_price_sqm_min: (city as any).average_price_sqm_min,
