@@ -1,7 +1,8 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
-import { PenLine, Plus, Eye, Clock, CheckCircle2, XCircle, AlertCircle, ArrowLeft, Lightbulb } from 'lucide-react';
+import { PenLine, Plus, Eye, Clock, CheckCircle2, XCircle, AlertCircle, ArrowLeft, Lightbulb, X, UserCircle, Sparkles } from 'lucide-react';
 import { EnhancedEmptyState } from '@/components/shared/EnhancedEmptyState';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -20,10 +21,23 @@ const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secon
   rejected: { label: 'Rejected', variant: 'destructive', icon: XCircle },
 };
 
+const BANNER_KEY = 'blog_growth_banner_dismissed';
+
+const contentPrompts = [
+  "What's the #1 mistake buyers make in your area?",
+  "What should buyers know before purchasing in your city?",
+  "Explain a process you wish every client understood",
+  "What makes your neighborhood a hidden gem?",
+];
+
 export default function AgencyBlogManagement() {
   const { data: agency, isLoading: agencyLoading } = useMyAgency();
   const { data: blogPosts = [], isLoading: postsLoading } = useMyBlogPosts('agency', agency?.id);
   const { canSubmit } = useBlogQuotaCheck('agency', agency?.id);
+  const [bannerDismissed, setBannerDismissed] = useState(() => localStorage.getItem(BANNER_KEY) === 'true');
+
+  const totalViews = blogPosts.reduce((sum, p) => sum + (p.views_count || 0), 0);
+  const publishedCount = blogPosts.filter(p => p.verification_status === 'approved').length;
 
   if (agencyLoading || postsLoading) {
     return <AgencyBlogSkeleton />;
@@ -54,19 +68,92 @@ export default function AgencyBlogManagement() {
             )}
           </div>
 
+          {/* Growth Banner */}
+          {!bannerDismissed && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="relative p-4 rounded-2xl bg-primary/5 border border-primary/15"
+            >
+              <button
+                onClick={() => {
+                  localStorage.setItem(BANNER_KEY, 'true');
+                  setBannerDismissed(true);
+                }}
+                className="absolute top-3 right-3 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <div className="flex items-start gap-3 pr-6">
+                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <PenLine className="h-4 w-4 text-primary" />
+                </div>
+                <div className="space-y-1.5">
+                  <p className="text-sm font-medium text-foreground">Your expertise, their trust.</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Articles you publish appear on BuyWise Israel's blog — seen by buyers actively researching. Share what you know about your market, and let your knowledge do the marketing.
+                  </p>
+                  <div className="flex items-center gap-3 pt-1">
+                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      <UserCircle className="h-3 w-3" />
+                      Published articles link to your profile
+                    </span>
+                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Sparkles className="h-3 w-3" />
+                      AI formatting included
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Real Stats (only if they have published content) */}
+          {publishedCount > 0 && totalViews > 0 && (
+            <div className="flex items-center gap-4 px-1">
+              <span className="text-xs text-muted-foreground">
+                <strong className="text-foreground">{publishedCount}</strong> published
+              </span>
+              <span className="text-xs text-muted-foreground">
+                <strong className="text-foreground">{totalViews.toLocaleString()}</strong> total views
+              </span>
+            </div>
+          )}
+
           {/* Posts List */}
           {blogPosts.length === 0 ? (
-            <EnhancedEmptyState
-              icon={PenLine}
-              title="No articles yet"
-              description="Write your first article to share expertise with buyers and boost your agency's visibility."
-              variant="compact"
-              primaryAction={canSubmit ? { label: 'Write Article', href: '/agency/blog/new', icon: Plus } : undefined}
-              suggestions={[
-                { icon: Lightbulb, text: 'Share market insights or neighborhood guides' },
-                { icon: Eye, text: 'Published articles appear on your agency profile' },
-              ]}
-            />
+            <div className="space-y-6">
+              <EnhancedEmptyState
+                icon={PenLine}
+                title="No articles yet"
+                description="Write your first article to share expertise with buyers and boost your agency's visibility."
+                variant="compact"
+                primaryAction={canSubmit ? { label: 'Write Article', href: '/agency/blog/new', icon: Plus } : undefined}
+                suggestions={[
+                  { icon: Lightbulb, text: 'Share market insights or neighborhood guides' },
+                  { icon: Eye, text: 'Published articles appear on your agency profile' },
+                ]}
+              />
+
+              {/* Content Prompts */}
+              <Card className="rounded-2xl border-primary/10">
+                <CardContent className="p-4 space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Not sure what to write?</p>
+                  <div className="grid gap-2">
+                    {contentPrompts.map((prompt) => (
+                      <Link
+                        key={prompt}
+                        to="/agency/blog/new"
+                        className="flex items-center gap-2 p-2.5 rounded-xl text-sm text-foreground hover:bg-muted/50 transition-colors border border-border/50"
+                      >
+                        <Lightbulb className="h-3.5 w-3.5 text-primary shrink-0" />
+                        {prompt}
+                      </Link>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           ) : (
             <div className="space-y-3">
               {blogPosts.map((post, index) => {
@@ -111,6 +198,26 @@ export default function AgencyBlogManagement() {
                   </motion.div>
                 );
               })}
+
+              {/* Content Prompts (collapsed, below articles) */}
+              {canSubmit && (
+                <Card className="rounded-2xl border-dashed border-primary/15 bg-primary/[0.02]">
+                  <CardContent className="p-3">
+                    <p className="text-xs text-muted-foreground mb-2">Ideas for your next article:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {contentPrompts.slice(0, 2).map((prompt) => (
+                        <Link
+                          key={prompt}
+                          to="/agency/blog/new"
+                          className="text-xs text-primary hover:text-primary/80 hover:underline"
+                        >
+                          "{prompt}"
+                        </Link>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           )}
         </motion.div>
