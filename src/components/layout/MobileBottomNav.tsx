@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, Heart, Menu, X, Building, User, ChevronRight, LayoutDashboard, FileText, MessageSquare, Settings, Users, Landmark, UserCircle } from 'lucide-react';
+import { Home, Search, Heart, Menu, X, Building, User, ChevronRight, LayoutDashboard, FileText, MessageSquare, Settings, Users, Landmark, UserCircle, BarChart3 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useFavoritesContext } from '@/contexts/FavoritesContext';
@@ -117,7 +117,7 @@ const agencyMobileNav = {
     { icon: LayoutDashboard, label: 'Dashboard', to: '/agency' },
     { icon: FileText, label: 'Listings', to: '/agency/listings' },
     { icon: Users, label: 'Team', to: '/agency/team' },
-    { icon: MessageSquare, label: 'Leads', to: '/agency/leads' },
+    { icon: BarChart3, label: 'Analytics', to: '/agency/analytics' },
   ],
   more: [
     { label: 'Import Listings', to: '/agency/import', icon: FileText },
@@ -130,7 +130,7 @@ const agentMobileNav = {
   tabs: [
     { icon: LayoutDashboard, label: 'Dashboard', to: '/agent' },
     { icon: FileText, label: 'Listings', to: '/agent/properties' },
-    { icon: MessageSquare, label: 'Leads', to: '/agent/leads' },
+    { icon: BarChart3, label: 'Analytics', to: '/agent/analytics' },
     { icon: UserCircle, label: 'Profile', to: '/agent/profile' },
   ],
   more: [

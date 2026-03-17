@@ -31,14 +31,14 @@ const agencyNavItems = [
   { label: 'Dashboard', to: '/agency', end: true },
   { label: 'Listings', to: '/agency/listings' },
   { label: 'Team', to: '/agency/team' },
-  { label: 'Leads', to: '/agency/leads' },
+  { label: 'Analytics', to: '/agency/analytics' },
   { label: 'Settings', to: '/agency/settings' },
 ];
 
 const agentNavItems = [
   { label: 'Dashboard', to: '/agent', end: true },
   { label: 'My Listings', to: '/agent/properties' },
-  { label: 'Leads', to: '/agent/leads' },
+  { label: 'Analytics', to: '/agent/analytics' },
   { label: 'Profile', to: '/agent/profile' },
 ];
 
