@@ -1169,19 +1169,9 @@ async function computeImagePhash(imageUrl: string, propertyId: string | null, sb
 }
 
 async function registerImageHashes(propertyId: string, imageUrls: string[], sb: any): Promise<string[]> {
-  const warnings: string[] = [];
-  // Process first 5 images for pHash (cover photos most important for dedup)
-  const toCheck = imageUrls.slice(0, 5);
-  for (const url of toCheck) {
-    const result = await computeImagePhash(url, propertyId, sb);
-    if (result && result.similar.length > 0) {
-      const matchIds = result.similar.map((s: any) => s.property_id).filter((id: string) => id !== propertyId);
-      if (matchIds.length > 0) {
-        warnings.push(`pHash duplicate: image visually matches property ${matchIds[0]} (hamming=${result.similar[0].hamming_distance})`);
-      }
-    }
-  }
-  return warnings;
+  // DISABLED: compute-image-hash crashes with magick.wasm URL error in edge runtime.
+  // Skip pHash registration until the WASM issue is resolved.
+  return [];
 }
 
 async function parallelImageDownload(
