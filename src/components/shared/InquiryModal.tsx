@@ -340,6 +340,19 @@ function InquiryForm({
         </Link>
       )}
 
+      {/* Open to similar listings */}
+      <div className="flex items-center gap-2">
+        <Checkbox
+          id="open-to-similar"
+          checked={openToSimilar}
+          onCheckedChange={(checked) => setOpenToSimilar(!!checked)}
+        />
+        <Label htmlFor="open-to-similar" className="text-sm font-normal cursor-pointer flex items-center gap-1.5">
+          <Search className="h-3.5 w-3.5 text-muted-foreground" />
+          I'm also open to similar listings in this area
+        </Label>
+      </div>
+
       {/* Form error */}
       {errors._form && (
         <p className="text-sm text-destructive text-center">{errors._form}</p>
