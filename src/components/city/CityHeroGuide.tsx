@@ -14,8 +14,12 @@ interface CityHeroGuideProps {
 export function CityHeroGuide({ 
   cityName, 
   heroImage, 
-  identitySentence
+  identitySentence,
+  lastUpdated,
 }: CityHeroGuideProps) {
+  const updatedLabel = lastUpdated
+    ? `Updated ${format(new Date(lastUpdated), 'MMM yyyy')}`
+    : `Updated ${new Date().getFullYear()}`;
   const scrollToContent = () => {
     window.scrollTo({ top: window.innerHeight * 0.6, behavior: 'smooth' });
   };
