@@ -79,6 +79,13 @@ export default function CityDetail() {
       });
     }
 
+    // Sort: anglo-tagged first, then preserve existing order
+    result.sort((a, b) => {
+      if (a.anglo_tag && !b.anglo_tag) return -1;
+      if (!a.anglo_tag && b.anglo_tag) return 1;
+      return 0;
+    });
+
     return result;
   }, [neighborhoods, priceTableRows]);
 
