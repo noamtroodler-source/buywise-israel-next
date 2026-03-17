@@ -118,20 +118,15 @@ export function CityQuickStats({ citySlug, cityData, dataSources, lastVerified }
     >
       <div className="container">
         <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 py-5 text-center">
-          {/* Price per sqm - avg headline with range subtitle */}
-          {formatPrice(pricePerSqm) && (
-            <div className="flex flex-col items-center gap-0.5">
-              <div className="flex items-center gap-2">
-                <span className="text-lg font-semibold text-foreground">
-                  {formatPricePerArea(pricePerSqm, 'ILS')}
-                </span>
-                <span className="text-sm text-muted-foreground">avg price</span>
-              </div>
-              {priceRangeDisplay && (
-                <span className="text-xs text-muted-foreground">
-                  {priceRangeDisplay} range
-                </span>
-              )}
+          {/* Price per sqm */}
+          {(priceRangeDisplay || formatPrice(pricePerSqm)) && (
+            <div className="flex items-center gap-2">
+              <span className="text-lg font-semibold text-foreground">
+                {priceRangeDisplay || formatPricePerArea(pricePerSqm, 'ILS')}
+              </span>
+              <span className="text-sm text-muted-foreground">
+                {priceRangeDisplay ? 'range' : 'avg'}
+              </span>
             </div>
           )}
 
