@@ -31,12 +31,6 @@ const metrics: ComparisonMetric[] = [
     higherIsBetter: true 
   },
   { 
-    label: 'Investment Score', 
-    key: 'investment_score', 
-    format: (v) => v ? `${v}/100` : 'N/A',
-    higherIsBetter: true 
-  },
-  { 
     label: 'Commute to TLV', 
     key: 'commute_time_tel_aviv', 
     format: (v) => v === 0 ? 'In TLV' : v ? `${v} min` : 'N/A',
