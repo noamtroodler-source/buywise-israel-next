@@ -109,6 +109,47 @@ export default function CityDetail() {
   const { data: priceTableRows = [] } = useNeighborhoodPriceTable(slug || '', city?.name);
   const districtName = city ? getDistrictForCity(city.name) : null;
 
+  // Merge featured neighborhoods + CBS price table into unified list
+  const unifiedNeighborhoods: UnifiedNeighborhood[] = useMemo(() => {
+    const featuredMap = new Map(neighborhoods.map(n => [n.name, n]));
+    const seen = new Set<string>();
+    const result: UnifiedNeighborhood[] = [];
+
+    // Featured first (sorted by sort_order)
+    for (const n of neighborhoods) {
+      const priceRow = priceTableRows.find(r => r.name === n.name);
+      seen.add(n.name);
+      result.push({
+        name: n.name,
+        name_he: n.name_he,
+        vibe: n.vibe,
+        description: n.description,
+        price_tier: n.price_tier,
+        avg_price: priceRow?.avg_price ?? n.avg_price ?? null,
+        yoy_change_percent: priceRow?.yoy_change_percent ?? n.yoy_change_percent ?? null,
+        is_featured: true,
+        sort_order: n.sort_order,
+      });
+    }
+
+    // CBS-only neighborhoods (not featured), sorted by price desc
+    const cbsOnly = priceTableRows
+      .filter(r => !seen.has(r.name))
+      .sort((a, b) => b.avg_price - a.avg_price);
+
+    for (const r of cbsOnly) {
+      result.push({
+        name: r.name,
+        price_tier: r.price_tier,
+        avg_price: r.avg_price,
+        yoy_change_percent: r.yoy_change_percent,
+        is_featured: false,
+      });
+    }
+
+    return result;
+  }, [neighborhoods, priceTableRows]);
+
   if (cityLoading) {
     return (
       <Layout>
