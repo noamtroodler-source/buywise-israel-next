@@ -81,17 +81,7 @@ const STORAGE_KEY = 'buywise_rent_vs_buy_inputs';
 
 type BuyerCategory = 'first_time' | 'oleh' | 'additional' | 'non_resident';
 
-// Fee estimates
-const FEES = {
-  lawyerRate: 0.005, // 0.5% of price
-  lawyerMinimum: 5000,
-  agentRate: 0.02, // 2% + VAT
-  vatRate: 0.18, // Updated to 18% as of Jan 2025
-  arnonaDefault: 400, // Monthly estimate when city data not available
-  vaadBayitDefault: FALLBACK_CONSTANTS.VAAD_BAYIT_DEFAULT,
-  homeInsurance: 150, // Monthly
-  maintenanceRate: 0.005, // 0.5% of property value annually
-};
+// Fee estimates now pulled from DB via useCalculatorConstants() — see calculations useMemo
 
 // Time horizon options
 const TIME_HORIZONS = [5, 10, 15, 20, 25];
