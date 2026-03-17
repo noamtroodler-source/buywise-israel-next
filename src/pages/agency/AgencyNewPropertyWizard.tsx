@@ -202,7 +202,7 @@ function AgencyWizardContent() {
       case 3: return <StepFeatures />;
       case 4: return <StepPhotos />;
       case 5: return <StepDescription />;
-      case 6: return <StepReview onEditStep={(s) => setCurrentStep(s + 1)} />;
+      case 6: return <StepReview onEditStep={(s) => setCurrentStep(s)} stepOffset={1} />;
       default: return null;
     }
   };
