@@ -28,7 +28,7 @@ interface HistoricalPriceChartProps {
   lastVerified?: string | null;
 }
 
-type Period = '5y' | '10y' | 'all';
+// Period toggle removed — all cities currently have 2020–2025 data only
 
 const COMPARE_COLORS = ['#1FA3A3', '#6366F1'];
 
