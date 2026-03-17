@@ -2,10 +2,13 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { InlineSourceBadge } from '@/components/shared/InlineSourceBadge';
+import { BuyWiseEstimateBadge } from '@/components/shared/BuyWiseEstimateBadge';
 import { useFormatPrice, useCurrencySymbol, useAreaUnitLabel, useFormatPricePerArea } from '@/contexts/PreferencesContext';
 import { NATIONAL_AVG_PRICE_SQM } from '@/lib/constants/marketAverages';
+import { useCityVerification } from '@/hooks/useCityVerification';
 
 interface CityQuickStatsProps {
+  citySlug?: string;
   cityData?: {
     average_price_sqm?: number | null;
     average_price_sqm_min?: number | null;
@@ -25,9 +28,10 @@ interface CityQuickStatsProps {
   lastVerified?: string | null;
 }
 
-export function CityQuickStats({ cityData, dataSources, lastVerified }: CityQuickStatsProps) {
+export function CityQuickStats({ citySlug, cityData, dataSources, lastVerified }: CityQuickStatsProps) {
   const hasVerifiedData = !!(dataSources && Object.keys(dataSources).length > 0);
   const [selectedRooms, setSelectedRooms] = useState<number>(3);
+  const { data: verification } = useCityVerification(citySlug);
   
   const formatPriceHook = useFormatPrice();
   const currencySymbol = useCurrencySymbol();
@@ -154,8 +158,17 @@ export function CityQuickStats({ cityData, dataSources, lastVerified }: CityQuic
 
           {/* Yield display */}
           {yieldDisplay && (
-            <div className="text-lg font-semibold text-foreground">
-              {yieldDisplay}
+            <div className="flex items-center gap-2">
+              <span className="text-lg font-semibold text-foreground">
+                {yieldDisplay}
+              </span>
+              <BuyWiseEstimateBadge
+                rental4RoomMin={verification?.rental4Room?.rent_min}
+                rental4RoomMax={verification?.rental4Room?.rent_max}
+                medianPrice={cityData?.median_apartment_price}
+                sources={verification?.sources}
+                verifiedAt={verification?.verifiedAt}
+              />
             </div>
           )}
 
@@ -184,6 +197,13 @@ export function CityQuickStats({ cityData, dataSources, lastVerified }: CityQuic
                   ))}
                 </SelectContent>
               </Select>
+              <BuyWiseEstimateBadge
+                rental4RoomMin={verification?.rental4Room?.rent_min}
+                rental4RoomMax={verification?.rental4Room?.rent_max}
+                medianPrice={cityData?.median_apartment_price}
+                sources={verification?.sources}
+                verifiedAt={verification?.verifiedAt}
+              />
             </div>
           )}
 
