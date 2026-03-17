@@ -110,7 +110,7 @@ export function MarketOverviewCards({
                     </p>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    National average: ₪{NATIONAL_AVG_PRICE_SQM.toLocaleString()}/m²
+                    National average: {formatPricePerAreaFn(NATIONAL_AVG_PRICE_SQM, 'ILS')}
                   </p>
                 </div>
                 
