@@ -59,7 +59,7 @@ export function HistoricalPriceChart({
   dataSources,
   lastVerified,
 }: HistoricalPriceChartProps) {
-  const [period, setPeriod] = useState<Period>('10y');
+  // Show all available data (currently 2020–2025 for all cities)
   const [compareCities, setCompareCities] = useState<string[]>([cityName]);
   const { data: cityPrices = [] } = useHistoricalPrices(citySlug);
   const { data: nationalAvg = [] } = useNationalAveragePrices();
