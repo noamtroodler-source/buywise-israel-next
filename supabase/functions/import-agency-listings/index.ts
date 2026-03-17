@@ -2022,7 +2022,17 @@ async function processOneItem(
     // ── POST-EXTRACTION CITY INFERENCE ──
     let cityMatchType: "exact" | "fuzzy" | "domain" | "none" = "none";
     if (!listing.city || listing.city.trim() === "") {
-      if (domainCity) {
+      // Try Hebrew city name extraction from scraped content
+      if (item.url?.includes("yad2.co.il") && markdown) {
+        const hebrewCity = inferCityFromHebrew(markdown.slice(0, 3000));
+        if (hebrewCity) {
+          listing.city = hebrewCity;
+          cityMatchType = "fuzzy";
+          console.log(`Inferred city "${hebrewCity}" from Hebrew content for ${item.url}`);
+        }
+      }
+      // Fallback to domain city
+      if ((!listing.city || listing.city.trim() === "") && domainCity) {
         listing.city = domainCity;
         cityMatchType = "domain";
       }
