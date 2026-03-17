@@ -11,7 +11,7 @@ serve(async (req) => {
   }
 
   try {
-    const { content } = await req.json();
+    const { content, mode } = await req.json();
 
     if (!content || typeof content !== 'string') {
       return new Response(
@@ -32,7 +32,16 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const systemPrompt = `You are a professional blog editor specializing in real estate content. Take the raw article text and format it into clean, professional Markdown.
+    const summaryPrompt = `You are a professional blog editor specializing in real estate content. Read the following article and write a compelling 1-2 sentence summary suitable for search results and social media shares. The summary should capture the main value proposition and entice readers to click.
+
+Do NOT:
+- Use generic phrases like "This article discusses..."
+- Exceed 2 sentences or 300 characters
+- Add quotes or formatting
+
+Return ONLY the summary text, nothing else.`;
+
+    const formatPrompt = `You are a professional blog editor specializing in real estate content. Take the raw article text and format it into clean, professional Markdown.
 
 Your task:
 1. Add section headers (## for main sections, ### for subsections) to organize the content logically
@@ -52,6 +61,11 @@ Do NOT:
 
 Return ONLY the formatted Markdown content, no explanations or meta-commentary.`;
 
+    const systemPrompt = mode === 'summary' ? summaryPrompt : formatPrompt;
+    const userMessage = mode === 'summary'
+      ? `Please write a summary for the following blog article:\n\n${content}`
+      : `Please format and polish the following blog article:\n\n${content}`;
+
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -62,7 +76,7 @@ Return ONLY the formatted Markdown content, no explanations or meta-commentary.`
         model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `Please format and polish the following blog article:\n\n${content}` }
+          { role: "user", content: userMessage }
         ],
       }),
     });
