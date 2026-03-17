@@ -11,8 +11,7 @@ import { useNeighborhoodPriceTable } from '@/hooks/useNeighborhoodPriceTable';
 // New guide-style components
 import { CityHeroGuide } from '@/components/city/CityHeroGuide';
 import { CitySourceAttribution } from '@/components/city/CitySourceAttribution';
-import { CityNeighborhoodHighlights } from '@/components/city/CityNeighborhoodHighlights';
-import { CityNeighborhoodPriceTable } from '@/components/city/CityNeighborhoodPriceTable';
+import { CityNeighborhoods, UnifiedNeighborhood } from '@/components/city/CityNeighborhoods';
 // Existing components (kept)
 import { CityQuickStats } from '@/components/city/CityQuickStats';
 import { MarketOverviewCards } from '@/components/city/MarketOverviewCards';
