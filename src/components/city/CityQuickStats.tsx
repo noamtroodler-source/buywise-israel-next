@@ -102,7 +102,7 @@ export function CityQuickStats({ citySlug, cityData, dataSources, lastVerified }
     const priceMax = cityData?.average_price_sqm_max;
     
     if (priceMin && priceMax) {
-      return `${formatPriceHook(priceMin, 'ILS')}–${formatPriceHook(priceMax, 'ILS')}/${areaUnitLabel}`;
+      return `${formatPricePerArea(priceMin, 'ILS')}–${formatPricePerArea(priceMax, 'ILS')}`;
     }
     return null;
   };
