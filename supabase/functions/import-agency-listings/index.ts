@@ -1711,14 +1711,15 @@ async function retryWithSimplifiedPrompt(
 ): Promise<any | null> {
   console.log(`Retrying with simplified prompt for ${url}`);
   const truncatedContent = markdown.slice(0, 4000);
+  const yad2Hint = url.includes("yad2.co.il") ? `\n${inferYad2RegionHint(url)}\nLook for Hebrew city names like: תל אביב, ירושלים, פתח תקווה, רעננה, הרצליה, רמת גן, גבעת שמואל, כפר סבא, הוד השרון, נתניה, חיפה, באר שבע, אשדוד, אשקלון, מודיעין, חדרה, בית שמש.\n` : "";
   const simplifiedPrompt = `Extract ONLY these fields from this Israeli real estate listing page. Return values only if clearly present, otherwise omit.
-
+${yad2Hint}
 - price (number in NIS, 0 if "Price on Request")
 - bedrooms (number — Israeli "rooms" minus 1)
 - size_sqm (number)
 - city (must be one of: ${SUPPORTED_CITIES.join(", ")})
 - address (street name + number)
-- property_type (one of: apartment, house, penthouse, duplex, garden_apartment, cottage, land, commercial, parking, storage, building, agricultural_estate, assisted_living)
+- property_type (one of: apartment, house, penthouse, duplex, garden_apartment, cottage, land)
 - listing_status (for_sale or for_rent)
 - image_urls (array of image URLs)
 - listing_category (property, project, or not_listing)
