@@ -206,9 +206,13 @@ function InquiryForm({
       ? buildBuyerContextSnapshot(buyerProfile!)
       : null;
 
-    const fullMessage = channel === 'email'
+    let fullMessage = channel === 'email'
       ? `Subject: ${subject.trim()}\n\n${message.trim()}`
       : message.trim();
+
+    if (openToSimilar) {
+      fullMessage += '\n\nI\'m also open to similar listings in this area.';
+    }
 
     onSubmit({
       name: isLoggedIn ? (user?.user_metadata?.full_name || name) : name,
@@ -216,7 +220,12 @@ function InquiryForm({
       phone,
       message: fullMessage,
       includeBuyerProfile,
+      openToSimilar,
       buyerContextSnapshot: snapshot,
+    });
+
+    toast.success('Inquiry sent!', {
+      description: 'Most agents reply within 24 hours.',
     });
   };
 
