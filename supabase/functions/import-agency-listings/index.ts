@@ -3011,17 +3011,106 @@ function mapYad2PropertyType(type: string): string {
   return "apartment";
 }
 
-// Process a Yad2 item (pre-extracted, skip AI — go straight to validation/dedup/insert)
+// Process a Yad2 item — scrape individual page if no extracted_data, then validate/dedup/insert
 async function processYad2Item(
   item: any, sb: any, job: any, agentId: string | null, jobId: string, importType: string = "resale"
 ): Promise<{ succeeded: boolean }> {
   try {
     await sb.from("import_job_items").update({ status: "processing" }).eq("id", item.id);
 
-    const listing = item.extracted_data || {};
+    let listing = item.extracted_data || {};
+
+    // If no extracted data (URL-only discovery), scrape the individual listing page
     if (!listing.city || listing.listing_category !== "property") {
-      await sb.from("import_job_items").update({ status: "skipped", error_message: "Invalid Yad2 data or unsupported city", error_type: "permanent" }).eq("id", item.id);
-      return { succeeded: false };
+      const firecrawlKey = Deno.env.get("FIRECRAWL_API_KEY");
+      const lovableKey = Deno.env.get("LOVABLE_API_KEY");
+      if (!firecrawlKey || !lovableKey) {
+        await sb.from("import_job_items").update({ status: "failed", error_message: "Missing API keys for scraping", error_type: "transient" }).eq("id", item.id);
+        return { succeeded: false };
+      }
+
+      console.log(`[Yad2] No extracted data for ${item.url} — scraping individual page`);
+      const scrapeRes = await fetch("https://api.firecrawl.dev/v1/scrape", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${firecrawlKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ url: item.url, formats: ["markdown", "html"], onlyMainContent: true, waitFor: 3000 }),
+      });
+      const scrapeData = await scrapeRes.json();
+      if (!scrapeRes.ok) {
+        const errType = scrapeRes.status === 429 ? "transient" : "permanent";
+        await sb.from("import_job_items").update({ status: "failed", error_message: `Scrape failed (${scrapeRes.status})`, error_type: errType }).eq("id", item.id);
+        return { succeeded: false };
+      }
+      await trackCost(sb, jobId, "firecrawl", 1, "credits");
+
+      const markdown = scrapeData.data?.markdown || scrapeData.markdown || "";
+      const pageHtml = scrapeData.data?.html || scrapeData.html || "";
+
+      if (!markdown || markdown.length < 50) {
+        await sb.from("import_job_items").update({ status: "skipped", error_message: "Page content too short", error_type: "permanent" }).eq("id", item.id);
+        return { succeeded: false };
+      }
+
+      // Pre-filter sold/rented
+      const preFilter = isNonResalePage(markdown, importType);
+      if (preFilter.skip) {
+        await sb.from("import_job_items").update({ status: "skipped", error_message: preFilter.reason, error_type: "permanent" }).eq("id", item.id);
+        return { succeeded: false };
+      }
+
+      // AI extraction
+      const domain = getDomainFromUrl(item.url);
+      const extractionPrompt = buildExtractionPrompt(item.url, domain, markdown, []);
+      const extractRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [{ role: "user", content: extractionPrompt }],
+          tools: [{
+            type: "function",
+            function: {
+              name: "extract_listing",
+              parameters: { type: "object", properties: {} },
+            },
+          }],
+        }),
+      });
+      await trackCost(sb, jobId, "ai_tokens", 1, "calls");
+
+      if (!extractRes.ok) {
+        await sb.from("import_job_items").update({ status: "failed", error_message: `AI extraction failed (${extractRes.status})`, error_type: "transient" }).eq("id", item.id);
+        return { succeeded: false };
+      }
+
+      const extractData = await extractRes.json();
+      const toolCall = extractData.choices?.[0]?.message?.tool_calls?.[0];
+      if (!toolCall) {
+        await sb.from("import_job_items").update({ status: "failed", error_message: "AI did not return structured data", error_type: "transient" }).eq("id", item.id);
+        return { succeeded: false };
+      }
+
+      try {
+        listing = typeof toolCall.function.arguments === "string"
+          ? JSON.parse(toolCall.function.arguments)
+          : toolCall.function.arguments;
+      } catch {
+        await sb.from("import_job_items").update({ status: "failed", error_message: "Failed to parse AI response", error_type: "transient" }).eq("id", item.id);
+        return { succeeded: false };
+      }
+
+      // Default listing_category
+      if (!listing.listing_category) listing.listing_category = "property";
+      listing._source = "yad2";
+      listing._has_structured_data = false;
+
+      // Update item with extracted data
+      await sb.from("import_job_items").update({ extracted_data: listing }).eq("id", item.id);
+
+      if (!listing.city || listing.listing_category !== "property") {
+        await sb.from("import_job_items").update({ status: "skipped", error_message: "AI extraction: missing city or not a property", error_type: "permanent" }).eq("id", item.id);
+        return { succeeded: false };
+      }
     }
 
     // City whitelist
