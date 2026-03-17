@@ -2214,7 +2214,19 @@ async function processOneItem(
     }
 
     // Insert property
-    const entryDate = listing.entry_date === "immediate" ? new Date().toISOString().split("T")[0] : listing.entry_date || null;
+    // Sanitize entry_date: only accept valid ISO dates, convert "immediate"/Hebrew equivalents to today
+    const entryDate = (() => {
+      const raw = listing.entry_date;
+      if (!raw || typeof raw !== "string") return null;
+      const trimmed = raw.trim().toLowerCase();
+      if (trimmed === "immediate" || trimmed === "מיידי" || trimmed === "מיידית") {
+        return new Date().toISOString().split("T")[0];
+      }
+      if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+      const match = trimmed.match(/^(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})$/);
+      if (match) return `${match[3]}-${match[2].padStart(2,'0')}-${match[1].padStart(2,'0')}`;
+      return null; // Hebrew text like "גמישה" → null
+    })();
 
     const { data: property, error: propErr } = await sb
       .from("properties")
