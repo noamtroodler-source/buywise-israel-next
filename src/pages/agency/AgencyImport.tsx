@@ -491,60 +491,6 @@ export default function AgencyImport() {
             </Card>
           )}
 
-          {/* Past Jobs */}
-          {jobs.length > 1 && (
-            <Card className="rounded-2xl border-primary/10">
-              <CardHeader>
-                <CardTitle className="text-lg">Past Imports</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                {jobs.map(job => (
-                    <div
-                      key={job.id}
-                      className={cn(
-                        'flex items-center gap-2',
-                      )}
-                    >
-                      <button
-                        onClick={() => setActiveJobId(job.id)}
-                        className={cn(
-                          'flex-1 text-left p-3 rounded-xl border transition-colors',
-                          currentJob?.id === job.id
-                            ? 'border-primary/30 bg-primary/5'
-                            : 'border-border hover:bg-muted/30'
-                        )}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm font-medium truncate">{job.website_url}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {job.processed_count} imported · {new Date(job.created_at).toLocaleDateString()}
-                            </p>
-                          </div>
-                          <Badge variant="outline" className="text-xs">{job.status}</Badge>
-                        </div>
-                      </button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="rounded-xl text-muted-foreground hover:text-destructive shrink-0"
-                        disabled={deleteJobMutation.isPending}
-                        onClick={() => {
-                          if (confirm('Delete this import job and all its items?')) {
-                            deleteJobMutation.mutate(job.id);
-                            if (activeJobId === job.id) setActiveJobId(null);
-                          }
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
         </motion.div>
       </div>
     </Layout>
