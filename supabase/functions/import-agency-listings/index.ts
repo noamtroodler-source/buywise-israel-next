@@ -2211,7 +2211,7 @@ async function processOneItem(
         checks_required: listing.checks_required ?? null,
         is_published: false, is_featured: false, views_count: 0,
         verification_status: "draft",
-        import_source: "website_scrape",
+        import_source: job.source_type === "yad2" ? "yad2" : "website_scrape",
         source_url: item.url,
       })
       .select("id")
