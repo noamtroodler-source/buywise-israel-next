@@ -58,7 +58,14 @@ const statusConfig: Record<VerificationStatus, {
 function AgencyEditWizardContent({ propertyId }: { propertyId: string }) {
   const navigate = useNavigate();
   const { data: property, isLoading } = useProperty(propertyId);
-  const { data, currentStep, setCurrentStep, goNext, goBack, canGoNext, isLastStep, loadFromSaved } = usePropertyWizard();
+  const { data, currentStep, setCurrentStep, goNext, goBack, isLastStep, loadFromSaved, getStepErrors, getAllErrors } = usePropertyWizard();
+
+  // Compute step errors for progress bar
+  const stepErrors: Record<number, number> = {};
+  for (let i = 0; i < 5; i++) {
+    const errs = getStepErrors(i);
+    if (errs.length > 0) stepErrors[i] = errs.length;
+  }
   const updateProperty = useUpdatePropertyForAgency();
   const submitForReview = useSubmitForReview();
   const [isSubmitting, setIsSubmitting] = useState(false);
