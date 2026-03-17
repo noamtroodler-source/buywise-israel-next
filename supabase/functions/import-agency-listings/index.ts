@@ -2321,11 +2321,9 @@ async function handleProcessBatch(body: any) {
       if (Date.now() - batchStartTime > TIME_LIMIT_MS) break;
 
       const chunk = pendingItems.slice(i, i + currentConcurrency);
-      const isYad2 = job.source_type === "yad2";
       const results = await Promise.allSettled(
-        chunk.map(item => isYad2
-          ? processYad2Item(item, sb, job, agentId, job_id, job.import_type || "resale")
-          : processOneItem(item, sb, job, agentId, FIRECRAWL_API_KEY, LOVABLE_API_KEY, job_id, cachedDomainCity, job.import_type || "resale")
+        chunk.map(item =>
+          processOneItem(item, sb, job, agentId, FIRECRAWL_API_KEY, LOVABLE_API_KEY, job_id, cachedDomainCity, job.import_type || "resale")
         )
       );
 
