@@ -75,6 +75,7 @@ export default function CityDetail() {
         avg_price: r.avg_price,
         yoy_change_percent: r.yoy_change_percent,
         is_featured: false,
+        anglo_tag: isAngloNeighborhood(slug || '', r.name),
       });
     }
 

@@ -125,6 +125,8 @@ export function CityNeighborhoods({ cityName, neighborhoods }: CityNeighborhoods
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
     if (!q) return neighborhoods;
+    // Special "anglo" keyword filters to tagged neighborhoods
+    if (q === 'anglo') return neighborhoods.filter(n => n.anglo_tag);
     return neighborhoods.filter(n =>
       n.name.toLowerCase().includes(q) ||
       (n.name_he && n.name_he.includes(q))
