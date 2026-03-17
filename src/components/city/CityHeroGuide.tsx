@@ -8,6 +8,7 @@ interface CityHeroGuideProps {
   cityName: string;
   heroImage: string;
   identitySentence: string;
+  lastUpdated?: string;
 }
 
 export function CityHeroGuide({ 
