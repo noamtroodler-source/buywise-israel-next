@@ -16,6 +16,7 @@ export interface UnifiedNeighborhood {
   yoy_change_percent: number | null;
   is_featured: boolean;
   sort_order?: number;
+  anglo_tag?: boolean;
 }
 
 interface CityNeighborhoodsProps {
@@ -90,6 +91,11 @@ function NeighborhoodCard({ n }: { n: UnifiedNeighborhood }) {
             </span>
           )}
         </div>
+        {n.anglo_tag && (
+          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-primary/70 bg-primary/8 border border-primary/15 rounded-full px-1.5 py-0.5 shrink-0 whitespace-nowrap">
+            🌍 Anglo hub
+          </span>
+        )}
       </div>
 
       {n.is_featured && n.vibe && (
@@ -119,6 +125,8 @@ export function CityNeighborhoods({ cityName, neighborhoods }: CityNeighborhoods
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
     if (!q) return neighborhoods;
+    // Special "anglo" keyword filters to tagged neighborhoods
+    if (q === 'anglo') return neighborhoods.filter(n => n.anglo_tag);
     return neighborhoods.filter(n =>
       n.name.toLowerCase().includes(q) ||
       (n.name_he && n.name_he.includes(q))

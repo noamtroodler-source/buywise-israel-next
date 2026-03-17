@@ -9,6 +9,7 @@ import { useCityMarketFactors } from '@/hooks/useCityMarketFactors';
 import { useCityNeighborhoods } from '@/hooks/useCityNeighborhoods';
 import { getDistrictForCity } from '@/lib/utils/districtMapping';
 import { useNeighborhoodPriceTable } from '@/hooks/useNeighborhoodPriceTable';
+import { isAngloNeighborhood } from '@/lib/angloNeighborhoodTags';
 // New guide-style components
 import { CityHeroGuide } from '@/components/city/CityHeroGuide';
 import { CitySourceAttribution } from '@/components/city/CitySourceAttribution';
@@ -58,6 +59,7 @@ export default function CityDetail() {
         yoy_change_percent: priceRow?.yoy_change_percent ?? n.yoy_change_percent ?? null,
         is_featured: true,
         sort_order: n.sort_order,
+        anglo_tag: isAngloNeighborhood(slug || '', n.name),
       });
     }
 
@@ -73,6 +75,7 @@ export default function CityDetail() {
         avg_price: r.avg_price,
         yoy_change_percent: r.yoy_change_percent,
         is_featured: false,
+        anglo_tag: isAngloNeighborhood(slug || '', r.name),
       });
     }
 

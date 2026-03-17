@@ -915,6 +915,7 @@ export type Database = {
       }
       cities: {
         Row: {
+          anglo_note: string | null
           anglo_presence: string | null
           arnona_discounts: string | null
           arnona_monthly_avg: number | null
@@ -986,6 +987,7 @@ export type Database = {
           yoy_price_change: number | null
         }
         Insert: {
+          anglo_note?: string | null
           anglo_presence?: string | null
           arnona_discounts?: string | null
           arnona_monthly_avg?: number | null
@@ -1057,6 +1059,7 @@ export type Database = {
           yoy_price_change?: number | null
         }
         Update: {
+          anglo_note?: string | null
           anglo_presence?: string | null
           arnona_discounts?: string | null
           arnona_monthly_avg?: number | null

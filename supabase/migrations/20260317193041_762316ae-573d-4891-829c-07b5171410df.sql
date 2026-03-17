@@ -1,0 +1,1 @@
+ALTER TABLE public.cities ADD COLUMN anglo_note text;
