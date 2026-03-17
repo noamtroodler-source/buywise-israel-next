@@ -1094,6 +1094,10 @@ async function enhanceImage(imagePublicUrl: string, sb: any, bucketName: string,
   } catch { return imagePublicUrl; }
 }
 
+// Geocoding rate-limit state
+let _lastGeoTime = 0;
+let _geoQueue: Promise<any> = Promise.resolve();
+
 // Track image URLs across a batch to detect repeated placeholder images
 const _batchImageUrlCounts = new Map<string, number>();
 
