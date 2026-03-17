@@ -38,7 +38,7 @@ interface AgencyOnboardingProgressProps {
 }
 
 export function AgencyOnboardingProgress({ agency, teamCount, listingsCount = 0 }: AgencyOnboardingProgressProps) {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const checklistItems: ChecklistItem[] = [
     {
