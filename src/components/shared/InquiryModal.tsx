@@ -141,12 +141,19 @@ function InquiryForm({
   const hasBuyerProfile = !!buyerProfile;
 
   const agentFirstName = agentName.split(' ')[0];
-  const defaultMessage = `Hi${agentFirstName ? ` ${agentFirstName}` : ''}, I'm interested in the ${propertyTitle}. I'd love to learn more.`;
+  const userName = user?.user_metadata?.full_name || '';
+
+  const buildDefaultMessage = (ch: InquiryChannel, uName: string) => {
+    if (ch === 'email') {
+      return `Dear ${agentFirstName},\n\nI'm interested in the ${propertyTitle}. I'd love to learn more about this property.\n\nBest,\n${uName || '[Your Name]'}`;
+    }
+    return `Hi${agentFirstName ? ` ${agentFirstName}` : ''}, I'm interested in the ${propertyTitle}. I'd love to learn more.`;
+  };
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [message, setMessage] = useState(defaultMessage);
+  const [message, setMessage] = useState(buildDefaultMessage(channel, userName));
   const [includeBuyerProfile, setIncludeBuyerProfile] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
