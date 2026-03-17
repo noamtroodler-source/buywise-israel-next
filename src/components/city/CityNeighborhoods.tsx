@@ -91,6 +91,11 @@ function NeighborhoodCard({ n }: { n: UnifiedNeighborhood }) {
             </span>
           )}
         </div>
+        {n.anglo_tag && (
+          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-primary/70 bg-primary/8 border border-primary/15 rounded-full px-1.5 py-0.5 shrink-0 whitespace-nowrap">
+            🌍 Anglo hub
+          </span>
+        )}
       </div>
 
       {n.is_featured && n.vibe && (
