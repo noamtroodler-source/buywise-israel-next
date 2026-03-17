@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
-import { FALLBACK_CONSTANTS } from '@/lib/calculations/constants';
+import { FALLBACK_CONSTANTS, getConstant } from '@/lib/calculations/constants';
+import { useCalculatorConstants } from '@/hooks/useCalculatorConstants';
 import { useSavePromptTrigger } from '@/hooks/useSavePromptTrigger';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
