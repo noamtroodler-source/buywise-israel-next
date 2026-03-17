@@ -224,6 +224,14 @@ export default function AgencyDashboard() {
                   <CardTitle className="text-sm flex items-center gap-2">
                     <Megaphone className="h-4 w-4 text-primary" />
                     Team Announcements
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-[220px] text-xs">
+                        Post internal updates visible to all agents in your agency
+                      </TooltipContent>
+                    </Tooltip>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="px-4 pb-4">
