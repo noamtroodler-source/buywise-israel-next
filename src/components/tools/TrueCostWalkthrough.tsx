@@ -69,9 +69,10 @@ export function TrueCostWalkthrough() {
   };
 
   const calculateCosts = (): CostBreakdown => {
+    const vatMultiplier = getVatMultiplier(calcConstants);
     const purchaseTax = calculatePurchaseTax(propertyPrice);
-    const lawyerFees = Math.max(propertyPrice * 0.01, 15000) * 1.18; // 1% + VAT (18%), min 15k
-    const agentFees = usesAgent ? propertyPrice * 0.02 * 1.18 : 0; // 2% + VAT (18%)
+    const lawyerFees = Math.max(propertyPrice * 0.01, 15000) * vatMultiplier; // 1% + VAT, min 15k
+    const agentFees = usesAgent ? propertyPrice * getConstant(calcConstants, 'AGENT_RATE') * vatMultiplier : 0; // Agent + VAT
     const mortgageFees = 5000; // Approximate: appraisal + opening fees
     const registrationFees = 2000; // Tabu registration
 
