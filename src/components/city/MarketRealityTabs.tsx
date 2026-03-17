@@ -192,7 +192,7 @@ export function MarketRealityTabs({
                         </TooltipTrigger>
                         <TooltipContent className="bg-background border-border">
                           <p className="font-medium">{city.name}</p>
-                          <p className="text-muted-foreground">₪{city.pricePerSqm.toLocaleString()}/m²</p>
+                          <p className="text-muted-foreground">{formatPricePerAreaFn(city.pricePerSqm, 'ILS')}</p>
                         </TooltipContent>
                       </UITooltip>
                     ))}
