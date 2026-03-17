@@ -461,7 +461,7 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
                               <span>
                                 <Button
                                   onClick={handleSubmitForReview}
-                                  disabled={isSubmitting || !canGoNext || !isAgentVerified || !canCreateListing}
+                                  disabled={isSubmitting || getAllErrors().length > 0 || !isAgentVerified || !canCreateListing}
                                   className="gap-2 rounded-xl h-11 px-6"
                                 >
                                   {isSubmitting ? (
