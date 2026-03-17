@@ -3652,6 +3652,7 @@ export type Database = {
       project_inquiries: {
         Row: {
           budget_range: string | null
+          buyer_context_snapshot: Json | null
           created_at: string
           developer_id: string
           email: string
@@ -3665,11 +3666,13 @@ export type Database = {
           project_id: string
           responded_at: string | null
           response_method: string | null
+          session_id: string | null
           status: string | null
           user_id: string | null
         }
         Insert: {
           budget_range?: string | null
+          buyer_context_snapshot?: Json | null
           created_at?: string
           developer_id: string
           email: string
@@ -3683,11 +3686,13 @@ export type Database = {
           project_id: string
           responded_at?: string | null
           response_method?: string | null
+          session_id?: string | null
           status?: string | null
           user_id?: string | null
         }
         Update: {
           budget_range?: string | null
+          buyer_context_snapshot?: Json | null
           created_at?: string
           developer_id?: string
           email?: string
@@ -3701,6 +3706,7 @@ export type Database = {
           project_id?: string
           responded_at?: string | null
           response_method?: string | null
+          session_id?: string | null
           status?: string | null
           user_id?: string | null
         }
@@ -4224,6 +4230,7 @@ export type Database = {
           agency_id: string | null
           agent_id: string
           assigned_to: string | null
+          buyer_context_snapshot: Json | null
           contacted_at: string | null
           created_at: string | null
           email: string | null
@@ -4235,6 +4242,7 @@ export type Database = {
           notes: string | null
           phone: string | null
           property_id: string
+          session_id: string | null
           status: string | null
           user_id: string | null
         }
@@ -4242,6 +4250,7 @@ export type Database = {
           agency_id?: string | null
           agent_id: string
           assigned_to?: string | null
+          buyer_context_snapshot?: Json | null
           contacted_at?: string | null
           created_at?: string | null
           email?: string | null
@@ -4253,6 +4262,7 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           property_id: string
+          session_id?: string | null
           status?: string | null
           user_id?: string | null
         }
@@ -4260,6 +4270,7 @@ export type Database = {
           agency_id?: string | null
           agent_id?: string
           assigned_to?: string | null
+          buyer_context_snapshot?: Json | null
           contacted_at?: string | null
           created_at?: string | null
           email?: string | null
@@ -4271,6 +4282,7 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           property_id?: string
+          session_id?: string | null
           status?: string | null
           user_id?: string | null
         }
@@ -5525,6 +5537,24 @@ export type Database = {
       calculate_journey_stage: { Args: { milestones: Json }; Returns: string }
       can_agent_view_profile: {
         Args: { _agent_user_id: string; _profile_id: string }
+        Returns: boolean
+      }
+      check_inquiry_dedupe: {
+        Args: {
+          p_inquiry_type: string
+          p_property_id: string
+          p_session_id?: string
+          p_user_id: string
+        }
+        Returns: boolean
+      }
+      check_project_inquiry_dedupe: {
+        Args: {
+          p_inquiry_type: string
+          p_project_id: string
+          p_session_id?: string
+          p_user_id: string
+        }
         Returns: boolean
       }
       find_similar_images: {
