@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Loader2, Eye } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
@@ -11,8 +12,7 @@ import { useNeighborhoodPriceTable } from '@/hooks/useNeighborhoodPriceTable';
 // New guide-style components
 import { CityHeroGuide } from '@/components/city/CityHeroGuide';
 import { CitySourceAttribution } from '@/components/city/CitySourceAttribution';
-import { CityNeighborhoodHighlights } from '@/components/city/CityNeighborhoodHighlights';
-import { CityNeighborhoodPriceTable } from '@/components/city/CityNeighborhoodPriceTable';
+import { CityNeighborhoods, UnifiedNeighborhood } from '@/components/city/CityNeighborhoods';
 // Existing components (kept)
 import { CityQuickStats } from '@/components/city/CityQuickStats';
 import { MarketOverviewCards } from '@/components/city/MarketOverviewCards';
@@ -109,6 +109,47 @@ export default function CityDetail() {
   const { data: properties = [] } = useProperties(city ? { city: city.name } : undefined);
   const { data: priceTableRows = [] } = useNeighborhoodPriceTable(slug || '', city?.name);
   const districtName = city ? getDistrictForCity(city.name) : null;
+
+  // Merge featured neighborhoods + CBS price table into unified list
+  const unifiedNeighborhoods: UnifiedNeighborhood[] = useMemo(() => {
+    const featuredMap = new Map(neighborhoods.map(n => [n.name, n]));
+    const seen = new Set<string>();
+    const result: UnifiedNeighborhood[] = [];
+
+    // Featured first (sorted by sort_order)
+    for (const n of neighborhoods) {
+      const priceRow = priceTableRows.find(r => r.name === n.name);
+      seen.add(n.name);
+      result.push({
+        name: n.name,
+        name_he: n.name_he,
+        vibe: n.vibe,
+        description: n.description,
+        price_tier: n.price_tier,
+        avg_price: priceRow?.avg_price ?? n.avg_price ?? null,
+        yoy_change_percent: priceRow?.yoy_change_percent ?? n.yoy_change_percent ?? null,
+        is_featured: true,
+        sort_order: n.sort_order,
+      });
+    }
+
+    // CBS-only neighborhoods (not featured), sorted by price desc
+    const cbsOnly = priceTableRows
+      .filter(r => !seen.has(r.name))
+      .sort((a, b) => b.avg_price - a.avg_price);
+
+    for (const r of cbsOnly) {
+      result.push({
+        name: r.name,
+        price_tier: r.price_tier,
+        avg_price: r.avg_price,
+        yoy_change_percent: r.yoy_change_percent,
+        is_featured: false,
+      });
+    }
+
+    return result;
+  }, [neighborhoods, priceTableRows]);
 
   if (cityLoading) {
     return (
@@ -224,59 +265,11 @@ export default function CityDetail() {
           lastVerified={city.updated_at}
         />
 
-        {/* 2.5. Neighborhood Highlights */}
-        {neighborhoods.length > 0 && (
-          <CityNeighborhoodHighlights 
+        {/* 2.5. Unified Neighborhood Explorer */}
+        {unifiedNeighborhoods.length > 0 && (
+          <CityNeighborhoods 
             cityName={city.name}
-            neighborhoods={neighborhoods}
-          />
-        )}
-
-        {/* Neighborhood Price Table moved below Price by Apartment Size */}
-
-        {/* 3. Market Overview - 3 Card Grid */}
-        <section id="market">
-          <MarketOverviewCards
-            cityName={city.name}
-            arnonaRateSqm={city.arnona_rate_sqm}
-            propertyTypes={[
-              { name: 'Resale', value: (city as any).resale_percent || 55 },
-              { name: 'New Projects', value: (city as any).new_projects_percent || 30 },
-              { name: 'Rentals', value: (city as any).rentals_percent || 15 },
-            ]}
-            dataSources={(city as any).data_sources}
-            lastVerified={city.updated_at}
-            cityData={{
-              average_price_sqm: city.average_price_sqm,
-            }}
-          />
-        </section>
-
-        {/* 5. Historical Price Chart */}
-        <section id="price-history">
-          <HistoricalPriceChart
-            citySlug={slug || ''}
-            cityName={city.name}
-            dataSources={(city as any).data_sources}
-            lastVerified={city.updated_at}
-          />
-        </section>
-
-        {/* 5.5. Price by Apartment Size */}
-        <section id="price-by-size">
-          <PriceByApartmentSize
-            citySlug={slug || ''}
-            cityName={city.name}
-            dataSources={(city as any).data_sources}
-            lastVerified={city.updated_at}
-          />
-        </section>
-
-        {/* 5.6. Neighborhood Price Snapshot + Drawer */}
-        {priceTableRows.length > 0 && (
-          <CityNeighborhoodPriceTable
-            cityName={city.name}
-            rows={priceTableRows}
+            neighborhoods={unifiedNeighborhoods}
           />
         )}
 
