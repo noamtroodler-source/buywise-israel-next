@@ -1306,6 +1306,65 @@ export type Database = {
         }
         Relationships: []
       }
+      city_rental_verification: {
+        Row: {
+          city_slug: string
+          created_at: string
+          id: string
+          notes: string | null
+          rent_avg: number | null
+          rent_max: number | null
+          rent_min: number | null
+          room_count: number
+          source: string
+          status: string
+          updated_at: string
+          verified_at: string
+          yield_max: number | null
+          yield_min: number | null
+        }
+        Insert: {
+          city_slug: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          rent_avg?: number | null
+          rent_max?: number | null
+          rent_min?: number | null
+          room_count: number
+          source?: string
+          status?: string
+          updated_at?: string
+          verified_at?: string
+          yield_max?: number | null
+          yield_min?: number | null
+        }
+        Update: {
+          city_slug?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          rent_avg?: number | null
+          rent_max?: number | null
+          rent_min?: number | null
+          room_count?: number
+          source?: string
+          status?: string
+          updated_at?: string
+          verified_at?: string
+          yield_max?: number | null
+          yield_min?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "city_rental_verification_city_slug_fkey"
+            columns: ["city_slug"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["slug"]
+          },
+        ]
+      }
       client_errors: {
         Row: {
           created_at: string
