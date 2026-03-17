@@ -4,7 +4,7 @@ import { Loader2, Eye } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { useCity } from '@/hooks/useCities';
-import { useProperties } from '@/hooks/useProperties';
+import { useCityPropertyCount } from '@/hooks/useCityPropertyCount';
 import { useCityMarketFactors } from '@/hooks/useCityMarketFactors';
 import { useCityNeighborhoods } from '@/hooks/useCityNeighborhoods';
 import { getDistrictForCity } from '@/lib/utils/districtMapping';
@@ -17,7 +17,7 @@ import { CityNeighborhoods, UnifiedNeighborhood } from '@/components/city/CityNe
 import { CityQuickStats } from '@/components/city/CityQuickStats';
 import { MarketOverviewCards } from '@/components/city/MarketOverviewCards';
 import { CityWorthWatchingNew, MarketFactor } from '@/components/city/CityWorthWatchingNew';
-import { CityExploreListings } from '@/components/city/CityExploreListings';
+import { CityResourcesCTA } from '@/components/city/CityResourcesCTA';
 import { CityFeaturedProperties } from '@/components/city/CityFeaturedProperties';
 import { HistoricalPriceChart } from '@/components/city/HistoricalPriceChart';
 import { PriceByApartmentSize } from '@/components/city/PriceByApartmentSize';
@@ -35,13 +35,12 @@ export default function CityDetail() {
   const { data: cityDetails } = useCityDetails(slug || '');
   const { data: dbMarketFactors = [] } = useCityMarketFactors(slug || '');
   const { data: neighborhoods = [] } = useCityNeighborhoods(slug || '');
-  const { data: properties = [] } = useProperties(city ? { city: city.name } : undefined);
+  const { data: propertyCount = 0 } = useCityPropertyCount(city?.name);
   const { data: priceTableRows = [] } = useNeighborhoodPriceTable(slug || '', city?.name);
   const districtName = city ? getDistrictForCity(city.name) : null;
 
   // Merge featured neighborhoods + CBS price table into unified list
   const unifiedNeighborhoods: UnifiedNeighborhood[] = useMemo(() => {
-    const featuredMap = new Map(neighborhoods.map(n => [n.name, n]));
     const seen = new Set<string>();
     const result: UnifiedNeighborhood[] = [];
 
@@ -145,12 +144,9 @@ export default function CityDetail() {
   const worthWatching = allFactors.slice(0, 6);
     
   const heroImage = cityHeroImages[slug || ''] || city.hero_image || 'https://images.unsplash.com/photo-1544967082-d9d25d867d66?w=1920';
-  const medianPrice = city.median_apartment_price ?? null;
-  const grossYield = city.gross_yield_percent ?? null;
-  const identitySentence = (city as any).identity_sentence || city.description || `${city.name} is a city in Israel with its own unique character and real estate market.`;
-  const yoyChange = city.yoy_price_change ?? undefined;
+  const identitySentence = city.identity_sentence || city.description || `${city.name} is a city in Israel with its own unique character and real estate market.`;
 
-  const seoMeta = generateCityMeta(city, properties.length);
+  const seoMeta = generateCityMeta(city, propertyCount);
   const jsonLd = generateCityJsonLd({
     ...city,
     hero_image: heroImage,
@@ -179,20 +175,20 @@ export default function CityDetail() {
           citySlug={slug}
           cityData={{
             average_price_sqm: city.average_price_sqm,
-            average_price_sqm_min: (city as any).average_price_sqm_min,
-            average_price_sqm_max: (city as any).average_price_sqm_max,
+            average_price_sqm_min: city.average_price_sqm_min,
+            average_price_sqm_max: city.average_price_sqm_max,
             median_apartment_price: city.median_apartment_price,
             rental_3_room_min: city.rental_3_room_min,
             rental_3_room_max: city.rental_3_room_max,
             rental_4_room_min: city.rental_4_room_min,
             rental_4_room_max: city.rental_4_room_max,
-            rental_5_room_min: (city as any).rental_5_room_min,
-            rental_5_room_max: (city as any).rental_5_room_max,
+            rental_5_room_min: city.rental_5_room_min,
+            rental_5_room_max: city.rental_5_room_max,
             gross_yield_percent: city.gross_yield_percent,
-            gross_yield_percent_min: (city as any).gross_yield_percent_min,
-            gross_yield_percent_max: (city as any).gross_yield_percent_max,
+            gross_yield_percent_min: city.gross_yield_percent_min,
+            gross_yield_percent_max: city.gross_yield_percent_max,
           }}
-          dataSources={(city as any).data_sources}
+          dataSources={city.data_sources as Record<string, string> | undefined}
           lastVerified={city.updated_at}
         />
 
@@ -208,7 +204,7 @@ export default function CityDetail() {
         <MarketOverviewCards
           cityName={city.name}
           arnonaRateSqm={city.arnona_rate_sqm}
-          dataSources={(city as any).data_sources}
+          dataSources={city.data_sources as Record<string, string> | undefined}
           lastVerified={city.updated_at}
           cityData={{ average_price_sqm: city.average_price_sqm }}
         />
@@ -239,20 +235,17 @@ export default function CityDetail() {
           )}
         </section>
 
-        {/* 8. Explore Listings CTA */}
-        <section id="listings">
-          <CityExploreListings 
-            cityName={city.name} 
-            propertiesCount={properties.length} 
-          />
+        {/* 7. Helpful Resources */}
+        <section id="resources">
+          <CityResourcesCTA cityName={city.name} />
         </section>
 
-        {/* 9. Featured Properties - At the bottom */}
+        {/* 8. Featured Properties */}
         <CityFeaturedProperties cityName={city.name} citySlug={slug || ''} />
 
-        {/* 10. Source Attribution */}
+        {/* 9. Source Attribution */}
         <CitySourceAttribution 
-          sources={(city as any).data_sources} 
+          sources={city.data_sources as Record<string, string> | undefined} 
           lastVerified={city.updated_at}
           cityName={city.name}
           districtName={districtName}
