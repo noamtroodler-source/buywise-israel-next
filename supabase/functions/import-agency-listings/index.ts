@@ -2331,7 +2331,7 @@ async function handleProcessBatch(body: any) {
   const MAX_CONCURRENCY = 5;
   const MIN_CONCURRENCY = 2;
   const REFILL_SIZE = 10;
-  const MAX_ITEMS = 15;
+  const MAX_ITEMS = 25;
   const TIME_LIMIT_MS = 120_000;
   const batchStartTime = Date.now();
 
