@@ -141,7 +141,7 @@ function InquiryForm({
   const hasBuyerProfile = !!buyerProfile;
 
   const agentFirstName = agentName.split(' ')[0];
-  const defaultMessage = `Hi${agentFirstName ? ` ${agentFirstName}` : ''}, I'm interested in ${propertyTitle}. I'd love to learn more.`;
+  const defaultMessage = `Hi${agentFirstName ? ` ${agentFirstName}` : ''}, I'm interested in the ${propertyTitle}. I'd love to learn more.`;
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
