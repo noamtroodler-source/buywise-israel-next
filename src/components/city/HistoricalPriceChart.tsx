@@ -117,14 +117,8 @@ export function HistoricalPriceChart({
     });
   }, [cityPrices, nationalAvg, comparisonData, comparisonCityNames]);
 
-  // Filter by period
-  const filteredData = useMemo(() => {
-    if (mergedData.length === 0) return [];
-    const currentYear = new Date().getFullYear();
-    if (period === '5y') return mergedData.filter((d) => d.year >= currentYear - 5);
-    if (period === '10y') return mergedData.filter((d) => d.year >= currentYear - 10);
-    return mergedData;
-  }, [mergedData, period]);
+  // Use all available data (no period filtering)
+  const filteredData = mergedData;
 
   // Metrics for current city only
   const metrics = useMemo(() => {
