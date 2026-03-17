@@ -53,7 +53,7 @@ export function PropertyValueSnapshot({
     return Math.round((cityArnonaRate * sizeSqm) / 12); // Monthly arnona
   }, [sizeSqm, cityArnonaRate]);
 
-  const vaadBayit = vaadBayitMonthly ?? 450; // Default ₪450 if not specified
+  const vaadBayit = vaadBayitMonthly ?? FALLBACK_CONSTANTS.VAAD_BAYIT_DEFAULT;
   const totalMonthlyCommitment = price + arnonaEstimate + vaadBayit;
   
   // For rentals: calculate city average rent and comparison
