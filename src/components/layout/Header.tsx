@@ -110,9 +110,9 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container h-16 grid grid-cols-[auto_1fr_auto] items-center gap-4">
         {/* Logo - Left */}
-        <Link to="/" className="flex items-center gap-1.5">
-          <img src={logoIcon} alt="BuyWise Israel" className="h-8 w-8 object-contain" />
-          <div className="flex items-baseline gap-1.5">
+        <Link to="/" className="flex items-center gap-1">
+          <img src={logoIcon} alt="BuyWise Israel" className="h-[34px] w-[34px] object-contain" />
+          <div className="flex items-baseline gap-0.5">
             <span className="text-[1.3rem] font-bold tracking-tight text-foreground">BuyWise</span>
             <span className="text-[1.3rem] font-bold tracking-tight text-primary">Israel</span>
           </div>
