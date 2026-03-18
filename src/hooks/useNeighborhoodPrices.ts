@@ -111,20 +111,25 @@ export function useNeighborhoodPrices(cityName: string | undefined, rooms: numbe
         const latest = prices[0] as any;
         const latestYear = latest.year;
         const latestQuarter = latest.quarter;
-        const latestPrice = latest.avg_price_nis;
+
+        // Average last 4 quarters (1 year) for a stable benchmark
+        const recentPrices = prices.slice(0, 4).filter((p: any) => p.avg_price_nis);
+        const avgPrice = recentPrices.length > 0
+          ? Math.round(recentPrices.reduce((sum: number, p: any) => sum + p.avg_price_nis, 0) / recentPrices.length)
+          : null;
 
         // Compare against 3 years ago for a stable trend
         const prevYear = prices.find(
           (p: any) => p.year === latestYear - 3 && p.quarter === latestQuarter
         ) as any;
 
-        const yoyChange = prevYear?.avg_price_nis && latestPrice
-          ? Math.round(((latestPrice - prevYear.avg_price_nis) / prevYear.avg_price_nis) * 1000) / 10
+        const yoyChange = prevYear?.avg_price_nis && latest.avg_price_nis
+          ? Math.round(((latest.avg_price_nis - prevYear.avg_price_nis) / prevYear.avg_price_nis) * 1000) / 10
           : null;
 
         result[mapping.anglo_name] = {
-          avg_price: latestPrice,
-          avg_price_sqm: latestPrice ? Math.round(latestPrice / avgSize) : null,
+          avg_price: avgPrice,
+          avg_price_sqm: avgPrice ? Math.round(avgPrice / avgSize) : null,
           yoy_change_percent: yoyChange,
           latest_year: latestYear,
           latest_quarter: latestQuarter,
