@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { Project, Developer, ProjectUnit } from '@/types/projects';
@@ -219,20 +219,9 @@ export function ProjectStickyCard({ project, developer, representingAgent, selec
         <Card className="shadow-lg border-primary/10">
           <CardContent className="p-5 space-y-4">
 
-            {/* Contact Section - Tabbed if both agent and developer exist */}
+            {/* Contact Section */}
             {representingAgent ? (
-              <Tabs defaultValue="agent" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="agent" className="text-xs">Sales Agent</TabsTrigger>
-                  <TabsTrigger value="developer" className="text-xs">Developer</TabsTrigger>
-                </TabsList>
-                <TabsContent value="agent" className="mt-3">
-                  <AgentContactSection />
-                </TabsContent>
-                <TabsContent value="developer" className="mt-3">
-                  <DeveloperContactSection />
-                </TabsContent>
-              </Tabs>
+              <AgentContactSection />
             ) : (
               <DeveloperContactSection />
             )}
