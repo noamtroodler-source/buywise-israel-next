@@ -186,11 +186,6 @@ const CITY_ROOM_SIZE_INSIGHTS: Record<string, RoomInsightFn> = {
       : '') +
     (m.room5Price ? `5-room units at ${fmt(m.room5Price)} give you genuine family space at a fraction of Jerusalem prices.` : ''),
 
-  'givat-zeev': (m) =>
-    `Givat Ze'ev's value proposition is clearest when you look at room sizes. ` +
-    (m.room4Price ? `A 4-room at ${fmt(m.room4Price)} gets you family space that would cost significantly more inside Jerusalem. ` : '') +
-    (m.room3Price ? `3-room entry points at ${fmt(m.room3Price)} make this one of the most accessible gateways to the Jerusalem area. ` : '') +
-    `Growing connectivity is gradually closing the price gap with the city, but there's still meaningful value here.`,
 };
 
 /**

@@ -53,7 +53,6 @@ const CITY_COORDINATES: Record<string, { lat: number; lng: number }> = {
   'Kiryat Bialik': { lat: 32.8300, lng: 35.0850 },
   'Karmiel': { lat: 32.9136, lng: 35.2961 },
   'Afula': { lat: 32.6100, lng: 35.2883 },
-  'Yokneam': { lat: 32.6592, lng: 35.1108 },
 };
 
 interface BackfillRequest {

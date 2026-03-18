@@ -115,12 +115,12 @@ You know about:
 - ALWAYS prefer linking to real listings/projects you have data for over generic advice.`;
 
 const KNOWN_CITIES = [
-  "Ashdod", "Ashkelon", "Bat Yam", "Beer Sheva", "Beit Shemesh", "Caesarea",
-  "Efrat", "Eilat", "Givat Shmuel", "Givat Ze'ev", "Givatayim", "Gush Etzion",
-  "Hadera", "Haifa", "Herzliya", "Hod HaSharon", "Holon", "Jerusalem",
-  "Kfar Saba", "Ma'ale Adumim", "Mevaseret Zion", "Modi'in", "Nahariya",
+  "Ashdod", "Ashkelon", "Beer Sheva", "Beit Shemesh", "Caesarea",
+  "Efrat", "Eilat", "Givat Shmuel", "Gush Etzion",
+  "Hadera", "Haifa", "Herzliya", "Hod HaSharon", "Jerusalem",
+  "Kfar Saba", "Ma'ale Adumim", "Mevaseret Zion", "Modi'in",
   "Netanya", "Pardes Hanna", "Petah Tikva", "Ra'anana", "Ramat Gan",
-  "Rosh HaAyin", "Shoham", "Tel Aviv", "Zichron Yaakov"
+  "Tel Aviv", "Zichron Yaakov"
 ];
 
 function extractCities(text: string): string[] {

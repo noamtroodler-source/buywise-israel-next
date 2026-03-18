@@ -48,7 +48,7 @@ const recommendations: Record<string, { areas: string[]; propertyTypes: string[]
     tips: ['Check community facilities', 'Look for family-friendly neighborhoods'],
   },
   'quiet-single': {
-    areas: ['Zichron Yaakov', 'Nahariya', 'Tiberias'],
+    areas: ['Zichron Yaakov', 'Pardes Hanna', 'Hadera'],
     propertyTypes: ['Apartment', 'Small House'],
     tips: ['Consider work-from-home setup', 'Check internet connectivity'],
   },

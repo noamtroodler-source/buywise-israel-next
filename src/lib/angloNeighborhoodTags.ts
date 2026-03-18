@@ -22,7 +22,6 @@ const angloTagsRaw: Record<string, string[]> = {
   'maale-adumim': ['Mitzpe Nevo'],
   caesarea: ['Caesarea'],
   'givat-shmuel': ['Central Givat Shmuel'],
-  'givat-zeev': ['Givat Ze\'ev HaChadasha', 'Ramat Givat Ze\'ev'],
   'zichron-yaakov': ['Derech Sarah', 'Hazon Ish', 'Ramat Tzvi', 'HaMoshava'],
 };
 
