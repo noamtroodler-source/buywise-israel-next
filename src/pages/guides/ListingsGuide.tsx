@@ -137,7 +137,7 @@ const whatOmitted = [
   {
     icon: AlertTriangle,
     title: 'Realistic Delivery Dates',
-    description: 'For new developments, allowable delays and index-linked price adjustments are not highlighted.',
+    description: 'For projects, allowable delays and index-linked price adjustments are not highlighted.',
   },
 ];
 

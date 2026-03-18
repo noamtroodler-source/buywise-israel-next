@@ -58,7 +58,7 @@ export function DeveloperOnboardingProgress() {
     {
       id: 'first_project',
       label: 'Add your first project',
-      description: 'List a new development to attract buyers',
+      description: 'List a project to attract buyers',
       icon: Building2,
       isComplete: projects.length > 0,
       action: () => navigate('/developer/projects/new'),

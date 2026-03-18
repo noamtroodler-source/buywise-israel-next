@@ -39,7 +39,7 @@ const professionalTypes = [
   {
     icon: Landmark,
     title: "Property Developer",
-    description: "Construction companies and developers showcasing new development projects.",
+    description: "Construction companies and developers showcasing projects.",
     features: [
       "Project showcase pages",
       "Unit inventory management",

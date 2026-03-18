@@ -231,7 +231,7 @@ export default function Projects() {
               description={
                 totalCount > 0 
                   ? 'Try adjusting your filters to see more results.'
-                  : 'New construction projects will be available soon.'
+                  : 'Projects will be available soon.'
               }
               primaryAction={totalCount > 0 ? {
                 label: 'Reset Filters',

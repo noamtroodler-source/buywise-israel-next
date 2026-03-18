@@ -178,7 +178,7 @@ export const MapProjectOverlay = memo(function MapProjectOverlay({
           <div className="absolute top-2 left-2 z-10">
             <Badge className="text-xs gap-1 bg-emerald-500/90 text-white border-emerald-500/90 backdrop-blur-sm">
               <Building2 className="h-3 w-3" />
-              New Development
+              New Project
             </Badge>
           </div>
 

@@ -413,7 +413,7 @@ export default function Favorites() {
                     <Building className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
                     <p className="text-muted-foreground">No projects saved</p>
                     <Button asChild variant="link" className="mt-2">
-                      <Link to="/projects">Browse new developments</Link>
+                      <Link to="/projects">Browse projects</Link>
                     </Button>
                   </div>
                 ) : (

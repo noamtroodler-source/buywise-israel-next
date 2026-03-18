@@ -78,7 +78,7 @@ const allGuides: Record<string, Guide> = {
   },
   'new-vs-resale': {
     slug: 'new-vs-resale',
-    title: 'New Construction vs Resale in Israel',
+    title: 'New Projects vs Resale in Israel',
     description: 'Distinct legal structures, payment schedules, and risks. Which path fits your situation?',
     image: newVsResaleHero,
     readingTime: 18,

@@ -30,7 +30,7 @@ const specializations = [
   { id: 'residential', label: 'Residential' },
   { id: 'commercial', label: 'Commercial' },
   { id: 'luxury', label: 'Luxury' },
-  { id: 'new_construction', label: 'New Construction' },
+  { id: 'new_construction', label: 'New Projects' },
   { id: 'investment', label: 'Investment Properties' },
   { id: 'rentals', label: 'Rentals' },
 ];

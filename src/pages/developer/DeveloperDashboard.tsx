@@ -377,7 +377,7 @@ export default function DeveloperDashboard() {
                   <div>
                     <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">Add New Project</h3>
                     <p className="text-sm text-muted-foreground">
-                      Create a new development listing
+                      Create a new project listing
                     </p>
                   </div>
                 </CardContent>

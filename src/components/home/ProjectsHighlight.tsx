@@ -96,7 +96,7 @@ export function ProjectsHighlight() {
             viewport={{ once: true }}
           >
             <h2 className="text-2xl md:text-4xl font-bold text-foreground">
-              New Developments
+              Projects
             </h2>
             <p className="text-base text-muted-foreground mt-1 max-w-lg">
               Pre-construction projects with transparent pricing

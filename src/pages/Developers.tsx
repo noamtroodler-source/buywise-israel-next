@@ -24,7 +24,7 @@ export default function Developers() {
               <h1 className="text-4xl font-bold text-foreground">Developers</h1>
             </div>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Explore Israel's leading real estate developers and their new construction projects.
+              Explore Israel's leading real estate developers and their projects.
             </p>
           </div>
 

@@ -77,7 +77,7 @@ export function ProjectHero({ project, onShare, onSave, isSaved = false }: Proje
   const formatGallerySubtitle = () => {
     const parts: string[] = [];
     
-    parts.push('New Development');
+    parts.push('New Project');
     
     if (project.price_from) {
       const priceText = project.price_to 

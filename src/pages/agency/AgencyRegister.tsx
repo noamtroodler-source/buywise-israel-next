@@ -46,7 +46,7 @@ const baseSteps = [
 
 const agentStep = { id: 'agent', title: 'Agent Profile', description: 'Your personal agent details', icon: UserCheck };
 
-const specializations = ['Residential', 'Luxury', 'New Construction', 'Rentals', 'Anglo Market', 'Investment Properties'];
+const specializations = ['Residential', 'Luxury', 'New Projects', 'Rentals', 'Anglo Market', 'Investment Properties'];
 
 const benefits = [
   'Your own agency profile page',

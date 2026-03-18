@@ -500,7 +500,7 @@ export default function BuyingInIsraelGuide() {
                   <p className="text-sm text-muted-foreground mt-1">Special benefits and considerations for new immigrants</p>
                 </Link>
                 <Link to="/guides/new-vs-resale" className="p-4 bg-card border border-border rounded-lg hover:border-primary/40 transition-colors">
-                  <h4 className="font-medium text-foreground">New Construction vs Resale</h4>
+                  <h4 className="font-medium text-foreground">New Projects vs Resale</h4>
                   <p className="text-sm text-muted-foreground mt-1">Compare your property options</p>
                 </Link>
               </div>

@@ -122,7 +122,7 @@ const GUIDE_TITLES: Record<string, string> = {
   "true-cost": "The True Cost of Buying",
   "talking-to-professionals": "What to Know Before Talking to an Agent, Lawyer, or Broker",
   "mortgages": "Mortgages in Israel for Foreign Buyers",
-  "new-vs-resale": "New Construction vs Resale in Israel",
+  "new-vs-resale": "New Projects vs Resale in Israel",
   "rent-vs-buy": "Rent vs Buy in Israel",
 };
 
