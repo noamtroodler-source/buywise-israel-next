@@ -335,6 +335,11 @@ Deno.serve(async (req) => {
                   subject: "Your subscription has been canceled — BuyWise Israel",
                   html: `
                     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+                      <div style="text-align: center; margin-bottom: 32px;">
+                        <a href="https://buywiseisrael.com" style="text-decoration: none;">
+                          <img src="https://buywiseisrael.com/og-image.png" alt="BuyWise Israel" style="height: 48px; width: auto;" />
+                        </a>
+                      </div>
                       <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 16px;">Your subscription has been canceled</h1>
                       <p style="color: #333; font-size: 16px; line-height: 1.6;">We're sorry to see you go. Your subscription has been canceled and you'll retain access until the end of your current billing period.</p>
                       <div style="margin-top: 16px; padding: 16px; background-color: #eff6ff; border-radius: 8px;">
