@@ -111,7 +111,12 @@ export function useNeighborhoodPrices(cityName: string | undefined, rooms: numbe
         const latest = prices[0] as any;
         const latestYear = latest.year;
         const latestQuarter = latest.quarter;
-        const latestPrice = latest.avg_price_nis;
+
+        // Average last 4 quarters (1 year) for a stable benchmark
+        const recentPrices = prices.slice(0, 4).filter((p: any) => p.avg_price_nis);
+        const avgPrice = recentPrices.length > 0
+          ? Math.round(recentPrices.reduce((sum: number, p: any) => sum + p.avg_price_nis, 0) / recentPrices.length)
+          : null;
 
         // Compare against 3 years ago for a stable trend
         const prevYear = prices.find(
