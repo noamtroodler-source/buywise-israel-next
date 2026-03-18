@@ -78,7 +78,7 @@ function GoogleLocationSearch({ onLocationSelect, propertyLat, propertyLng }: Lo
       </div>
       
       {isFocused && status === 'OK' && data.length > 0 && (
-        <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-lg shadow-lg overflow-hidden">
+        <div className="absolute z-50 w-full mt-1 bg-background border border-border/50 rounded-xl shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08),0_2px_8px_-2px_rgba(0,0,0,0.04)] overflow-hidden">
           {data.map((suggestion) => (
             <button
               key={suggestion.place_id}
@@ -161,7 +161,7 @@ function NominatimLocationSearch({ onLocationSelect, propertyLat, propertyLng }:
       </div>
       
       {isFocused && suggestions.length > 0 && (
-        <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-lg shadow-lg overflow-hidden">
+        <div className="absolute z-50 w-full mt-1 bg-background border border-border/50 rounded-xl shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08),0_2px_8px_-2px_rgba(0,0,0,0.04)] overflow-hidden">
           {suggestions.map((result, index) => (
             <button
               key={index}

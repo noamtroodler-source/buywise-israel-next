@@ -93,7 +93,7 @@ export function NeighborhoodAutocomplete({
       </div>
 
       {open && !disabled && (
-        <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-xl shadow-lg max-h-60 overflow-auto">
+        <div className="absolute z-50 w-full mt-1 bg-background border border-border/50 rounded-xl shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08),0_2px_8px_-2px_rgba(0,0,0,0.04)] max-h-60 overflow-auto">
           {isLoading ? (
             <div className="px-3 py-3 text-sm text-muted-foreground">
               Loading neighborhoods…

@@ -104,7 +104,7 @@ export function PullToRefresh({
         }}
       >
         <div className={cn(
-          "w-8 h-8 rounded-full bg-background border border-border shadow-md flex items-center justify-center",
+          "w-8 h-8 rounded-full bg-background border border-border/50 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08),0_2px_8px_-2px_rgba(0,0,0,0.04)] flex items-center justify-center",
           isRefreshing && "animate-spin"
         )}>
           <Loader2 className={cn(
