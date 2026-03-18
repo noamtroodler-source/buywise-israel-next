@@ -26,6 +26,7 @@ import { useCityDetails } from '@/hooks/useCityDetails';
 import { SEOHead } from '@/components/seo/SEOHead';
 import { generateCityMeta, generateCityJsonLd, SITE_CONFIG } from '@/lib/seo';
 import { useTrackContentVisit } from '@/hooks/useTrackContentVisit';
+import { MarketDataContext } from '@/components/shared/MarketDataContext';
 
 import { cityHeroImages } from '@/lib/cityHeroImages';
 
