@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 
 export function AdvertiseCTA() {
   return (
-    <section className="py-20 bg-background">
+    <section id="cta" className="py-20 bg-background scroll-mt-20">
       <div className="container">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
