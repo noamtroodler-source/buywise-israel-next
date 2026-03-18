@@ -9,6 +9,7 @@ import { RecentNearbySales } from './RecentNearbySales';
 import { AIMarketInsight } from './AIMarketInsight';
 import { useMarketInsight } from '@/hooks/useMarketInsight';
 import { useRoomSpecificCityPrice } from '@/hooks/useRoomSpecificCityPrice';
+import { useNeighborhoodAvgPrice } from '@/hooks/useNeighborhoodPrices';
 
 interface MarketIntelligenceProps {
   property: {
@@ -112,9 +113,19 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
   // Room-specific city average (overrides generic city avg when available)
   const { data: roomPrice } = useRoomSpecificCityPrice(property.city, property.bedrooms);
   
+  // Neighborhood-level average (highest priority for comparison card)
+  const { data: neighborhoodPrice } = useNeighborhoodAvgPrice(
+    property.city,
+    property.neighborhood ?? undefined,
+    property.bedrooms ?? 4
+  );
+
   const effectiveAvgPriceSqm = roomPrice?.avgPriceSqm ?? cityData?.average_price_sqm ?? null;
   const effectiveYoyChange = roomPrice?.yoyChange ?? cityData?.yoy_price_change ?? null;
   const effectiveRoomCount = roomPrice ? property.bedrooms : null;
+
+  // Neighborhood avg price per sqm (falls back to city if unavailable)
+  const neighborhoodAvgPriceSqm = neighborhoodPrice?.avg_price_sqm ?? null;
 
   // Compute days on market
   const createdDate = property.created_at ? new Date(property.created_at) : new Date();
@@ -199,6 +210,8 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
           cityArnonaRate={cityData?.arnona_rate_sqm}
           cityAvgVaadBayit={cityData?.average_vaad_bayit}
           roomCount={effectiveRoomCount}
+          neighborhoodAvgPriceSqm={neighborhoodAvgPriceSqm}
+          neighborhoodName={property.neighborhood}
           hideHeader
         />
 
