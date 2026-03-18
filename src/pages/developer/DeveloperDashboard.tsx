@@ -198,13 +198,13 @@ export default function DeveloperDashboard() {
             <DeveloperOnboardingProgress />
           </motion.div>
 
-          {/* New Development Showcase */}
+          {/* Project Showcase */}
           <motion.div variants={itemVariants}>
             <Card className="rounded-2xl border-primary/10 bg-gradient-to-br from-primary/5 via-transparent to-transparent">
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <Home className="h-5 w-5 text-primary" />
-                  New Development Showcase
+                  Project Showcase
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
