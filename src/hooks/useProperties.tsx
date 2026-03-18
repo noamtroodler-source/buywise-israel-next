@@ -8,7 +8,8 @@ import { isSavedLocationDest } from '@/lib/utils/commuteFilter';
  * Returns properties with _isBoosted flag set.
  */
 async function fetchFeaturedProperties(
-  excludeIds: Set<string>
+  excludeIds: Set<string>,
+  listingStatus?: 'for_sale' | 'for_rent'
 ): Promise<Property[]> {
   const { data: featured } = await supabase
     .from('featured_listings')
@@ -21,12 +22,17 @@ async function fetchFeaturedProperties(
 
   if (!featuredIds.length) return [];
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('properties')
     .select(`*, agent:agents(*, agency:agencies(id, name, logo_url))`)
     .in('id', featuredIds)
     .eq('is_published', true);
 
+  if (listingStatus) {
+    query = query.eq('listing_status', listingStatus);
+  }
+
+  const { data, error } = await query;
   if (error) return [];
 
   return (data ?? []).map(p => ({ ...p, _isBoosted: true })) as Property[];
@@ -402,7 +408,7 @@ export function useFeaturedSaleProperties(options?: FeaturedPropertiesOptions) {
       }
 
       // Merge featured listings
-      const boostedProperties = await fetchFeaturedProperties(adminIds);
+      const boostedProperties = await fetchFeaturedProperties(adminIds, 'for_sale');
       const merged = [...adminProperties, ...boostedProperties].slice(0, 8);
       return merged;
     },
@@ -454,7 +460,7 @@ export function useFeaturedRentalProperties(options?: FeaturedPropertiesOptions)
       }
 
       // Merge featured listings
-      const boostedProperties = await fetchFeaturedProperties(adminIds);
+      const boostedProperties = await fetchFeaturedProperties(adminIds, 'for_rent');
       const merged = [...adminProperties, ...boostedProperties].slice(0, 8);
       return merged;
     },
@@ -482,11 +488,11 @@ export function useRecommendedProperties() {
   });
 }
 
-export function useCityFeaturedProperties(cityName: string, limit: number = 8) {
+export function useCityFeaturedProperties(cityName: string, limit: number = 8, listingStatus: 'for_sale' | 'for_rent' = 'for_sale') {
   return useQuery({
-    queryKey: ['properties', 'city-featured', cityName, limit],
+    queryKey: ['properties', 'city-featured', cityName, limit, listingStatus],
     queryFn: async () => {
-      const boosted = await fetchFeaturedProperties(new Set());
+      const boosted = await fetchFeaturedProperties(new Set(), listingStatus);
       // Filter boosted to this city
       const cityBoosted = boosted.filter(p => 
         p.city?.toLowerCase().includes(cityName.toLowerCase())
@@ -501,6 +507,7 @@ export function useCityFeaturedProperties(cityName: string, limit: number = 8) {
         .from('properties')
         .select(`*, agent:agents(*, agency:agencies(id, name, logo_url))`)
         .eq('is_published', true)
+        .eq('listing_status', listingStatus)
         .ilike('city', `%${cityName}%`)
         .eq('is_featured', true)
         .order('created_at', { ascending: false })
@@ -522,6 +529,7 @@ export function useCityFeaturedProperties(cityName: string, limit: number = 8) {
         .from('properties')
         .select(`*, agent:agents(*, agency:agencies(id, name, logo_url))`)
         .eq('is_published', true)
+        .eq('listing_status', listingStatus)
         .ilike('city', `%${cityName}%`)
         .order('views_count', { ascending: false })
         .limit(limit - combined.length);
