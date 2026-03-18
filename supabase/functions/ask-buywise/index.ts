@@ -345,7 +345,11 @@ Deno.serve(async (req) => {
     // Extract user token for profile injection
     const userToken = req.headers.get("x-user-token") || undefined;
 
-    const systemPrompt = await buildSystemPrompt(pageContext || "", supabaseUrl, supabaseKey, userToken);
+    // Extract latest user message for search intent
+    const userMessages = (messages || []).filter((m: any) => m.role === "user");
+    const userQuery = userMessages.length ? userMessages[userMessages.length - 1].content : "";
+
+    const systemPrompt = await buildSystemPrompt(pageContext || "", supabaseUrl, supabaseKey, userToken, userQuery);
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
