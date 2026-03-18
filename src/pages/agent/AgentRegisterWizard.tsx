@@ -78,10 +78,8 @@ export default function AgentRegisterWizard() {
     email: user?.email || '',
     phone: '',
     license_number: '',
-    // Agency
-    agency_choice: (urlInviteCode ? 'invite_code' : 'independent') as 'independent' | 'invite_code' | 'request_join',
+    // Agency (invite code is now required)
     invite_code: urlInviteCode || '',
-    agency_id: '',
     // Profile
     years_experience: 0,
     languages: ['Hebrew', 'English'] as string[],
