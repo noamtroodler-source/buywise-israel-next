@@ -34,6 +34,7 @@ interface MarketIntelligenceProps {
     is_accessible?: boolean | null;
     entry_date?: string | null;
     original_price?: number | null;
+    additional_rooms?: number | null;
     description?: string | null;
     features?: string[] | null;
     property_type?: string;
