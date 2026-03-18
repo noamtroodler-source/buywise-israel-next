@@ -5,34 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// City price multipliers (Tel Aviv = 1.0 baseline)
-const CITY_MULTIPLIERS: Record<string, number> = {
-  'Tel Aviv': 1.8,
-  'Herzliya': 1.6,
-  'Ramat Gan': 1.3,
-  'Givatayim': 1.25,
-  'Netanya': 1.0,
-  'Ra\'anana': 1.5,
-  'Kfar Saba': 1.2,
-  'Petah Tikva': 1.1,
-  'Rishon LeZion': 1.15,
-  'Rehovot': 1.05,
-  'Ashdod': 0.85,
-  'Ashkelon': 0.75,
-  'Haifa': 0.9,
-  'Jerusalem': 1.4,
-  'Beer Sheva': 0.55,
-  'Eilat': 0.8,
-  'Modiin': 1.25,
-  'Bat Yam': 0.95,
-  'Holon': 1.0,
-  'Nahariya': 0.65,
-  'Hadera': 0.7,
-  'Caesarea': 1.7,
-  'Zichron Yaakov': 1.1,
-  'Beit Shemesh': 0.9,
-  'Tiberias': 0.6,
-};
+// Pricing is now fetched from the cities table at runtime — no hardcoded multipliers
 
 // Property type configurations
 const PROPERTY_TYPES = [
