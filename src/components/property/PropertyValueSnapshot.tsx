@@ -42,6 +42,8 @@ export function PropertyValueSnapshot({
   cityAvgVaadBayit,
   roomCount,
   hideHeader = false,
+  neighborhoodAvgPriceSqm,
+  neighborhoodName,
 }: PropertyValueSnapshotProps) {
   const formatPrice = useFormatPrice();
   const formatPricePerArea = useFormatPricePerArea();
