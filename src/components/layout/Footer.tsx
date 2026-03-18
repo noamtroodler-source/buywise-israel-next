@@ -9,10 +9,12 @@ export function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
           {/* Brand - Full width on mobile */}
           <div className="col-span-2 md:col-span-1 space-y-4">
-            <Link to="/" className="flex items-center gap-2">
-              <img src={logoIcon} alt="BuyWise Israel" className="h-8 w-8 md:h-9 md:w-9 rounded-lg object-contain" />
-              <span className="text-lg md:text-xl font-bold text-foreground">BuyWise</span>
-              <span className="text-lg md:text-xl font-bold text-primary">Israel</span>
+            <Link to="/" className="flex items-center gap-2.5">
+              <img src={logoIcon} alt="BuyWise Israel" className="h-7 w-7 md:h-8 md:w-8 object-contain" />
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-lg md:text-[1.3rem] font-bold tracking-tight text-foreground">BuyWise</span>
+                <span className="text-lg md:text-[1.3rem] font-bold tracking-tight text-primary">Israel</span>
+              </div>
             </Link>
             <p className="text-sm text-muted-foreground">
               Helping international buyers navigate Israeli real estate with clarity and confidence.
