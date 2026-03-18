@@ -1,7 +1,7 @@
 import { ReactNode } from 'react';
 import { Header } from './Header';
 import { Footer } from './Footer';
-import { FloatingWhatsApp } from '../shared/FloatingWhatsApp';
+import { AskBuyWiseButton } from '../shared/AskBuyWise';
 import { MobileBottomNav } from './MobileBottomNav';
 import { CookieConsentBanner } from '../shared/CookieConsentBanner';
 import { CommandPaletteProvider } from '@/hooks/useCommandPalette';
