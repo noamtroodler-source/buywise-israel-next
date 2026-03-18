@@ -395,8 +395,7 @@ export function RecentNearbySales({
               </Tooltip>
             </div>
           )}
-          <div className="rounded-lg border border-border bg-muted/30 p-6 text-center">
-            <Building2 className="mx-auto h-10 w-10 text-muted-foreground/50 mb-3" />
+          <div className="rounded-lg border border-border bg-muted/30 p-6 flex flex-col items-center justify-center text-center">
             <p className="text-sm font-medium text-foreground mb-1">
               No nearby sales data yet
             </p>
