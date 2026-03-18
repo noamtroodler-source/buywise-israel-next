@@ -38,7 +38,6 @@ import { scrollToTopInstant } from '@/lib/scrollToTop';
 
 const steps = [
   { title: 'Basic Info', description: 'Your contact details', icon: User },
-  { title: 'Agency', description: 'Join or go independent', icon: Building2 },
   { title: 'Profile', description: 'Your experience', icon: Briefcase },
   { title: 'Complete', description: 'Review & submit', icon: CheckCircle2 },
 ];
