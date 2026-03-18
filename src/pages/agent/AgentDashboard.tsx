@@ -153,7 +153,7 @@ export default function AgentDashboard() {
     { label: 'Analytics', icon: BarChart3, href: '/agent/analytics', color: 'text-primary', bg: 'bg-primary/10', hoverBg: 'hover:bg-primary/5' },
     { label: 'Blog', icon: PenLine, href: '/agent/blog', count: blogPosts.length, color: 'text-primary', bg: 'bg-primary/10', hoverBg: 'hover:bg-primary/5' },
     { label: 'Settings', icon: Settings, href: '/agent/settings', color: 'text-primary', bg: 'bg-primary/10', hoverBg: 'hover:bg-primary/5' },
-    { label: 'Profile', icon: ExternalLink, href: '/agent/settings', color: 'text-primary', bg: 'bg-primary/10', hoverBg: 'hover:bg-primary/5' },
+    { label: 'Public Page', icon: ExternalLink, href: agentProfile ? `/agents/${agentProfile.id}` : '#', color: 'text-primary', bg: 'bg-primary/10', hoverBg: 'hover:bg-primary/5' },
   ];
 
   return (
