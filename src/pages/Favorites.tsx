@@ -23,6 +23,7 @@ import { PullToRefresh } from '@/components/shared/PullToRefresh';
 import { MobileListingsSkeletonGrid } from '@/components/shared/MobilePropertySkeleton';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useQueryClient } from '@tanstack/react-query';
+import { getProjectProgress } from '@/lib/projectProgress';
 
 const popularCities = ['Tel Aviv', 'Jerusalem', 'Herzliya', 'Ra\'anana', 'Netanya'];
 
