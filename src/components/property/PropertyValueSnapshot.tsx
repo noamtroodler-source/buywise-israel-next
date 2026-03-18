@@ -222,7 +222,7 @@ export function PropertyValueSnapshot({
                 {formatPricePerArea(propertyPricePerSqm, 'ILS')}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                Price per m²
+                Price {perArea}
               </p>
             </>
           ) : (
