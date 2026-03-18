@@ -32,6 +32,12 @@ export interface DeveloperProfile {
   specialties: string[] | null;
   email_verified_at: string | null;
   onboarding_completed_at: string | null;
+  regions_active: string[] | null;
+  is_publicly_traded: boolean | null;
+  tase_ticker: string | null;
+  notable_projects: string[] | null;
+  awards_certifications: string | null;
+  completed_projects_text: string | null;
   last_active_at: string | null;
 }
 

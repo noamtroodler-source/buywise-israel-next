@@ -27,6 +27,12 @@ export interface Developer {
   company_type: string | null;
   specialties: string[] | null;
   value_proposition: string | null;
+  regions_active: string[] | null;
+  is_publicly_traded: boolean | null;
+  tase_ticker: string | null;
+  notable_projects: string[] | null;
+  awards_certifications: string | null;
+  completed_projects_text: string | null;
 }
 
 export interface Project {
