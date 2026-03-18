@@ -257,6 +257,7 @@ export default function Tools() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTool, setActiveTool] = useState<string | null>(null);
   const isMobile = useIsMobile();
+  const { isAdmin } = useUserRole();
 
   useEffect(() => {
     const toolParam = searchParams.get('tool');
@@ -269,7 +270,9 @@ export default function Tools() {
     }
   }, [searchParams]);
 
-  const ActiveComponent = activeTool ? toolComponents[activeTool] : null;
+  const isBetaTool = activeTool ? BETA_TOOL_IDS.has(activeTool) : false;
+  const showBetaGate = isBetaTool && !isAdmin;
+  const ActiveComponent = activeTool && !showBetaGate ? toolComponents[activeTool] : null;
 
   const handleToolClick = (toolId: string) => {
     setSearchParams({ tool: toolId });
