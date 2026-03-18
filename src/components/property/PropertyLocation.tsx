@@ -278,7 +278,7 @@ export function PropertyLocation({
               )}
               
               {/* City reference points (filter out train anchors) */}
-              {cityAnchors?.filter(a => a.icon !== 'train').map((anchor) => (
+              {cityAnchors?.map((anchor) => (
                 <CityAnchorCard
                   key={anchor.id}
                   anchor={anchor}
