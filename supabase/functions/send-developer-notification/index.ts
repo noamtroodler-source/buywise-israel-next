@@ -147,7 +147,8 @@ const getNotificationContent = (payload: NotificationPayload) => {
         subject: 'Notification from BuyWise Israel',
         body: payload.message || 'You have a new notification.',
         html: `
-          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+            ${brandHeader}
             <h1 style="color: #1a1a1a; font-size: 24px;">Notification</h1>
             <p style="color: #333; font-size: 16px;">${payload.message || 'You have a new notification.'}</p>
             ${brandFooter}
