@@ -467,7 +467,8 @@ export function RecentNearbySales({
               </TooltipTrigger>
               <TooltipContent side="left" className="max-w-xs">
                 <p className="text-xs">
-                  Shows properties sold within 500 meters of this listing in the past 24 months. Closer matches appear first.
+                  Shows properties sold within {radiusUsedM >= 1000 ? '1km' : '500m'} of this listing in the past 24 months. Closer matches appear first.
+                  {usedExpandedRadius && ' Search was expanded from 500m to 1km due to limited nearby data.'}
                 </p>
               </TooltipContent>
             </Tooltip>
