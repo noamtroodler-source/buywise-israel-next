@@ -114,16 +114,6 @@ const CITY_INSIGHTS: Record<string, InsightFn> = {
     `Prices have climbed ${m.totalAppreciation.toFixed(0)}% over ${m.years} years to ${fmt(m.currentPrice)} average. ` +
     `At ${m.cagr}% annual growth, it's tracking close to its neighbor Ra'anana but at a more accessible price point.`,
 
-  'rosh-haayin': (m) =>
-    `Rosh Ha'ayin blends suburban quiet with real connectivity — the train gets you to Tel Aviv fast. ` +
-    `At ${fmt(m.currentPrice)} average, it's up ${m.totalAppreciation.toFixed(0)}% over ${m.years} years. ` +
-    `It's found its niche as an affordable family alternative to the Sharon-region premium cities.`,
-
-  'shoham': (m) =>
-    `Shoham is a small, affluent community town — think cul-de-sacs, gardens, and some of the best schools in the region. ` +
-    `At ${fmt(m.currentPrice)} average, it commands a premium for good reason. ` +
-    `${m.totalAppreciation.toFixed(0)}% growth over ${m.years} years at ${m.cagr}% annually — limited supply keeps this market tight.`,
-
   'givat-shmuel': (m) =>
     `Givat Shmuel has been one of the biggest success stories in Israeli real estate — massive new construction transformed this once-sleepy town. ` +
     `At ${fmt(m.currentPrice)} with ${m.totalAppreciation.toFixed(0)}% appreciation over ${m.years} years, ` +
