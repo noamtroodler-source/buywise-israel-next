@@ -35,6 +35,7 @@ interface CommandItem {
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   keywords?: string[];
+  badge?: 'beta';
 }
 
 const BROWSE: CommandItem[] = [
