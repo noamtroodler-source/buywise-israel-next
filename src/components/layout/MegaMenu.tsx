@@ -61,7 +61,7 @@ export function MegaMenu({ config, className }: MegaMenuProps) {
                                 {item.label}
                               </span>
                               {item.description && (
-                                <span className="text-xs text-muted-foreground group-hover:text-accent-foreground/70">
+                                <span className="text-xs text-muted-foreground/70 group-hover:text-accent-foreground/70">
                                   {item.description}
                                 </span>
                               )}
