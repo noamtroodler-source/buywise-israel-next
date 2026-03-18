@@ -104,13 +104,116 @@ You know about:
 
 ## Other Resources
 - [Glossary](/glossary) — Hebrew real estate terms explained
-- [Blog](/blog) — Latest articles and market updates`;
+- [Blog](/blog) — Latest articles and market updates
+
+## Linking to Listings & Projects
+- When you mention specific properties or projects from the "Available Listings" data below, ALWAYS include a markdown link.
+- Format for properties: [Brief description](/property/{id})
+- Format for projects: [Project Name](/projects/{slug})
+- When discussing a neighborhood in general, link to filtered listings: [See apartments in Ir Yamim](/listings?status=for_sale&city=Netanya&neighborhood=Ir+Yamim)
+- If you know the bedroom count, add it: [See 4BR in Ir Yamim](/listings?status=for_sale&city=Netanya&neighborhood=Ir+Yamim&bedrooms=4)
+- ALWAYS prefer linking to real listings/projects you have data for over generic advice.`;
+
+const KNOWN_CITIES = [
+  "Ashdod", "Ashkelon", "Bat Yam", "Beer Sheva", "Beit Shemesh", "Caesarea",
+  "Efrat", "Eilat", "Givat Shmuel", "Givat Ze'ev", "Givatayim", "Gush Etzion",
+  "Hadera", "Haifa", "Herzliya", "Hod HaSharon", "Holon", "Jerusalem",
+  "Kfar Saba", "Ma'ale Adumim", "Mevaseret Zion", "Modi'in", "Nahariya",
+  "Netanya", "Pardes Hanna", "Petah Tikva", "Ra'anana", "Ramat Gan",
+  "Rosh HaAyin", "Shoham", "Tel Aviv", "Zichron Yaakov"
+];
+
+function extractCities(text: string): string[] {
+  const lower = text.toLowerCase();
+  return KNOWN_CITIES.filter(c => lower.includes(c.toLowerCase()));
+}
+
+function extractBedrooms(text: string): number | null {
+  // Match patterns like "4 bedroom", "4-bedroom", "4BR", "4 bed"
+  const match = text.match(/(\d)\s*[-]?\s*(?:bedroom|bed\b|br\b)/i);
+  return match ? parseInt(match[1]) : null;
+}
+
+async function fetchListingsContext(
+  supabase: any,
+  cities: string[],
+  bedrooms: number | null
+): Promise<string> {
+  const parts: string[] = [];
+
+  // Query properties
+  let propQuery = supabase
+    .from("properties")
+    .select("id, title, address, city, neighborhood, price, bedrooms, property_type, currency")
+    .eq("is_published", true)
+    .eq("listing_status", "for_sale")
+    .order("created_at", { ascending: false })
+    .limit(10);
+
+  if (cities.length) propQuery = propQuery.in("city", cities);
+  if (bedrooms) propQuery = propQuery.eq("bedrooms", bedrooms);
+
+  const { data: properties } = await propQuery;
+
+  if (properties?.length) {
+    const lines = properties.map((p: any) =>
+      `- [${p.title || `${p.bedrooms}BR in ${p.neighborhood || p.city}`}](/property/${p.id}) — ${p.neighborhood || ''}, ${p.city} | ₪${(p.price / 1000000).toFixed(1)}M | ${p.bedrooms}BR | ${p.property_type}`
+    );
+    parts.push(`### Properties for Sale\n${lines.join("\n")}`);
+  }
+
+  // Query rental properties
+  let rentalQuery = supabase
+    .from("properties")
+    .select("id, title, address, city, neighborhood, price, bedrooms, property_type, currency")
+    .eq("is_published", true)
+    .eq("listing_status", "for_rent")
+    .order("created_at", { ascending: false })
+    .limit(5);
+
+  if (cities.length) rentalQuery = rentalQuery.in("city", cities);
+  if (bedrooms) rentalQuery = rentalQuery.eq("bedrooms", bedrooms);
+
+  const { data: rentals } = await rentalQuery;
+
+  if (rentals?.length) {
+    const lines = rentals.map((p: any) =>
+      `- [${p.title || `${p.bedrooms}BR rental in ${p.neighborhood || p.city}`}](/property/${p.id}) — ${p.neighborhood || ''}, ${p.city} | ₪${p.price.toLocaleString()}/mo | ${p.bedrooms}BR`
+    );
+    parts.push(`### Rentals\n${lines.join("\n")}`);
+  }
+
+  // Query projects
+  let projQuery = supabase
+    .from("projects")
+    .select("id, name, slug, city, neighborhood, price_from, price_to, status, min_bedrooms, max_bedrooms")
+    .eq("is_published", true)
+    .order("created_at", { ascending: false })
+    .limit(5);
+
+  if (cities.length) projQuery = projQuery.in("city", cities);
+
+  const { data: projects } = await projQuery;
+
+  if (projects?.length) {
+    const lines = projects.map((p: any) => {
+      const priceStr = p.price_from ? `from ₪${(p.price_from / 1000000).toFixed(1)}M` : "price TBD";
+      const bedStr = p.min_bedrooms && p.max_bedrooms ? `${p.min_bedrooms}-${p.max_bedrooms}BR` : "";
+      return `- [${p.name}](/projects/${p.slug}) — ${p.neighborhood || ''}, ${p.city} | ${priceStr} | ${bedStr} | ${p.status}`;
+    });
+    parts.push(`### New Construction Projects\n${lines.join("\n")}`);
+  }
+
+  if (!parts.length) return "";
+  return `\n## Available Listings (reference these with links when relevant)\n${parts.join("\n\n")}`;
+}
 
 async function buildSystemPrompt(
   pageContext: string,
   supabaseUrl: string,
   supabaseKey: string,
-  userToken?: string
+  userToken?: string,
+  userQuery?: string
 ): Promise<string> {
   const parts = [SYSTEM_PROMPT_IDENTITY];
   const supabase = createClient(supabaseUrl, supabaseKey);
@@ -188,6 +291,22 @@ async function buildSystemPrompt(
     }
   }
 
+  // Fetch relevant listings based on conversation context
+  try {
+    const searchText = [pageContext, userQuery || ""].join(" ");
+    const cities = extractCities(searchText);
+    const bedrooms = extractBedrooms(searchText);
+    
+    if (cities.length || bedrooms) {
+      const listingsContext = await fetchListingsContext(supabase, cities, bedrooms);
+      if (listingsContext) {
+        parts.push(listingsContext);
+      }
+    }
+  } catch (e) {
+    console.error("Failed to fetch listings context:", e);
+  }
+
   // Page context
   if (pageContext) {
     parts.push(`\n## Current Page Context\nThe user is currently on: ${pageContext}\nTailor your greeting and suggestions to what they're looking at.`);
@@ -226,7 +345,11 @@ Deno.serve(async (req) => {
     // Extract user token for profile injection
     const userToken = req.headers.get("x-user-token") || undefined;
 
-    const systemPrompt = await buildSystemPrompt(pageContext || "", supabaseUrl, supabaseKey, userToken);
+    // Extract latest user message for search intent
+    const userMessages = (messages || []).filter((m: any) => m.role === "user");
+    const userQuery = userMessages.length ? userMessages[userMessages.length - 1].content : "";
+
+    const systemPrompt = await buildSystemPrompt(pageContext || "", supabaseUrl, supabaseKey, userToken, userQuery);
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
