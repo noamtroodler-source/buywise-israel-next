@@ -17,8 +17,8 @@ interface PropertyValueSnapshotProps {
   vaadBayitMonthly?: number | null;
   cityArnonaRate?: number | null;
   cityAvgVaadBayit?: number | null;
-  /** When set, labels will say "vs {city} {roomCount}-Room Avg" */
-  roomCount?: number | null;
+  /** Room-specific city average total price (1-year avg for 3/4/5-room) */
+  roomSpecificCityAvgPrice?: number | null;
   /** When true, skip the section header (used when embedded in MarketIntelligence) */
   hideHeader?: boolean;
   /** Neighborhood avg price per sqm (takes priority over city avg in middle card) */
