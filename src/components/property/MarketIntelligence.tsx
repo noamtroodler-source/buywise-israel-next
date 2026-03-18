@@ -150,6 +150,7 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
     property_type: property.property_type || 'apartment',
     bedrooms: property.bedrooms,
     bathrooms: property.bathrooms || null,
+    israeli_room_count: israeliRooms,
     floor: property.floor ?? null,
     total_floors: property.total_floors ?? null,
     year_built: property.year_built ?? null,
