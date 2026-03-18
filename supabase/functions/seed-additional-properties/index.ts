@@ -176,7 +176,8 @@ function getListingAge(): number {
 function generateProperty(
   cityName: string,
   listingStatus: 'for_sale' | 'for_rent',
-  agentId: string
+  agentId: string,
+  cityData: { average_price_sqm: number | null; rental_3_room_min: number | null; rental_3_room_max: number | null; rental_4_room_min: number | null; rental_4_room_max: number | null; rental_5_room_min: number | null; rental_5_room_max: number | null }
 ) {
   const propType = getWeightedPropertyType();
   const rooms = randomInt(propType.minRooms, propType.maxRooms);
@@ -184,18 +185,30 @@ function generateProperty(
   const floor = randomInt(propType.minFloor, propType.maxFloor);
   const totalFloors = Math.max(floor + randomInt(0, 5), floor);
   
-  const cityMultiplier = CITY_MULTIPLIERS[cityName] || 1.0;
-  const variance = 0.7 + Math.random() * 0.6; // ±30% variance
-  
-  // Base prices per sqm
-  const baseSalePricePerSqm = 35000; // ~35,000 NIS/sqm baseline
-  const baseRentPricePerSqm = 55;    // ~55 NIS/sqm/month baseline
-  
+  // Use verified cities table data for pricing
   let price: number;
   if (listingStatus === 'for_sale') {
-    price = Math.round((sqm * baseSalePricePerSqm * cityMultiplier * variance) / 10000) * 10000;
+    const avgPriceSqm = cityData.average_price_sqm || 25000;
+    const variance = 0.75 + Math.random() * 0.55; // 0.75–1.30
+    price = Math.round((sqm * avgPriceSqm * variance) / 10000) * 10000;
   } else {
-    price = Math.round((sqm * baseRentPricePerSqm * cityMultiplier * variance) / 100) * 100;
+    // Israeli room count (rooms here = total rooms from property type)
+    const israeliRooms = rooms;
+    let min: number, max: number;
+    if (israeliRooms <= 2) {
+      min = (cityData.rental_3_room_min || 3000) * 0.75;
+      max = (cityData.rental_3_room_max || 5000) * 0.75;
+    } else if (israeliRooms === 3) {
+      min = cityData.rental_3_room_min || 3000;
+      max = cityData.rental_3_room_max || 5000;
+    } else if (israeliRooms === 4) {
+      min = cityData.rental_4_room_min || 4500;
+      max = cityData.rental_4_room_max || 7000;
+    } else {
+      min = cityData.rental_5_room_min || 6000;
+      max = cityData.rental_5_room_max || 10000;
+    }
+    price = Math.round((min + Math.random() * (max - min)) / 100) * 100;
   }
   
   const daysAgo = getListingAge();
