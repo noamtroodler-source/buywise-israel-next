@@ -74,6 +74,7 @@ function buildDormantSaverEmail(
     <html>
       <body style="margin: 0; padding: 0; background: #f9fafb; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
         <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px; background: #ffffff;">
+          ${brandHeader}
           <h1 style="color: #1a1a1a; font-size: 22px; margin-bottom: 8px;">Hey${userName ? " " + userName : ""},</h1>
           <p style="color: #333; font-size: 16px; line-height: 1.6; margin-bottom: 24px;">
             We noticed some new properties just hit the market in ${city} that match what you've been looking at. Thought you'd want to see them before they get snapped up.
