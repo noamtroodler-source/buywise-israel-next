@@ -220,11 +220,32 @@ export function CityNeighborhoods({ cityName, neighborhoods }: CityNeighborhoods
                 </div>
               )}
 
+              {/* Sort */}
+              <Select
+                value={sortBy}
+                onValueChange={(v) => {
+                  setSortBy(v as SortOption);
+                  setCurrentPage(0);
+                }}
+              >
+                <SelectTrigger className="h-8 w-[130px] text-xs gap-1 [&>svg]:h-3 [&>svg]:w-3">
+                  <ArrowUpDown className="h-3 w-3 text-muted-foreground shrink-0" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent align="end">
+                  <SelectItem value="featured" className="text-xs">Featured</SelectItem>
+                  <SelectItem value="price_asc" className="text-xs">Price ↑</SelectItem>
+                  <SelectItem value="price_desc" className="text-xs">Price ↓</SelectItem>
+                  <SelectItem value="growth_desc" className="text-xs">Growth ↑</SelectItem>
+                  <SelectItem value="growth_asc" className="text-xs">Growth ↓</SelectItem>
+                </SelectContent>
+              </Select>
+
               {/* Search */}
-              <div className="relative w-48 sm:w-56">
+              <div className="relative w-40 sm:w-48">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                 <Input
-                  placeholder="Search neighborhoods…"
+                  placeholder="Search…"
                   value={search}
                   onChange={e => {
                     setSearch(e.target.value);
