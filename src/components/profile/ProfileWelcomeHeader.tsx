@@ -32,9 +32,8 @@ const PURPOSE_LABELS: Record<string, string> = {
 
 const RESIDENCY_BADGES: Record<string, string> = {
   oleh_hadash: 'Oleh Hadash',
-  toshav_hozer: 'Toshav Hozer',
-  foreign_resident: 'Foreign Resident',
-  israeli_citizen: 'Israeli Citizen',
+  non_resident: 'Foreign Resident',
+  israeli_resident: 'Israeli Resident',
 };
 
 export function ProfileWelcomeHeader({
