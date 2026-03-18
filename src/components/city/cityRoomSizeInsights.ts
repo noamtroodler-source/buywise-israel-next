@@ -102,18 +102,6 @@ const CITY_ROOM_SIZE_INSIGHTS: Record<string, RoomInsightFn> = {
       : '') +
     (m.room5Price ? `5-room units at ${fmt(m.room5Price)} give you space that would cost nearly double in neighboring Ramat Gan or Givatayim.` : ''),
 
-  'holon': (m) =>
-    `Holon delivers genuine space value in the Tel Aviv metro. ` +
-    (m.room3Price ? `3-room apartments at ${fmt(m.room3Price)} are a realistic first purchase for young buyers. ` : '') +
-    (m.room4Price ? `The 4-room market at ${fmt(m.room4Price)} is where families are increasingly looking as TLV prices push them southward. ` : '') +
-    `Urban renewal is adding modern inventory, but legacy buildings still offer the best value per room.`,
-
-  'bat-yam': (m) =>
-    `Bat Yam offers the closest thing to affordable beachfront in the Tel Aviv metro. ` +
-    (m.room3Price ? `A 3-room at ${fmt(m.room3Price)} with sea proximity is a deal you won't find anywhere else this close to TLV. ` : '') +
-    (m.gapSmallToLarge ? `The ${fmtGap(m.gapSmallToLarge)} spread across sizes is modest — upgrading here is realistic. ` : '') +
-    `The Red Line light rail is set to narrow the price gap with its northern neighbors.`,
-
   'kfar-saba': (m) =>
     `Kfar Saba's room-size pricing reflects its status as a premium family suburb. ` +
     (m.room4Price ? `The 4-room at ${fmt(m.room4Price)} is the core of this market — schools and parks drive families here. ` : '') +
