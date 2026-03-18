@@ -108,6 +108,7 @@ const generateDeveloperDigestHtml = (name: string, stats: DeveloperStats): strin
     </head>
     <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; background-color: #f5f5f5;">
       <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+        ${brandHeader}
         <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 8px;">Here's how your week looked</h1>
         <p style="color: #666; font-size: 16px; margin-bottom: 24px;">
           Hi ${firstName}, here's a quick snapshot of your projects.
