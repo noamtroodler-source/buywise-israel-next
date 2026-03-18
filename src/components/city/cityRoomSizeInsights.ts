@@ -116,19 +116,6 @@ const CITY_ROOM_SIZE_INSIGHTS: Record<string, RoomInsightFn> = {
     (m.room3Price ? `3-room units at ${fmt(m.room3Price)} offer a more accessible entry into the Sharon region. ` : '') +
     `This is a market where you're paying for construction quality as much as location.`,
 
-  'rosh-haayin': (m) =>
-    `Rosh Ha'ayin delivers suburban space at commuter-friendly prices. ` +
-    (m.room3Price && m.room4Price
-      ? `The 3-to-4-room upgrade from ${fmt(m.room3Price)} to ${fmt(m.room4Price)} (${fmtGap(m.room4Price - m.room3Price)} gap) is one of the more affordable step-ups in the greater Tel Aviv area. `
-      : '') +
-    (m.room5Price ? `5-room units at ${fmt(m.room5Price)} attract families who want real space without the Sharon-region price tag.` : ''),
-
-  'shoham': (m) =>
-    `Shoham's small, planned community means prices are premium across all sizes. ` +
-    (m.room4Price ? `4-room units at ${fmt(m.room4Price)} dominate the market — this is a family town through and through. ` : '') +
-    (m.room5Price ? `5-room villas and duplexes at ${fmt(m.room5Price)} are the aspirational target, but inventory is thin. ` : '') +
-    `Don't expect bargains on any room count here — supply is structurally limited.`,
-
   'givat-shmuel': (m) =>
     `Givat Shmuel's tower boom has changed the room-size equation. ` +
     (m.room3Price ? `New 3-room units at ${fmt(m.room3Price)} are popular with young couples entering the market. ` : '') +
