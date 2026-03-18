@@ -24,8 +24,8 @@ export function PromotedBadge({ className, compact = false }: PromotedBadgeProps
           {!compact && 'Promoted'}
         </Badge>
       </TooltipTrigger>
-      <TooltipContent side="bottom">
-        <p className="text-xs">This listing is promoted by its agent or developer</p>
+      <TooltipContent side="bottom" className="z-50">
+        <p className="text-xs">Promoted listing</p>
       </TooltipContent>
     </Tooltip>
   );
