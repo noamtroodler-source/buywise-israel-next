@@ -109,7 +109,6 @@ export function ProjectQuickSummary({
       <div className="flex items-center gap-1.5 text-muted-foreground">
         <MapPin className="h-4 w-4" />
         <span>
-          {project.address && `${project.address}, `}
           {project.neighborhood && `${project.neighborhood}, `}
           {project.city}
         </span>
