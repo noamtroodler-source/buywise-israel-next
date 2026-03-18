@@ -272,9 +272,6 @@ export function RecentNearbySales({
       // Optionally filter by similar room count
       minRooms: propertyRooms ? propertyRooms - 1 : undefined,
       maxRooms: propertyRooms ? propertyRooms + 1 : undefined,
-      propertyPrice,
-      propertySizeSqm,
-      propertyRooms,
     }
   );
 
