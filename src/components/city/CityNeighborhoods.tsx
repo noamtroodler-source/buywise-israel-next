@@ -31,7 +31,7 @@ interface CityNeighborhoodsProps {
   neighborhoods: UnifiedNeighborhood[];
 }
 
-const PAGE_SIZE = 6;
+const PAGE_SIZE = 9;
 
 const uniformBadgeStyle = 'bg-primary/10 text-primary border-primary/20';
 
