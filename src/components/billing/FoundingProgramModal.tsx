@@ -20,7 +20,7 @@ const BENEFITS = [
   { icon: Calendar, text: '2 months completely free on any plan' },
   { icon: Star, text: '3 free featured listings per month' },
   { icon: Zap, text: 'Exclusive early access for your listings' },
-  { icon: BookOpen, text: 'Featured case study on launch' },
+  { icon: BookOpen, text: 'First to list a property = you represent it on the platform' },
 ];
 
 interface FoundingProgramModalProps {

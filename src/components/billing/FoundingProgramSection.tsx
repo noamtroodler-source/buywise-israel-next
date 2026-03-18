@@ -19,8 +19,8 @@ const BENEFITS = [
   },
   {
     icon: BookOpen,
-    title: 'Case Study Feature',
-    description: 'Get featured on our blog and social channels as a launch partner — free exposure to our buyer audience.',
+    title: 'First to List, First to Represent',
+    description: 'For non-exclusive properties, the first agent to list it on BuyWise becomes the representing agent for that property on the platform.',
   },
 ];
 
