@@ -94,9 +94,16 @@ export function PropertyValueSnapshot({
     ? Math.round(((totalMonthlyCommitment - cityAvgTotalMonthly) / cityAvgTotalMonthly) * 100)
     : null;
   
-  // For purchases: calculate comparison to area average
-  const purchaseComparisonPercent = propertyPricePerSqm && averagePriceSqm 
-    ? Math.round(((propertyPricePerSqm - averagePriceSqm) / averagePriceSqm) * 100)
+  // For purchases: calculate comparison to neighborhood or city average
+  // Prefer neighborhood when available, fall back to city
+  const comparisonAvgSqm = neighborhoodAvgPriceSqm ?? averagePriceSqm;
+  const comparisonLabel = neighborhoodAvgPriceSqm && neighborhoodName
+    ? neighborhoodName
+    : city;
+  const isNeighborhoodComparison = !!(neighborhoodAvgPriceSqm && neighborhoodName);
+
+  const purchaseComparisonPercent = propertyPricePerSqm && comparisonAvgSqm
+    ? Math.round(((propertyPricePerSqm - comparisonAvgSqm) / comparisonAvgSqm) * 100)
     : null;
 
   // Rental-specific cards
