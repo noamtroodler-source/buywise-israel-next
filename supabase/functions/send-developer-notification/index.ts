@@ -47,7 +47,8 @@ const getNotificationContent = (payload: NotificationPayload) => {
         subject: `Great news — "${payload.projectName}" is now live`,
         body: `Great news! Your project "${payload.projectName}" has been reviewed and approved. It is now live and visible to potential buyers on our platform.`,
         html: `
-          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+            ${brandHeader}
             <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 16px;">Great news — your project is now live</h1>
             <p style="color: #333; font-size: 16px; line-height: 1.6;">Your project <strong>"${payload.projectName}"</strong> has been reviewed and approved.</p>
             <p style="color: #333; font-size: 16px; line-height: 1.6;">It's now visible to potential buyers on BuyWise Israel.</p>
