@@ -144,7 +144,7 @@ function DesktopCompsList({
                     )}
                   >
                     {Math.abs(comparison) <= 2
-                      ? "Similar price per m²"
+                      ? `Similar price ${areaLabels.perArea}`
                       : comparison > 0 
                         ? `Listing is ${comparison.toFixed(0)}% above this sale`
                         : `Listing is ${Math.abs(comparison).toFixed(0)}% below this sale`
@@ -152,13 +152,13 @@ function DesktopCompsList({
                   </Badge>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-xs">
-                  <p className="font-medium mb-1">Price per m² Comparison</p>
+                  <p className="font-medium mb-1">Price {areaLabels.perArea} Comparison</p>
                   <p className="text-xs text-muted-foreground">
                     {Math.abs(comparison) <= 2
-                      ? "This listing's price per sqm is within 2% of this sale—a closely matched comparable."
+                      ? `This listing's price ${areaLabels.perArea} is within 2% of this sale—a closely matched comparable.`
                       : comparison > 0 
-                        ? "This listing's price per sqm is higher than what this nearby property sold for. Could indicate premium features or room for negotiation."
-                        : "This listing's price per sqm is below recent comparable sales—potentially good value or motivated seller."
+                        ? `This listing's price ${areaLabels.perArea} is higher than what this nearby property sold for. Could indicate premium features or room for negotiation.`
+                        : `This listing's price ${areaLabels.perArea} is below recent comparable sales—potentially good value or motivated seller.`
                     }
                   </p>
                 </TooltipContent>
