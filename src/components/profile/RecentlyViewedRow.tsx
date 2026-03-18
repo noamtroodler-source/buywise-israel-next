@@ -24,7 +24,7 @@ export function RecentlyViewedRow() {
 
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-border bg-card p-4">
+      <div className="rounded-2xl border border-border/50 bg-card shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08),0_2px_8px_-2px_rgba(0,0,0,0.04)] p-4">
         <div className="flex items-center gap-2 mb-3">
           <Clock className="h-4 w-4 text-primary" />
           <span className="font-medium text-sm">Recently Viewed</span>
@@ -40,13 +40,13 @@ export function RecentlyViewedRow() {
 
   if (recentProperties.length === 0) {
     return (
-      <div className="rounded-xl border border-border bg-card p-4">
+      <div className="rounded-2xl border border-border/50 bg-card shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08),0_2px_8px_-2px_rgba(0,0,0,0.04)] p-4">
         <div className="flex items-center gap-2 mb-3">
           <Clock className="h-4 w-4 text-primary" />
           <span className="font-medium text-sm">Recently Viewed</span>
         </div>
         <div className="text-center py-4">
-          <div className="w-10 h-10 rounded-full bg-muted mx-auto mb-2 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-full bg-primary/5 mx-auto mb-2 flex items-center justify-center">
             <Home className="h-5 w-5 text-muted-foreground" />
           </div>
           <p className="text-xs text-muted-foreground mb-2">No recent views</p>
@@ -63,7 +63,7 @@ export function RecentlyViewedRow() {
   const displayedProperties = recentProperties.slice(0, 10);
 
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
+    <div className="rounded-2xl border border-border/50 bg-card shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08),0_2px_8px_-2px_rgba(0,0,0,0.04)] p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Clock className="h-4 w-4 text-primary" />

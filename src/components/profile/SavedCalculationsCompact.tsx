@@ -10,7 +10,7 @@ export function SavedCalculationsCompact() {
 
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-border bg-card p-3 md:p-4">
+      <div className="rounded-2xl border border-border/50 bg-card shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08),0_2px_8px_-2px_rgba(0,0,0,0.04)] p-4">
         <div className="flex items-center gap-2 mb-3">
           <Calculator className="h-4 w-4 text-primary" />
           <span className="font-medium text-sm">Saved Calculations</span>
@@ -60,7 +60,7 @@ export function SavedCalculationsCompact() {
   };
 
   return (
-    <div className="rounded-xl border border-border bg-card p-3 md:p-4">
+    <div className="rounded-2xl border border-border/50 bg-card shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08),0_2px_8px_-2px_rgba(0,0,0,0.04)] p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Calculator className="h-4 w-4 text-primary" />
@@ -73,7 +73,7 @@ export function SavedCalculationsCompact() {
 
       {savedResults.length === 0 ? (
         <div className="text-center py-4">
-          <div className="w-10 h-10 rounded-full bg-muted mx-auto mb-2 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-full bg-primary/5 mx-auto mb-2 flex items-center justify-center">
             <Calculator className="h-5 w-5 text-muted-foreground" />
           </div>
           <p className="text-xs text-muted-foreground mb-2">No saved calculations</p>
@@ -89,7 +89,7 @@ export function SavedCalculationsCompact() {
             <Link
               key={result.id}
               to={getCalculatorLink(result.calculator_type)}
-              className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/40 hover:bg-muted/60 transition-colors"
+              className="flex items-center justify-between py-2 px-3 rounded-xl bg-muted/40 hover:bg-muted/60 transition-colors"
             >
               <span className="text-xs text-muted-foreground">
                 {getCalculatorLabel(result.calculator_type)}

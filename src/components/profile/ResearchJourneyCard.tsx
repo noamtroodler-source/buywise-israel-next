@@ -51,7 +51,7 @@ export function ResearchJourneyCard() {
   const summary = summaryParts.join(' ');
 
   return (
-    <div className="rounded-xl border border-border bg-gradient-to-br from-primary/5 to-card p-4 space-y-3">
+    <div className="rounded-2xl border border-border/50 bg-gradient-to-br from-primary/5 to-card shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08),0_2px_8px_-2px_rgba(0,0,0,0.04)] p-4 space-y-3">
       <div className="flex items-center gap-2">
         <div className="rounded-lg bg-primary/10 p-1.5">
           <Search className="h-4 w-4 text-primary" />

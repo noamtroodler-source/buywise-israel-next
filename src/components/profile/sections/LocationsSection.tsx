@@ -33,9 +33,9 @@ export function LocationsSection() {
 
   return (
     <>
-      <div className="rounded-2xl border border-border bg-card overflow-hidden">
+      <div className="rounded-2xl border border-border/50 bg-card shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08),0_2px_8px_-2px_rgba(0,0,0,0.04)] overflow-hidden">
         {/* Section Header */}
-        <div className="flex items-center justify-between p-4 border-b border-border/50 bg-muted/20">
+        <div className="flex items-center justify-between p-4 border-b border-border/30 bg-muted/20">
           <div className="flex items-center gap-2.5">
             <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
               <MapPin className="h-5 w-5" />
@@ -81,7 +81,7 @@ export function LocationsSection() {
                 return (
                   <div
                     key={location.id}
-                    className="flex items-center justify-between p-3 rounded-lg bg-muted/40 group"
+                    className="flex items-center justify-between p-3 rounded-xl bg-muted/40 group"
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <span className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">

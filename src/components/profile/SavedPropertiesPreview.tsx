@@ -11,7 +11,7 @@ export function SavedPropertiesPreview() {
 
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-border bg-card p-3 md:p-4">
+      <div className="rounded-2xl border border-border/50 bg-card shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08),0_2px_8px_-2px_rgba(0,0,0,0.04)] p-4">
         <div className="flex items-center justify-between mb-3">
           <Skeleton className="h-5 w-32" />
           <Skeleton className="h-4 w-16" />
@@ -29,7 +29,7 @@ export function SavedPropertiesPreview() {
   const totalCount = favoriteProperties.length;
 
   return (
-    <div className="rounded-xl border border-border bg-card p-3 md:p-4">
+    <div className="rounded-2xl border border-border/50 bg-card shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08),0_2px_8px_-2px_rgba(0,0,0,0.04)] p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Heart className="h-4 w-4 text-primary" />
@@ -42,7 +42,7 @@ export function SavedPropertiesPreview() {
 
       {totalCount === 0 ? (
         <div className="text-center py-4">
-          <div className="w-10 h-10 rounded-full bg-muted mx-auto mb-2 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-full bg-primary/5 mx-auto mb-2 flex items-center justify-center">
             <Home className="h-5 w-5 text-muted-foreground" />
           </div>
           <p className="text-xs text-muted-foreground mb-2">No saved properties yet</p>
@@ -81,7 +81,7 @@ export function SavedPropertiesPreview() {
             ))}
             {/* Show placeholder slots if less than 3 */}
             {displayedProperties.length < 3 && Array.from({ length: 3 - displayedProperties.length }).map((_, i) => (
-              <div key={`empty-${i}`} className="flex-1 aspect-square rounded-lg border-2 border-dashed border-border" />
+              <div key={`empty-${i}`} className="flex-1 aspect-square rounded-xl border-2 border-dashed border-border/50" />
             ))}
           </div>
 
