@@ -5,7 +5,7 @@ import useEmblaCarousel from 'embla-carousel-react';
 import { 
   Calculator, Wallet, Scale, TrendingUp, Receipt, 
   Hammer, ClipboardList, ArrowRight, ArrowLeft, Compass,
-  Search, Home, ChevronRight, Languages
+  Search, Home, ChevronRight, Languages, Construction
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { SEOHead } from '@/components/seo/SEOHead';
@@ -25,6 +25,7 @@ import { DualNavigation } from '@/components/shared/DualNavigation';
 import { TOOLS_BY_PHASE } from '@/lib/navigationConfig';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useTrackContentVisit } from '@/hooks/useTrackContentVisit';
+import { useUserRole } from '@/hooks/useUserRole';
 
 
 interface Tool {
