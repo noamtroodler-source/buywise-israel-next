@@ -4,6 +4,7 @@ import { X, Heart, MapPin, ExternalLink, Calendar, HardHat, Home } from 'lucide-
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { getProjectProgress } from '@/lib/projectProgress';
 
 interface CompareProject {
   id: string;
