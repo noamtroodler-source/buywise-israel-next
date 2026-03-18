@@ -129,16 +129,38 @@ export function CityNeighborhoods({ cityName, neighborhoods }: CityNeighborhoods
 
   const isSearching = search.trim().length > 0;
 
+  type SortOption = 'featured' | 'price_asc' | 'price_desc' | 'growth_asc' | 'growth_desc';
+  const [sortBy, setSortBy] = useState<SortOption>('featured');
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
-    if (!q) return neighborhoods;
-    // Special "anglo" keyword filters to tagged neighborhoods
-    if (q === 'anglo') return neighborhoods.filter(n => n.anglo_tag);
-    return neighborhoods.filter(n =>
-      n.name.toLowerCase().includes(q) ||
-      (n.name_he && n.name_he.includes(q))
-    );
-  }, [neighborhoods, search]);
+    let result = neighborhoods;
+    if (q === 'anglo') {
+      result = neighborhoods.filter(n => n.anglo_tag);
+    } else if (q) {
+      result = neighborhoods.filter(n =>
+        n.name.toLowerCase().includes(q) ||
+        (n.name_he && n.name_he.includes(q))
+      );
+    }
+
+    if (sortBy === 'featured') return result;
+
+    return [...result].sort((a, b) => {
+      switch (sortBy) {
+        case 'price_asc':
+          return (a.avg_price ?? Infinity) - (b.avg_price ?? Infinity);
+        case 'price_desc':
+          return (b.avg_price ?? -Infinity) - (a.avg_price ?? -Infinity);
+        case 'growth_desc':
+          return (b.yoy_change_percent ?? -Infinity) - (a.yoy_change_percent ?? -Infinity);
+        case 'growth_asc':
+          return (a.yoy_change_percent ?? Infinity) - (b.yoy_change_percent ?? Infinity);
+        default:
+          return 0;
+      }
+    });
+  }, [neighborhoods, search, sortBy]);
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const safePage = Math.min(currentPage, Math.max(totalPages - 1, 0));
