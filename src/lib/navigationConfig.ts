@@ -13,6 +13,7 @@ export interface NavItem {
   description?: string;
   phase?: JourneyPhase;
   icon?: string;
+  badge?: 'beta';
 }
 
 export interface NavColumn {
@@ -51,7 +52,7 @@ export const NAV_CONFIG: Record<string, NavSection> = {
           { label: 'True Cost', href: '/tools?tool=totalcost', description: 'Taxes, fees & closing costs', phase: 'check' },
           { label: 'Investment Returns', href: '/tools?tool=investment', description: 'ROI & cash flow analysis', phase: 'check' },
           { label: 'Rent vs Buy', href: '/tools?tool=rentvsbuy', description: 'Compare your options', phase: 'define' },
-          { label: 'Listing Decoder', href: '/tools?tool=listing-decoder', description: 'Translate & analyze listings', phase: 'check' },
+          { label: 'Listing Decoder', href: '/tools?tool=listing-decoder', description: 'Translate & analyze listings', phase: 'check', badge: 'beta' },
         ]
       },
       {
@@ -83,7 +84,7 @@ export const NAV_CONFIG: Record<string, NavSection> = {
         items: [
           { label: 'Affordability Calculator', href: '/tools?tool=affordability', description: 'Budget planning', phase: 'define' },
           { label: 'Rent vs Buy', href: '/tools?tool=rentvsbuy', description: 'Should you rent or buy?', phase: 'define' },
-          { label: 'Document Checklist', href: '/tools?tool=documents', description: 'What to prepare', phase: 'move_forward' },
+          { label: 'Document Checklist', href: '/tools?tool=documents', description: 'What to prepare', phase: 'move_forward', badge: 'beta' },
         ]
       },
       {

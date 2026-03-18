@@ -68,6 +68,11 @@ function MegaMenuContent({ config }: { config: NavSection }) {
                           <span className="h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />
                         )}
                         {item.label}
+                        {item.badge === 'beta' && (
+                          <span className="text-[10px] font-semibold uppercase tracking-wide text-primary/70 bg-primary/10 border border-primary/20 rounded px-1 py-px leading-none">
+                            Beta
+                          </span>
+                        )}
                       </span>
                       {item.description && (
                         <span className="text-xs text-muted-foreground/70 group-hover:text-accent-foreground/70">
