@@ -34,7 +34,7 @@ export function AdvertiseCTA() {
                 className="bg-white/20 text-white hover:bg-white/30 border border-white/30"
               >
                 <Link to="/auth?tab=signup&role=agency">
-                  Register Your Agency
+                  Become a Founding Partner
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
