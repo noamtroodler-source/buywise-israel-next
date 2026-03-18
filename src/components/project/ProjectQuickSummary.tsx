@@ -155,6 +155,10 @@ export function ProjectQuickSummary({
           <Eye className="h-4 w-4" />
           <span>{project.views_count || 0} views</span>
         </div>
+        <div className="flex items-center gap-1.5">
+          <Heart className="h-4 w-4" />
+          <span>{project.total_saves || 0} saves</span>
+        </div>
       </div>
     </motion.div>
   );
