@@ -13,6 +13,7 @@ import { InquiryBreakdownChart } from '@/components/admin/InquiryBreakdownChart'
 import { ActivityFeed } from '@/components/admin/ActivityFeed';
 import { LiveIndicator } from '@/components/admin/LiveIndicator';
 import { ImageDedupPanel } from '@/components/admin/ImageDedupPanel';
+import { FeaturedPerformanceSummary } from '@/components/admin/FeaturedPerformanceSummary';
 import { usePlatformStats, useViewsTrend, useInquiryBreakdown } from '@/hooks/useAdminAnalytics';
 import { useRecentActivity } from '@/hooks/useRecentActivity';
 
