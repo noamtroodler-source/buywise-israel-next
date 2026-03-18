@@ -152,6 +152,19 @@ export async function trackProjectInquiry(params: TrackProjectInquiryParams & { 
       .insert(insertData as any);
 
     sendProjectInquiryNotification(params);
+
+    // Send confirmation to buyer
+    if (params.email && params.email !== 'not-provided@placeholder.com') {
+      supabase.functions.invoke('send-inquiry-confirmation', {
+        body: {
+          buyerEmail: params.email,
+          buyerName: params.name || 'there',
+          listingTitle: params.projectName || 'the project',
+          listingType: 'project',
+          inquiryType: params.inquiryType,
+        },
+      }).catch((err) => console.error('Failed to send buyer confirmation:', err));
+    }
   } catch (error) {
     console.error('Failed to track project inquiry:', error);
   }
