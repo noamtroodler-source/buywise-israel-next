@@ -139,16 +139,6 @@ const CITY_INSIGHTS: Record<string, InsightFn> = {
     `At ${fmt(m.currentPrice)} average — still well below its flashier neighbors — prices are up ${m.totalAppreciation.toFixed(0)}% over ${m.years} years. ` +
     `The train connection and growing community make this a smart entry point for patient buyers.`,
 
-  'kiryat-tivon': (m) =>
-    `Kiryat Tivon is Haifa's premium suburb — green, quiet, and popular with university families. ` +
-    `At ${fmt(m.currentPrice)} with ${m.cagr}% annual growth, it's the kind of market where properties don't sit long. ` +
-    `${m.totalAppreciation.toFixed(0)}% appreciation over ${m.years} years reflects steady demand in a supply-limited town.`,
-
-  'yokneam': (m) =>
-    `Yokne'am sits at the intersection of tech and nature — the Yokne'am-Megiddo tech park has put this small city on the map. ` +
-    `At ${fmt(m.currentPrice)} average with ${m.totalAppreciation.toFixed(0)}% growth over ${m.years} years, ` +
-    `it's still affordable by central Israel standards, and the tech jobs keep demand steady.`,
-
   'hadera': (m) =>
     `Hadera is mid-transformation — once overlooked, now increasingly on buyers' radars thanks to rail connectivity and affordability. ` +
     `At ${fmt(m.currentPrice)} average, prices are up ${m.totalAppreciation.toFixed(0)}% over ${m.years} years. ` +
