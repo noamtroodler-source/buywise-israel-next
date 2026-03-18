@@ -348,34 +348,37 @@ Deno.serve(async (req) => {
 
     const agentIds = agents.map(a => a.id);
 
-    // Fetch all cities
+    // Fetch all cities with pricing data
     const { data: cities, error: citiesError } = await supabase
       .from('cities')
-      .select('name');
+      .select('name, average_price_sqm, rental_3_room_min, rental_3_room_max, rental_4_room_min, rental_4_room_max, rental_5_room_min, rental_5_room_max');
 
     if (citiesError) throw citiesError;
     if (!cities || cities.length === 0) {
       throw new Error('No cities found');
     }
 
+    // Build a lookup map for city pricing data
+    const cityDataMap = new Map(cities.map(c => [c.name, c]));
     const cityNames = cities.map(c => c.name);
     
     let totalInserted = 0;
     const batchSize = 100;
 
     for (const cityName of cityNames) {
+      const cityData = cityDataMap.get(cityName)!;
       const properties: Record<string, unknown>[] = [];
 
       // Generate 50 for_sale properties
       for (let i = 0; i < 50; i++) {
         const agentId = randomChoice(agentIds);
-        properties.push(generateProperty(cityName, 'for_sale', agentId));
+        properties.push(generateProperty(cityName, 'for_sale', agentId, cityData));
       }
 
       // Generate 50 for_rent properties
       for (let i = 0; i < 50; i++) {
         const agentId = randomChoice(agentIds);
-        properties.push(generateProperty(cityName, 'for_rent', agentId));
+        properties.push(generateProperty(cityName, 'for_rent', agentId, cityData));
       }
 
       // Insert in batches
