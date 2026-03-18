@@ -206,7 +206,7 @@ interface ToolsCarouselProps {
   onToolClick: (toolId: string) => void;
 }
 
-function ToolsCarousel({ tools, phaseKey, onToolClick }: ToolsCarouselProps) {
+function ToolsCarousel({ tools, phaseKey, onToolClick, betaToolIds }: ToolsCarouselProps & { betaToolIds?: Set<string> }) {
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: 'start',
     loop: true,
