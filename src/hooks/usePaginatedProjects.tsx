@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Project } from '@/types/projects';
 import { ProjectFiltersType } from '@/components/filters/ProjectFilters';
+import { shuffleFeatured } from '@/lib/utils/shuffleFeatured';
 
 async function fetchFeaturedProjectIds(): Promise<string[]> {
   // Projects don't use featured_listings (that's for properties)
@@ -130,7 +131,7 @@ export function usePaginatedProjects(
           .in('id', boostedIds)
           .eq('is_published', true);
 
-        const boostedProjects = (boostedData ?? []).map(p => ({ ...p, _isBoosted: true })) as Project[];
+        const boostedProjects = shuffleFeatured((boostedData ?? []).map(p => ({ ...p, _isBoosted: true })) as Project[]);
         return [...boostedProjects, ...(data as Project[])];
       }
 

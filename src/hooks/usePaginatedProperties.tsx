@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Property, PropertyFilters } from '@/types/database';
 import { isSavedLocationDest, getSavedLocationId, filterByDistance } from '@/lib/utils/commuteFilter';
 import { useSavedLocations } from '@/hooks/useSavedLocations';
+import { shuffleFeatured } from '@/lib/utils/shuffleFeatured';
 
 const DEFAULT_PAGE_SIZE = 24;
 
@@ -137,7 +138,7 @@ export function usePaginatedProperties(
       }
       const { data, error } = await query;
       if (error) return [] as Property[];
-      return (data ?? []).map(p => ({ ...p, _isBoosted: true })) as Property[];
+      return shuffleFeatured((data ?? []).map(p => ({ ...p, _isBoosted: true })) as Property[]);
     },
     enabled: page === 1 && boostedIds.length > 0,
     staleTime: 60_000,

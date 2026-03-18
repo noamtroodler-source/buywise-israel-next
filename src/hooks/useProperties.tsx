@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Property, PropertyFilters } from '@/types/database';
 import { isSavedLocationDest } from '@/lib/utils/commuteFilter';
+import { shuffleFeatured } from '@/lib/utils/shuffleFeatured';
 
 /**
  * Helper: fetch featured property IDs from the featured_listings table.
@@ -35,7 +36,7 @@ async function fetchFeaturedProperties(
   const { data, error } = await query;
   if (error) return [];
 
-  return (data ?? []).map(p => ({ ...p, _isBoosted: true })) as Property[];
+  return shuffleFeatured((data ?? []).map(p => ({ ...p, _isBoosted: true })) as Property[]);
 }
 
 /**
