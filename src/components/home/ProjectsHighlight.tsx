@@ -1,10 +1,9 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, ArrowUpRight, MapPin, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useFeaturedProjects } from '@/hooks/useProjects';
 import { ProjectFavoriteButton } from '@/components/project/ProjectFavoriteButton';
@@ -20,68 +19,57 @@ function formatPrice(price: number | null, currency: string = 'ILS') {
   }).format(price);
 }
 
-function ProjectCard({ project, variant = 'default' }: { 
-  project: any; 
-  variant?: 'hero' | 'default' 
+function ProjectCard({ project, variant = 'default' }: {
+  project: any;
+  variant?: 'hero' | 'default';
 }) {
   const isHero = variant === 'hero';
-  
+
   return (
     <Link
       to={`/projects/${project.slug}`}
-      className="group relative block overflow-hidden rounded-2xl h-full"
+      className="group relative block h-full overflow-hidden rounded-xl md:rounded-2xl"
     >
-      {/* Image */}
       <div className="absolute inset-0">
         <PropertyThumbnail
           src={project.images?.[0]}
           alt={project.name}
           type="project"
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+          className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
         />
       </div>
-      
-      {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/10" />
-      
-      {/* Favorite */}
-      <div className="absolute top-3 right-3 z-10">
+
+      <div className="absolute inset-0 bg-gradient-to-t from-foreground/85 via-foreground/30 to-foreground/10" />
+
+      <div className="absolute right-3 top-3 z-10">
         <ProjectFavoriteButton projectId={project.id} />
       </div>
-      
-      {/* Content */}
-      <div className={`absolute bottom-0 left-0 right-0 ${isHero ? 'p-6 md:p-8' : 'p-4 md:p-5'}`}>
-        {/* Developer tag */}
-        {project.developer && typeof project.developer === 'object' && (
-          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-white/70 mb-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+
+      <div className={`absolute inset-x-0 bottom-0 ${isHero ? 'p-4 md:p-5' : 'p-3.5 md:p-4'}`}>
+        {project.developer && typeof project.developer === 'object' && isHero && (
+          <span className="mb-2 inline-flex items-center gap-1.5 text-xs font-medium text-white/75">
+            <span className="h-1.5 w-1.5 rounded-full bg-primary" />
             {project.developer.name}
           </span>
         )}
-        
-        <h3 className={`font-bold text-white mb-1.5 leading-tight ${isHero ? 'text-2xl md:text-3xl' : 'text-lg'}`}>
+
+        <h3 className={`mb-1 leading-tight text-white ${isHero ? 'text-xl md:text-2xl font-bold' : 'text-base md:text-lg font-semibold'}`}>
           {project.name}
         </h3>
-        
-        <div className="flex items-center gap-3 mb-2 flex-wrap">
-          <span className="inline-flex items-center gap-1 text-sm text-white/80">
-            <MapPin className="h-3.5 w-3.5" />
+
+        <div className="mb-2 flex items-center gap-1.5 text-white/80">
+          <MapPin className="h-3.5 w-3.5 shrink-0" />
+          <p className="truncate text-sm">
             {project.neighborhood ? `${project.neighborhood}, ` : ''}{project.city}
-          </span>
-          {isHero && project.completion_date && (
-            <span className="inline-flex items-center gap-1 text-sm text-white/80">
-              <Calendar className="h-3.5 w-3.5" />
-              {new Date(project.completion_date).getFullYear()}
-            </span>
-          )}
+          </p>
         </div>
 
-        <div className="flex items-center justify-between">
-          <p className={`font-semibold text-white ${isHero ? 'text-lg' : 'text-base'}`}>
+        <div className="flex items-center justify-between gap-3">
+          <p className={`text-white ${isHero ? 'text-base md:text-lg font-semibold' : 'text-sm md:text-base font-medium'}`}>
             From {formatPrice(project.price_from, project.currency || 'ILS')}
           </p>
-          
-          <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-white/10 backdrop-blur-sm text-white opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0 transition-all duration-300">
+
+          <span className="inline-flex h-8 w-8 translate-x-2 items-center justify-center rounded-full bg-background/15 text-white opacity-0 backdrop-blur-sm transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100">
             <ArrowUpRight className="h-4 w-4" />
           </span>
         </div>
@@ -102,9 +90,9 @@ export function ProjectsHighlight() {
     containScroll: 'trimSnaps',
   });
 
-  const displayProjects = projects?.slice(0, 6) || [];
+  const displayProjects = (projects ?? []).slice(0, isDesktop ? 3 : 4);
   const heroProject = displayProjects[0];
-  const gridProjects = displayProjects.slice(1, 5);
+  const sideProjects = displayProjects.slice(1, 3);
 
   const onSelect = useCallback(() => {
     if (!emblaApi) return;
@@ -127,15 +115,13 @@ export function ProjectsHighlight() {
 
   if (isLoading) {
     return (
-      <section className="py-12 md:py-16">
+      <section className="py-8 md:py-10">
         <div className="container">
-          <div className="flex gap-4">
-            <Skeleton className="flex-1 aspect-[4/3] rounded-2xl" />
-            <div className="hidden lg:grid grid-cols-2 gap-4 flex-1">
-              <Skeleton className="aspect-[4/3] rounded-2xl" />
-              <Skeleton className="aspect-[4/3] rounded-2xl" />
-              <Skeleton className="aspect-[4/3] rounded-2xl" />
-              <Skeleton className="aspect-[4/3] rounded-2xl" />
+          <div className="grid gap-4 lg:grid-cols-12">
+            <Skeleton className="aspect-[16/10] rounded-xl md:rounded-2xl lg:col-span-7" />
+            <div className="hidden gap-4 lg:grid lg:col-span-5">
+              <Skeleton className="aspect-[16/9] rounded-xl md:rounded-2xl" />
+              <Skeleton className="aspect-[16/9] rounded-xl md:rounded-2xl" />
             </div>
           </div>
         </div>
@@ -146,43 +132,42 @@ export function ProjectsHighlight() {
   if (displayProjects.length === 0) return null;
 
   return (
-    <section className="py-10 md:py-12">
+    <section className="py-8 md:py-10">
       <div className="container">
-        {/* Header */}
-        <div className="flex items-end justify-between gap-4 mb-8">
+        <div className="mb-5 flex items-end justify-between gap-4 md:mb-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
+            <h2 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">
               New Developments
             </h2>
-            <p className="text-muted-foreground mt-1.5">
+            <p className="mt-1 text-sm text-muted-foreground md:text-base">
               Pre-construction projects with transparent pricing
             </p>
           </motion.div>
 
           <div className="flex items-center gap-2">
-            {/* Mobile carousel controls */}
             {!isDesktop && displayProjects.length > 1 && (
-              <div className="flex gap-1.5 mr-2">
+              <div className="mr-1 flex gap-1.5">
                 <button
                   onClick={scrollPrev}
-                  className="w-9 h-9 rounded-full border border-border flex items-center justify-center hover:bg-muted transition-colors"
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-background hover:bg-muted transition-colors"
                   aria-label="Previous"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </button>
                 <button
                   onClick={scrollNext}
-                  className="w-9 h-9 rounded-full border border-border flex items-center justify-center hover:bg-muted transition-colors"
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-background hover:bg-muted transition-colors"
                   aria-label="Next"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </button>
               </div>
             )}
+
             <Button variant="outline" asChild className="rounded-full">
               <Link to="/projects" className="gap-2">
                 View All
@@ -192,32 +177,29 @@ export function ProjectsHighlight() {
           </div>
         </div>
 
-        {/* Mobile: Carousel */}
         {!isDesktop && (
-          <div className="lg:hidden -mx-4">
+          <div className="-mx-4 lg:hidden">
             <div className="overflow-hidden px-4" ref={emblaRef}>
               <div className="flex">
                 {displayProjects.map((project) => (
                   <div
                     key={project.id}
-                    className="flex-[0_0_calc(100%-2rem)] sm:flex-[0_0_calc(50%-1rem)] min-w-0 pl-4 first:pl-4"
+                    className="min-w-0 flex-[0_0_calc(100%-2rem)] pl-4 first:pl-4 sm:flex-[0_0_calc(50%-1rem)]"
                   >
-                    <div className="aspect-[3/4] sm:aspect-[4/3]">
+                    <div className="aspect-[16/10]">
                       <ProjectCard project={project} />
                     </div>
                   </div>
                 ))}
               </div>
             </div>
-            {/* Progress bar */}
-            <div className="px-4 mt-4">
-              <div className="h-0.5 bg-border rounded-full overflow-hidden">
+
+            <div className="mt-4 px-4">
+              <div className="h-0.5 overflow-hidden rounded-full bg-border">
                 <motion.div
-                  className="h-full bg-primary rounded-full"
+                  className="h-full rounded-full bg-primary"
                   initial={false}
-                  animate={{
-                    width: `${((selectedIndex + 1) / displayProjects.length) * 100}%`,
-                  }}
+                  animate={{ width: `${((selectedIndex + 1) / displayProjects.length) * 100}%` }}
                   transition={{ duration: 0.3, ease: 'easeOut' }}
                 />
               </div>
@@ -225,34 +207,28 @@ export function ProjectsHighlight() {
           </div>
         )}
 
-        {/* Desktop: Hero + Grid Layout */}
         {isDesktop && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="hidden lg:grid lg:grid-cols-2 gap-4"
+            className="hidden items-stretch gap-4 lg:grid lg:grid-cols-12"
           >
-            {/* Hero project - left side, full height */}
             {heroProject && (
-              <div className="row-span-2 min-h-[360px]">
+              <div className="aspect-[2/1] lg:col-span-7">
                 <ProjectCard project={heroProject} variant="hero" />
               </div>
             )}
 
-            {/* 4 smaller projects - 2x2 grid on right */}
-            {gridProjects.map((project, i) => (
-              <motion.div
-                key={project.id}
-                initial={{ opacity: 0, y: 15 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.1 + i * 0.05 }}
-                className="aspect-[16/9]"
-              >
-                <ProjectCard project={project} />
-              </motion.div>
-            ))}
+            {sideProjects.length > 0 && (
+              <div className="grid gap-4 lg:col-span-5">
+                {sideProjects.map((project) => (
+                  <div key={project.id} className="aspect-[16/9]">
+                    <ProjectCard project={project} />
+                  </div>
+                ))}
+              </div>
+            )}
           </motion.div>
         )}
       </div>
