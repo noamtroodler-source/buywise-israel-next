@@ -92,6 +92,20 @@ export function useProjectInquiryTracking() {
       if (error) throw error;
 
       sendProjectInquiryNotification(params);
+
+      // Send confirmation to buyer
+      if (params.email && params.email !== 'not-provided@placeholder.com') {
+        supabase.functions.invoke('send-inquiry-confirmation', {
+          body: {
+            buyerEmail: params.email,
+            buyerName: params.name || 'there',
+            listingTitle: params.projectName || 'the project',
+            listingType: 'project',
+            inquiryType: params.inquiryType,
+          },
+        }).catch((err) => console.error('Failed to send buyer confirmation:', err));
+      }
+
       return data;
     },
     onError: (error) => {
