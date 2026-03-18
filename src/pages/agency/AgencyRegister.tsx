@@ -484,6 +484,7 @@ export default function AgencyRegister() {
       }
 
       clearDraft();
+      setGeneratedInviteCode(defaultInviteCode);
       setShowSuccessDialog(true);
     } catch (error: unknown) {
       toast.error(getUserFriendlyError(error, 'Registration failed. Please try again.'));
