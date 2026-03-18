@@ -410,7 +410,7 @@ export function useFeaturedSaleProperties(options?: FeaturedPropertiesOptions) {
 
       // Merge featured listings
       const boostedProperties = await fetchFeaturedProperties(adminIds, 'for_sale');
-      const merged = [...adminProperties, ...boostedProperties].slice(0, 8);
+      const merged = [...boostedProperties, ...adminProperties].slice(0, 8);
       return merged;
     },
     enabled: options?.enabled !== false,
