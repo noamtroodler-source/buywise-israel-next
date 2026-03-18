@@ -46,7 +46,7 @@ export function BuyerProfileSection() {
 
   return (
     <>
-      <div className="rounded-2xl border border-border bg-card overflow-hidden">
+      <div className="rounded-2xl border border-border/50 bg-card shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08),0_2px_8px_-2px_rgba(0,0,0,0.04)] overflow-hidden">
         {/* Section Header - always visible */}
         <div className="flex items-center justify-between p-4 border-b border-border/50 bg-muted/20">
           <div className="flex items-center gap-2.5">
