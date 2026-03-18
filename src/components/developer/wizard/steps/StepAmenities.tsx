@@ -95,28 +95,6 @@ export function StepAmenities() {
         </p>
       </div>
 
-      {/* Featured Selling Point */}
-      <div className="p-4 rounded-xl border border-primary/20 bg-gradient-to-r from-primary/5 to-primary/[0.02] space-y-3">
-        <div className="flex items-center gap-2">
-          <Star className="h-5 w-5 text-primary fill-primary" />
-          <Label className="text-base font-semibold">Featured Selling Point</Label>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          What's the ONE thing that makes this development stand out? This will be prominently displayed at the top of your listing.
-        </p>
-        <Input
-          placeholder="e.g., Rooftop infinity pool with 360° views"
-          value={data.featured_highlight}
-          onChange={(e) => updateData({ featured_highlight: e.target.value.slice(0, 60) })}
-          maxLength={60}
-          className="bg-background"
-        />
-        <p className="text-xs text-muted-foreground">
-          💡 Examples: "Direct beach access", "Smart home in every unit", "Private rooftop gardens", "5-star hotel amenities"
-          <span className="float-right">{data.featured_highlight.length}/60</span>
-        </p>
-      </div>
-
       {Object.entries(amenityOptions).map(([category, amenities]) => (
         <div key={category} className="space-y-3">
           <Label className="text-base font-medium">{categoryLabels[category]}</Label>
