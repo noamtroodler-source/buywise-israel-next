@@ -210,6 +210,8 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
           cityArnonaRate={cityData?.arnona_rate_sqm}
           cityAvgVaadBayit={cityData?.average_vaad_bayit}
           roomCount={effectiveRoomCount}
+          neighborhoodAvgPriceSqm={neighborhoodAvgPriceSqm}
+          neighborhoodName={property.neighborhood}
           hideHeader
         />
 

@@ -11,18 +11,27 @@ export interface NeighborhoodPriceData {
   rooms: number;
 }
 
+const AVG_SIZE_BY_ROOMS: Record<number, number> = {
+  3: 75,
+  4: 100,
+  5: 130,
+};
+
 /**
  * Fetches approved CBS mappings for a city and joins with latest price data.
  * Returns price data keyed by anglo_name for easy lookup.
+ * @param rooms - Room count to query (3, 4, or 5). Defaults to 4.
  */
-export function useNeighborhoodPrices(cityName: string | undefined) {
+export function useNeighborhoodPrices(cityName: string | undefined, rooms: number = 4) {
+  // Clamp rooms to supported range
+  const effectiveRooms = Math.max(3, Math.min(5, rooms));
+
   return useQuery({
-    queryKey: ['neighborhoodPrices', cityName],
+    queryKey: ['neighborhoodPrices', cityName, effectiveRooms],
     queryFn: async () => {
       if (!cityName) return {};
 
       // Step 1: Get approved mappings for this city
-      // Need to handle CBS_TO_PLATFORM name differences
       const cbsCityVariants = [cityName];
       const platformToCbs: Record<string, string> = {
         "Ma'ale Adumim": "Maale Adumim",
@@ -32,7 +41,6 @@ export function useNeighborhoodPrices(cityName: string | undefined) {
       if (platformToCbs[cityName]) {
         cbsCityVariants.push(platformToCbs[cityName]);
       }
-      // Also try the reverse
       const cbsToPlatform: Record<string, string> = {
         "Maale Adumim": "Ma'ale Adumim",
         "Modiin": "Modi'in",
@@ -59,23 +67,26 @@ export function useNeighborhoodPrices(cityName: string | undefined) {
 
       // Step 2: Get price data for all mapped CBS IDs
       const cbsIds = [...new Set(typedMappings.map(m => m.cbs_neighborhood_id))];
-      const cbsCity = typedMappings[0].city; // Use the CBS city name from the mapping
+      const cbsCity = typedMappings[0].city;
 
       const { data: priceData, error: priceErr } = await supabase
         .from('neighborhood_price_history')
         .select('neighborhood_id, avg_price_nis, year, quarter, rooms')
         .in('neighborhood_id', cbsIds)
         .eq('city_en', cbsCity)
-        .eq('rooms', 4) // Default to 4-room apartments as representative
+        .eq('rooms', effectiveRooms)
         .order('year', { ascending: false })
         .order('quarter', { ascending: false })
         .limit(500);
 
       if (priceErr) throw priceErr;
 
-      // Step 3: For each mapping, find latest price and calculate YoY
+      // Step 3: For each mapping, find latest price and calculate 3-year change
+      const avgSize = AVG_SIZE_BY_ROOMS[effectiveRooms] || 100;
+
       const result: Record<string, {
         avg_price: number | null;
+        avg_price_sqm: number | null;
         yoy_change_percent: number | null;
         latest_year: number | null;
         latest_quarter: number | null;
@@ -89,6 +100,7 @@ export function useNeighborhoodPrices(cityName: string | undefined) {
         if (prices.length === 0) {
           result[mapping.anglo_name] = {
             avg_price: null,
+            avg_price_sqm: null,
             yoy_change_percent: null,
             latest_year: null,
             latest_quarter: null,
@@ -101,8 +113,7 @@ export function useNeighborhoodPrices(cityName: string | undefined) {
         const latestQuarter = latest.quarter;
         const latestPrice = latest.avg_price_nis;
 
-        // Find same quarter previous year for YoY
-        // Compare against 3 years ago for a more stable trend
+        // Compare against 3 years ago for a stable trend
         const prevYear = prices.find(
           (p: any) => p.year === latestYear - 3 && p.quarter === latestQuarter
         ) as any;
@@ -113,6 +124,7 @@ export function useNeighborhoodPrices(cityName: string | undefined) {
 
         result[mapping.anglo_name] = {
           avg_price: latestPrice,
+          avg_price_sqm: latestPrice ? Math.round(latestPrice / avgSize) : null,
           yoy_change_percent: yoyChange,
           latest_year: latestYear,
           latest_quarter: latestQuarter,
@@ -129,9 +141,14 @@ export function useNeighborhoodPrices(cityName: string | undefined) {
 /**
  * Fetches neighborhood average price for a specific neighborhood in a city.
  * Used on property detail pages.
+ * @param rooms - Room count for room-specific comparison (defaults to 4)
  */
-export function useNeighborhoodAvgPrice(cityName: string | undefined, neighborhoodName: string | undefined) {
-  const { data: allPrices, isLoading } = useNeighborhoodPrices(cityName);
+export function useNeighborhoodAvgPrice(
+  cityName: string | undefined,
+  neighborhoodName: string | undefined,
+  rooms: number = 4
+) {
+  const { data: allPrices, isLoading } = useNeighborhoodPrices(cityName, rooms);
 
   const priceData = neighborhoodName && allPrices ? allPrices[neighborhoodName] : null;
 
