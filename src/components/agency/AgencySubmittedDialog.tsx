@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 interface AgencySubmittedDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  inviteCode?: string;
 }
 
 export function AgencySubmittedDialog({ open, onOpenChange }: AgencySubmittedDialogProps) {
