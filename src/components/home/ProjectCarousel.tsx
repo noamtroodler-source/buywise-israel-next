@@ -205,18 +205,6 @@ function ProjectCard({ project, hideStatusBadge = false }: { project: Project; h
               </>
             )}
 
-            {/* Action Buttons - Top Right */}
-            <div className="absolute top-2 right-2 flex gap-1.5 z-10">
-              {/* Share - visible on hover */}
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                <ProjectShareButton
-                  projectSlug={project.slug}
-                  projectName={project.name}
-                />
-              </div>
-              {/* Favorite - always visible */}
-              <ProjectFavoriteButton projectId={project.id} />
-            </div>
 
             {/* Status Badge - Top Left (moved below progress bar) */}
             <div className="absolute top-6 left-2 flex gap-1.5 z-10">
