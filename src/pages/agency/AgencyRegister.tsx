@@ -102,6 +102,7 @@ export default function AgencyRegister() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [generatedInviteCode, setGeneratedInviteCode] = useState('');
   const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [showResumeDraft, setShowResumeDraft] = useState(false);
   const [pendingDraft, setPendingDraft] = useState<DraftData | null>(null);
