@@ -423,10 +423,10 @@ export default function Areas() {
             className="text-center space-y-6"
           >
             <h1 className="text-4xl md:text-5xl font-bold text-foreground">
-              Explore Market Environments
+              Know Your Market Before You Buy
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Understand the buying landscape before you search. Each city page breaks down pricing, yields, and market dynamics.
+              The numbers behind every city, laid out clearly so you can buy with confidence.
             </p>
             
             {/* Search Input */}
