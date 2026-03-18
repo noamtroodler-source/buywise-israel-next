@@ -17,8 +17,8 @@ interface PropertyValueSnapshotProps {
   vaadBayitMonthly?: number | null;
   cityArnonaRate?: number | null;
   cityAvgVaadBayit?: number | null;
-  /** When set, labels will say "vs {city} {roomCount}-Room Avg" */
-  roomCount?: number | null;
+  /** Room-specific city average total price (1-year avg for 3/4/5-room) */
+  roomSpecificCityAvgPrice?: number | null;
   /** When true, skip the section header (used when embedded in MarketIntelligence) */
   hideHeader?: boolean;
   /** Neighborhood avg price per sqm (takes priority over city avg in middle card) */
@@ -40,7 +40,7 @@ export function PropertyValueSnapshot({
   vaadBayitMonthly,
   cityArnonaRate,
   cityAvgVaadBayit,
-  roomCount,
+  roomSpecificCityAvgPrice,
   hideHeader = false,
   neighborhoodAvgPriceSqm,
   neighborhoodName,
@@ -281,52 +281,67 @@ export function PropertyValueSnapshot({
             )}
         </div>
 
-        {/* Card 3: 12-Month Trend */}
-        <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
-          <div className="flex items-center gap-2 text-muted-foreground mb-1">
-            {priceChange !== null && priceChange !== undefined ? (
-              priceChange > 0 ? (
-                <TrendingUp className="h-4 w-4 text-semantic-green" />
-              ) : priceChange < 0 ? (
-                <TrendingDown className="h-4 w-4 text-semantic-red" />
-              ) : (
-                <Minus className="h-4 w-4" />
-              )
-            ) : (
-              <Minus className="h-4 w-4 text-muted-foreground/40" />
-            )}
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="text-sm cursor-help border-b border-dotted border-muted-foreground/30">
-                    12-Month Trend
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-xs">
-                  <p className="font-medium mb-1">Area Price Trend</p>
-                  <p className="text-xs text-muted-foreground">
-                    How much property prices in {city} have changed over the past 12 months, based on government transaction data.
+        {/* Card 3: Room-Specific City Price Comparison */}
+        {(() => {
+          const hasRoomData = bedrooms != null && bedrooms >= 3 && bedrooms <= 5 && roomSpecificCityAvgPrice != null;
+          const roomCompPercent = hasRoomData
+            ? Math.round(((price - roomSpecificCityAvgPrice!) / roomSpecificCityAvgPrice!) * 100)
+            : null;
+
+          return (
+            <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
+              <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                {roomCompPercent !== null ? (
+                  roomCompPercent > 0 ? (
+                    <TrendingUp className="h-4 w-4 text-semantic-red" />
+                  ) : roomCompPercent < 0 ? (
+                    <TrendingDown className="h-4 w-4 text-semantic-green" />
+                  ) : (
+                    <Minus className="h-4 w-4" />
+                  )
+                ) : (
+                  <Minus className="h-4 w-4 text-muted-foreground/40" />
+                )}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="text-sm cursor-help border-b border-dotted border-muted-foreground/30">
+                        {hasRoomData ? `vs ${city} ${bedrooms}-Room Avg` : `vs ${city} Avg`}
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-xs">
+                      <p className="font-medium mb-1">City Price Comparison</p>
+                      <p className="text-xs text-muted-foreground">
+                        {hasRoomData
+                          ? `Compares this listing's price against the average ${bedrooms}-room apartment sale price in ${city}, based on government transaction data.`
+                          : `Room-specific price comparison is available for 3, 4, and 5-room apartments.`}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              {roomCompPercent !== null ? (
+                <>
+                  <p className="text-2xl font-bold text-foreground">
+                    {roomCompPercent > 0 ? '+' : ''}{roomCompPercent}%
                   </p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-          {priceChange !== null && priceChange !== undefined ? (
-            <>
-              <p className="text-2xl font-bold text-foreground">
-                {priceChange > 0 ? '+' : ''}{priceChange}%
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                {city} avg prices
-              </p>
-            </>
-          ) : (
-            <>
-              <p className="text-lg font-semibold text-muted-foreground/60">No data yet</p>
-              <p className="text-xs text-muted-foreground mt-1">Trend data unavailable</p>
-            </>
-          )}
-        </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {city} avg: {formatPrice(roomSpecificCityAvgPrice!, 'ILS')}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-lg font-semibold text-muted-foreground/60">No data yet</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {bedrooms != null && (bedrooms < 3 || bedrooms > 5)
+                      ? `We track 3–5 room averages — ${bedrooms}-room data isn't available yet`
+                      : 'Room-specific city data unavailable'}
+                  </p>
+                </>
+              )}
+            </div>
+          );
+        })()}
       </div>
     </div>
   );
