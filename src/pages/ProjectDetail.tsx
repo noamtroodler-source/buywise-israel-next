@@ -9,6 +9,8 @@ import { useProjectFavorites } from '@/hooks/useProjectFavorites';
 import { useAuth } from '@/hooks/useAuth';
 import { useBuyerProfile, getEffectiveBuyerType } from '@/hooks/useBuyerProfile';
 import { PropertyLocation } from '@/components/property/PropertyLocation';
+import { NeighborhoodContextCard } from '@/components/property/NeighborhoodContextCard';
+import { MobileCollapsibleSection } from '@/components/property/MobileCollapsibleSection';
 import { GoogleMapsProvider } from '@/components/maps/GoogleMapsProvider';
 import {
   ProjectHero,
