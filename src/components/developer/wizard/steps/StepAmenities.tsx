@@ -1,7 +1,7 @@
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
-import { Star } from 'lucide-react';
+
 import { useProjectWizard } from '../ProjectWizardContext';
 
 const amenityOptions = {
