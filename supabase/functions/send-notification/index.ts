@@ -238,7 +238,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    if ((payload.type === 'listing_approved' || payload.type === 'listing_rejected' || payload.type === 'changes_requested') && !agent.notify_on_approval) {
+    if ((payload.type === 'listing_approved' || payload.type === 'listing_rejected' || payload.type === 'changes_requested' || payload.type === 'join_approved' || payload.type === 'join_rejected') && !agent.notify_on_approval) {
       console.log("Agent has approval notifications disabled");
       return new Response(
         JSON.stringify({ message: "Approval notifications disabled for this agent" }),
