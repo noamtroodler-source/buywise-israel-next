@@ -54,6 +54,7 @@ interface MarketIntelligenceProps {
 }
 
 function MarketVerdictBadge({ avgComparison, compsCount }: { avgComparison: number | null; compsCount: number }) {
+  const areaLabels = useAreaLabel();
   if (avgComparison === null) {
     return (
       <Badge variant="secondary" className="text-xs">
