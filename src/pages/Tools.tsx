@@ -295,7 +295,23 @@ export default function Tools() {
       
       <div className="min-h-screen bg-background">
         {activeTool ? (
-          activeTool === 'listing-decoder' ? (
+          showBetaGate ? (
+            <div className="container py-6">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="max-w-4xl mx-auto space-y-4"
+              >
+                <DualNavigation
+                  parentLabel="All Tools"
+                  parentPath="/tools"
+                  backLabel="Go back"
+                  className="mb-2"
+                />
+                <BetaComingSoon tool={allTools[activeTool]} />
+              </motion.div>
+            </div>
+          ) : activeTool === 'listing-decoder' ? (
             /* Listing Decoder gets full-width layout like PropertyDetail */
             <div className="min-h-screen bg-background">
               <div className="container py-6">
