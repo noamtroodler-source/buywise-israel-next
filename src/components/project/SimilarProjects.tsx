@@ -1,7 +1,7 @@
 import { useSimilarProjects } from '@/hooks/useSimilarProjects';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ChevronLeft, ChevronRight, MapPin, Building2, Calendar } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MapPin, Building2, Calendar, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 import useEmblaCarousel from 'embla-carousel-react';
@@ -160,13 +160,14 @@ export function SimilarProjects({ currentProject }: SimilarProjectsProps) {
         </div>
       </div>
 
-      <div className="mt-6 text-center">
-        <Button variant="outline" asChild>
-          <Link to={`/projects?city=${currentProject?.city}`}>
-            <Building2 className="h-4 w-4 mr-2" />
-            View All Projects in {currentProject?.city}
-          </Link>
-        </Button>
+      <div className="mt-8 text-center">
+        <Link
+          to={`/projects?city=${currentProject?.city}`}
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline transition-colors"
+        >
+          View all projects in {currentProject?.city}
+          <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
       </div>
     </motion.section>
   );
