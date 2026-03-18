@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Compass, ArrowRight } from 'lucide-react';
+import { Loader2, Compass, ArrowRight, LayoutDashboard, Settings } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
@@ -17,7 +18,7 @@ import { SavedCalculationsCompact } from '@/components/profile/SavedCalculations
 import { RecentlyViewedRow } from '@/components/profile/RecentlyViewedRow';
 import { SupportFooter } from '@/components/shared/SupportFooter';
 import { ResearchJourneyCard } from '@/components/profile/ResearchJourneyCard';
-import { ProfileQuickStats } from '@/components/profile/ProfileQuickStats';
+import { ProfileGettingStarted } from '@/components/profile/ProfileGettingStarted';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 export default function Profile() {
@@ -27,6 +28,7 @@ export default function Profile() {
   const { isAgent, isAdmin } = useUserRole();
   const { data: myAgency } = useMyAgency();
   const { data: developerProfile } = useDeveloperProfile();
+  const [activeTab, setActiveTab] = useState('dashboard');
 
   const handleSignOut = async () => {
     await signOut();
@@ -46,7 +48,6 @@ export default function Profile() {
   return (
     <Layout>
       <div className="container py-4 md:py-6 max-w-4xl">
-        {/* Compact Welcome Header */}
         <ProfileWelcomeHeader
           fullName={profile?.full_name || null}
           email={user?.email}
@@ -59,38 +60,34 @@ export default function Profile() {
           onSignOut={handleSignOut}
         />
 
-        {/* Tab Navigation */}
-        <Tabs defaultValue="overview" className="mt-6">
-          <TabsList className="w-full h-11 bg-muted/60 rounded-xl p-1 grid grid-cols-3">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6">
+          <TabsList className="w-full h-11 bg-muted/60 rounded-xl p-1 grid grid-cols-2">
             <TabsTrigger
-              value="overview"
-              className="rounded-lg text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm"
+              value="dashboard"
+              className="rounded-lg text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm flex items-center gap-1.5"
             >
-              Overview
+              <LayoutDashboard className="h-4 w-4" />
+              Dashboard
             </TabsTrigger>
             <TabsTrigger
-              value="profile"
-              className="rounded-lg text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm"
+              value="settings"
+              className="rounded-lg text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm flex items-center gap-1.5"
             >
-              My Profile
-            </TabsTrigger>
-            <TabsTrigger
-              value="saved"
-              className="rounded-lg text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm"
-            >
-              Saved & Alerts
+              <Settings className="h-4 w-4" />
+              Settings
             </TabsTrigger>
           </TabsList>
 
-          {/* Overview Tab */}
-          <TabsContent value="overview" className="mt-6 space-y-6">
-            <ProfileQuickStats />
+          {/* Dashboard Tab */}
+          <TabsContent value="dashboard" className="mt-6 space-y-6">
+            <ProfileGettingStarted onSwitchTab={setActiveTab} />
+
             {/* Journey Tracker Card */}
             <button
               onClick={() => navigate('/my-journey')}
               className="w-full text-left"
             >
-              <div className="rounded-xl border border-primary/20 bg-primary/[0.03] p-4 flex items-center gap-4 hover:shadow-md hover:border-primary/40 transition-all group">
+              <div className="rounded-2xl border border-primary/20 bg-primary/[0.03] p-4 flex items-center gap-4 hover:shadow-md hover:border-primary/40 transition-all group">
                 <div className="w-10 h-10 rounded-lg bg-primary/15 flex items-center justify-center text-primary flex-shrink-0">
                   <Compass className="h-5 w-5" />
                 </div>
@@ -101,8 +98,13 @@ export default function Profile() {
                 <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all flex-shrink-0" />
               </div>
             </button>
+
             <ResearchJourneyCard />
             <RecentlyViewedRow />
+            <SavedPropertiesPreview />
+            <AlertsCompact />
+            <SavedCalculationsCompact />
+
             <SupportFooter
               message="Questions about your account? [We're here to help]."
               linkText="We're here to help"
@@ -110,19 +112,12 @@ export default function Profile() {
             />
           </TabsContent>
 
-          {/* My Profile Tab */}
-          <TabsContent value="profile" className="mt-6 space-y-6">
+          {/* Settings Tab */}
+          <TabsContent value="settings" className="mt-6 space-y-6">
             <BuyerProfileSection />
             <MortgageSection />
             <LocationsSection />
             <AccountSection />
-          </TabsContent>
-
-          {/* Saved & Alerts Tab */}
-          <TabsContent value="saved" className="mt-6 space-y-6">
-            <AlertsCompact />
-            <SavedPropertiesPreview />
-            <SavedCalculationsCompact />
           </TabsContent>
         </Tabs>
       </div>
