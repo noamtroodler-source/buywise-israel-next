@@ -2127,6 +2127,50 @@ export type Database = {
           },
         ]
       }
+      featured_performance: {
+        Row: {
+          agency_id: string
+          created_at: string
+          featured_at: string
+          featured_listing_id: string
+          id: string
+          property_id: string
+          snapshot_inquiries: number
+          snapshot_saves: number
+          snapshot_views: number
+        }
+        Insert: {
+          agency_id: string
+          created_at?: string
+          featured_at?: string
+          featured_listing_id: string
+          id?: string
+          property_id: string
+          snapshot_inquiries?: number
+          snapshot_saves?: number
+          snapshot_views?: number
+        }
+        Update: {
+          agency_id?: string
+          created_at?: string
+          featured_at?: string
+          featured_listing_id?: string
+          id?: string
+          property_id?: string
+          snapshot_inquiries?: number
+          snapshot_saves?: number
+          snapshot_views?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "featured_performance_featured_listing_id_fkey"
+            columns: ["featured_listing_id"]
+            isOneToOne: true
+            referencedRelation: "featured_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       founding_featured_credits: {
         Row: {
           credits_granted: number
