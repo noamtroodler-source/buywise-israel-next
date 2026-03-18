@@ -9,11 +9,11 @@ export function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
           {/* Brand - Full width on mobile */}
           <div className="col-span-2 md:col-span-1 space-y-4">
-            <Link to="/" className="flex items-center gap-1.5">
-              <img src={logoIcon} alt="BuyWise Israel" className="h-7 w-7 md:h-8 md:w-8 object-contain" />
-              <div className="flex items-baseline gap-1.5">
+            <Link to="/" className="flex items-center gap-0.5">
+              <img src={logoIcon} alt="BuyWise Israel" className="h-[30px] w-[30px] md:h-[34px] md:w-[34px] object-contain" />
+              <div className="flex items-baseline gap-1">
                 <span className="text-lg md:text-[1.3rem] font-bold tracking-tight text-foreground">BuyWise</span>
-                <span className="text-lg md:text-[1.3rem] font-bold tracking-tight text-primary">Israel</span>
+                <span className="text-lg md:text-[1.3rem] font-extrabold tracking-tight text-primary">Israel</span>
               </div>
             </Link>
             <p className="text-sm text-muted-foreground">
