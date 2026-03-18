@@ -79,7 +79,6 @@ function WizardContent() {
         images: data.images.length > 0 ? data.images : undefined,
         floor_plans: data.floor_plans.length > 0 ? data.floor_plans : undefined,
         unit_types: data.unit_types.length > 0 ? data.unit_types : undefined,
-        featured_highlight: data.featured_highlight || undefined,
         submitForReview: false,
       });
       autoSave.clearSavedData();
