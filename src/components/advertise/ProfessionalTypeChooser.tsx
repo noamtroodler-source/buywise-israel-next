@@ -1,54 +1,24 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { User, Building2, Landmark, Check, ArrowRight } from "lucide-react";
+import { Building2, Check, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 const professionalTypes = [
   {
-    icon: User,
-    title: "Individual Agent",
-    description: "Independent agents looking to list properties and connect with international buyers.",
-    features: [
-      "Personal agent profile page",
-      "Unlimited property listings",
-      "Direct buyer inquiries",
-      "Performance analytics",
-      "Verified agent badge",
-    ],
-    href: "/auth?tab=signup&role=agent",
-    buttonText: "Register as Agent",
-    popular: false,
-  },
-  {
     icon: Building2,
     title: "Agency / Team",
-    description: "Real estate firms managing multiple agents with unified brand presence.",
+    description: "Real estate firms managing multiple agents with unified brand presence. Register your agency and invite your agents to join.",
     features: [
       "Branded agency profile",
       "Team member management",
-      "Agent invite system",
+      "Agent invite system — agents join via your link",
       "Consolidated analytics",
       "Priority support",
       "Homepage exposure opportunities",
     ],
     href: "/auth?tab=signup&role=agency",
-    buttonText: "Register Agency",
-    popular: false,
-  },
-  {
-    icon: Landmark,
-    title: "Property Developer",
-    description: "Construction companies and developers showcasing projects.",
-    features: [
-      "Project showcase pages",
-      "Unit inventory management",
-      "Construction progress updates",
-      "Project inquiry tracking",
-      "Developer verification",
-    ],
-    href: "/auth?tab=signup&role=developer",
-    buttonText: "Register as Developer",
+    buttonText: "Register Your Agency",
     popular: false,
   },
 ];
@@ -65,14 +35,14 @@ export function ProfessionalTypeChooser() {
           className="text-center mb-14"
         >
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Choose Your Path
+            Register Your Agency
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Whether you're an individual agent, running an agency, or a property developer—we have the right solution for you.
+            Set up your agency profile, then invite your agents to join your team through a simple invite link.
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+        <div className="grid gap-6 max-w-lg mx-auto">
           {professionalTypes.map((type, index) => (
             <motion.div
               key={index}

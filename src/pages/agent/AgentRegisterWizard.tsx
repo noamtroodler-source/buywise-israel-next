@@ -38,7 +38,6 @@ import { scrollToTopInstant } from '@/lib/scrollToTop';
 
 const steps = [
   { title: 'Basic Info', description: 'Your contact details', icon: User },
-  { title: 'Agency', description: 'Join or go independent', icon: Building2 },
   { title: 'Profile', description: 'Your experience', icon: Briefcase },
   { title: 'Complete', description: 'Review & submit', icon: CheckCircle2 },
 ];
@@ -79,10 +78,8 @@ export default function AgentRegisterWizard() {
     email: user?.email || '',
     phone: '',
     license_number: '',
-    // Agency
-    agency_choice: (urlInviteCode ? 'invite_code' : 'independent') as 'independent' | 'invite_code' | 'request_join',
+    // Agency (invite code is now required)
     invite_code: urlInviteCode || '',
-    agency_id: '',
     // Profile
     years_experience: 0,
     languages: ['Hebrew', 'English'] as string[],
@@ -202,13 +199,8 @@ export default function AgentRegisterWizard() {
       case 0:
         return formData.name && formData.email && formData.license_number && isEmailVerified;
       case 1:
-        if (formData.agency_choice === 'invite_code') {
-          return validatedAgencyId !== null;
-        }
-        return true;
-      case 2:
         return formData.languages.length > 0;
-      case 3:
+      case 2:
         return true;
       default:
         return false;
@@ -274,6 +266,40 @@ export default function AgentRegisterWizard() {
       // Error handled by mutation
     }
   };
+
+  // If no invite code provided, show blocker message
+  if (!urlInviteCode && !validatedAgencyId) {
+    return (
+      <Layout>
+        <div className="relative bg-gradient-to-b from-primary/5 via-primary/[0.02] to-background overflow-hidden">
+          <div className="container py-16 md:py-24 max-w-lg relative">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center space-y-6"
+            >
+              <div className="mx-auto w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <Building2 className="h-10 w-10 text-primary" />
+              </div>
+              <h1 className="text-3xl font-bold">Invite Required</h1>
+              <p className="text-muted-foreground text-lg max-w-md mx-auto">
+                Agents join BuyWise through their agency. Ask your agency manager for an invite link to get started.
+              </p>
+              <div className="bg-muted/50 rounded-xl p-5 border border-border/50 text-left space-y-3">
+                <p className="text-sm font-medium">Are you an agency owner?</p>
+                <p className="text-sm text-muted-foreground">
+                  Register your agency first, then invite your agents to join your team.
+                </p>
+                <Button asChild className="w-full rounded-xl">
+                  <a href="/auth?tab=signup&role=agency">Register Your Agency</a>
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   const renderStep = () => {
     switch (currentStep) {
@@ -363,128 +389,6 @@ export default function AgentRegisterWizard() {
         );
 
       case 1:
-        return (
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className="space-y-6"
-          >
-            {/* Section Header */}
-            <motion.div variants={itemVariants} className="flex items-center gap-3 mb-6">
-              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Building2 className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <h3 className="font-semibold">Agency Affiliation</h3>
-                <p className="text-sm text-muted-foreground">Work independently or join an agency</p>
-              </div>
-            </motion.div>
-
-            <RadioGroup
-              value={formData.agency_choice}
-              onValueChange={(v) => updateField('agency_choice', v as any)}
-              className="space-y-4"
-            >
-              <motion.div variants={itemVariants}>
-                <label 
-                  htmlFor="independent"
-                  className={`flex items-start gap-4 p-5 rounded-xl border-2 cursor-pointer transition-all ${
-                    formData.agency_choice === 'independent' 
-                      ? 'border-primary bg-primary/5 shadow-sm' 
-                      : 'border-border hover:border-primary/30 hover:bg-muted/50'
-                  }`}
-                >
-                  <RadioGroupItem value="independent" id="independent" className="mt-1" />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <User className="h-4 w-4 text-primary" />
-                      </div>
-                      <span className="font-semibold">I'm an independent agent</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-2 ml-10">
-                      Work independently without an agency affiliation. Full control over your listings and client relationships.
-                    </p>
-                  </div>
-                </label>
-              </motion.div>
-
-              <motion.div variants={itemVariants}>
-                <label 
-                  htmlFor="invite_code"
-                  className={`flex items-start gap-4 p-5 rounded-xl border-2 cursor-pointer transition-all ${
-                    formData.agency_choice === 'invite_code' 
-                      ? 'border-primary bg-primary/5 shadow-sm' 
-                      : 'border-border hover:border-primary/30 hover:bg-muted/50'
-                  }`}
-                >
-                  <RadioGroupItem value="invite_code" id="invite_code" className="mt-1" />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <Building2 className="h-4 w-4 text-primary" />
-                      </div>
-                      <span className="font-semibold">I have an agency invite code</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-2 ml-10">
-                      Join an agency using a code from your agency admin
-                    </p>
-                  </div>
-                </label>
-              </motion.div>
-            </RadioGroup>
-
-            {formData.agency_choice === 'invite_code' && (
-              <motion.div 
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="space-y-4 pt-2"
-              >
-                <div className="bg-muted/30 rounded-xl p-5 border border-border/50">
-                  <Label htmlFor="invite_code_input" className="text-sm font-medium">Enter Invite Code</Label>
-                  <div className="flex gap-3 mt-2">
-                    <Input
-                      id="invite_code_input"
-                      value={formData.invite_code}
-                      onChange={(e) => {
-                        updateField('invite_code', e.target.value);
-                        setValidatedAgencyId(null);
-                        setValidatedAgencyName(null);
-                      }}
-                      placeholder="e.g., ABC123XYZ"
-                      className="flex-1 h-11 rounded-xl"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={validateInviteCode}
-                      disabled={isValidatingCode || !formData.invite_code.trim()}
-                      className="rounded-xl h-11 px-5"
-                    >
-                      {isValidatingCode ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        'Validate'
-                      )}
-                    </Button>
-                  </div>
-                  {validatedAgencyName && (
-                    <div className="flex items-center gap-2 mt-3 p-3 rounded-lg bg-primary/10 text-primary">
-                      <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center">
-                        <Check className="h-3.5 w-3.5" />
-                      </div>
-                      <span className="text-sm font-medium">Joining: {validatedAgencyName}</span>
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-            )}
-          </motion.div>
-        );
-
-      case 2:
         return (
           <motion.div
             variants={containerVariants}
@@ -606,7 +510,7 @@ export default function AgentRegisterWizard() {
           </motion.div>
         );
 
-      case 3:
+      case 2:
         return (
           <motion.div
             variants={containerVariants}
@@ -635,7 +539,7 @@ export default function AgentRegisterWizard() {
                   { label: 'Email', value: formData.email, icon: Mail },
                   { label: 'Phone', value: formData.phone || 'Not provided', icon: Phone },
                   { label: 'License', value: formData.license_number, icon: BadgeCheck },
-                  { label: 'Agency', value: validatedAgencyName || 'Independent', icon: Building2 },
+                  { label: 'Agency', value: validatedAgencyName || 'N/A', icon: Building2 },
                   { label: 'Languages', value: formData.languages.join(', '), icon: Globe },
                 ].map((item, index) => (
                   <div key={index} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">

@@ -1,8 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 import { motion } from 'framer-motion';
-import { Building2, Clock, Mail, LayoutList } from 'lucide-react';
+import { Building2, Clock, Mail, LayoutList, Link2, Check, Copy } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -11,14 +11,32 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 interface AgencySubmittedDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  inviteCode?: string;
 }
 
-export function AgencySubmittedDialog({ open, onOpenChange }: AgencySubmittedDialogProps) {
+export function AgencySubmittedDialog({ open, onOpenChange, inviteCode }: AgencySubmittedDialogProps) {
   const navigate = useNavigate();
+  const [copied, setCopied] = useState(false);
+
+  const inviteLink = inviteCode 
+    ? `${window.location.origin}/auth?tab=signup&role=agent&code=${inviteCode}` 
+    : '';
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(inviteLink);
+      setCopied(true);
+      toast.success('Invite link copied!');
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error('Failed to copy');
+    }
+  };
 
   useEffect(() => {
     if (open) {
@@ -109,10 +127,42 @@ export function AgencySubmittedDialog({ open, onOpenChange }: AgencySubmittedDia
             </div>
           </motion.div>
 
+          {inviteCode && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="flex items-start gap-3 p-3 bg-primary/[0.06] rounded-xl border border-primary/20"
+            >
+              <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <Link2 className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex-1">
+                <p className="font-medium text-sm">Invite Your Agents</p>
+                <p className="text-sm text-muted-foreground mb-2">
+                  Share this link with your agents so they can join your team — they can start signing up right away.
+                </p>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 text-xs bg-muted/80 rounded-lg px-3 py-2 truncate border border-border/50">
+                    {inviteLink}
+                  </code>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleCopy}
+                    className="shrink-0 rounded-lg h-8 px-3"
+                  >
+                    {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
+            transition={{ delay: 0.5 }}
             className="flex items-start gap-3 p-3 bg-primary/[0.04] rounded-xl border border-primary/15"
           >
             <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">

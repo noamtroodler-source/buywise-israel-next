@@ -102,6 +102,7 @@ export default function AgencyRegister() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [generatedInviteCode, setGeneratedInviteCode] = useState('');
   const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [showResumeDraft, setShowResumeDraft] = useState(false);
   const [pendingDraft, setPendingDraft] = useState<DraftData | null>(null);
@@ -483,6 +484,7 @@ export default function AgencyRegister() {
       }
 
       clearDraft();
+      setGeneratedInviteCode(defaultInviteCode);
       setShowSuccessDialog(true);
     } catch (error: unknown) {
       toast.error(getUserFriendlyError(error, 'Registration failed. Please try again.'));
@@ -1041,7 +1043,8 @@ export default function AgencyRegister() {
 
       <AgencySubmittedDialog 
         open={showSuccessDialog} 
-        onOpenChange={setShowSuccessDialog} 
+        onOpenChange={setShowSuccessDialog}
+        inviteCode={generatedInviteCode}
       />
     </Layout>
   );
