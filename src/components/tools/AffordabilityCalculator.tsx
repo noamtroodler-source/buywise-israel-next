@@ -495,11 +495,12 @@ function AffordabilityCalculatorContent() {
             <Card>
               <CardHeader className="pb-4"><CardTitle className="text-base flex items-center gap-2"><Building2 className="h-4 w-4 text-primary" />Target City</CardTitle></CardHeader>
               <CardContent>
-                <Select value={selectedCity} onValueChange={setSelectedCity}>
+                <Select value={selectedCity || '__none__'} onValueChange={(val) => setSelectedCity(val === '__none__' ? '' : val)}>
                   <SelectTrigger className="h-11">
                     <SelectValue placeholder="Select a city" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="__none__" className="text-muted-foreground">All cities</SelectItem>
                     {availableCities.map((city) => (
                       <SelectItem key={city} value={city}>{city}</SelectItem>
                     ))}
