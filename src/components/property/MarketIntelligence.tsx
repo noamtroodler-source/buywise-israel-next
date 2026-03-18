@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useAreaLabel } from '@/contexts/PreferencesContext';
 import { BarChart3, ShieldCheck, Info, ArrowRight } from 'lucide-react';
+import { getIsraeliRoomCount } from '@/lib/israeliRoomCount';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
