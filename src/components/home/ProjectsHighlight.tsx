@@ -146,7 +146,7 @@ export function ProjectsHighlight() {
   if (displayProjects.length === 0) return null;
 
   return (
-    <section className="py-12 md:py-16">
+    <section className="py-10 md:py-12">
       <div className="container">
         {/* Header */}
         <div className="flex items-end justify-between gap-4 mb-8">
@@ -202,7 +202,7 @@ export function ProjectsHighlight() {
                     key={project.id}
                     className="flex-[0_0_calc(100%-2rem)] sm:flex-[0_0_calc(50%-1rem)] min-w-0 pl-4 first:pl-4"
                   >
-                    <div className="aspect-[3/4] sm:aspect-[4/5]">
+                    <div className="aspect-[3/4] sm:aspect-[4/3]">
                       <ProjectCard project={project} />
                     </div>
                   </div>
@@ -235,7 +235,7 @@ export function ProjectsHighlight() {
           >
             {/* Hero project - left side, full height */}
             {heroProject && (
-              <div className="row-span-2 aspect-auto min-h-[480px]">
+              <div className="row-span-2 min-h-[360px]">
                 <ProjectCard project={heroProject} variant="hero" />
               </div>
             )}
@@ -248,7 +248,7 @@ export function ProjectsHighlight() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.1 + i * 0.05 }}
-                className="aspect-[16/10]"
+                className="aspect-[16/9]"
               >
                 <ProjectCard project={project} />
               </motion.div>
