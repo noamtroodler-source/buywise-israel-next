@@ -131,7 +131,7 @@ export function usePaginatedProjects(
           .in('id', boostedIds)
           .eq('is_published', true);
 
-        const boostedProjects = (boostedData ?? []).map(p => ({ ...p, _isBoosted: true })) as Project[];
+        const boostedProjects = shuffleFeatured((boostedData ?? []).map(p => ({ ...p, _isBoosted: true })) as Project[]);
         return [...boostedProjects, ...(data as Project[])];
       }
 
