@@ -213,12 +213,6 @@ export default function AgentDashboard() {
                   <Settings className="h-4 w-4" />
                 </Link>
               </Button>
-              <Button variant="outline" size="sm" asChild className="rounded-xl border-primary/20 hover:bg-primary/5 hidden sm:inline-flex">
-                <Link to={agentProfile ? `/agents/${agentProfile.id}` : '#'}>
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  Public Page
-                </Link>
-              </Button>
             </div>
           </div>
 
