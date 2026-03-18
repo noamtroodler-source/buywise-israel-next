@@ -91,6 +91,19 @@ export function useInquiryTracking() {
       // Send notification to agent (async, don't wait)
       sendInquiryNotification(params);
 
+      // Send confirmation to buyer (async, don't wait)
+      if (params.email && params.email !== 'not-provided@placeholder.com') {
+        supabase.functions.invoke('send-inquiry-confirmation', {
+          body: {
+            buyerEmail: params.email,
+            buyerName: params.name || 'there',
+            listingTitle: params.propertyTitle || 'the property',
+            listingType: 'property',
+            inquiryType: params.inquiryType,
+          },
+        }).catch((err) => console.error('Failed to send buyer confirmation:', err));
+      }
+
       return data;
     },
     onError: (error) => {
