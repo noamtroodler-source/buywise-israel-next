@@ -135,7 +135,8 @@ const getNotificationContent = (payload: NotificationPayload) => {
         subject: `Heads up: "${payload.propertyTitle}" expires in ${payload.daysUntilExpiry} days`,
         body: `Your property listing "${payload.propertyTitle}" will expire in ${payload.daysUntilExpiry} days.\n\nTo keep your listing active and visible to buyers, please renew it from your dashboard.`,
         html: `
-          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+            ${brandHeader}
             <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 16px;">Just a heads up</h1>
             <p style="color: #333; font-size: 16px; line-height: 1.6;">Your listing <strong>"${payload.propertyTitle}"</strong> will expire in <strong>${payload.daysUntilExpiry} days</strong>.</p>
             <p style="color: #666; font-size: 14px;">To keep your listing visible to buyers, you can renew it from your dashboard. No rush — just wanted to make sure you knew.</p>
