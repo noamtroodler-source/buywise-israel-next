@@ -51,6 +51,20 @@ export default function ProjectDetail() {
   // Track project views
   useProjectViewTracking(project?.id);
 
+  // Set structured page context for Ask BuyWise
+  useEffect(() => {
+    if (project) {
+      setPageContextData({
+        name: project.name,
+        city: project.city,
+        neighborhood: project.neighborhood || undefined,
+        priceFrom: project.price_from || undefined,
+        currency: project.currency || 'ILS',
+      });
+    }
+    return () => setPageContextData(null);
+  }, [project]);
+
   if (isLoading) {
     return (
       <Layout>
