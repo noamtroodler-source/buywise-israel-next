@@ -214,7 +214,7 @@ interface RecentNearbySalesProps {
   /** When true, skip the verdict badge (parent renders it) */
   hideVerdict?: boolean;
   /** Callback to expose the computed average comparison to parent */
-  onVerdictComputed?: (avgComparison: number | null, compsCount: number) => void;
+  onVerdictComputed?: (avgComparison: number | null, compsCount: number, radiusUsedM: number) => void;
 }
 
 export function RecentNearbySales({
