@@ -152,7 +152,8 @@ const getNotificationContent = (payload: NotificationPayload) => {
         subject: `You're in — ${payload.agencyName || 'the agency'} approved your request`,
         body: `Great news! ${payload.agencyName || 'The agency'} has approved your request to join their team. You're now part of the team and can start listing properties under their brand.`,
         html: `
-          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+            ${brandHeader}
             <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 16px;">You're in! 🎉</h1>
             <p style="color: #333; font-size: 16px; line-height: 1.6;"><strong>${payload.agencyName || 'The agency'}</strong> has approved your request to join their team.</p>
             <div style="margin-top: 16px; padding: 16px; background-color: #eff6ff; border-radius: 8px;">
