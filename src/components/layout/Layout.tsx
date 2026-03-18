@@ -1,3 +1,4 @@
+// Layout component - Ask BuyWise Phase 1
 import { ReactNode } from 'react';
 import { Header } from './Header';
 import { Footer } from './Footer';
