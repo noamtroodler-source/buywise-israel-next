@@ -120,3 +120,12 @@ Based on Perplexity blueprint research. All changes in `import-agency-listings/i
    - Sends batches of 10 to `check_existing` action
    - Logs price changes and removals per agency
    - Response now includes `existing_checked`, `price_changes`, `removed` counts
+
+## Phase 16: Neighborhood Profiles — Implemented ✅
+
+1. **DB Migration** — `neighborhood_profiles` table with unique `(city, neighborhood)` constraint. Public SELECT RLS, admin-only INSERT/UPDATE/DELETE. `update_updated_at_column()` trigger.
+2. **`import-neighborhood-profiles` edge function** — Admin-only, accepts JSON array, upserts on `(city, neighborhood)` conflict. Batches of 100.
+3. **Admin page `/admin/import-neighborhood-profiles`** — CSV upload with column mapping to 8 research fields + sources. Preview table, batch upload with progress.
+4. **`useNeighborhoodProfile` hook** — Simple query by city + neighborhood, 10-min stale time.
+5. **`NeighborhoodContextCard` component** — Displays 8 data sections (Reputation, Physical Character, Proximity Anchors, Anglo Community, Daily Life, Transit, Honest Trade-off, Best For) with collapsible sources. Warning variant for trade-offs, highlight for Best For.
+6. **PropertyDetail integration** — Card appears after Location section, wrapped in `MobileCollapsibleSection` with `alwaysStartClosed`. Only renders when neighborhood has a profile.
