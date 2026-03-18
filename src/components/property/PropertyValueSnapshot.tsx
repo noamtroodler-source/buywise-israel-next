@@ -21,6 +21,10 @@ interface PropertyValueSnapshotProps {
   roomCount?: number | null;
   /** When true, skip the section header (used when embedded in MarketIntelligence) */
   hideHeader?: boolean;
+  /** Neighborhood avg price per sqm (takes priority over city avg in middle card) */
+  neighborhoodAvgPriceSqm?: number | null;
+  /** Neighborhood name for label (e.g. "Arnona") */
+  neighborhoodName?: string | null;
 }
 
 export function PropertyValueSnapshot({ 
