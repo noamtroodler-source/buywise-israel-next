@@ -71,7 +71,8 @@ const getNotificationContent = (payload: NotificationPayload) => {
         subject: `We couldn't approve "${payload.propertyTitle}" — here's why`,
         body: `Your property listing "${payload.propertyTitle}" could not be approved at this time.\n\nReason: ${payload.rejectionReason || 'Please contact support for more details.'}\n\nPlease update your listing and resubmit for review.`,
         html: `
-          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+            ${brandHeader}
             <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 16px;">We couldn't approve this one — here's why</h1>
             <p style="color: #333; font-size: 16px; line-height: 1.6;">We know this isn't the news you wanted. Your listing <strong>"${payload.propertyTitle}"</strong> couldn't be approved at this time.</p>
             <div style="margin-top: 16px; padding: 16px; background-color: #f8fafc; border-radius: 8px; border-left: 4px solid #64748b;">
