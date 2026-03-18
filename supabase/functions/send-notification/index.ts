@@ -29,6 +29,14 @@ interface NotificationPayload {
   agencyName?: string;
 }
 
+const brandHeader = `
+  <div style="text-align: center; margin-bottom: 32px;">
+    <a href="https://buywiseisrael.com" style="text-decoration: none;">
+      <img src="https://buywiseisrael.com/og-image.png" alt="BuyWise Israel" style="height: 48px; width: auto;" />
+    </a>
+  </div>
+`;
+
 const brandFooter = `
   <p style="color: #999; font-size: 12px; margin-top: 40px; text-align: center; border-top: 1px solid #eee; padding-top: 20px;">
     Questions? Just reply — we read every email.<br>
@@ -43,7 +51,8 @@ const getNotificationContent = (payload: NotificationPayload) => {
         subject: `Great news — "${payload.propertyTitle}" is now live`,
         body: `Great news! Your property listing "${payload.propertyTitle}" has been reviewed and approved. It is now live and visible to potential buyers on our platform.`,
         html: `
-          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+            ${brandHeader}
             <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 16px;">Great news — your listing is now live</h1>
             <p style="color: #333; font-size: 16px; line-height: 1.6;">Your property listing <strong>"${payload.propertyTitle}"</strong> has been reviewed and approved.</p>
             <p style="color: #333; font-size: 16px; line-height: 1.6;">It's now visible to potential buyers on BuyWise Israel.</p>
@@ -62,7 +71,8 @@ const getNotificationContent = (payload: NotificationPayload) => {
         subject: `We couldn't approve "${payload.propertyTitle}" — here's why`,
         body: `Your property listing "${payload.propertyTitle}" could not be approved at this time.\n\nReason: ${payload.rejectionReason || 'Please contact support for more details.'}\n\nPlease update your listing and resubmit for review.`,
         html: `
-          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+            ${brandHeader}
             <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 16px;">We couldn't approve this one — here's why</h1>
             <p style="color: #333; font-size: 16px; line-height: 1.6;">We know this isn't the news you wanted. Your listing <strong>"${payload.propertyTitle}"</strong> couldn't be approved at this time.</p>
             <div style="margin-top: 16px; padding: 16px; background-color: #f8fafc; border-radius: 8px; border-left: 4px solid #64748b;">
@@ -82,7 +92,8 @@ const getNotificationContent = (payload: NotificationPayload) => {
         subject: `Just a few tweaks needed for "${payload.propertyTitle}"`,
         body: `Our team has reviewed your listing "${payload.propertyTitle}" and requested some changes before it can be approved.\n\nFeedback: ${payload.message || 'Please review and update your listing.'}\n\nPlease make the requested changes and resubmit.`,
         html: `
-          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+            ${brandHeader}
             <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 16px;">Just a few tweaks needed — we're almost there</h1>
             <p style="color: #333; font-size: 16px; line-height: 1.6;">Our team has reviewed your listing <strong>"${payload.propertyTitle}"</strong> and requested some small changes before it can go live.</p>
             <div style="margin-top: 16px; padding: 16px; background-color: #eff6ff; border-radius: 8px; border-left: 4px solid #2563eb;">
@@ -102,7 +113,8 @@ const getNotificationContent = (payload: NotificationPayload) => {
         subject: `New inquiry for "${payload.propertyTitle}"`,
         body: `You have received a new ${payload.inquiryType || 'inquiry'} for your property "${payload.propertyTitle}".\n\nFrom: ${payload.inquirerName || 'A potential buyer'}${payload.inquirerEmail ? `\nEmail: ${payload.inquirerEmail}` : ''}\n\nLog in to your dashboard to view and respond to this lead.`,
         html: `
-          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+            ${brandHeader}
             <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 16px;">New inquiry received</h1>
             <p style="color: #333; font-size: 16px; line-height: 1.6;">Someone is interested in your property <strong>"${payload.propertyTitle}"</strong>.</p>
             <div style="margin-top: 16px; padding: 16px; background-color: #eff6ff; border-radius: 8px;">
@@ -123,7 +135,8 @@ const getNotificationContent = (payload: NotificationPayload) => {
         subject: `Heads up: "${payload.propertyTitle}" expires in ${payload.daysUntilExpiry} days`,
         body: `Your property listing "${payload.propertyTitle}" will expire in ${payload.daysUntilExpiry} days.\n\nTo keep your listing active and visible to buyers, please renew it from your dashboard.`,
         html: `
-          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+            ${brandHeader}
             <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 16px;">Just a heads up</h1>
             <p style="color: #333; font-size: 16px; line-height: 1.6;">Your listing <strong>"${payload.propertyTitle}"</strong> will expire in <strong>${payload.daysUntilExpiry} days</strong>.</p>
             <p style="color: #666; font-size: 14px;">To keep your listing visible to buyers, you can renew it from your dashboard. No rush — just wanted to make sure you knew.</p>
@@ -139,7 +152,8 @@ const getNotificationContent = (payload: NotificationPayload) => {
         subject: `You're in — ${payload.agencyName || 'the agency'} approved your request`,
         body: `Great news! ${payload.agencyName || 'The agency'} has approved your request to join their team. You're now part of the team and can start listing properties under their brand.`,
         html: `
-          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+            ${brandHeader}
             <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 16px;">You're in! 🎉</h1>
             <p style="color: #333; font-size: 16px; line-height: 1.6;"><strong>${payload.agencyName || 'The agency'}</strong> has approved your request to join their team.</p>
             <div style="margin-top: 16px; padding: 16px; background-color: #eff6ff; border-radius: 8px;">
@@ -157,7 +171,8 @@ const getNotificationContent = (payload: NotificationPayload) => {
         subject: `Your request to join ${payload.agencyName || 'the agency'} wasn't approved`,
         body: `Unfortunately, your request to join ${payload.agencyName || 'the agency'} wasn't approved at this time.${payload.rejectionReason ? ` Reason: ${payload.rejectionReason}` : ''} You can still operate as an independent agent or try joining another agency.`,
         html: `
-          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+            ${brandHeader}
             <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 16px;">We have an update on your request</h1>
             <p style="color: #333; font-size: 16px; line-height: 1.6;">Unfortunately, your request to join <strong>${payload.agencyName || 'the agency'}</strong> wasn't approved at this time.</p>
             ${payload.rejectionReason ? `
@@ -178,7 +193,8 @@ const getNotificationContent = (payload: NotificationPayload) => {
         subject: 'Notification from BuyWise Israel',
         body: payload.message || 'You have a new notification.',
         html: `
-          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+            ${brandHeader}
             <h1 style="color: #1a1a1a; font-size: 24px;">Notification</h1>
             <p style="color: #333; font-size: 16px;">${payload.message || 'You have a new notification.'}</p>
             ${brandFooter}

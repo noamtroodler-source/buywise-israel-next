@@ -18,6 +18,14 @@ const GUIDE_PROGRESSION: Record<string, { slug: string; title: string }> = {
   "rent-vs-buy": { slug: "buying-in-israel", title: "Complete Guide to Buying in Israel" },
 };
 
+const brandHeader = `
+  <div style="text-align: center; margin-bottom: 32px;">
+    <a href="https://buywiseisrael.com" style="text-decoration: none;">
+      <img src="https://buywiseisrael.com/og-image.png" alt="BuyWise Israel" style="height: 48px; width: auto;" />
+    </a>
+  </div>
+`;
+
 const brandFooter = `
   <p style="color: #999; font-size: 12px; margin-top: 40px; text-align: center; border-top: 1px solid #eee; padding-top: 20px;">
     Questions? Just reply — we read every email.<br>
@@ -66,6 +74,7 @@ function buildDormantSaverEmail(
     <html>
       <body style="margin: 0; padding: 0; background: #f9fafb; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
         <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px; background: #ffffff;">
+          ${brandHeader}
           <h1 style="color: #1a1a1a; font-size: 22px; margin-bottom: 8px;">Hey${userName ? " " + userName : ""},</h1>
           <p style="color: #333; font-size: 16px; line-height: 1.6; margin-bottom: 24px;">
             We noticed some new properties just hit the market in ${city} that match what you've been looking at. Thought you'd want to see them before they get snapped up.
@@ -93,6 +102,7 @@ function buildGuideStalledEmail(
     <html>
       <body style="margin: 0; padding: 0; background: #f9fafb; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
         <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px; background: #ffffff;">
+          ${brandHeader}
           <h1 style="color: #1a1a1a; font-size: 22px; margin-bottom: 8px;">Hey${userName ? " " + userName : ""},</h1>
           <p style="color: #333; font-size: 16px; line-height: 1.6;">
             We saw you were reading our <strong>${lastGuideTitle}</strong> — great stuff. A lot of people at the same stage found this guide really helpful as a next step:

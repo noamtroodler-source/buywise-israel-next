@@ -23,6 +23,14 @@ interface NotificationPayload {
   message?: string;
 }
 
+const brandHeader = `
+  <div style="text-align: center; margin-bottom: 32px;">
+    <a href="https://buywiseisrael.com" style="text-decoration: none;">
+      <img src="https://buywiseisrael.com/og-image.png" alt="BuyWise Israel" style="height: 48px; width: auto;" />
+    </a>
+  </div>
+`;
+
 const brandFooter = `
   <p style="color: #999; font-size: 12px; margin-top: 40px; text-align: center; border-top: 1px solid #eee; padding-top: 20px;">
     Questions? Just reply — we read every email.<br>
@@ -37,7 +45,8 @@ const getNotificationContent = (payload: NotificationPayload) => {
         subject: `${payload.agentName} joined your agency`,
         body: `${payload.agentName} has joined your agency using an invite code.\n\nEmail: ${payload.agentEmail || 'Not provided'}\n\nYou can view and manage your team from your agency dashboard.`,
         html: `
-          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+            ${brandHeader}
             <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 16px;">Something good just happened</h1>
             <p style="color: #333; font-size: 16px; line-height: 1.6;"><strong>${payload.agentName}</strong> has joined your agency using an invite code.</p>
             <div style="margin-top: 16px; padding: 16px; background-color: #eff6ff; border-radius: 8px;">
@@ -57,7 +66,8 @@ const getNotificationContent = (payload: NotificationPayload) => {
         subject: `Just a heads up: ${payload.agentName} has left your agency`,
         body: `${payload.agentName} has left your agency.\n\nIf this was unexpected, you may want to reach out to them.`,
         html: `
-          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+            ${brandHeader}
             <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 16px;">Just a heads up</h1>
             <p style="color: #333; font-size: 16px; line-height: 1.6;"><strong>${payload.agentName}</strong> has left your agency.</p>
             <p style="color: #666; font-size: 14px;">If this was unexpected, you may want to reach out to them.</p>
@@ -73,7 +83,8 @@ const getNotificationContent = (payload: NotificationPayload) => {
         subject: `New inquiry for ${payload.propertyTitle || 'your agency'}`,
         body: `Your agency has received a new lead!\n\nFrom: ${payload.leadName || 'A potential buyer'}${payload.leadEmail ? `\nEmail: ${payload.leadEmail}` : ''}${payload.propertyTitle ? `\nProperty: ${payload.propertyTitle}` : ''}\n\nLog in to your dashboard to assign this lead to an agent.`,
         html: `
-          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+            ${brandHeader}
             <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 16px;">New inquiry received</h1>
             <p style="color: #333; font-size: 16px; line-height: 1.6;">Your agency has received a new inquiry.</p>
             <div style="margin-top: 16px; padding: 16px; background-color: #eff6ff; border-radius: 8px;">
@@ -94,7 +105,8 @@ const getNotificationContent = (payload: NotificationPayload) => {
         subject: `${payload.agentName} wants to join your agency`,
         body: `${payload.agentName} has requested to join your agency.\n\nEmail: ${payload.agentEmail || 'Not provided'}${payload.message ? `\nMessage: ${payload.message}` : ''}\n\nLog in to your dashboard to approve or decline this request.`,
         html: `
-          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+            ${brandHeader}
             <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 16px;">Someone wants to join your team</h1>
             <p style="color: #333; font-size: 16px; line-height: 1.6;"><strong>${payload.agentName}</strong> has requested to join your agency.</p>
             <div style="margin-top: 16px; padding: 16px; background-color: #eff6ff; border-radius: 8px;">
@@ -115,7 +127,8 @@ const getNotificationContent = (payload: NotificationPayload) => {
         subject: 'Notification from BuyWise Israel',
         body: payload.message || 'You have a new notification.',
         html: `
-          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+            ${brandHeader}
             <h1 style="color: #1a1a1a; font-size: 24px;">Notification</h1>
             <p style="color: #333; font-size: 16px;">${payload.message || 'You have a new notification.'}</p>
             ${brandFooter}

@@ -94,6 +94,11 @@ const handler = async (req: Request): Promise<Response> => {
       </head>
       <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5; margin: 0; padding: 20px;">
         <div style="max-width: 480px; margin: 0 auto; background-color: white; border-radius: 12px; padding: 40px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+          <div style="text-align: center; margin-bottom: 24px;">
+            <a href="https://buywiseisrael.com" style="text-decoration: none;">
+              <img src="https://buywiseisrael.com/og-image.png" alt="BuyWise Israel" style="height: 48px; width: auto;" />
+            </a>
+          </div>
           <div style="text-align: center; margin-bottom: 30px;">
             <h1 style="color: #1a1a1a; font-size: 24px; margin: 0;">Almost there — let's verify your email</h1>
             <p style="color: #666; margin-top: 8px;">BuyWise Israel ${typeDisplay} Registration</p>

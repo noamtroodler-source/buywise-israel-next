@@ -6,6 +6,14 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const brandHeader = `
+  <div style="text-align: center; margin-bottom: 32px;">
+    <a href="https://buywiseisrael.com" style="text-decoration: none;">
+      <img src="https://buywiseisrael.com/og-image.png" alt="BuyWise Israel" style="height: 48px; width: auto;" />
+    </a>
+  </div>
+`;
+
 const brandFooter = `
   <p style="color: #999; font-size: 12px; margin-top: 40px; text-align: center; border-top: 1px solid #eee; padding-top: 20px;">
     Questions? Just reply — we read every email.<br>
@@ -32,6 +40,7 @@ Deno.serve(async (req) => {
     // Admin notification
     const adminHtml = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+        ${brandHeader}
         <div style="background: #2563eb; color: white; padding: 20px 24px; border-radius: 8px 8px 0 0;">
           <h1 style="margin: 0; font-size: 20px;">📬 New Contact Form Submission</h1>
           <p style="margin: 4px 0 0; opacity: 0.85; font-size: 14px;">Someone reached out via the contact page</p>
@@ -55,6 +64,7 @@ Deno.serve(async (req) => {
     // Confirmation to submitter
     const confirmHtml = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+        ${brandHeader}
         <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 16px;">We got your message, ${name.split(" ")[0]}! 👋</h1>
         <p style="color: #333; font-size: 16px; line-height: 1.6;">Thanks for reaching out. We've received your message and will get back to you within 24 hours.</p>
         <div style="margin-top: 16px; padding: 16px; background-color: #eff6ff; border-radius: 8px;">
