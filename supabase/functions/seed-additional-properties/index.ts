@@ -5,34 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// City price multipliers (Tel Aviv = 1.0 baseline)
-const CITY_MULTIPLIERS: Record<string, number> = {
-  'Tel Aviv': 1.8,
-  'Herzliya': 1.6,
-  'Ramat Gan': 1.3,
-  'Givatayim': 1.25,
-  'Netanya': 1.0,
-  'Ra\'anana': 1.5,
-  'Kfar Saba': 1.2,
-  'Petah Tikva': 1.1,
-  'Rishon LeZion': 1.15,
-  'Rehovot': 1.05,
-  'Ashdod': 0.85,
-  'Ashkelon': 0.75,
-  'Haifa': 0.9,
-  'Jerusalem': 1.4,
-  'Beer Sheva': 0.55,
-  'Eilat': 0.8,
-  'Modiin': 1.25,
-  'Bat Yam': 0.95,
-  'Holon': 1.0,
-  'Nahariya': 0.65,
-  'Hadera': 0.7,
-  'Caesarea': 1.7,
-  'Zichron Yaakov': 1.1,
-  'Beit Shemesh': 0.9,
-  'Tiberias': 0.6,
-};
+// Pricing is now fetched from the cities table at runtime — no hardcoded multipliers
 
 // Property type configurations
 const PROPERTY_TYPES = [
@@ -203,7 +176,8 @@ function getListingAge(): number {
 function generateProperty(
   cityName: string,
   listingStatus: 'for_sale' | 'for_rent',
-  agentId: string
+  agentId: string,
+  cityData: { average_price_sqm: number | null; rental_3_room_min: number | null; rental_3_room_max: number | null; rental_4_room_min: number | null; rental_4_room_max: number | null; rental_5_room_min: number | null; rental_5_room_max: number | null }
 ) {
   const propType = getWeightedPropertyType();
   const rooms = randomInt(propType.minRooms, propType.maxRooms);
@@ -211,18 +185,30 @@ function generateProperty(
   const floor = randomInt(propType.minFloor, propType.maxFloor);
   const totalFloors = Math.max(floor + randomInt(0, 5), floor);
   
-  const cityMultiplier = CITY_MULTIPLIERS[cityName] || 1.0;
-  const variance = 0.7 + Math.random() * 0.6; // ±30% variance
-  
-  // Base prices per sqm
-  const baseSalePricePerSqm = 35000; // ~35,000 NIS/sqm baseline
-  const baseRentPricePerSqm = 55;    // ~55 NIS/sqm/month baseline
-  
+  // Use verified cities table data for pricing
   let price: number;
   if (listingStatus === 'for_sale') {
-    price = Math.round((sqm * baseSalePricePerSqm * cityMultiplier * variance) / 10000) * 10000;
+    const avgPriceSqm = cityData.average_price_sqm || 25000;
+    const variance = 0.75 + Math.random() * 0.55; // 0.75–1.30
+    price = Math.round((sqm * avgPriceSqm * variance) / 10000) * 10000;
   } else {
-    price = Math.round((sqm * baseRentPricePerSqm * cityMultiplier * variance) / 100) * 100;
+    // Israeli room count (rooms here = total rooms from property type)
+    const israeliRooms = rooms;
+    let min: number, max: number;
+    if (israeliRooms <= 2) {
+      min = (cityData.rental_3_room_min || 3000) * 0.75;
+      max = (cityData.rental_3_room_max || 5000) * 0.75;
+    } else if (israeliRooms === 3) {
+      min = cityData.rental_3_room_min || 3000;
+      max = cityData.rental_3_room_max || 5000;
+    } else if (israeliRooms === 4) {
+      min = cityData.rental_4_room_min || 4500;
+      max = cityData.rental_4_room_max || 7000;
+    } else {
+      min = cityData.rental_5_room_min || 6000;
+      max = cityData.rental_5_room_max || 10000;
+    }
+    price = Math.round((min + Math.random() * (max - min)) / 100) * 100;
   }
   
   const daysAgo = getListingAge();
@@ -362,34 +348,37 @@ Deno.serve(async (req) => {
 
     const agentIds = agents.map(a => a.id);
 
-    // Fetch all cities
+    // Fetch all cities with pricing data
     const { data: cities, error: citiesError } = await supabase
       .from('cities')
-      .select('name');
+      .select('name, average_price_sqm, rental_3_room_min, rental_3_room_max, rental_4_room_min, rental_4_room_max, rental_5_room_min, rental_5_room_max');
 
     if (citiesError) throw citiesError;
     if (!cities || cities.length === 0) {
       throw new Error('No cities found');
     }
 
+    // Build a lookup map for city pricing data
+    const cityDataMap = new Map(cities.map(c => [c.name, c]));
     const cityNames = cities.map(c => c.name);
     
     let totalInserted = 0;
     const batchSize = 100;
 
     for (const cityName of cityNames) {
+      const cityData = cityDataMap.get(cityName)!;
       const properties: Record<string, unknown>[] = [];
 
       // Generate 50 for_sale properties
       for (let i = 0; i < 50; i++) {
         const agentId = randomChoice(agentIds);
-        properties.push(generateProperty(cityName, 'for_sale', agentId));
+        properties.push(generateProperty(cityName, 'for_sale', agentId, cityData));
       }
 
       // Generate 50 for_rent properties
       for (let i = 0; i < 50; i++) {
         const agentId = randomChoice(agentIds);
-        properties.push(generateProperty(cityName, 'for_rent', agentId));
+        properties.push(generateProperty(cityName, 'for_rent', agentId, cityData));
       }
 
       // Insert in batches
