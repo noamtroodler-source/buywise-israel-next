@@ -8,6 +8,7 @@ interface UseNearbySoldCompsOptions {
   limit?: number;
   minRooms?: number;
   maxRooms?: number;
+  enabled?: boolean;
 }
 
 /**
@@ -66,7 +67,7 @@ export function useNearbySoldComps(
         is_same_building: row.is_same_building as boolean,
       }));
     },
-    enabled: Boolean(latitude && longitude && city),
+    enabled: (options.enabled !== false) && Boolean(latitude && longitude && city),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }

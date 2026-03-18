@@ -214,7 +214,7 @@ interface RecentNearbySalesProps {
   /** When true, skip the verdict badge (parent renders it) */
   hideVerdict?: boolean;
   /** Callback to expose the computed average comparison to parent */
-  onVerdictComputed?: (avgComparison: number | null, compsCount: number) => void;
+  onVerdictComputed?: (avgComparison: number | null, compsCount: number, radiusUsedM: number) => void;
 }
 
 export function RecentNearbySales({
@@ -261,7 +261,8 @@ export function RecentNearbySales({
     };
   }, [emblaApi, onSelect]);
 
-  const { data: comps, isLoading, error } = useNearbySoldComps(
+  // Primary query: 500m radius
+  const { data: comps500m, isLoading: isLoading500m, error: error500m } = useNearbySoldComps(
     latitude,
     longitude,
     city,
@@ -269,11 +270,33 @@ export function RecentNearbySales({
       radiusKm: 0.5,
       monthsBack: 24,
       limit: 5,
-      // Optionally filter by similar room count
       minRooms: propertyRooms ? propertyRooms - 1 : undefined,
       maxRooms: propertyRooms ? propertyRooms + 1 : undefined,
     }
   );
+
+  // Expanded query: 1km radius — only fires when 500m returns < 3 comps
+  const needs1km = !isLoading500m && !error500m && (comps500m?.length ?? 0) < 3;
+  const { data: comps1km, isLoading: isLoading1km } = useNearbySoldComps(
+    latitude,
+    longitude,
+    city,
+    {
+      radiusKm: 1.0,
+      monthsBack: 24,
+      limit: 5,
+      minRooms: propertyRooms ? propertyRooms - 1 : undefined,
+      maxRooms: propertyRooms ? propertyRooms + 1 : undefined,
+      enabled: needs1km,
+    }
+  );
+
+  // Decide which dataset to use
+  const usedExpandedRadius = needs1km && (comps1km?.length ?? 0) > (comps500m?.length ?? 0);
+  const comps = usedExpandedRadius ? comps1km! : (comps500m ?? []);
+  const isLoading = isLoading500m || (needs1km && isLoading1km);
+  const error = error500m;
+  const radiusUsedM = usedExpandedRadius ? 1000 : 500;
 
   // Generate city slug for links
   const citySlug = city?.toLowerCase().replace(/['']/g, '').replace(/\s+/g, '-') || '';
@@ -320,9 +343,9 @@ export function RecentNearbySales({
   // Expose verdict data to parent (must be before early returns)
   useEffect(() => {
     if (onVerdictComputed) {
-      onVerdictComputed(avgComparison, comps?.length ?? 0);
+      onVerdictComputed(avgComparison, comps?.length ?? 0, radiusUsedM);
     }
-  }, [avgComparison, comps?.length, onVerdictComputed]);
+  }, [avgComparison, comps?.length, radiusUsedM, onVerdictComputed]);
 
   // Show empty state if we don't have coordinates
   if (!latitude || !longitude) {
@@ -439,12 +462,13 @@ export function RecentNearbySales({
             <Tooltip>
               <TooltipTrigger asChild>
                 <span className="text-xs text-muted-foreground cursor-help border-b border-dotted border-muted-foreground/30">
-                  Last 24 months • Within 500m
+                  Last 24 months • Within {radiusUsedM >= 1000 ? '1km' : '500m'}
                 </span>
               </TooltipTrigger>
               <TooltipContent side="left" className="max-w-xs">
                 <p className="text-xs">
-                  Shows properties sold within 500 meters of this listing in the past 24 months. Closer matches appear first.
+                  Shows properties sold within {radiusUsedM >= 1000 ? '1km' : '500m'} of this listing in the past 24 months. Closer matches appear first.
+                  {usedExpandedRadius && ' Search was expanded from 500m to 1km due to limited nearby data.'}
                 </p>
               </TooltipContent>
             </Tooltip>
