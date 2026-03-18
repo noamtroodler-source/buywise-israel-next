@@ -144,11 +144,6 @@ const CITY_INSIGHTS: Record<string, InsightFn> = {
     `At ${fmt(m.currentPrice)} average, prices are up ${m.totalAppreciation.toFixed(0)}% over ${m.years} years. ` +
     `At ${m.cagr}% annual growth, it's one of the more accessible markets with real upside potential.`,
 
-  'nahariya': (m) =>
-    `Nahariya is Israel's northernmost coastal city, and its prices reflect both the appeal and the remoteness. ` +
-    `At ${fmt(m.currentPrice)} average — ${Math.abs(m.deltaVsNational ?? 0)}% ${(m.deltaVsNational ?? 0) > 0 ? 'above' : 'below'} national — ` +
-    `it offers beachfront living at prices you won't find anywhere else on the coast. ${m.totalAppreciation.toFixed(0)}% growth over ${m.years} years shows gradual upward momentum.`,
-
   'beit-shemesh': (m) =>
     `Beit Shemesh has been one of Israel's fastest-growing cities by population, and prices have followed. ` +
     `Up ${m.totalAppreciation.toFixed(0)}% over ${m.years} years to ${fmt(m.currentPrice)} average, ` +
