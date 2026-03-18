@@ -26,6 +26,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAgentProperties, useDeleteProperty, useSubmitForReview, useBulkDeleteProperties, useBulkSubmitForReview } from '@/hooks/useAgentProperties';
 import { PROPERTY_WIZARD_STORAGE_KEY } from '@/components/agent/wizard/PropertyWizardContext';
 import { STALE_THRESHOLD_DAYS } from '@/hooks/useAgentProfile';
