@@ -143,7 +143,7 @@ const generateDeveloperDigestHtml = (name: string, stats: DeveloperStats): strin
   `;
 };
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }

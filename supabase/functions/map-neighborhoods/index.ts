@@ -156,7 +156,7 @@ async function persistMappings(
   console.log(`Persisted ${rows.length} mappings for ${city}`);
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {

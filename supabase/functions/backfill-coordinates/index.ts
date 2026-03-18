@@ -188,7 +188,7 @@ async function tryMultipleFormats(address: string, city: string, neighborhood?: 
   return await geocodeWithNominatim(`${city}, Israel`);
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }

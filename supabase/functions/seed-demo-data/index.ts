@@ -340,7 +340,7 @@ function generateProjectDescription(name: string, city: string, units: number): 
 
 // ============ MAIN SEEDING FUNCTION ============
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }

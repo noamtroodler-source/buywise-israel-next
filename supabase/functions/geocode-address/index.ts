@@ -233,7 +233,7 @@ async function tryGeocode(address: string, city: string, neighborhood?: string):
   return null;
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }

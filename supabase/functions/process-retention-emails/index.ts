@@ -125,7 +125,7 @@ const GUIDE_TITLES: Record<string, string> = {
   "rent-vs-buy": "Rent vs Buy in Israel",
 };
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
