@@ -1,17 +1,51 @@
 import { useState, useRef, useEffect, FormEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircle, X, Send, Square, RotateCcw, Sparkles, ThumbsUp, ThumbsDown, Loader2 } from 'lucide-react';
+import { MessageCircle, X, Send, Square, RotateCcw, Sparkles, ThumbsUp, ThumbsDown, Loader2, History, ChevronLeft, Calculator, BookOpen, UserPlus } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import ReactMarkdown from 'react-markdown';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Drawer, DrawerContent, DrawerTitle } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useAskBuyWise, type ChatMessage } from '@/hooks/useAskBuyWise';
+import { useAskBuyWise, type ChatMessage, type ConversationSummary } from '@/hooks/useAskBuyWise';
 import { usePageContext } from '@/hooks/usePageContext';
 import { trackEvent } from '@/lib/analytics';
 import { cn } from '@/lib/utils';
 
+// --- CTA Detection ---
+function detectCTAs(content: string): { label: string; icon: React.ReactNode; path: string }[] {
+  const ctas: { label: string; icon: React.ReactNode; path: string }[] = [];
+  const lower = content.toLowerCase();
+
+  if (lower.includes('purchase tax') || lower.includes('mas rechisha')) {
+    ctas.push({ label: 'Calculate Purchase Tax', icon: <Calculator className="w-3 h-3" />, path: '/tools?tool=purchase-tax' });
+  } else if (lower.includes('mortgage') || lower.includes('monthly payment')) {
+    ctas.push({ label: 'Try Mortgage Calculator', icon: <Calculator className="w-3 h-3" />, path: '/tools?tool=mortgage' });
+  } else if (lower.includes('true cost') || lower.includes('hidden cost') || lower.includes('closing cost')) {
+    ctas.push({ label: 'Calculate True Cost', icon: <Calculator className="w-3 h-3" />, path: '/tools?tool=true-cost' });
+  } else if (lower.includes('afford')) {
+    ctas.push({ label: 'Check Affordability', icon: <Calculator className="w-3 h-3" />, path: '/tools?tool=affordability' });
+  }
+
+  // Guide CTAs
+  const guidePatterns: [RegExp, string, string][] = [
+    [/buying.*(guide|process)/i, 'Read Buying Guide', '/guides/buying-in-israel'],
+    [/oleh|olim|new immigrant/i, 'Read Oleh Guide', '/guides/oleh-buyer'],
+    [/new construction|developer|off.?plan/i, 'Read New Construction Guide', '/guides/new-construction'],
+    [/rent vs.? buy/i, 'Read Rent vs Buy Guide', '/guides/rent-vs-buy'],
+  ];
+
+  for (const [pattern, label, path] of guidePatterns) {
+    if (pattern.test(content) && ctas.length < 2) {
+      ctas.push({ label, icon: <BookOpen className="w-3 h-3" />, path });
+      break;
+    }
+  }
+
+  return ctas.slice(0, 2);
+}
+
+// --- Markdown with SPA links ---
 function ChatMarkdown({ content }: { content: string }) {
   const navigate = useNavigate();
 
@@ -20,7 +54,6 @@ function ChatMarkdown({ content }: { content: string }) {
       <ReactMarkdown
         components={{
           a: ({ href, children, ...props }) => {
-            // Internal links: SPA navigation
             if (href && href.startsWith('/')) {
               return (
                 <a
@@ -36,7 +69,6 @@ function ChatMarkdown({ content }: { content: string }) {
                 </a>
               );
             }
-            // External links: new tab
             return (
               <a {...props} href={href} target="_blank" rel="noopener noreferrer" className="text-primary underline">
                 {children}
@@ -51,6 +83,7 @@ function ChatMarkdown({ content }: { content: string }) {
   );
 }
 
+// --- Feedback Buttons ---
 function FeedbackButtons({ messageId, onFeedback }: { messageId: string; onFeedback: (id: string, rating: 'good' | 'bad') => void }) {
   const [submitted, setSubmitted] = useState<'good' | 'bad' | null>(null);
 
@@ -70,27 +103,70 @@ function FeedbackButtons({ messageId, onFeedback }: { messageId: string; onFeedb
 
   return (
     <div className="flex gap-1 ml-9 mt-0.5">
-      <button
-        onClick={() => handleClick('good')}
-        className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-        title="Helpful"
-      >
+      <button onClick={() => handleClick('good')} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors" title="Helpful">
         <ThumbsUp className="w-3 h-3" />
       </button>
-      <button
-        onClick={() => handleClick('bad')}
-        className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-        title="Not helpful"
-      >
+      <button onClick={() => handleClick('bad')} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors" title="Not helpful">
         <ThumbsDown className="w-3 h-3" />
       </button>
     </div>
   );
 }
 
-function ChatBubble({ message, isLast, isStreaming, onFeedback }: { message: ChatMessage; isLast: boolean; isStreaming: boolean; onFeedback: (id: string, rating: 'good' | 'bad') => void }) {
+// --- Inline CTAs ---
+function InlineCTAs({ content }: { content: string }) {
+  const navigate = useNavigate();
+  const ctas = detectCTAs(content);
+  if (ctas.length === 0) return null;
+
+  return (
+    <div className="flex flex-wrap gap-1.5 ml-9 mt-1.5">
+      {ctas.map((cta) => (
+        <button
+          key={cta.path}
+          onClick={() => navigate(cta.path)}
+          className="inline-flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors font-medium"
+        >
+          {cta.icon}
+          {cta.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// --- Follow-up Chips ---
+function FollowUpChips({ followUps, onSelect, disabled }: { followUps: string[]; onSelect: (s: string) => void; disabled: boolean }) {
+  if (!followUps.length) return null;
+
+  return (
+    <div className="flex flex-wrap gap-1.5 ml-9 mt-2">
+      {followUps.map((s) => (
+        <button
+          key={s}
+          onClick={() => onSelect(s)}
+          disabled={disabled}
+          className="text-[11px] px-2.5 py-1 rounded-full border border-primary/20 text-primary/80 hover:bg-primary/5 transition-colors disabled:opacity-50 text-left"
+        >
+          {s}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// --- Chat Bubble ---
+function ChatBubble({
+  message, isLast, isStreaming, onFeedback, onFollowUp,
+}: {
+  message: ChatMessage; isLast: boolean; isStreaming: boolean;
+  onFeedback: (id: string, rating: 'good' | 'bad') => void;
+  onFollowUp: (s: string) => void;
+}) {
   const isUser = message.role === 'user';
   const showFeedback = !isUser && message.id && message.content && !(isLast && isStreaming);
+  const showFollowUps = !isUser && isLast && !isStreaming && (message.followUps?.length ?? 0) > 0;
+  const showCTAs = !isUser && message.content && !(isLast && isStreaming);
 
   return (
     <div className="mb-4">
@@ -121,20 +197,38 @@ function ChatBubble({ message, isLast, isStreaming, onFeedback }: { message: Cha
           )}
         </div>
       </div>
+      {showCTAs && <InlineCTAs content={message.content} />}
       {showFeedback && <FeedbackButtons messageId={message.id!} onFeedback={onFeedback} />}
+      {showFollowUps && <FollowUpChips followUps={message.followUps!} onSelect={onFollowUp} disabled={isStreaming} />}
     </div>
   );
 }
 
-function SuggestionChips({
-  suggestions,
-  onSelect,
-  disabled,
-}: {
-  suggestions: string[];
-  onSelect: (s: string) => void;
-  disabled: boolean;
-}) {
+// --- Guest Signup Nudge ---
+function GuestNudge() {
+  return (
+    <div className="mx-4 mb-3 px-3 py-2.5 rounded-lg bg-primary/5 border border-primary/20 text-sm">
+      <div className="flex items-start gap-2">
+        <UserPlus className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+        <div>
+          <p className="text-foreground font-medium text-xs">Sign up for unlimited chat & history</p>
+          <p className="text-muted-foreground text-[11px] mt-0.5">
+            Save your conversations and get personalized advice.
+          </p>
+          <Link
+            to="/signup"
+            className="inline-block mt-1.5 text-[11px] font-medium text-primary hover:text-primary/80 underline"
+          >
+            Create free account →
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- Suggestion Chips ---
+function SuggestionChips({ suggestions, onSelect, disabled }: { suggestions: string[]; onSelect: (s: string) => void; disabled: boolean }) {
   return (
     <div className="flex flex-wrap gap-2">
       {suggestions.map((s) => (
@@ -151,7 +245,56 @@ function SuggestionChips({
   );
 }
 
-function ChatHeader({ onClose, onClear, showClear }: { onClose: () => void; onClear: () => void; showClear: boolean }) {
+// --- History Panel ---
+function HistoryPanel({ conversations, currentId, onSelect, onNewChat, onBack }: {
+  conversations: ConversationSummary[];
+  currentId: string | null;
+  onSelect: (id: string) => void;
+  onNewChat: () => void;
+  onBack: () => void;
+}) {
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onBack}>
+          <ChevronLeft className="w-4 h-4" />
+        </Button>
+        <h3 className="text-sm font-semibold flex-1">Chat History</h3>
+        <Button variant="outline" size="sm" className="h-7 text-xs" onClick={onNewChat}>
+          New Chat
+        </Button>
+      </div>
+      <ScrollArea className="flex-1">
+        {conversations.length === 0 ? (
+          <p className="text-muted-foreground text-xs text-center py-8">No previous conversations</p>
+        ) : (
+          <div className="py-2">
+            {conversations.map((c) => (
+              <button
+                key={c.id}
+                onClick={() => onSelect(c.id)}
+                className={cn(
+                  'w-full text-left px-4 py-2.5 hover:bg-muted/50 transition-colors',
+                  c.id === currentId && 'bg-muted'
+                )}
+              >
+                <p className="text-sm font-medium truncate">{c.title || 'Untitled conversation'}</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">
+                  {new Date(c.updated_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                </p>
+              </button>
+            ))}
+          </div>
+        )}
+      </ScrollArea>
+    </div>
+  );
+}
+
+// --- Chat Header ---
+function ChatHeader({ onClose, onClear, onHistory, showClear, showHistory }: {
+  onClose: () => void; onClear: () => void; onHistory: () => void; showClear: boolean; showHistory: boolean;
+}) {
   return (
     <div className="flex items-center justify-between px-4 py-3 border-b border-border">
       <div className="flex items-center gap-2">
@@ -164,6 +307,11 @@ function ChatHeader({ onClose, onClear, showClear }: { onClose: () => void; onCl
         </div>
       </div>
       <div className="flex items-center gap-1">
+        {showHistory && (
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onHistory} title="Chat history">
+            <History className="w-3.5 h-3.5" />
+          </Button>
+        )}
         {showClear && (
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClear} title="New chat">
             <RotateCcw className="w-3.5 h-3.5" />
@@ -177,10 +325,13 @@ function ChatHeader({ onClose, onClear, showClear }: { onClose: () => void; onCl
   );
 }
 
-function ChatBody({ 
-  messages, suggestions, isStreaming, error, isAtLimit, isLoading, onSuggestion, onFeedback, scrollRef 
-}: { 
-  messages: ChatMessage[]; suggestions: string[]; isStreaming: boolean; error: string | null; isAtLimit: boolean; isLoading: boolean; onSuggestion: (s: string) => void; onFeedback: (id: string, rating: 'good' | 'bad') => void; scrollRef: React.RefObject<HTMLDivElement>; 
+// --- Chat Body ---
+function ChatBody({
+  messages, suggestions, isStreaming, error, isAtLimit, isLoading, showGuestNudge, onSuggestion, onFeedback, onFollowUp, scrollRef,
+}: {
+  messages: ChatMessage[]; suggestions: string[]; isStreaming: boolean; error: string | null; isAtLimit: boolean; isLoading: boolean; showGuestNudge: boolean;
+  onSuggestion: (s: string) => void; onFeedback: (id: string, rating: 'good' | 'bad') => void; onFollowUp: (s: string) => void;
+  scrollRef: React.RefObject<HTMLDivElement>;
 }) {
   const showSuggestions = messages.length === 0 && !isLoading;
   return (
@@ -209,17 +360,19 @@ function ChatBody({
         </div>
       )}
       {messages.map((msg, i) => (
-        <ChatBubble 
-          key={msg.id || i} 
-          message={msg} 
-          isLast={i === messages.length - 1} 
-          isStreaming={isStreaming} 
-          onFeedback={onFeedback} 
+        <ChatBubble
+          key={msg.id || i}
+          message={msg}
+          isLast={i === messages.length - 1}
+          isStreaming={isStreaming}
+          onFeedback={onFeedback}
+          onFollowUp={onFollowUp}
         />
       ))}
       {error && (
         <div className="mx-9 mb-3 px-3 py-2 rounded-lg bg-destructive/10 text-destructive text-xs">{error}</div>
       )}
+      {showGuestNudge && <GuestNudge />}
       {isAtLimit && (
         <div className="mx-9 mb-3 px-3 py-2 rounded-lg bg-muted text-muted-foreground text-xs">
           You've reached the message limit for this session. Start a new chat to continue!
@@ -229,6 +382,7 @@ function ChatBody({
   );
 }
 
+// --- Chat Input ---
 function ChatInput({ onSubmit, isStreaming, isAtLimit, onStop }: { onSubmit: (msg: string) => void; isStreaming: boolean; isAtLimit: boolean; onStop: () => void }) {
   const [input, setInput] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -269,10 +423,15 @@ function ChatInput({ onSubmit, isStreaming, isAtLimit, onStop }: { onSubmit: (ms
   );
 }
 
+// --- Chat Panel ---
 function ChatPanel({ onClose }: { onClose: () => void }) {
-  const { messages, isStreaming, error, isAtLimit, isLoading, sendMessage, stopStreaming, clearChat, submitFeedback } = useAskBuyWise();
+  const {
+    messages, isStreaming, error, isAtLimit, isLoading, isAuthenticated, showGuestNudge, conversations,
+    sendMessage, stopStreaming, clearChat, submitFeedback, loadConversationById,
+  } = useAskBuyWise();
   const { description, suggestions } = usePageContext();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [showHistory, setShowHistory] = useState(false);
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -280,9 +439,33 @@ function ChatPanel({ onClose }: { onClose: () => void }) {
 
   const handleSend = (msg: string) => sendMessage(msg, description);
 
+  if (showHistory) {
+    return (
+      <HistoryPanel
+        conversations={conversations}
+        currentId={null}
+        onSelect={(id) => {
+          loadConversationById(id);
+          setShowHistory(false);
+        }}
+        onNewChat={() => {
+          clearChat();
+          setShowHistory(false);
+        }}
+        onBack={() => setShowHistory(false)}
+      />
+    );
+  }
+
   return (
     <div className="flex flex-col h-full">
-      <ChatHeader onClose={onClose} onClear={clearChat} showClear={messages.length > 0} />
+      <ChatHeader
+        onClose={onClose}
+        onClear={clearChat}
+        onHistory={() => setShowHistory(true)}
+        showClear={messages.length > 0}
+        showHistory={isAuthenticated === true && conversations.length > 0}
+      />
       <ChatBody
         messages={messages}
         suggestions={suggestions}
@@ -290,8 +473,10 @@ function ChatPanel({ onClose }: { onClose: () => void }) {
         error={error}
         isAtLimit={isAtLimit}
         isLoading={isLoading}
+        showGuestNudge={showGuestNudge}
         onSuggestion={(s) => sendMessage(s, description)}
         onFeedback={submitFeedback}
+        onFollowUp={(s) => sendMessage(s, description)}
         scrollRef={scrollRef}
       />
       <ChatInput onSubmit={handleSend} isStreaming={isStreaming} isAtLimit={isAtLimit} onStop={stopStreaming} />
@@ -299,6 +484,7 @@ function ChatPanel({ onClose }: { onClose: () => void }) {
   );
 }
 
+// --- Main Button ---
 export function AskBuyWiseButton() {
   const [isVisible, setIsVisible] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -316,7 +502,6 @@ export function AskBuyWiseButton() {
 
   return (
     <>
-      {/* FAB button */}
       <AnimatePresence>
         {isVisible && !isOpen && (
           <motion.button
@@ -337,7 +522,6 @@ export function AskBuyWiseButton() {
         )}
       </AnimatePresence>
 
-      {/* Desktop: popover card */}
       {!isMobile && (
         <AnimatePresence>
           {isOpen && (
@@ -354,7 +538,6 @@ export function AskBuyWiseButton() {
         </AnimatePresence>
       )}
 
-      {/* Mobile: bottom drawer */}
       {isMobile && (
         <Drawer open={isOpen} onOpenChange={setIsOpen}>
           <DrawerContent className="max-h-[80vh]">

@@ -163,6 +163,9 @@ async function buildSystemPrompt(
     parts.push(`\n## Current Page Context\nThe user is currently on: ${pageContext}\nTailor your greeting and suggestions to what they're looking at.`);
   }
 
+  // Follow-up instruction
+  parts.push(`\n## Response Format\nAt the end of every response, add a block starting with "[SUGGESTIONS]" on its own line, followed by 2-3 short follow-up questions the user might want to ask next, each on its own line prefixed with "- ". These will be shown as clickable chips. Do NOT include this block label in your main answer text.`);
+
   return parts.join("\n");
 }
 
