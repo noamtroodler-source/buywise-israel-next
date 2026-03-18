@@ -32,7 +32,7 @@ export default function DeveloperDetail() {
   const { data: blogPosts = [] } = useAuthorBlogPosts('developer', developer?.id);
   const { isArticleSaved, toggleSave } = useSavedArticles();
   const { mutate: trackInquiry } = useProjectInquiryTracking();
-  const [logoError, setLogoError] = useState(false);
+  
   const { user } = useAuth();
 
   // Calculate stats
