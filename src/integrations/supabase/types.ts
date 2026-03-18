@@ -1635,8 +1635,10 @@ export type Database = {
           admin_notes: string | null
           approved_at: string | null
           approved_by: string | null
+          awards_certifications: string | null
           company_size: string | null
           company_type: string | null
+          completed_projects_text: string | null
           created_at: string
           description: string | null
           email: string | null
@@ -1645,11 +1647,13 @@ export type Database = {
           founded_year: number | null
           id: string
           instagram_url: string | null
+          is_publicly_traded: boolean | null
           is_verified: boolean | null
           last_active_at: string | null
           linkedin_url: string | null
           logo_url: string | null
           name: string
+          notable_projects: string[] | null
           notify_email: boolean | null
           notify_on_approval: boolean | null
           notify_on_inquiry: boolean | null
@@ -1657,9 +1661,11 @@ export type Database = {
           office_city: string | null
           onboarding_completed_at: string | null
           phone: string | null
+          regions_active: string[] | null
           slug: string
           specialties: string[] | null
           status: string | null
+          tase_ticker: string | null
           total_projects: number | null
           updated_at: string
           user_id: string | null
@@ -1671,8 +1677,10 @@ export type Database = {
           admin_notes?: string | null
           approved_at?: string | null
           approved_by?: string | null
+          awards_certifications?: string | null
           company_size?: string | null
           company_type?: string | null
+          completed_projects_text?: string | null
           created_at?: string
           description?: string | null
           email?: string | null
@@ -1681,11 +1689,13 @@ export type Database = {
           founded_year?: number | null
           id?: string
           instagram_url?: string | null
+          is_publicly_traded?: boolean | null
           is_verified?: boolean | null
           last_active_at?: string | null
           linkedin_url?: string | null
           logo_url?: string | null
           name: string
+          notable_projects?: string[] | null
           notify_email?: boolean | null
           notify_on_approval?: boolean | null
           notify_on_inquiry?: boolean | null
@@ -1693,9 +1703,11 @@ export type Database = {
           office_city?: string | null
           onboarding_completed_at?: string | null
           phone?: string | null
+          regions_active?: string[] | null
           slug: string
           specialties?: string[] | null
           status?: string | null
+          tase_ticker?: string | null
           total_projects?: number | null
           updated_at?: string
           user_id?: string | null
@@ -1707,8 +1719,10 @@ export type Database = {
           admin_notes?: string | null
           approved_at?: string | null
           approved_by?: string | null
+          awards_certifications?: string | null
           company_size?: string | null
           company_type?: string | null
+          completed_projects_text?: string | null
           created_at?: string
           description?: string | null
           email?: string | null
@@ -1717,11 +1731,13 @@ export type Database = {
           founded_year?: number | null
           id?: string
           instagram_url?: string | null
+          is_publicly_traded?: boolean | null
           is_verified?: boolean | null
           last_active_at?: string | null
           linkedin_url?: string | null
           logo_url?: string | null
           name?: string
+          notable_projects?: string[] | null
           notify_email?: boolean | null
           notify_on_approval?: boolean | null
           notify_on_inquiry?: boolean | null
@@ -1729,9 +1745,11 @@ export type Database = {
           office_city?: string | null
           onboarding_completed_at?: string | null
           phone?: string | null
+          regions_active?: string[] | null
           slug?: string
           specialties?: string[] | null
           status?: string | null
+          tase_ticker?: string | null
           total_projects?: number | null
           updated_at?: string
           user_id?: string | null
