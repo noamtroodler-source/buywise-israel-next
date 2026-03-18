@@ -33,19 +33,8 @@ export function AdvertiseCTA() {
                 asChild
                 className="bg-white/20 text-white hover:bg-white/30 border border-white/30"
               >
-                <Link to="/auth?tab=signup&role=agent">
-                  Register as Agent
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-              <Button
-                size="lg"
-                variant="secondary"
-                asChild
-                className="bg-white/20 text-white hover:bg-white/30 border border-white/30"
-              >
                 <Link to="/auth?tab=signup&role=agency">
-                  Register Agency
+                  Register Your Agency
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>

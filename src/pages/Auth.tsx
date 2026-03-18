@@ -71,8 +71,8 @@ type ProfessionalRole = 'agent' | 'agency' | 'developer' | null;
 const roleConfig = {
   agent: {
     icon: User,
-    title: "Join as a Real Estate Agent",
-    description: "Create your account to start listing properties and connecting with buyers",
+    title: "Join Your Agency's Team",
+    description: "Create your account to join your agency's team on BuyWise",
     redirectTo: "/agent/register",
     buttonText: "Create Agent Account",
   },

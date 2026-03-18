@@ -42,7 +42,7 @@ export function ProfessionalTypeChooser() {
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+        <div className="grid gap-6 max-w-lg mx-auto">
           {professionalTypes.map((type, index) => (
             <motion.div
               key={index}

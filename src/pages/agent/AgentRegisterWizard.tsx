@@ -539,7 +539,7 @@ export default function AgentRegisterWizard() {
                   { label: 'Email', value: formData.email, icon: Mail },
                   { label: 'Phone', value: formData.phone || 'Not provided', icon: Phone },
                   { label: 'License', value: formData.license_number, icon: BadgeCheck },
-                  { label: 'Agency', value: validatedAgencyName || 'Independent', icon: Building2 },
+                  { label: 'Agency', value: validatedAgencyName || 'N/A', icon: Building2 },
                   { label: 'Languages', value: formData.languages.join(', '), icon: Globe },
                 ].map((item, index) => (
                   <div key={index} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
