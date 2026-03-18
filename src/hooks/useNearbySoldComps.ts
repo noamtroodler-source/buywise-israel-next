@@ -8,6 +8,7 @@ interface UseNearbySoldCompsOptions {
   limit?: number;
   minRooms?: number;
   maxRooms?: number;
+  enabled?: boolean;
 }
 
 /**
