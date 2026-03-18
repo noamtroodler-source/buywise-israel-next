@@ -26,6 +26,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAgentProperties, useDeleteProperty, useSubmitForReview, useBulkDeleteProperties, useBulkSubmitForReview } from '@/hooks/useAgentProperties';
 import { PROPERTY_WIZARD_STORAGE_KEY } from '@/components/agent/wizard/PropertyWizardContext';
 import { STALE_THRESHOLD_DAYS } from '@/hooks/useAgentProfile';
@@ -206,15 +207,22 @@ export default function AgentProperties() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                className="rounded-xl"
-                onClick={() => exportListingsToCSV(filteredListings, formatPrice)}
-                disabled={filteredListings.length === 0}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Export
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="rounded-xl"
+                    onClick={() => exportListingsToCSV(filteredListings, formatPrice)}
+                    disabled={filteredListings.length === 0}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Export CSV
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Download your listings as a spreadsheet</p>
+                </TooltipContent>
+              </Tooltip>
               <Button asChild className="rounded-xl">
                 <Link to="/agent/properties/new">
                   <Plus className="h-4 w-4 mr-2" />
