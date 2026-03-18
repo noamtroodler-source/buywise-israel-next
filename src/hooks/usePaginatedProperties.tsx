@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Property, PropertyFilters } from '@/types/database';
 import { isSavedLocationDest, getSavedLocationId, filterByDistance } from '@/lib/utils/commuteFilter';
 import { useSavedLocations } from '@/hooks/useSavedLocations';
+import { shuffleFeatured } from '@/lib/utils/shuffleFeatured';
 
 const DEFAULT_PAGE_SIZE = 24;
 
