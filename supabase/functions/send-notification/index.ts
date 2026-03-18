@@ -171,7 +171,8 @@ const getNotificationContent = (payload: NotificationPayload) => {
         subject: `Your request to join ${payload.agencyName || 'the agency'} wasn't approved`,
         body: `Unfortunately, your request to join ${payload.agencyName || 'the agency'} wasn't approved at this time.${payload.rejectionReason ? ` Reason: ${payload.rejectionReason}` : ''} You can still operate as an independent agent or try joining another agency.`,
         html: `
-          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+            ${brandHeader}
             <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 16px;">We have an update on your request</h1>
             <p style="color: #333; font-size: 16px; line-height: 1.6;">Unfortunately, your request to join <strong>${payload.agencyName || 'the agency'}</strong> wasn't approved at this time.</p>
             ${payload.rejectionReason ? `
