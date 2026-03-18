@@ -295,7 +295,7 @@ export default function Principles() {
                 No account required. No pressure applied.
               </p>
               <div className="flex flex-wrap justify-center gap-4">
-                <Button asChild size="lg">
+                <Button asChild variant="outline" size="lg">
                   <Link to="/guides" className="gap-2">
                     Read a Guide
                     <ArrowRight className="h-4 w-4" />
