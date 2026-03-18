@@ -40,7 +40,6 @@ interface City {
   slug: string;
   image: string;
   description: string;
-  tags: string[];
 }
 
 interface Region {
@@ -60,12 +59,12 @@ const regions: Region[] = [
     subtitle: 'Beach life, urban energy & metro convenience',
     icon: Sun,
     cities: [
-      { name: 'Tel Aviv', slug: 'tel-aviv', image: telAvivImg, description: "Tel Aviv is Israel's most competitive market — limited supply, urban premium, and the benchmark everything else is measured against.", tags: ['Urban premium', 'Limited supply'] },
-      { name: 'Herzliya', slug: 'herzliya', image: herzliyaImg, description: "Herzliya is where Israel's tech elite lives — premium coastal real estate driven by Silicon Wadi proximity.", tags: ['Coastal premium', 'High demand'] },
-      { name: 'Netanya', slug: 'netanya', image: netanyaImg, description: "Netanya is Israel's most popular Anglo coastal city — oceanfront living with a wide range of price points and a large English-speaking community.", tags: ['Coastal variety', 'Range of price points'] },
-      { name: 'Haifa', slug: 'haifa', image: haifaImg, description: "Haifa is Israel's most undervalued major city — world-class tech, top universities, and waterfront living at a fraction of Tel Aviv prices.", tags: ['Northern metro', 'Value positioning'] },
-      { name: 'Ramat Gan', slug: 'ramat-gan', image: ramatGanImg, description: "Ramat Gan is Tel Aviv's practical neighbor — the Diamond Exchange district, high-rise renewal, and metro access without the Tel Aviv premium.", tags: ['Business hub', 'High-rise living'] },
-      { name: 'Ashdod', slug: 'ashdod', image: ashdodImg, description: "Ashdod is where affordability meets the Mediterranean — a port city investing heavily in infrastructure, with prices that still leave room for growth.", tags: ['Port city', 'Beach access'] },
+      { name: 'Tel Aviv', slug: 'tel-aviv', image: telAvivImg, description: "Tel Aviv is Israel's most competitive market — limited supply, urban premium, and the benchmark everything else is measured against." },
+      { name: 'Herzliya', slug: 'herzliya', image: herzliyaImg, description: "Herzliya is where Israel's tech elite lives — premium coastal real estate driven by Silicon Wadi proximity." },
+      { name: 'Netanya', slug: 'netanya', image: netanyaImg, description: "Netanya is Israel's most popular Anglo coastal city — oceanfront living with a wide range of price points and a large English-speaking community." },
+      { name: 'Haifa', slug: 'haifa', image: haifaImg, description: "Haifa is Israel's most undervalued major city — world-class tech, top universities, and waterfront living at a fraction of Tel Aviv prices." },
+      { name: 'Ramat Gan', slug: 'ramat-gan', image: ramatGanImg, description: "Ramat Gan is Tel Aviv's practical neighbor — the Diamond Exchange district, high-rise renewal, and metro access without the Tel Aviv premium." },
+      { name: 'Ashdod', slug: 'ashdod', image: ashdodImg, description: "Ashdod is where affordability meets the Mediterranean — a port city investing heavily in infrastructure, with prices that still leave room for growth." },
     ],
   },
   {
@@ -75,20 +74,20 @@ const regions: Region[] = [
     subtitle: 'Family suburbs, Jerusalem area & growing communities',
     icon: Building,
     cities: [
-      { name: "Ra'anana", slug: 'raanana', image: raananaImg, description: "Ra'anana is the gold standard for Anglo suburban life — top schools, walkable center, and a mature market with premium pricing to match.", tags: ['Established suburban', 'Premium pricing'] },
-      { name: 'Kfar Saba', slug: 'kfar-saba', image: kfarSabaImg, description: "Kfar Saba offers suburban living at more moderate prices — a family-first city with good schools and a growing commercial center.", tags: ['Suburban value', 'Family-oriented'] },
-      { name: "Modi'in", slug: 'modiin', image: modiinImg, description: "Modi'in is a planned city between Jerusalem and Tel Aviv — modern infrastructure, young families, and a layout designed from scratch.", tags: ['Planned city', 'Central location'] },
-      { name: 'Givat Shmuel', slug: 'givat-shmuel', image: givatShmuelImg, description: "Givat Shmuel is a compact Central District suburb punching above its weight — strong demand driving steady appreciation.", tags: ['Compact city', 'Developing market'] },
-      { name: 'Hod HaSharon', slug: 'hod-hasharon', image: hodHasharonImg, description: "Hod HaSharon is a suburb families move to and stay in — top schools, good train access, and a track record of steady appreciation.", tags: ['Quality schools', 'Green spaces'] },
-      { name: 'Petah Tikva', slug: 'petah-tikva', image: petahTikvaImg, description: "Petah Tikva is Israel's first agricultural colony turned major city — diverse neighborhoods ranging from historic to high-rise renewal.", tags: ['Historic city', 'Diverse options'] },
-      { name: 'Hadera', slug: 'hadera', image: haderaImg, description: "Hadera is a train-connected coastal city offering some of the best value between Tel Aviv and Haifa — still early in its growth story.", tags: ['Affordable', 'Improving area'] },
-      { name: 'Caesarea', slug: 'caesarea', image: caesareaImg, description: "Caesarea is Israel's most exclusive residential address — a small, gated community with premium pricing and a lifestyle unlike anywhere else.", tags: ['Luxury market', 'Exclusive area'] },
-      { name: 'Jerusalem', slug: 'jerusalem', image: jerusalemImg, description: "Jerusalem is a city like no other — deeply diverse neighborhoods, strong Anglo communities, and a market driven by significance as much as economics.", tags: ['High demand', 'Varied neighborhoods'] },
-      { name: 'Beit Shemesh', slug: 'beit-shemesh', image: beitShemeshImg, description: "Beit Shemesh is booming between Jerusalem and Tel Aviv — large Anglo and religious communities with some of Israel's biggest new housing projects.", tags: ['Rapid growth', 'New construction'] },
-      { name: 'Efrat', slug: 'efrat', image: efratImg, description: "Efrat is one of Israel's strongest Anglo communities — a close-knit Judean Hills town with excellent schools and English as a daily language.", tags: ['Established community', 'Limited inventory'] },
-      { name: 'Gush Etzion', slug: 'gush-etzion', image: gushEtzionImg, description: "Gush Etzion is a collection of close-knit communities in the Judean Hills — strong Anglo presence, affordable family homes, and a nature-rich lifestyle.", tags: ['Multiple communities', 'Varied options'] },
-      { name: "Ma'ale Adumim", slug: 'maale-adumim', image: maaleAdumimImg, description: "Ma'ale Adumim is Jerusalem's largest suburb — established infrastructure, desert views, and significantly lower prices than the capital itself.", tags: ['Established suburb', 'Jerusalem access'] },
-      { name: 'Mevaseret Zion', slug: 'mevaseret-zion', image: mevaseretZionImg, description: "Mevaseret Zion is an upscale green suburb at Jerusalem's western gate — nature access, quality of life, and a short commute to the city.", tags: ['Upscale suburb', 'Nature access'] },
+      { name: "Ra'anana", slug: 'raanana', image: raananaImg, description: "Ra'anana is the gold standard for Anglo suburban life — top schools, walkable center, and a mature market with premium pricing to match." },
+      { name: 'Kfar Saba', slug: 'kfar-saba', image: kfarSabaImg, description: "Kfar Saba offers suburban living at more moderate prices — a family-first city with good schools and a growing commercial center." },
+      { name: "Modi'in", slug: 'modiin', image: modiinImg, description: "Modi'in is a planned city between Jerusalem and Tel Aviv — modern infrastructure, young families, and a layout designed from scratch." },
+      { name: 'Givat Shmuel', slug: 'givat-shmuel', image: givatShmuelImg, description: "Givat Shmuel is a compact Central District suburb punching above its weight — strong demand driving steady appreciation." },
+      { name: 'Hod HaSharon', slug: 'hod-hasharon', image: hodHasharonImg, description: "Hod HaSharon is a suburb families move to and stay in — top schools, good train access, and a track record of steady appreciation." },
+      { name: 'Petah Tikva', slug: 'petah-tikva', image: petahTikvaImg, description: "Petah Tikva is Israel's first agricultural colony turned major city — diverse neighborhoods ranging from historic to high-rise renewal." },
+      { name: 'Hadera', slug: 'hadera', image: haderaImg, description: "Hadera is a train-connected coastal city offering some of the best value between Tel Aviv and Haifa — still early in its growth story." },
+      { name: 'Caesarea', slug: 'caesarea', image: caesareaImg, description: "Caesarea is Israel's most exclusive residential address — a small, gated community with premium pricing and a lifestyle unlike anywhere else." },
+      { name: 'Jerusalem', slug: 'jerusalem', image: jerusalemImg, description: "Jerusalem is a city like no other — deeply diverse neighborhoods, strong Anglo communities, and a market driven by significance as much as economics." },
+      { name: 'Beit Shemesh', slug: 'beit-shemesh', image: beitShemeshImg, description: "Beit Shemesh is booming between Jerusalem and Tel Aviv — large Anglo and religious communities with some of Israel's biggest new housing projects." },
+      { name: 'Efrat', slug: 'efrat', image: efratImg, description: "Efrat is one of Israel's strongest Anglo communities — a close-knit Judean Hills town with excellent schools and English as a daily language." },
+      { name: 'Gush Etzion', slug: 'gush-etzion', image: gushEtzionImg, description: "Gush Etzion is a collection of close-knit communities in the Judean Hills — strong Anglo presence, affordable family homes, and a nature-rich lifestyle." },
+      { name: "Ma'ale Adumim", slug: 'maale-adumim', image: maaleAdumimImg, description: "Ma'ale Adumim is Jerusalem's largest suburb — established infrastructure, desert views, and significantly lower prices than the capital itself." },
+      { name: 'Mevaseret Zion', slug: 'mevaseret-zion', image: mevaseretZionImg, description: "Mevaseret Zion is an upscale green suburb at Jerusalem's western gate — nature access, quality of life, and a short commute to the city." },
     ],
   },
   {
@@ -98,8 +97,8 @@ const regions: Region[] = [
     subtitle: 'Lifestyle value & scenic living',
     icon: Trees,
     cities: [
-      { name: 'Zichron Yaakov', slug: 'zichron-yaakov', image: zichronYaakovImg, description: "Zichron Yaakov is Israel's wine country gem — a historic hilltop town with boutique character and Carmel coast views.", tags: ['Wine country', 'Historic charm'] },
-      { name: 'Pardes Hanna', slug: 'pardes-hanna', image: pardesHannaImg, description: "Pardes Hanna is a quiet, affordable alternative in the north — a laid-back community attracting young families priced out of the center.", tags: ['Quiet living', 'Value north'] },
+      { name: 'Zichron Yaakov', slug: 'zichron-yaakov', image: zichronYaakovImg, description: "Zichron Yaakov is Israel's wine country gem — a historic hilltop town with boutique character and Carmel coast views." },
+      { name: 'Pardes Hanna', slug: 'pardes-hanna', image: pardesHannaImg, description: "Pardes Hanna is a quiet, affordable alternative in the north — a laid-back community attracting young families priced out of the center." },
     ],
   },
   {
@@ -109,31 +108,13 @@ const regions: Region[] = [
     subtitle: 'Affordable frontier & resort living',
     icon: Heart,
     cities: [
-      { name: 'Ashkelon', slug: 'ashkelon', image: ashkelonImg, description: "Ashkelon offers Israel's best value for beachfront living — a laid-back southern city where your budget stretches further without giving up the coastline.", tags: ['Coastal affordable', 'Beach lifestyle'] },
-      { name: 'Beer Sheva', slug: 'beer-sheva', image: beerShevaImg, description: "Beer Sheva is Israel's most affordable major city — a university-driven tech hub where significant government investment is reshaping the Negev capital.", tags: ['Negev capital', 'Tech growth'] },
-      { name: 'Eilat', slug: 'eilat', image: eilatImg, description: "Eilat is a VAT-free resort city at Israel's southern tip — popular with vacation-home buyers and rental investors, but a very different market from the center.", tags: ['Resort living', 'Tax benefits'] },
+      { name: 'Ashkelon', slug: 'ashkelon', image: ashkelonImg, description: "Ashkelon offers Israel's best value for beachfront living — a laid-back southern city where your budget stretches further without giving up the coastline." },
+      { name: 'Beer Sheva', slug: 'beer-sheva', image: beerShevaImg, description: "Beer Sheva is Israel's most affordable major city — a university-driven tech hub where significant government investment is reshaping the Negev capital." },
+      { name: 'Eilat', slug: 'eilat', image: eilatImg, description: "Eilat is a VAT-free resort city at Israel's southern tip — popular with vacation-home buyers and rental investors, but a very different market from the center." },
     ],
   },
 ];
 
-// Tag color mapping
-const tagColors: Record<string, string> = {
-  'Urban premium': 'bg-primary/10 text-primary',
-  'Limited supply': 'bg-destructive/10 text-destructive',
-  'Coastal premium': 'bg-primary/10 text-primary',
-  'High demand': 'bg-warning/20 text-warning-foreground',
-  'Affordable': 'bg-success/10 text-success',
-  'Affordable coast': 'bg-success/10 text-success',
-  'Family city': 'bg-accent/20 text-accent-foreground',
-  'Family-oriented': 'bg-accent/20 text-accent-foreground',
-  'Growing community': 'bg-success/10 text-success',
-  'Rapid growth': 'bg-success/10 text-success',
-  'Luxury market': 'bg-primary/10 text-primary',
-  'Tech hub north': 'bg-primary/10 text-primary',
-  'Tech growth': 'bg-primary/10 text-primary',
-  'Resort living': 'bg-accent/20 text-accent-foreground',
-  'Wine country': 'bg-accent/20 text-accent-foreground',
-};
 
 function RegionQuickNav({ 
   regions, 
@@ -217,18 +198,6 @@ function CityCard({ city, index }: { city: City; index: number }) {
             <p className="text-sm text-muted-foreground line-clamp-2 mb-4 leading-relaxed">
               {city.description}
             </p>
-            <div className="flex flex-wrap gap-2">
-              {city.tags.map((tag) => (
-                <span 
-                  key={tag} 
-                  className={`text-xs px-2.5 py-1 rounded-full font-medium ${
-                    tagColors[tag] || 'bg-muted text-muted-foreground'
-                  }`}
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
           </div>
         </div>
       </Link>
@@ -373,8 +342,7 @@ export default function Areas() {
     return regions.map(region => ({
       ...region,
       cities: region.cities.filter(city => 
-        cityMatchesQuery(city.name, searchQuery) ||
-        city.tags.some(tag => tag.toLowerCase().includes(query))
+        cityMatchesQuery(city.name, searchQuery)
       )
     })).filter(region => region.cities.length > 0);
   }, [searchQuery]);
