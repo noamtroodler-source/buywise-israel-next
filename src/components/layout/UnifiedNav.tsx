@@ -47,7 +47,7 @@ function MegaMenuContent({ config }: { config: NavSection }) {
       )}
     >
       <div className={cn(
-        "grid gap-0",
+        "grid gap-0 divide-x divide-border/30",
         columnCount === 2 ? "grid-cols-2" : "grid-cols-3"
       )}>
         {config.columns.map((column) => (
