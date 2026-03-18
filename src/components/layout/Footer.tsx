@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
-import { Home, Mail, MapPin, MessageSquare } from 'lucide-react';
+import { Mail, MapPin, MessageSquare } from 'lucide-react';
+import logoIcon from '@/assets/logo-icon-preview.png';
 
 export function Footer() {
   return (
