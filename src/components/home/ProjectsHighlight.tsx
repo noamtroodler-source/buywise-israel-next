@@ -1,13 +1,17 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowRight, Building2, CheckCircle2 } from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { CarouselDots } from '@/components/shared/CarouselDots';
 import { useFeaturedProjects } from '@/hooks/useProjects';
 import { ProjectFavoriteButton } from '@/components/project/ProjectFavoriteButton';
+import { ProjectShareButton } from '@/components/project/ProjectShareButton';
 import { PropertyThumbnail } from '@/components/shared/PropertyThumbnail';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 function formatPrice(price: number | null, currency: string = 'ILS') {
   if (!price) return 'Price on request';
@@ -18,55 +22,24 @@ function formatPrice(price: number | null, currency: string = 'ILS') {
   }).format(price);
 }
 
-function ProjectCard({ project }: { project: any }) {
-  return (
-    <Link
-      to={`/projects/${project.slug}`}
-      className="group block overflow-hidden rounded-xl border border-border bg-card transition-shadow duration-300 hover:shadow-lg"
-    >
-      <div className="relative aspect-[4/3] overflow-hidden bg-muted">
-        <PropertyThumbnail
-          src={project.images?.[0]}
-          alt={project.name}
-          type="project"
-          className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
-        />
-        <div className="absolute right-2.5 top-2.5 z-10">
-          <ProjectFavoriteButton projectId={project.id} />
-        </div>
-      </div>
-
-      <div className="p-3">
-        <h3 className="truncate text-sm font-semibold text-foreground">
-          {project.name}
-        </h3>
-        <div className="mt-0.5 flex items-center gap-1 text-muted-foreground">
-          <MapPin className="h-3 w-3 shrink-0" />
-          <p className="truncate text-xs">
-            {project.neighborhood ? `${project.neighborhood}, ` : ''}{project.city}
-          </p>
-        </div>
-        <p className="mt-1.5 text-sm font-bold text-foreground">
-          From {formatPrice(project.price_from, project.currency || 'ILS')}
-        </p>
-      </div>
-    </Link>
-  );
-}
-
 export function ProjectsHighlight() {
   const { data: projects, isLoading } = useFeaturedProjects();
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
   const [selectedIndex, setSelectedIndex] = useState(0);
-
+  
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: 'start',
-    loop: false,
+    loop: true,
     skipSnaps: false,
     containScroll: 'trimSnaps',
   });
 
-  const displayProjects = (projects ?? []).slice(0, 8);
+  // For mobile carousel, show all projects; for desktop, use bento layout
+  const displayProjects = projects?.slice(0, 6) || [];
+  const mainProject = displayProjects[0];
+  const sideProjects = displayProjects.slice(1, 3);
 
+  // Handle carousel index changes
   const onSelect = useCallback(() => {
     if (!emblaApi) return;
     setSelectedIndex(emblaApi.selectedScrollSnap());
@@ -83,97 +56,239 @@ export function ProjectsHighlight() {
     };
   }, [emblaApi, onSelect]);
 
-  const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
-  const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
+  const scrollTo = useCallback((index: number) => {
+    emblaApi?.scrollTo(index);
+  }, [emblaApi]);
 
   if (isLoading) {
     return (
-      <section className="py-6 md:py-8">
+      <section className="py-10 md:py-14">
         <div className="container">
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="space-y-2">
-                <Skeleton className="aspect-[4/3] rounded-xl" />
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-3 w-1/2" />
-              </div>
-            ))}
+          {/* Mobile/Tablet: Single skeleton */}
+          <div className="lg:hidden">
+            <Skeleton className="aspect-[16/9] rounded-lg" />
+          </div>
+          {/* Desktop: Bento skeleton */}
+          <div className="hidden lg:grid lg:grid-cols-5 gap-4">
+            <Skeleton className="lg:col-span-3 aspect-[16/9] rounded-lg" />
+            <div className="lg:col-span-2 space-y-3">
+              <Skeleton className="aspect-[16/7] rounded-lg" />
+              <Skeleton className="aspect-[16/7] rounded-lg" />
+            </div>
           </div>
         </div>
       </section>
     );
   }
 
-  if (displayProjects.length === 0) return null;
+  if (displayProjects.length === 0) {
+    return null;
+  }
 
   return (
-    <section className="py-6 md:py-8">
+    <section className="py-10 md:py-14">
       <div className="container">
-        <div className="mb-4 flex items-end justify-between gap-4">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6">
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-xl font-bold tracking-tight text-foreground md:text-2xl">
+            <div className="flex items-center gap-2 text-primary mb-1">
+              <Building2 className="h-5 w-5" />
+              <span className="text-sm font-medium">New Construction</span>
+            </div>
+            <h2 className="text-2xl md:text-4xl font-bold text-foreground">
               New Developments
             </h2>
-            <p className="mt-0.5 text-xs text-muted-foreground md:text-sm">
+            <p className="text-base text-muted-foreground mt-1 max-w-lg">
               Pre-construction projects with transparent pricing
             </p>
           </motion.div>
 
-          <div className="flex items-center gap-2">
-            <div className="flex gap-1">
-              <button
-                onClick={scrollPrev}
-                className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background transition-colors hover:bg-muted"
-                aria-label="Previous"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <button
-                onClick={scrollNext}
-                className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background transition-colors hover:bg-muted"
-                aria-label="Next"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-
-            <Button variant="outline" size="sm" asChild className="rounded-full">
-              <Link to="/projects" className="gap-1.5">
-                View All
-                <ArrowRight className="h-3 w-3" />
-              </Link>
-            </Button>
-          </div>
+          <Button variant="outline" asChild>
+            <Link to="/projects" className="gap-2">
+              View All
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </Button>
         </div>
 
-        <div className="overflow-hidden" ref={emblaRef}>
-          <div className="-ml-3 flex md:-ml-4">
-            {displayProjects.map((project) => (
-              <div
-                key={project.id}
-                className="min-w-0 flex-[0_0_65%] pl-3 sm:flex-[0_0_45%] md:flex-[0_0_25%] md:pl-4"
-              >
-                <ProjectCard project={project} />
+        {/* Mobile/Tablet: Horizontal Carousel */}
+        {!isDesktop && (
+          <div className="lg:hidden animate-fade-in -mx-4">
+            <div className="overflow-hidden px-4" ref={emblaRef}>
+              <div className="flex">
+                {displayProjects.map((project) => (
+                  <div 
+                    key={project.id} 
+                    className="flex-[0_0_calc(100%-2rem)] sm:flex-[0_0_calc(50%-1rem)] min-w-0 pl-4 first:pl-4"
+                  >
+                    <Link
+                      to={`/projects/${project.slug}`}
+                      className="group block relative overflow-hidden rounded-xl bg-card shadow-[0_4px_24px_-4px_rgba(0,0,0,0.12),0_2px_8px_-2px_rgba(0,0,0,0.06)] hover:shadow-[0_16px_40px_-8px_rgba(0,0,0,0.18),0_6px_12px_-4px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 transition-all duration-300"
+                    >
+                      <div className="aspect-[16/10] overflow-hidden">
+                        <PropertyThumbnail
+                          src={project.images?.[0]}
+                          alt={project.name}
+                          type="project"
+                          className="w-full h-full group-hover:scale-105 transition-transform duration-500"
+                        />
+                      </div>
+                      <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent" />
+                      
+                      {/* Action Buttons - Top Right */}
+                      <div className="absolute top-3 right-3 flex gap-1.5 z-10">
+                        <ProjectShareButton
+                          projectSlug={project.slug}
+                          projectName={project.name}
+                        />
+                        <ProjectFavoriteButton projectId={project.id} />
+                      </div>
+                      <div className="absolute bottom-0 left-0 right-0 p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Badge className="bg-primary text-primary-foreground text-xs">
+                            New Project
+                          </Badge>
+                          {project.developer && (
+                            <span className="text-xs text-white/80 flex items-center gap-1">
+                              <CheckCircle2 className="h-3 w-3" />
+                              {typeof project.developer === 'object' ? project.developer.name : 'Verified'}
+                            </span>
+                          )}
+                        </div>
+                        <h3 className="text-xl font-bold text-white mb-1">
+                          {project.name}
+                        </h3>
+                        <p className="text-sm text-white/80 mb-2">
+                          {project.neighborhood ? `${project.neighborhood}, ` : ''}{project.city}
+                        </p>
+                        <p className="text-base font-semibold text-white">
+                          From {formatPrice(project.price_from, project.currency || 'ILS')}
+                        </p>
+                      </div>
+                    </Link>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
+            {/* Dot Indicators */}
+            <div className="px-4">
+              <CarouselDots 
+                total={displayProjects.length} 
+                current={selectedIndex} 
+                onDotClick={scrollTo}
+                className="mt-4"
+              />
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Mobile progress bar */}
-        <div className="mt-3 md:hidden">
-          <div className="h-0.5 overflow-hidden rounded-full bg-border">
-            <motion.div
-              className="h-full rounded-full bg-primary"
-              initial={false}
-              animate={{ width: `${((selectedIndex + 1) / displayProjects.length) * 100}%` }}
-              transition={{ duration: 0.3, ease: 'easeOut' }}
-            />
-          </div>
-        </div>
+        {/* Desktop: Bento Grid */}
+        {isDesktop && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="hidden lg:grid lg:grid-cols-5 gap-4"
+          >
+            {/* Main Project Card */}
+            {mainProject && (
+              <Link
+                to={`/projects/${mainProject.slug}`}
+                className="lg:col-span-3 group relative overflow-hidden rounded-2xl bg-card shadow-[0_4px_24px_-4px_rgba(0,0,0,0.12),0_2px_8px_-2px_rgba(0,0,0,0.06)] hover:shadow-[0_16px_40px_-8px_rgba(0,0,0,0.18),0_6px_12px_-4px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 transition-all duration-300"
+              >
+                <div className="aspect-[16/9] overflow-hidden">
+                  <PropertyThumbnail
+                    src={mainProject.images?.[0]}
+                    alt={mainProject.name}
+                    type="project"
+                    className="w-full h-full group-hover:scale-105 transition-transform duration-500"
+                  />
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent" />
+                
+                {/* Action Buttons - Top Right */}
+                <div className="absolute top-3 right-3 flex gap-1.5 z-10">
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <ProjectShareButton
+                      projectSlug={mainProject.slug}
+                      projectName={mainProject.name}
+                    />
+                  </div>
+                  <ProjectFavoriteButton projectId={mainProject.id} />
+                </div>
+                <div className="absolute bottom-0 left-0 right-0 p-4 md:p-5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Badge className="bg-primary text-primary-foreground text-xs">
+                      New Project
+                    </Badge>
+                    {mainProject.developer && (
+                      <span className="text-xs text-white/80 flex items-center gap-1">
+                        <CheckCircle2 className="h-3 w-3" />
+                        {typeof mainProject.developer === 'object' ? mainProject.developer.name : 'Verified'}
+                      </span>
+                    )}
+                  </div>
+                  <h3 className="text-xl md:text-2xl font-bold text-white mb-1">
+                    {mainProject.name}
+                  </h3>
+                  <p className="text-sm text-white/80 mb-2">
+                    {mainProject.neighborhood ? `${mainProject.neighborhood}, ` : ''}{mainProject.city}
+                  </p>
+                  <p className="text-base font-semibold text-white">
+                    From {formatPrice(mainProject.price_from, mainProject.currency || 'ILS')}
+                  </p>
+                </div>
+              </Link>
+            )}
+
+            {/* Side Projects */}
+            <div className="lg:col-span-2 space-y-4">
+              {sideProjects.map((project) => (
+                <Link
+                  key={project.id}
+                  to={`/projects/${project.slug}`}
+                  className="group block relative overflow-hidden rounded-xl bg-card shadow-[0_4px_24px_-4px_rgba(0,0,0,0.12),0_2px_8px_-2px_rgba(0,0,0,0.06)] hover:shadow-[0_16px_40px_-8px_rgba(0,0,0,0.18),0_6px_12px_-4px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 transition-all duration-300"
+                >
+                  <div className="aspect-[16/7] overflow-hidden">
+                    <PropertyThumbnail
+                      src={project.images?.[0]}
+                      alt={project.name}
+                      type="project"
+                      className="w-full h-full group-hover:scale-105 transition-transform duration-500"
+                    />
+                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 to-transparent" />
+                  
+                  {/* Action Buttons - Top Right */}
+                  <div className="absolute top-2 right-2 flex gap-1.5 z-10">
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <ProjectShareButton
+                        projectSlug={project.slug}
+                        projectName={project.name}
+                      />
+                    </div>
+                    <ProjectFavoriteButton projectId={project.id} />
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 p-3">
+                    <Badge className="bg-primary/90 text-primary-foreground mb-1.5 text-xs">
+                      New Project
+                    </Badge>
+                    <h3 className="text-base font-bold text-white">
+                      {project.name}
+                    </h3>
+                    <p className="text-xs text-white/80">
+                      {project.city} • From {formatPrice(project.price_from, project.currency || 'ILS')}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </motion.div>
+        )}
       </div>
     </section>
   );
