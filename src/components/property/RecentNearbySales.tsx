@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { MapPin, Home, TrendingUp, Calendar, BarChart3, Building2, ShieldCheck, ChevronDown, Info } from 'lucide-react';
+import { MapPin, Home, TrendingUp, Calendar, BarChart3, ShieldCheck, ChevronDown, Info } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import useEmblaCarousel from 'embla-carousel-react';
 import { useNearbySoldComps } from '@/hooks/useNearbySoldComps';
