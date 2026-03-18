@@ -127,7 +127,7 @@ export function ProjectsHighlight() {
                   >
                     <Link
                       to={`/projects/${project.slug}`}
-                      className="group block relative overflow-hidden rounded-xl bg-card border border-border shadow-card hover:shadow-card-hover transition-all duration-300"
+                      className="group block relative overflow-hidden rounded-xl bg-card shadow-[0_4px_24px_-4px_rgba(0,0,0,0.12),0_2px_8px_-2px_rgba(0,0,0,0.06)] hover:shadow-[0_16px_40px_-8px_rgba(0,0,0,0.18),0_6px_12px_-4px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 transition-all duration-300"
                     >
                       <div className="aspect-[16/10] overflow-hidden">
                         <PropertyThumbnail
@@ -198,7 +198,7 @@ export function ProjectsHighlight() {
             {mainProject && (
               <Link
                 to={`/projects/${mainProject.slug}`}
-                className="lg:col-span-3 group relative overflow-hidden rounded-xl bg-card border border-border shadow-card hover:shadow-card-hover transition-all duration-300"
+                className="lg:col-span-3 group relative overflow-hidden rounded-2xl bg-card shadow-[0_4px_24px_-4px_rgba(0,0,0,0.12),0_2px_8px_-2px_rgba(0,0,0,0.06)] hover:shadow-[0_16px_40px_-8px_rgba(0,0,0,0.18),0_6px_12px_-4px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 transition-all duration-300"
               >
                 <div className="aspect-[16/9] overflow-hidden">
                   <PropertyThumbnail
@@ -246,12 +246,12 @@ export function ProjectsHighlight() {
             )}
 
             {/* Side Projects */}
-            <div className="lg:col-span-2 space-y-3">
+            <div className="lg:col-span-2 space-y-4">
               {sideProjects.map((project) => (
                 <Link
                   key={project.id}
                   to={`/projects/${project.slug}`}
-                  className="group block relative overflow-hidden rounded-lg bg-card border border-border shadow-card hover:shadow-card-hover transition-all duration-300"
+                  className="group block relative overflow-hidden rounded-xl bg-card shadow-[0_4px_24px_-4px_rgba(0,0,0,0.12),0_2px_8px_-2px_rgba(0,0,0,0.06)] hover:shadow-[0_16px_40px_-8px_rgba(0,0,0,0.18),0_6px_12px_-4px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 transition-all duration-300"
                 >
                   <div className="aspect-[16/7] overflow-hidden">
                     <PropertyThumbnail
