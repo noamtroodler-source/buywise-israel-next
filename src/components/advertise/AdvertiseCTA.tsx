@@ -20,7 +20,7 @@ export function AdvertiseCTA() {
 
           <div className="relative z-10">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4">
-              Ready to Grow Your Business?
+              Ready to Expand Your Agency's Reach?
             </h2>
             <p className="text-lg text-white/80 max-w-2xl mx-auto mb-8">
               Join BuyWise Israel today and start connecting with motivated international buyers actively searching for Israeli real estate.
