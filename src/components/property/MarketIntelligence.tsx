@@ -9,6 +9,7 @@ import { RecentNearbySales } from './RecentNearbySales';
 import { AIMarketInsight } from './AIMarketInsight';
 import { useMarketInsight } from '@/hooks/useMarketInsight';
 import { useRoomSpecificCityPrice } from '@/hooks/useRoomSpecificCityPrice';
+import { useNeighborhoodAvgPrice } from '@/hooks/useNeighborhoodPrices';
 
 interface MarketIntelligenceProps {
   property: {
