@@ -196,7 +196,7 @@ export default function Compare() {
       },
     },
     {
-      label: isRental ? 'Rent/m²' : 'Price/m²',
+      label: isRental ? `Rent${areaLabels.slashArea}` : `Price${areaLabels.slashArea}`,
       getValue: (p: Property) => p.size_sqm ? formatPrice(Math.round(p.price / p.size_sqm), p.currency || 'ILS') : '—',
       getBestPropertyId: (props: Property[]) => {
         const withSize = props.filter(p => p.size_sqm && p.size_sqm > 0);
