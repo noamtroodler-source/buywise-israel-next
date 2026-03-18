@@ -51,12 +51,12 @@ function ModalBody({ onActivate, onClose }: { onActivate: (code: string) => void
       </div>
 
       <h2 className="text-xl font-bold text-foreground mb-1">Founding Partner Program</h2>
-      <p className="text-sm text-muted-foreground mb-2">Limited to 15 Agencies — Early Access</p>
+      <p className="text-sm text-muted-foreground mb-2">Limited Availability — Early Access</p>
 
       {spots && spots.remaining > 0 && (
         <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 mb-4">
           <span className="text-xs font-semibold text-primary">
-            {spots.remaining} spot{spots.remaining !== 1 ? 's' : ''} left
+            Limited spots remaining
           </span>
         </div>
       )}

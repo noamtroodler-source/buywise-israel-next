@@ -56,7 +56,7 @@ export function FoundingPromoRibbon({ onSeeDetails }: FoundingPromoRibbonProps) 
           <Sparkles className="h-3.5 w-3.5 flex-shrink-0 opacity-90" />
           <span className="text-xs sm:text-sm font-medium truncate">
             <span className="font-semibold">Founding Program</span>
-            <span className="hidden sm:inline opacity-80"> · 60-day free trial + 25% off + ₪16,000 in credits</span>
+            <span className="hidden sm:inline opacity-80"> · 60-day free trial + exclusive founding partner benefits</span>
           </span>
         </div>
 

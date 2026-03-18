@@ -47,7 +47,7 @@ export function AdvertiseHero() {
 
             {/* Trust indicator */}
             <p className="text-sm text-muted-foreground pt-4">
-              No credit card required · Free for 60 days · Limited to 15 founding agencies
+              No credit card required · Free for 60 days · Limited spots available
             </p>
           </motion.div>
 
