@@ -48,6 +48,7 @@ export function AdvertiseCTA() {
                   Register Agency
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
+              </Button>
             </div>
 
             <p className="text-sm text-white/60">
