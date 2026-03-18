@@ -121,7 +121,7 @@ function SimpleMenuContent({ items }: { items: { label: string; href: string; de
                     )}
                     {item.label}
                   </span>
-                  <span className="text-xs text-muted-foreground group-hover:text-accent-foreground/70">
+                  <span className="text-xs text-muted-foreground/70 group-hover:text-accent-foreground/70">
                     {item.description}
                   </span>
                 </Link>
