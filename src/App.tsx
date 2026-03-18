@@ -504,6 +504,7 @@ const App = () => (
                           <Route path="warm-leads" element={<AdminWarmLeads />} />
                           <Route path="duplicates" element={<AdminDuplicates />} />
                           <Route path="import-analytics" element={<AdminImportAnalytics />} />
+                          <Route path="import-neighborhood-profiles" element={<ImportNeighborhoodProfiles />} />
                         </Route>
                         
                         <Route path="*" element={<NotFound />} />
