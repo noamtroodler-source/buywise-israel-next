@@ -51,7 +51,7 @@ export function MarketDataContext({ variant = 'compact', className }: MarketData
         <CollapsibleTrigger className="flex items-center gap-2.5 w-full px-4 py-3 text-left hover:bg-muted/30 transition-colors">
           <Database className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
           <span className="text-sm text-muted-foreground flex-1">
-            Official data is a strong starting point — but doesn't capture everything
+            Official data is the best benchmark — here's what it doesn't capture
           </span>
           <ChevronDown className={cn(
             "h-3.5 w-3.5 text-muted-foreground transition-transform duration-200",
