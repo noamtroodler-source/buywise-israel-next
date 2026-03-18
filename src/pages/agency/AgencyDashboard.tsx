@@ -184,18 +184,18 @@ export default function AgencyDashboard() {
             ))}
           </div>
 
-          {/* Two-Column Layout: Performance + Activity */}
-          <div className="grid lg:grid-cols-5 gap-6 lg:items-center">
+          {/* Two-Column Layout: Performance + Announcements */}
+          <div className="grid lg:grid-cols-5 gap-6 lg:items-stretch">
             {/* Left Column — wider */}
-            <div className="lg:col-span-3">
+            <div className="lg:col-span-3 flex flex-col">
               {/* Performance Insights — subtle bg wrap */}
-              <div className="bg-muted/30 rounded-2xl p-4">
+              <div className="bg-muted/30 rounded-2xl p-4 flex-1">
                 <AgencyPerformanceInsights />
               </div>
             </div>
 
             {/* Right Column — narrower */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="lg:col-span-2 flex flex-col gap-6">
               {/* Pending Join Requests (if any) */}
               {pendingRequests > 0 && (
                 <Card className="rounded-2xl border-primary/20 bg-primary/5">
@@ -219,7 +219,7 @@ export default function AgencyDashboard() {
               )}
 
               {/* Team Announcements — always show compact */}
-              <Card className="rounded-2xl border-border/50">
+              <Card className="rounded-2xl border-border/50 flex-1 flex flex-col">
                 <CardHeader className="pb-2 pt-4 px-4">
                   <CardTitle className="text-sm flex items-center gap-2">
                     <Megaphone className="h-4 w-4 text-primary" />
@@ -234,7 +234,7 @@ export default function AgencyDashboard() {
                     </Tooltip>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="px-4 pb-4">
+                <CardContent className="px-4 pb-4 flex-1">
                   <AgencyAnnouncements agencyId={agency.id} compact />
                 </CardContent>
               </Card>
@@ -243,12 +243,16 @@ export default function AgencyDashboard() {
           </div>
 
           {/* Listings Preview + Activity Feed */}
-          <div className="grid lg:grid-cols-5 gap-6">
-            <div className="lg:col-span-3">
-              <DashboardListingsPreview agencyId={agency.id} />
+          <div className="grid lg:grid-cols-5 gap-6 lg:items-stretch">
+            <div className="lg:col-span-3 flex flex-col">
+              <div className="flex-1">
+                <DashboardListingsPreview agencyId={agency.id} />
+              </div>
             </div>
-            <div className="lg:col-span-2">
-              <AgencyTeamActivityFeed agencyId={agency.id} />
+            <div className="lg:col-span-2 flex flex-col">
+              <div className="flex-1">
+                <AgencyTeamActivityFeed agencyId={agency.id} />
+              </div>
             </div>
           </div>
         </motion.div>

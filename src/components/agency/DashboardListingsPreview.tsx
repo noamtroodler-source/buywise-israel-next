@@ -41,7 +41,7 @@ export function DashboardListingsPreview({ agencyId }: Props) {
   }, [listings, search, agentMap]);
 
   return (
-    <Card className="rounded-2xl border-border/50">
+    <Card className="rounded-2xl border-border/50 h-full">
       <CardHeader className="pb-2 pt-4 px-4">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm flex items-center gap-2">
