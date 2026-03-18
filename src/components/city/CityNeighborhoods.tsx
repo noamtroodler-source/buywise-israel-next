@@ -1,8 +1,15 @@
 import { useState, useMemo } from 'react';
-import { MapPin, Search, TrendingUp, TrendingDown, Minus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MapPin, Search, TrendingUp, TrendingDown, Minus, ChevronLeft, ChevronRight, ArrowUpDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { PriceTier } from '@/types/neighborhood';
 
