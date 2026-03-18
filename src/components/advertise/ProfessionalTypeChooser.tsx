@@ -6,49 +6,19 @@ import { Badge } from "@/components/ui/badge";
 
 const professionalTypes = [
   {
-    icon: User,
-    title: "Individual Agent",
-    description: "Independent agents looking to list properties and connect with international buyers.",
-    features: [
-      "Personal agent profile page",
-      "Unlimited property listings",
-      "Direct buyer inquiries",
-      "Performance analytics",
-      "Verified agent badge",
-    ],
-    href: "/auth?tab=signup&role=agent",
-    buttonText: "Register as Agent",
-    popular: false,
-  },
-  {
     icon: Building2,
     title: "Agency / Team",
-    description: "Real estate firms managing multiple agents with unified brand presence.",
+    description: "Real estate firms managing multiple agents with unified brand presence. Register your agency and invite your agents to join.",
     features: [
       "Branded agency profile",
       "Team member management",
-      "Agent invite system",
+      "Agent invite system — agents join via your link",
       "Consolidated analytics",
       "Priority support",
       "Homepage exposure opportunities",
     ],
     href: "/auth?tab=signup&role=agency",
-    buttonText: "Register Agency",
-    popular: false,
-  },
-  {
-    icon: Landmark,
-    title: "Property Developer",
-    description: "Construction companies and developers showcasing projects.",
-    features: [
-      "Project showcase pages",
-      "Unit inventory management",
-      "Construction progress updates",
-      "Project inquiry tracking",
-      "Developer verification",
-    ],
-    href: "/auth?tab=signup&role=developer",
-    buttonText: "Register as Developer",
+    buttonText: "Register Your Agency",
     popular: false,
   },
 ];
