@@ -235,7 +235,7 @@ export function ProjectsHighlight() {
           >
             {/* Hero project - left side, full height */}
             {heroProject && (
-              <div className="row-span-2 aspect-auto min-h-[480px]">
+              <div className="row-span-2 min-h-[360px]">
                 <ProjectCard project={heroProject} variant="hero" />
               </div>
             )}
