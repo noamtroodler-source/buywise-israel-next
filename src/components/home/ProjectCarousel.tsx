@@ -9,8 +9,6 @@ import useEmblaCarousel from 'embla-carousel-react';
 import { useCallback, useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { differenceInDays } from 'date-fns';
-import { ProjectFavoriteButton } from '@/components/project/ProjectFavoriteButton';
-import { ProjectShareButton } from '@/components/project/ProjectShareButton';
 
 interface Project {
   id: string;
