@@ -237,20 +237,6 @@ export function ProjectStickyCard({ project, developer, representingAgent, selec
               <DeveloperContactSection />
             )}
 
-            <Separator />
-
-            {/* Buyer Protections */}
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium text-muted-foreground">Buyer Protections</h4>
-              <div className="space-y-1.5">
-                {buyerProtections.map((protection, index) => (
-                  <div key={index} className="flex items-center gap-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-primary flex-shrink-0" />
-                    <span>{protection}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
 
             {/* Permission to Slow Down */}
             <div className="pt-3 border-t border-border/50 mt-3">
