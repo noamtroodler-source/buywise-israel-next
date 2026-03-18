@@ -99,6 +99,10 @@ const allTools: Record<string, Tool> = {
   },
 };
 
+
+// Tools that require admin access
+const BETA_TOOL_IDS = new Set(['renovation', 'documents', 'listing-decoder', 'investment']);
+
 const toolComponents: Record<string, React.ComponentType> = {
   mortgage: MortgageCalculator,
   totalcost: TrueCostCalculator,
@@ -109,6 +113,31 @@ const toolComponents: Record<string, React.ComponentType> = {
   documents: DocumentChecklistTool,
   'listing-decoder': ListingDecoderTool,
 };
+
+function BetaComingSoon({ tool }: { tool: Tool }) {
+  const Icon = tool.icon;
+  return (
+    <div className="max-w-lg mx-auto text-center py-16 px-6">
+      <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6">
+        <Construction className="h-8 w-8 text-primary" />
+      </div>
+      <h2 className="text-2xl font-bold text-foreground mb-2">{tool.label}</h2>
+      <span className="inline-block text-xs font-semibold uppercase tracking-wider text-primary bg-primary/10 border border-primary/20 rounded-full px-3 py-1 mb-4">
+        Coming Soon
+      </span>
+      <p className="text-muted-foreground leading-relaxed mb-6">
+        We're putting the finishing touches on this tool to make sure it gives you accurate, Israel-specific results. 
+        It'll be available soon — stay tuned!
+      </p>
+      <div className="p-4 rounded-xl bg-muted/50 border border-border/50">
+        <p className="text-sm text-muted-foreground">
+          <span className="font-medium text-foreground">What it will do:</span>{' '}
+          {tool.description}
+        </p>
+      </div>
+    </div>
+  );
+}
 
 // Journey phase order
 const phaseOrder = ['define', 'check', 'move_forward', 'after_deal'];
