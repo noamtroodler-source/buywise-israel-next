@@ -19,8 +19,24 @@ interface AgencySubmittedDialogProps {
   inviteCode?: string;
 }
 
-export function AgencySubmittedDialog({ open, onOpenChange }: AgencySubmittedDialogProps) {
+export function AgencySubmittedDialog({ open, onOpenChange, inviteCode }: AgencySubmittedDialogProps) {
   const navigate = useNavigate();
+  const [copied, setCopied] = useState(false);
+
+  const inviteLink = inviteCode 
+    ? `${window.location.origin}/auth?tab=signup&role=agent&code=${inviteCode}` 
+    : '';
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(inviteLink);
+      setCopied(true);
+      toast.success('Invite link copied!');
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error('Failed to copy');
+    }
+  };
 
   useEffect(() => {
     if (open) {
