@@ -46,21 +46,9 @@ export function AdvertiseHero() {
             </div>
 
             {/* Trust indicator */}
-            <div className="flex items-center gap-3 pt-4">
-              <div className="flex -space-x-2">
-                {["A", "B", "C", "D"].map((letter, i) => (
-                  <div
-                    key={i}
-                    className="w-8 h-8 rounded-full bg-primary/10 border-2 border-background flex items-center justify-center text-xs font-medium text-primary"
-                  >
-                    {letter}
-                  </div>
-                ))}
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Join <span className="font-semibold text-foreground">50+ professionals</span> already on the platform
-              </p>
-            </div>
+            <p className="text-sm text-muted-foreground pt-4">
+              No credit card required · Free for 60 days · Limited to 15 founding agencies
+            </p>
           </motion.div>
 
           {/* Right Visual - Dashboard Mockup */}
