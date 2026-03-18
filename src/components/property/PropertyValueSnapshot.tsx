@@ -1,4 +1,4 @@
-import { TrendingUp, TrendingDown, Minus, DollarSign, BarChart3, Home, Calendar } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, DollarSign, BarChart3, Home, Calendar, Lightbulb } from 'lucide-react';
 import { useFormatPrice, useFormatPricePerArea, useAreaLabel } from '@/contexts/PreferencesContext';
 import { useMemo } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
