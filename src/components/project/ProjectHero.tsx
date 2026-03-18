@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import useEmblaCarousel from 'embla-carousel-react';
-import { ChevronLeft, ChevronRight, Share2, Heart } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Project } from '@/types/projects';
@@ -127,27 +127,6 @@ export function ProjectHero({ project, onShare, onSave, isSaved = false }: Proje
           {/* Click hint overlay */}
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 pointer-events-none" />
           
-          {/* Overlay Actions */}
-          <div className="absolute top-4 right-4 flex gap-2" onClick={(e) => e.stopPropagation()}>
-            <Button
-              variant="secondary"
-              size="icon"
-              className="h-10 w-10 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background"
-              onClick={(e) => { e.stopPropagation(); handleShare(); }}
-            >
-              <Share2 className="h-5 w-5" />
-            </Button>
-            <Button
-              variant="secondary"
-              size="icon"
-              className={`h-10 w-10 rounded-full backdrop-blur-sm ${
-                isSaved ? 'bg-primary text-primary-foreground' : 'bg-background/80 hover:bg-background'
-              }`}
-              onClick={(e) => { e.stopPropagation(); onSave?.(); }}
-            >
-              <Heart className={`h-5 w-5 ${isSaved ? 'fill-current' : ''}`} />
-            </Button>
-          </div>
 
           {/* Status & Featured Badges */}
           <div className="absolute top-4 left-4 flex gap-2" onClick={(e) => e.stopPropagation()}>

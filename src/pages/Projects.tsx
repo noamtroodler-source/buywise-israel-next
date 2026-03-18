@@ -17,9 +17,8 @@ import { CreateAlertDialog } from '@/components/filters/CreateAlertDialog';
 import { useAuth } from '@/hooks/useAuth';
 import { ListingsGrid } from '@/components/listings/ListingsGrid';
 
-import { ProjectFavoriteButton } from '@/components/project/ProjectFavoriteButton';
 import { PromotedBadge } from '@/components/shared/PromotedBadge';
-import { ProjectShareButton } from '@/components/project/ProjectShareButton';
+
 import { BackToTopButton } from '@/components/shared/BackToTopButton';
 import { PullToRefresh } from '@/components/shared/PullToRefresh';
 import { MobileProjectsSkeletonGrid } from '@/components/shared/MobileProjectSkeleton';
@@ -284,15 +283,6 @@ export default function Projects() {
                               )}
                             </div>
 
-                            {/* Action Buttons - Top Right */}
-                            <div className="absolute top-3 right-3 flex items-center gap-1.5 z-10">
-                              {/* Share - visible on hover */}
-                              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                                <ProjectShareButton projectSlug={project.slug} projectName={project.name} />
-                              </div>
-                              {/* Favorite - always visible */}
-                              <ProjectFavoriteButton projectId={project.id} />
-                            </div>
                             
                           </div>
                           <CardContent className="p-5 space-y-3">
