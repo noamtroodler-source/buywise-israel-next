@@ -198,18 +198,6 @@ function CityCard({ city, index }: { city: City; index: number }) {
             <p className="text-sm text-muted-foreground line-clamp-2 mb-4 leading-relaxed">
               {city.description}
             </p>
-            <div className="flex flex-wrap gap-2">
-              {city.tags.map((tag) => (
-                <span 
-                  key={tag} 
-                  className={`text-xs px-2.5 py-1 rounded-full font-medium ${
-                    tagColors[tag] || 'bg-muted text-muted-foreground'
-                  }`}
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
           </div>
         </div>
       </Link>
