@@ -557,7 +557,6 @@ serve(async (req) => {
 
     // ============ STEP 5: CREATE RENTAL PROPERTIES ============
     console.log("Creating rental properties...");
-    const BASE_RENT = 5000; // 5K NIS base
     
     for (const city of CITIES) {
       for (let i = 0; i < 8; i++) {
@@ -566,6 +565,7 @@ serve(async (req) => {
                         propertyType === 'garden_apartment' ? randomInt(3, 5) :
                         propertyType === 'house' ? randomInt(4, 6) : randomInt(2, 4);
         const additionalRooms = propertyType === 'house' ? randomInt(1, 3) : randomInt(1, 2);
+        const israeliRooms = bedrooms + additionalRooms;
         const bathrooms = Math.max(1, Math.floor(bedrooms / 2) + randomInt(0, 1));
         const sizeSqm = propertyType === 'penthouse' ? randomInt(120, 250) :
                        propertyType === 'house' ? randomInt(150, 300) :
@@ -576,7 +576,7 @@ serve(async (req) => {
                      randomInt(1, 15);
         const totalFloors = Math.max(floor + randomInt(0, 5), floor + 1);
         const features = randomChoices(FEATURES, randomInt(3, 7));
-        const rent = Math.round(BASE_RENT * city.priceMultiplier * (sizeSqm / 80) * (1 + Math.random() * 0.3));
+        const rent = generateRentPrice(city, israeliRooms);
         
         const { error } = await supabase
           .from('properties')
