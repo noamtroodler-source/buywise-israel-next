@@ -17,9 +17,8 @@ import { CreateAlertDialog } from '@/components/filters/CreateAlertDialog';
 import { useAuth } from '@/hooks/useAuth';
 import { ListingsGrid } from '@/components/listings/ListingsGrid';
 
-import { ProjectFavoriteButton } from '@/components/project/ProjectFavoriteButton';
 import { PromotedBadge } from '@/components/shared/PromotedBadge';
-import { ProjectShareButton } from '@/components/project/ProjectShareButton';
+
 import { BackToTopButton } from '@/components/shared/BackToTopButton';
 import { PullToRefresh } from '@/components/shared/PullToRefresh';
 import { MobileProjectsSkeletonGrid } from '@/components/shared/MobileProjectSkeleton';
