@@ -39,7 +39,7 @@ export function AdvertiseHero() {
             <div className="flex flex-wrap gap-4">
               <Button 
                 size="lg" 
-                onClick={() => document.getElementById('founding')?.scrollIntoView({ behavior: 'smooth' })}
+                onClick={() => document.getElementById('cta')?.scrollIntoView({ behavior: 'smooth' })}
               >
                 Claim Your Founding Spot
               </Button>
