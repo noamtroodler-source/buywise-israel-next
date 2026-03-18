@@ -64,6 +64,7 @@ Deno.serve(async (req) => {
     // Confirmation to submitter
     const confirmHtml = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+        ${brandHeader}
         <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 16px;">We got your message, ${name.split(" ")[0]}! 👋</h1>
         <p style="color: #333; font-size: 16px; line-height: 1.6;">Thanks for reaching out. We've received your message and will get back to you within 24 hours.</p>
         <div style="margin-top: 16px; padding: 16px; background-color: #eff6ff; border-radius: 8px;">
