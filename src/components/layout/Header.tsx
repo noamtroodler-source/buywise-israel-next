@@ -136,15 +136,6 @@ export function Header() {
 
         {/* Right Side */}
         <div className="flex items-center justify-end gap-1 sm:gap-2">
-          {/* Command Palette Trigger */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="hidden lg:flex rounded-full h-10 w-10"
-            onClick={toggleCommandPalette}
-          >
-            <Search className="h-5 w-5" />
-          </Button>
           {/* Preferences Button */}
           <PreferencesDialog />
           {/* Favorites Icon - visible to all users on all screen sizes */}
