@@ -95,12 +95,6 @@ const CITY_ROOM_SIZE_INSIGHTS: Record<string, RoomInsightFn> = {
     (m.room3Price ? `3-room units at ${fmt(m.room3Price)} are the entry play — mostly in older buildings with TAMA 38 potential. ` : '') +
     (m.gapSmallToLarge ? `The ${fmtGap(m.gapSmallToLarge)} gap to the top end is significant, but urban renewal is creating new inventory across all sizes.` : ''),
 
-  'givatayim': (m) =>
-    `In tiny Givatayim, space is the ultimate luxury. ` +
-    (m.room3Price ? `3-room units already command ${fmt(m.room3Price)}, rivaling some Tel Aviv neighborhoods. ` : '') +
-    (m.gapSmallToLarge ? `The ${fmtGap(m.gapSmallToLarge)} premium to upsize is steep because larger apartments are genuinely scarce here. ` : '') +
-    `If you're targeting Givatayim, be flexible on size — the neighborhood premium is what you're really paying for.`,
-
   'petah-tikva': (m) =>
     `Petah Tikva offers meaningful size variety at accessible price points. ` +
     (m.room3Price && m.room4Price
