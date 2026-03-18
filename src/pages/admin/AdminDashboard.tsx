@@ -171,6 +171,7 @@ export default function AdminDashboard() {
             </div>
           </CardContent>
         </Card>
+        <FeaturedPerformanceSummary />
         <ImageDedupPanel />
         </div>
       </div>

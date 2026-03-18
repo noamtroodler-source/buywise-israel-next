@@ -149,9 +149,12 @@ export function FeaturedPropertyCard({ slot, onRemove, isRemoving }: FeaturedPro
               </div>
             </div>
 
-            <p className="text-xs text-muted-foreground mt-1">
-              Featured {formatDistanceToNow(new Date(slot.featured_at), { addSuffix: true })}
-            </p>
+            <div className="flex items-center justify-between mt-1">
+              <p className="text-xs text-muted-foreground">
+                Featured {formatDistanceToNow(new Date(slot.featured_at), { addSuffix: true })}
+              </p>
+              <FeaturedLiftBadges propertyId={property.id} />
+            </div>
           </div>
         </div>
       </CardContent>
