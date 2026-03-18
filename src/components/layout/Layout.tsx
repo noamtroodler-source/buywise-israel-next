@@ -25,7 +25,7 @@ export function Layout({ children, hideFooter, hideMobileNav }: LayoutProps) {
             <Footer />
           </div>
         )}
-        <FloatingWhatsApp />
+        <AskBuyWiseButton />
         {!hideMobileNav && <MobileBottomNav />}
         <CookieConsentBanner />
       </div>

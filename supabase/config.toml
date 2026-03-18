@@ -116,3 +116,6 @@ verify_jwt = false
 
 [functions.detect-duplicates]
 verify_jwt = false
+
+[functions.ask-buywise]
+verify_jwt = false
