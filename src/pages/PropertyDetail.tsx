@@ -1,5 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
 import { useEffect, useRef } from 'react';
+import { setPageContextData } from '@/hooks/usePageContext';
 import { Layout } from '@/components/layout/Layout';
 import { useProperty } from '@/hooks/useProperties';
 import { useCityDetails } from '@/hooks/useCityDetails';
@@ -62,6 +63,23 @@ export default function PropertyDetail() {
       addToRecentlyViewed(id);
     }
   }, [id, property, addToRecentlyViewed]);
+
+  // Set structured page context for Ask BuyWise
+  useEffect(() => {
+    if (property) {
+      setPageContextData({
+        price: property.price,
+        city: property.city,
+        neighborhood: property.neighborhood || undefined,
+        bedrooms: property.bedrooms || undefined,
+        propertyType: property.property_type,
+        name: property.title,
+        listingStatus: property.listing_status,
+        currency: property.currency || 'ILS',
+      });
+    }
+    return () => setPageContextData(null);
+  }, [property]);
   
   // Get city slug for fetching city data
   const citySlug = property?.city?.toLowerCase().replace(/['']/g, '').replace(/\s+/g, '-') || '';

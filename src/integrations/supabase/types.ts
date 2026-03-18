@@ -919,6 +919,7 @@ export type Database = {
           guest_id: string | null
           id: string
           page_context: string | null
+          title: string | null
           updated_at: string | null
           user_id: string | null
         }
@@ -927,6 +928,7 @@ export type Database = {
           guest_id?: string | null
           id?: string
           page_context?: string | null
+          title?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
@@ -935,6 +937,7 @@ export type Database = {
           guest_id?: string | null
           id?: string
           page_context?: string | null
+          title?: string | null
           updated_at?: string | null
           user_id?: string | null
         }

@@ -6,11 +6,34 @@ import { trackEvent } from '@/lib/analytics';
 export type ChatMessage = {
   role: 'user' | 'assistant';
   content: string;
-  id?: string; // DB message ID (set after persistence)
+  id?: string;
+  followUps?: string[];
+};
+
+export type ConversationSummary = {
+  id: string;
+  title: string | null;
+  updated_at: string;
 };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ask-buywise`;
 const MAX_MESSAGES = 20;
+const GUEST_NUDGE_THRESHOLD = 5;
+
+// Parse [SUGGESTIONS] block from assistant content
+function parseFollowUps(content: string): { cleanContent: string; followUps: string[] } {
+  const match = content.match(/\[SUGGESTIONS\]\s*([\s\S]*?)$/);
+  if (!match) return { cleanContent: content, followUps: [] };
+
+  const cleanContent = content.slice(0, match.index).trimEnd();
+  const followUps = match[1]
+    .split('\n')
+    .map(l => l.replace(/^[-•*]\s*/, '').trim())
+    .filter(l => l.length > 0 && l.length < 120)
+    .slice(0, 3);
+
+  return { cleanContent, followUps };
+}
 
 export function useAskBuyWise() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -18,12 +41,14 @@ export function useAskBuyWise() {
   const [error, setError] = useState<string | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const abortRef = useRef<AbortController | null>(null);
 
   const userMessageCount = messages.filter(m => m.role === 'user').length;
   const isAtLimit = userMessageCount >= MAX_MESSAGES;
+  const showGuestNudge = isAuthenticated === false && userMessageCount >= GUEST_NUDGE_THRESHOLD;
 
-  // Load existing conversation on mount
   useEffect(() => {
     loadConversation();
   }, []);
@@ -31,17 +56,18 @@ export function useAskBuyWise() {
   async function loadConversation() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      
+      setIsAuthenticated(!!session?.user);
+
       if (session?.user) {
-        // Authenticated: load latest conversation
         const { data: convos } = await supabase
           .from('chat_conversations')
-          .select('id')
+          .select('id, title, updated_at')
           .eq('user_id', session.user.id)
           .order('updated_at', { ascending: false })
-          .limit(1) as any;
+          .limit(20) as any;
 
         if (convos?.length) {
+          setConversations(convos);
           const convoId = convos[0].id;
           setConversationId(convoId);
           const { data: msgs } = await supabase
@@ -50,11 +76,16 @@ export function useAskBuyWise() {
             .eq('conversation_id', convoId)
             .order('created_at', { ascending: true }) as any;
           if (msgs?.length) {
-            setMessages(msgs.map((m: any) => ({ role: m.role, content: m.content, id: m.id })));
+            setMessages(msgs.map((m: any) => {
+              if (m.role === 'assistant') {
+                const { cleanContent, followUps } = parseFollowUps(m.content);
+                return { role: m.role, content: cleanContent, id: m.id, followUps };
+              }
+              return { role: m.role, content: m.content, id: m.id };
+            }));
           }
         }
       }
-      // Guest conversations are ephemeral in the UI but persisted via edge function
     } catch (e) {
       console.error('Failed to load conversation:', e);
     } finally {
@@ -62,12 +93,36 @@ export function useAskBuyWise() {
     }
   }
 
+  const loadConversationById = useCallback(async (convoId: string) => {
+    try {
+      setConversationId(convoId);
+      setMessages([]);
+      setError(null);
+      const { data: msgs } = await supabase
+        .from('chat_messages')
+        .select('id, role, content')
+        .eq('conversation_id', convoId)
+        .order('created_at', { ascending: true }) as any;
+      if (msgs?.length) {
+        setMessages(msgs.map((m: any) => {
+          if (m.role === 'assistant') {
+            const { cleanContent, followUps } = parseFollowUps(m.content);
+            return { role: m.role, content: cleanContent, id: m.id, followUps };
+          }
+          return { role: m.role, content: m.content, id: m.id };
+        }));
+      }
+    } catch (e) {
+      console.error('Failed to load conversation:', e);
+    }
+  }, []);
+
   async function getOrCreateConversation(pageContext: string): Promise<string | null> {
     if (conversationId) return conversationId;
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      
+
       if (session?.user) {
         const { data, error: err } = await supabase
           .from('chat_conversations')
@@ -78,8 +133,6 @@ export function useAskBuyWise() {
         setConversationId(data.id);
         return data.id;
       } else {
-        // For guests, we'll persist via a separate mechanism if needed
-        // For now, create a local-only conversation marker
         const localId = crypto.randomUUID();
         setConversationId(localId);
         return localId;
@@ -93,7 +146,7 @@ export function useAskBuyWise() {
   async function persistMessage(convoId: string, role: string, content: string): Promise<string | null> {
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) return null; // Only persist for authenticated users client-side
+      if (!session?.user) return null;
 
       const { data, error: err } = await supabase
         .from('chat_messages')
@@ -102,7 +155,6 @@ export function useAskBuyWise() {
         .single() as any;
       if (err) throw err;
 
-      // Touch conversation updated_at
       await supabase
         .from('chat_conversations')
         .update({ updated_at: new Date().toISOString() } as any)
@@ -112,6 +164,25 @@ export function useAskBuyWise() {
     } catch (e) {
       console.error('Failed to persist message:', e);
       return null;
+    }
+  }
+
+  async function setConversationTitle(convoId: string, firstMessage: string) {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+
+      const title = firstMessage.length > 60 ? firstMessage.slice(0, 57) + '...' : firstMessage;
+      await supabase
+        .from('chat_conversations')
+        .update({ title } as any)
+        .eq('id', convoId) as any;
+
+      setConversations(prev =>
+        prev.map(c => c.id === convoId ? { ...c, title } : c)
+      );
+    } catch (e) {
+      console.error('Failed to set conversation title:', e);
     }
   }
 
@@ -127,12 +198,16 @@ export function useAskBuyWise() {
     trackEvent('chat_message_sent', 'ask_buywise', pageContext);
 
     const convoId = await getOrCreateConversation(pageContext);
+    const isFirstMessage = messages.filter(m => m.role === 'user').length === 0;
 
     // Persist user message
     if (convoId) {
       const msgId = await persistMessage(convoId, 'user', input.trim());
       if (msgId) {
         setMessages(prev => prev.map((m, i) => i === prev.length - 1 && m.role === 'user' && !m.id ? { ...m, id: msgId } : m));
+      }
+      if (isFirstMessage) {
+        setConversationTitle(convoId, input.trim());
       }
     }
 
@@ -141,7 +216,6 @@ export function useAskBuyWise() {
 
     let assistantContent = '';
 
-    // Get auth token for profile injection
     const { data: { session } } = await supabase.auth.getSession();
 
     try {
@@ -233,20 +307,22 @@ export function useAskBuyWise() {
             const content = parsed.choices?.[0]?.delta?.content;
             if (content) {
               assistantContent += content;
-              const finalContent = assistantContent;
-              setMessages(prev =>
-                prev.map((m, i) =>
-                  i === prev.length - 1 && m.role === 'assistant'
-                    ? { ...m, content: finalContent }
-                    : m
-                )
-              );
             }
           } catch { /* ignore */ }
         }
       }
 
-      // Persist assistant message
+      // Parse follow-ups from final content
+      const { cleanContent, followUps } = parseFollowUps(assistantContent);
+      setMessages(prev =>
+        prev.map((m, i) =>
+          i === prev.length - 1 && m.role === 'assistant'
+            ? { ...m, content: cleanContent, followUps }
+            : m
+        )
+      );
+
+      // Persist assistant message (full content including suggestions block for context)
       if (convoId && assistantContent) {
         const asstId = await persistMessage(convoId, 'assistant', assistantContent);
         if (asstId) {
@@ -288,9 +364,13 @@ export function useAskBuyWise() {
     error,
     isAtLimit,
     isLoading,
+    isAuthenticated,
+    showGuestNudge,
+    conversations,
     sendMessage,
     stopStreaming,
     clearChat,
     submitFeedback,
+    loadConversationById,
   };
 }

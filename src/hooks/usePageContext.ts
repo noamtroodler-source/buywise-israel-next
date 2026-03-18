@@ -1,9 +1,33 @@
 import { useLocation } from 'react-router-dom';
 import { useMemo } from 'react';
 
+export interface PageContextData {
+  price?: number;
+  city?: string;
+  neighborhood?: string;
+  bedrooms?: number;
+  propertyType?: string;
+  name?: string;
+  listingStatus?: string;
+  priceFrom?: number;
+  priceTo?: number;
+  currency?: string;
+}
+
 export interface PageContext {
   description: string;
   suggestions: string[];
+}
+
+// Singleton store for page context data set by detail pages
+let _pageData: PageContextData | null = null;
+
+export function setPageContextData(data: PageContextData | null) {
+  _pageData = data;
+}
+
+export function getPageContextData(): PageContextData | null {
+  return _pageData;
 }
 
 const toolNames: Record<string, string> = {
@@ -28,17 +52,70 @@ const guideNames: Record<string, string> = {
   'listings-guide': 'Understanding Listings Guide',
 };
 
+function formatPrice(price: number): string {
+  if (price >= 1_000_000) return `₪${(price / 1_000_000).toFixed(1)}M`;
+  if (price >= 1_000) return `₪${(price / 1_000).toFixed(0)}K`;
+  return `₪${price}`;
+}
+
+function buildPropertySuggestions(data: PageContextData): string[] {
+  const suggestions: string[] = [];
+  if (data.price && data.city) {
+    suggestions.push(`Is ${formatPrice(data.price)} fair for ${data.city}?`);
+  }
+  if (data.price) {
+    suggestions.push(`What are the hidden costs on a ${formatPrice(data.price)} purchase?`);
+  }
+  suggestions.push('What should I ask the agent?');
+  return suggestions.slice(0, 3);
+}
+
+function buildProjectSuggestions(data: PageContextData): string[] {
+  const suggestions: string[] = [];
+  if (data.priceFrom && data.city) {
+    suggestions.push(`Is ${formatPrice(data.priceFrom)} fair for new construction in ${data.city}?`);
+  }
+  suggestions.push('What guarantees should I get from the developer?');
+  suggestions.push('How does the payment schedule work?');
+  return suggestions.slice(0, 3);
+}
+
+function buildPropertyDescription(data: PageContextData): string {
+  const parts: string[] = [];
+  if (data.name) parts.push(data.name);
+  if (data.bedrooms) parts.push(`${data.bedrooms}BR`);
+  if (data.propertyType) parts.push(data.propertyType);
+  if (data.city) parts.push(`in ${data.city}`);
+  if (data.neighborhood) parts.push(`(${data.neighborhood})`);
+  if (data.price) parts.push(`listed at ${formatPrice(data.price)}`);
+  if (data.listingStatus === 'for_rent') parts.push('(rental)');
+  return parts.length > 0
+    ? `Viewing a property listing: ${parts.join(' ')}`
+    : 'Viewing a property listing';
+}
+
+function buildProjectDescription(data: PageContextData): string {
+  const parts: string[] = [];
+  if (data.name) parts.push(data.name);
+  if (data.city) parts.push(`in ${data.city}`);
+  if (data.priceFrom) parts.push(`from ${formatPrice(data.priceFrom)}`);
+  return parts.length > 0
+    ? `Viewing a new construction project: ${parts.join(' ')}`
+    : 'Viewing a new construction project';
+}
+
 export function usePageContext(): PageContext {
   const location = useLocation();
   const path = location.pathname;
   const search = new URLSearchParams(location.search);
+  const data = _pageData;
 
   return useMemo(() => {
     // Property detail page
     if (path.match(/^\/property\//)) {
       return {
-        description: 'Viewing a property listing',
-        suggestions: [
+        description: data ? buildPropertyDescription(data) : 'Viewing a property listing',
+        suggestions: data ? buildPropertySuggestions(data) : [
           'Is this fairly priced for the area?',
           'What hidden costs should I expect?',
           'What should I ask the agent?',
@@ -49,8 +126,8 @@ export function usePageContext(): PageContext {
     // Project detail page
     if (path.match(/^\/project\//)) {
       return {
-        description: 'Viewing a new construction project',
-        suggestions: [
+        description: data ? buildProjectDescription(data) : 'Viewing a new construction project',
+        suggestions: data ? buildProjectSuggestions(data) : [
           'What are the risks of buying new construction?',
           'What guarantees should I get from the developer?',
           'How does the payment schedule work?',
@@ -144,5 +221,5 @@ export function usePageContext(): PageContext {
         'How do mortgages work for foreigners?',
       ],
     };
-  }, [path, search.toString()]);
+  }, [path, search.toString(), data?.price, data?.city, data?.name, data?.priceFrom]);
 }

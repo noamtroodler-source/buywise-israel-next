@@ -1,4 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
+import { useEffect } from 'react';
+import { setPageContextData } from '@/hooks/usePageContext';
 import { motion } from 'framer-motion';
 import { Loader2, Compass } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
@@ -48,6 +50,20 @@ export default function ProjectDetail() {
 
   // Track project views
   useProjectViewTracking(project?.id);
+
+  // Set structured page context for Ask BuyWise
+  useEffect(() => {
+    if (project) {
+      setPageContextData({
+        name: project.name,
+        city: project.city,
+        neighborhood: project.neighborhood || undefined,
+        priceFrom: project.price_from || undefined,
+        currency: project.currency || 'ILS',
+      });
+    }
+    return () => setPageContextData(null);
+  }, [project]);
 
   if (isLoading) {
     return (
