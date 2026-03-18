@@ -43,7 +43,7 @@ const BROWSE: CommandItem[] = [
   { label: 'Rentals', href: '/listings?status=for_rent', icon: Home, keywords: ['rent', 'lease'] },
   { label: 'New Projects', href: '/projects', icon: Building2, keywords: ['development', 'new build'] },
   { label: 'Explore Cities', href: '/areas', icon: Map, keywords: ['markets', 'neighborhoods', 'prices'] },
-  { label: 'Browse Developers', href: '/developers', icon: Landmark, keywords: ['builders'] },
+  
   { label: 'My Favorites', href: '/favorites', icon: Heart, keywords: ['saved', 'liked'] },
 ];
 

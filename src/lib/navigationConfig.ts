@@ -103,7 +103,7 @@ export const NAV_CONFIG: Record<string, NavSection> = {
         title: 'Browse',
         items: [
           { label: 'All New Projects', href: '/projects', phase: 'explore' },
-          { label: 'Browse Developers', href: '/developers', phase: 'explore' },
+          
           { label: 'Understand Markets', href: '/areas', description: 'Prices & trends by city', phase: 'understand' },
           { label: 'Trusted Professionals', href: '/professionals', description: 'Vetted lawyers & advisors', phase: 'move_forward' },
         ]
