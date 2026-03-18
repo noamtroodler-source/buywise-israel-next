@@ -13,6 +13,7 @@ export interface NavItem {
   description?: string;
   phase?: JourneyPhase;
   icon?: string;
+  badge?: 'beta';
 }
 
 export interface NavColumn {
