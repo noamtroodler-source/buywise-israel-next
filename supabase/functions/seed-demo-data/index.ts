@@ -647,8 +647,9 @@ serve(async (req) => {
         const status = randomChoice(PROJECT_STATUS);
         const totalUnits = randomInt(30, 200);
         const availableUnits = Math.floor(totalUnits * (0.2 + Math.random() * 0.5));
-        const priceFrom = Math.round(BASE_PRICE * city.priceMultiplier * 0.8);
-        const priceTo = Math.round(BASE_PRICE * city.priceMultiplier * 2.5);
+        const avgPriceSqm = city.average_price_sqm || 25000;
+        const priceFrom = Math.round(avgPriceSqm * 70 * 0.9 / 10000) * 10000; // ~70sqm unit
+        const priceTo = Math.round(avgPriceSqm * 200 * 1.1 / 10000) * 10000; // ~200sqm penthouse
         const constructionProgress = status === 'planning' ? randomInt(0, 10) :
                                     status === 'pre_sale' ? randomInt(5, 25) :
                                     status === 'under_construction' ? randomInt(25, 85) :
