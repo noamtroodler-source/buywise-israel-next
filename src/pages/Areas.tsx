@@ -115,24 +115,6 @@ const regions: Region[] = [
   },
 ];
 
-// Tag color mapping
-const tagColors: Record<string, string> = {
-  'Urban premium': 'bg-primary/10 text-primary',
-  'Limited supply': 'bg-destructive/10 text-destructive',
-  'Coastal premium': 'bg-primary/10 text-primary',
-  'High demand': 'bg-warning/20 text-warning-foreground',
-  'Affordable': 'bg-success/10 text-success',
-  'Affordable coast': 'bg-success/10 text-success',
-  'Family city': 'bg-accent/20 text-accent-foreground',
-  'Family-oriented': 'bg-accent/20 text-accent-foreground',
-  'Growing community': 'bg-success/10 text-success',
-  'Rapid growth': 'bg-success/10 text-success',
-  'Luxury market': 'bg-primary/10 text-primary',
-  'Tech hub north': 'bg-primary/10 text-primary',
-  'Tech growth': 'bg-primary/10 text-primary',
-  'Resort living': 'bg-accent/20 text-accent-foreground',
-  'Wine country': 'bg-accent/20 text-accent-foreground',
-};
 
 function RegionQuickNav({ 
   regions, 
