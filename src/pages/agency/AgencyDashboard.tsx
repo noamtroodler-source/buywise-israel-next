@@ -194,51 +194,52 @@ export default function AgencyDashboard() {
               </div>
             </div>
 
-            {/* Right Column — narrower */}
-            <div className="lg:col-span-2 flex flex-col gap-6">
-              {/* Pending Join Requests (if any) */}
-              {pendingRequests > 0 && (
-                <Card className="rounded-2xl border-primary/20 bg-primary/5">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="p-2 rounded-xl bg-primary/10">
-                        <Users className="h-4 w-4 text-primary" />
+            {/* Right Column — narrower, matching gray wrapper */}
+            <div className="lg:col-span-2 flex flex-col">
+              <div className="bg-muted/30 rounded-2xl p-4 flex-1 flex flex-col gap-4">
+                {/* Pending Join Requests (if any) */}
+                {pendingRequests > 0 && (
+                  <Card className="rounded-2xl border-primary/20 bg-primary/5">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="p-2 rounded-xl bg-primary/10">
+                          <Users className="h-4 w-4 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">{pendingRequests} Join Request{pendingRequests !== 1 ? 's' : ''}</p>
+                          <p className="text-xs text-muted-foreground">Agents waiting for approval</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-medium">{pendingRequests} Join Request{pendingRequests !== 1 ? 's' : ''}</p>
-                        <p className="text-xs text-muted-foreground">Agents waiting for approval</p>
-                      </div>
-                    </div>
-                    <Button size="sm" asChild className="rounded-xl w-full">
-                      <Link to="/agency/team">
-                        Review Requests
-                      </Link>
-                    </Button>
+                      <Button size="sm" asChild className="rounded-xl w-full">
+                        <Link to="/agency/team">
+                          Review Requests
+                        </Link>
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Team Announcements — always show compact */}
+                <Card className="rounded-2xl border-border/50 flex-1 flex flex-col">
+                  <CardHeader className="pb-2 pt-4 px-4">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Megaphone className="h-4 w-4 text-primary" />
+                      Team Announcements
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-[220px] text-xs">
+                          Post internal updates visible to all agents in your agency
+                        </TooltipContent>
+                      </Tooltip>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-4 pb-4 flex-1">
+                    <AgencyAnnouncements agencyId={agency.id} compact />
                   </CardContent>
                 </Card>
-              )}
-
-              {/* Team Announcements — always show compact */}
-              <Card className="rounded-2xl border-border/50 flex-1 flex flex-col">
-                <CardHeader className="pb-2 pt-4 px-4">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <Megaphone className="h-4 w-4 text-primary" />
-                    Team Announcements
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-[220px] text-xs">
-                        Post internal updates visible to all agents in your agency
-                      </TooltipContent>
-                    </Tooltip>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="px-4 pb-4 flex-1">
-                  <AgencyAnnouncements agencyId={agency.id} compact />
-                </CardContent>
-              </Card>
-
+              </div>
             </div>
           </div>
 
