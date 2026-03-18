@@ -213,8 +213,6 @@ export default function ProjectDetail() {
               {/* Listing Feedback */}
               <ListingFeedback listingType="projects" />
               
-              {/* FAQ Section */}
-              <ProjectFAQ />
             </div>
 
             {/* Right Column - Sticky Sidebar */}
