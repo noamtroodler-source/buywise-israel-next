@@ -413,6 +413,74 @@ export default function AgentDashboard() {
                 )}
               </WidgetErrorBoundary>
 
+              {/* Recent Properties */}
+              <WidgetErrorBoundary fallbackTitle="Couldn't load recent properties">
+                {propertiesLoading ? (
+                  <RecentPropertiesSkeleton />
+                ) : properties.length === 0 ? (
+                  <Card className="rounded-2xl border-border/50">
+                    <CardContent className="flex flex-col items-center justify-center py-10 text-center">
+                      <div className="p-3 rounded-xl bg-primary/10 mb-3">
+                        <Home className="h-6 w-6 text-primary" />
+                      </div>
+                      <p className="text-sm font-medium text-foreground">No listings yet</p>
+                      <p className="text-xs text-muted-foreground mt-1 mb-4 max-w-xs">
+                        Create your first listing to start attracting buyers and tracking performance.
+                      </p>
+                      <Button asChild size="sm" className="rounded-xl gap-2">
+                        <Link to="/agent/properties/new">
+                          <Plus className="h-4 w-4" />
+                          Create Your First Listing
+                        </Link>
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <Card className="rounded-2xl border-border/50">
+                    <CardHeader className="pb-2 pt-4 px-4">
+                      <CardTitle className="text-sm flex items-center justify-between">
+                        <span className="flex items-center gap-2">
+                          <Home className="h-4 w-4 text-primary" />
+                          Recent Properties
+                        </span>
+                        <Button variant="link" size="sm" asChild className="h-auto p-0 text-xs text-primary">
+                          <Link to="/agent/properties">View All</Link>
+                        </Button>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="px-4 pb-4">
+                      <div className="space-y-2">
+                        {properties.slice(0, 3).map((property) => (
+                          <div key={property.id} className="flex items-center justify-between p-2.5 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <img
+                                src={property.images?.[0] || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=100'}
+                                alt={property.title}
+                                className="h-10 w-10 rounded-lg object-cover flex-shrink-0"
+                              />
+                              <div className="min-w-0">
+                                <p className="font-medium text-sm line-clamp-1">{property.title}</p>
+                                <p className="text-xs text-muted-foreground">{property.city}</p>
+                              </div>
+                            </div>
+                            <span className={`text-xs px-2 py-1 rounded-lg font-medium flex-shrink-0 ${
+                              (property as any).verification_status === 'approved'
+                                ? 'bg-primary/10 text-primary'
+                                : 'bg-muted text-muted-foreground'
+                            }`}>
+                              {(property as any).verification_status === 'approved' ? 'Live' :
+                               (property as any).verification_status === 'pending_review' ? 'Pending' :
+                               (property as any).verification_status === 'changes_requested' ? 'Changes' :
+                               'Draft'}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </WidgetErrorBoundary>
+
               {/* Changes Requested Alert */}
               <WidgetErrorBoundary fallbackTitle="Couldn't load action items">
                 {statusCounts.changes_requested > 0 && (
