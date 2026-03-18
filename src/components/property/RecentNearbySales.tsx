@@ -43,6 +43,7 @@ function DesktopCompsList({
   formatDistance: (meters: number) => string;
   formatSoldDate: (date: string) => string;
 }) {
+  const areaLabels = useAreaLabel();
   const [isExpanded, setIsExpanded] = useState(false);
   const visibleComps = comps.slice(0, 3);
   const hiddenComps = comps.slice(3);
