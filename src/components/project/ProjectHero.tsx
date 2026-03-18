@@ -65,7 +65,7 @@ export function ProjectHero({ project, onShare, onSave, isSaved = false }: Proje
     } else if (navigator.share) {
       navigator.share({
         title: project.name,
-        text: `Check out ${project.name} - New development in ${project.city}`,
+        text: `Check out ${project.name} - New project in ${project.city}`,
         url: window.location.href,
       });
     } else {
