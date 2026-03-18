@@ -198,17 +198,15 @@ export function ProjectsHighlight() {
             {mainProject && (
               <Link
                 to={`/projects/${mainProject.slug}`}
-                className="lg:col-span-3 group relative overflow-hidden rounded-2xl bg-card shadow-[0_4px_24px_-4px_rgba(0,0,0,0.12),0_2px_8px_-2px_rgba(0,0,0,0.06)] hover:shadow-[0_16px_40px_-8px_rgba(0,0,0,0.18),0_6px_12px_-4px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 transition-all duration-300"
+                className="lg:col-span-3 group relative overflow-hidden rounded-2xl bg-foreground/90 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.12),0_2px_8px_-2px_rgba(0,0,0,0.06)] hover:shadow-[0_16px_40px_-8px_rgba(0,0,0,0.18),0_6px_12px_-4px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 transition-all duration-300 aspect-[16/9]"
               >
-                <div className="aspect-[16/9] overflow-hidden">
-                  <PropertyThumbnail
-                    src={mainProject.images?.[0]}
-                    alt={mainProject.name}
-                    type="project"
-                    className="w-full h-full group-hover:scale-105 transition-transform duration-500"
-                  />
-                </div>
-                <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent" />
+                <PropertyThumbnail
+                  src={mainProject.images?.[0]}
+                  alt={mainProject.name}
+                  type="project"
+                  className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
                 
                 {/* Action Buttons - Top Right */}
                 <div className="absolute top-3 right-3 flex gap-1.5 z-10">
