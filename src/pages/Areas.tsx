@@ -108,9 +108,9 @@ const regions: Region[] = [
     subtitle: 'Affordable frontier & resort living',
     icon: Heart,
     cities: [
-      { name: 'Ashkelon', slug: 'ashkelon', image: ashkelonImg, description: "Ashkelon offers Israel's best value for beachfront living — a laid-back southern city where your budget stretches further without giving up the coastline.", tags: ['Coastal affordable', 'Beach lifestyle'] },
-      { name: 'Beer Sheva', slug: 'beer-sheva', image: beerShevaImg, description: "Beer Sheva is Israel's most affordable major city — a university-driven tech hub where significant government investment is reshaping the Negev capital.", tags: ['Negev capital', 'Tech growth'] },
-      { name: 'Eilat', slug: 'eilat', image: eilatImg, description: "Eilat is a VAT-free resort city at Israel's southern tip — popular with vacation-home buyers and rental investors, but a very different market from the center.", tags: ['Resort living', 'Tax benefits'] },
+      { name: 'Ashkelon', slug: 'ashkelon', image: ashkelonImg, description: "Ashkelon offers Israel's best value for beachfront living — a laid-back southern city where your budget stretches further without giving up the coastline." },
+      { name: 'Beer Sheva', slug: 'beer-sheva', image: beerShevaImg, description: "Beer Sheva is Israel's most affordable major city — a university-driven tech hub where significant government investment is reshaping the Negev capital." },
+      { name: 'Eilat', slug: 'eilat', image: eilatImg, description: "Eilat is a VAT-free resort city at Israel's southern tip — popular with vacation-home buyers and rental investors, but a very different market from the center." },
     ],
   },
 ];
