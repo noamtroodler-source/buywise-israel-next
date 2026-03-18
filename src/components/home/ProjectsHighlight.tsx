@@ -243,12 +243,12 @@ export function ProjectsHighlight() {
             )}
 
             {/* Side Projects */}
-            <div className="lg:col-span-2 space-y-4">
+            <div className="lg:col-span-2 flex flex-col gap-4">
               {sideProjects.map((project) => (
                 <Link
                   key={project.id}
                   to={`/projects/${project.slug}`}
-                  className="group block relative overflow-hidden rounded-xl bg-foreground/90 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.12),0_2px_8px_-2px_rgba(0,0,0,0.06)] hover:shadow-[0_16px_40px_-8px_rgba(0,0,0,0.18),0_6px_12px_-4px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 transition-all duration-300 aspect-[16/7]"
+                  className="group block relative overflow-hidden rounded-xl bg-foreground/90 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.12),0_2px_8px_-2px_rgba(0,0,0,0.06)] hover:shadow-[0_16px_40px_-8px_rgba(0,0,0,0.18),0_6px_12px_-4px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 transition-all duration-300 flex-1"
                 >
                   <PropertyThumbnail
                     src={project.images?.[0]}
