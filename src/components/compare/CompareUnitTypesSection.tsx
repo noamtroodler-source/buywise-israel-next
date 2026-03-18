@@ -5,6 +5,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { ProjectUnit } from '@/types/projects';
+import { useAreaLabel } from '@/contexts/PreferencesContext';
 
 interface CompareProject {
   id: string;
