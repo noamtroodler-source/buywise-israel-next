@@ -48,7 +48,7 @@ export function AccountSection() {
 
   if (isLoading) {
     return (
-      <div className="rounded-2xl border border-border bg-card p-4">
+      <div className="rounded-2xl border border-border/50 bg-card shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08),0_2px_8px_-2px_rgba(0,0,0,0.04)] p-4">
         <div className="flex justify-center py-6">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
