@@ -85,7 +85,7 @@ function NeighborhoodCard({ n }: { n: UnifiedNeighborhood }) {
   return (
     <div
       className={cn(
-        'rounded-lg border border-border/50 bg-card/80 backdrop-blur-sm px-4 py-3 transition-colors hover:bg-muted/40',
+        'rounded-lg border border-border/50 bg-card/80 backdrop-blur-sm px-3 py-2.5 transition-colors hover:bg-muted/40',
         n.is_featured && 'border-l-2 border-l-primary/30'
       )}
     >
@@ -271,7 +271,7 @@ export function CityNeighborhoods({ cityName, neighborhoods }: CityNeighborhoods
             No neighborhoods match "{search}"
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {displayed.map(n => (
               <NeighborhoodCard key={n.name} n={n} />
             ))}
