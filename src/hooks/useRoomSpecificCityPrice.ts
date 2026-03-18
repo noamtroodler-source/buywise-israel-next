@@ -48,8 +48,14 @@ export function useRoomSpecificCityPrice(city: string | null, rooms: number | nu
       const latest = data[0];
       if (!latest.avg_price_nis) return null;
 
+      // Average last 4 quarters (1 year) for a stable baseline
+      const recentPrices = data.slice(0, 4).filter(d => d.avg_price_nis != null);
+      const avgPriceNis = recentPrices.length > 0
+        ? Math.round(recentPrices.reduce((sum, d) => sum + (d.avg_price_nis ?? 0), 0) / recentPrices.length)
+        : latest.avg_price_nis;
+
       const avgSize = AVG_SIZE_BY_ROOMS[rooms] || 100;
-      const avgPriceSqm = Math.round(latest.avg_price_nis / avgSize);
+      const avgPriceSqm = Math.round(avgPriceNis / avgSize);
 
       // Find same quarter one year prior for YoY
       const priorYear = latest.year - 1;
@@ -76,7 +82,7 @@ export function useRoomSpecificCityPrice(city: string | null, rooms: number | nu
       }
 
       return {
-        avgPrice: latest.avg_price_nis,
+        avgPrice: avgPriceNis,
         avgPriceSqm,
         yoyChange,
         fiveYearChange,
