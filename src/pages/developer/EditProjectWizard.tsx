@@ -148,7 +148,7 @@ function EditWizardContent({ projectId }: { projectId: string }) {
         images: project.images || [],
         floor_plans: project.floor_plans || [],
         description: project.description || '',
-        featured_highlight: project.featured_highlight || '',
+        featured_highlight: '',
       });
       setHasLoaded(true);
     }
