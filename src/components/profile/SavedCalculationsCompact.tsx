@@ -89,7 +89,7 @@ export function SavedCalculationsCompact() {
             <Link
               key={result.id}
               to={getCalculatorLink(result.calculator_type)}
-              className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/40 hover:bg-muted/60 transition-colors"
+              className="flex items-center justify-between py-2 px-3 rounded-xl bg-muted/40 hover:bg-muted/60 transition-colors"
             >
               <span className="text-xs text-muted-foreground">
                 {getCalculatorLabel(result.calculator_type)}

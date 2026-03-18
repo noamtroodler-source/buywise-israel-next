@@ -87,7 +87,7 @@ export default function Profile() {
               onClick={() => navigate('/my-journey')}
               className="w-full text-left"
             >
-              <div className="rounded-2xl border border-primary/20 bg-primary/[0.03] p-4 flex items-center gap-4 hover:shadow-md hover:border-primary/40 transition-all group">
+              <div className="rounded-2xl border border-primary/20 bg-primary/[0.03] shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08),0_2px_8px_-2px_rgba(0,0,0,0.04)] p-4 flex items-center gap-4 hover:shadow-md hover:border-primary/40 transition-all group">
                 <div className="w-10 h-10 rounded-lg bg-primary/15 flex items-center justify-center text-primary flex-shrink-0">
                   <Compass className="h-5 w-5" />
                 </div>

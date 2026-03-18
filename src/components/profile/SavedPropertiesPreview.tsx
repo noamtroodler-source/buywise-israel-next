@@ -81,7 +81,7 @@ export function SavedPropertiesPreview() {
             ))}
             {/* Show placeholder slots if less than 3 */}
             {displayedProperties.length < 3 && Array.from({ length: 3 - displayedProperties.length }).map((_, i) => (
-              <div key={`empty-${i}`} className="flex-1 aspect-square rounded-lg border-2 border-dashed border-border" />
+              <div key={`empty-${i}`} className="flex-1 aspect-square rounded-xl border-2 border-dashed border-border/50" />
             ))}
           </div>
 

@@ -59,7 +59,7 @@ export function AlertsCompact() {
             {alerts.slice(0, 4).map((alert) => (
               <div
                 key={alert.id}
-                className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/40 group"
+                className="flex items-center justify-between py-2 px-3 rounded-xl bg-muted/40 group"
               >
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium truncate">
