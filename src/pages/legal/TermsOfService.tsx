@@ -108,7 +108,7 @@ export default function TermsOfService() {
               <p>BuyWise Israel provides an online platform designed to help international buyers navigate Israeli real estate. Our Services include:</p>
               <ul>
                 <li>Property listing search and display</li>
-                <li>New development project information</li>
+                <li>Project information</li>
                 <li>Financial calculators and tools</li>
                 <li>Educational guides and resources</li>
                 <li>Search alerts and notifications</li>

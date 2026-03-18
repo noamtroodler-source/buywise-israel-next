@@ -44,7 +44,7 @@ const steps = [
 ];
 
 const languages = ['Hebrew', 'English', 'Russian', 'French', 'Spanish', 'Arabic', 'Amharic', 'Yiddish'];
-const specializations = ['Residential', 'Luxury', 'New Construction', 'Rentals', 'Anglo Market', 'Investment Properties'];
+const specializations = ['Residential', 'Luxury', 'New Projects', 'Rentals', 'Anglo Market', 'Investment Properties'];
 
 const containerVariants = {
   hidden: { opacity: 0 },

@@ -14,7 +14,7 @@ const GUIDE_PROGRESSION: Record<string, { slug: string; title: string }> = {
   "purchase-tax": { slug: "true-cost", title: "The True Cost of Buying" },
   "true-cost": { slug: "talking-to-professionals", title: "What to Know Before Talking to an Agent, Lawyer, or Broker" },
   "talking-to-professionals": { slug: "mortgages", title: "Mortgages in Israel for Foreign Buyers" },
-  "mortgages": { slug: "new-vs-resale", title: "New Construction vs Resale in Israel" },
+  "mortgages": { slug: "new-vs-resale", title: "New Projects vs Resale in Israel" },
   "new-vs-resale": { slug: "rent-vs-buy", title: "Rent vs Buy in Israel" },
   "rent-vs-buy": { slug: "buying-in-israel", title: "Complete Guide to Buying in Israel" },
 };
@@ -122,7 +122,7 @@ const GUIDE_TITLES: Record<string, string> = {
   "true-cost": "The True Cost of Buying",
   "talking-to-professionals": "What to Know Before Talking to an Agent, Lawyer, or Broker",
   "mortgages": "Mortgages in Israel for Foreign Buyers",
-  "new-vs-resale": "New Construction vs Resale in Israel",
+  "new-vs-resale": "New Projects vs Resale in Israel",
   "rent-vs-buy": "Rent vs Buy in Israel",
 };
 

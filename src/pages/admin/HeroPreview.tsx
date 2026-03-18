@@ -32,7 +32,7 @@ export default function HeroPreview() {
                   Find Your Perfect Home in Israel
                 </h3>
                 <p className="text-lg text-primary-foreground/90 max-w-xl mt-4">
-                  Discover thousands of properties across Israel. Whether you're buying, renting, or looking for new developments.
+                  Discover thousands of properties across Israel. Whether you're buying, renting, or looking for projects.
                 </p>
               </div>
             </div>

@@ -92,8 +92,8 @@ export function generateProjectMeta(project: ProjectMetaInput): { title: string;
   const priceText = project.price_from ? formatPrice(project.price_from, project.currency || 'ILS') : '';
   const developerName = project.developer?.name || '';
   
-  // Generate title: "Haifa Heights | New Development in Haifa | From ₪1,800,000"
-  let title = `${project.name} | New Development in ${project.city}`;
+  // Generate title: "Haifa Heights | New Project in Haifa | From ₪1,800,000"
+  let title = `${project.name} | New Project in ${project.city}`;
   if (priceText) title += ` | From ${priceText}`;
   
   // Generate description

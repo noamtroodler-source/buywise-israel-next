@@ -65,7 +65,7 @@ export function ProjectHero({ project, onShare, onSave, isSaved = false }: Proje
     } else if (navigator.share) {
       navigator.share({
         title: project.name,
-        text: `Check out ${project.name} - New development in ${project.city}`,
+        text: `Check out ${project.name} - New project in ${project.city}`,
         url: window.location.href,
       });
     } else {
@@ -77,7 +77,7 @@ export function ProjectHero({ project, onShare, onSave, isSaved = false }: Proje
   const formatGallerySubtitle = () => {
     const parts: string[] = [];
     
-    parts.push('New Development');
+    parts.push('New Project');
     
     if (project.price_from) {
       const priceText = project.price_to 

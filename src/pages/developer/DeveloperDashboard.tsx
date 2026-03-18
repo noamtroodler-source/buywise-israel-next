@@ -198,13 +198,13 @@ export default function DeveloperDashboard() {
             <DeveloperOnboardingProgress />
           </motion.div>
 
-          {/* New Development Showcase */}
+          {/* Project Showcase */}
           <motion.div variants={itemVariants}>
             <Card className="rounded-2xl border-primary/10 bg-gradient-to-br from-primary/5 via-transparent to-transparent">
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <Home className="h-5 w-5 text-primary" />
-                  New Development Showcase
+                  Project Showcase
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -377,7 +377,7 @@ export default function DeveloperDashboard() {
                   <div>
                     <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">Add New Project</h3>
                     <p className="text-sm text-muted-foreground">
-                      Create a new development listing
+                      Create a new project listing
                     </p>
                   </div>
                 </CardContent>

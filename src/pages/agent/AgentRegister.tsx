@@ -156,7 +156,7 @@ export default function AgentRegister() {
                     id="specializations"
                     value={formData.specializations}
                     onChange={(e) => updateField('specializations', e.target.value)}
-                    placeholder="Luxury homes, Commercial, New construction"
+                    placeholder="Luxury homes, Commercial, New projects"
                   />
                 </div>
 

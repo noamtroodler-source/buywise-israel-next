@@ -223,7 +223,7 @@ const LEASE_TERMS = ['6_months', '12_months', '24_months', 'flexible'];
 const FURNISHED_STATUS = ['fully', 'semi', 'unfurnished'];
 const PETS_POLICY = ['allowed', 'case_by_case', 'not_allowed'];
 const LANGUAGES = ['Hebrew', 'English', 'Russian', 'French', 'Spanish', 'Arabic', 'Amharic'];
-const SPECIALIZATIONS = ['First-time buyers', 'Investment properties', 'Luxury homes', 'Rentals', 'Anglo clients', 'New developments', 'Commercial'];
+const SPECIALIZATIONS = ['First-time buyers', 'Investment properties', 'Luxury homes', 'Rentals', 'Anglo clients', 'New projects', 'Commercial'];
 const PROJECT_STATUS = ['planning', 'pre_sale', 'under_construction', 'completed'];
 const PROJECT_AMENITIES = ['gym', 'pool', 'lobby', 'underground_parking', 'rooftop_terrace', 'playground', 'security_24_7', 'concierge', 'storage_units', 'ev_charging'];
 

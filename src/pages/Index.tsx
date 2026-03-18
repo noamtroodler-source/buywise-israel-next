@@ -15,7 +15,7 @@ const Index = () => {
     <Layout>
       <SEOHead
         title="BuyWise Israel - Property Search for English Speakers"
-        description="Find your perfect property in Israel. Search apartments, houses, and new developments with tools built for international buyers. Transparent pricing, honest guidance."
+        description="Find your perfect property in Israel. Search apartments, houses, and projects with tools built for international buyers. Transparent pricing, honest guidance."
         canonicalUrl="https://buywiseisrael.com"
       />
       

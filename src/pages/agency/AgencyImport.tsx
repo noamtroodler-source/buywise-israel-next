@@ -183,7 +183,7 @@ export default function AgencyImport() {
           <div className="flex items-start gap-3 p-4 rounded-xl bg-primary/5 border border-primary/10">
             <Info className="h-4 w-4 text-primary mt-0.5 shrink-0" />
             <p className="text-sm text-muted-foreground">
-              New construction projects and developments are always skipped — add those via the{' '}
+              Projects and developments are always skipped — add those via the{' '}
               <Link to="/agency/projects/new" className="text-primary font-medium hover:underline">
                 Project Wizard
               </Link>{' '}

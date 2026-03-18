@@ -195,7 +195,7 @@ export default function AdminFeatured() {
             <CardTitle>Featured Projects</CardTitle>
           </div>
           <CardDescription>
-            New development projects shown on the homepage. One hero (large) and two secondary (smaller).
+            Projects shown on the homepage. One hero (large) and two secondary (smaller).
           </CardDescription>
         </CardHeader>
         <CardContent>

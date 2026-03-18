@@ -17,7 +17,7 @@ const FEEDBACK_CONFIG = {
     subtitle: "Your feedback helps us show what matters most to buyers like you.",
   },
   projects: {
-    title: "Thoughts on our new development listings?",
+    title: "Thoughts on our project listings?",
     subtitle: "Let us know what info would help you evaluate projects better.",
   },
 };

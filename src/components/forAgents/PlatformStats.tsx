@@ -24,7 +24,7 @@ export function PlatformStats() {
       icon: MapPin,
       value: isLoading ? "..." : (stats?.projectsCount || 0).toString(),
       label: "Active Projects",
-      description: "New developments"
+      description: "New projects"
     },
     {
       icon: Calculator,
