@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState, useEffect, Component, ReactNode } from 'react';
+import { lazy, Suspense, useState, useEffect, useCallback, Component, ReactNode } from 'react';
 import { MapPin, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useGoogleMaps } from '@/components/maps/GoogleMapsProvider';
@@ -24,7 +24,6 @@ interface Props {
   onPositionChange?: (lat: number, lng: number) => void;
 }
 
-// Simple inline error boundary for the map
 interface ErrorBoundaryState {
   hasError: boolean;
 }
@@ -80,19 +79,31 @@ export function PropertyMiniMapWrapper({
   onPositionChange,
 }: Props) {
   const [hasError, setHasError] = useState(false);
+  const [hasGoogleError, setHasGoogleError] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const { isLoaded: googleMapsLoaded, loadError: googleMapsError } = useGoogleMaps();
+
+  const handleGoogleError = useCallback(() => {
+    setHasGoogleError(true);
+  }, []);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
+  // If provider already knows key is bad, skip Google entirely
+  useEffect(() => {
+    if (googleMapsError) {
+      setHasGoogleError(true);
+    }
+  }, [googleMapsError]);
+
   if (!isMounted) {
     return <MapFallback latitude={latitude} longitude={longitude} />;
   }
 
-  // Prefer Google Maps if available
-  if (googleMapsLoaded && !googleMapsError) {
+  // Use Google Maps only if loaded, no errors detected
+  if (googleMapsLoaded && !googleMapsError && !hasGoogleError) {
     return (
       <GoogleMiniMap
         latitude={latitude}
@@ -101,6 +112,7 @@ export function PropertyMiniMapWrapper({
         nearbyPOIs={nearbyPOIs}
         draggable={draggable}
         onPositionChange={onPositionChange}
+        onError={handleGoogleError}
       />
     );
   }

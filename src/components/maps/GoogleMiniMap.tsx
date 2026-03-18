@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect, useRef } from 'react';
 import { GoogleMap, Marker, InfoWindow } from '@react-google-maps/api';
 import { useGoogleMaps } from './GoogleMapsProvider';
 import { MapPin, ExternalLink } from 'lucide-react';
@@ -18,6 +18,7 @@ interface GoogleMiniMapProps {
   nearbyPOIs?: POIMarker[];
   draggable?: boolean;
   onPositionChange?: (lat: number, lng: number) => void;
+  onError?: () => void;
 }
 
 const categoryColors: Record<string, string> = {
@@ -57,12 +58,42 @@ export function GoogleMiniMap({
   nearbyPOIs = [],
   draggable = false,
   onPositionChange,
+  onError,
 }: GoogleMiniMapProps) {
   const { isLoaded, loadError } = useGoogleMaps();
   const [selectedPOI, setSelectedPOI] = useState<POIMarker | null>(null);
   const [markerPosition, setMarkerPosition] = useState({ lat: latitude, lng: longitude });
+  const [mapLoaded, setMapLoaded] = useState(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   const center = { lat: latitude, lng: longitude };
+
+  // Timeout: if map doesn't fire onLoad within 5s, trigger error fallback
+  useEffect(() => {
+    if (isLoaded && !loadError && !mapLoaded) {
+      timeoutRef.current = setTimeout(() => {
+        if (!mapLoaded) {
+          console.warn('Google Map failed to load within timeout');
+          onError?.();
+        }
+      }, 5000);
+    }
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, [isLoaded, loadError, mapLoaded, onError]);
+
+  // If context reports error (e.g. auth failure), propagate immediately
+  useEffect(() => {
+    if (loadError) {
+      onError?.();
+    }
+  }, [loadError, onError]);
+
+  const handleMapLoad = useCallback(() => {
+    setMapLoaded(true);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+  }, []);
 
   const handleMarkerDragEnd = useCallback((e: google.maps.MapMouseEvent) => {
     if (e.latLng && onPositionChange) {
@@ -80,7 +111,6 @@ export function GoogleMiniMap({
     );
   };
 
-  // Fallback for loading or error states
   if (loadError || !isLoaded) {
     return (
       <div className="relative rounded-xl overflow-hidden border border-border h-[200px] sm:h-[240px] bg-muted flex items-center justify-center">
@@ -104,6 +134,7 @@ export function GoogleMiniMap({
         mapContainerStyle={containerStyle}
         center={center}
         zoom={15}
+        onLoad={handleMapLoad}
         options={{
           styles: mapStyles,
           disableDefaultUI: true,
@@ -112,7 +143,6 @@ export function GoogleMiniMap({
           gestureHandling: draggable ? 'cooperative' : 'none',
         }}
       >
-        {/* Property Marker */}
         <Marker
           position={markerPosition}
           draggable={draggable}
@@ -128,7 +158,6 @@ export function GoogleMiniMap({
           title={propertyTitle}
         />
 
-        {/* POI Markers */}
         {nearbyPOIs.map((poi, index) => (
           <Marker
             key={index}
@@ -145,7 +174,6 @@ export function GoogleMiniMap({
           />
         ))}
 
-        {/* POI Info Window */}
         {selectedPOI && (
           <InfoWindow
             position={{ lat: selectedPOI.lat, lng: selectedPOI.lng }}
@@ -159,10 +187,8 @@ export function GoogleMiniMap({
         )}
       </GoogleMap>
 
-      {/* Gradient overlay for branding */}
       <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-black/10 to-transparent pointer-events-none" />
       
-      {/* Draggable indicator */}
       {draggable && (
         <div className="absolute top-2 left-2 bg-background/90 backdrop-blur-sm rounded-md px-2 py-1 text-xs text-muted-foreground shadow-sm">
           Drag pin to adjust
