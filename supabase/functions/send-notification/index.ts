@@ -26,6 +26,7 @@ interface NotificationPayload {
   inquiryType?: string;
   rejectionReason?: string;
   daysUntilExpiry?: number;
+  agencyName?: string;
 }
 
 const brandFooter = `
