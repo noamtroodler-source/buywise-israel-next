@@ -65,7 +65,7 @@ export function CityHeroGuide({
           transition={{ delay: 0.1 }}
           className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-4"
         >
-          Living in <span className="text-primary">{cityName}</span>
+          Buying in <span className="text-primary">{cityName}</span>
         </motion.h1>
 
         {/* Identity Sentence */}
