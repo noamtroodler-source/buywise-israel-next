@@ -148,7 +148,9 @@ export function useNeighborhoodPrices(cityName: string | undefined, rooms: numbe
 /**
  * Fetches neighborhood average price for a specific neighborhood in a city.
  * Used on property detail pages.
- * @param rooms - Room count for room-specific comparison (defaults to 4)
+ * @param rooms - Israeli government standard total room count (bedrooms + additional rooms).
+ *   Use getIsraeliRoomCount() from '@/lib/israeliRoomCount' to convert BuyWise fields.
+ *   Defaults to 4.
  */
 export function useNeighborhoodAvgPrice(
   cityName: string | undefined,

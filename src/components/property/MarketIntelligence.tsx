@@ -242,7 +242,7 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
           latitude={property.latitude}
           longitude={property.longitude}
           city={property.city}
-          propertyRooms={property.bedrooms ?? undefined}
+          propertyRooms={israeliRooms ?? undefined}
           propertyPrice={property.price}
           propertySizeSqm={property.size_sqm ?? undefined}
           hideHeader

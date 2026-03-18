@@ -20,6 +20,10 @@ const AVG_SIZE_BY_ROOMS: Record<number, number> = {
  * Fetches the latest room-specific average price from city_price_history
  * and computes YoY change by comparing to the same quarter one year prior.
  * Only supports 3, 4, 5 rooms (the room counts tracked in city_price_history).
+ *
+ * IMPORTANT: The `rooms` parameter expects the Israeli government standard total room count
+ * (bedrooms + additional rooms like living room, mamad, office), NOT BuyWise bedrooms alone.
+ * Use getIsraeliRoomCount() from '@/lib/israeliRoomCount' to convert before calling this hook.
  */
 export function useRoomSpecificCityPrice(city: string | null, rooms: number | null) {
   const supported = rooms !== null && rooms >= 3 && rooms <= 5;
