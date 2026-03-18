@@ -53,7 +53,8 @@ const TOOLS: CommandItem[] = [
   { label: 'True Cost Calculator', href: '/tools?tool=totalcost', icon: Calculator, keywords: ['taxes', 'fees', 'closing'] },
   { label: 'Investment Returns', href: '/tools?tool=investment', icon: BarChart3, keywords: ['roi', 'yield', 'cash flow'] },
   { label: 'Rent vs Buy', href: '/tools?tool=rentvsbuy', icon: Scale, keywords: ['compare', 'decision'] },
-  { label: 'Document Checklist', href: '/tools?tool=documents', icon: FileText, keywords: ['papers', 'prepare'] },
+  { label: 'Document Checklist', href: '/tools?tool=documents', icon: FileText, keywords: ['papers', 'prepare'], badge: 'beta' },
+  { label: 'Listing Decoder', href: '/tools?tool=listing-decoder', icon: Languages, keywords: ['translate', 'hebrew', 'analyze'], badge: 'beta' },
 ];
 
 const LEARN: CommandItem[] = [
