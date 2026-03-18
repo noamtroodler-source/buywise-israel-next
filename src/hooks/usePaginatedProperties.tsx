@@ -124,14 +124,18 @@ export function usePaginatedProperties(
 
   // Fetch boosted properties (only on page 1)
   const { data: boostedProperties = [] } = useQuery({
-    queryKey: ['properties', 'search-boosted', boostedIds],
+    queryKey: ['properties', 'search-boosted', boostedIds, filters?.listing_status],
     queryFn: async () => {
       if (!boostedIds.length) return [] as Property[];
-      const { data, error } = await supabase
+      let query = supabase
         .from('properties')
         .select(`*, agent:agents(*, agency:agencies(id, name, logo_url))`)
         .in('id', boostedIds)
         .eq('is_published', true);
+      if (filters?.listing_status) {
+        query = query.eq('listing_status', filters.listing_status);
+      }
+      const { data, error } = await query;
       if (error) return [] as Property[];
       return (data ?? []).map(p => ({ ...p, _isBoosted: true })) as Property[];
     },

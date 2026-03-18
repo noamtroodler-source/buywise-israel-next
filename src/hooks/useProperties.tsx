@@ -488,11 +488,11 @@ export function useRecommendedProperties() {
   });
 }
 
-export function useCityFeaturedProperties(cityName: string, limit: number = 8) {
+export function useCityFeaturedProperties(cityName: string, limit: number = 8, listingStatus: 'for_sale' | 'for_rent' = 'for_sale') {
   return useQuery({
-    queryKey: ['properties', 'city-featured', cityName, limit],
+    queryKey: ['properties', 'city-featured', cityName, limit, listingStatus],
     queryFn: async () => {
-      const boosted = await fetchFeaturedProperties(new Set());
+      const boosted = await fetchFeaturedProperties(new Set(), listingStatus);
       // Filter boosted to this city
       const cityBoosted = boosted.filter(p => 
         p.city?.toLowerCase().includes(cityName.toLowerCase())
@@ -507,6 +507,7 @@ export function useCityFeaturedProperties(cityName: string, limit: number = 8) {
         .from('properties')
         .select(`*, agent:agents(*, agency:agencies(id, name, logo_url))`)
         .eq('is_published', true)
+        .eq('listing_status', listingStatus)
         .ilike('city', `%${cityName}%`)
         .eq('is_featured', true)
         .order('created_at', { ascending: false })
@@ -528,6 +529,7 @@ export function useCityFeaturedProperties(cityName: string, limit: number = 8) {
         .from('properties')
         .select(`*, agent:agents(*, agency:agencies(id, name, logo_url))`)
         .eq('is_published', true)
+        .eq('listing_status', listingStatus)
         .ilike('city', `%${cityName}%`)
         .order('views_count', { ascending: false })
         .limit(limit - combined.length);
