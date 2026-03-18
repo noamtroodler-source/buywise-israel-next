@@ -1273,53 +1273,6 @@ export type Database = {
           },
         ]
       }
-      city_market_cycles: {
-        Row: {
-          avg_annual_growth: number | null
-          city_slug: string
-          created_at: string | null
-          cycle_name: string
-          id: string
-          notes: string | null
-          period_end: number
-          period_start: number
-          sort_order: number | null
-          total_growth_percent: number | null
-        }
-        Insert: {
-          avg_annual_growth?: number | null
-          city_slug: string
-          created_at?: string | null
-          cycle_name: string
-          id?: string
-          notes?: string | null
-          period_end: number
-          period_start: number
-          sort_order?: number | null
-          total_growth_percent?: number | null
-        }
-        Update: {
-          avg_annual_growth?: number | null
-          city_slug?: string
-          created_at?: string | null
-          cycle_name?: string
-          id?: string
-          notes?: string | null
-          period_end?: number
-          period_start?: number
-          sort_order?: number | null
-          total_growth_percent?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "city_market_cycles_city_slug_fkey"
-            columns: ["city_slug"]
-            isOneToOne: false
-            referencedRelation: "cities"
-            referencedColumns: ["slug"]
-          },
-        ]
-      }
       city_market_factors: {
         Row: {
           city_slug: string
@@ -1492,42 +1445,6 @@ export type Database = {
           session_id?: string
           stack_trace?: string | null
           user_id?: string | null
-        }
-        Relationships: []
-      }
-      comparison_sessions: {
-        Row: {
-          comparison_criteria: Json | null
-          comparison_duration_ms: number | null
-          created_at: string | null
-          id: string
-          outcome: string | null
-          property_ids: string[]
-          session_id: string
-          user_id: string | null
-          winner_property_id: string | null
-        }
-        Insert: {
-          comparison_criteria?: Json | null
-          comparison_duration_ms?: number | null
-          created_at?: string | null
-          id?: string
-          outcome?: string | null
-          property_ids: string[]
-          session_id: string
-          user_id?: string | null
-          winner_property_id?: string | null
-        }
-        Update: {
-          comparison_criteria?: Json | null
-          comparison_duration_ms?: number | null
-          created_at?: string | null
-          id?: string
-          outcome?: string | null
-          property_ids?: string[]
-          session_id?: string
-          user_id?: string | null
-          winner_property_id?: string | null
         }
         Relationships: []
       }
@@ -2359,42 +2276,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      funnel_exit_feedback: {
-        Row: {
-          created_at: string | null
-          exit_reason: string | null
-          feedback_text: string | null
-          funnel_step: string | null
-          funnel_type: string
-          id: string
-          page_path: string | null
-          session_id: string
-          user_id: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          exit_reason?: string | null
-          feedback_text?: string | null
-          funnel_step?: string | null
-          funnel_type: string
-          id?: string
-          page_path?: string | null
-          session_id: string
-          user_id?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          exit_reason?: string | null
-          feedback_text?: string | null
-          funnel_step?: string | null
-          funnel_type?: string
-          id?: string
-          page_path?: string | null
-          session_id?: string
-          user_id?: string | null
-        }
-        Relationships: []
       }
       glossary_terms: {
         Row: {
