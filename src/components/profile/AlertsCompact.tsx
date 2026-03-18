@@ -40,7 +40,7 @@ export function AlertsCompact() {
 
         {alerts.length === 0 ? (
           <div className="text-center py-4">
-            <div className="w-10 h-10 rounded-full bg-muted mx-auto mb-2 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-primary/5 mx-auto mb-2 flex items-center justify-center">
               <Bell className="h-5 w-5 text-muted-foreground" />
             </div>
             <p className="text-xs text-muted-foreground mb-2">No alerts set up yet</p>
