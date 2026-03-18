@@ -9,9 +9,9 @@ interface CityAnchorsLayerProps {
 }
 
 const ANCHOR_COLORS: Record<string, string> = {
-  orientation: '#0ea5e9',
-  daily_life: '#10b981',
-  mobility: '#3b82f6',
+  shul: '#e11d48',
+  supermarket: '#10b981',
+  landmark: '#3b82f6',
 };
 
 export function CityAnchorsLayer({ map, cityFilter, bounds }: CityAnchorsLayerProps) {

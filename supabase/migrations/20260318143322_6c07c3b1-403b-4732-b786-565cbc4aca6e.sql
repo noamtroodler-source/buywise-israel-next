@@ -1,0 +1,2 @@
+ALTER TABLE city_anchors DROP CONSTRAINT city_anchors_anchor_type_check;
+ALTER TABLE city_anchors ADD CONSTRAINT city_anchors_anchor_type_check CHECK (anchor_type IN ('shul', 'supermarket', 'landmark'));

@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 export interface CityAnchor {
   id: string;
   city_id: string;
-  anchor_type: 'orientation' | 'daily_life' | 'mobility';
+  anchor_type: 'shul' | 'supermarket' | 'landmark';
   name: string;
   name_he: string | null;
   description: string | null;
