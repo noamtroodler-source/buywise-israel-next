@@ -56,6 +56,7 @@ export default function Compare() {
   const { favoriteIds, toggleFavorite } = useFavorites();
   const formatPrice = useFormatPrice();
   const formatArea = useFormatArea();
+  const areaLabels = useAreaLabel();
 
   const isRental = compareCategory === 'rent';
 
