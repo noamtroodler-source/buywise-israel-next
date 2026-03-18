@@ -342,8 +342,7 @@ export default function Areas() {
     return regions.map(region => ({
       ...region,
       cities: region.cities.filter(city => 
-        cityMatchesQuery(city.name, searchQuery) ||
-        city.tags.some(tag => tag.toLowerCase().includes(query))
+        cityMatchesQuery(city.name, searchQuery)
       )
     })).filter(region => region.cities.length > 0);
   }, [searchQuery]);
