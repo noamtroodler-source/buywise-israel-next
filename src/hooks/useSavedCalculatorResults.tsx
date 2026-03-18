@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import type { Json } from '@/integrations/supabase/types';
 import { getUserFriendlyError } from '@/utils/userFriendlyErrors';
 
-export type CalculatorType = 'mortgage' | 'affordability' | 'truecost' | 'rentvsbuy' | 'investment' | 'purchase_tax';
+export type CalculatorType = 'mortgage' | 'affordability' | 'truecost' | 'rentvsbuy' | 'investment';
 
 export interface SavedCalculatorResult {
   id: string;

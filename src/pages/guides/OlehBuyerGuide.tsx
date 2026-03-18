@@ -188,10 +188,10 @@ export default function OlehBuyerGuide() {
             </p>
           </div>
 
-          <Link to="/tools?tool=purchasetax">
+          <Link to="/tools?tool=totalcost">
             <Button variant="outline" size="sm" className="gap-2 mt-4">
               <Calculator className="h-4 w-4" />
-              Calculate Your Oleh Tax Savings
+              Calculate Your Total Purchase Costs
             </Button>
           </Link>
         </div>

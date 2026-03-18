@@ -298,10 +298,10 @@ export default function NewConstructionGuide() {
             <li><strong>Upgrades:</strong> Any customizations beyond standard spec</li>
           </ul>
           <div className="flex gap-3 mt-4">
-            <Link to="/tools?tool=purchasetax">
+            <Link to="/tools?tool=totalcost">
               <Button variant="outline" size="sm" className="gap-2">
                 <Calculator className="h-4 w-4" />
-                Purchase Tax Calculator
+                Total Cost Calculator
               </Button>
             </Link>
             <Link to="/tools?tool=totalcost">
