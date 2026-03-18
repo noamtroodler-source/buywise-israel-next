@@ -52,7 +52,7 @@ function MegaMenuContent({ config }: { config: NavSection }) {
       )}>
         {config.columns.map((column) => (
           <div key={column.title} className="p-6">
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">
               {column.title}
             </h4>
             <ul className="space-y-0.5">
