@@ -142,6 +142,11 @@ export function CommandPalette() {
             >
               <item.icon className="mr-2 h-4 w-4 text-muted-foreground" />
               {item.label}
+              {item.badge === 'beta' && (
+                <span className="ml-1.5 text-[10px] font-semibold uppercase tracking-wide text-primary/70 bg-primary/10 border border-primary/20 rounded px-1 py-px leading-none">
+                  Beta
+                </span>
+              )}
             </CommandItem>
           ))}
         </CommandGroup>
