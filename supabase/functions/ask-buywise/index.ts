@@ -291,6 +291,22 @@ async function buildSystemPrompt(
     }
   }
 
+  // Fetch relevant listings based on conversation context
+  try {
+    const searchText = [pageContext, userQuery || ""].join(" ");
+    const cities = extractCities(searchText);
+    const bedrooms = extractBedrooms(searchText);
+    
+    if (cities.length || bedrooms) {
+      const listingsContext = await fetchListingsContext(supabase, cities, bedrooms);
+      if (listingsContext) {
+        parts.push(listingsContext);
+      }
+    }
+  } catch (e) {
+    console.error("Failed to fetch listings context:", e);
+  }
+
   // Page context
   if (pageContext) {
     parts.push(`\n## Current Page Context\nThe user is currently on: ${pageContext}\nTailor your greeting and suggestions to what they're looking at.`);
