@@ -156,12 +156,6 @@ const CITY_ROOM_SIZE_INSIGHTS: Record<string, RoomInsightFn> = {
       : '') +
     `For buyers who need space and can commute, Hadera's value proposition is hard to beat.`,
 
-  'nahariya': (m) =>
-    `Nahariya offers beachfront living at prices that challenge belief. ` +
-    (m.room3Price ? `A 3-room at ${fmt(m.room3Price)} with coastal proximity is among the cheapest in Israel. ` : '') +
-    (m.room4Price ? `4-room units at ${fmt(m.room4Price)} give families real space near the sea. ` : '') +
-    `If you're looking at Nahariya, you're prioritizing lifestyle and value — the room-size premiums here are minimal compared to anywhere else on the coast.`,
-
   'beit-shemesh': (m) =>
     `Beit Shemesh's rapid population growth means strong demand across all apartment sizes. ` +
     (m.room4Price ? `The 4-room at ${fmt(m.room4Price)} is the community workhorse — most families start and settle here. ` : '') +
