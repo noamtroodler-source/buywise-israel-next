@@ -3,11 +3,14 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useProjectWizard, ProjectStatus } from '../ProjectWizardContext';
 import { useCities } from '@/hooks/useCities';
+import { useNeighborhoodNames } from '@/hooks/useNeighborhoodNames';
 import { AddressAutocomplete, ParsedAddress } from '@/components/agent/wizard/AddressAutocomplete';
+import { CityAutocomplete } from '@/components/agent/wizard/CityAutocomplete';
 import { NeighborhoodAutocomplete } from '@/components/agent/wizard/NeighborhoodAutocomplete';
 import { PropertyMiniMapWrapper } from '@/components/property/PropertyMiniMapWrapper';
 import { AlertCircle, MapPin } from 'lucide-react';
 import { GoogleMapsProvider } from '@/components/maps/GoogleMapsProvider';
+import { useCallback } from 'react';
 
 const statusOptions: { value: ProjectStatus; label: string }[] = [
   { value: 'planning', label: 'Planning' },
@@ -22,12 +25,23 @@ export function StepBasics() {
   const { data, updateData } = useProjectWizard();
   const { data: cities = [] } = useCities();
   const supportedCityNames = cities.map(c => c.name);
+  const { data: neighborhoods = [] } = useNeighborhoodNames(data.city || null);
+
+  const matchNeighborhood = useCallback((googleNeighborhood: string | undefined) => {
+    if (!googleNeighborhood || neighborhoods.length === 0) return undefined;
+    const lower = googleNeighborhood.toLowerCase();
+    const match = neighborhoods.find(n => n.name.toLowerCase() === lower);
+    return match?.name;
+  }, [neighborhoods]);
 
   const handleAddressSelect = (address: ParsedAddress) => {
+    const matchedCity = address.matchedSupportedCity || address.city || data.city;
+    const matchedNeighborhood = matchNeighborhood(address.neighborhood);
+
     updateData({
       address: address.streetAddress || address.fullAddress,
-      city: address.matchedSupportedCity || address.city || data.city,
-      neighborhood: address.neighborhood || data.neighborhood,
+      city: matchedCity,
+      neighborhood: matchedNeighborhood || data.neighborhood,
       latitude: address.latitude,
       longitude: address.longitude,
     });
@@ -44,7 +58,6 @@ export function StepBasics() {
   const hasAddressText = (data.address || '').trim().length > 0;
   const hasValidLocation = !!(data.latitude && data.longitude);
   const showAddressWarning = hasAddressText && !hasValidLocation;
-  // Check if address has a street number (contains digits)
   const hasMissingStreetNumber = hasValidLocation && !/\d+/.test(data.address || '');
 
   return (
@@ -58,6 +71,7 @@ export function StepBasics() {
       </div>
 
       <div className="space-y-4">
+        {/* 1. Project Name */}
         <div className="space-y-2">
           <Label htmlFor="name">Project Name *</Label>
           <Input
@@ -69,39 +83,7 @@ export function StepBasics() {
           />
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="city">City *</Label>
-          <Select
-            value={data.city}
-            onValueChange={(value) => updateData({ city: value })}
-          >
-            <SelectTrigger className="h-11 rounded-xl">
-              <SelectValue placeholder="Select city" />
-            </SelectTrigger>
-            <SelectContent>
-              {cities.map((city) => (
-                <SelectItem key={city.slug} value={city.name}>
-                  {city.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="neighborhood">Neighborhood</Label>
-          <NeighborhoodAutocomplete
-            value={data.neighborhood || ''}
-            onValueChange={(val) => updateData({ neighborhood: val })}
-            cityName={data.city}
-            placeholder="Select or search neighborhood"
-          />
-          <p className="text-xs text-muted-foreground">
-            Helps buyers find this project when filtering by neighborhood
-          </p>
-        </div>
-
-        {/* Location Section with AddressAutocomplete */}
+        {/* 2. Street Address + Map */}
         <div className="space-y-4 pt-2">
           <div className="flex items-center gap-3">
             <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -118,7 +100,6 @@ export function StepBasics() {
               onInputChange={handleAddressInputChange}
               placeholder="Start typing: Rothschild 42, Tel Aviv..."
               supportedCities={supportedCityNames}
-              selectedCity={data.city}
             />
             {showAddressWarning ? (
               <p className="text-xs text-primary font-medium">
@@ -135,7 +116,6 @@ export function StepBasics() {
             )}
           </div>
 
-          {/* Map Preview */}
           {data.latitude && data.longitude ? (
             <div className="space-y-2">
               <Label>Confirm Location</Label>
@@ -158,6 +138,36 @@ export function StepBasics() {
           )}
         </div>
 
+        {/* 3. City (searchable) */}
+        <div className="space-y-2">
+          <Label htmlFor="city">City *</Label>
+          <CityAutocomplete
+            value={data.city}
+            onValueChange={(value) => updateData({ city: value, neighborhood: '' })}
+            placeholder="Search or select city"
+          />
+          {data.latitude && data.city && (
+            <p className="text-xs text-muted-foreground">
+              Auto-filled from address. Change if needed.
+            </p>
+          )}
+        </div>
+
+        {/* 4. Neighborhood (searchable, scoped to city) */}
+        <div className="space-y-2">
+          <Label htmlFor="neighborhood">Neighborhood</Label>
+          <NeighborhoodAutocomplete
+            value={data.neighborhood || ''}
+            onValueChange={(val) => updateData({ neighborhood: val })}
+            cityName={data.city}
+            placeholder="Select or search neighborhood"
+          />
+          <p className="text-xs text-muted-foreground">
+            Helps buyers find this project when filtering by neighborhood
+          </p>
+        </div>
+
+        {/* 5. Project Status */}
         <div className="space-y-2">
           <Label>Project Status *</Label>
           <Select
