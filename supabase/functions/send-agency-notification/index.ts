@@ -66,7 +66,8 @@ const getNotificationContent = (payload: NotificationPayload) => {
         subject: `Just a heads up: ${payload.agentName} has left your agency`,
         body: `${payload.agentName} has left your agency.\n\nIf this was unexpected, you may want to reach out to them.`,
         html: `
-          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+            ${brandHeader}
             <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 16px;">Just a heads up</h1>
             <p style="color: #333; font-size: 16px; line-height: 1.6;"><strong>${payload.agentName}</strong> has left your agency.</p>
             <p style="color: #666; font-size: 14px;">If this was unexpected, you may want to reach out to them.</p>
