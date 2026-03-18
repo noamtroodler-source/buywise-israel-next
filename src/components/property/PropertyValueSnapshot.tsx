@@ -11,6 +11,7 @@ interface PropertyValueSnapshotProps {
   averagePriceSqm?: number | null;
   priceChange?: number | null;
   listingStatus?: string;
+  /** Israeli government standard room count (bedrooms + additional rooms). Use getIsraeliRoomCount(). */
   bedrooms?: number | null;
   cityRentalMin?: number | null;
   cityRentalMax?: number | null;

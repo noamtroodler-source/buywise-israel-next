@@ -20,7 +20,9 @@ const AVG_SIZE_BY_ROOMS: Record<number, number> = {
 /**
  * Fetches approved CBS mappings for a city and joins with latest price data.
  * Returns price data keyed by anglo_name for easy lookup.
- * @param rooms - Room count to query (3, 4, or 5). Defaults to 4.
+ * @param rooms - Israeli government standard total room count (bedrooms + additional rooms).
+ *   Use getIsraeliRoomCount() from '@/lib/israeliRoomCount' to convert BuyWise fields.
+ *   Supported: 3, 4, or 5. Defaults to 4.
  */
 export function useNeighborhoodPrices(cityName: string | undefined, rooms: number = 4) {
   // Clamp rooms to supported range
@@ -146,7 +148,9 @@ export function useNeighborhoodPrices(cityName: string | undefined, rooms: numbe
 /**
  * Fetches neighborhood average price for a specific neighborhood in a city.
  * Used on property detail pages.
- * @param rooms - Room count for room-specific comparison (defaults to 4)
+ * @param rooms - Israeli government standard total room count (bedrooms + additional rooms).
+ *   Use getIsraeliRoomCount() from '@/lib/israeliRoomCount' to convert BuyWise fields.
+ *   Defaults to 4.
  */
 export function useNeighborhoodAvgPrice(
   cityName: string | undefined,

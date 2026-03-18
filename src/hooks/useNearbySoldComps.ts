@@ -10,6 +10,13 @@ interface UseNearbySoldCompsOptions {
   maxRooms?: number;
 }
 
+/**
+ * Fetches nearby sold comparable transactions from government data.
+ *
+ * IMPORTANT: minRooms/maxRooms expect Israeli government standard total room count
+ * (bedrooms + additional rooms), NOT BuyWise bedrooms alone.
+ * Use getIsraeliRoomCount() from '@/lib/israeliRoomCount' to convert before calling.
+ */
 export function useNearbySoldComps(
   latitude: number | null | undefined,
   longitude: number | null | undefined,

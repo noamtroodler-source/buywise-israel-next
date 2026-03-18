@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useAreaLabel } from '@/contexts/PreferencesContext';
 import { BarChart3, ShieldCheck, Info, ArrowRight } from 'lucide-react';
+import { getIsraeliRoomCount } from '@/lib/israeliRoomCount';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -33,6 +34,7 @@ interface MarketIntelligenceProps {
     is_accessible?: boolean | null;
     entry_date?: string | null;
     original_price?: number | null;
+    additional_rooms?: number | null;
     description?: string | null;
     features?: string[] | null;
     property_type?: string;
@@ -112,19 +114,24 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
 
   const citySlug = property.city?.toLowerCase().replace(/['']/g, '').replace(/\s+/g, '-') || '';
 
+  // Convert BuyWise bedrooms + additional_rooms → Israeli gov standard room count
+  const israeliRooms = getIsraeliRoomCount(property.bedrooms, property.additional_rooms);
+
   // Room-specific city average (overrides generic city avg when available)
-  const { data: roomPrice } = useRoomSpecificCityPrice(property.city, property.bedrooms);
+  // Note: rooms param = Israeli standard total room count (bedrooms + additional)
+  const { data: roomPrice } = useRoomSpecificCityPrice(property.city, israeliRooms);
   
   // Neighborhood-level average (highest priority for comparison card)
+  // Note: rooms param = Israeli standard total room count
   const { data: neighborhoodPrice } = useNeighborhoodAvgPrice(
     property.city,
     property.neighborhood ?? undefined,
-    property.bedrooms ?? 4
+    israeliRooms ?? 4
   );
 
   const effectiveAvgPriceSqm = roomPrice?.avgPriceSqm ?? cityData?.average_price_sqm ?? null;
   const effectiveYoyChange = roomPrice?.yoyChange ?? cityData?.yoy_price_change ?? null;
-  const effectiveRoomCount = roomPrice ? property.bedrooms : null;
+  const effectiveRoomCount = roomPrice ? israeliRooms : null;
 
   // Neighborhood avg price per sqm (falls back to city if unavailable)
   const neighborhoodAvgPriceSqm = neighborhoodPrice?.avg_price_sqm ?? null;
@@ -143,6 +150,7 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
     property_type: property.property_type || 'apartment',
     bedrooms: property.bedrooms,
     bathrooms: property.bathrooms || null,
+    israeli_room_count: israeliRooms,
     floor: property.floor ?? null,
     total_floors: property.total_floors ?? null,
     year_built: property.year_built ?? null,
@@ -208,7 +216,7 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
           averagePriceSqm={effectiveAvgPriceSqm}
           priceChange={effectiveYoyChange}
           listingStatus={property.listing_status}
-          bedrooms={property.bedrooms}
+          bedrooms={israeliRooms}
           cityArnonaRate={cityData?.arnona_rate_sqm}
           cityAvgVaadBayit={cityData?.average_vaad_bayit}
           roomSpecificCityAvgPrice={roomPrice?.avgPrice ?? null}
@@ -234,7 +242,7 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
           latitude={property.latitude}
           longitude={property.longitude}
           city={property.city}
-          propertyRooms={property.bedrooms ?? undefined}
+          propertyRooms={israeliRooms ?? undefined}
           propertyPrice={property.price}
           propertySizeSqm={property.size_sqm ?? undefined}
           hideHeader
