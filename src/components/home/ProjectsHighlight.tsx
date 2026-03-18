@@ -248,7 +248,7 @@ export function ProjectsHighlight() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.1 + i * 0.05 }}
-                className="aspect-[16/10]"
+                className="aspect-[16/9]"
               >
                 <ProjectCard project={project} />
               </motion.div>
