@@ -95,10 +95,6 @@ export function ProjectsHighlight() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <div className="flex items-center gap-2 text-primary mb-1">
-              <Building2 className="h-5 w-5" />
-              <span className="text-sm font-medium">New Construction</span>
-            </div>
             <h2 className="text-2xl md:text-4xl font-bold text-foreground">
               New Developments
             </h2>
