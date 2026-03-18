@@ -26,9 +26,8 @@ export function ProjectDeveloperCard({ developer }: ProjectDeveloperCardProps) {
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Star className="h-5 w-5 text-primary" />
-          Why This Developer
+        <CardTitle className="text-lg">
+          About the Developer
         </CardTitle>
       </CardHeader>
       <CardContent className="p-3 md:p-6 space-y-5">
