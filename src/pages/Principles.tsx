@@ -127,23 +127,24 @@ export default function Principles() {
               </h2>
             </motion.div>
 
-            <div className="grid md:grid-cols-2 gap-6 md:gap-10 max-w-4xl mx-auto">
+            <div className="grid md:grid-cols-2 gap-8 md:gap-16 max-w-3xl mx-auto">
               {/* We Are */}
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
+                className="flex flex-col"
               >
-                <h3 className="font-semibold text-foreground mb-4 text-lg flex items-center gap-2">
+                <h3 className="font-semibold text-foreground mb-5 text-lg flex items-center gap-2.5">
                   <div className="p-1.5 rounded-full bg-primary/10">
                     <Check className="h-4 w-4 text-primary" />
                   </div>
                   What We Are
                 </h3>
-                <ul className="space-y-3">
+                <ul className="space-y-4">
                   {weAreItems.map((item, i) => (
                     <li key={i} className="flex items-start gap-3">
-                      <Check className="h-4 w-4 text-primary mt-1 shrink-0" />
+                      <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
                       <span className="text-muted-foreground text-sm leading-relaxed">{item}</span>
                     </li>
                   ))}
@@ -155,17 +156,18 @@ export default function Principles() {
                 initial={{ opacity: 0, x: 20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
+                className="flex flex-col"
               >
-                <h3 className="font-semibold text-foreground mb-4 text-lg flex items-center gap-2">
+                <h3 className="font-semibold text-foreground mb-5 text-lg flex items-center gap-2.5">
                   <div className="p-1.5 rounded-full bg-destructive/10">
                     <X className="h-4 w-4 text-destructive" />
                   </div>
                   What We're Not
                 </h3>
-                <ul className="space-y-3">
+                <ul className="space-y-4">
                   {weAreNotItems.map((item, i) => (
                     <li key={i} className="flex items-start gap-3">
-                      <X className="h-4 w-4 text-destructive/70 mt-1 shrink-0" />
+                      <X className="h-4 w-4 text-destructive/70 mt-0.5 shrink-0" />
                       <span className="text-muted-foreground text-sm leading-relaxed">{item}</span>
                     </li>
                   ))}
