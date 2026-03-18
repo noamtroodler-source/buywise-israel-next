@@ -438,6 +438,7 @@ export default function Tools() {
                         tools={phaseTools} 
                         phaseKey={phaseKey}
                         onToolClick={handleToolClick}
+                        betaToolIds={isAdmin ? undefined : BETA_TOOL_IDS}
                       />
                     ) : (
                       /* Desktop: Grid */
