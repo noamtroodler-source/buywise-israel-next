@@ -77,6 +77,7 @@
     "use-places-autocomplete": "^4.0.1",
     "use-supercluster": "^1.2.0",
     "vaul": "^0.9.9",
+    "xlsx": "^0.18.5",
     "zod": "^3.25.76"
   },
   "devDependencies": {
