@@ -5,6 +5,7 @@ import { FloatingWhatsApp } from '../shared/FloatingWhatsApp';
 import { MobileBottomNav } from './MobileBottomNav';
 import { CookieConsentBanner } from '../shared/CookieConsentBanner';
 import { CommandPaletteProvider } from '@/hooks/useCommandPalette';
+import { useRouteVisitTracker } from '@/hooks/useRouteVisitTracker';
 
 interface LayoutProps {
   children: ReactNode;
@@ -13,6 +14,7 @@ interface LayoutProps {
 }
 
 export function Layout({ children, hideFooter, hideMobileNav }: LayoutProps) {
+  useRouteVisitTracker();
   return (
     <CommandPaletteProvider>
       <div className="flex min-h-screen flex-col">
