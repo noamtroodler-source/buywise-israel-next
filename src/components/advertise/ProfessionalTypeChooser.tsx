@@ -35,10 +35,10 @@ export function ProfessionalTypeChooser() {
           className="text-center mb-14"
         >
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Choose Your Path
+            Register Your Agency
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Whether you're an individual agent, running an agency, or a property developer—we have the right solution for you.
+            Set up your agency profile, then invite your agents to join your team through a simple invite link.
           </p>
         </motion.div>
 
