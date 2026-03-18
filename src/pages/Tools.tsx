@@ -245,6 +245,7 @@ function ToolsCarousel({ tools, phaseKey, onToolClick, betaToolIds }: ToolsCarou
               <ToolCard 
                 tool={tool} 
                 onClick={() => onToolClick(tool.id)}
+                isBeta={betaToolIds?.has(tool.id)}
               />
             </div>
           ))}
