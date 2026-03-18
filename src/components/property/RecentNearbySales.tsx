@@ -343,9 +343,9 @@ export function RecentNearbySales({
   // Expose verdict data to parent (must be before early returns)
   useEffect(() => {
     if (onVerdictComputed) {
-      onVerdictComputed(avgComparison, comps?.length ?? 0);
+      onVerdictComputed(avgComparison, comps?.length ?? 0, radiusUsedM);
     }
-  }, [avgComparison, comps?.length, onVerdictComputed]);
+  }, [avgComparison, comps?.length, radiusUsedM, onVerdictComputed]);
 
   // Show empty state if we don't have coordinates
   if (!latitude || !longitude) {
