@@ -252,7 +252,7 @@ export function PropertyValueSnapshot({
               <Tooltip>
                 <TooltipTrigger asChild>
                     <span className="text-sm cursor-help border-b border-dotted border-muted-foreground/30">
-                      vs {comparisonLabel} {!isNeighborhoodComparison && roomCount ? `${roomCount}-Room ` : ''}Avg
+                      vs {comparisonLabel} Avg
                     </span>
                   </TooltipTrigger>
                   <TooltipContent side="top" className="max-w-xs">
