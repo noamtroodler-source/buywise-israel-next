@@ -435,7 +435,7 @@ export default function Areas() {
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
                   type="text"
-                  placeholder="Search cities or neighborhoods..."
+                  placeholder="Search cities..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-12 h-12 rounded-full border-border/50 bg-background shadow-sm"
