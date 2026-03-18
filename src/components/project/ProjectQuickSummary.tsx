@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { Project, Developer } from '@/types/projects';
+import { getProjectProgress } from '@/lib/projectProgress';
 
 interface ProjectQuickSummaryProps {
   project: Project & { construction_progress_percent?: number };
