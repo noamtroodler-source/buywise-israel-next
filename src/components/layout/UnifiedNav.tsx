@@ -104,15 +104,15 @@ function SimpleMenuContent({ items }: { items: { label: string; href: string; de
   const { isVisited } = useContentVisits();
 
   return (
-    <div className="rounded-xl border bg-popover text-popover-foreground shadow-xl overflow-hidden w-[180px]">
-      <div className="p-3">
-        <ul className="space-y-1">
+    <div className="rounded-xl border border-border/50 border-t-2 border-t-primary bg-popover text-popover-foreground shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08),0_2px_8px_-2px_rgba(0,0,0,0.04)] overflow-hidden w-[220px]">
+      <div className="p-4">
+        <ul className="space-y-0.5">
           {items.map((item) => (
             <li key={item.href}>
               <NavigationMenuLink asChild>
                 <Link
                   to={item.href}
-                  className="group flex flex-col rounded-md px-2 py-1.5 hover:bg-accent transition-colors"
+                  className="group flex flex-col rounded-lg px-3 py-2.5 -mx-1 hover:bg-muted/50 transition-colors"
                 >
                   <span className="text-sm font-medium text-foreground group-hover:text-accent-foreground flex items-center gap-1.5">
                     {isVisited(item.href) && (
