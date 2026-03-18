@@ -13,7 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Property } from '@/types/database';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useAuth } from '@/hooks/useAuth';
-import { useFormatPrice, useFormatArea } from '@/contexts/PreferencesContext';
+import { useFormatPrice, useFormatArea, useAreaLabel } from '@/contexts/PreferencesContext';
 import { toast } from 'sonner';
 import { GuestSignupNudge } from '@/components/shared/GuestSignupNudge';
 import {
