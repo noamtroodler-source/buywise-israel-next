@@ -3383,6 +3383,57 @@ export type Database = {
         }
         Relationships: []
       }
+      neighborhood_profiles: {
+        Row: {
+          anglo_community: string | null
+          best_for: string | null
+          city: string
+          created_at: string
+          daily_life: string | null
+          honest_tradeoff: string | null
+          id: string
+          neighborhood: string
+          physical_character: string | null
+          proximity_anchors: string | null
+          reputation: string | null
+          sources: string | null
+          transit_mobility: string | null
+          updated_at: string
+        }
+        Insert: {
+          anglo_community?: string | null
+          best_for?: string | null
+          city: string
+          created_at?: string
+          daily_life?: string | null
+          honest_tradeoff?: string | null
+          id?: string
+          neighborhood: string
+          physical_character?: string | null
+          proximity_anchors?: string | null
+          reputation?: string | null
+          sources?: string | null
+          transit_mobility?: string | null
+          updated_at?: string
+        }
+        Update: {
+          anglo_community?: string | null
+          best_for?: string | null
+          city?: string
+          created_at?: string
+          daily_life?: string | null
+          honest_tradeoff?: string | null
+          id?: string
+          neighborhood?: string
+          physical_character?: string | null
+          proximity_anchors?: string | null
+          reputation?: string | null
+          sources?: string | null
+          transit_mobility?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       overage_records: {
         Row: {
           actual_count: number
