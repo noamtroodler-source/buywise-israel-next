@@ -32,7 +32,7 @@ export function MarketDataContext({ variant = 'compact', className }: MarketData
           )} />
         </CollapsibleTrigger>
         <CollapsibleContent>
-          <div className="mt-2 pl-[18px] space-y-1 text-xs text-muted-foreground">
+          <div className="mt-2 grid grid-cols-2 gap-x-6 gap-y-1 text-xs text-muted-foreground">
             {FACTORS.map((f) => (
               <p key={f.label}>
                 <span className="font-medium text-foreground/70">{f.label}:</span> {f.desc}
