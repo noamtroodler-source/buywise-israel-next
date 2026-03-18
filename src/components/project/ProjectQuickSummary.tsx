@@ -7,7 +7,7 @@ import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { Project, Developer } from '@/types/projects';
 
 interface ProjectQuickSummaryProps {
-  project: Project & { construction_progress_percent?: number; featured_highlight?: string | null };
+  project: Project & { construction_progress_percent?: number };
   developer?: Developer | null;
   onShare?: () => void;
   onSave?: () => void;
