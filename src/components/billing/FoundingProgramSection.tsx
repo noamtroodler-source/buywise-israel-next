@@ -35,7 +35,7 @@ export function FoundingProgramSection() {
           <h2 className="text-2xl md:text-3xl font-bold text-foreground">Founding Partner Program</h2>
         </div>
         <p className="text-muted-foreground max-w-xl mx-auto mb-4">
-          Be one of the first 15 agencies on the platform and unlock exclusive early-adopter benefits.
+          Be one of the first agencies on the platform and unlock exclusive early-adopter benefits.
         </p>
         {spots && spots.remaining > 0 && (
           <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-4 py-1.5">
