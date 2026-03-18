@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FeaturedPropertySlot } from '@/hooks/useHomepageFeatured';
 import { cn } from '@/lib/utils';
+import { FeaturedLiftBadges } from '@/components/admin/FeaturedLiftBadges';
 
 interface FeaturedPropertyCardProps {
   slot: FeaturedPropertySlot;
