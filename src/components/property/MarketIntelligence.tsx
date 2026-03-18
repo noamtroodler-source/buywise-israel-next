@@ -87,7 +87,7 @@ function MarketVerdictBadge({ avgComparison, compsCount }: { avgComparison: numb
         </TooltipTrigger>
         <TooltipContent side="right" className="max-w-xs">
           <p className="text-xs">
-            Based on {compsCount} nearby sale{compsCount > 1 ? 's' : ''} comparing price/m².
+            Based on {compsCount} nearby sale{compsCount > 1 ? 's' : ''} comparing price{areaLabels.slashArea}.
           </p>
         </TooltipContent>
       </Tooltip>

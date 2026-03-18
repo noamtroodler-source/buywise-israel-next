@@ -229,6 +229,16 @@ export function useAreaUnitLabel() {
   return areaUnit === 'sqft' ? 'sqft' : 'sqm';
 }
 
+// Returns dynamic area labels for user-facing text
+export function useAreaLabel() {
+  const { areaUnit } = usePreferences();
+  return {
+    unit: areaUnit === 'sqft' ? 'sqft' : 'm²',
+    perArea: areaUnit === 'sqft' ? 'per sqft' : 'per m²',
+    slashArea: areaUnit === 'sqft' ? '/sqft' : '/m²',
+  };
+}
+
 export function useFormatPricePerArea() {
   const { currency, exchangeRate, areaUnit } = usePreferences();
 

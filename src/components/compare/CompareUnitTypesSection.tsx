@@ -198,7 +198,7 @@ export function CompareUnitTypesSection({
 
                 {/* Price per sqm */}
                 <CompareRow 
-                  label="Price/m²"
+                  label={`Price${areaLabels.slashArea}`}
                   icon={DollarSign}
                   values={projects.map(p => {
                     const unit = getSelectedUnit(p.id);

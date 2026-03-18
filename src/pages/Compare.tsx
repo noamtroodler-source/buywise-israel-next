@@ -380,7 +380,7 @@ export default function Compare() {
     {
       label: 'Price vs City Avg',
       getValue: (p: Property) => getPriceVsCityAvg(p),
-      tooltip: 'How this property\'s price per m² compares to the city average.',
+      tooltip: `How this property's price ${areaLabels.perArea} compares to the city average.`,
     },
     {
       label: '12-Month Change',

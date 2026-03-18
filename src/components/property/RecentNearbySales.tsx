@@ -557,7 +557,7 @@ export function RecentNearbySales({
                                 )}
                               >
                                 {Math.abs(comparison) <= 2
-                                  ? "Similar price per m²"
+                                  ? `Similar price ${areaLabels.perArea}`
                                   : comparison > 0 
                                     ? `Listing is ${comparison.toFixed(0)}% above this sale`
                                     : `Listing is ${Math.abs(comparison).toFixed(0)}% below this sale`

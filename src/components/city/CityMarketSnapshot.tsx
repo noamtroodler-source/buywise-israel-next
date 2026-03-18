@@ -64,7 +64,7 @@ export function CityMarketSnapshot({ cityData }: CityMarketSnapshotProps) {
     {
       icon: DollarSign,
       value: formatPrice(pricePerSqm),
-      label: 'Price per m²',
+      label: `Price ${areaLabels.perArea}`,
       sublabel: priceVsNational !== null 
         ? `${priceVsNational > 0 ? '+' : ''}${priceVsNational}% vs national avg`
         : 'Average asking price',
