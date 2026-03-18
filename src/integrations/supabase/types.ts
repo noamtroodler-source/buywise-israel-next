@@ -3392,6 +3392,7 @@ export type Database = {
           daily_life: string | null
           honest_tradeoff: string | null
           id: string
+          narrative: string | null
           neighborhood: string
           physical_character: string | null
           proximity_anchors: string | null
@@ -3408,6 +3409,7 @@ export type Database = {
           daily_life?: string | null
           honest_tradeoff?: string | null
           id?: string
+          narrative?: string | null
           neighborhood: string
           physical_character?: string | null
           proximity_anchors?: string | null
@@ -3424,6 +3426,7 @@ export type Database = {
           daily_life?: string | null
           honest_tradeoff?: string | null
           id?: string
+          narrative?: string | null
           neighborhood?: string
           physical_character?: string | null
           proximity_anchors?: string | null

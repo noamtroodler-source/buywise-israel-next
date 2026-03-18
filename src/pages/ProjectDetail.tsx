@@ -1,6 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Compass } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { useProject, useProjectUnits } from '@/hooks/useProjects';
@@ -9,6 +9,8 @@ import { useProjectFavorites } from '@/hooks/useProjectFavorites';
 import { useAuth } from '@/hooks/useAuth';
 import { useBuyerProfile, getEffectiveBuyerType } from '@/hooks/useBuyerProfile';
 import { PropertyLocation } from '@/components/property/PropertyLocation';
+import { NeighborhoodContextCard } from '@/components/property/NeighborhoodContextCard';
+import { MobileCollapsibleSection } from '@/components/property/MobileCollapsibleSection';
 import { GoogleMapsProvider } from '@/components/maps/GoogleMapsProvider';
 import {
   ProjectHero,
@@ -145,6 +147,22 @@ export default function ProjectDetail() {
                   entityType="project"
                 />
               </GoogleMapsProvider>
+
+              {/* Neighborhood Guide */}
+              {project.neighborhood && (
+                <MobileCollapsibleSection
+                  id="neighborhood-guide"
+                  title={`${project.neighborhood} Guide`}
+                  icon={<Compass className="h-5 w-5" />}
+                  summary="Know the neighborhood before you commit"
+                  alwaysStartClosed
+                >
+                  <NeighborhoodContextCard
+                    city={project.city}
+                    neighborhood={project.neighborhood}
+                  />
+                </MobileCollapsibleSection>
+              )}
               
               {/* Questions to Ask the Developer - After location, before next steps */}
               <ProjectQuestionsToAsk 

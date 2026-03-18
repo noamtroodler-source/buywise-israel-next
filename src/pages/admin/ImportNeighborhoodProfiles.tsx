@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Upload, CheckCircle, AlertCircle, FileSpreadsheet } from 'lucide-react';
+import { Upload, CheckCircle, AlertCircle, FileSpreadsheet, FileText } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 interface ProfileRow {
@@ -298,6 +298,97 @@ export default function ImportNeighborhoodProfiles() {
           )}
         </CardContent>
       </Card>
+
+      {/* Narrative Import Section */}
+      <NarrativeImportCard />
     </div>
+  );
+}
+
+function NarrativeImportCard() {
+  const [importing, setImporting] = useState(false);
+  const [result, setResult] = useState<{ parsed: number; updated: number; created: number; errors: string[] } | null>(null);
+
+  const handleMarkdownUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.endsWith('.md') && !file.name.endsWith('.txt')) {
+      toast.error('Please upload a .md or .txt file');
+      return;
+    }
+
+    const markdown = await file.text();
+    if (!markdown || markdown.length < 100) {
+      toast.error('File appears empty or too short');
+      return;
+    }
+
+    setImporting(true);
+    setResult(null);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('import-neighborhood-narratives', {
+        body: { markdown },
+      });
+
+      if (error) {
+        toast.error(`Import error: ${error.message}`);
+      } else if (data) {
+        setResult(data);
+        toast.success(`Processed ${data.parsed} narratives (${data.updated} updated, ${data.created} created)`);
+      }
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setImporting(false);
+    }
+  }, []);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <FileText className="h-5 w-5" />
+          Import Neighborhood Narratives (Markdown)
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <p className="text-sm text-muted-foreground">
+          Upload a Markdown file with <code>## City — Neighborhood</code> headers followed by narrative text
+          and <strong>**Best for:**</strong> lines.
+        </p>
+        <input
+          type="file"
+          accept=".md,.txt"
+          onChange={handleMarkdownUpload}
+          disabled={importing}
+          className="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+        />
+        {importing && <p className="text-sm text-muted-foreground">Importing narratives...</p>}
+
+        {result && (
+          <div className="space-y-2 pt-4 border-t border-border">
+            <div className="flex items-center gap-2 text-sm">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <span className="font-medium">
+                {result.parsed} parsed • {result.updated} updated • {result.created} created
+              </span>
+            </div>
+            {result.errors?.length > 0 && (
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-sm text-destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <span>{result.errors.length} errors</span>
+                </div>
+                <div className="max-h-40 overflow-y-auto text-xs text-muted-foreground bg-muted p-2 rounded">
+                  {result.errors.map((e: string, i: number) => <p key={i}>{e}</p>)}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

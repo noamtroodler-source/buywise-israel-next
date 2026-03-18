@@ -1,0 +1,1 @@
+ALTER TABLE public.neighborhood_profiles ADD COLUMN IF NOT EXISTS narrative text;

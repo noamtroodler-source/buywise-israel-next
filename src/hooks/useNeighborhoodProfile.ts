@@ -13,6 +13,7 @@ export interface NeighborhoodProfile {
   transit_mobility: string | null;
   honest_tradeoff: string | null;
   best_for: string | null;
+  narrative: string | null;
   sources: string | null;
   created_at: string;
   updated_at: string;
