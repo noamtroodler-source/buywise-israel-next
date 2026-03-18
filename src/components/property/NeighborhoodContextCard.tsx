@@ -35,7 +35,7 @@ export function NeighborhoodContextCard({ city, neighborhood }: NeighborhoodCont
           <Sparkles className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
           <p className="text-sm text-foreground">
             <span className="font-semibold text-primary">Best for: </span>
-            {profile.best_for}
+            {profile.best_for.replace(/\s*-\s*$/, '')}
           </p>
         </div>
       )}
