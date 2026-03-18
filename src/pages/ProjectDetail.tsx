@@ -1,4 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
+import { useEffect } from 'react';
+import { setPageContextData } from '@/hooks/usePageContext';
 import { motion } from 'framer-motion';
 import { Loader2, Compass } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
