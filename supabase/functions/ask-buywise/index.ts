@@ -4,20 +4,18 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+    "authorization, x-client-info, apikey, content-type, x-user-token, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Simple in-memory rate limiter (per session, resets on cold start)
+// Simple in-memory rate limiter
 const rateLimiter = new Map<string, number[]>();
 
 function isRateLimited(sessionId: string): boolean {
   const now = Date.now();
-  const window = 60_000; // 1 minute
+  const window = 60_000;
   const maxRequests = 5;
-  
   const timestamps = (rateLimiter.get(sessionId) || []).filter(t => now - t < window);
   if (timestamps.length >= maxRequests) return true;
-  
   timestamps.push(now);
   rateLimiter.set(sessionId, timestamps);
   return false;
@@ -81,14 +79,14 @@ You know about:
 async function buildSystemPrompt(
   pageContext: string,
   supabaseUrl: string,
-  supabaseKey: string
+  supabaseKey: string,
+  userToken?: string
 ): Promise<string> {
   const parts = [SYSTEM_PROMPT_IDENTITY];
+  const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // Fetch live calculator constants for accuracy
+  // Fetch live calculator constants
   try {
-    const supabase = createClient(supabaseUrl, supabaseKey);
-    
     const { data: constants } = await supabase
       .from("calculator_constants")
       .select("constant_key, value_numeric, label, category")
@@ -103,7 +101,7 @@ async function buildSystemPrompt(
       parts.push(`\n## Current Data (verified, use these numbers)\n${constLines}`);
     }
 
-    // Fetch glossary terms for context
+    // Fetch glossary terms
     const { data: glossary } = await supabase
       .from("glossary_terms")
       .select("english_term, hebrew_term, transliteration, simple_explanation")
@@ -117,10 +115,50 @@ async function buildSystemPrompt(
     }
   } catch (e) {
     console.error("Failed to fetch DB context:", e);
-    // Continue without DB data — system prompt is still useful
   }
 
-  // Add page context
+  // Buyer profile injection for authenticated users
+  if (userToken) {
+    try {
+      const userClient = createClient(supabaseUrl, supabaseKey, {
+        global: { headers: { Authorization: `Bearer ${userToken}` } },
+      });
+      const { data: { user } } = await userClient.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from("buyer_profiles")
+          .select("residency_status, purchase_purpose, is_first_property, buyer_entity, budget_min, budget_max, target_cities, aliyah_year, purchase_timeline, is_upgrading")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (profile) {
+          const lines: string[] = [];
+          if (profile.residency_status) lines.push(`- Residency: ${profile.residency_status}`);
+          if (profile.purchase_purpose) lines.push(`- Purpose: ${profile.purchase_purpose}`);
+          if (profile.is_first_property !== null) lines.push(`- First property in Israel: ${profile.is_first_property ? 'Yes' : 'No'}`);
+          if (profile.buyer_entity) lines.push(`- Buying as: ${profile.buyer_entity}`);
+          if (profile.budget_min || profile.budget_max) {
+            const budgetStr = profile.budget_min && profile.budget_max
+              ? `₪${(profile.budget_min/1000000).toFixed(1)}M – ₪${(profile.budget_max/1000000).toFixed(1)}M`
+              : profile.budget_max ? `Up to ₪${(profile.budget_max/1000000).toFixed(1)}M` : `From ₪${(profile.budget_min/1000000).toFixed(1)}M`;
+            lines.push(`- Budget: ${budgetStr}`);
+          }
+          if (profile.target_cities?.length) lines.push(`- Target cities: ${profile.target_cities.join(', ')}`);
+          if (profile.aliyah_year) lines.push(`- Aliyah year: ${profile.aliyah_year}`);
+          if (profile.purchase_timeline) lines.push(`- Timeline: ${profile.purchase_timeline}`);
+          if (profile.is_upgrading) lines.push(`- Upgrading (selling current property)`);
+
+          if (lines.length) {
+            parts.push(`\n## Buyer Profile (personalize your answers based on this)\n${lines.join('\n')}`);
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Failed to fetch buyer profile:", e);
+    }
+  }
+
+  // Page context
   if (pageContext) {
     parts.push(`\n## Current Page Context\nThe user is currently on: ${pageContext}\nTailor your greeting and suggestions to what they're looking at.`);
   }
@@ -136,7 +174,6 @@ serve(async (req) => {
   try {
     const { messages, pageContext, sessionId } = await req.json();
 
-    // Rate limiting
     const sid = sessionId || "anonymous";
     if (isRateLimited(sid)) {
       return new Response(
@@ -153,7 +190,10 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
     const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || "";
 
-    const systemPrompt = await buildSystemPrompt(pageContext || "", supabaseUrl, supabaseKey);
+    // Extract user token for profile injection
+    const userToken = req.headers.get("x-user-token") || undefined;
+
+    const systemPrompt = await buildSystemPrompt(pageContext || "", supabaseUrl, supabaseKey, userToken);
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

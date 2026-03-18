@@ -1,46 +1,127 @@
 import { useState, useRef, useEffect, FormEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircle, X, Send, Square, RotateCcw, Sparkles } from 'lucide-react';
+import { MessageCircle, X, Send, Square, RotateCcw, Sparkles, ThumbsUp, ThumbsDown, Loader2 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import ReactMarkdown from 'react-markdown';
+import { useNavigate } from 'react-router-dom';
 import { Drawer, DrawerContent, DrawerTitle } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAskBuyWise, type ChatMessage } from '@/hooks/useAskBuyWise';
 import { usePageContext } from '@/hooks/usePageContext';
+import { trackEvent } from '@/lib/analytics';
 import { cn } from '@/lib/utils';
 
-function ChatBubble({ message }: { message: ChatMessage }) {
-  const isUser = message.role === 'user';
+function ChatMarkdown({ content }: { content: string }) {
+  const navigate = useNavigate();
+
   return (
-    <div className={cn('flex gap-2.5 mb-4', isUser ? 'justify-end' : 'justify-start')}>
-      {!isUser && (
-        <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center flex-shrink-0 mt-0.5">
-          <Sparkles className="w-3.5 h-3.5 text-primary-foreground" />
-        </div>
-      )}
-      <div
-        className={cn(
-          'max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed',
-          isUser
-            ? 'bg-primary text-primary-foreground rounded-br-md'
-            : 'bg-muted text-foreground rounded-bl-md'
-        )}
+    <div className="prose prose-sm dark:prose-invert max-w-none [&_p]:mb-2 [&_p:last-child]:mb-0 [&_ul]:mb-2 [&_li]:mb-0.5 [&_a]:text-primary [&_a]:underline">
+      <ReactMarkdown
+        components={{
+          a: ({ href, children, ...props }) => {
+            // Internal links: SPA navigation
+            if (href && href.startsWith('/')) {
+              return (
+                <a
+                  {...props}
+                  href={href}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    navigate(href);
+                  }}
+                  className="text-primary underline cursor-pointer hover:text-primary/80"
+                >
+                  {children}
+                </a>
+              );
+            }
+            // External links: new tab
+            return (
+              <a {...props} href={href} target="_blank" rel="noopener noreferrer" className="text-primary underline">
+                {children}
+              </a>
+            );
+          },
+        }}
       >
-        {isUser ? (
-          <p>{message.content}</p>
-        ) : message.content ? (
-          <div className="prose prose-sm dark:prose-invert max-w-none [&_p]:mb-2 [&_p:last-child]:mb-0 [&_ul]:mb-2 [&_li]:mb-0.5 [&_a]:text-primary [&_a]:underline">
-            <ReactMarkdown>{message.content}</ReactMarkdown>
-          </div>
-        ) : (
-          <div className="flex gap-1 py-1">
-            <span className="w-1.5 h-1.5 bg-muted-foreground/50 rounded-full animate-bounce [animation-delay:0ms]" />
-            <span className="w-1.5 h-1.5 bg-muted-foreground/50 rounded-full animate-bounce [animation-delay:150ms]" />
-            <span className="w-1.5 h-1.5 bg-muted-foreground/50 rounded-full animate-bounce [animation-delay:300ms]" />
+        {content}
+      </ReactMarkdown>
+    </div>
+  );
+}
+
+function FeedbackButtons({ messageId, onFeedback }: { messageId: string; onFeedback: (id: string, rating: 'good' | 'bad') => void }) {
+  const [submitted, setSubmitted] = useState<'good' | 'bad' | null>(null);
+
+  const handleClick = (rating: 'good' | 'bad') => {
+    if (submitted) return;
+    setSubmitted(rating);
+    onFeedback(messageId, rating);
+  };
+
+  if (submitted) {
+    return (
+      <span className="text-[10px] text-muted-foreground ml-9 mt-0.5 block">
+        {submitted === 'good' ? 'Thanks for the feedback! 👍' : 'Thanks — we\'ll improve! 🙏'}
+      </span>
+    );
+  }
+
+  return (
+    <div className="flex gap-1 ml-9 mt-0.5">
+      <button
+        onClick={() => handleClick('good')}
+        className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+        title="Helpful"
+      >
+        <ThumbsUp className="w-3 h-3" />
+      </button>
+      <button
+        onClick={() => handleClick('bad')}
+        className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+        title="Not helpful"
+      >
+        <ThumbsDown className="w-3 h-3" />
+      </button>
+    </div>
+  );
+}
+
+function ChatBubble({ message, isLast, isStreaming, onFeedback }: { message: ChatMessage; isLast: boolean; isStreaming: boolean; onFeedback: (id: string, rating: 'good' | 'bad') => void }) {
+  const isUser = message.role === 'user';
+  const showFeedback = !isUser && message.id && message.content && !(isLast && isStreaming);
+
+  return (
+    <div className="mb-4">
+      <div className={cn('flex gap-2.5', isUser ? 'justify-end' : 'justify-start')}>
+        {!isUser && (
+          <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center flex-shrink-0 mt-0.5">
+            <Sparkles className="w-3.5 h-3.5 text-primary-foreground" />
           </div>
         )}
+        <div
+          className={cn(
+            'max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed',
+            isUser
+              ? 'bg-primary text-primary-foreground rounded-br-md'
+              : 'bg-muted text-foreground rounded-bl-md'
+          )}
+        >
+          {isUser ? (
+            <p>{message.content}</p>
+          ) : message.content ? (
+            <ChatMarkdown content={message.content} />
+          ) : (
+            <div className="flex gap-1 py-1">
+              <span className="w-1.5 h-1.5 bg-muted-foreground/50 rounded-full animate-bounce [animation-delay:0ms]" />
+              <span className="w-1.5 h-1.5 bg-muted-foreground/50 rounded-full animate-bounce [animation-delay:150ms]" />
+              <span className="w-1.5 h-1.5 bg-muted-foreground/50 rounded-full animate-bounce [animation-delay:300ms]" />
+            </div>
+          )}
+        </div>
       </div>
+      {showFeedback && <FeedbackButtons messageId={message.id!} onFeedback={onFeedback} />}
     </div>
   );
 }
@@ -97,13 +178,18 @@ function ChatHeader({ onClose, onClear, showClear }: { onClose: () => void; onCl
 }
 
 function ChatBody({ 
-  messages, suggestions, isStreaming, error, isAtLimit, onSuggestion, scrollRef 
+  messages, suggestions, isStreaming, error, isAtLimit, isLoading, onSuggestion, onFeedback, scrollRef 
 }: { 
-  messages: ChatMessage[]; suggestions: string[]; isStreaming: boolean; error: string | null; isAtLimit: boolean; onSuggestion: (s: string) => void; scrollRef: React.RefObject<HTMLDivElement>; 
+  messages: ChatMessage[]; suggestions: string[]; isStreaming: boolean; error: string | null; isAtLimit: boolean; isLoading: boolean; onSuggestion: (s: string) => void; onFeedback: (id: string, rating: 'good' | 'bad') => void; scrollRef: React.RefObject<HTMLDivElement>; 
 }) {
-  const showSuggestions = messages.length === 0;
+  const showSuggestions = messages.length === 0 && !isLoading;
   return (
     <ScrollArea className="flex-1 px-4 py-3" ref={scrollRef}>
+      {isLoading && (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+        </div>
+      )}
       {showSuggestions && (
         <div className="mb-4">
           <div className="flex gap-2.5 mb-4">
@@ -123,7 +209,13 @@ function ChatBody({
         </div>
       )}
       {messages.map((msg, i) => (
-        <ChatBubble key={i} message={msg} />
+        <ChatBubble 
+          key={msg.id || i} 
+          message={msg} 
+          isLast={i === messages.length - 1} 
+          isStreaming={isStreaming} 
+          onFeedback={onFeedback} 
+        />
       ))}
       {error && (
         <div className="mx-9 mb-3 px-3 py-2 rounded-lg bg-destructive/10 text-destructive text-xs">{error}</div>
@@ -178,7 +270,7 @@ function ChatInput({ onSubmit, isStreaming, isAtLimit, onStop }: { onSubmit: (ms
 }
 
 function ChatPanel({ onClose }: { onClose: () => void }) {
-  const { messages, isStreaming, error, isAtLimit, sendMessage, stopStreaming, clearChat } = useAskBuyWise();
+  const { messages, isStreaming, error, isAtLimit, isLoading, sendMessage, stopStreaming, clearChat, submitFeedback } = useAskBuyWise();
   const { description, suggestions } = usePageContext();
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -197,7 +289,9 @@ function ChatPanel({ onClose }: { onClose: () => void }) {
         isStreaming={isStreaming}
         error={error}
         isAtLimit={isAtLimit}
+        isLoading={isLoading}
         onSuggestion={(s) => sendMessage(s, description)}
+        onFeedback={submitFeedback}
         scrollRef={scrollRef}
       />
       <ChatInput onSubmit={handleSend} isStreaming={isStreaming} isAtLimit={isAtLimit} onStop={stopStreaming} />
@@ -215,6 +309,11 @@ export function AskBuyWiseButton() {
     return () => clearTimeout(timer);
   }, []);
 
+  const handleOpen = () => {
+    setIsOpen(true);
+    trackEvent('chat_opened', 'ask_buywise');
+  };
+
   return (
     <>
       {/* FAB button */}
@@ -226,7 +325,7 @@ export function AskBuyWiseButton() {
             exit={{ opacity: 0, y: 20, scale: 0.8 }}
             whileHover={{ scale: 1.08 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => setIsOpen(true)}
+            onClick={handleOpen}
             className="fixed bottom-20 lg:bottom-6 right-4 lg:right-6 z-40 w-12 h-12 lg:w-14 lg:h-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-shadow flex items-center justify-center group"
             aria-label="Ask BuyWise AI Assistant"
           >
@@ -238,7 +337,7 @@ export function AskBuyWiseButton() {
         )}
       </AnimatePresence>
 
-      {/* Desktop: popover card anchored bottom-right */}
+      {/* Desktop: popover card */}
       {!isMobile && (
         <AnimatePresence>
           {isOpen && (
