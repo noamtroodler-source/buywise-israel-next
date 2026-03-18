@@ -22,7 +22,7 @@ export function MarketDataContext({ variant = 'compact', className }: MarketData
 
   if (variant === 'compact') {
     return (
-      <Collapsible open={isOpen} onOpenChange={setIsOpen} className={className}>
+      <Collapsible open={isOpen} onOpenChange={setIsOpen} className={cn("flex flex-col items-center", className)}>
         <CollapsibleTrigger className="group flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground/70 transition-colors py-1">
           <Database className="h-3 w-3" />
           <span>Official data is a strong starting point — but doesn't capture everything.</span>
