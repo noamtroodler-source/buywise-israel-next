@@ -3,7 +3,7 @@ import { Calculator, MapPin, Shield, Globe } from 'lucide-react';
 
 const displayStats = [
   { icon: Calculator, value: '7', label: 'Free Tools' },
-  { icon: MapPin, value: '35+', label: 'Cities' },
+  { icon: MapPin, value: '24+', label: 'Cities' },
   { icon: Shield, value: '100%', label: 'Independent' },
   { icon: Globe, value: '100%', label: 'In English' },
 ];
