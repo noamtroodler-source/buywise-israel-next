@@ -105,54 +105,50 @@ export function ProjectStickyCard({ project, developer, representingAgent, selec
 
   // Agent Contact Section
   const AgentContactSection = () => (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <Avatar className="h-12 w-12">
-          <AvatarImage src={representingAgent?.avatar_url || undefined} alt={representingAgent?.name} />
-          <AvatarFallback className="bg-primary/10">
-            <User className="h-6 w-6 text-primary" />
+        <Avatar className="h-16 w-16 ring-2 ring-primary/20 ring-offset-2 ring-offset-background shadow-md border border-background">
+          <AvatarImage src={representingAgent?.avatar_url || undefined} alt={representingAgent?.name} className="object-cover" />
+          <AvatarFallback className="bg-gradient-to-br from-primary/10 to-primary/20 text-primary font-semibold text-lg">
+            {representingAgent?.name?.charAt(0)}{representingAgent?.name?.split(' ')[1]?.charAt(0) || ''}
           </AvatarFallback>
         </Avatar>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5">
-              {representingAgent?.id ? (
-                <Link 
-                  to={`/agents/${representingAgent.id}`}
-                  className="font-semibold truncate hover:text-primary hover:underline transition-colors inline-flex items-center gap-1"
-                >
-                  {representingAgent?.name}
-                  <ChevronRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                </Link>
-              ) : (
-                <span className="font-semibold truncate">{representingAgent?.name}</span>
-              )}
+        <div className="flex-1 min-w-0">
+          <p className="text-xs text-muted-foreground">Agent</p>
+          <div className="flex items-center gap-1">
+            {representingAgent?.id ? (
+              <Link 
+                to={`/agents/${representingAgent.id}`}
+                className="font-semibold text-foreground hover:text-primary hover:underline transition-colors inline-flex items-center gap-1"
+              >
+                {representingAgent?.name}
+                <ChevronRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+              </Link>
+            ) : (
+              <span className="font-semibold text-foreground">{representingAgent?.name}</span>
+            )}
           </div>
-          {representingAgent?.agency_name && (
-            <p className="text-sm text-muted-foreground truncate">
-              {representingAgent.agency_name}
-            </p>
-          )}
         </div>
       </div>
-      <div className="space-y-2">
+
+      <div className="pt-3 border-t border-border/50 space-y-2">
         {representingAgent?.phone && (
           <Button 
-            className="w-full" 
+            className="w-full gap-2" 
             size="lg" 
             onClick={() => openInquiryModal('whatsapp', 'agent')}
           >
-            <MessageCircle className="h-4 w-4 mr-2" />
-            WhatsApp Agent
+            <MessageCircle className="h-4 w-4" />
+            WhatsApp
           </Button>
         )}
         <Button 
           variant="outline" 
-          size="sm" 
-          className="w-full"
+          className="w-full gap-2"
           onClick={() => openInquiryModal('email', 'agent')}
         >
-          <Mail className="h-4 w-4 mr-1.5" />
-          Email Agent
+          <Mail className="h-4 w-4" />
+          Email
         </Button>
       </div>
     </div>
