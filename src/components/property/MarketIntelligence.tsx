@@ -100,15 +100,16 @@ function MarketVerdictBadge({ avgComparison, compsCount }: { avgComparison: numb
 }
 
 export function MarketIntelligence({ property, cityData }: MarketIntelligenceProps) {
-  const [verdictData, setVerdictData] = useState<{ avgComparison: number | null; compsCount: number }>({
+  const [verdictData, setVerdictData] = useState<{ avgComparison: number | null; compsCount: number; radiusUsedM: number }>({
     avgComparison: null,
     compsCount: 0,
+    radiusUsedM: 500,
   });
 
-  const handleVerdictComputed = useCallback((avgComparison: number | null, compsCount: number) => {
+  const handleVerdictComputed = useCallback((avgComparison: number | null, compsCount: number, radiusUsedM: number) => {
     setVerdictData(prev => {
-      if (prev.avgComparison === avgComparison && prev.compsCount === compsCount) return prev;
-      return { avgComparison, compsCount };
+      if (prev.avgComparison === avgComparison && prev.compsCount === compsCount && prev.radiusUsedM === radiusUsedM) return prev;
+      return { avgComparison, compsCount, radiusUsedM };
     });
   }, []);
 
