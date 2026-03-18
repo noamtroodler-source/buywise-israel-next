@@ -1,5 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
 import { useEffect, useRef } from 'react';
+import { setPageContextData } from '@/hooks/usePageContext';
 import { Layout } from '@/components/layout/Layout';
 import { useProperty } from '@/hooks/useProperties';
 import { useCityDetails } from '@/hooks/useCityDetails';
