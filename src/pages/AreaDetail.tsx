@@ -26,6 +26,7 @@ import { useCityDetails } from '@/hooks/useCityDetails';
 import { SEOHead } from '@/components/seo/SEOHead';
 import { generateCityMeta, generateCityJsonLd, SITE_CONFIG } from '@/lib/seo';
 import { useTrackContentVisit } from '@/hooks/useTrackContentVisit';
+import { MarketDataContext } from '@/components/shared/MarketDataContext';
 
 import { cityHeroImages } from '@/lib/cityHeroImages';
 
@@ -221,6 +222,11 @@ export default function CityDetail() {
 
         {/* 4. Price History */}
         <HistoricalPriceChart citySlug={slug || ''} cityName={city.name} />
+
+        {/* 4.5. Data Context */}
+        <div className="container py-6">
+          <MarketDataContext variant="full" />
+        </div>
 
         {/* 5. Price by Apartment Size */}
         <PriceByApartmentSize citySlug={slug || ''} cityName={city.name} />

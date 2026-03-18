@@ -25,6 +25,7 @@ import { SimilarProperties } from '@/components/property/SimilarProperties';
 // RecentNearbySales is now used inside MarketIntelligence
 import { SupportFooter } from '@/components/shared/SupportFooter';
 import { ListingDisclaimer } from '@/components/shared/ListingDisclaimer';
+import { MarketDataContext } from '@/components/shared/MarketDataContext';
 import { ListingFeedback } from '@/components/listings/ListingFeedback';
 import { ReportListingButton } from '@/components/property/ReportListingButton';
 import { MobileSectionNav } from '@/components/property/MobileSectionNav';
@@ -208,6 +209,7 @@ export default function PropertyDetail() {
                     cityArnonaRate={cityData?.arnona_rate_sqm}
                     cityAvgVaadBayit={cityData?.average_vaad_bayit}
                   />
+                  <MarketDataContext variant="compact" className="mt-4" />
                 </MobileCollapsibleSection>
               ) : (
                 <MobileCollapsibleSection

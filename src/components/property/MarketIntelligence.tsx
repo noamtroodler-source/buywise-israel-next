@@ -8,6 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { PropertyValueSnapshot } from './PropertyValueSnapshot';
 import { RecentNearbySales } from './RecentNearbySales';
+import { MarketDataContext } from '@/components/shared/MarketDataContext';
 import { AIMarketInsight } from './AIMarketInsight';
 import { useMarketInsight } from '@/hooks/useMarketInsight';
 import { useRoomSpecificCityPrice } from '@/hooks/useRoomSpecificCityPrice';
@@ -253,6 +254,9 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
 
         {/* AI Market Insight — placed after evidence so it reads as a conclusion */}
         <AIMarketInsight insight={insight} isLoading={insightLoading} />
+
+        {/* Data context — help buyers understand data limitations */}
+        <MarketDataContext variant="compact" />
 
         {/* Explore city link */}
         <div className="flex justify-center pt-1">
