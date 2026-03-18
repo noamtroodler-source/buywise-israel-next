@@ -104,16 +104,6 @@ const CITY_INSIGHTS: Record<string, InsightFn> = {
     `${m.totalAppreciation.toFixed(0)}% growth over ${m.years} years at ${m.cagr}% annually — ` +
     `at ${fmt(m.currentPrice)} average, it remains one of the more accessible entry points into the greater Tel Aviv area.`,
 
-  'holon': (m) =>
-    `Holon offers genuine value in the Tel Aviv metro — families priced out of TLV and Ramat Gan are increasingly looking here. ` +
-    `At ${fmt(m.currentPrice)} average, prices are up ${m.totalAppreciation.toFixed(0)}% over ${m.years} years. ` +
-    `The city's cultural investments and urban renewal projects are starting to show up in the numbers.`,
-
-  'bat-yam': (m) =>
-    `Bat Yam is Israel's most underestimated beachfront city. Directly south of Tel Aviv with seafront access, ` +
-    `yet prices average just ${fmt(m.currentPrice)} — ${Math.abs(m.deltaVsNational ?? 0)}% ${(m.deltaVsNational ?? 0) > 0 ? 'above' : 'below'} national. ` +
-    `${m.totalAppreciation.toFixed(0)}% growth over ${m.years} years, and the Red Line light rail is set to transform accessibility. Keep watching.`,
-
   'kfar-saba': (m) =>
     `Kfar Saba has the suburban-premium DNA — good schools, green spaces, and a loyal community that rarely lets homes sit on the market. ` +
     `At ${fmt(m.currentPrice)} with ${m.cagr}% annual growth, ` +
