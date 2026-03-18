@@ -234,10 +234,10 @@ export function CityNeighborhoods({ cityName, neighborhoods }: CityNeighborhoods
                 </SelectTrigger>
                 <SelectContent align="end">
                   <SelectItem value="featured" className="text-xs">Featured</SelectItem>
-                  <SelectItem value="price_asc" className="text-xs">Price ↑</SelectItem>
-                  <SelectItem value="price_desc" className="text-xs">Price ↓</SelectItem>
-                  <SelectItem value="growth_desc" className="text-xs">Growth ↑</SelectItem>
-                  <SelectItem value="growth_asc" className="text-xs">Growth ↓</SelectItem>
+                  <SelectItem value="price_asc" className="text-xs">Price: Low to High</SelectItem>
+                  <SelectItem value="price_desc" className="text-xs">Price: High to Low</SelectItem>
+                  <SelectItem value="growth_desc" className="text-xs">Most Growth</SelectItem>
+                  <SelectItem value="growth_asc" className="text-xs">Least Growth</SelectItem>
                 </SelectContent>
               </Select>
 
