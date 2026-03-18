@@ -1,8 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 import { motion } from 'framer-motion';
-import { Building2, Clock, Mail, LayoutList } from 'lucide-react';
+import { Building2, Clock, Mail, LayoutList, Link2, Check, Copy } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 interface AgencySubmittedDialogProps {
   open: boolean;
