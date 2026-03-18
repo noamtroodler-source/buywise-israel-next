@@ -169,10 +169,6 @@ const CITY_INSIGHTS: Record<string, InsightFn> = {
     `At ${fmt(m.currentPrice)} average, it's ${Math.abs(m.deltaVsNational ?? 0)}% ${(m.deltaVsNational ?? 0) > 0 ? 'above' : 'below'} national. ` +
     `${m.totalAppreciation.toFixed(0)}% growth over ${m.years} years — a pragmatic choice for Jerusalem-area buyers watching their budget.`,
 
-  'givat-zeev': (m) =>
-    `Givat Ze'ev has grown rapidly as a Jerusalem satellite town — more affordable, family-oriented, and increasingly connected. ` +
-    `At ${fmt(m.currentPrice)} average with ${m.totalAppreciation.toFixed(0)}% appreciation over ${m.years} years, ` +
-    `it fills a clear gap for buyers who need Jerusalem proximity without Jerusalem prices.`,
 };
 
 /**
