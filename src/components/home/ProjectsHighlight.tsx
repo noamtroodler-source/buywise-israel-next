@@ -1,15 +1,13 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, Building2, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, MapPin, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CarouselDots } from '@/components/shared/CarouselDots';
 import { useFeaturedProjects } from '@/hooks/useProjects';
 import { ProjectFavoriteButton } from '@/components/project/ProjectFavoriteButton';
-import { ProjectShareButton } from '@/components/project/ProjectShareButton';
 import { PropertyThumbnail } from '@/components/shared/PropertyThumbnail';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 
@@ -22,11 +20,81 @@ function formatPrice(price: number | null, currency: string = 'ILS') {
   }).format(price);
 }
 
+function ProjectCard({ project, variant = 'default' }: { 
+  project: any; 
+  variant?: 'hero' | 'default' 
+}) {
+  const isHero = variant === 'hero';
+  
+  return (
+    <Link
+      to={`/projects/${project.slug}`}
+      className="group relative block overflow-hidden rounded-2xl h-full"
+    >
+      {/* Image */}
+      <div className="absolute inset-0">
+        <PropertyThumbnail
+          src={project.images?.[0]}
+          alt={project.name}
+          type="project"
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+        />
+      </div>
+      
+      {/* Gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/10" />
+      
+      {/* Favorite */}
+      <div className="absolute top-3 right-3 z-10">
+        <ProjectFavoriteButton projectId={project.id} />
+      </div>
+      
+      {/* Content */}
+      <div className={`absolute bottom-0 left-0 right-0 ${isHero ? 'p-6 md:p-8' : 'p-4 md:p-5'}`}>
+        {/* Developer tag */}
+        {project.developer && typeof project.developer === 'object' && (
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-white/70 mb-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+            {project.developer.name}
+          </span>
+        )}
+        
+        <h3 className={`font-bold text-white mb-1.5 leading-tight ${isHero ? 'text-2xl md:text-3xl' : 'text-lg'}`}>
+          {project.name}
+        </h3>
+        
+        <div className="flex items-center gap-3 mb-2 flex-wrap">
+          <span className="inline-flex items-center gap-1 text-sm text-white/80">
+            <MapPin className="h-3.5 w-3.5" />
+            {project.neighborhood ? `${project.neighborhood}, ` : ''}{project.city}
+          </span>
+          {isHero && project.completion_date && (
+            <span className="inline-flex items-center gap-1 text-sm text-white/80">
+              <Calendar className="h-3.5 w-3.5" />
+              {new Date(project.completion_date).getFullYear()}
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between">
+          <p className={`font-semibold text-white ${isHero ? 'text-lg' : 'text-base'}`}>
+            From {formatPrice(project.price_from, project.currency || 'ILS')}
+          </p>
+          
+          <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-white/10 backdrop-blur-sm text-white opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0 transition-all duration-300">
+            <ArrowUpRight className="h-4 w-4" />
+          </span>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
 export function ProjectsHighlight() {
   const { data: projects, isLoading } = useFeaturedProjects();
   const isDesktop = useMediaQuery('(min-width: 1024px)');
   const [selectedIndex, setSelectedIndex] = useState(0);
-  
+
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: 'start',
     loop: true,
@@ -34,12 +102,10 @@ export function ProjectsHighlight() {
     containScroll: 'trimSnaps',
   });
 
-  // For mobile carousel, show all projects; for desktop, use bento layout
   const displayProjects = projects?.slice(0, 6) || [];
-  const mainProject = displayProjects[0];
-  const sideProjects = displayProjects.slice(1, 3);
+  const heroProject = displayProjects[0];
+  const gridProjects = displayProjects.slice(1, 5);
 
-  // Handle carousel index changes
   const onSelect = useCallback(() => {
     if (!emblaApi) return;
     setSelectedIndex(emblaApi.selectedScrollSnap());
@@ -56,24 +122,20 @@ export function ProjectsHighlight() {
     };
   }, [emblaApi, onSelect]);
 
-  const scrollTo = useCallback((index: number) => {
-    emblaApi?.scrollTo(index);
-  }, [emblaApi]);
+  const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
+  const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
 
   if (isLoading) {
     return (
-      <section className="py-10 md:py-14">
+      <section className="py-12 md:py-16">
         <div className="container">
-          {/* Mobile/Tablet: Single skeleton */}
-          <div className="lg:hidden">
-            <Skeleton className="aspect-[16/9] rounded-lg" />
-          </div>
-          {/* Desktop: Bento skeleton */}
-          <div className="hidden lg:grid lg:grid-cols-5 gap-4">
-            <Skeleton className="lg:col-span-3 aspect-[16/9] rounded-lg" />
-            <div className="lg:col-span-2 space-y-3">
-              <Skeleton className="aspect-[16/7] rounded-lg" />
-              <Skeleton className="aspect-[16/7] rounded-lg" />
+          <div className="flex gap-4">
+            <Skeleton className="flex-1 aspect-[4/3] rounded-2xl" />
+            <div className="hidden lg:grid grid-cols-2 gap-4 flex-1">
+              <Skeleton className="aspect-[4/3] rounded-2xl" />
+              <Skeleton className="aspect-[4/3] rounded-2xl" />
+              <Skeleton className="aspect-[4/3] rounded-2xl" />
+              <Skeleton className="aspect-[4/3] rounded-2xl" />
             </div>
           </div>
         </div>
@@ -81,208 +143,116 @@ export function ProjectsHighlight() {
     );
   }
 
-  if (displayProjects.length === 0) {
-    return null;
-  }
+  if (displayProjects.length === 0) return null;
 
   return (
-    <section className="py-10 md:py-14">
+    <section className="py-12 md:py-16">
       <div className="container">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6">
+        <div className="flex items-end justify-between gap-4 mb-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-2xl md:text-4xl font-bold text-foreground">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
               New Developments
             </h2>
-            <p className="text-base text-muted-foreground mt-1 max-w-lg">
+            <p className="text-muted-foreground mt-1.5">
               Pre-construction projects with transparent pricing
             </p>
           </motion.div>
 
-          <Button variant="outline" asChild>
-            <Link to="/projects" className="gap-2">
-              View All
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            {/* Mobile carousel controls */}
+            {!isDesktop && displayProjects.length > 1 && (
+              <div className="flex gap-1.5 mr-2">
+                <button
+                  onClick={scrollPrev}
+                  className="w-9 h-9 rounded-full border border-border flex items-center justify-center hover:bg-muted transition-colors"
+                  aria-label="Previous"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={scrollNext}
+                  className="w-9 h-9 rounded-full border border-border flex items-center justify-center hover:bg-muted transition-colors"
+                  aria-label="Next"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            )}
+            <Button variant="outline" asChild className="rounded-full">
+              <Link to="/projects" className="gap-2">
+                View All
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </Button>
+          </div>
         </div>
 
-        {/* Mobile/Tablet: Horizontal Carousel */}
+        {/* Mobile: Carousel */}
         {!isDesktop && (
-          <div className="lg:hidden animate-fade-in -mx-4">
+          <div className="lg:hidden -mx-4">
             <div className="overflow-hidden px-4" ref={emblaRef}>
               <div className="flex">
                 {displayProjects.map((project) => (
-                  <div 
-                    key={project.id} 
+                  <div
+                    key={project.id}
                     className="flex-[0_0_calc(100%-2rem)] sm:flex-[0_0_calc(50%-1rem)] min-w-0 pl-4 first:pl-4"
                   >
-                    <Link
-                      to={`/projects/${project.slug}`}
-                      className="group block relative overflow-hidden rounded-xl bg-card shadow-[0_4px_24px_-4px_rgba(0,0,0,0.12),0_2px_8px_-2px_rgba(0,0,0,0.06)] hover:shadow-[0_16px_40px_-8px_rgba(0,0,0,0.18),0_6px_12px_-4px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 transition-all duration-300"
-                    >
-                      <div className="aspect-[16/10] overflow-hidden">
-                        <PropertyThumbnail
-                          src={project.images?.[0]}
-                          alt={project.name}
-                          type="project"
-                          className="w-full h-full group-hover:scale-105 transition-transform duration-500"
-                        />
-                      </div>
-                      <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent" />
-                      
-                      {/* Action Buttons - Top Right */}
-                      <div className="absolute top-3 right-3 flex gap-1.5 z-10">
-                        <ProjectShareButton
-                          projectSlug={project.slug}
-                          projectName={project.name}
-                        />
-                        <ProjectFavoriteButton projectId={project.id} />
-                      </div>
-                      <div className="absolute bottom-0 left-0 right-0 p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Badge className="bg-primary text-primary-foreground text-xs">
-                            New Project
-                          </Badge>
-                          {project.developer && (
-                            <span className="text-xs text-white/80 flex items-center gap-1">
-                              <CheckCircle2 className="h-3 w-3" />
-                              {typeof project.developer === 'object' ? project.developer.name : 'Verified'}
-                            </span>
-                          )}
-                        </div>
-                        <h3 className="text-xl font-bold text-white mb-1">
-                          {project.name}
-                        </h3>
-                        <p className="text-sm text-white/80 mb-2">
-                          {project.neighborhood ? `${project.neighborhood}, ` : ''}{project.city}
-                        </p>
-                        <p className="text-base font-semibold text-white">
-                          From {formatPrice(project.price_from, project.currency || 'ILS')}
-                        </p>
-                      </div>
-                    </Link>
+                    <div className="aspect-[3/4] sm:aspect-[4/5]">
+                      <ProjectCard project={project} />
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
-            {/* Dot Indicators */}
-            <div className="px-4">
-              <CarouselDots 
-                total={displayProjects.length} 
-                current={selectedIndex} 
-                onDotClick={scrollTo}
-                className="mt-4"
-              />
+            {/* Progress bar */}
+            <div className="px-4 mt-4">
+              <div className="h-0.5 bg-border rounded-full overflow-hidden">
+                <motion.div
+                  className="h-full bg-primary rounded-full"
+                  initial={false}
+                  animate={{
+                    width: `${((selectedIndex + 1) / displayProjects.length) * 100}%`,
+                  }}
+                  transition={{ duration: 0.3, ease: 'easeOut' }}
+                />
+              </div>
             </div>
           </div>
         )}
 
-        {/* Desktop: Bento Grid */}
+        {/* Desktop: Hero + Grid Layout */}
         {isDesktop && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="hidden lg:grid lg:grid-cols-5 gap-4"
+            className="hidden lg:grid lg:grid-cols-2 gap-4"
           >
-            {/* Main Project Card */}
-            {mainProject && (
-              <Link
-                to={`/projects/${mainProject.slug}`}
-                className="lg:col-span-3 group relative overflow-hidden rounded-2xl bg-card shadow-[0_4px_24px_-4px_rgba(0,0,0,0.12),0_2px_8px_-2px_rgba(0,0,0,0.06)] hover:shadow-[0_16px_40px_-8px_rgba(0,0,0,0.18),0_6px_12px_-4px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 transition-all duration-300"
-              >
-                <div className="aspect-[16/9] overflow-hidden">
-                  <PropertyThumbnail
-                    src={mainProject.images?.[0]}
-                    alt={mainProject.name}
-                    type="project"
-                    className="w-full h-full group-hover:scale-105 transition-transform duration-500"
-                  />
-                </div>
-                <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent" />
-                
-                {/* Action Buttons - Top Right */}
-                <div className="absolute top-3 right-3 flex gap-1.5 z-10">
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                    <ProjectShareButton
-                      projectSlug={mainProject.slug}
-                      projectName={mainProject.name}
-                    />
-                  </div>
-                  <ProjectFavoriteButton projectId={mainProject.id} />
-                </div>
-                <div className="absolute bottom-0 left-0 right-0 p-4 md:p-5">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Badge className="bg-primary text-primary-foreground text-xs">
-                      New Project
-                    </Badge>
-                    {mainProject.developer && (
-                      <span className="text-xs text-white/80 flex items-center gap-1">
-                        <CheckCircle2 className="h-3 w-3" />
-                        {typeof mainProject.developer === 'object' ? mainProject.developer.name : 'Verified'}
-                      </span>
-                    )}
-                  </div>
-                  <h3 className="text-xl md:text-2xl font-bold text-white mb-1">
-                    {mainProject.name}
-                  </h3>
-                  <p className="text-sm text-white/80 mb-2">
-                    {mainProject.neighborhood ? `${mainProject.neighborhood}, ` : ''}{mainProject.city}
-                  </p>
-                  <p className="text-base font-semibold text-white">
-                    From {formatPrice(mainProject.price_from, mainProject.currency || 'ILS')}
-                  </p>
-                </div>
-              </Link>
+            {/* Hero project - left side, full height */}
+            {heroProject && (
+              <div className="row-span-2 aspect-auto min-h-[480px]">
+                <ProjectCard project={heroProject} variant="hero" />
+              </div>
             )}
 
-            {/* Side Projects */}
-            <div className="lg:col-span-2 space-y-4">
-              {sideProjects.map((project) => (
-                <Link
-                  key={project.id}
-                  to={`/projects/${project.slug}`}
-                  className="group block relative overflow-hidden rounded-xl bg-card shadow-[0_4px_24px_-4px_rgba(0,0,0,0.12),0_2px_8px_-2px_rgba(0,0,0,0.06)] hover:shadow-[0_16px_40px_-8px_rgba(0,0,0,0.18),0_6px_12px_-4px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 transition-all duration-300"
-                >
-                  <div className="aspect-[16/7] overflow-hidden">
-                    <PropertyThumbnail
-                      src={project.images?.[0]}
-                      alt={project.name}
-                      type="project"
-                      className="w-full h-full group-hover:scale-105 transition-transform duration-500"
-                    />
-                  </div>
-                  <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 to-transparent" />
-                  
-                  {/* Action Buttons - Top Right */}
-                  <div className="absolute top-2 right-2 flex gap-1.5 z-10">
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                      <ProjectShareButton
-                        projectSlug={project.slug}
-                        projectName={project.name}
-                      />
-                    </div>
-                    <ProjectFavoriteButton projectId={project.id} />
-                  </div>
-                  <div className="absolute bottom-0 left-0 right-0 p-3">
-                    <Badge className="bg-primary/90 text-primary-foreground mb-1.5 text-xs">
-                      New Project
-                    </Badge>
-                    <h3 className="text-base font-bold text-white">
-                      {project.name}
-                    </h3>
-                    <p className="text-xs text-white/80">
-                      {project.city} • From {formatPrice(project.price_from, project.currency || 'ILS')}
-                    </p>
-                  </div>
-                </Link>
-              ))}
-            </div>
+            {/* 4 smaller projects - 2x2 grid on right */}
+            {gridProjects.map((project, i) => (
+              <motion.div
+                key={project.id}
+                initial={{ opacity: 0, y: 15 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.1 + i * 0.05 }}
+                className="aspect-[16/10]"
+              >
+                <ProjectCard project={project} />
+              </motion.div>
+            ))}
           </motion.div>
         )}
       </div>
