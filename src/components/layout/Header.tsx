@@ -178,7 +178,7 @@ export function Header() {
                     <DropdownMenuItem asChild className="rounded-lg px-3 py-2">
                       <Link to="/agent" className="flex items-center gap-2.5">
                         <Building2 className="h-4 w-4 text-muted-foreground" />
-                        Agent Dashboard
+                        Agent Portal
                       </Link>
                     </DropdownMenuItem>
                   )}

@@ -185,7 +185,7 @@ export default function AgentDashboard() {
                     {agentProfile?.status === 'active' && <BadgeCheck className="h-5 w-5 text-primary" />}
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    {agentProfile?.agency_name || 'Independent Agent'} · Agent Dashboard
+                    {agentProfile?.agency_name || 'Independent Agent'} · Agent Portal
                   </p>
                 </div>
               </div>
