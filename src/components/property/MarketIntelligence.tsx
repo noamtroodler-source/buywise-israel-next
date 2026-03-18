@@ -231,8 +231,8 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
           <Separator className="flex-1" />
           <span className="text-xs text-muted-foreground whitespace-nowrap">
             {verdictData.compsCount > 0 
-              ? `Based on ${verdictData.compsCount} verified sale${verdictData.compsCount > 1 ? 's' : ''} within 500m`
-              : 'Nearby sales within 500m'
+              ? `Based on ${verdictData.compsCount} verified sale${verdictData.compsCount > 1 ? 's' : ''} within ${verdictData.radiusUsedM >= 1000 ? '1km' : '500m'}`
+              : `Nearby sales within ${verdictData.radiusUsedM >= 1000 ? '1km' : '500m'}`
             }
           </span>
           <Separator className="flex-1" />
