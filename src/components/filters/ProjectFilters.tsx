@@ -737,61 +737,6 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
               </div>
             </div>
 
-            {/* Developer */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-primary">
-                <Briefcase className="h-4 w-4" />
-                <h4 className="font-semibold">Developer</h4>
-                {filters.developer_id && (
-                  <button
-                    className="ml-auto text-xs text-muted-foreground hover:text-foreground"
-                    onClick={() => updateFilter('developer_id', undefined)}
-                  >
-                    Clear
-                  </button>
-                )}
-              </div>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search developer..."
-                  value={developerSearch}
-                  onChange={(e) => setDeveloperSearch(e.target.value)}
-                  className="pl-10 rounded-lg"
-                />
-              </div>
-              <div className="max-h-[180px] overflow-y-auto space-y-1">
-                {filteredDevelopers?.map(dev => (
-                  <button
-                    key={dev.id}
-                    className={cn(
-                      "w-full text-left px-3 py-2.5 text-sm rounded-lg transition-colors flex items-center justify-between",
-                      filters.developer_id === dev.id 
-                        ? "bg-accent text-accent-foreground font-medium" 
-                        : "hover:bg-muted"
-                    )}
-                    onClick={() => {
-                      updateFilter('developer_id', dev.id);
-                      setDeveloperSearch('');
-                    }}
-                  >
-                    <span>{dev.name}</span>
-                    {dev.is_verified && (
-                      <span className="text-xs text-primary">✓ Verified</span>
-                    )}
-                  </button>
-                ))}
-                {filteredDevelopers?.length === 0 && (
-                  <p className="text-sm text-muted-foreground text-center py-4">No developers found</p>
-                )}
-              </div>
-              <Link 
-                to="/developers" 
-                className="flex items-center gap-1 text-primary text-sm font-medium hover:underline"
-              >
-                View all developers <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
 
             {/* Size Section */}
             <div className="space-y-3">

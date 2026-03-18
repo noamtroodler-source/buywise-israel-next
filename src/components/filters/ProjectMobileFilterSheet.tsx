@@ -356,41 +356,6 @@ export function ProjectMobileFilterSheet({
               </div>
             </section>
 
-            {/* Developer Section */}
-            {developers && developers.length > 0 && (
-              <section className="space-y-3">
-                <h3 className="font-semibold flex items-center gap-2">
-                  <Briefcase className="h-4 w-4 text-primary" />
-                  Developer
-                </h3>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search developer..."
-                    value={developerSearch}
-                    onChange={(e) => setDeveloperSearch(e.target.value)}
-                    className="pl-10 rounded-xl"
-                  />
-                </div>
-                <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
-                  {filteredDevelopers?.slice(0, 10).map(dev => (
-                    <button
-                      key={dev.id}
-                      className={cn(
-                        "px-3 py-1.5 rounded-full text-sm font-medium transition-all",
-                        filters.developer_id === dev.id 
-                          ? "bg-primary text-primary-foreground" 
-                          : "bg-muted hover:bg-muted/80"
-                      )}
-                      onClick={() => updateFilter('developer_id', filters.developer_id === dev.id ? undefined : dev.id)}
-                    >
-                      {dev.name}
-                      {dev.is_verified && <span className="ml-1 text-xs">✓</span>}
-                    </button>
-                  ))}
-                </div>
-              </section>
-            )}
 
             {/* Size Section */}
             <section className="space-y-3">
