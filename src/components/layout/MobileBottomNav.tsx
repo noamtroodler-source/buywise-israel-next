@@ -131,7 +131,7 @@ const agentMobileNav = {
     { icon: LayoutDashboard, label: 'Dashboard', to: '/agent' },
     { icon: FileText, label: 'Listings', to: '/agent/properties' },
     { icon: BarChart3, label: 'Analytics', to: '/agent/analytics' },
-    { icon: UserCircle, label: 'Profile', to: '/agent/profile' },
+    { icon: Settings, label: 'Settings', to: '/agent/settings' },
   ],
   more: [
     { label: 'Back to BuyWise', to: '/', icon: Home },
