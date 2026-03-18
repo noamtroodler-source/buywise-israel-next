@@ -236,6 +236,25 @@ export function useApproveJoinRequest() {
         .eq('id', agentId);
 
       if (agentError) throw agentError;
+
+      // Send approval email to agent
+      try {
+        const { data: agency } = await supabase
+          .from('agencies')
+          .select('name')
+          .eq('id', agencyId)
+          .single();
+
+        await supabase.functions.invoke('send-notification', {
+          body: {
+            type: 'join_approved',
+            agentId,
+            agencyName: agency?.name || 'Your agency',
+          },
+        });
+      } catch (emailErr) {
+        console.error('Failed to send approval email:', emailErr);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agencyJoinRequests'] });
