@@ -141,7 +141,6 @@ export default function NewVsResaleGuide() {
               <Badge variant="secondary" className="mb-4"><Scale className="h-3 w-3 mr-1" />Essential Guide</Badge>
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">
                 New Construction vs Resale in <span className="text-primary">Israel</span>
-                <span className="block mt-2">What's Really Different</span>
               </h1>
               <p className="text-lg text-muted-foreground mb-6">Two different buying processes, not just two ages of apartment</p>
               <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-muted-foreground">
