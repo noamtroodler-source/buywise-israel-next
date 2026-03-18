@@ -355,14 +355,14 @@ serve(async (req) => {
     console.log("Fetching official cities from database...");
     const { data: dbCities, error: citiesError } = await supabase
       .from('cities')
-      .select('name, slug');
+      .select('name, slug, average_price_sqm, rental_3_room_min, rental_3_room_max, rental_4_room_min, rental_4_room_max, rental_5_room_min, rental_5_room_max');
     
     if (citiesError || !dbCities || dbCities.length === 0) {
       throw new Error(`Failed to fetch cities: ${citiesError?.message || 'No cities found'}`);
     }
     
-    // Build CITIES array from database - ensures we ONLY use official cities
-    const CITIES = dbCities.map(city => getCityWithCoords(city.name, city.slug));
+    // Build CITIES array from database - ensures we ONLY use official cities with verified pricing
+    const CITIES = dbCities.map(city => getCityWithCoords(city));
     console.log(`Using ${CITIES.length} official cities from database`);
 
     const results = {
