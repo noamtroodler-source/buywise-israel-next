@@ -148,18 +148,6 @@ const CITY_ROOM_SIZE_INSIGHTS: Record<string, RoomInsightFn> = {
     `That's a fraction of what the same upgrade costs in the Sharon or Gush Dan. ` +
     (m.room5Price ? `Even 5-room units at ${fmt(m.room5Price)} feel like a steal compared to the national average.` : ''),
 
-  'kiryat-tivon': (m) =>
-    `Kiryat Tivon's family-oriented market is reflected in room-size demand. ` +
-    (m.room4Price ? `4-room apartments at ${fmt(m.room4Price)} are the sweet spot for university families and professionals. ` : '') +
-    (m.gapSmallToLarge ? `The ${fmtGap(m.gapSmallToLarge)} spread between sizes is reasonable for a premium Haifa suburb. ` : '') +
-    `Limited construction keeps competition steady, especially for larger units.`,
-
-  'yokneam': (m) =>
-    `Yokne'am's tech-park proximity drives demand across all apartment sizes. ` +
-    (m.room3Price ? `3-room units at ${fmt(m.room3Price)} attract young tech workers. ` : '') +
-    (m.room4Price ? `4-room apartments at ${fmt(m.room4Price)} serve growing families. ` : '') +
-    `The pricing here is still central-Israel affordable, but with tech-corridor demand — that combination doesn't usually last.`,
-
   'hadera': (m) =>
     `Hadera's pricing across sizes is a study in accessibility. ` +
     (m.room3Price ? `3-room apartments at ${fmt(m.room3Price)} are among the most affordable rail-connected options in central Israel. ` : '') +
