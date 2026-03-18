@@ -111,9 +111,7 @@ export function Header() {
       <div className="container h-16 grid grid-cols-[auto_1fr_auto] items-center gap-4">
         {/* Logo - Left */}
         <Link to="/" className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-            <Home className="h-5 w-5 text-primary-foreground" />
-          </div>
+          <img src={logoIcon} alt="BuyWise Israel" className="h-9 w-9 rounded-lg object-contain" />
           <span className="text-xl font-bold text-foreground">BuyWise</span>
           <span className="text-xl font-bold text-primary">Israel</span>
         </Link>

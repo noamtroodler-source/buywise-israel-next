@@ -10,9 +10,7 @@ export function Footer() {
           {/* Brand - Full width on mobile */}
           <div className="col-span-2 md:col-span-1 space-y-4">
             <Link to="/" className="flex items-center gap-2">
-              <div className="flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-lg bg-primary">
-                <Home className="h-4 w-4 md:h-5 md:w-5 text-primary-foreground" />
-              </div>
+              <img src={logoIcon} alt="BuyWise Israel" className="h-8 w-8 md:h-9 md:w-9 rounded-lg object-contain" />
               <span className="text-lg md:text-xl font-bold text-foreground">BuyWise</span>
               <span className="text-lg md:text-xl font-bold text-primary">Israel</span>
             </Link>
