@@ -99,11 +99,6 @@ const CITY_INSIGHTS: Record<string, InsightFn> = {
     `At ${fmt(m.currentPrice)} average, it's ${Math.abs(m.deltaVsNational ?? 0)}% ${(m.deltaVsNational ?? 0) > 0 ? 'above' : 'below'} national average. ` +
     `The Diamond Exchange area redevelopment and new towers are reshaping the skyline — and ${m.cagr}% annual growth shows the market is paying attention.`,
 
-  'givatayim': (m) =>
-    `Givatayim punches well above its size — this tiny city next to Tel Aviv has some of the highest per-sqm prices outside TLV itself. ` +
-    `At ${fmt(m.currentPrice)} average with ${m.totalAppreciation.toFixed(0)}% appreciation over ${m.years} years, ` +
-    `demand consistently outstrips supply here. The urban renewal pipeline may add inventory, but don't expect prices to soften.`,
-
   'petah-tikva': (m) =>
     `Petah Tikva has transformed from a sleepy suburb into a major residential hub, riding the Gush Dan spillover effect. ` +
     `${m.totalAppreciation.toFixed(0)}% growth over ${m.years} years at ${m.cagr}% annually — ` +
