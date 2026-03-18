@@ -267,6 +267,40 @@ export default function AgentRegisterWizard() {
     }
   };
 
+  // If no invite code provided, show blocker message
+  if (!urlInviteCode && !validatedAgencyId) {
+    return (
+      <Layout>
+        <div className="relative bg-gradient-to-b from-primary/5 via-primary/[0.02] to-background overflow-hidden">
+          <div className="container py-16 md:py-24 max-w-lg relative">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center space-y-6"
+            >
+              <div className="mx-auto w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <Building2 className="h-10 w-10 text-primary" />
+              </div>
+              <h1 className="text-3xl font-bold">Invite Required</h1>
+              <p className="text-muted-foreground text-lg max-w-md mx-auto">
+                Agents join BuyWise through their agency. Ask your agency manager for an invite link to get started.
+              </p>
+              <div className="bg-muted/50 rounded-xl p-5 border border-border/50 text-left space-y-3">
+                <p className="text-sm font-medium">Are you an agency owner?</p>
+                <p className="text-sm text-muted-foreground">
+                  Register your agency first, then invite your agents to join your team.
+                </p>
+                <Button asChild className="w-full rounded-xl">
+                  <a href="/auth?tab=signup&role=agency">Register Your Agency</a>
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
   const renderStep = () => {
     switch (currentStep) {
       case 0:
