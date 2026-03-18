@@ -510,7 +510,7 @@ export default function AgentRegisterWizard() {
           </motion.div>
         );
 
-      case 3:
+      case 2:
         return (
           <motion.div
             variants={containerVariants}
