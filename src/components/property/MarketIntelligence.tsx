@@ -114,14 +114,19 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
 
   const citySlug = property.city?.toLowerCase().replace(/['']/g, '').replace(/\s+/g, '-') || '';
 
+  // Convert BuyWise bedrooms + additional_rooms → Israeli gov standard room count
+  const israeliRooms = getIsraeliRoomCount(property.bedrooms, property.additional_rooms);
+
   // Room-specific city average (overrides generic city avg when available)
-  const { data: roomPrice } = useRoomSpecificCityPrice(property.city, property.bedrooms);
+  // Note: rooms param = Israeli standard total room count (bedrooms + additional)
+  const { data: roomPrice } = useRoomSpecificCityPrice(property.city, israeliRooms);
   
   // Neighborhood-level average (highest priority for comparison card)
+  // Note: rooms param = Israeli standard total room count
   const { data: neighborhoodPrice } = useNeighborhoodAvgPrice(
     property.city,
     property.neighborhood ?? undefined,
-    property.bedrooms ?? 4
+    israeliRooms ?? 4
   );
 
   const effectiveAvgPriceSqm = roomPrice?.avgPriceSqm ?? cityData?.average_price_sqm ?? null;
