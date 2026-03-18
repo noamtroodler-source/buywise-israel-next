@@ -23,7 +23,7 @@ export function AdvertiseCTA() {
               Ready to Grow Your Business?
             </h2>
             <p className="text-lg text-white/80 max-w-2xl mx-auto mb-8">
-              Join BuyWise Israel today and start connecting with motivated Anglo buyers actively searching for Israeli real estate.
+              Join BuyWise Israel today and start connecting with motivated international buyers actively searching for Israeli real estate.
             </p>
 
             <div className="flex flex-wrap justify-center gap-4 mb-8">
