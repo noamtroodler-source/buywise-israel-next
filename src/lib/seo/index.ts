@@ -22,6 +22,9 @@ export {
   generateAgencyJsonLd,
   generateBreadcrumbJsonLd,
   generateWebsiteJsonLd,
+  generateOrganizationJsonLd,
+  generateFAQJsonLd,
+  generateHomepageJsonLd,
 } from './jsonLd';
 
 export { useSEO } from './useSEO';
