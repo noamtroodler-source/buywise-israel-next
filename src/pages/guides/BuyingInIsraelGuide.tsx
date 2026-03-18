@@ -86,7 +86,7 @@ export default function BuyingInIsraelGuide() {
           <ul className="list-disc pl-5 space-y-2">
             <li><strong>High Demand:</strong> Limited land and immigration drive consistent demand</li>
             <li><strong>Regional Variations:</strong> Tel Aviv and Jerusalem command premium prices, while peripheral areas offer better value</li>
-            <li><strong>New Construction:</strong> Government initiatives for new housing developments</li>
+            <li><strong>New Projects:</strong> Government initiatives for new housing developments</li>
             <li><strong>Foreign Investment:</strong> Significant interest from overseas buyers</li>
           </ul>
           <div className="bg-primary/5 p-4 rounded-lg mt-4">
