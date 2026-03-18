@@ -505,30 +505,6 @@ export default function AgentDashboard() {
                 )}
               </WidgetErrorBoundary>
 
-              {/* Homepage Exposure (condensed) */}
-              <Card className="rounded-2xl border-border/50">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="p-2 rounded-xl bg-primary/10">
-                      <Home className="h-4 w-4 text-primary" />
-                    </div>
-                    <p className="text-sm font-medium">Homepage Exposure</p>
-                  </div>
-                  <p className="text-xs text-muted-foreground mb-3">
-                    BuyWise Israel periodically highlights listings on the homepage. Placement is curated and limited.
-                  </p>
-                  <a
-                    href="mailto:hello@buywiseisrael.com"
-                    className="inline-flex items-center gap-2 text-xs font-medium text-primary hover:underline"
-                  >
-                    <Mail className="h-3.5 w-3.5" />
-                    hello@buywiseisrael.com
-                  </a>
-                  <p className="text-[10px] text-muted-foreground/70 mt-2">
-                    One listing per agent at a time. Not guaranteed.
-                  </p>
-                </CardContent>
-              </Card>
 
               {/* Latest Blog Post */}
               {blogPosts.length > 0 && (
