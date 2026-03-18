@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ChevronRight, Check } from "lucide-react";
+import { ChevronRight, Search } from "lucide-react";
 import { useContentVisits } from "@/hooks/useContentVisits";
 import {
   NavigationMenu,
