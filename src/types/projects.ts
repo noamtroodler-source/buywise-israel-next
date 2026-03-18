@@ -54,6 +54,7 @@ export interface Project {
   is_featured: boolean;
   is_published: boolean;
   views_count: number;
+  total_saves: number;
   featured_highlight: string | null;
   created_at: string;
   updated_at: string;
