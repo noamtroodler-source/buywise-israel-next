@@ -136,7 +136,14 @@ export default function ProjectDetail() {
               <ProjectDescription 
                 description={project.description} 
                 amenities={project.amenities}
-              />
+               />
+              
+              {/* Why This Developer - after description */}
+              {project.developer && (
+                <div id="developer-section">
+                  <ProjectDeveloperCard developer={project.developer} />
+                </div>
+              )}
               
               {/* Floor Plans - What's available */}
               <ProjectFloorPlans units={units} developer={project.developer} />
@@ -208,12 +215,6 @@ export default function ProjectDetail() {
               
               {/* FAQ Section */}
               <ProjectFAQ />
-              
-              {project.developer && (
-                <div id="developer-section">
-                  <ProjectDeveloperCard developer={project.developer} />
-                </div>
-              )}
             </div>
 
             {/* Right Column - Sticky Sidebar */}
