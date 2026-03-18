@@ -229,9 +229,9 @@ export default function AgentProperties() {
                   New Listing
                 </Link>
               </Button>
-              <Button asChild className="rounded-xl" variant="outline">
+              <Button asChild className="rounded-xl">
                 <Link to="/developer/projects/new">
-                  <Building2 className="h-4 w-4 mr-2" />
+                  <Plus className="h-4 w-4 mr-2" />
                   New Project
                 </Link>
               </Button>
