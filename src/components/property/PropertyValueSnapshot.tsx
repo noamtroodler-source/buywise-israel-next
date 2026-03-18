@@ -117,7 +117,19 @@ export function PropertyValueSnapshot({
         {!hideHeader && (
           <div className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5 text-primary" />
-            <h3 className="text-lg font-semibold text-foreground">AI Rental Snapshot</h3>
+            <h3 className="text-lg font-semibold text-foreground">Rental Snapshot</h3>
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex items-center justify-center h-5 w-5 rounded bg-amber-50 dark:bg-amber-950/40 cursor-help">
+                    <Lightbulb className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-xs text-xs leading-relaxed">
+                  BuyWise Estimate · Total monthly combines listed rent + estimated arnona (municipal rate × property size) + Va'ad Bayit. City average uses verified rental data from Madlan/GPG research. Arnona and Va'ad are estimates — actual amounts vary by building.
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         )}
         
