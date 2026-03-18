@@ -194,7 +194,7 @@ export default function AgencyTeam() {
                           size="sm"
                           variant="outline"
                           className="rounded-xl"
-                          onClick={() => rejectRequest.mutate({ requestId: request.id })}
+                          onClick={() => rejectRequest.mutate({ requestId: request.id, agentId: request.agent_id, agencyId: agency.id })}
                           disabled={rejectRequest.isPending}
                         >
                           Reject

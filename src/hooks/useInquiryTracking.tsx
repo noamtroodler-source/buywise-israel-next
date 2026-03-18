@@ -91,6 +91,19 @@ export function useInquiryTracking() {
       // Send notification to agent (async, don't wait)
       sendInquiryNotification(params);
 
+      // Send confirmation to buyer (async, don't wait)
+      if (params.email && params.email !== 'not-provided@placeholder.com') {
+        supabase.functions.invoke('send-inquiry-confirmation', {
+          body: {
+            buyerEmail: params.email,
+            buyerName: params.name || 'there',
+            listingTitle: params.propertyTitle || 'the property',
+            listingType: 'property',
+            inquiryType: params.inquiryType,
+          },
+        }).catch((err) => console.error('Failed to send buyer confirmation:', err));
+      }
+
       return data;
     },
     onError: (error) => {
@@ -138,6 +151,19 @@ export async function trackInquiry(params: TrackInquiryParams & { userId?: strin
 
     // Send notification to agent (async, don't wait)
     sendInquiryNotification(params);
+
+    // Send confirmation to buyer
+    if (params.email) {
+      supabase.functions.invoke('send-inquiry-confirmation', {
+        body: {
+          buyerEmail: params.email,
+          buyerName: params.name || 'there',
+          listingTitle: params.propertyTitle || 'the property',
+          listingType: 'property',
+          inquiryType: params.inquiryType,
+        },
+      }).catch((err) => console.error('Failed to send buyer confirmation:', err));
+    }
   } catch (error) {
     console.error('Failed to track inquiry:', error);
   }

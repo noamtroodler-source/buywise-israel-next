@@ -11,7 +11,9 @@ type NotificationType =
   | 'listing_rejected'
   | 'changes_requested'
   | 'new_inquiry'
-  | 'listing_expiring';
+  | 'listing_expiring'
+  | 'join_approved'
+  | 'join_rejected';
 
 interface NotificationPayload {
   type: NotificationType;
@@ -24,6 +26,7 @@ interface NotificationPayload {
   inquiryType?: string;
   rejectionReason?: string;
   daysUntilExpiry?: number;
+  agencyName?: string;
 }
 
 const brandFooter = `
@@ -131,6 +134,45 @@ const getNotificationContent = (payload: NotificationPayload) => {
           </div>
         `,
       };
+    case 'join_approved':
+      return {
+        subject: `You're in — ${payload.agencyName || 'the agency'} approved your request`,
+        body: `Great news! ${payload.agencyName || 'The agency'} has approved your request to join their team. You're now part of the team and can start listing properties under their brand.`,
+        html: `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+            <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 16px;">You're in! 🎉</h1>
+            <p style="color: #333; font-size: 16px; line-height: 1.6;"><strong>${payload.agencyName || 'The agency'}</strong> has approved your request to join their team.</p>
+            <div style="margin-top: 16px; padding: 16px; background-color: #eff6ff; border-radius: 8px;">
+              <p style="margin: 0; color: #2563eb; font-weight: 500;">You can now list properties under their brand and access team features.</p>
+            </div>
+            <a href="https://buywiseisrael.com/agent/listings" style="display: inline-block; background-color: #2563eb; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; margin-top: 24px;">
+              Go to Dashboard
+            </a>
+            ${brandFooter}
+          </div>
+        `,
+      };
+    case 'join_rejected':
+      return {
+        subject: `Your request to join ${payload.agencyName || 'the agency'} wasn't approved`,
+        body: `Unfortunately, your request to join ${payload.agencyName || 'the agency'} wasn't approved at this time.${payload.rejectionReason ? ` Reason: ${payload.rejectionReason}` : ''} You can still operate as an independent agent or try joining another agency.`,
+        html: `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+            <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 16px;">We have an update on your request</h1>
+            <p style="color: #333; font-size: 16px; line-height: 1.6;">Unfortunately, your request to join <strong>${payload.agencyName || 'the agency'}</strong> wasn't approved at this time.</p>
+            ${payload.rejectionReason ? `
+            <div style="margin-top: 16px; padding: 16px; background-color: #f8fafc; border-radius: 8px; border-left: 4px solid #64748b;">
+              <p style="margin: 0; font-weight: 600; color: #333;">Reason:</p>
+              <p style="margin: 8px 0 0 0; color: #666;">${payload.rejectionReason}</p>
+            </div>` : ''}
+            <p style="margin-top: 24px; color: #666; font-size: 14px;">You can still operate as an independent agent or explore other agencies on BuyWise Israel.</p>
+            <a href="https://buywiseisrael.com/agent/listings" style="display: inline-block; background-color: #2563eb; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; margin-top: 16px;">
+              Go to Dashboard
+            </a>
+            ${brandFooter}
+          </div>
+        `,
+      };
     default:
       return {
         subject: 'Notification from BuyWise Israel',
@@ -196,7 +238,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    if ((payload.type === 'listing_approved' || payload.type === 'listing_rejected' || payload.type === 'changes_requested') && !agent.notify_on_approval) {
+    if ((payload.type === 'listing_approved' || payload.type === 'listing_rejected' || payload.type === 'changes_requested' || payload.type === 'join_approved' || payload.type === 'join_rejected') && !agent.notify_on_approval) {
       console.log("Agent has approval notifications disabled");
       return new Response(
         JSON.stringify({ message: "Approval notifications disabled for this agent" }),

@@ -98,6 +98,16 @@ const Contact = () => {
 
       if (error) throw error;
 
+      // Send admin notification + confirmation email (async, don't block)
+      supabase.functions.invoke('contact-form-notify', {
+        body: {
+          name: formData.name,
+          email: formData.email,
+          category: formData.category || 'general',
+          message: formData.message,
+        },
+      }).catch((err) => console.error('Failed to send contact notification:', err));
+
       toast({
         title: "Message sent!",
         description: "Thanks for reaching out. We'll get back to you within 24 hours.",

@@ -236,6 +236,25 @@ export function useApproveJoinRequest() {
         .eq('id', agentId);
 
       if (agentError) throw agentError;
+
+      // Send approval email to agent
+      try {
+        const { data: agency } = await supabase
+          .from('agencies')
+          .select('name')
+          .eq('id', agencyId)
+          .single();
+
+        await supabase.functions.invoke('send-notification', {
+          body: {
+            type: 'join_approved',
+            agentId,
+            agencyName: agency?.name || 'Your agency',
+          },
+        });
+      } catch (emailErr) {
+        console.error('Failed to send approval email:', emailErr);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agencyJoinRequests'] });
@@ -253,7 +272,7 @@ export function useRejectJoinRequest() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ requestId, reason }: { requestId: string; reason?: string }) => {
+    mutationFn: async ({ requestId, reason, agentId, agencyId }: { requestId: string; reason?: string; agentId?: string; agencyId?: string }) => {
       const { error } = await supabase
         .from('agency_join_requests')
         .update({ 
@@ -264,6 +283,32 @@ export function useRejectJoinRequest() {
         .eq('id', requestId);
 
       if (error) throw error;
+
+      // Send rejection email to agent
+      if (agentId) {
+        try {
+          let agencyName: string | undefined;
+          if (agencyId) {
+            const { data: agency } = await supabase
+              .from('agencies')
+              .select('name')
+              .eq('id', agencyId)
+              .single();
+            agencyName = agency?.name;
+          }
+
+          await supabase.functions.invoke('send-notification', {
+            body: {
+              type: 'join_rejected',
+              agentId,
+              agencyName: agencyName || 'The agency',
+              rejectionReason: reason || undefined,
+            },
+          });
+        } catch (emailErr) {
+          console.error('Failed to send rejection email:', emailErr);
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agencyJoinRequests'] });
