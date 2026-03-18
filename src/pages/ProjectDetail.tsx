@@ -147,6 +147,22 @@ export default function ProjectDetail() {
                   entityType="project"
                 />
               </GoogleMapsProvider>
+
+              {/* Neighborhood Guide */}
+              {project.neighborhood && (
+                <MobileCollapsibleSection
+                  id="neighborhood-guide"
+                  title={`${project.neighborhood} Guide`}
+                  icon={<Compass className="h-5 w-5" />}
+                  summary="Know the neighborhood before you commit"
+                  alwaysStartClosed
+                >
+                  <NeighborhoodContextCard
+                    city={project.city}
+                    neighborhood={project.neighborhood}
+                  />
+                </MobileCollapsibleSection>
+              )}
               
               {/* Questions to Ask the Developer - After location, before next steps */}
               <ProjectQuestionsToAsk 
