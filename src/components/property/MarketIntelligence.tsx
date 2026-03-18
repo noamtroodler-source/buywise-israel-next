@@ -131,7 +131,7 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
 
   const effectiveAvgPriceSqm = roomPrice?.avgPriceSqm ?? cityData?.average_price_sqm ?? null;
   const effectiveYoyChange = roomPrice?.yoyChange ?? cityData?.yoy_price_change ?? null;
-  const effectiveRoomCount = roomPrice ? property.bedrooms : null;
+  const effectiveRoomCount = roomPrice ? israeliRooms : null;
 
   // Neighborhood avg price per sqm (falls back to city if unavailable)
   const neighborhoodAvgPriceSqm = neighborhoodPrice?.avg_price_sqm ?? null;
