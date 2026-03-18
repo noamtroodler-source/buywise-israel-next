@@ -202,7 +202,7 @@ export function ProjectsHighlight() {
                     key={project.id}
                     className="flex-[0_0_calc(100%-2rem)] sm:flex-[0_0_calc(50%-1rem)] min-w-0 pl-4 first:pl-4"
                   >
-                    <div className="aspect-[3/4] sm:aspect-[4/5]">
+                    <div className="aspect-[3/4] sm:aspect-[4/3]">
                       <ProjectCard project={project} />
                     </div>
                   </div>
