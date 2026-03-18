@@ -10,7 +10,6 @@ const CITY_COORDINATES: Record<string, { lat: number; lng: number }> = {
   'Tel Aviv': { lat: 32.0853, lng: 34.7818 },
   'Herzliya': { lat: 32.1663, lng: 34.8434 },
   'Ramat Gan': { lat: 32.0833, lng: 34.8100 },
-  'Givatayim': { lat: 32.0714, lng: 34.8114 },
   'Netanya': { lat: 32.3286, lng: 34.8574 },
   "Ra'anana": { lat: 32.1836, lng: 34.8714 },
   'Kfar Saba': { lat: 32.1780, lng: 34.9065 },
