@@ -11,7 +11,9 @@ type NotificationType =
   | 'listing_rejected'
   | 'changes_requested'
   | 'new_inquiry'
-  | 'listing_expiring';
+  | 'listing_expiring'
+  | 'join_approved'
+  | 'join_rejected';
 
 interface NotificationPayload {
   type: NotificationType;
