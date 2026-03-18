@@ -494,7 +494,6 @@ serve(async (req) => {
 
     // ============ STEP 4: CREATE PROPERTIES FOR SALE ============
     console.log("Creating for-sale properties...");
-    const BASE_PRICE = 2500000; // 2.5M NIS base
     
     for (const city of CITIES) {
       for (let i = 0; i < 8; i++) {
@@ -512,7 +511,7 @@ serve(async (req) => {
                      randomInt(1, 15);
         const totalFloors = Math.max(floor + randomInt(0, 5), floor + 1);
         const features = randomChoices(FEATURES, randomInt(3, 7));
-        const price = Math.round(BASE_PRICE * city.priceMultiplier * (sizeSqm / 80) * (1 + Math.random() * 0.3));
+        const price = generateSalePrice(city, sizeSqm);
         
         const { error } = await supabase
           .from('properties')
