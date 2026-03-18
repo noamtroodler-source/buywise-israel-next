@@ -88,7 +88,8 @@ const getNotificationContent = (payload: NotificationPayload) => {
         subject: `Just a few tweaks needed for "${payload.projectName}"`,
         body: `Our team has reviewed your project "${payload.projectName}" and requested some changes before it can be approved.\n\nFeedback: ${payload.message || 'Please review and update your project.'}\n\nPlease make the requested changes and resubmit.`,
         html: `
-          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+            ${brandHeader}
             <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 16px;">Just a few tweaks needed — we're almost there</h1>
             <p style="color: #333; font-size: 16px; line-height: 1.6;">Our team has reviewed your project <strong>"${payload.projectName}"</strong> and requested some small changes before it can go live.</p>
             <div style="margin-top: 16px; padding: 16px; background-color: #eff6ff; border-radius: 8px; border-left: 4px solid #2563eb;">
