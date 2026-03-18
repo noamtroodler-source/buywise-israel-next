@@ -1,6 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Compass } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { useProject, useProjectUnits } from '@/hooks/useProjects';
