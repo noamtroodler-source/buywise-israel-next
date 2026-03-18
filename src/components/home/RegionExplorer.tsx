@@ -125,10 +125,10 @@ export function RegionExplorer() {
         >
           <div>
             <h2 className="text-2xl md:text-4xl font-bold text-foreground">
-              Explore Market Environments
+              Know Your Market Before You Buy
             </h2>
             <p className="text-base text-muted-foreground mt-1">
-              Market context and buyer-focused insights for each city.
+              The numbers behind every city, laid out clearly so you can buy with confidence.
             </p>
           </div>
           <Button variant="outline" asChild>
