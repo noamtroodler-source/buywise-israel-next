@@ -128,7 +128,7 @@ export function RegionExplorer() {
               Know Your Market Before You Buy
             </h2>
             <p className="text-base text-muted-foreground mt-1">
-              The numbers behind every city, laid out clearly so you can buy with confidence.
+              The numbers behind every market, laid out clearly so you can buy with confidence.
             </p>
           </div>
           <Button variant="outline" asChild>

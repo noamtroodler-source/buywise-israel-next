@@ -394,7 +394,7 @@ export default function Areas() {
               Know Your Market Before You Buy
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              The numbers behind every city, laid out clearly so you can buy with confidence.
+              The numbers behind every market, laid out clearly so you can buy with confidence.
             </p>
             
             {/* Search Input */}
