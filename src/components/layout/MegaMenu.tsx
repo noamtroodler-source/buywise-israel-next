@@ -33,27 +33,26 @@ export function MegaMenu({ config, className }: MegaMenuProps) {
           <NavigationMenuContent>
             <div 
               className={cn(
-                "rounded-xl border bg-popover text-popover-foreground shadow-xl overflow-hidden",
-                columnCount === 2 ? "w-[420px]" : "w-[580px]"
+                "rounded-xl border border-border/50 border-t-2 border-t-primary bg-popover text-popover-foreground shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08),0_2px_8px_-2px_rgba(0,0,0,0.04)] overflow-hidden",
+                columnCount === 2 ? "w-[480px]" : "w-[680px]"
               )}
             >
-              {/* Columns */}
               <div className={cn(
-                "grid gap-0 divide-x divide-border",
+                "grid gap-0",
                 columnCount === 2 ? "grid-cols-2" : "grid-cols-3"
               )}>
                 {config.columns.map((column) => (
-                  <div key={column.title} className="p-4">
+                  <div key={column.title} className="p-6">
                     <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
                       {column.title}
                     </h4>
-                    <ul className="space-y-1">
+                    <ul className="space-y-0.5">
                       {column.items.map((item) => (
                         <li key={item.href}>
                           <NavigationMenuLink asChild>
                             <Link
                               to={item.href}
-                              className="group flex flex-col rounded-md px-2 py-1.5 hover:bg-accent transition-colors"
+                              className="group flex flex-col rounded-lg px-3 py-2.5 -mx-1 hover:bg-muted/50 transition-colors"
                             >
                               <span className="text-sm font-medium text-foreground group-hover:text-accent-foreground flex items-center gap-1.5">
                                 {isVisited(item.href) && (
@@ -75,9 +74,8 @@ export function MegaMenu({ config, className }: MegaMenuProps) {
                 ))}
               </div>
               
-              {/* CTA Footer */}
               {config.cta && (
-                <div className="border-t border-border bg-muted/30 px-4 py-3">
+                <div className="border-t border-border bg-muted/20 px-6 py-3.5">
                   <NavigationMenuLink asChild>
                     <Link
                       to={config.cta.href}
