@@ -203,22 +203,8 @@ export default function DeveloperDetail() {
           {/* Hero Card */}
           <Card className="overflow-hidden">
             <CardContent className="p-6 md:p-8">
-              <div className="flex flex-col md:flex-row gap-6">
-                {/* Logo */}
-                {developer.logo_url && !logoError ? (
-                  <img
-                    src={developer.logo_url}
-                    alt={developer.name}
-                    className="h-24 w-24 object-contain rounded-xl bg-muted p-3 shrink-0"
-                    onError={() => setLogoError(true)}
-                  />
-                ) : (
-                  <div className="h-24 w-24 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                    <Building2 className="h-12 w-12 text-primary" />
-                  </div>
-                )}
-
-                <div className="flex-1 space-y-4">
+              <div>
+                <div className="space-y-4">
                   {/* Name & Verified Badge */}
                   <div className="flex items-center gap-3 flex-wrap">
                     <h1 className="text-3xl font-bold text-foreground">{developer.name}</h1>
