@@ -5,7 +5,7 @@ import useEmblaCarousel from 'embla-carousel-react';
 import { 
   Calculator, Wallet, Scale, TrendingUp, Receipt, 
   Hammer, ClipboardList, ArrowRight, ArrowLeft, Compass,
-  Search, Home, ChevronRight, Languages
+  Search, Home, ChevronRight, Languages, Construction
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { SEOHead } from '@/components/seo/SEOHead';
@@ -25,6 +25,7 @@ import { DualNavigation } from '@/components/shared/DualNavigation';
 import { TOOLS_BY_PHASE } from '@/lib/navigationConfig';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useTrackContentVisit } from '@/hooks/useTrackContentVisit';
+import { useUserRole } from '@/hooks/useUserRole';
 
 
 interface Tool {
@@ -65,6 +66,7 @@ const allTools: Record<string, Tool> = {
     label: 'Investment Return Calculator', 
     description: 'Evaluate returns, cash flow, and long-term value — using Israeli market assumptions.', 
     icon: TrendingUp,
+    badge: 'Beta',
   },
   rentvsbuy: { 
     id: 'rentvsbuy', 
@@ -97,6 +99,10 @@ const allTools: Record<string, Tool> = {
   },
 };
 
+
+// Tools that require admin access
+const BETA_TOOL_IDS = new Set(['renovation', 'documents', 'listing-decoder', 'investment']);
+
 const toolComponents: Record<string, React.ComponentType> = {
   mortgage: MortgageCalculator,
   totalcost: TrueCostCalculator,
@@ -107,6 +113,31 @@ const toolComponents: Record<string, React.ComponentType> = {
   documents: DocumentChecklistTool,
   'listing-decoder': ListingDecoderTool,
 };
+
+function BetaComingSoon({ tool }: { tool: Tool }) {
+  const Icon = tool.icon;
+  return (
+    <div className="max-w-lg mx-auto text-center py-16 px-6">
+      <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6">
+        <Construction className="h-8 w-8 text-primary" />
+      </div>
+      <h2 className="text-2xl font-bold text-foreground mb-2">{tool.label}</h2>
+      <span className="inline-block text-xs font-semibold uppercase tracking-wider text-primary bg-primary/10 border border-primary/20 rounded-full px-3 py-1 mb-4">
+        Coming Soon
+      </span>
+      <p className="text-muted-foreground leading-relaxed mb-6">
+        We're putting the finishing touches on this tool to make sure it gives you accurate, Israel-specific results. 
+        It'll be available soon — stay tuned!
+      </p>
+      <div className="p-4 rounded-xl bg-muted/50 border border-border/50">
+        <p className="text-sm text-muted-foreground">
+          <span className="font-medium text-foreground">What it will do:</span>{' '}
+          {tool.description}
+        </p>
+      </div>
+    </div>
+  );
+}
 
 // Journey phase order
 const phaseOrder = ['define', 'check', 'move_forward', 'after_deal'];
@@ -119,19 +150,21 @@ const journeyStages = [
   { key: 'after_deal', label: 'Already bought', icon: Home, description: 'Planning renovations' },
 ];
 
-function ToolCard({ tool, onClick }: { tool: Tool; onClick: () => void }) {
+function ToolCard({ tool, onClick, isBeta }: { tool: Tool; onClick: () => void; isBeta?: boolean }) {
   const Icon = tool.icon;
   
   return (
     <div 
-      className="group bg-card border border-border rounded-xl p-5 hover:shadow-md hover:border-primary/40 transition-all cursor-pointer flex flex-col h-full"
+      className={`group bg-card border border-border rounded-xl p-5 transition-all cursor-pointer flex flex-col h-full ${
+        isBeta ? 'opacity-75 hover:opacity-90' : 'hover:shadow-md hover:border-primary/40'
+      }`}
       onClick={onClick}
     >
       <div className="flex items-start justify-between gap-3 mb-4">
         <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
           <Icon className="h-5 w-5 text-primary" />
         </div>
-        {tool.guidanceHint && (
+        {!isBeta && tool.guidanceHint && (
           <span className="text-xs text-primary font-medium bg-primary/8 px-2 py-1 rounded-full whitespace-nowrap">
             {tool.guidanceHint}
           </span>
@@ -141,8 +174,12 @@ function ToolCard({ tool, onClick }: { tool: Tool; onClick: () => void }) {
       <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
         {tool.label}
         {tool.badge && (
-          <span className="text-[10px] font-semibold uppercase tracking-wider bg-accent/15 text-accent-foreground px-1.5 py-0.5 rounded">
-            {tool.badge}
+          <span className={`text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded ${
+            isBeta 
+              ? 'bg-primary/10 text-primary border border-primary/20' 
+              : 'bg-accent/15 text-accent-foreground'
+          }`}>
+            {isBeta ? 'Coming Soon' : tool.badge}
           </span>
         )}
       </h3>
@@ -152,8 +189,10 @@ function ToolCard({ tool, onClick }: { tool: Tool; onClick: () => void }) {
       </p>
       
       <div className="flex justify-end mt-4">
-        <span className="text-primary text-sm font-medium flex items-center gap-1 group-hover:gap-2 transition-all">
-          Open tool
+        <span className={`text-sm font-medium flex items-center gap-1 group-hover:gap-2 transition-all ${
+          isBeta ? 'text-muted-foreground' : 'text-primary'
+        }`}>
+          {isBeta ? 'Coming soon' : 'Open tool'}
           <ArrowRight className="h-4 w-4" />
         </span>
       </div>
@@ -167,7 +206,7 @@ interface ToolsCarouselProps {
   onToolClick: (toolId: string) => void;
 }
 
-function ToolsCarousel({ tools, phaseKey, onToolClick }: ToolsCarouselProps) {
+function ToolsCarousel({ tools, phaseKey, onToolClick, betaToolIds }: ToolsCarouselProps & { betaToolIds?: Set<string> }) {
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: 'start',
     loop: true,
@@ -206,6 +245,7 @@ function ToolsCarousel({ tools, phaseKey, onToolClick }: ToolsCarouselProps) {
               <ToolCard 
                 tool={tool} 
                 onClick={() => onToolClick(tool.id)}
+                isBeta={betaToolIds?.has(tool.id)}
               />
             </div>
           ))}
@@ -226,6 +266,7 @@ export default function Tools() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTool, setActiveTool] = useState<string | null>(null);
   const isMobile = useIsMobile();
+  const { isAdmin } = useUserRole();
 
   useEffect(() => {
     const toolParam = searchParams.get('tool');
@@ -238,7 +279,9 @@ export default function Tools() {
     }
   }, [searchParams]);
 
-  const ActiveComponent = activeTool ? toolComponents[activeTool] : null;
+  const isBetaTool = activeTool ? BETA_TOOL_IDS.has(activeTool) : false;
+  const showBetaGate = isBetaTool && !isAdmin;
+  const ActiveComponent = activeTool && !showBetaGate ? toolComponents[activeTool] : null;
 
   const handleToolClick = (toolId: string) => {
     setSearchParams({ tool: toolId });
@@ -261,7 +304,23 @@ export default function Tools() {
       
       <div className="min-h-screen bg-background">
         {activeTool ? (
-          activeTool === 'listing-decoder' ? (
+          showBetaGate ? (
+            <div className="container py-6">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="max-w-4xl mx-auto space-y-4"
+              >
+                <DualNavigation
+                  parentLabel="All Tools"
+                  parentPath="/tools"
+                  backLabel="Go back"
+                  className="mb-2"
+                />
+                <BetaComingSoon tool={allTools[activeTool]} />
+              </motion.div>
+            </div>
+          ) : activeTool === 'listing-decoder' ? (
             /* Listing Decoder gets full-width layout like PropertyDetail */
             <div className="min-h-screen bg-background">
               <div className="container py-6">
@@ -379,6 +438,7 @@ export default function Tools() {
                         tools={phaseTools} 
                         phaseKey={phaseKey}
                         onToolClick={handleToolClick}
+                        betaToolIds={isAdmin ? undefined : BETA_TOOL_IDS}
                       />
                     ) : (
                       /* Desktop: Grid */
@@ -393,6 +453,7 @@ export default function Tools() {
                             <ToolCard 
                               tool={tool} 
                               onClick={() => handleToolClick(tool.id)}
+                              isBeta={!isAdmin && BETA_TOOL_IDS.has(tool.id)}
                             />
                           </motion.div>
                         ))}
