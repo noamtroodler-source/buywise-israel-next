@@ -1,28 +1,30 @@
 
 
-## Plan: Add Neighborhoods to All Mock Projects
+## Plan: Clean Up Sold Comps — Remove Mock Data, Keep Only Real
 
-### Problem
-All projects in the database have `neighborhood` set to `null`. The listing cards already display neighborhood when present (`{project.neighborhood ? ... : ''}`) — the data is simply missing.
+### Current State
+The `sold_transactions` table has **26,551 records** from these sources:
+- **15,247** — `govmap_gov_il` (real)
+- **1,270** — `nadlan_gov_il` (real)
+- **584** — `israel_tax_authority` (real)
+- **10** — `nadlan.gov.il` (real)
+- **9,440** — `mock_seed` (fake — must go)
 
-### Solution
+The hook (`useNearbySoldComps.ts`) correctly queries the real `get_nearby_sold_comps` database function, but has a **fallback that generates fake mock comps** when no real results are found (lines 132-140). This means even after purging mock DB rows, properties without nearby real comps would still show fabricated data — violating your no-fabrication policy.
 
-**Single database migration** to update all mock projects with appropriate neighborhood values based on their city. Each city's projects will get realistic neighborhood assignments:
+### Changes
 
-- Jerusalem: Baka, Rehavia, German Colony
-- Tel Aviv: Florentin, Neve Tzedek, Rothschild
-- Herzliya: Herzliya Pituach, Marina, City Center
-- Haifa: Carmel Center, Ahuza, Bat Galim
-- Netanya: Ir Yamim, City Center, South Beach
-- Ra'anana: North Ra'anana, City Center
-- Modiin: Buchman, Moriah, Aviv
-- Beit Shemesh: Ramat Beit Shemesh Aleph, Sheinfeld
-- Beer Sheva: Old City, Neve Noy
-- etc.
+1. **Purge 9,440 mock_seed rows** from `sold_transactions` table
+   - `DELETE FROM sold_transactions WHERE source = 'mock_seed'`
 
-This is a data-only fix — no component changes needed since all card components (Projects.tsx, ProjectCarousel, MapProjectCard, etc.) already render neighborhood when available.
+2. **Remove the mock fallback** from `useNearbySoldComps.ts`
+   - Delete the `seededRandom` and `generateMockComps` helper functions (~70 lines)
+   - Remove the "if no results, generate mock" block — just return the real results (empty array if none found)
 
-### Implementation
-1. Run a SQL migration with UPDATE statements mapping each project by name/city to a neighborhood value
-2. No code changes required — existing conditional rendering handles it
+3. **No component changes needed** — `RecentNearbySales.tsx` already handles empty comps gracefully (the section simply won't render when there's no data)
+
+### Result
+- ~17,111 real government-sourced transactions remain
+- Properties near those transactions show real comps
+- Properties without nearby real data show nothing (honest) instead of fabricated numbers
 
