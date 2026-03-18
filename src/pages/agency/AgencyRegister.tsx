@@ -1043,7 +1043,8 @@ export default function AgencyRegister() {
 
       <AgencySubmittedDialog 
         open={showSuccessDialog} 
-        onOpenChange={setShowSuccessDialog} 
+        onOpenChange={setShowSuccessDialog}
+        inviteCode={generatedInviteCode}
       />
     </Layout>
   );
