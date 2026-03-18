@@ -115,7 +115,7 @@ export default function Principles() {
 
         {/* We Are / We Are Not */}
         <section className="py-14 md:py-20 bg-muted/30">
-          <div className="container">
+          <div className="container flex flex-col items-center">
             <motion.div
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
@@ -127,13 +127,13 @@ export default function Principles() {
               </h2>
             </motion.div>
 
-            <div className="grid md:grid-cols-2 gap-8 md:gap-16 max-w-3xl mx-auto">
+            <div className="inline-grid md:grid-cols-2 gap-y-8 gap-x-12 md:gap-x-20">
               {/* We Are */}
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
-                className="flex flex-col"
+                className="flex flex-col max-w-xs"
               >
                 <h3 className="font-semibold text-foreground mb-5 text-lg flex items-center gap-2.5">
                   <div className="p-1.5 rounded-full bg-primary/10">
@@ -156,7 +156,7 @@ export default function Principles() {
                 initial={{ opacity: 0, x: 20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
-                className="flex flex-col"
+                className="flex flex-col max-w-xs"
               >
                 <h3 className="font-semibold text-foreground mb-5 text-lg flex items-center gap-2.5">
                   <div className="p-1.5 rounded-full bg-destructive/10">
