@@ -97,8 +97,8 @@ const regions: Region[] = [
     subtitle: 'Lifestyle value & scenic living',
     icon: Trees,
     cities: [
-      { name: 'Zichron Yaakov', slug: 'zichron-yaakov', image: zichronYaakovImg, description: "Zichron Yaakov is Israel's wine country gem — a historic hilltop town with boutique character and Carmel coast views.", tags: ['Wine country', 'Historic charm'] },
-      { name: 'Pardes Hanna', slug: 'pardes-hanna', image: pardesHannaImg, description: "Pardes Hanna is a quiet, affordable alternative in the north — a laid-back community attracting young families priced out of the center.", tags: ['Quiet living', 'Value north'] },
+      { name: 'Zichron Yaakov', slug: 'zichron-yaakov', image: zichronYaakovImg, description: "Zichron Yaakov is Israel's wine country gem — a historic hilltop town with boutique character and Carmel coast views." },
+      { name: 'Pardes Hanna', slug: 'pardes-hanna', image: pardesHannaImg, description: "Pardes Hanna is a quiet, affordable alternative in the north — a laid-back community attracting young families priced out of the center." },
     ],
   },
   {
