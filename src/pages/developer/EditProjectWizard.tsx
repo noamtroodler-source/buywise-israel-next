@@ -148,7 +148,7 @@ function EditWizardContent({ projectId }: { projectId: string }) {
         images: project.images || [],
         floor_plans: project.floor_plans || [],
         description: project.description || '',
-        featured_highlight: project.featured_highlight || '',
+        featured_highlight: '',
       });
       setHasLoaded(true);
     }
@@ -176,7 +176,7 @@ function EditWizardContent({ projectId }: { projectId: string }) {
       images: data.images,
       floor_plans: data.floor_plans,
       description: data.description || null,
-      featured_highlight: data.featured_highlight || null,
+      
       unit_types: data.unit_types, // Include unit types for sync
     });
   };
