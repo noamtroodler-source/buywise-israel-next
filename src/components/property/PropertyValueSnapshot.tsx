@@ -40,7 +40,7 @@ export function PropertyValueSnapshot({
   vaadBayitMonthly,
   cityArnonaRate,
   cityAvgVaadBayit,
-  roomCount,
+  roomSpecificCityAvgPrice,
   hideHeader = false,
   neighborhoodAvgPriceSqm,
   neighborhoodName,
