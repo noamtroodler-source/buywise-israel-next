@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Project } from '@/types/projects';
 import { ProjectFiltersType } from '@/components/filters/ProjectFilters';
+import { shuffleFeatured } from '@/lib/utils/shuffleFeatured';
 
 async function fetchFeaturedProjectIds(): Promise<string[]> {
   // Projects don't use featured_listings (that's for properties)
