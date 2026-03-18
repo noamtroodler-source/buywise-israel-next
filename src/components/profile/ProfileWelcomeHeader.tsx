@@ -80,7 +80,7 @@ export function ProfileWelcomeHeader({
   if (buyerProfile) {
     if (buyerProfile.is_first_property) badges.push('First-Time Buyer');
     const residencyLabel = RESIDENCY_BADGES[buyerProfile.residency_status];
-    if (residencyLabel && buyerProfile.residency_status !== 'israeli_citizen') badges.push(residencyLabel);
+    if (residencyLabel && buyerProfile.residency_status !== 'israeli_resident') badges.push(residencyLabel);
     if (buyerProfile.is_upgrading) badges.push('Upgrader');
   }
 
