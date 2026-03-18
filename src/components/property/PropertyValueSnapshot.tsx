@@ -102,6 +102,7 @@ export function PropertyValueSnapshot({
     ? neighborhoodName
     : city;
   const isNeighborhoodComparison = !!(neighborhoodAvgPriceSqm && neighborhoodName);
+  // Note: roomCount is intentionally NOT shown in the purchase comparison card label
 
   const purchaseComparisonPercent = propertyPricePerSqm && comparisonAvgSqm
     ? Math.round(((propertyPricePerSqm - comparisonAvgSqm) / comparisonAvgSqm) * 100)
