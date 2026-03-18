@@ -23,8 +23,6 @@ const CITY_COORDINATES: Record<string, { lat: number; lng: number }> = {
   'Beer Sheva': { lat: 31.2518, lng: 34.7913 },
   'Eilat': { lat: 29.5577, lng: 34.9519 },
   'Modiin': { lat: 31.8980, lng: 35.0104 },
-  'Bat Yam': { lat: 32.0236, lng: 34.7518 },
-  'Holon': { lat: 32.0107, lng: 34.7748 },
   'Nahariya': { lat: 33.0061, lng: 35.0945 },
   'Hadera': { lat: 32.4340, lng: 34.9196 },
   'Caesarea': { lat: 32.5005, lng: 34.8975 },
