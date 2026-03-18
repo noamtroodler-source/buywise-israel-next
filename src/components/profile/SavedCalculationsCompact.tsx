@@ -38,7 +38,7 @@ export function SavedCalculationsCompact() {
     switch (type) {
       case 'mortgage': return '/tools?tool=mortgage';
       case 'affordability': return '/tools?tool=affordability';
-      case 'purchase_tax': return '/tools?tool=purchasetax';
+      case 'purchase_tax': return '/tools?tool=totalcost';
       default: return '/tools';
     }
   };

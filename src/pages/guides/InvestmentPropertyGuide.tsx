@@ -680,12 +680,12 @@ export default function InvestmentPropertyGuide() {
                   </h4>
                   <p className="text-sm text-muted-foreground mt-1">Model your specific investment scenario</p>
                 </Link>
-                <Link to="/tools?tool=purchasetax" className="p-4 bg-card border border-border rounded-lg hover:border-primary/40 transition-colors">
+                <Link to="/tools?tool=totalcost" className="p-4 bg-card border border-border rounded-lg hover:border-primary/40 transition-colors">
                   <h4 className="font-medium text-foreground flex items-center gap-2">
                     <Calculator className="h-4 w-4 text-primary" />
-                    Purchase Tax Calculator
+                    Total Cost Calculator
                   </h4>
-                  <p className="text-sm text-muted-foreground mt-1">Calculate investor tax rates</p>
+                  <p className="text-sm text-muted-foreground mt-1">See full purchase costs including tax</p>
                 </Link>
               </div>
             </div>

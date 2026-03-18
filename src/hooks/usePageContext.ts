@@ -31,7 +31,7 @@ export function getPageContextData(): PageContextData | null {
 }
 
 const toolNames: Record<string, string> = {
-  'purchase-tax': 'Purchase Tax Calculator',
+  
   'true-cost': 'True Cost Calculator',
   'mortgage': 'Mortgage Calculator',
   'rent-vs-buy': 'Rent vs Buy Calculator',

@@ -39,9 +39,9 @@ const calculatorConfig: Record<CalculatorType, { label: string; icon: React.Reac
     resultKey: 'netYield',
   },
   purchase_tax: {
-    label: 'Purchase Tax Calculator',
+    label: 'Total Cost Calculator',
     icon: <Receipt className="h-4 w-4" />,
-    path: '/tools?tool=purchasetax',
+    path: '/tools?tool=totalcost',
     resultKey: 'tax_amount',
   },
 };
