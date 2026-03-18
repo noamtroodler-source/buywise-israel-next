@@ -151,6 +151,7 @@ const AdminEnterpriseInquiries = lazy(() => import("./pages/admin/AdminEnterpris
 const AdminWarmLeads = lazy(() => import("./pages/admin/AdminWarmLeads"));
 const AdminDuplicates = lazy(() => import("./pages/admin/AdminDuplicates"));
 const AdminImportAnalytics = lazy(() => import("./pages/admin/AdminImportAnalytics"));
+const ImportNeighborhoodProfiles = lazy(() => import("./pages/admin/ImportNeighborhoodProfiles"));
 // Global query client config for optimal caching
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -503,6 +504,7 @@ const App = () => (
                           <Route path="warm-leads" element={<AdminWarmLeads />} />
                           <Route path="duplicates" element={<AdminDuplicates />} />
                           <Route path="import-analytics" element={<AdminImportAnalytics />} />
+                          <Route path="import-neighborhood-profiles" element={<ImportNeighborhoodProfiles />} />
                         </Route>
                         
                         <Route path="*" element={<NotFound />} />

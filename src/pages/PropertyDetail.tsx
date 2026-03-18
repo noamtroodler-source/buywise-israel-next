@@ -30,7 +30,8 @@ import { ReportListingButton } from '@/components/property/ReportListingButton';
 import { MobileSectionNav } from '@/components/property/MobileSectionNav';
 import { DualNavigation } from '@/components/shared/DualNavigation';
 import { MobileCollapsibleSection } from '@/components/property/MobileCollapsibleSection';
-import { Calculator, BarChart3, MapPin } from 'lucide-react';
+import { NeighborhoodContextCard } from '@/components/property/NeighborhoodContextCard';
+import { Calculator, BarChart3, MapPin, Compass } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { SEOHead } from '@/components/seo/SEOHead';
@@ -284,8 +285,31 @@ export default function PropertyDetail() {
               </MobileCollapsibleSection>
             </motion.div>
 
-            {/* Questions to Ask - After location, before next steps */}
-            <PropertyQuestionsToAsk 
+            {/* Neighborhood Guide - After location */}
+            {property.neighborhood && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.3 }}
+                className="py-6 border-b border-border md:border-none"
+              >
+                <MobileCollapsibleSection
+                  id="neighborhood-guide"
+                  title={`${property.neighborhood} Guide`}
+                  icon={<Compass className="h-5 w-5" />}
+                  summary={`Know the neighborhood before you commit`}
+                  alwaysStartClosed
+                >
+                  <NeighborhoodContextCard
+                    city={property.city}
+                    neighborhood={property.neighborhood}
+                  />
+                </MobileCollapsibleSection>
+              </motion.div>
+            )}
+
+            {/* Questions to Ask - After neighborhood guide, before next steps */}
+            <PropertyQuestionsToAsk
               listing={{
                 type: property.listing_status === 'for_rent' ? 'rent' : 'buy',
                 entity_id: property.id,
