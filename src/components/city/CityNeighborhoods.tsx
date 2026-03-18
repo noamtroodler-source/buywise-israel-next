@@ -1,8 +1,15 @@
 import { useState, useMemo } from 'react';
-import { MapPin, Search, TrendingUp, TrendingDown, Minus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MapPin, Search, TrendingUp, TrendingDown, Minus, ChevronLeft, ChevronRight, ArrowUpDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { PriceTier } from '@/types/neighborhood';
 
@@ -122,16 +129,38 @@ export function CityNeighborhoods({ cityName, neighborhoods }: CityNeighborhoods
 
   const isSearching = search.trim().length > 0;
 
+  type SortOption = 'featured' | 'price_asc' | 'price_desc' | 'growth_asc' | 'growth_desc';
+  const [sortBy, setSortBy] = useState<SortOption>('featured');
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
-    if (!q) return neighborhoods;
-    // Special "anglo" keyword filters to tagged neighborhoods
-    if (q === 'anglo') return neighborhoods.filter(n => n.anglo_tag);
-    return neighborhoods.filter(n =>
-      n.name.toLowerCase().includes(q) ||
-      (n.name_he && n.name_he.includes(q))
-    );
-  }, [neighborhoods, search]);
+    let result = neighborhoods;
+    if (q === 'anglo') {
+      result = neighborhoods.filter(n => n.anglo_tag);
+    } else if (q) {
+      result = neighborhoods.filter(n =>
+        n.name.toLowerCase().includes(q) ||
+        (n.name_he && n.name_he.includes(q))
+      );
+    }
+
+    if (sortBy === 'featured') return result;
+
+    return [...result].sort((a, b) => {
+      switch (sortBy) {
+        case 'price_asc':
+          return (a.avg_price ?? Infinity) - (b.avg_price ?? Infinity);
+        case 'price_desc':
+          return (b.avg_price ?? -Infinity) - (a.avg_price ?? -Infinity);
+        case 'growth_desc':
+          return (b.yoy_change_percent ?? -Infinity) - (a.yoy_change_percent ?? -Infinity);
+        case 'growth_asc':
+          return (a.yoy_change_percent ?? Infinity) - (b.yoy_change_percent ?? Infinity);
+        default:
+          return 0;
+      }
+    });
+  }, [neighborhoods, search, sortBy]);
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const safePage = Math.min(currentPage, Math.max(totalPages - 1, 0));
@@ -191,11 +220,32 @@ export function CityNeighborhoods({ cityName, neighborhoods }: CityNeighborhoods
                 </div>
               )}
 
+              {/* Sort */}
+              <Select
+                value={sortBy}
+                onValueChange={(v) => {
+                  setSortBy(v as SortOption);
+                  setCurrentPage(0);
+                }}
+              >
+                <SelectTrigger className="h-8 w-[130px] text-xs gap-1 [&>svg]:h-3 [&>svg]:w-3">
+                  <ArrowUpDown className="h-3 w-3 text-muted-foreground shrink-0" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent align="end">
+                  <SelectItem value="featured" className="text-xs">Featured</SelectItem>
+                  <SelectItem value="price_asc" className="text-xs">Price ↑</SelectItem>
+                  <SelectItem value="price_desc" className="text-xs">Price ↓</SelectItem>
+                  <SelectItem value="growth_desc" className="text-xs">Growth ↑</SelectItem>
+                  <SelectItem value="growth_asc" className="text-xs">Growth ↓</SelectItem>
+                </SelectContent>
+              </Select>
+
               {/* Search */}
-              <div className="relative w-48 sm:w-56">
+              <div className="relative w-40 sm:w-48">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                 <Input
-                  placeholder="Search neighborhoods…"
+                  placeholder="Search…"
                   value={search}
                   onChange={e => {
                     setSearch(e.target.value);
