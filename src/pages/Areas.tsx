@@ -40,7 +40,6 @@ interface City {
   slug: string;
   image: string;
   description: string;
-  tags: string[];
 }
 
 interface Region {
