@@ -15,7 +15,7 @@ import { NAV_CONFIG, type NavSection } from "@/lib/navigationConfig";
 // Route patterns that map to each nav item
 const ROUTE_MAP: Record<string, string[]> = {
   Buy: ['/listings'],
-  Projects: ['/projects', '/developers'],
+  Projects: ['/projects'],
   Rent: ['/listings'],
   Learn: ['/blog', '/guides', '/tools', '/glossary'],
   Company: ['/about', '/professionals', '/contact'],
