@@ -11,7 +11,7 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/comp
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { CarouselDots } from '@/components/shared/CarouselDots';
 import { format } from 'date-fns';
-import { useFormatPrice, useFormatPricePerArea } from '@/contexts/PreferencesContext';
+import { useFormatPrice, useFormatPricePerArea, useAreaLabel } from '@/contexts/PreferencesContext';
 import { cn } from '@/lib/utils';
 
 // Types for sold comps
@@ -43,6 +43,7 @@ function DesktopCompsList({
   formatDistance: (meters: number) => string;
   formatSoldDate: (date: string) => string;
 }) {
+  const areaLabels = useAreaLabel();
   const [isExpanded, setIsExpanded] = useState(false);
   const visibleComps = comps.slice(0, 3);
   const hiddenComps = comps.slice(3);
@@ -144,7 +145,7 @@ function DesktopCompsList({
                     )}
                   >
                     {Math.abs(comparison) <= 2
-                      ? "Similar price per m²"
+                      ? `Similar price ${areaLabels.perArea}`
                       : comparison > 0 
                         ? `Listing is ${comparison.toFixed(0)}% above this sale`
                         : `Listing is ${Math.abs(comparison).toFixed(0)}% below this sale`
@@ -152,13 +153,13 @@ function DesktopCompsList({
                   </Badge>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-xs">
-                  <p className="font-medium mb-1">Price per m² Comparison</p>
+                  <p className="font-medium mb-1">Price {areaLabels.perArea} Comparison</p>
                   <p className="text-xs text-muted-foreground">
                     {Math.abs(comparison) <= 2
-                      ? "This listing's price per sqm is within 2% of this sale—a closely matched comparable."
+                      ? `This listing's price ${areaLabels.perArea} is within 2% of this sale—a closely matched comparable.`
                       : comparison > 0 
-                        ? "This listing's price per sqm is higher than what this nearby property sold for. Could indicate premium features or room for negotiation."
-                        : "This listing's price per sqm is below recent comparable sales—potentially good value or motivated seller."
+                        ? `This listing's price ${areaLabels.perArea} is higher than what this nearby property sold for. Could indicate premium features or room for negotiation.`
+                        : `This listing's price ${areaLabels.perArea} is below recent comparable sales—potentially good value or motivated seller.`
                     }
                   </p>
                 </TooltipContent>
@@ -229,6 +230,7 @@ export function RecentNearbySales({
 }: RecentNearbySalesProps) {
   const formatPrice = useFormatPrice();
   const formatPricePerAreaFn = useFormatPricePerArea();
+  const areaLabels = useAreaLabel();
   const isMobile = useIsMobile();
   const [selectedIndex, setSelectedIndex] = useState(0);
   
@@ -479,7 +481,7 @@ export function RecentNearbySales({
               </TooltipTrigger>
               <TooltipContent side="right" className="max-w-xs">
                 <p className="text-xs">
-                  Based on {comps.length} nearby sale{comps.length > 1 ? 's' : ''} comparing price/m².
+                  Based on {comps.length} nearby sale{comps.length > 1 ? 's' : ''} comparing price{areaLabels.slashArea}.
                 </p>
               </TooltipContent>
             </Tooltip>
@@ -557,7 +559,7 @@ export function RecentNearbySales({
                                 )}
                               >
                                 {Math.abs(comparison) <= 2
-                                  ? "Similar price per m²"
+                                  ? `Similar price ${areaLabels.perArea}`
                                   : comparison > 0 
                                     ? `Listing is ${comparison.toFixed(0)}% above this sale`
                                     : `Listing is ${Math.abs(comparison).toFixed(0)}% below this sale`

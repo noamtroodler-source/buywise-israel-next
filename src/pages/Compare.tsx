@@ -13,7 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Property } from '@/types/database';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useAuth } from '@/hooks/useAuth';
-import { useFormatPrice, useFormatArea } from '@/contexts/PreferencesContext';
+import { useFormatPrice, useFormatArea, useAreaLabel } from '@/contexts/PreferencesContext';
 import { toast } from 'sonner';
 import { GuestSignupNudge } from '@/components/shared/GuestSignupNudge';
 import {
@@ -56,6 +56,7 @@ export default function Compare() {
   const { favoriteIds, toggleFavorite } = useFavorites();
   const formatPrice = useFormatPrice();
   const formatArea = useFormatArea();
+  const areaLabels = useAreaLabel();
 
   const isRental = compareCategory === 'rent';
 
@@ -196,7 +197,7 @@ export default function Compare() {
       },
     },
     {
-      label: isRental ? 'Rent/m²' : 'Price/m²',
+      label: isRental ? `Rent${areaLabels.slashArea}` : `Price${areaLabels.slashArea}`,
       getValue: (p: Property) => p.size_sqm ? formatPrice(Math.round(p.price / p.size_sqm), p.currency || 'ILS') : '—',
       getBestPropertyId: (props: Property[]) => {
         const withSize = props.filter(p => p.size_sqm && p.size_sqm > 0);
@@ -380,7 +381,7 @@ export default function Compare() {
     {
       label: 'Price vs City Avg',
       getValue: (p: Property) => getPriceVsCityAvg(p),
-      tooltip: 'How this property\'s price per m² compares to the city average.',
+      tooltip: `How this property's price ${areaLabels.perArea} compares to the city average.`,
     },
     {
       label: '12-Month Change',

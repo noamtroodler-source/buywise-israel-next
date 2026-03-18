@@ -4,6 +4,7 @@ import { DollarSign, Home, Key } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { NATIONAL_AVG_PRICE_SQM } from '@/lib/constants/marketAverages';
+import { useAreaLabel } from '@/contexts/PreferencesContext';
 
 interface CityMarketSnapshotProps {
   cityData?: {
@@ -20,6 +21,7 @@ interface CityMarketSnapshotProps {
 
 export function CityMarketSnapshot({ cityData }: CityMarketSnapshotProps) {
   const [selectedRooms, setSelectedRooms] = useState<number>(3);
+  const areaLabels = useAreaLabel();
   
   const pricePerSqm = cityData?.average_price_sqm ?? null;
   const medianPrice = cityData?.median_apartment_price ?? null;
@@ -64,7 +66,7 @@ export function CityMarketSnapshot({ cityData }: CityMarketSnapshotProps) {
     {
       icon: DollarSign,
       value: formatPrice(pricePerSqm),
-      label: 'Price per m²',
+      label: `Price ${areaLabels.perArea}`,
       sublabel: priceVsNational !== null 
         ? `${priceVsNational > 0 ? '+' : ''}${priceVsNational}% vs national avg`
         : 'Average asking price',

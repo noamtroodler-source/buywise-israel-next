@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { useAreaLabel } from '@/contexts/PreferencesContext';
 import { BarChart3, ShieldCheck, Info, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
@@ -54,6 +55,7 @@ interface MarketIntelligenceProps {
 }
 
 function MarketVerdictBadge({ avgComparison, compsCount }: { avgComparison: number | null; compsCount: number }) {
+  const areaLabels = useAreaLabel();
   if (avgComparison === null) {
     return (
       <Badge variant="secondary" className="text-xs">
@@ -87,7 +89,7 @@ function MarketVerdictBadge({ avgComparison, compsCount }: { avgComparison: numb
         </TooltipTrigger>
         <TooltipContent side="right" className="max-w-xs">
           <p className="text-xs">
-            Based on {compsCount} nearby sale{compsCount > 1 ? 's' : ''} comparing price/m².
+            Based on {compsCount} nearby sale{compsCount > 1 ? 's' : ''} comparing price{areaLabels.slashArea}.
           </p>
         </TooltipContent>
       </Tooltip>

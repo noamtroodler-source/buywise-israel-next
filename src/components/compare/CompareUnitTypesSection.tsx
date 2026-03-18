@@ -5,6 +5,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { ProjectUnit } from '@/types/projects';
+import { useAreaLabel } from '@/contexts/PreferencesContext';
 
 interface CompareProject {
   id: string;
@@ -26,6 +27,7 @@ export function CompareUnitTypesSection({
 }: CompareUnitTypesSectionProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedUnits, setSelectedUnits] = useState<Record<string, string>>({});
+  const areaLabels = useAreaLabel();
 
   // Get all unique unit types across projects and auto-select matching ones
   useEffect(() => {
@@ -198,7 +200,7 @@ export function CompareUnitTypesSection({
 
                 {/* Price per sqm */}
                 <CompareRow 
-                  label="Price/m²"
+                  label={`Price${areaLabels.slashArea}`}
                   icon={DollarSign}
                   values={projects.map(p => {
                     const unit = getSelectedUnit(p.id);

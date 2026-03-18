@@ -1,5 +1,5 @@
 import { TrendingUp, TrendingDown, Minus, DollarSign, BarChart3, Home, Calendar } from 'lucide-react';
-import { useFormatPrice, useFormatPricePerArea } from '@/contexts/PreferencesContext';
+import { useFormatPrice, useFormatPricePerArea, useAreaLabel } from '@/contexts/PreferencesContext';
 import { useMemo } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { FALLBACK_CONSTANTS } from '@/lib/calculations/constants';
@@ -47,6 +47,7 @@ export function PropertyValueSnapshot({
 }: PropertyValueSnapshotProps) {
   const formatPrice = useFormatPrice();
   const formatPricePerArea = useFormatPricePerArea();
+  const { perArea } = useAreaLabel();
   
   const isRental = listingStatus === 'for_rent';
   
@@ -221,7 +222,7 @@ export function PropertyValueSnapshot({
                 {formatPricePerArea(propertyPricePerSqm, 'ILS')}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                Price per m²
+                Price {perArea}
               </p>
             </>
           ) : (
@@ -256,7 +257,7 @@ export function PropertyValueSnapshot({
                   <TooltipContent side="top" className="max-w-xs">
                     <p className="font-medium mb-1">Price vs {isNeighborhoodComparison ? 'Neighborhood' : (roomCount ? `${roomCount}-Room ` : 'City ')}Average</p>
                     <p className="text-xs text-muted-foreground">
-                      Compares this property's price per m² against the {isNeighborhoodComparison ? `average ${roomCount ? `${roomCount}-room ` : ''}sale price in ${comparisonLabel}` : `average ${roomCount ? `${roomCount}-room ` : ''}sale price in ${city}`}, based on {isNeighborhoodComparison ? '3 years of' : 'recent'} government-recorded transactions. A positive % means priced above average; negative means below.
+                      Compares this property's price {perArea} against the {isNeighborhoodComparison ? `average ${roomCount ? `${roomCount}-room ` : ''}sale price in ${comparisonLabel}` : `average ${roomCount ? `${roomCount}-room ` : ''}sale price in ${city}`}, based on {isNeighborhoodComparison ? '3 years of' : 'recent'} government-recorded transactions. A positive % means priced above average; negative means below.
                     </p>
                   </TooltipContent>
                 </Tooltip>
