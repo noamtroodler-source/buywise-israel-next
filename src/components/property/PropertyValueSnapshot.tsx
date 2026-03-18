@@ -47,6 +47,7 @@ export function PropertyValueSnapshot({
 }: PropertyValueSnapshotProps) {
   const formatPrice = useFormatPrice();
   const formatPricePerArea = useFormatPricePerArea();
+  const { perArea } = useAreaLabel();
   
   const isRental = listingStatus === 'for_rent';
   
