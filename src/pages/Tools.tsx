@@ -66,6 +66,7 @@ const allTools: Record<string, Tool> = {
     label: 'Investment Return Calculator', 
     description: 'Evaluate returns, cash flow, and long-term value — using Israeli market assumptions.', 
     icon: TrendingUp,
+    badge: 'Beta',
   },
   rentvsbuy: { 
     id: 'rentvsbuy', 
