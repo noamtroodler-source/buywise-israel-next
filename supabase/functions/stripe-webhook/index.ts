@@ -223,6 +223,54 @@ Deno.serve(async (req) => {
             .from("subscriptions")
             .update({ status: "past_due" })
             .eq("stripe_subscription_id", subId);
+
+          // Send payment failed email
+          try {
+            const { data: sub } = await adminClient
+              .from("subscriptions")
+              .select("entity_type, entity_id")
+              .eq("stripe_subscription_id", subId)
+              .single();
+
+            if (sub) {
+              let recipientEmail: string | null = null;
+              if (sub.entity_type === "agency") {
+                const { data } = await adminClient.from("agencies").select("email").eq("id", sub.entity_id).single();
+                recipientEmail = data?.email || null;
+              } else if (sub.entity_type === "developer") {
+                const { data } = await adminClient.from("developers").select("email").eq("id", sub.entity_id).single();
+                recipientEmail = data?.email || null;
+              }
+
+              if (recipientEmail) {
+                const resendApiKey = Deno.env.get("RESEND_API_KEY");
+                if (resendApiKey) {
+                  const resend = new Resend(resendApiKey);
+                  await resend.emails.send({
+                    from: "BuyWise Israel <hello@buywiseisrael.com>",
+                    to: [recipientEmail],
+                    subject: "Your payment didn't go through — BuyWise Israel",
+                    html: `
+                      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+                        <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 16px;">Your payment didn't go through</h1>
+                        <p style="color: #333; font-size: 16px; line-height: 1.6;">We tried to process your subscription payment, but it didn't go through. This can happen for a number of reasons — expired card, insufficient funds, etc.</p>
+                        <div style="margin-top: 16px; padding: 16px; background-color: #eff6ff; border-radius: 8px;">
+                          <p style="margin: 0; color: #2563eb; font-weight: 500;">Please update your payment method to keep your subscription active.</p>
+                        </div>
+                        <p style="margin-top: 24px; color: #666; font-size: 14px;">If you believe this is an error, just reply to this email and we'll sort it out.</p>
+                        <p style="color: #999; font-size: 12px; margin-top: 40px; text-align: center; border-top: 1px solid #eee; padding-top: 20px;">
+                          Questions? Just reply — we read every email.<br>
+                          <span style="color: #666; font-style: italic;">— Your friends at BuyWise Israel</span>
+                        </p>
+                      </div>
+                    `,
+                  });
+                }
+              }
+            }
+          } catch (emailErr) {
+            console.error("Failed to send payment failed email:", emailErr);
+          }
         }
         break;
       }
