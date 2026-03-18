@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ChevronRight, Check } from "lucide-react";
+import { ChevronRight, Search } from "lucide-react";
 import { useContentVisits } from "@/hooks/useContentVisits";
 import {
   NavigationMenu,
@@ -38,12 +38,12 @@ export function MegaMenu({ config, className }: MegaMenuProps) {
               )}
             >
               <div className={cn(
-                "grid gap-0",
+                "grid gap-0 divide-x divide-border/30",
                 columnCount === 2 ? "grid-cols-2" : "grid-cols-3"
               )}>
                 {config.columns.map((column) => (
                   <div key={column.title} className="p-6">
-                    <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">
                       {column.title}
                     </h4>
                     <ul className="space-y-0.5">
@@ -56,12 +56,12 @@ export function MegaMenu({ config, className }: MegaMenuProps) {
                             >
                               <span className="text-sm font-medium text-foreground group-hover:text-accent-foreground flex items-center gap-1.5">
                                 {isVisited(item.href) && (
-                                  <Check className="h-3 w-3 text-primary flex-shrink-0" />
+                                  <span className="h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />
                                 )}
                                 {item.label}
                               </span>
                               {item.description && (
-                                <span className="text-xs text-muted-foreground group-hover:text-accent-foreground/70">
+                                <span className="text-xs text-muted-foreground/70 group-hover:text-accent-foreground/70">
                                   {item.description}
                                 </span>
                               )}
@@ -79,10 +79,11 @@ export function MegaMenu({ config, className }: MegaMenuProps) {
                   <NavigationMenuLink asChild>
                     <Link
                       to={config.cta.href}
-                      className="group flex items-center justify-between text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+                      className="group flex items-center gap-2 border-l-2 border-primary pl-3 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
                     >
+                      <Search className="h-3.5 w-3.5" />
                       {config.cta.label}
-                      <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                      <ChevronRight className="h-4 w-4 ml-auto transition-transform group-hover:translate-x-0.5" />
                     </Link>
                   </NavigationMenuLink>
                 </div>
