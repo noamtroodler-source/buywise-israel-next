@@ -502,6 +502,7 @@ serve(async (req) => {
                         propertyType === 'garden_apartment' ? randomInt(3, 5) :
                         propertyType === 'house' ? randomInt(4, 6) : randomInt(2, 4);
         const additionalRooms = propertyType === 'house' ? randomInt(1, 3) : randomInt(1, 2);
+        const bathrooms = Math.max(1, Math.floor(bedrooms / 2) + randomInt(0, 1));
         const sizeSqm = propertyType === 'penthouse' ? randomInt(120, 250) :
                        propertyType === 'house' ? randomInt(150, 300) :
                        propertyType === 'garden_apartment' ? randomInt(90, 150) :
