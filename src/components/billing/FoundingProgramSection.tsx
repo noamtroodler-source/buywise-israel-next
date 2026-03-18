@@ -37,10 +37,14 @@ export function FoundingProgramSection() {
         <p className="text-muted-foreground max-w-xl mx-auto mb-4">
           Be one of the first 15 agencies on the platform and unlock exclusive early-adopter benefits.
         </p>
-        {spots && (
+        {spots && spots.remaining > 0 && (
           <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-4 py-1.5">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+            </span>
             <span className="text-sm font-semibold text-primary">
-              {spots.remaining} of {spots.cap} spots remaining
+              Limited spots remaining
             </span>
           </div>
         )}
