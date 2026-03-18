@@ -462,7 +462,7 @@ export function RecentNearbySales({
             <Tooltip>
               <TooltipTrigger asChild>
                 <span className="text-xs text-muted-foreground cursor-help border-b border-dotted border-muted-foreground/30">
-                  Last 24 months • Within 500m
+                  Last 24 months • Within {radiusUsedM >= 1000 ? '1km' : '500m'}
                 </span>
               </TooltipTrigger>
               <TooltipContent side="left" className="max-w-xs">
