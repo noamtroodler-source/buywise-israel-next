@@ -208,6 +208,7 @@ function ChatPanel({ onClose }: { onClose: () => void }) {
 export function AskBuyWiseButton() {
   const [isVisible, setIsVisible] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const timer = setTimeout(() => setIsVisible(true), 2000);
@@ -238,29 +239,31 @@ export function AskBuyWiseButton() {
       </AnimatePresence>
 
       {/* Desktop: popover card anchored bottom-right */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed bottom-6 right-6 z-50 w-[380px] h-[520px] rounded-2xl bg-card border border-border shadow-2xl overflow-hidden hidden lg:flex flex-col"
-          >
-            <ChatPanel onClose={() => setIsOpen(false)} />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {!isMobile && (
+        <AnimatePresence>
+          {isOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.95 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="fixed bottom-6 right-6 z-50 w-[380px] h-[520px] rounded-2xl bg-card border border-border shadow-2xl overflow-hidden flex flex-col"
+            >
+              <ChatPanel onClose={() => setIsOpen(false)} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      )}
 
       {/* Mobile: bottom drawer */}
-      <div className="lg:hidden">
+      {isMobile && (
         <Drawer open={isOpen} onOpenChange={setIsOpen}>
           <DrawerContent className="max-h-[80vh]">
             <DrawerTitle className="sr-only">Ask BuyWise</DrawerTitle>
             <ChatPanel onClose={() => setIsOpen(false)} />
           </DrawerContent>
         </Drawer>
-      </div>
+      )}
     </>
   );
 }
