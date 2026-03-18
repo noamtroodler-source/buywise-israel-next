@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { MapPin, Building, Calendar, Eye, Share2, Heart, CheckCircle, Star } from 'lucide-react';
+import { MapPin, Building, Calendar, Eye, Share2, Heart, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
