@@ -29,7 +29,7 @@ export function SavedPropertiesPreview() {
   const totalCount = favoriteProperties.length;
 
   return (
-    <div className="rounded-xl border border-border bg-card p-3 md:p-4">
+    <div className="rounded-2xl border border-border/50 bg-card shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08),0_2px_8px_-2px_rgba(0,0,0,0.04)] p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Heart className="h-4 w-4 text-primary" />
