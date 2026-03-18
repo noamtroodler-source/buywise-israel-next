@@ -256,9 +256,9 @@ export function PropertyValueSnapshot({
                     </span>
                   </TooltipTrigger>
                   <TooltipContent side="top" className="max-w-xs">
-                    <p className="font-medium mb-1">Price vs {isNeighborhoodComparison ? 'Neighborhood' : (roomCount ? `${roomCount}-Room ` : 'City ')}Average</p>
+                    <p className="font-medium mb-1">Price vs {isNeighborhoodComparison ? 'Neighborhood' : 'City'} Average</p>
                     <p className="text-xs text-muted-foreground">
-                      Compares this property's price {perArea} against the {isNeighborhoodComparison ? `average sale price in ${comparisonLabel}` : `average ${roomCount ? `${roomCount}-room ` : ''}sale price in ${city}`}, based on {isNeighborhoodComparison ? 'the past year of' : 'recent'} government-recorded transactions. A positive % means priced above average; negative means below.
+                      Compares this property's price {perArea} against the average sale price in {comparisonLabel}, based on the past year of government-recorded transactions. A positive % means priced above average; negative means below.
                     </p>
                   </TooltipContent>
                 </Tooltip>

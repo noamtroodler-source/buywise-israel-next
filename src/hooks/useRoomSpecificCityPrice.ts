@@ -82,7 +82,7 @@ export function useRoomSpecificCityPrice(city: string | null, rooms: number | nu
       }
 
       return {
-        avgPrice: latest.avg_price_nis,
+        avgPrice: avgPriceNis,
         avgPriceSqm,
         yoyChange,
         fiveYearChange,
