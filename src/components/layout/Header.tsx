@@ -1,5 +1,6 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Home, User, LogOut, Heart, Building2, Shield, Users, Landmark, Search, LayoutDashboard, MessageSquare, Settings, FileText, Import, UserCircle } from 'lucide-react';
+import { User, LogOut, Heart, Building2, Shield, Users, Landmark } from 'lucide-react';
+import logoIcon from '@/assets/logo-icon-preview.png';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
