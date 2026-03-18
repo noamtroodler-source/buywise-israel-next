@@ -8,7 +8,8 @@ import { isSavedLocationDest } from '@/lib/utils/commuteFilter';
  * Returns properties with _isBoosted flag set.
  */
 async function fetchFeaturedProperties(
-  excludeIds: Set<string>
+  excludeIds: Set<string>,
+  listingStatus?: 'for_sale' | 'for_rent'
 ): Promise<Property[]> {
   const { data: featured } = await supabase
     .from('featured_listings')
@@ -21,12 +22,17 @@ async function fetchFeaturedProperties(
 
   if (!featuredIds.length) return [];
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('properties')
     .select(`*, agent:agents(*, agency:agencies(id, name, logo_url))`)
     .in('id', featuredIds)
     .eq('is_published', true);
 
+  if (listingStatus) {
+    query = query.eq('listing_status', listingStatus);
+  }
+
+  const { data, error } = await query;
   if (error) return [];
 
   return (data ?? []).map(p => ({ ...p, _isBoosted: true })) as Property[];
