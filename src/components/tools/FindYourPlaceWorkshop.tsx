@@ -33,7 +33,7 @@ const recommendations: Record<string, { areas: string[]; propertyTypes: string[]
     tips: ['Check school districts carefully', 'Look for safe routes to schools'],
   },
   'suburban-single': {
-    areas: ['Netanya', 'Bat Yam', 'Holon'],
+    areas: ['Netanya', 'Ashdod', 'Ashkelon'],
     propertyTypes: ['1-2 Bedroom Apartment'],
     tips: ['Check public transport connections', 'Consider distance to work'],
   },
@@ -43,12 +43,12 @@ const recommendations: Record<string, { areas: string[]; propertyTypes: string[]
     tips: ['Good balance of price and quality', 'Growing areas with appreciation potential'],
   },
   'suburban-family': {
-    areas: ['Modiin', 'Shoham', 'Beer Yaakov', 'Gedera'],
+    areas: ['Modiin', 'Kfar Saba', 'Beit Shemesh', 'Hod HaSharon'],
     propertyTypes: ['House', 'Cottage', 'Large Apartment'],
     tips: ['Check community facilities', 'Look for family-friendly neighborhoods'],
   },
   'quiet-single': {
-    areas: ['Zichron Yaakov', 'Nahariya', 'Tiberias'],
+    areas: ['Zichron Yaakov', 'Pardes Hanna', 'Hadera'],
     propertyTypes: ['Apartment', 'Small House'],
     tips: ['Consider work-from-home setup', 'Check internet connectivity'],
   },

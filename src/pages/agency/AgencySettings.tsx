@@ -36,7 +36,7 @@ import { EnhancedEmptyState } from '@/components/shared/EnhancedEmptyState';
 const allCities = [
   'Tel Aviv', 'Jerusalem', 'Haifa', 'Ra\'anana', 'Herzliya', 
   'Netanya', 'Modi\'in', 'Beit Shemesh', 'Ashdod', 'Beer Sheva',
-  'Eilat', 'Ashkelon', 'Petah Tikva', 'Holon', 'Ramat Gan',
+  'Eilat', 'Ashkelon', 'Petah Tikva', 'Ramat Gan',
 ];
 
 const allSpecializations = [

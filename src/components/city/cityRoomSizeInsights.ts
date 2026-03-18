@@ -95,30 +95,12 @@ const CITY_ROOM_SIZE_INSIGHTS: Record<string, RoomInsightFn> = {
     (m.room3Price ? `3-room units at ${fmt(m.room3Price)} are the entry play — mostly in older buildings with TAMA 38 potential. ` : '') +
     (m.gapSmallToLarge ? `The ${fmtGap(m.gapSmallToLarge)} gap to the top end is significant, but urban renewal is creating new inventory across all sizes.` : ''),
 
-  'givatayim': (m) =>
-    `In tiny Givatayim, space is the ultimate luxury. ` +
-    (m.room3Price ? `3-room units already command ${fmt(m.room3Price)}, rivaling some Tel Aviv neighborhoods. ` : '') +
-    (m.gapSmallToLarge ? `The ${fmtGap(m.gapSmallToLarge)} premium to upsize is steep because larger apartments are genuinely scarce here. ` : '') +
-    `If you're targeting Givatayim, be flexible on size — the neighborhood premium is what you're really paying for.`,
-
   'petah-tikva': (m) =>
     `Petah Tikva offers meaningful size variety at accessible price points. ` +
     (m.room3Price && m.room4Price
       ? `The jump from 3-room (${fmt(m.room3Price)}) to 4-room (${fmt(m.room4Price)}) is roughly ${fmtGap(m.room4Price - m.room3Price)}, which is manageable for the Tel Aviv metro. `
       : '') +
     (m.room5Price ? `5-room units at ${fmt(m.room5Price)} give you space that would cost nearly double in neighboring Ramat Gan or Givatayim.` : ''),
-
-  'holon': (m) =>
-    `Holon delivers genuine space value in the Tel Aviv metro. ` +
-    (m.room3Price ? `3-room apartments at ${fmt(m.room3Price)} are a realistic first purchase for young buyers. ` : '') +
-    (m.room4Price ? `The 4-room market at ${fmt(m.room4Price)} is where families are increasingly looking as TLV prices push them southward. ` : '') +
-    `Urban renewal is adding modern inventory, but legacy buildings still offer the best value per room.`,
-
-  'bat-yam': (m) =>
-    `Bat Yam offers the closest thing to affordable beachfront in the Tel Aviv metro. ` +
-    (m.room3Price ? `A 3-room at ${fmt(m.room3Price)} with sea proximity is a deal you won't find anywhere else this close to TLV. ` : '') +
-    (m.gapSmallToLarge ? `The ${fmtGap(m.gapSmallToLarge)} spread across sizes is modest — upgrading here is realistic. ` : '') +
-    `The Red Line light rail is set to narrow the price gap with its northern neighbors.`,
 
   'kfar-saba': (m) =>
     `Kfar Saba's room-size pricing reflects its status as a premium family suburb. ` +
@@ -133,19 +115,6 @@ const CITY_ROOM_SIZE_INSIGHTS: Record<string, RoomInsightFn> = {
     (m.room4Price ? `4-room apartments at ${fmt(m.room4Price)} are the market standard — newer builds with modern layouts. ` : '') +
     (m.room3Price ? `3-room units at ${fmt(m.room3Price)} offer a more accessible entry into the Sharon region. ` : '') +
     `This is a market where you're paying for construction quality as much as location.`,
-
-  'rosh-haayin': (m) =>
-    `Rosh Ha'ayin delivers suburban space at commuter-friendly prices. ` +
-    (m.room3Price && m.room4Price
-      ? `The 3-to-4-room upgrade from ${fmt(m.room3Price)} to ${fmt(m.room4Price)} (${fmtGap(m.room4Price - m.room3Price)} gap) is one of the more affordable step-ups in the greater Tel Aviv area. `
-      : '') +
-    (m.room5Price ? `5-room units at ${fmt(m.room5Price)} attract families who want real space without the Sharon-region price tag.` : ''),
-
-  'shoham': (m) =>
-    `Shoham's small, planned community means prices are premium across all sizes. ` +
-    (m.room4Price ? `4-room units at ${fmt(m.room4Price)} dominate the market — this is a family town through and through. ` : '') +
-    (m.room5Price ? `5-room villas and duplexes at ${fmt(m.room5Price)} are the aspirational target, but inventory is thin. ` : '') +
-    `Don't expect bargains on any room count here — supply is structurally limited.`,
 
   'givat-shmuel': (m) =>
     `Givat Shmuel's tower boom has changed the room-size equation. ` +
@@ -179,18 +148,6 @@ const CITY_ROOM_SIZE_INSIGHTS: Record<string, RoomInsightFn> = {
     `That's a fraction of what the same upgrade costs in the Sharon or Gush Dan. ` +
     (m.room5Price ? `Even 5-room units at ${fmt(m.room5Price)} feel like a steal compared to the national average.` : ''),
 
-  'kiryat-tivon': (m) =>
-    `Kiryat Tivon's family-oriented market is reflected in room-size demand. ` +
-    (m.room4Price ? `4-room apartments at ${fmt(m.room4Price)} are the sweet spot for university families and professionals. ` : '') +
-    (m.gapSmallToLarge ? `The ${fmtGap(m.gapSmallToLarge)} spread between sizes is reasonable for a premium Haifa suburb. ` : '') +
-    `Limited construction keeps competition steady, especially for larger units.`,
-
-  'yokneam': (m) =>
-    `Yokne'am's tech-park proximity drives demand across all apartment sizes. ` +
-    (m.room3Price ? `3-room units at ${fmt(m.room3Price)} attract young tech workers. ` : '') +
-    (m.room4Price ? `4-room apartments at ${fmt(m.room4Price)} serve growing families. ` : '') +
-    `The pricing here is still central-Israel affordable, but with tech-corridor demand — that combination doesn't usually last.`,
-
   'hadera': (m) =>
     `Hadera's pricing across sizes is a study in accessibility. ` +
     (m.room3Price ? `3-room apartments at ${fmt(m.room3Price)} are among the most affordable rail-connected options in central Israel. ` : '') +
@@ -198,12 +155,6 @@ const CITY_ROOM_SIZE_INSIGHTS: Record<string, RoomInsightFn> = {
       ? `Upgrading from 4-room (${fmt(m.room4Price)}) to 5-room (${fmt(m.room5Price)}) costs just ${fmtGap(m.room5Price - m.room4Price)} — a rare luxury in this market. `
       : '') +
     `For buyers who need space and can commute, Hadera's value proposition is hard to beat.`,
-
-  'nahariya': (m) =>
-    `Nahariya offers beachfront living at prices that challenge belief. ` +
-    (m.room3Price ? `A 3-room at ${fmt(m.room3Price)} with coastal proximity is among the cheapest in Israel. ` : '') +
-    (m.room4Price ? `4-room units at ${fmt(m.room4Price)} give families real space near the sea. ` : '') +
-    `If you're looking at Nahariya, you're prioritizing lifestyle and value — the room-size premiums here are minimal compared to anywhere else on the coast.`,
 
   'beit-shemesh': (m) =>
     `Beit Shemesh's rapid population growth means strong demand across all apartment sizes. ` +
@@ -235,11 +186,6 @@ const CITY_ROOM_SIZE_INSIGHTS: Record<string, RoomInsightFn> = {
       : '') +
     (m.room5Price ? `5-room units at ${fmt(m.room5Price)} give you genuine family space at a fraction of Jerusalem prices.` : ''),
 
-  'givat-zeev': (m) =>
-    `Givat Ze'ev's value proposition is clearest when you look at room sizes. ` +
-    (m.room4Price ? `A 4-room at ${fmt(m.room4Price)} gets you family space that would cost significantly more inside Jerusalem. ` : '') +
-    (m.room3Price ? `3-room entry points at ${fmt(m.room3Price)} make this one of the most accessible gateways to the Jerusalem area. ` : '') +
-    `Growing connectivity is gradually closing the price gap with the city, but there's still meaningful value here.`,
 };
 
 /**

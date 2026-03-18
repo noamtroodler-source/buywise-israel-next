@@ -99,25 +99,10 @@ const CITY_INSIGHTS: Record<string, InsightFn> = {
     `At ${fmt(m.currentPrice)} average, it's ${Math.abs(m.deltaVsNational ?? 0)}% ${(m.deltaVsNational ?? 0) > 0 ? 'above' : 'below'} national average. ` +
     `The Diamond Exchange area redevelopment and new towers are reshaping the skyline — and ${m.cagr}% annual growth shows the market is paying attention.`,
 
-  'givatayim': (m) =>
-    `Givatayim punches well above its size — this tiny city next to Tel Aviv has some of the highest per-sqm prices outside TLV itself. ` +
-    `At ${fmt(m.currentPrice)} average with ${m.totalAppreciation.toFixed(0)}% appreciation over ${m.years} years, ` +
-    `demand consistently outstrips supply here. The urban renewal pipeline may add inventory, but don't expect prices to soften.`,
-
   'petah-tikva': (m) =>
     `Petah Tikva has transformed from a sleepy suburb into a major residential hub, riding the Gush Dan spillover effect. ` +
     `${m.totalAppreciation.toFixed(0)}% growth over ${m.years} years at ${m.cagr}% annually — ` +
     `at ${fmt(m.currentPrice)} average, it remains one of the more accessible entry points into the greater Tel Aviv area.`,
-
-  'holon': (m) =>
-    `Holon offers genuine value in the Tel Aviv metro — families priced out of TLV and Ramat Gan are increasingly looking here. ` +
-    `At ${fmt(m.currentPrice)} average, prices are up ${m.totalAppreciation.toFixed(0)}% over ${m.years} years. ` +
-    `The city's cultural investments and urban renewal projects are starting to show up in the numbers.`,
-
-  'bat-yam': (m) =>
-    `Bat Yam is Israel's most underestimated beachfront city. Directly south of Tel Aviv with seafront access, ` +
-    `yet prices average just ${fmt(m.currentPrice)} — ${Math.abs(m.deltaVsNational ?? 0)}% ${(m.deltaVsNational ?? 0) > 0 ? 'above' : 'below'} national. ` +
-    `${m.totalAppreciation.toFixed(0)}% growth over ${m.years} years, and the Red Line light rail is set to transform accessibility. Keep watching.`,
 
   'kfar-saba': (m) =>
     `Kfar Saba has the suburban-premium DNA — good schools, green spaces, and a loyal community that rarely lets homes sit on the market. ` +
@@ -128,16 +113,6 @@ const CITY_INSIGHTS: Record<string, InsightFn> = {
     `Hod HaSharon is the Sharon region's rising star — newer construction, younger demographics, and strong demand. ` +
     `Prices have climbed ${m.totalAppreciation.toFixed(0)}% over ${m.years} years to ${fmt(m.currentPrice)} average. ` +
     `At ${m.cagr}% annual growth, it's tracking close to its neighbor Ra'anana but at a more accessible price point.`,
-
-  'rosh-haayin': (m) =>
-    `Rosh Ha'ayin blends suburban quiet with real connectivity — the train gets you to Tel Aviv fast. ` +
-    `At ${fmt(m.currentPrice)} average, it's up ${m.totalAppreciation.toFixed(0)}% over ${m.years} years. ` +
-    `It's found its niche as an affordable family alternative to the Sharon-region premium cities.`,
-
-  'shoham': (m) =>
-    `Shoham is a small, affluent community town — think cul-de-sacs, gardens, and some of the best schools in the region. ` +
-    `At ${fmt(m.currentPrice)} average, it commands a premium for good reason. ` +
-    `${m.totalAppreciation.toFixed(0)}% growth over ${m.years} years at ${m.cagr}% annually — limited supply keeps this market tight.`,
 
   'givat-shmuel': (m) =>
     `Givat Shmuel has been one of the biggest success stories in Israeli real estate — massive new construction transformed this once-sleepy town. ` +
@@ -164,25 +139,10 @@ const CITY_INSIGHTS: Record<string, InsightFn> = {
     `At ${fmt(m.currentPrice)} average — still well below its flashier neighbors — prices are up ${m.totalAppreciation.toFixed(0)}% over ${m.years} years. ` +
     `The train connection and growing community make this a smart entry point for patient buyers.`,
 
-  'kiryat-tivon': (m) =>
-    `Kiryat Tivon is Haifa's premium suburb — green, quiet, and popular with university families. ` +
-    `At ${fmt(m.currentPrice)} with ${m.cagr}% annual growth, it's the kind of market where properties don't sit long. ` +
-    `${m.totalAppreciation.toFixed(0)}% appreciation over ${m.years} years reflects steady demand in a supply-limited town.`,
-
-  'yokneam': (m) =>
-    `Yokne'am sits at the intersection of tech and nature — the Yokne'am-Megiddo tech park has put this small city on the map. ` +
-    `At ${fmt(m.currentPrice)} average with ${m.totalAppreciation.toFixed(0)}% growth over ${m.years} years, ` +
-    `it's still affordable by central Israel standards, and the tech jobs keep demand steady.`,
-
   'hadera': (m) =>
     `Hadera is mid-transformation — once overlooked, now increasingly on buyers' radars thanks to rail connectivity and affordability. ` +
     `At ${fmt(m.currentPrice)} average, prices are up ${m.totalAppreciation.toFixed(0)}% over ${m.years} years. ` +
     `At ${m.cagr}% annual growth, it's one of the more accessible markets with real upside potential.`,
-
-  'nahariya': (m) =>
-    `Nahariya is Israel's northernmost coastal city, and its prices reflect both the appeal and the remoteness. ` +
-    `At ${fmt(m.currentPrice)} average — ${Math.abs(m.deltaVsNational ?? 0)}% ${(m.deltaVsNational ?? 0) > 0 ? 'above' : 'below'} national — ` +
-    `it offers beachfront living at prices you won't find anywhere else on the coast. ${m.totalAppreciation.toFixed(0)}% growth over ${m.years} years shows gradual upward momentum.`,
 
   'beit-shemesh': (m) =>
     `Beit Shemesh has been one of Israel's fastest-growing cities by population, and prices have followed. ` +
@@ -209,10 +169,6 @@ const CITY_INSIGHTS: Record<string, InsightFn> = {
     `At ${fmt(m.currentPrice)} average, it's ${Math.abs(m.deltaVsNational ?? 0)}% ${(m.deltaVsNational ?? 0) > 0 ? 'above' : 'below'} national. ` +
     `${m.totalAppreciation.toFixed(0)}% growth over ${m.years} years — a pragmatic choice for Jerusalem-area buyers watching their budget.`,
 
-  'givat-zeev': (m) =>
-    `Givat Ze'ev has grown rapidly as a Jerusalem satellite town — more affordable, family-oriented, and increasingly connected. ` +
-    `At ${fmt(m.currentPrice)} average with ${m.totalAppreciation.toFixed(0)}% appreciation over ${m.years} years, ` +
-    `it fills a clear gap for buyers who need Jerusalem proximity without Jerusalem prices.`,
 };
 
 /**

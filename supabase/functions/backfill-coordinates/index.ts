@@ -10,7 +10,6 @@ const CITY_COORDINATES: Record<string, { lat: number; lng: number }> = {
   'Tel Aviv': { lat: 32.0853, lng: 34.7818 },
   'Herzliya': { lat: 32.1663, lng: 34.8434 },
   'Ramat Gan': { lat: 32.0833, lng: 34.8100 },
-  'Givatayim': { lat: 32.0714, lng: 34.8114 },
   'Netanya': { lat: 32.3286, lng: 34.8574 },
   "Ra'anana": { lat: 32.1836, lng: 34.8714 },
   'Kfar Saba': { lat: 32.1780, lng: 34.9065 },
@@ -24,9 +23,6 @@ const CITY_COORDINATES: Record<string, { lat: number; lng: number }> = {
   'Beer Sheva': { lat: 31.2518, lng: 34.7913 },
   'Eilat': { lat: 29.5577, lng: 34.9519 },
   'Modiin': { lat: 31.8980, lng: 35.0104 },
-  'Bat Yam': { lat: 32.0236, lng: 34.7518 },
-  'Holon': { lat: 32.0107, lng: 34.7748 },
-  'Nahariya': { lat: 33.0061, lng: 35.0945 },
   'Hadera': { lat: 32.4340, lng: 34.9196 },
   'Caesarea': { lat: 32.5005, lng: 34.8975 },
   'Zichron Yaakov': { lat: 32.5714, lng: 34.9526 },
@@ -51,15 +47,12 @@ const CITY_COORDINATES: Record<string, { lat: number; lng: number }> = {
   'Yavne': { lat: 31.8789, lng: 34.7394 },
   'Lod': { lat: 31.9514, lng: 34.8911 },
   'Ramla': { lat: 31.9275, lng: 34.8739 },
-  'Rosh HaAyin': { lat: 32.0956, lng: 34.9567 },
   'Kiryat Ono': { lat: 32.0633, lng: 34.8583 },
-  'Shoham': { lat: 31.9981, lng: 34.9469 },
   'Kiryat Motzkin': { lat: 32.8400, lng: 35.0750 },
   'Kiryat Yam': { lat: 32.8417, lng: 35.0700 },
   'Kiryat Bialik': { lat: 32.8300, lng: 35.0850 },
   'Karmiel': { lat: 32.9136, lng: 35.2961 },
   'Afula': { lat: 32.6100, lng: 35.2883 },
-  'Yokneam': { lat: 32.6592, lng: 35.1108 },
 };
 
 interface BackfillRequest {
