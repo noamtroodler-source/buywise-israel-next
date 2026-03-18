@@ -146,7 +146,7 @@ export function ProjectsHighlight() {
   if (displayProjects.length === 0) return null;
 
   return (
-    <section className="py-12 md:py-16">
+    <section className="py-10 md:py-12">
       <div className="container">
         {/* Header */}
         <div className="flex items-end justify-between gap-4 mb-8">
