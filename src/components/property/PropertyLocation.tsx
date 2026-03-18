@@ -104,8 +104,8 @@ export function PropertyLocation({
     const anchorPOIs = (cityAnchors || [])
       .filter(anchor => anchor.latitude && anchor.longitude)
       .map(anchor => ({
-        category: anchor.anchor_type === 'orientation' ? 'Landmark' : 
-                  anchor.anchor_type === 'daily_life' ? 'Shopping' : 'Transport',
+        category: anchor.anchor_type === 'shul' ? 'Shul' : 
+                  anchor.anchor_type === 'supermarket' ? 'Shopping' : 'Landmark',
         name: anchor.name,
         lat: anchor.latitude!,
         lng: anchor.longitude!,

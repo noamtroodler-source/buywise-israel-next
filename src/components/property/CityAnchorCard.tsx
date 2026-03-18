@@ -29,9 +29,9 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 
 // Label for each anchor type
 const anchorTypeLabels: Record<string, string> = {
-  'orientation': 'City Landmark',
-  'daily_life': 'Daily Essentials',
-  'mobility': 'Transit Access',
+  'shul': 'Community Shul',
+  'supermarket': 'Supermarket',
+  'landmark': 'City Landmark',
 };
 
 // Calculate distance between two coordinates using Haversine formula
