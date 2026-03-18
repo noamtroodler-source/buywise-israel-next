@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { Project, Developer } from '@/types/projects';
+import { getProjectProgress } from '@/lib/projectProgress';
 
 interface ProjectQuickSummaryProps {
   project: Project & { construction_progress_percent?: number };
@@ -131,12 +132,15 @@ export function ProjectQuickSummary({
           </p>
           <p className="text-xs text-muted-foreground">Completion</p>
         </div>
-        {project.construction_progress_percent !== undefined && project.construction_progress_percent > 0 && (
-          <div className="text-center">
-            <p className="text-lg sm:text-xl font-semibold">{project.construction_progress_percent}%</p>
-            <p className="text-xs text-muted-foreground">Progress</p>
-          </div>
-        )}
+        {(() => {
+          const derivedProgress = getProjectProgress(project.status, project.construction_progress_percent);
+          return derivedProgress > 0 ? (
+            <div className="text-center">
+              <p className="text-lg sm:text-xl font-semibold">{derivedProgress}%</p>
+              <p className="text-xs text-muted-foreground">Progress</p>
+            </div>
+          ) : null;
+        })()}
         <div className="text-center flex items-center justify-center">
           {(() => {
             const statusInfo = getStatusLabel(project.status || 'planning');

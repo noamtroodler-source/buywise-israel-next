@@ -23,6 +23,7 @@ import { PullToRefresh } from '@/components/shared/PullToRefresh';
 import { MobileListingsSkeletonGrid } from '@/components/shared/MobilePropertySkeleton';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useQueryClient } from '@tanstack/react-query';
+import { getProjectProgress } from '@/lib/projectProgress';
 
 const popularCities = ['Tel Aviv', 'Jerusalem', 'Herzliya', 'Ra\'anana', 'Netanya'];
 
@@ -480,11 +481,7 @@ export default function Favorites() {
                                     </span>
                                   </div>
                                   <Progress 
-                                    value={
-                                      project.status === 'delivery' ? 100 :
-                                      ['foundation', 'structure', 'finishing'].includes(project.status) ? (project.construction_progress_percent || 0) :
-                                      0
-                                    } 
+                                    value={getProjectProgress(project.status, project.construction_progress_percent)} 
                                     className="h-1.5" 
                                   />
                                 </div>
