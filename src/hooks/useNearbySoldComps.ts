@@ -22,9 +22,6 @@ export function useNearbySoldComps(
     limit = 5,
     minRooms,
     maxRooms,
-    propertyPrice,
-    propertySizeSqm,
-    propertyRooms,
   } = options;
 
   return useQuery({
@@ -50,7 +47,7 @@ export function useNearbySoldComps(
         throw error;
       }
 
-      const results = (data || []).map((row: Record<string, unknown>) => ({
+      return (data || []).map((row: Record<string, unknown>) => ({
         id: row.id as string,
         sold_price: row.sold_price as number,
         sold_date: row.sold_date as string,
@@ -61,19 +58,6 @@ export function useNearbySoldComps(
         distance_meters: row.distance_meters as number,
         is_same_building: row.is_same_building as boolean,
       }));
-
-      // If no real comps, generate mock data from listing details
-      if (results.length === 0 && propertyPrice && propertyPrice > 0) {
-        return generateMockComps(
-          latitude,
-          longitude,
-          propertyPrice,
-          propertySizeSqm || 80,
-          propertyRooms || 3
-        );
-      }
-
-      return results;
     },
     enabled: Boolean(latitude && longitude && city),
     staleTime: 5 * 60 * 1000, // 5 minutes
