@@ -453,6 +453,7 @@ export default function Tools() {
                             <ToolCard 
                               tool={tool} 
                               onClick={() => handleToolClick(tool.id)}
+                              isBeta={!isAdmin && BETA_TOOL_IDS.has(tool.id)}
                             />
                           </motion.div>
                         ))}
