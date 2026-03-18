@@ -557,3 +557,80 @@ export function generateWebsiteJsonLd(): object {
     },
   };
 }
+
+// Organization schema for homepage
+export function generateOrganizationJsonLd(): object {
+  return {
+    '@context': createContext(),
+    '@type': 'Organization',
+    '@id': `${SITE_CONFIG.siteUrl}/#organization`,
+    name: SITE_CONFIG.siteName,
+    url: SITE_CONFIG.siteUrl,
+    logo: {
+      '@type': 'ImageObject',
+      url: SITE_CONFIG.defaultImage,
+    },
+    description: SITE_CONFIG.defaultDescription,
+    sameAs: [
+      'https://twitter.com/BuyWiseIsrael',
+    ],
+    contactPoint: {
+      '@type': 'ContactPoint',
+      contactType: 'customer service',
+      url: `${SITE_CONFIG.siteUrl}/contact`,
+      availableLanguage: ['English'],
+    },
+  };
+}
+
+// FAQ schema for homepage rich results (dropdown Q&A in Google)
+export function generateFAQJsonLd(): object {
+  const faqs = [
+    {
+      question: 'What is BuyWise Israel?',
+      answer: 'BuyWise Israel is a market intelligence platform built for international buyers exploring Israeli real estate. We help you compare 30+ markets, calculate purchase taxes and costs, and connect with verified professionals — all in English.',
+    },
+    {
+      question: 'Is BuyWise free for buyers?',
+      answer: 'Yes, BuyWise Israel is completely free for property buyers. You can explore markets, use our calculators, read guides, and browse listings at no cost. Our platform is funded by real estate professionals who list their properties and services.',
+    },
+    {
+      question: 'What markets does BuyWise cover?',
+      answer: 'BuyWise covers over 30 Israeli markets including Tel Aviv, Jerusalem, Haifa, Ra\'anana, Herzliya, Netanya, Beer Sheva, Modiin, and more. Each market page includes price data, rental yields, neighborhood guides, and local insights.',
+    },
+    {
+      question: 'How do I find a verified agent in Israel?',
+      answer: 'Browse our directory of verified real estate agencies operating in Israel. Each agency profile shows their areas of coverage, specializations, team members, and how to get in touch. All agencies on BuyWise are reviewed before being listed.',
+    },
+    {
+      question: 'What costs are involved in buying property in Israel?',
+      answer: 'Buying property in Israel involves purchase tax (mas rechisha), lawyer fees, mortgage arrangement fees, and potentially agent commissions. Use our free Purchase Tax Calculator and Cost Estimator to get a full breakdown based on your specific situation.',
+    },
+    {
+      question: 'Can I buy property in Israel as a foreign resident?',
+      answer: 'Yes, foreign residents can buy property in Israel. However, the purchase tax rates are higher for non-residents, and there are specific legal and financial considerations. Our guides and calculators are designed to help international buyers navigate these differences.',
+    },
+  ];
+
+  return {
+    '@context': createContext(),
+    '@type': 'FAQPage',
+    mainEntity: faqs.map(faq => ({
+      '@type': 'Question',
+      name: faq.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: faq.answer,
+      },
+    })),
+  };
+}
+
+// Combined homepage JSON-LD (all schemas for the main page)
+export function generateHomepageJsonLd(): object[] {
+  return [
+    generateWebsiteJsonLd(),
+    generateOrganizationJsonLd(),
+    generateFAQJsonLd(),
+  ];
+}
