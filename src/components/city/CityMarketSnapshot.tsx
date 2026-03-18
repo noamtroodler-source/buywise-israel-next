@@ -4,6 +4,7 @@ import { DollarSign, Home, Key } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { NATIONAL_AVG_PRICE_SQM } from '@/lib/constants/marketAverages';
+import { useAreaLabel } from '@/contexts/PreferencesContext';
 
 interface CityMarketSnapshotProps {
   cityData?: {
