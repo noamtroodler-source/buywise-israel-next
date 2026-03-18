@@ -39,7 +39,7 @@ const agentNavItems = [
   { label: 'Dashboard', to: '/agent', end: true },
   { label: 'My Listings', to: '/agent/properties' },
   { label: 'Analytics', to: '/agent/analytics' },
-  { label: 'Profile', to: '/agent/profile' },
+  { label: 'Settings', to: '/agent/settings' },
 ];
 
 const developerNavItems = [
