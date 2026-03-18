@@ -101,7 +101,7 @@ export function CommandPalette() {
   const professionalItems: CommandItem[] = [];
   if (isAgent) {
     professionalItems.push(
-      { label: 'Agent Dashboard', href: '/agent', icon: Building2, keywords: ['dashboard'] },
+      { label: 'Agent Portal', href: '/agent', icon: Building2, keywords: ['dashboard', 'portal'] },
       { label: 'My Listings', href: '/agent/properties', icon: Home, keywords: ['manage'] },
       { label: 'Agent Analytics', href: '/agent/analytics', icon: BarChart3 },
     );
