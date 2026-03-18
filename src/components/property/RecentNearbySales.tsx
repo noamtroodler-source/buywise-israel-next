@@ -11,7 +11,7 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/comp
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { CarouselDots } from '@/components/shared/CarouselDots';
 import { format } from 'date-fns';
-import { useFormatPrice, useFormatPricePerArea } from '@/contexts/PreferencesContext';
+import { useFormatPrice, useFormatPricePerArea, useAreaLabel } from '@/contexts/PreferencesContext';
 import { cn } from '@/lib/utils';
 
 // Types for sold comps
