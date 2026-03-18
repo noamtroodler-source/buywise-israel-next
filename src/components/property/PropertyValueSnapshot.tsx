@@ -144,7 +144,7 @@ export function PropertyValueSnapshot({
               {formatPrice(totalMonthlyCommitment, 'ILS')}/mo
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              Rent + Arnona + Va'ad
+              Rent + Arnona + Va'ad <span className="text-muted-foreground/60">(est.)</span>
             </p>
           </div>
 
