@@ -132,12 +132,15 @@ export function ProjectQuickSummary({
           </p>
           <p className="text-xs text-muted-foreground">Completion</p>
         </div>
-        {project.construction_progress_percent !== undefined && project.construction_progress_percent > 0 && (
-          <div className="text-center">
-            <p className="text-lg sm:text-xl font-semibold">{project.construction_progress_percent}%</p>
-            <p className="text-xs text-muted-foreground">Progress</p>
-          </div>
-        )}
+        {(() => {
+          const derivedProgress = getProjectProgress(project.status, project.construction_progress_percent);
+          return derivedProgress > 0 ? (
+            <div className="text-center">
+              <p className="text-lg sm:text-xl font-semibold">{derivedProgress}%</p>
+              <p className="text-xs text-muted-foreground">Progress</p>
+            </div>
+          ) : null;
+        })()}
         <div className="text-center flex items-center justify-center">
           {(() => {
             const statusInfo = getStatusLabel(project.status || 'planning');

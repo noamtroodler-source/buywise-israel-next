@@ -3,52 +3,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Project } from '@/types/projects';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { PROJECT_STAGES, STAGE_PROGRESS, getProjectStageIndex, getProjectProgress } from '@/lib/projectProgress';
 
 interface ProjectTimelineProps {
   project: Project & { construction_progress_percent?: number };
 }
 
-const stages = [
-  { name: 'Planning', status: 'planning' },
-  { name: 'Pre-Sale', status: 'pre_sale' },
-  { name: 'Foundation', status: 'foundation' },
-  { name: 'Structure', status: 'structure' },
-  { name: 'Finishing', status: 'finishing' },
-  { name: 'Delivery', status: 'delivery' },
-];
-
-const STAGE_PROGRESS = [0, 10, 30, 50, 75, 100];
-
-// Map non-standard DB statuses to the closest timeline stage
-const STATUS_MAP: Record<string, string> = {
-  under_construction: 'structure',
-  completed: 'delivery',
-};
-
-// Given a raw percentage, pick the closest stage index
-const inferStageFromPercent = (percent: number): number => {
-  let closest = 0;
-  let minDiff = Infinity;
-  for (let i = 0; i < STAGE_PROGRESS.length; i++) {
-    const diff = Math.abs(STAGE_PROGRESS[i] - percent);
-    if (diff < minDiff) { minDiff = diff; closest = i; }
-  }
-  return closest;
-};
+const stages = PROJECT_STAGES;
 
 export function ProjectTimeline({ project }: ProjectTimelineProps) {
   const isMobile = useIsMobile();
 
-  const getCurrentStageIndex = () => {
-    const normalizedStatus = STATUS_MAP[project.status] || project.status;
-    const idx = stages.findIndex(stage => stage.status === normalizedStatus);
-    if (idx !== -1) return idx;
-    // Status not recognized — infer from construction_progress_percent
-    return inferStageFromPercent(project.construction_progress_percent || 0);
-  };
-
-  const currentStageIndex = getCurrentStageIndex();
-  const progress = STAGE_PROGRESS[currentStageIndex];
+  const currentStageIndex = getProjectStageIndex(project.status, project.construction_progress_percent);
+  const progress = getProjectProgress(project.status, project.construction_progress_percent);
   
   // Calculate visual progress based on stage index
   const stageProgress = ((currentStageIndex) / (stages.length - 1)) * 100;

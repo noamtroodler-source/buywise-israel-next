@@ -480,11 +480,7 @@ export default function Favorites() {
                                     </span>
                                   </div>
                                   <Progress 
-                                    value={
-                                      project.status === 'delivery' ? 100 :
-                                      ['foundation', 'structure', 'finishing'].includes(project.status) ? (project.construction_progress_percent || 0) :
-                                      0
-                                    } 
+                                    value={getProjectProgress(project.status, project.construction_progress_percent)} 
                                     className="h-1.5" 
                                   />
                                 </div>

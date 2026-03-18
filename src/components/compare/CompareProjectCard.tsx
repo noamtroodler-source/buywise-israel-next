@@ -142,16 +142,22 @@ export function CompareProjectCard({
         <div className="space-y-2">
           <div className="flex items-center justify-between text-sm">
             <Badge variant="secondary">{getStatusLabel(project.status)}</Badge>
-            {project.construction_progress_percent !== null && (
-              <span className="text-muted-foreground flex items-center gap-1">
-                <HardHat className="h-3.5 w-3.5" />
-                {project.construction_progress_percent}%
-              </span>
-            )}
+            {(() => {
+              const progress = getProjectProgress(project.status, project.construction_progress_percent);
+              return progress > 0 ? (
+                <span className="text-muted-foreground flex items-center gap-1">
+                  <HardHat className="h-3.5 w-3.5" />
+                  {progress}%
+                </span>
+              ) : null;
+            })()}
           </div>
-          {project.construction_progress_percent !== null && (
-            <Progress value={project.construction_progress_percent} className="h-1.5" />
-          )}
+          {(() => {
+            const progress = getProjectProgress(project.status, project.construction_progress_percent);
+            return progress > 0 ? (
+              <Progress value={progress} className="h-1.5" />
+            ) : null;
+          })()}
         </div>
 
         {/* Quick Stats */}
