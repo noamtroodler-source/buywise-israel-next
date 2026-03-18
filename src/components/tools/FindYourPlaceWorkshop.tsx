@@ -43,7 +43,7 @@ const recommendations: Record<string, { areas: string[]; propertyTypes: string[]
     tips: ['Good balance of price and quality', 'Growing areas with appreciation potential'],
   },
   'suburban-family': {
-    areas: ['Modiin', 'Shoham', 'Beer Yaakov', 'Gedera'],
+    areas: ['Modiin', 'Kfar Saba', 'Beit Shemesh', 'Hod HaSharon'],
     propertyTypes: ['House', 'Cottage', 'Large Apartment'],
     tips: ['Check community facilities', 'Look for family-friendly neighborhoods'],
   },
