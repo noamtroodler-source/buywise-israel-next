@@ -88,10 +88,11 @@ function MegaMenuContent({ config }: { config: NavSection }) {
           <NavigationMenuLink asChild>
             <Link
               to={config.cta.href}
-              className="group flex items-center justify-between text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+              className="group flex items-center gap-2 border-l-2 border-primary pl-3 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
             >
+              <Search className="h-3.5 w-3.5" />
               {config.cta.label}
-              <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+              <ChevronRight className="h-4 w-4 ml-auto transition-transform group-hover:translate-x-0.5" />
             </Link>
           </NavigationMenuLink>
         </div>
