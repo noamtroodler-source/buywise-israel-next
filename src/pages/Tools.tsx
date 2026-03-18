@@ -150,19 +150,21 @@ const journeyStages = [
   { key: 'after_deal', label: 'Already bought', icon: Home, description: 'Planning renovations' },
 ];
 
-function ToolCard({ tool, onClick }: { tool: Tool; onClick: () => void }) {
+function ToolCard({ tool, onClick, isBeta }: { tool: Tool; onClick: () => void; isBeta?: boolean }) {
   const Icon = tool.icon;
   
   return (
     <div 
-      className="group bg-card border border-border rounded-xl p-5 hover:shadow-md hover:border-primary/40 transition-all cursor-pointer flex flex-col h-full"
+      className={`group bg-card border border-border rounded-xl p-5 transition-all cursor-pointer flex flex-col h-full ${
+        isBeta ? 'opacity-75 hover:opacity-90' : 'hover:shadow-md hover:border-primary/40'
+      }`}
       onClick={onClick}
     >
       <div className="flex items-start justify-between gap-3 mb-4">
         <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
           <Icon className="h-5 w-5 text-primary" />
         </div>
-        {tool.guidanceHint && (
+        {!isBeta && tool.guidanceHint && (
           <span className="text-xs text-primary font-medium bg-primary/8 px-2 py-1 rounded-full whitespace-nowrap">
             {tool.guidanceHint}
           </span>
@@ -172,8 +174,12 @@ function ToolCard({ tool, onClick }: { tool: Tool; onClick: () => void }) {
       <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
         {tool.label}
         {tool.badge && (
-          <span className="text-[10px] font-semibold uppercase tracking-wider bg-accent/15 text-accent-foreground px-1.5 py-0.5 rounded">
-            {tool.badge}
+          <span className={`text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded ${
+            isBeta 
+              ? 'bg-primary/10 text-primary border border-primary/20' 
+              : 'bg-accent/15 text-accent-foreground'
+          }`}>
+            {isBeta ? 'Coming Soon' : tool.badge}
           </span>
         )}
       </h3>
@@ -183,8 +189,10 @@ function ToolCard({ tool, onClick }: { tool: Tool; onClick: () => void }) {
       </p>
       
       <div className="flex justify-end mt-4">
-        <span className="text-primary text-sm font-medium flex items-center gap-1 group-hover:gap-2 transition-all">
-          Open tool
+        <span className={`text-sm font-medium flex items-center gap-1 group-hover:gap-2 transition-all ${
+          isBeta ? 'text-muted-foreground' : 'text-primary'
+        }`}>
+          {isBeta ? 'Coming soon' : 'Open tool'}
           <ArrowRight className="h-4 w-4" />
         </span>
       </div>
