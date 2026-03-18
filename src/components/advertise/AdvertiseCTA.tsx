@@ -63,7 +63,7 @@ export function AdvertiseCTA() {
             </div>
 
             <p className="text-sm text-white/60">
-              No credit card required · Free forever · Start in minutes
+              No credit card required · Start in minutes · Limited spots available
             </p>
           </div>
         </motion.div>
