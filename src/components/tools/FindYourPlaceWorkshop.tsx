@@ -33,7 +33,7 @@ const recommendations: Record<string, { areas: string[]; propertyTypes: string[]
     tips: ['Check school districts carefully', 'Look for safe routes to schools'],
   },
   'suburban-single': {
-    areas: ['Netanya', 'Bat Yam', 'Holon'],
+    areas: ['Netanya', 'Ashdod', 'Ashkelon'],
     propertyTypes: ['1-2 Bedroom Apartment'],
     tips: ['Check public transport connections', 'Consider distance to work'],
   },
