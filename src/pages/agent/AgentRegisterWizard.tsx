@@ -199,13 +199,8 @@ export default function AgentRegisterWizard() {
       case 0:
         return formData.name && formData.email && formData.license_number && isEmailVerified;
       case 1:
-        if (formData.agency_choice === 'invite_code') {
-          return validatedAgencyId !== null;
-        }
-        return true;
-      case 2:
         return formData.languages.length > 0;
-      case 3:
+      case 2:
         return true;
       default:
         return false;
