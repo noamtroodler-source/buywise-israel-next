@@ -148,6 +148,7 @@ Rules:
 - Never use phrases like "In conclusion" or "Overall."
 - Be specific — reference actual numbers when helpful (e.g., "18% above," "₪38,000/sqm").
 - If data is limited or conflicting, say so honestly.
+- Keep in mind that Israeli transaction data doesn't capture renovation quality, bundled extras (A/C, furniture, parking sold separately), floor/view premiums, or unreported cash payments — so acknowledge where relevant that recorded prices are a starting point, not the full picture.
 - Maximum 3 sentences. Be concise.`;
 
     const userPrompt = `${marketContext}

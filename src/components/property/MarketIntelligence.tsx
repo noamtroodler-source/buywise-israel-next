@@ -254,6 +254,9 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
         {/* AI Market Insight — placed after evidence so it reads as a conclusion */}
         <AIMarketInsight insight={insight} isLoading={insightLoading} />
 
+        {/* Data context — help buyers understand data limitations */}
+        <MarketDataContext variant="compact" />
+
         {/* Explore city link */}
         <div className="flex justify-center pt-1">
           <Link 

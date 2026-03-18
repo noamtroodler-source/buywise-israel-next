@@ -208,6 +208,7 @@ export default function PropertyDetail() {
                     cityArnonaRate={cityData?.arnona_rate_sqm}
                     cityAvgVaadBayit={cityData?.average_vaad_bayit}
                   />
+                  <MarketDataContext variant="compact" className="mt-4" />
                 </MobileCollapsibleSection>
               ) : (
                 <MobileCollapsibleSection
