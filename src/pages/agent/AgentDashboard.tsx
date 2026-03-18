@@ -384,6 +384,33 @@ export default function AgentDashboard() {
                     className="rounded-2xl border-border/50"
                   />
                 ) : null}
+               </WidgetErrorBoundary>
+            </div>
+
+            {/* Right Column — Contextual Sidebar */}
+            <div className="md:col-span-2 space-y-4">
+              {/* Stale Listings Alert */}
+              <WidgetErrorBoundary fallbackTitle="Couldn't load stale listings">
+                {staleListings.length > 0 && (
+                  <Card className="rounded-2xl border-primary/20 bg-primary/5">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="p-2 rounded-xl bg-primary/10">
+                          <RefreshCw className="h-4 w-4 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">Listings Need Renewal</p>
+                          <p className="text-xs text-muted-foreground">
+                            {staleListings.length} listing{staleListings.length > 1 ? 's' : ''} over {STALE_THRESHOLD_DAYS} days old
+                          </p>
+                        </div>
+                      </div>
+                      <Button size="sm" variant="outline" asChild className="rounded-xl w-full border-primary/30 text-primary hover:bg-primary/10">
+                        <Link to="/agent/properties?tab=stale">Renew Now</Link>
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
               </WidgetErrorBoundary>
 
               {/* Recent Properties */}
@@ -449,33 +476,6 @@ export default function AgentDashboard() {
                           </div>
                         ))}
                       </div>
-                    </CardContent>
-                  </Card>
-                )}
-              </WidgetErrorBoundary>
-            </div>
-
-            {/* Right Column — Contextual Sidebar */}
-            <div className="md:col-span-2 space-y-4">
-              {/* Stale Listings Alert */}
-              <WidgetErrorBoundary fallbackTitle="Couldn't load stale listings">
-                {staleListings.length > 0 && (
-                  <Card className="rounded-2xl border-primary/20 bg-primary/5">
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="p-2 rounded-xl bg-primary/10">
-                          <RefreshCw className="h-4 w-4 text-primary" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium">Listings Need Renewal</p>
-                          <p className="text-xs text-muted-foreground">
-                            {staleListings.length} listing{staleListings.length > 1 ? 's' : ''} over {STALE_THRESHOLD_DAYS} days old
-                          </p>
-                        </div>
-                      </div>
-                      <Button size="sm" variant="outline" asChild className="rounded-xl w-full border-primary/30 text-primary hover:bg-primary/10">
-                        <Link to="/agent/properties?tab=stale">Renew Now</Link>
-                      </Button>
                     </CardContent>
                   </Card>
                 )}
