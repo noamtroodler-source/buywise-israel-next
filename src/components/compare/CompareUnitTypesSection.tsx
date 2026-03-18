@@ -27,6 +27,7 @@ export function CompareUnitTypesSection({
 }: CompareUnitTypesSectionProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedUnits, setSelectedUnits] = useState<Record<string, string>>({});
+  const areaLabels = useAreaLabel();
 
   // Get all unique unit types across projects and auto-select matching ones
   useEffect(() => {

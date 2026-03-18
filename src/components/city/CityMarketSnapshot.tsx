@@ -21,6 +21,7 @@ interface CityMarketSnapshotProps {
 
 export function CityMarketSnapshot({ cityData }: CityMarketSnapshotProps) {
   const [selectedRooms, setSelectedRooms] = useState<number>(3);
+  const areaLabels = useAreaLabel();
   
   const pricePerSqm = cityData?.average_price_sqm ?? null;
   const medianPrice = cityData?.median_apartment_price ?? null;

@@ -230,6 +230,7 @@ export function RecentNearbySales({
 }: RecentNearbySalesProps) {
   const formatPrice = useFormatPrice();
   const formatPricePerAreaFn = useFormatPricePerArea();
+  const areaLabels = useAreaLabel();
   const isMobile = useIsMobile();
   const [selectedIndex, setSelectedIndex] = useState(0);
   
