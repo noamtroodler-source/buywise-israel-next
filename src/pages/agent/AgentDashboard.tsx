@@ -123,6 +123,7 @@ export default function AgentDashboard() {
     rejected: properties.filter(p => (p as any).verification_status === 'rejected').length,
   };
   const totalViews = properties.reduce((sum, p) => sum + (p.views_count || 0), 0);
+  const totalSaves = properties.reduce((sum, p) => sum + ((p as any).total_saves || 0), 0);
 
   // Stale listings
   const staleListings = useMemo(() => {
@@ -141,6 +142,8 @@ export default function AgentDashboard() {
     ...(statusCounts.draft > 0 ? [{ label: 'drafts', value: statusCounts.draft }] : []),
     ...(statusCounts.pending_review > 0 ? [{ label: 'pending', value: statusCounts.pending_review }] : []),
     { label: 'total views', value: totalViews },
+    { label: 'total saves', value: totalSaves },
+    { label: 'total inquiries', value: leadStats?.total || 0 },
   ];
 
   // Quick actions grid
