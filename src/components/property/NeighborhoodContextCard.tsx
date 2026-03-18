@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNeighborhoodProfile } from '@/hooks/useNeighborhoodProfile';
 import { MapPin, Sparkles } from 'lucide-react';
 
@@ -6,11 +7,26 @@ interface NeighborhoodContextCardProps {
   neighborhood: string | null | undefined;
 }
 
+/** Truncate text to roughly the first two sentences. */
+function truncateToSentences(text: string, count = 2): { truncated: string; isTruncated: boolean } {
+  // Match sentence-ending punctuation followed by a space or end
+  const sentenceEnds = [...text.matchAll(/[.!?](?:\s|$)/g)];
+  if (sentenceEnds.length <= count) {
+    return { truncated: text, isTruncated: false };
+  }
+  const cutoff = sentenceEnds[count - 1].index! + 1;
+  return { truncated: text.slice(0, cutoff).trim(), isTruncated: true };
+}
+
 export function NeighborhoodContextCard({ city, neighborhood }: NeighborhoodContextCardProps) {
   const { data: profile, isLoading } = useNeighborhoodProfile(city, neighborhood);
+  const [expanded, setExpanded] = useState(false);
 
   if (isLoading || !profile) return null;
   if (!profile.narrative) return null;
+
+  const { truncated, isTruncated } = truncateToSentences(profile.narrative);
+  const displayText = expanded ? profile.narrative : truncated;
 
   return (
     <div className="space-y-4">
@@ -22,10 +38,20 @@ export function NeighborhoodContextCard({ city, neighborhood }: NeighborhoodCont
         </p>
       </div>
 
-      {/* Narrative */}
-      <p className="text-sm leading-relaxed text-foreground/90 italic">
-        "{profile.narrative}"
-      </p>
+      {/* Narrative — blockquote style */}
+      <div className="border-l-2 border-primary/20 pl-4">
+        <p className="text-sm leading-relaxed text-foreground/80">
+          {displayText}
+        </p>
+        {isTruncated && (
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="text-xs font-medium text-primary hover:text-primary/80 mt-1.5 transition-colors"
+          >
+            {expanded ? 'Show less' : 'Read more'}
+          </button>
+        )}
+      </div>
 
       {/* Best For callout */}
       {profile.best_for && (
