@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Building, Phone, Mail, Globe, CheckCircle, ChevronRight, Calendar, Star, MapPin, Users, TrendingUp, Award, Briefcase } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,8 +10,6 @@ interface ProjectDeveloperCardProps {
 }
 
 export function ProjectDeveloperCard({ developer }: ProjectDeveloperCardProps) {
-  const [logoError, setLogoError] = useState(false);
-
   const hasAtAGlance = developer.is_publicly_traded || developer.tase_ticker ||
     (developer.specialties && developer.specialties.length > 0) ||
     (developer.regions_active && developer.regions_active.length > 0) ||
@@ -32,48 +29,32 @@ export function ProjectDeveloperCard({ developer }: ProjectDeveloperCardProps) {
       </CardHeader>
       <CardContent className="p-3 md:p-6 space-y-5">
         {/* 1. Identity Strip */}
-        <div className="flex items-start gap-4">
-          <Link to={`/developers/${developer.slug}`} className="shrink-0">
-            {developer.logo_url && !logoError ? (
-              <img
-                src={developer.logo_url}
-                alt={developer.name}
-                className="w-16 h-16 object-contain rounded-lg bg-muted p-2 hover:ring-2 hover:ring-primary/20 transition-all"
-                onError={() => setLogoError(true)}
-              />
-            ) : (
-              <div className="w-16 h-16 rounded-lg bg-primary/10 flex items-center justify-center hover:ring-2 hover:ring-primary/20 transition-all">
-                <Building className="h-8 w-8 text-primary" />
-              </div>
+        <div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Link to={`/developers/${developer.slug}`}>
+              <h3 className="font-semibold hover:text-primary hover:underline transition-colors inline-flex items-center gap-1">
+                {developer.name}
+                <ChevronRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+              </h3>
+            </Link>
+            {developer.is_verified && (
+              <Badge variant="secondary" className="gap-1 text-xs bg-primary/10 text-primary border-primary/20">
+                <CheckCircle className="h-3 w-3" />
+                Verified
+              </Badge>
             )}
-          </Link>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <Link to={`/developers/${developer.slug}`}>
-                <h3 className="font-semibold hover:text-primary hover:underline transition-colors inline-flex items-center gap-1">
-                  {developer.name}
-                  <ChevronRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                </h3>
-              </Link>
-              {developer.is_verified && (
-                <Badge variant="secondary" className="gap-1 text-xs bg-primary/10 text-primary border-primary/20">
-                  <CheckCircle className="h-3 w-3" />
-                  Verified
-                </Badge>
-              )}
-            </div>
-            <div className="flex flex-wrap gap-3 mt-1 text-sm text-muted-foreground">
+          </div>
+          <div className="flex flex-wrap gap-3 mt-1 text-sm text-muted-foreground">
+            <span className="flex items-center gap-1">
+              <Building className="h-3.5 w-3.5" />
+              {developer.total_projects || 0} Projects
+            </span>
+            {developer.founded_year && (
               <span className="flex items-center gap-1">
-                <Building className="h-3.5 w-3.5" />
-                {developer.total_projects || 0} Projects
+                <Calendar className="h-3.5 w-3.5" />
+                Est. {developer.founded_year}
               </span>
-              {developer.founded_year && (
-                <span className="flex items-center gap-1">
-                  <Calendar className="h-3.5 w-3.5" />
-                  Est. {developer.founded_year}
-                </span>
-              )}
-            </div>
+            )}
           </div>
         </div>
 
