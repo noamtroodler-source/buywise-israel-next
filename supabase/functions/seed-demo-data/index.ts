@@ -107,45 +107,84 @@ const AVATARS = [
 
 // ============ ISRAELI DATA ============
 
-// City coordinates and price multipliers - used when fetching from database
-const CITY_COORDS: Record<string, { lat: number; lng: number; priceMultiplier: number }> = {
-  "Tel Aviv": { lat: 32.0853, lng: 34.7818, priceMultiplier: 1.8 },
-  "Jerusalem": { lat: 31.7683, lng: 35.2137, priceMultiplier: 1.3 },
-  "Haifa": { lat: 32.7940, lng: 34.9896, priceMultiplier: 0.9 },
-  "Herzliya": { lat: 32.1656, lng: 34.8467, priceMultiplier: 1.6 },
-  "Ra'anana": { lat: 32.1841, lng: 34.8710, priceMultiplier: 1.4 },
-  "Netanya": { lat: 32.3286, lng: 34.8570, priceMultiplier: 1.0 },
-  "Ashkelon": { lat: 31.6688, lng: 34.5743, priceMultiplier: 0.7 },
-  "Ashdod": { lat: 31.8040, lng: 34.6553, priceMultiplier: 0.75 },
-  "Beer Sheva": { lat: 31.2518, lng: 34.7913, priceMultiplier: 0.55 },
-  "Petah Tikva": { lat: 32.0868, lng: 34.8859, priceMultiplier: 1.0 },
-  "Kfar Saba": { lat: 32.1780, lng: 34.9078, priceMultiplier: 1.2 },
-  "Modiin": { lat: 31.8977, lng: 35.0104, priceMultiplier: 1.15 },
-  "Modi'in": { lat: 31.8977, lng: 35.0104, priceMultiplier: 1.15 },
-  "Ramat Gan": { lat: 32.0680, lng: 34.8248, priceMultiplier: 1.35 },
-  "Hod HaSharon": { lat: 32.1530, lng: 34.8920, priceMultiplier: 1.25 },
-  "Eilat": { lat: 29.5581, lng: 34.9482, priceMultiplier: 0.9 },
-  "Beit Shemesh": { lat: 31.7514, lng: 34.9886, priceMultiplier: 0.8 },
-  "Caesarea": { lat: 32.5006, lng: 34.8978, priceMultiplier: 2.0 },
-  "Pardes Hanna": { lat: 32.4706, lng: 34.9699, priceMultiplier: 0.7 },
-  "Mevaseret Zion": { lat: 31.8024, lng: 35.1527, priceMultiplier: 1.25 },
-  "Zichron Yaakov": { lat: 32.5714, lng: 34.9520, priceMultiplier: 1.1 },
-  "Tiberias": { lat: 32.7940, lng: 35.5300, priceMultiplier: 0.65 },
-  "Kiryat Ata": { lat: 32.8100, lng: 35.1100, priceMultiplier: 0.7 },
-  "Yavne": { lat: 31.8780, lng: 34.7390, priceMultiplier: 0.85 },
-  "Givat Shmuel": { lat: 32.0800, lng: 34.8500, priceMultiplier: 1.3 },
+// City coordinates for lat/lng generation (no price data - that comes from cities table)
+const CITY_COORDS: Record<string, { lat: number; lng: number }> = {
+  "Tel Aviv": { lat: 32.0853, lng: 34.7818 },
+  "Jerusalem": { lat: 31.7683, lng: 35.2137 },
+  "Haifa": { lat: 32.7940, lng: 34.9896 },
+  "Herzliya": { lat: 32.1656, lng: 34.8467 },
+  "Ra'anana": { lat: 32.1841, lng: 34.8710 },
+  "Netanya": { lat: 32.3286, lng: 34.8570 },
+  "Ashkelon": { lat: 31.6688, lng: 34.5743 },
+  "Ashdod": { lat: 31.8040, lng: 34.6553 },
+  "Beer Sheva": { lat: 31.2518, lng: 34.7913 },
+  "Petah Tikva": { lat: 32.0868, lng: 34.8859 },
+  "Kfar Saba": { lat: 32.1780, lng: 34.9078 },
+  "Modiin": { lat: 31.8977, lng: 35.0104 },
+  "Modi'in": { lat: 31.8977, lng: 35.0104 },
+  "Ramat Gan": { lat: 32.0680, lng: 34.8248 },
+  "Hod HaSharon": { lat: 32.1530, lng: 34.8920 },
+  "Eilat": { lat: 29.5581, lng: 34.9482 },
+  "Beit Shemesh": { lat: 31.7514, lng: 34.9886 },
+  "Caesarea": { lat: 32.5006, lng: 34.8978 },
+  "Pardes Hanna": { lat: 32.4706, lng: 34.9699 },
+  "Mevaseret Zion": { lat: 31.8024, lng: 35.1527 },
+  "Zichron Yaakov": { lat: 32.5714, lng: 34.9520 },
+  "Tiberias": { lat: 32.7940, lng: 35.5300 },
+  "Kiryat Ata": { lat: 32.8100, lng: 35.1100 },
+  "Yavne": { lat: 31.8780, lng: 34.7390 },
+  "Givat Shmuel": { lat: 32.0800, lng: 34.8500 },
 };
 
-// Helper function to get city data with coordinates
-function getCityWithCoords(cityName: string, citySlug: string) {
-  const coords = CITY_COORDS[cityName] || { lat: 32.0, lng: 34.8, priceMultiplier: 1.0 };
-  return {
-    name: cityName,
-    slug: citySlug,
-    lat: coords.lat,
-    lng: coords.lng,
-    priceMultiplier: coords.priceMultiplier,
-  };
+interface CityData {
+  name: string;
+  slug: string;
+  lat: number;
+  lng: number;
+  average_price_sqm: number | null;
+  rental_3_room_min: number | null;
+  rental_3_room_max: number | null;
+  rental_4_room_min: number | null;
+  rental_4_room_max: number | null;
+  rental_5_room_min: number | null;
+  rental_5_room_max: number | null;
+}
+
+function getCityWithCoords(dbCity: { name: string; slug: string; average_price_sqm: number | null; rental_3_room_min: number | null; rental_3_room_max: number | null; rental_4_room_min: number | null; rental_4_room_max: number | null; rental_5_room_min: number | null; rental_5_room_max: number | null }): CityData {
+  const coords = CITY_COORDS[dbCity.name] || { lat: 32.0, lng: 34.8 };
+  return { ...dbCity, lat: coords.lat, lng: coords.lng };
+}
+
+/**
+ * Generate a sale price using verified cities.average_price_sqm.
+ * Falls back to a reasonable default if no data.
+ */
+function generateSalePrice(city: CityData, sizeSqm: number): number {
+  const avgPriceSqm = city.average_price_sqm || 25000;
+  const variance = 0.75 + Math.random() * 0.55; // 0.75–1.30
+  return Math.round((avgPriceSqm * sizeSqm * variance) / 10000) * 10000;
+}
+
+/**
+ * Generate a rental price using verified city rental ranges.
+ * israeliRooms = bedrooms + additional_rooms (Israeli standard).
+ */
+function generateRentPrice(city: CityData, israeliRooms: number): number {
+  let min: number, max: number;
+  if (israeliRooms <= 2) {
+    min = (city.rental_3_room_min || 3000) * 0.75;
+    max = (city.rental_3_room_max || 5000) * 0.75;
+  } else if (israeliRooms === 3) {
+    min = city.rental_3_room_min || 3000;
+    max = city.rental_3_room_max || 5000;
+  } else if (israeliRooms === 4) {
+    min = city.rental_4_room_min || 4500;
+    max = city.rental_4_room_max || 7000;
+  } else {
+    min = city.rental_5_room_min || 6000;
+    max = city.rental_5_room_max || 10000;
+  }
+  return Math.round((min + Math.random() * (max - min)) / 100) * 100;
 }
 
 const FIRST_NAMES_MALE = ["Yosef", "David", "Moshe", "Avraham", "Yitzhak", "Yaakov", "Eli", "Oren", "Noam", "Amit", "Eitan", "Gal", "Roi", "Nadav", "Ido", "Lior", "Tal", "Amir", "Yonatan", "Dan"];
