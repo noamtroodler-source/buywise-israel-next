@@ -148,38 +148,7 @@ export function ProjectDeveloperCard({ developer }: ProjectDeveloperCardProps) {
           </div>
         )}
 
-        {/* 5. Contact Actions */}
-        <div className="flex flex-wrap gap-2">
-          {developer.phone && (
-            <Button variant="outline" size="sm" className="flex-1" asChild>
-              <a href={`tel:${developer.phone}`}>
-                <Phone className="h-4 w-4 mr-1.5" />
-                Call
-              </a>
-            </Button>
-          )}
-          {developer.email && (
-            <Button size="sm" className="flex-1" asChild>
-              <a href={`mailto:${developer.email}`}>
-                <Mail className="h-4 w-4 mr-1.5" />
-                Email
-              </a>
-            </Button>
-          )}
-        </div>
-
-        {developer.website && (
-          <Button variant="ghost" size="sm" className="w-full justify-between" asChild>
-            <a href={developer.website} target="_blank" rel="noopener noreferrer">
-              <span className="flex items-center gap-1.5">
-                <Globe className="h-4 w-4" />
-                Visit Website
-              </span>
-              <ChevronRight className="h-4 w-4" />
-            </a>
-          </Button>
-        )}
-
+        {/* View All Projects Link */}
         <Link to={`/developers/${developer.slug}`}>
           <Button variant="secondary" size="sm" className="w-full justify-between">
             <span>View All {developer.name} Projects</span>
