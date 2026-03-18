@@ -462,7 +462,7 @@ export function useFeaturedRentalProperties(options?: FeaturedPropertiesOptions)
 
       // Merge featured listings
       const boostedProperties = await fetchFeaturedProperties(adminIds, 'for_rent');
-      const merged = [...adminProperties, ...boostedProperties].slice(0, 8);
+      const merged = [...boostedProperties, ...adminProperties].slice(0, 8);
       return merged;
     },
     enabled: options?.enabled !== false,
