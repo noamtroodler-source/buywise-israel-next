@@ -36,7 +36,7 @@ async function fetchFeaturedProperties(
   const { data, error } = await query;
   if (error) return [];
 
-  return (data ?? []).map(p => ({ ...p, _isBoosted: true })) as Property[];
+  return shuffleFeatured((data ?? []).map(p => ({ ...p, _isBoosted: true })) as Property[]);
 }
 
 /**

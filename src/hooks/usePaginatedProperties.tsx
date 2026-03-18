@@ -138,7 +138,7 @@ export function usePaginatedProperties(
       }
       const { data, error } = await query;
       if (error) return [] as Property[];
-      return (data ?? []).map(p => ({ ...p, _isBoosted: true })) as Property[];
+      return shuffleFeatured((data ?? []).map(p => ({ ...p, _isBoosted: true })) as Property[]);
     },
     enabled: page === 1 && boostedIds.length > 0,
     staleTime: 60_000,
