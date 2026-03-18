@@ -59,12 +59,12 @@ const regions: Region[] = [
     subtitle: 'Beach life, urban energy & metro convenience',
     icon: Sun,
     cities: [
-      { name: 'Tel Aviv', slug: 'tel-aviv', image: telAvivImg, description: "Tel Aviv is Israel's most competitive market — limited supply, urban premium, and the benchmark everything else is measured against.", tags: ['Urban premium', 'Limited supply'] },
-      { name: 'Herzliya', slug: 'herzliya', image: herzliyaImg, description: "Herzliya is where Israel's tech elite lives — premium coastal real estate driven by Silicon Wadi proximity.", tags: ['Coastal premium', 'High demand'] },
-      { name: 'Netanya', slug: 'netanya', image: netanyaImg, description: "Netanya is Israel's most popular Anglo coastal city — oceanfront living with a wide range of price points and a large English-speaking community.", tags: ['Coastal variety', 'Range of price points'] },
-      { name: 'Haifa', slug: 'haifa', image: haifaImg, description: "Haifa is Israel's most undervalued major city — world-class tech, top universities, and waterfront living at a fraction of Tel Aviv prices.", tags: ['Northern metro', 'Value positioning'] },
-      { name: 'Ramat Gan', slug: 'ramat-gan', image: ramatGanImg, description: "Ramat Gan is Tel Aviv's practical neighbor — the Diamond Exchange district, high-rise renewal, and metro access without the Tel Aviv premium.", tags: ['Business hub', 'High-rise living'] },
-      { name: 'Ashdod', slug: 'ashdod', image: ashdodImg, description: "Ashdod is where affordability meets the Mediterranean — a port city investing heavily in infrastructure, with prices that still leave room for growth.", tags: ['Port city', 'Beach access'] },
+      { name: 'Tel Aviv', slug: 'tel-aviv', image: telAvivImg, description: "Tel Aviv is Israel's most competitive market — limited supply, urban premium, and the benchmark everything else is measured against." },
+      { name: 'Herzliya', slug: 'herzliya', image: herzliyaImg, description: "Herzliya is where Israel's tech elite lives — premium coastal real estate driven by Silicon Wadi proximity." },
+      { name: 'Netanya', slug: 'netanya', image: netanyaImg, description: "Netanya is Israel's most popular Anglo coastal city — oceanfront living with a wide range of price points and a large English-speaking community." },
+      { name: 'Haifa', slug: 'haifa', image: haifaImg, description: "Haifa is Israel's most undervalued major city — world-class tech, top universities, and waterfront living at a fraction of Tel Aviv prices." },
+      { name: 'Ramat Gan', slug: 'ramat-gan', image: ramatGanImg, description: "Ramat Gan is Tel Aviv's practical neighbor — the Diamond Exchange district, high-rise renewal, and metro access without the Tel Aviv premium." },
+      { name: 'Ashdod', slug: 'ashdod', image: ashdodImg, description: "Ashdod is where affordability meets the Mediterranean — a port city investing heavily in infrastructure, with prices that still leave room for growth." },
     ],
   },
   {
