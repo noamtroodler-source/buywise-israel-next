@@ -85,7 +85,7 @@ function NeighborhoodCard({ n }: { n: UnifiedNeighborhood }) {
   return (
     <div
       className={cn(
-        'rounded-lg border border-border/50 bg-card/80 backdrop-blur-sm px-4 py-3 transition-colors hover:bg-muted/40',
+        'rounded-lg border border-border/50 bg-card/80 backdrop-blur-sm px-3 py-2.5 transition-colors hover:bg-muted/40',
         n.is_featured && 'border-l-2 border-l-primary/30'
       )}
     >
