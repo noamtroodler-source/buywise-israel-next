@@ -129,9 +129,9 @@ Deno.serve(async (req) => {
         else failed++;
       }
 
-      // Rate limit between chunks
+      // Rate limit: 200ms between Google chunks, 1.2s if hitting Nominatim
       if (i + 5 < transactions.length) {
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise(resolve => setTimeout(resolve, 300));
       }
     }
 
