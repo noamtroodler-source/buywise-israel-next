@@ -14,8 +14,8 @@ const BENEFITS = [
   },
   {
     icon: Zap,
-    title: 'Exclusive Early Access',
-    description: 'Your listings go live before anyone else\'s. Be the first agency buyers see on the platform.',
+    title: 'Maximum Visibility, Minimal Competition',
+    description: 'With only 15 founding agencies on the platform, your brand gets premium exposure to every international buyer — not buried among hundreds of competitors.',
   },
   {
     icon: BookOpen,
