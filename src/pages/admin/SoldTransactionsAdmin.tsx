@@ -403,7 +403,7 @@ export default function SoldTransactionsAdmin() {
               </Select>
             </div>
 
-            <div className="pt-6">
+            <div className="pt-6 flex items-center gap-3">
               <Button onClick={handleGeocode} disabled={isGeocoding || stats?.pendingGeocode === 0}>
                 {isGeocoding ? (
                   <>
@@ -417,7 +417,31 @@ export default function SoldTransactionsAdmin() {
                   </>
                 )}
               </Button>
+
+              <Button
+                variant="secondary"
+                onClick={() => batchGeocodeMutation.mutate()}
+                disabled={batchGeocodeMutation.isPending || stats?.pendingGeocode === 0}
+              >
+                {batchGeocodeMutation.isPending ? (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                    Batch Geocoding (200)...
+                  </>
+                ) : (
+                  <>
+                    <MapPin className="mr-2 h-4 w-4" />
+                    Batch Geocode 200 (Parallel)
+                  </>
+                )}
+              </Button>
             </div>
+
+            {batchGeocodeProgress && (
+              <p className="text-sm text-muted-foreground mt-2">
+                Last batch: {batchGeocodeProgress.geocoded} geocoded, {batchGeocodeProgress.failed} failed, {batchGeocodeProgress.remaining} remaining
+              </p>
+            )}
           </div>
 
           {stats?.pendingGeocode === 0 && (
