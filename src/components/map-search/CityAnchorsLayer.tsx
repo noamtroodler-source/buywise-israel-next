@@ -1,6 +1,7 @@
 import { useMemo, useState, useCallback } from 'react';
 import { Marker, InfoWindow } from '@react-google-maps/api';
 import { useCityAnchors } from '@/hooks/useCityAnchors';
+import { MapInfoCard } from './MapInfoCard';
 
 interface CityAnchorsLayerProps {
   map: google.maps.Map;
