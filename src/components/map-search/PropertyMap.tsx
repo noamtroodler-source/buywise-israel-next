@@ -261,6 +261,13 @@ export function PropertyMap({
   const isActiveProject = activePropertyId?.startsWith('project-') ?? false;
   const showNeighborhoods = activeLayers.has('neighborhoods') && zoom >= 13;
 
+  const activePoiCategories = useMemo(() => {
+    const cats: string[] = [];
+    if (activeLayers.has('shuls')) cats.push('shul');
+    if (activeLayers.has('schools')) cats.push('school');
+    return cats;
+  }, [activeLayers]);
+
   if (!isLoaded) {
     return <div className="h-full w-full bg-muted animate-pulse" />;
   }
