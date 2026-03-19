@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Train, MapPin, Heart, Landmark, Flame, BookOpen, GraduationCap, Stethoscope, Droplets, ShoppingCart } from 'lucide-react';
+import { Train, Heart, BookOpen, GraduationCap, Stethoscope, Droplets, ShoppingCart } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Switch } from '@/components/ui/switch';
 
@@ -11,15 +11,12 @@ interface LayersMenuProps {
 
 const LAYERS = [
   { id: 'trains', label: 'Train Stations', icon: Train, disabled: false },
-  { id: 'neighborhoods', label: 'Neighborhoods', icon: MapPin, disabled: false },
   { id: 'saved', label: 'My Places', icon: Heart, disabled: false },
-  { id: 'landmarks', label: 'City Landmarks', icon: Landmark, disabled: false },
   { id: 'shuls', label: 'Shuls', icon: BookOpen, disabled: false },
   { id: 'schools', label: 'Schools', icon: GraduationCap, disabled: false },
   { id: 'medical', label: 'Medical', icon: Stethoscope, disabled: false },
   { id: 'mikvehs', label: 'Mikvehs', icon: Droplets, disabled: false },
   { id: 'grocery', label: 'Grocery', icon: ShoppingCart, disabled: false },
-  { id: 'heatmap', label: 'Price Heatmap', icon: Flame, disabled: true, badge: 'Soon' },
 ] as const;
 
 export function LayersMenu({ activeLayers, onToggleLayer, children }: LayersMenuProps) {
