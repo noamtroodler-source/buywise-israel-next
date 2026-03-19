@@ -94,7 +94,7 @@ Deno.serve(async (req) => {
       .from("sold_transactions")
       .select("id, address, city, neighborhood")
       .is("latitude", null)
-      .limit(5);
+      .limit(200);
 
     if (fetchError || !transactions || transactions.length === 0) {
       return new Response(JSON.stringify({
