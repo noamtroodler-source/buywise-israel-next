@@ -190,9 +190,9 @@ export function CompareAISummary({ properties, winnerCounts, isRental, hideCTAs 
           <Sparkles className="h-5 w-5 text-primary" />
         </div>
         <div>
-          <h3 className="font-semibold text-lg">Comparison AI Summary</h3>
+          <h3 className="font-semibold text-lg">BuyWise Take</h3>
           <p className="text-sm text-muted-foreground">
-            AI-powered analysis of your selected properties
+            Our analysis of your selected properties
           </p>
         </div>
       </div>
