@@ -15,7 +15,7 @@ const BENEFITS = [
   {
     icon: Zap,
     title: 'Maximum Visibility, Minimal Competition',
-    description: 'With only 15 founding agencies on the platform, your brand gets premium exposure to every international buyer — not buried among hundreds of competitors.',
+    description: 'As part of a small, select group of founding agencies, your brand gets premium exposure to every international buyer — not buried among hundreds of competitors.',
   },
   {
     icon: BookOpen,
