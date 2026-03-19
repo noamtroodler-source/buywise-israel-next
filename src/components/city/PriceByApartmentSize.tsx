@@ -79,7 +79,7 @@ function RoomSizeInsight({ citySlug, cityName, latestPrices }: { citySlug: strin
     <div className="flex gap-3 p-4 rounded-lg bg-primary/5 border border-primary/10">
       <TrendingUp className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
       <p className="text-sm text-muted-foreground leading-relaxed">
-        <span className="font-medium text-foreground">What this means: </span>
+        <span className="font-medium text-foreground">BuyWise Take: </span>
         {insight}
       </p>
     </div>

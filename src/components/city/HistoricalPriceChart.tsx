@@ -421,7 +421,7 @@ export function HistoricalPriceChart({
                 <TrendingDown className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
               )}
               <p className="text-sm text-muted-foreground leading-relaxed">
-                <span className="font-medium text-foreground">What this means: </span>
+                <span className="font-medium text-foreground">BuyWise Take: </span>
                 {insight}
               </p>
             </div>

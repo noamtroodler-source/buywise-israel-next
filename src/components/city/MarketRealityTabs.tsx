@@ -287,7 +287,7 @@ export function MarketRealityTabs({
                 <div className="flex items-start gap-3">
                   <Info className="h-5 w-5 text-primary mt-0.5" />
                   <div>
-                    <p className="font-medium text-foreground">What This Means For You</p>
+                    <p className="font-medium text-foreground">BuyWise Take</p>
                     <p className="text-sm text-muted-foreground mt-1">
                       {comparisonCities.length > 1 
                         ? (() => {
