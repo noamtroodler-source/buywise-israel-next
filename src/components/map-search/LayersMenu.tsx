@@ -16,6 +16,9 @@ const LAYERS = [
   { id: 'landmarks', label: 'City Landmarks', icon: Landmark, disabled: false },
   { id: 'shuls', label: 'Shuls', icon: BookOpen, disabled: false },
   { id: 'schools', label: 'Schools', icon: GraduationCap, disabled: false },
+  { id: 'medical', label: 'Medical', icon: Stethoscope, disabled: false },
+  { id: 'mikvehs', label: 'Mikvehs', icon: Droplets, disabled: false },
+  { id: 'grocery', label: 'Grocery', icon: ShoppingCart, disabled: false },
   { id: 'heatmap', label: 'Price Heatmap', icon: Flame, disabled: true, badge: 'Soon' },
 ] as const;
 

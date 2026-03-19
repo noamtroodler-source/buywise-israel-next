@@ -14,6 +14,8 @@ export interface MapPoi {
   address: string | null;
   website: string | null;
   phone: string | null;
+  denomination: string | null;
+  english_level: string | null;
 }
 
 export function useMapPois(categories: string[]) {
