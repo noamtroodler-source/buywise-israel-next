@@ -25,6 +25,7 @@ export default function SoldTransactionsAdmin() {
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [isSeeding, setIsSeeding] = useState(false);
   const [clearExistingOnSeed, setClearExistingOnSeed] = useState(false);
+  const [batchGeocodeProgress, setBatchGeocodeProgress] = useState<{ geocoded: number; failed: number; remaining: number } | null>(null);
 
   // Fetch cities
   const { data: cities } = useQuery({
