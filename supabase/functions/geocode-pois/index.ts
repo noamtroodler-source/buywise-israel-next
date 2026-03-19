@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
     .select("id, name, address, city")
     .in("geocode_status", ["failed", "pending", "manual"])
     .not("address", "is", null)
-    .limit(200);
+    .limit(50);
 
   if (error) {
     return new Response(JSON.stringify({ error: error.message }), {
