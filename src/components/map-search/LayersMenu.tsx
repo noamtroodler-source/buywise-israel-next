@@ -38,11 +38,6 @@ export function LayersMenu({ activeLayers, onToggleLayer, children }: LayersMenu
                 <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
                 <span className="text-sm flex-1">
                   {layer.label}
-                  {layer.disabled && (
-                    <span className="ml-1.5 text-[10px] font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
-                      {layer.badge}
-                    </span>
-                  )}
                 </span>
                 <Switch
                   checked={activeLayers.has(layer.id)}
