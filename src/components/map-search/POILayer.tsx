@@ -36,9 +36,6 @@ const ENGLISH_LEVEL_COLORS: Record<string, string> = {
   'English Available': '#6b7280',
 };
 
-function truncate(text: string, max: number) {
-  return text.length > max ? text.slice(0, max).trimEnd() + '…' : text;
-}
 
 export function POILayer({ map, bounds, activeCategories }: POILayerProps) {
   const { data: pois = [] } = useMapPois(activeCategories);
