@@ -307,6 +307,10 @@ export function PropertyMap({
         {map && activeLayers.has('saved') && <SavedPlacesLayer map={map} bounds={currentBounds} />}
         {map && activeLayers.has('landmarks') && <CityAnchorsLayer map={map} cityFilter={cityFilter} bounds={currentBounds} />}
 
+        {map && activePoiCategories.length > 0 && (
+          <POILayer map={map} bounds={currentBounds} activeCategories={activePoiCategories} />
+        )}
+
         {map && showNeighborhoods && (
           <NeighborhoodBoundariesLayer map={map} city={cityFilter} highlightedNeighborhood={selectedNeighborhood} />
         )}
