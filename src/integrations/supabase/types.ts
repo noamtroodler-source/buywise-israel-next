@@ -3151,6 +3151,54 @@ export type Database = {
         }
         Relationships: []
       }
+      map_pois: {
+        Row: {
+          address: string | null
+          category: string
+          city: string
+          created_at: string
+          description: string | null
+          id: string
+          latitude: number
+          longitude: number
+          name: string
+          name_he: string | null
+          phone: string | null
+          subcategory: string | null
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          category: string
+          city: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          latitude: number
+          longitude: number
+          name: string
+          name_he?: string | null
+          phone?: string | null
+          subcategory?: string | null
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          category?: string
+          city?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          latitude?: number
+          longitude?: number
+          name?: string
+          name_he?: string | null
+          phone?: string | null
+          subcategory?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
       market_insight_cache: {
         Row: {
           created_at: string

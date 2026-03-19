@@ -7,6 +7,7 @@ import { DrawControl } from './DrawControl';
 import { TrainStationLayer } from './TrainStationLayer';
 import { SavedPlacesLayer } from './SavedPlacesLayer';
 import { CityAnchorsLayer } from './CityAnchorsLayer';
+import { POILayer } from './POILayer';
 import { NeighborhoodBoundariesLayer } from './NeighborhoodBoundariesLayer';
 import { NeighborhoodChips } from './NeighborhoodChips';
 import { SearchThisAreaButton } from './SearchThisAreaButton';
@@ -260,6 +261,13 @@ export function PropertyMap({
   const isActiveProject = activePropertyId?.startsWith('project-') ?? false;
   const showNeighborhoods = activeLayers.has('neighborhoods') && zoom >= 13;
 
+  const activePoiCategories = useMemo(() => {
+    const cats: string[] = [];
+    if (activeLayers.has('shuls')) cats.push('shul');
+    if (activeLayers.has('schools')) cats.push('school');
+    return cats;
+  }, [activeLayers]);
+
   if (!isLoaded) {
     return <div className="h-full w-full bg-muted animate-pulse" />;
   }
@@ -298,6 +306,10 @@ export function PropertyMap({
         {map && activeLayers.has('trains') && <TrainStationLayer map={map} bounds={currentBounds} />}
         {map && activeLayers.has('saved') && <SavedPlacesLayer map={map} bounds={currentBounds} />}
         {map && activeLayers.has('landmarks') && <CityAnchorsLayer map={map} cityFilter={cityFilter} bounds={currentBounds} />}
+
+        {map && activePoiCategories.length > 0 && (
+          <POILayer map={map} bounds={currentBounds} activeCategories={activePoiCategories} />
+        )}
 
         {map && showNeighborhoods && (
           <NeighborhoodBoundariesLayer map={map} city={cityFilter} highlightedNeighborhood={selectedNeighborhood} />
