@@ -180,10 +180,10 @@ export function GoogleMiniMap({
             position={{ lat: selectedPOI.lat, lng: selectedPOI.lng }}
             onCloseClick={() => setSelectedPOI(null)}
           >
-            <div className="p-1">
-              <strong className="block text-sm">{selectedPOI.name}</strong>
-              <span className="text-xs text-gray-500">{selectedPOI.category}</span>
-            </div>
+            <MapInfoCard
+              name={selectedPOI.name}
+              subtitle={selectedPOI.category}
+            />
           </InfoWindow>
         )}
       </GoogleMap>
