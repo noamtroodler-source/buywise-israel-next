@@ -54,6 +54,7 @@ async function geocodeAddress(address: string, city: string, neighborhood?: stri
     if (r) return r;
   }
   for (const q of variations) {
+    await new Promise(resolve => setTimeout(resolve, 1100)); // Nominatim: max 1 req/sec
     const r = await geocodeWithNominatim(q);
     if (r) return r;
   }
