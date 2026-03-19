@@ -10,9 +10,9 @@ function isWithinIsrael(lat: number, lng: number): boolean {
 }
 
 async function geocodeWithGoogle(query: string): Promise<{ lat: number; lng: number; source: string } | null> {
-  const apiKey = Deno.env.get("GOOGLE_GEOCODING_API_KEY");
+  const apiKey = Deno.env.get("GOOGLE_GEOCODING_API_KEY") || Deno.env.get("GOOGLE_MAPS_API_KEY");
   if (!apiKey) {
-    console.warn("GOOGLE_GEOCODING_API_KEY not set, skipping Google geocoding");
+    console.error("Neither GOOGLE_GEOCODING_API_KEY nor GOOGLE_MAPS_API_KEY is set");
     return null;
   }
   try {
