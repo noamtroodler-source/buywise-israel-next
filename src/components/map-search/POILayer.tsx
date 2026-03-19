@@ -28,6 +28,13 @@ const CATEGORY_LABELS: Record<string, string> = {
   restaurant: '🍽️',
 };
 
+const ENGLISH_LEVEL_COLORS: Record<string, string> = {
+  'Anglo Hub': '#16a34a',
+  'English Primary': '#2563eb',
+  'English Friendly': '#7c3aed',
+  'English Available': '#6b7280',
+};
+
 export function POILayer({ map, bounds, activeCategories }: POILayerProps) {
   const { data: pois = [] } = useMapPois(activeCategories);
   const [selected, setSelected] = useState<MapPoi | null>(null);
