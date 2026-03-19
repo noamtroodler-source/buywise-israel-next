@@ -25,6 +25,7 @@ export default function SoldTransactionsAdmin() {
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [isSeeding, setIsSeeding] = useState(false);
   const [clearExistingOnSeed, setClearExistingOnSeed] = useState(false);
+  const [batchGeocodeProgress, setBatchGeocodeProgress] = useState<{ geocoded: number; failed: number; remaining: number } | null>(null);
 
   // Fetch cities
   const { data: cities } = useQuery({
@@ -133,7 +134,29 @@ export default function SoldTransactionsAdmin() {
     },
   });
 
-  // Seed mutation
+  // Batch geocode mutation (parallel, larger batches)
+  const batchGeocodeMutation = useMutation({
+    mutationFn: async () => {
+      const response = await supabase.functions.invoke('batch-geocode-sold', {
+        body: {
+          city: selectedCity || undefined,
+          batchSize: 200,
+        },
+      });
+      if (response.error) throw response.error;
+      return response.data;
+    },
+    onSuccess: (data) => {
+      setBatchGeocodeProgress({ geocoded: data.geocoded, failed: data.failed, remaining: data.remaining });
+      toast.success(`Batch geocoded ${data.geocoded}/${data.total} transactions. ${data.remaining} remaining.`);
+      queryClient.invalidateQueries({ queryKey: ['sold-transactions-stats'] });
+    },
+    onError: (error) => {
+      toast.error(`Batch geocoding failed: ${error.message}`);
+    },
+  });
+
+
   const seedMutation = useMutation({
     mutationFn: async (options: { clearExisting: boolean }) => {
       const response = await supabase.functions.invoke('seed-sold-transactions', {
@@ -380,7 +403,7 @@ export default function SoldTransactionsAdmin() {
               </Select>
             </div>
 
-            <div className="pt-6">
+            <div className="pt-6 flex items-center gap-3">
               <Button onClick={handleGeocode} disabled={isGeocoding || stats?.pendingGeocode === 0}>
                 {isGeocoding ? (
                   <>
@@ -394,7 +417,31 @@ export default function SoldTransactionsAdmin() {
                   </>
                 )}
               </Button>
+
+              <Button
+                variant="secondary"
+                onClick={() => batchGeocodeMutation.mutate()}
+                disabled={batchGeocodeMutation.isPending || stats?.pendingGeocode === 0}
+              >
+                {batchGeocodeMutation.isPending ? (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                    Batch Geocoding (200)...
+                  </>
+                ) : (
+                  <>
+                    <MapPin className="mr-2 h-4 w-4" />
+                    Batch Geocode 200 (Parallel)
+                  </>
+                )}
+              </Button>
             </div>
+
+            {batchGeocodeProgress && (
+              <p className="text-sm text-muted-foreground mt-2">
+                Last batch: {batchGeocodeProgress.geocoded} geocoded, {batchGeocodeProgress.failed} failed, {batchGeocodeProgress.remaining} remaining
+              </p>
+            )}
           </div>
 
           {stats?.pendingGeocode === 0 && (
