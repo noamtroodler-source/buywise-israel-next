@@ -1,40 +1,49 @@
 
 
-# Import 22 New Shuls (Phase 3) into map_pois
+# Standardize Map Layer Popup Cards to BuyWise Brand
 
-## Overview
-Insert 22 new shul records from the uploaded CSV into the `map_pois` table. No duplicates exist with current data.
+## Problem
+All 5 InfoWindow popup cards (POI, Train Stations, Saved Places, City Anchors, GoogleMiniMap) use raw unstyled HTML inside Google's default InfoWindow bubble. They have inconsistent padding, no brand colors, hardcoded gray text colors, and no visual hierarchy matching the platform's design system.
 
-## Data Mapping
+## Design Standards to Apply
+- **Font**: Inter (already loaded globally, but InfoWindows render in a Google iframe — need inline styles)
+- **Colors**: Use brand primary (`#0472E6`) for links/CTAs, neutral grays from the design system
+- **Typography**: Consistent sizing — name as `font-semibold`, Hebrew name as secondary, metadata as muted
+- **English Level badge**: Use brand-consistent pill with proper spacing
+- **Links**: Styled with primary blue, not default browser link color
+- **Layout**: Consistent `max-w-[240px]`, `p-2` padding, `space-y-1` vertical rhythm across all cards
+- **Category icon**: Show a small colored dot or category label at the top for POIs
+- **"International buyers"**: Replace any "Anglo" text in description content (brand voice standard)
 
-| CSV Column | DB Column |
-|------------|-----------|
-| NAME | name |
-| CATEGORY | category (lowercase: "shul") |
-| SUBCATEGORY | subcategory |
-| STREET_ADDRESS | address |
-| CITY | city |
-| PHONE | phone |
-| WEBSITE | website |
-| DENOMINATION_OR_SPECIALTY | denomination |
-| ENGLISH_LEVEL | english_level |
-| NOTES | description |
-| SOURCE_URL | source_url |
+## Changes
 
-- `geocode_status` defaults to `'pending'`
-- `latitude`/`longitude` left null — will be geocoded by the existing `geocode-pois` edge function after insert
+### 1. Create shared `MapInfoCard` component
+**New file: `src/components/map-search/MapInfoCard.tsx`**
 
-## Steps
+A reusable wrapper that provides consistent styling for all InfoWindow content:
+- Consistent padding (`p-2`), max-width (`max-w-[240px]`)
+- Font family forced to Inter via inline style (Google InfoWindow iframe)
+- Title row: name (semibold) + optional Hebrew name below
+- Optional subtitle slot (subcategory, denomination)
+- Optional badge slot (english level)
+- Optional description (truncated)
+- Optional address line
+- Optional action links row (phone, website)
 
-1. **Insert 22 rows** into `map_pois` using the insert tool with proper field mapping (category lowercased to "shul", empty phone/website stored as null)
-2. **Trigger geocoding** by invoking the `geocode-pois` edge function to fill in lat/lng for the new entries
+### 2. Update `POILayer.tsx` InfoWindow content
+Replace inline markup with `MapInfoCard`, passing all fields as props. The card will handle layout and styling consistently.
 
-## Cities Covered
-- Beit Shemesh (7 shuls)
-- Jerusalem (12 shuls)
-- Netanya (1 shul)
-- Ra'anana (1 shul)
-- Rehovot (2 shuls — one has address needing verification)
+### 3. Update `TrainStationLayer.tsx` InfoWindow content
+Use `MapInfoCard` with name + Hebrew name. Add a small train icon or "Train Station" subtitle for context.
 
-No schema changes needed. No code changes needed.
+### 4. Update `SavedPlacesLayer.tsx` InfoWindow content
+Use `MapInfoCard` with label + address.
+
+### 5. Update `CityAnchorsLayer.tsx` InfoWindow content
+Use `MapInfoCard` with name, Hebrew name, description.
+
+### 6. Update `GoogleMiniMap.tsx` InfoWindow content
+Use `MapInfoCard` with name + category subtitle.
+
+All popup cards will share identical visual treatment — clean, branded, consistent with the platform's "warm professional" voice.
 
