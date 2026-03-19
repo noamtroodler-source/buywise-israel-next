@@ -6,6 +6,33 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+async function geocodeNominatim(address: string, city: string): Promise<{ lat: number; lng: number } | null> {
+  const query = `${address}, ${city}, Israel`;
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&countrycodes=il`;
+  
+  const resp = await fetch(url, {
+    headers: { "User-Agent": "BuyWiseIsrael/1.0 (poi-import)" },
+  });
+  const data = await resp.json();
+  
+  if (data && data.length > 0) {
+    return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+  }
+  
+  // Fallback: try city-only geocoding
+  const cityUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city + ", Israel")}&format=json&limit=1&countrycodes=il`;
+  const cityResp = await fetch(cityUrl, {
+    headers: { "User-Agent": "BuyWiseIsrael/1.0 (poi-import)" },
+  });
+  const cityData = await cityResp.json();
+  
+  if (cityData && cityData.length > 0) {
+    return { lat: parseFloat(cityData[0].lat), lng: parseFloat(cityData[0].lon) };
+  }
+  
+  return null;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -13,16 +40,15 @@ Deno.serve(async (req) => {
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  const googleKey = Deno.env.get("GOOGLE_MAPS_API_KEY")!;
   const supabase = createClient(supabaseUrl, serviceKey);
 
-  // Get POIs with failed/pending geocoding
+  // Get POIs needing geocoding
   const { data: pois, error } = await supabase
     .from("map_pois")
     .select("id, name, address, city")
     .in("geocode_status", ["failed", "pending"])
     .not("address", "is", null)
-    .limit(50);
+    .limit(30); // Nominatim rate limit: 1 req/sec
 
   if (error) {
     return new Response(JSON.stringify({ error: error.message }), {
@@ -42,39 +68,29 @@ Deno.serve(async (req) => {
   let failed = 0;
 
   for (const poi of pois) {
-    const query = `${poi.address}, ${poi.city}, Israel`;
-    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&key=${googleKey}`;
+    const result = await geocodeNominatim(poi.address, poi.city);
 
-    try {
-      const resp = await fetch(url);
-      const data = await resp.json();
-
-      if (data.status === "OK" && data.results?.length > 0) {
-        const loc = data.results[0].geometry.location;
-        await supabase
-          .from("map_pois")
-          .update({
-            latitude: loc.lat,
-            longitude: loc.lng,
-            geocode_status: "success",
-          })
-          .eq("id", poi.id);
-        success++;
-      } else {
-        await supabase
-          .from("map_pois")
-          .update({ geocode_status: "failed" })
-          .eq("id", poi.id);
-        failed++;
-        console.log(`Failed: ${poi.name} (${data.status}: ${data.error_message || "no results"})`);
-      }
-    } catch (e) {
+    if (result) {
+      await supabase
+        .from("map_pois")
+        .update({
+          latitude: result.lat,
+          longitude: result.lng,
+          geocode_status: "success",
+        })
+        .eq("id", poi.id);
+      success++;
+    } else {
+      await supabase
+        .from("map_pois")
+        .update({ geocode_status: "manual" })
+        .eq("id", poi.id);
       failed++;
-      console.error(`Error geocoding ${poi.name}:`, e);
+      console.log(`Failed: ${poi.name} - ${poi.address}, ${poi.city}`);
     }
 
-    // Rate limit
-    await new Promise((r) => setTimeout(r, 100));
+    // Nominatim requires 1 second between requests
+    await new Promise((r) => setTimeout(r, 1100));
   }
 
   // Count remaining
@@ -84,7 +100,7 @@ Deno.serve(async (req) => {
     .in("geocode_status", ["failed", "pending"]);
 
   return new Response(
-    JSON.stringify({ success, failed, remaining: count }),
+    JSON.stringify({ success, failed, remaining: count, batch_size: pois.length }),
     { headers: { ...corsHeaders, "Content-Type": "application/json" } }
   );
 });
