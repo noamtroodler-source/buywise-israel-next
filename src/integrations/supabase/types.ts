@@ -3157,13 +3157,17 @@ export type Database = {
           category: string
           city: string
           created_at: string
+          denomination: string | null
           description: string | null
+          english_level: string | null
+          geocode_status: string
           id: string
-          latitude: number
-          longitude: number
+          latitude: number | null
+          longitude: number | null
           name: string
           name_he: string | null
           phone: string | null
+          source_url: string | null
           subcategory: string | null
           website: string | null
         }
@@ -3172,13 +3176,17 @@ export type Database = {
           category: string
           city: string
           created_at?: string
+          denomination?: string | null
           description?: string | null
+          english_level?: string | null
+          geocode_status?: string
           id?: string
-          latitude: number
-          longitude: number
+          latitude?: number | null
+          longitude?: number | null
           name: string
           name_he?: string | null
           phone?: string | null
+          source_url?: string | null
           subcategory?: string | null
           website?: string | null
         }
@@ -3187,13 +3195,17 @@ export type Database = {
           category?: string
           city?: string
           created_at?: string
+          denomination?: string | null
           description?: string | null
+          english_level?: string | null
+          geocode_status?: string
           id?: string
-          latitude?: number
-          longitude?: number
+          latitude?: number | null
+          longitude?: number | null
           name?: string
           name_he?: string | null
           phone?: string | null
+          source_url?: string | null
           subcategory?: string | null
           website?: string | null
         }
