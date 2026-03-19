@@ -35,6 +35,10 @@ const ENGLISH_LEVEL_COLORS: Record<string, string> = {
   'English Available': '#6b7280',
 };
 
+function truncate(text: string, max: number) {
+  return text.length > max ? text.slice(0, max).trimEnd() + '…' : text;
+}
+
 export function POILayer({ map, bounds, activeCategories }: POILayerProps) {
   const { data: pois = [] } = useMapPois(activeCategories);
   const [selected, setSelected] = useState<MapPoi | null>(null);
@@ -47,13 +51,34 @@ export function POILayer({ map, bounds, activeCategories }: POILayerProps) {
     return () => google.maps.event.removeListener(listener);
   }, [map]);
 
+  // Clear selected POI when categories change (prevents orphaned InfoWindows)
+  useEffect(() => {
+    setSelected(null);
+  }, [activeCategories]);
+
   const visiblePois = useMemo(() => {
-    if (zoom < 13) return []; // Only show at neighborhood zoom
+    if (zoom < 13) return [];
     const withCoords = pois.filter((p) => p.latitude && p.longitude);
-    if (!bounds) return withCoords;
-    return withCoords.filter((p) =>
+    if (!bounds) return withCoords.slice(0, 150);
+
+    const inBounds = withCoords.filter((p) =>
       bounds.contains(new google.maps.LatLng(p.latitude, p.longitude))
     );
+
+    // Cap at 150 markers, prioritizing those closest to center
+    if (inBounds.length > 150) {
+      const center = bounds.getCenter();
+      const cLat = center.lat();
+      const cLng = center.lng();
+      inBounds.sort((a, b) => {
+        const dA = (a.latitude - cLat) ** 2 + (a.longitude - cLng) ** 2;
+        const dB = (b.latitude - cLat) ** 2 + (b.longitude - cLng) ** 2;
+        return dA - dB;
+      });
+      return inBounds.slice(0, 150);
+    }
+
+    return inBounds;
   }, [bounds, pois, zoom]);
 
   const handleClose = useCallback(() => setSelected(null), []);
@@ -92,6 +117,9 @@ export function POILayer({ map, bounds, activeCategories }: POILayerProps) {
             {selected.name_he && (
               <div className="text-xs text-gray-500">{selected.name_he}</div>
             )}
+            {selected.subcategory && (
+              <div className="text-xs text-gray-400 mt-0.5">{selected.subcategory}</div>
+            )}
             {selected.denomination && (
               <div className="text-xs text-gray-500 mt-0.5">{selected.denomination}</div>
             )}
@@ -107,7 +135,7 @@ export function POILayer({ map, bounds, activeCategories }: POILayerProps) {
               </span>
             )}
             {selected.description && (
-              <div className="text-xs text-gray-500 mt-0.5">{selected.description}</div>
+              <div className="text-xs text-gray-500 mt-0.5">{truncate(selected.description, 120)}</div>
             )}
             {selected.address && (
               <div className="text-xs text-gray-400 mt-0.5">{selected.address}</div>
