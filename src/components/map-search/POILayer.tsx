@@ -1,6 +1,7 @@
 import { useMemo, useState, useCallback, useEffect } from 'react';
 import { Marker, InfoWindow } from '@react-google-maps/api';
 import { useMapPois, MapPoi } from '@/hooks/useMapPois';
+import { MapInfoCard } from './MapInfoCard';
 
 interface POILayerProps {
   map: google.maps.Map;
