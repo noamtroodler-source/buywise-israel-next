@@ -22,6 +22,9 @@ async function geocodeWithGoogle(query: string): Promise<{ lat: number; lng: num
     if (data.status === "OK" && data.results?.[0]) {
       const { lat, lng } = data.results[0].geometry.location;
       if (isWithinIsrael(lat, lng)) return { lat, lng, source: "google_maps" };
+      console.warn(`Google result outside Israel: ${lat},${lng} for "${query}"`);
+    } else if (data.status !== "ZERO_RESULTS") {
+      console.warn(`Google geocode status: ${data.status} for "${query}" - ${data.error_message || ''}`);
     }
   } catch (e) { console.error("Google error:", e); }
   return null;
