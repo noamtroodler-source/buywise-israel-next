@@ -87,10 +87,24 @@ export function POILayer({ map, bounds, activeCategories }: POILayerProps) {
           position={{ lat: selected.latitude, lng: selected.longitude }}
           onCloseClick={handleClose}
         >
-          <div className="p-1 max-w-[200px]">
+          <div className="p-1 max-w-[220px]">
             <div className="text-sm font-medium">{selected.name}</div>
             {selected.name_he && (
               <div className="text-xs text-gray-500">{selected.name_he}</div>
+            )}
+            {selected.denomination && (
+              <div className="text-xs text-gray-500 mt-0.5">{selected.denomination}</div>
+            )}
+            {selected.english_level && (
+              <span
+                className="inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded mt-1"
+                style={{
+                  backgroundColor: `${ENGLISH_LEVEL_COLORS[selected.english_level] || '#6b7280'}20`,
+                  color: ENGLISH_LEVEL_COLORS[selected.english_level] || '#6b7280',
+                }}
+              >
+                {selected.english_level}
+              </span>
             )}
             {selected.description && (
               <div className="text-xs text-gray-500 mt-0.5">{selected.description}</div>
@@ -105,7 +119,7 @@ export function POILayer({ map, bounds, activeCategories }: POILayerProps) {
             )}
             {selected.website && (
               <a
-                href={selected.website}
+                href={selected.website.startsWith('http') ? selected.website : `https://${selected.website}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs text-primary mt-0.5 block"

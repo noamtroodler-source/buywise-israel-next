@@ -265,6 +265,9 @@ export function PropertyMap({
     const cats: string[] = [];
     if (activeLayers.has('shuls')) cats.push('shul');
     if (activeLayers.has('schools')) cats.push('school');
+    if (activeLayers.has('medical')) cats.push('medical');
+    if (activeLayers.has('mikvehs')) cats.push('mikveh');
+    if (activeLayers.has('grocery')) cats.push('grocery');
     return cats;
   }, [activeLayers]);
 
