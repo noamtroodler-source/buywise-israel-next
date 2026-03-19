@@ -7,6 +7,7 @@ import { DrawControl } from './DrawControl';
 import { TrainStationLayer } from './TrainStationLayer';
 import { SavedPlacesLayer } from './SavedPlacesLayer';
 import { CityAnchorsLayer } from './CityAnchorsLayer';
+import { POILayer } from './POILayer';
 import { NeighborhoodBoundariesLayer } from './NeighborhoodBoundariesLayer';
 import { NeighborhoodChips } from './NeighborhoodChips';
 import { SearchThisAreaButton } from './SearchThisAreaButton';
