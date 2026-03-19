@@ -99,6 +99,82 @@ const TOOLS = [
       },
     },
   },
+  {
+    type: "function" as const,
+    function: {
+      name: "compare_areas",
+      description: "Compare two cities side by side. Use when a user asks to compare cities, is deciding between areas, or asks 'X vs Y'. Returns price/sqm, yields, commute, lifestyle, arnona, anglo presence.",
+      parameters: {
+        type: "object",
+        properties: {
+          city_a: { type: "string", description: "First city name" },
+          city_b: { type: "string", description: "Second city name" },
+        },
+        required: ["city_a", "city_b"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "get_listing_details",
+      description: "Get full details about a specific property listing by its ID. Use when a user asks 'tell me more about that one', clicks a listing, or asks a follow-up about a specific property.",
+      parameters: {
+        type: "object",
+        properties: {
+          property_id: { type: "string", description: "UUID of the property" },
+        },
+        required: ["property_id"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "calculate_purchase_tax",
+      description: "Calculate Israeli purchase tax (mas rechisha) for a given price and buyer type. Use when users ask about purchase tax, how much tax they'll pay, or tax savings.",
+      parameters: {
+        type: "object",
+        properties: {
+          price: { type: "number", description: "Property price in ILS" },
+          buyer_type: { type: "string", enum: ["first_time", "oleh", "upgrader", "investor", "foreign", "company"], description: "Buyer category. first_time = first apartment, oleh = new immigrant within 7 years, upgrader = selling existing within 18 months, investor = additional property, foreign = non-resident, company = corporate." },
+        },
+        required: ["price", "buyer_type"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "get_neighborhood_profile",
+      description: "Get detailed neighborhood information including narrative, reputation, best-for, anglo community, daily life, and honest tradeoffs. Use when users ask 'what's X neighborhood like?' or want neighborhood-level detail.",
+      parameters: {
+        type: "object",
+        properties: {
+          city: { type: "string", description: "City name" },
+          neighborhood: { type: "string", description: "Neighborhood name" },
+        },
+        required: ["city", "neighborhood"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "get_user_saved_listings",
+      description: "Get the authenticated user's saved/favorited listings. Use when users ask about their saved properties, want to compare their favorites, or ask 'anything new like my saved ones?'. Only works for logged-in users.",
+      parameters: {
+        type: "object",
+        properties: {},
+        required: [],
+        additionalProperties: false,
+      },
+    },
+  },
 ];
 
 // ─── Tool Executors ─────────────────────────────────────────────────────────
@@ -185,7 +261,6 @@ async function executeSearchProjects(supabase: any, args: any): Promise<string> 
 }
 
 async function executeGetCityStats(supabase: any, args: any): Promise<string> {
-  // Get city data
   const { data: city } = await supabase
     .from("cities")
     .select("name, average_price, average_price_sqm, yoy_price_change, median_apartment_price, gross_yield_percent, rental_3_room_min, rental_3_room_max, rental_4_room_min, rental_4_room_max, population, socioeconomic_rank, commute_time_tel_aviv, commute_time_jerusalem, arnona_rate_sqm, average_vaad_bayit, identity_sentence, highlights")
@@ -195,7 +270,6 @@ async function executeGetCityStats(supabase: any, args: any): Promise<string> {
 
   if (!city) return `No city data found for "${args.city_name}". Try a different city name.`;
 
-  // Get recent price history
   const { data: priceHistory } = await supabase
     .from("city_price_history")
     .select("year, quarter, rooms, avg_price_nis")
@@ -204,7 +278,6 @@ async function executeGetCityStats(supabase: any, args: any): Promise<string> {
     .order("quarter", { ascending: false })
     .limit(8);
 
-  // Count active listings
   const { count: listingCount } = await supabase
     .from("properties")
     .select("id", { count: "exact", head: true })
@@ -234,7 +307,6 @@ async function executeGetCityStats(supabase: any, args: any): Promise<string> {
 }
 
 async function executeGetNearbyComps(supabase: any, args: any): Promise<string> {
-  // If we have lat/lng, use the DB function
   if (args.latitude && args.longitude) {
     const { data, error } = await supabase.rpc("get_nearby_sold_comps", {
       p_lat: args.latitude,
@@ -265,7 +337,6 @@ async function executeGetNearbyComps(supabase: any, args: any): Promise<string> 
     });
   }
 
-  // Fallback: just query sold_transactions by city
   const { data, error } = await supabase
     .from("sold_transactions")
     .select("sold_price, sold_date, rooms, size_sqm, property_type, price_per_sqm, neighborhood")
@@ -279,12 +350,316 @@ async function executeGetNearbyComps(supabase: any, args: any): Promise<string> 
   return JSON.stringify({ count: data.length, comps: data });
 }
 
-async function executeTool(supabase: any, toolName: string, args: any): Promise<string> {
+// ─── NEW Tool Executors ─────────────────────────────────────────────────────
+
+async function executeCompareAreas(supabase: any, args: any): Promise<string> {
+  const { data: cities, error } = await supabase
+    .from("cities")
+    .select("name, slug, average_price, average_price_sqm, average_price_sqm_min, average_price_sqm_max, yoy_price_change, median_apartment_price, gross_yield_percent, gross_yield_percent_min, gross_yield_percent_max, net_yield_percent, rental_3_room_min, rental_3_room_max, rental_4_room_min, rental_4_room_max, population, socioeconomic_rank, commute_time_tel_aviv, commute_time_jerusalem, has_train_station, arnona_rate_sqm, arnona_rate_sqm_min, arnona_rate_sqm_max, average_vaad_bayit, average_vaad_bayit_min, average_vaad_bayit_max, anglo_presence, anglo_note, identity_sentence, highlights, card_description, region")
+    .or(`name.ilike.%${args.city_a}%,name.ilike.%${args.city_b}%`);
+
+  if (error) return `Error comparing areas: ${error.message}`;
+  if (!cities || cities.length < 2) return `Could not find data for both cities. Found: ${cities?.map((c: any) => c.name).join(', ') || 'none'}. Try exact city names.`;
+
+  // Match each input to closest result
+  const matchCity = (input: string) =>
+    cities.find((c: any) => c.name.toLowerCase().includes(input.toLowerCase())) || cities[0];
+
+  const a = matchCity(args.city_a);
+  const b = matchCity(args.city_b);
+
+  const formatCity = (c: any) => ({
+    name: c.name,
+    identity: c.identity_sentence,
+    region: c.region,
+    population: c.population,
+    socioeconomic_rank: c.socioeconomic_rank,
+    avg_price: c.average_price,
+    price_per_sqm: c.average_price_sqm,
+    price_per_sqm_range: c.average_price_sqm_min && c.average_price_sqm_max ? `₪${c.average_price_sqm_min.toLocaleString()}-${c.average_price_sqm_max.toLocaleString()}` : null,
+    yoy_change: c.yoy_price_change,
+    median_apartment: c.median_apartment_price,
+    gross_yield: c.gross_yield_percent,
+    gross_yield_range: c.gross_yield_percent_min && c.gross_yield_percent_max ? `${c.gross_yield_percent_min}%-${c.gross_yield_percent_max}%` : null,
+    rental_3br: c.rental_3_room_min && c.rental_3_room_max ? `₪${c.rental_3_room_min}-${c.rental_3_room_max}` : null,
+    rental_4br: c.rental_4_room_min && c.rental_4_room_max ? `₪${c.rental_4_room_min}-${c.rental_4_room_max}` : null,
+    commute_tel_aviv_min: c.commute_time_tel_aviv,
+    commute_jerusalem_min: c.commute_time_jerusalem,
+    has_train: c.has_train_station,
+    arnona_per_sqm: c.arnona_rate_sqm,
+    vaad_bayit: c.average_vaad_bayit,
+    anglo_presence: c.anglo_presence,
+    anglo_note: c.anglo_note,
+    highlights: c.highlights,
+    link: `/areas/${c.slug}`,
+  });
+
+  return JSON.stringify({ city_a: formatCity(a), city_b: formatCity(b) });
+}
+
+async function executeGetListingDetails(supabase: any, args: any): Promise<string> {
+  const { data: p, error } = await supabase
+    .from("properties")
+    .select("id, title, description, city, neighborhood, address, price, original_price, currency, bedrooms, bathrooms, size_sqm, lot_size_sqm, property_type, listing_status, condition, floor, total_floors, year_built, features, parking, ac_type, is_furnished, furnished_status, furniture_items, is_accessible, entry_date, vaad_bayit_monthly, allows_pets, pets_policy, lease_term, subletting_allowed, agent_fee_required, bank_guarantee_required, checks_required, featured_highlight, images, created_at, price_reduced_at, agent_id")
+    .eq("id", args.property_id)
+    .maybeSingle();
+
+  if (error) return `Error fetching property: ${error.message}`;
+  if (!p) return `Property not found with ID ${args.property_id}. It may have been removed.`;
+
+  // Fetch agent info
+  let agentInfo = null;
+  if (p.agent_id) {
+    const { data: agent } = await supabase
+      .from("agents")
+      .select("name, agency_name, phone, email, languages, years_experience, is_verified")
+      .eq("id", p.agent_id)
+      .maybeSingle();
+    if (agent) {
+      agentInfo = {
+        name: agent.name,
+        agency: agent.agency_name,
+        languages: agent.languages,
+        experience_years: agent.years_experience,
+        verified: agent.is_verified,
+      };
+    }
+  }
+
+  const result: any = {
+    id: p.id,
+    title: p.title,
+    description: p.description?.slice(0, 500),
+    city: p.city,
+    neighborhood: p.neighborhood,
+    address: p.address,
+    price: p.price,
+    currency: p.currency || "ILS",
+    original_price: p.original_price,
+    price_reduced: p.price_reduced_at ? true : false,
+    price_drop_percent: p.original_price && p.price < p.original_price
+      ? Math.round((1 - p.price / p.original_price) * 100)
+      : null,
+    bedrooms: p.bedrooms,
+    bathrooms: p.bathrooms,
+    size_sqm: p.size_sqm,
+    lot_size_sqm: p.lot_size_sqm,
+    property_type: p.property_type,
+    listing_status: p.listing_status,
+    condition: p.condition,
+    floor: p.floor,
+    total_floors: p.total_floors,
+    year_built: p.year_built,
+    features: p.features,
+    parking: p.parking,
+    ac_type: p.ac_type,
+    furnished: p.furnished_status || (p.is_furnished ? "yes" : "no"),
+    furniture_items: p.furniture_items,
+    accessible: p.is_accessible,
+    entry_date: p.entry_date,
+    vaad_bayit: p.vaad_bayit_monthly,
+    pets: p.pets_policy || p.allows_pets,
+    lease_term: p.lease_term,
+    subletting: p.subletting_allowed,
+    agent_fee: p.agent_fee_required,
+    bank_guarantee: p.bank_guarantee_required,
+    checks_required: p.checks_required,
+    highlight: p.featured_highlight,
+    images_count: p.images?.length || 0,
+    listed_at: p.created_at,
+    agent: agentInfo,
+    link: `/property/${p.id}`,
+  };
+
+  return JSON.stringify(result);
+}
+
+async function executeCalculatePurchaseTax(supabase: any, args: any): Promise<string> {
+  const { price, buyer_type } = args;
+
+  // Fetch current brackets from DB
+  const { data: brackets, error } = await supabase
+    .from("purchase_tax_brackets")
+    .select("bracket_min, bracket_max, rate_percent")
+    .eq("buyer_type", buyer_type)
+    .eq("is_current", true)
+    .order("bracket_min", { ascending: true });
+
+  if (error) return `Error fetching tax brackets: ${error.message}`;
+
+  // Fallback brackets if DB is empty
+  const effectiveBrackets = brackets?.length ? brackets : getFallbackBrackets(buyer_type);
+
+  let totalTax = 0;
+  let remainingPrice = price;
+  const breakdown: any[] = [];
+
+  for (const bracket of effectiveBrackets) {
+    if (remainingPrice <= 0) break;
+    const bracketMax = bracket.bracket_max ?? Infinity;
+    const bracketSize = bracketMax - bracket.bracket_min;
+    const taxableAmount = Math.min(remainingPrice, bracketSize);
+    const rate = bracket.rate_percent / 100;
+    const taxAmount = Math.round(taxableAmount * rate);
+
+    breakdown.push({
+      range: `₪${bracket.bracket_min.toLocaleString()} – ${bracket.bracket_max ? `₪${bracket.bracket_max.toLocaleString()}` : "above"}`,
+      rate: `${bracket.rate_percent}%`,
+      taxable: taxableAmount,
+      tax: taxAmount,
+    });
+
+    totalTax += taxAmount;
+    remainingPrice -= taxableAmount;
+  }
+
+  const effectiveRate = price > 0 ? Math.round((totalTax / price) * 10000) / 100 : 0;
+
+  // Compare with investor rate for savings
+  let investorTax = 0;
+  if (buyer_type !== "investor" && buyer_type !== "foreign" && buyer_type !== "company") {
+    const investorBrackets = getFallbackBrackets("investor");
+    let rem = price;
+    for (const b of investorBrackets) {
+      if (rem <= 0) break;
+      const bMax = b.bracket_max ?? Infinity;
+      const taxable = Math.min(rem, bMax - b.bracket_min);
+      investorTax += Math.round(taxable * (b.rate_percent / 100));
+      rem -= taxable;
+    }
+  }
+
+  return JSON.stringify({
+    price,
+    buyer_type,
+    total_tax: totalTax,
+    effective_rate_percent: effectiveRate,
+    breakdown,
+    savings_vs_investor: buyer_type !== "investor" ? Math.round(investorTax - totalTax) : 0,
+    note: "These are 2024 brackets. Consult a tax advisor for your specific situation.",
+    calculator_link: "/tools?tool=purchase-tax",
+  });
+}
+
+function getFallbackBrackets(buyerType: string) {
+  const brackets: Record<string, { bracket_min: number; bracket_max: number | null; rate_percent: number }[]> = {
+    first_time: [
+      { bracket_min: 0, bracket_max: 1978745, rate_percent: 0 },
+      { bracket_min: 1978745, bracket_max: 2347040, rate_percent: 3.5 },
+      { bracket_min: 2347040, bracket_max: 6055070, rate_percent: 5 },
+      { bracket_min: 6055070, bracket_max: 20183560, rate_percent: 8 },
+      { bracket_min: 20183560, bracket_max: null, rate_percent: 10 },
+    ],
+    oleh: [
+      { bracket_min: 0, bracket_max: 1978745, rate_percent: 0 },
+      { bracket_min: 1978745, bracket_max: 6055070, rate_percent: 0.5 },
+      { bracket_min: 6055070, bracket_max: 20183560, rate_percent: 8 },
+      { bracket_min: 20183560, bracket_max: null, rate_percent: 10 },
+    ],
+    upgrader: [
+      { bracket_min: 0, bracket_max: 1978745, rate_percent: 0 },
+      { bracket_min: 1978745, bracket_max: 2347040, rate_percent: 3.5 },
+      { bracket_min: 2347040, bracket_max: 6055070, rate_percent: 5 },
+      { bracket_min: 6055070, bracket_max: 20183560, rate_percent: 8 },
+      { bracket_min: 20183560, bracket_max: null, rate_percent: 10 },
+    ],
+    investor: [
+      { bracket_min: 0, bracket_max: 6055070, rate_percent: 8 },
+      { bracket_min: 6055070, bracket_max: null, rate_percent: 10 },
+    ],
+    foreign: [
+      { bracket_min: 0, bracket_max: 6055070, rate_percent: 8 },
+      { bracket_min: 6055070, bracket_max: null, rate_percent: 10 },
+    ],
+    company: [
+      { bracket_min: 0, bracket_max: 6055070, rate_percent: 8 },
+      { bracket_min: 6055070, bracket_max: null, rate_percent: 10 },
+    ],
+  };
+  return brackets[buyerType] || brackets.investor;
+}
+
+async function executeGetNeighborhoodProfile(supabase: any, args: any): Promise<string> {
+  const { data: profile, error } = await supabase
+    .from("neighborhood_profiles")
+    .select("city, neighborhood, narrative, reputation, best_for, anglo_community, daily_life, honest_tradeoff, transit_mobility, schools_education, religious_life, dining_nightlife, green_spaces, safety_feel, avg_price_indicator, rental_indicator")
+    .ilike("city", `%${args.city}%`)
+    .ilike("neighborhood", `%${args.neighborhood}%`)
+    .limit(1)
+    .maybeSingle();
+
+  if (error) return `Error fetching neighborhood profile: ${error.message}`;
+  if (!profile) return `No detailed profile found for ${args.neighborhood} in ${args.city}. Try a different spelling or neighborhood name.`;
+
+  return JSON.stringify({
+    city: profile.city,
+    neighborhood: profile.neighborhood,
+    narrative: profile.narrative,
+    reputation: profile.reputation,
+    best_for: profile.best_for,
+    anglo_community: profile.anglo_community,
+    daily_life: profile.daily_life,
+    honest_tradeoff: profile.honest_tradeoff,
+    transit: profile.transit_mobility,
+    schools: profile.schools_education,
+    religious_life: profile.religious_life,
+    dining: profile.dining_nightlife,
+    green_spaces: profile.green_spaces,
+    safety: profile.safety_feel,
+    price_indicator: profile.avg_price_indicator,
+    rental_indicator: profile.rental_indicator,
+  });
+}
+
+async function executeGetUserSavedListings(supabase: any, _args: any, userId?: string): Promise<string> {
+  if (!userId) return "User is not logged in. Saved listings are only available for authenticated users. Suggest they sign up or log in.";
+
+  const { data: favorites, error } = await supabase
+    .from("favorites")
+    .select("property_id, created_at, properties:property_id(id, title, city, neighborhood, price, bedrooms, bathrooms, size_sqm, property_type, listing_status, condition, currency)")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(10);
+
+  if (error) return `Error fetching saved listings: ${error.message}`;
+  if (!favorites?.length) return "No saved listings found. The user hasn't favorited any properties yet.";
+
+  const results = favorites
+    .filter((f: any) => f.properties)
+    .map((f: any) => {
+      const p = f.properties;
+      return {
+        id: p.id,
+        title: p.title || `${p.bedrooms}BR ${p.property_type} in ${p.neighborhood || p.city}`,
+        city: p.city,
+        neighborhood: p.neighborhood,
+        price: p.price,
+        currency: p.currency || "ILS",
+        bedrooms: p.bedrooms,
+        size_sqm: p.size_sqm,
+        property_type: p.property_type,
+        listing_status: p.listing_status,
+        saved_at: f.created_at,
+        link: `/property/${p.id}`,
+      };
+    });
+
+  return JSON.stringify({ count: results.length, saved_listings: results });
+}
+
+// ─── Tool Router ────────────────────────────────────────────────────────────
+
+async function executeTool(supabase: any, toolName: string, args: any, userId?: string): Promise<string> {
   switch (toolName) {
     case "search_listings": return executeSearchListings(supabase, args);
     case "search_projects": return executeSearchProjects(supabase, args);
     case "get_city_stats": return executeGetCityStats(supabase, args);
     case "get_nearby_comps": return executeGetNearbyComps(supabase, args);
+    case "compare_areas": return executeCompareAreas(supabase, args);
+    case "get_listing_details": return executeGetListingDetails(supabase, args);
+    case "calculate_purchase_tax": return executeCalculatePurchaseTax(supabase, args);
+    case "get_neighborhood_profile": return executeGetNeighborhoodProfile(supabase, args);
+    case "get_user_saved_listings": return executeGetUserSavedListings(supabase, args, userId);
     default: return `Unknown tool: ${toolName}`;
   }
 }
@@ -298,9 +673,15 @@ You have access to tools that query BuyWise's live database of properties, proje
 - When a user asks about listings, apartments, prices, or wants to see what's available — ALWAYS call search_listings or search_projects first.
 - When a user asks about a city's market, prices, or trends — call get_city_stats.
 - When a user wants comparable sales for negotiation — call get_nearby_comps.
+- When a user compares two cities or asks "X vs Y" — call compare_areas with both city names.
+- When a user asks "tell me more" about a specific listing or references a property ID — call get_listing_details.
+- When a user asks about purchase tax or mas rechisha — call calculate_purchase_tax. Use their buyer profile data if available to pick the right buyer_type.
+- When a user asks what a neighborhood is like — call get_neighborhood_profile.
+- When an authenticated user asks about their saved/favorited properties — call get_user_saved_listings.
 - NEVER say "I don't have access to listings" — you DO. Use your tools.
 - When you get listing results, ALWAYS format them with markdown links: [Title](/property/id) or [Project Name](/projects/slug)
 - Include key details: price, bedrooms, neighborhood, size when available.
+- You can call MULTIPLE tools in one turn if needed. For example, compare_areas + search_listings to show listings in both cities.
 
 ## CRITICAL: Response Length Rules (NEVER violate these)
 - Your responses MUST be SHORT. Think text message, not essay.
@@ -489,6 +870,30 @@ async function buildSystemPrompt(
   return parts.join("\n");
 }
 
+// ─── Multi-tool Loop Helper ─────────────────────────────────────────────────
+
+async function executeToolRound(
+  serviceClient: any,
+  toolCalls: any[],
+  userId?: string,
+): Promise<any[]> {
+  return Promise.all(
+    toolCalls.map(async (tc: any) => {
+      const args = typeof tc.function.arguments === "string"
+        ? JSON.parse(tc.function.arguments)
+        : tc.function.arguments;
+
+      console.log(`Executing tool: ${tc.function.name}`, args);
+      const result = await executeTool(serviceClient, tc.function.name, args, userId);
+      return {
+        role: "tool" as const,
+        tool_call_id: tc.id,
+        content: result,
+      };
+    })
+  );
+}
+
 // ─── Main Handler ───────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
@@ -516,8 +921,22 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || "";
 
-    // Extract user token for profile injection
+    // Extract user token for profile injection & personalized tools
     const userToken = req.headers.get("x-user-token") || undefined;
+
+    // Resolve user ID for personalized tools
+    let userId: string | undefined;
+    if (userToken) {
+      try {
+        const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+          global: { headers: { Authorization: `Bearer ${userToken}` } },
+        });
+        const { data: { user } } = await userClient.auth.getUser();
+        userId = user?.id;
+      } catch (e) {
+        console.error("Failed to resolve user ID:", e);
+      }
+    }
 
     const systemPrompt = await buildSystemPrompt(pageContext || "", supabaseUrl, supabaseAnonKey, userToken);
 
@@ -568,7 +987,6 @@ Deno.serve(async (req) => {
 
     // ── Step 2: If no tool calls, stream the response directly ──
     if (!choice?.message?.tool_calls?.length) {
-      // The AI responded with content directly — re-request with streaming
       const streamResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -596,34 +1014,49 @@ Deno.serve(async (req) => {
       });
     }
 
-    // ── Step 3: Execute tool calls ──
+    // ── Step 3: Execute tool calls (up to 2 rounds for multi-tool chaining) ──
     const serviceClient = createClient(supabaseUrl, supabaseServiceKey);
-    const toolCalls = choice.message.tool_calls;
+    const MAX_TOOL_ROUNDS = 2;
 
-    // Add the assistant's tool_call message to history
+    // Round 1
     aiMessages.push(choice.message);
+    const round1Results = await executeToolRound(serviceClient, choice.message.tool_calls, userId);
+    aiMessages.push(...round1Results);
 
-    // Execute all tool calls in parallel
-    const toolResults = await Promise.all(
-      toolCalls.map(async (tc: any) => {
-        const args = typeof tc.function.arguments === "string"
-          ? JSON.parse(tc.function.arguments)
-          : tc.function.arguments;
+    // Check if AI wants another round of tools
+    let needsStreaming = true;
+    for (let round = 1; round < MAX_TOOL_ROUNDS; round++) {
+      const nextResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-3-flash-preview",
+          messages: aiMessages,
+          tools: TOOLS,
+          stream: false,
+        }),
+      });
 
-        console.log(`Executing tool: ${tc.function.name}`, args);
-        const result = await executeTool(serviceClient, tc.function.name, args);
-        return {
-          role: "tool" as const,
-          tool_call_id: tc.id,
-          content: result,
-        };
-      })
-    );
+      if (!nextResponse.ok) break;
 
-    // Add tool results to messages
-    aiMessages.push(...toolResults);
+      const nextResult = await nextResponse.json();
+      const nextChoice = nextResult.choices?.[0];
 
-    // ── Step 4: Stream the final response with tool results ──
+      if (!nextChoice?.message?.tool_calls?.length) {
+        // No more tool calls — done
+        break;
+      }
+
+      // Execute next round of tools
+      aiMessages.push(nextChoice.message);
+      const roundResults = await executeToolRound(serviceClient, nextChoice.message.tool_calls, userId);
+      aiMessages.push(...roundResults);
+    }
+
+    // ── Step 4: Stream the final response with all tool results ──
     const finalResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
