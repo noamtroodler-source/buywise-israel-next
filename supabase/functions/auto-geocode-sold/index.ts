@@ -10,8 +10,11 @@ function isWithinIsrael(lat: number, lng: number): boolean {
 }
 
 async function geocodeWithGoogle(query: string): Promise<{ lat: number; lng: number; source: string } | null> {
-  const apiKey = Deno.env.get("GOOGLE_MAPS_API_KEY");
-  if (!apiKey) return null;
+  const apiKey = Deno.env.get("GOOGLE_GEOCODING_API_KEY") || Deno.env.get("GOOGLE_MAPS_API_KEY");
+  if (!apiKey) {
+    console.error("Neither GOOGLE_GEOCODING_API_KEY nor GOOGLE_MAPS_API_KEY is set");
+    return null;
+  }
   try {
     const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&key=${apiKey}&region=il`;
     const res = await fetch(url);
@@ -19,6 +22,9 @@ async function geocodeWithGoogle(query: string): Promise<{ lat: number; lng: num
     if (data.status === "OK" && data.results?.[0]) {
       const { lat, lng } = data.results[0].geometry.location;
       if (isWithinIsrael(lat, lng)) return { lat, lng, source: "google_maps" };
+      console.warn(`Google result outside Israel: ${lat},${lng} for "${query}"`);
+    } else if (data.status !== "ZERO_RESULTS") {
+      console.warn(`Google geocode status: ${data.status} for "${query}" - ${data.error_message || ''}`);
     }
   } catch (e) { console.error("Google error:", e); }
   return null;
@@ -51,6 +57,7 @@ async function geocodeAddress(address: string, city: string, neighborhood?: stri
     if (r) return r;
   }
   for (const q of variations) {
+    await new Promise(resolve => setTimeout(resolve, 1100)); // Nominatim: max 1 req/sec
     const r = await geocodeWithNominatim(q);
     if (r) return r;
   }
@@ -87,7 +94,7 @@ Deno.serve(async (req) => {
       .from("sold_transactions")
       .select("id, address, city, neighborhood")
       .is("latitude", null)
-      .limit(200);
+      .limit(5);
 
     if (fetchError || !transactions || transactions.length === 0) {
       return new Response(JSON.stringify({
@@ -126,9 +133,9 @@ Deno.serve(async (req) => {
         else failed++;
       }
 
-      // Rate limit between chunks
+      // Rate limit: 200ms between Google chunks, 1.2s if hitting Nominatim
       if (i + 5 < transactions.length) {
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise(resolve => setTimeout(resolve, 300));
       }
     }
 
