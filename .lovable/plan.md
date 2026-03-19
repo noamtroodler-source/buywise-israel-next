@@ -1,34 +1,40 @@
 
 
-# POI Layer Polish Plan
+# Import 22 New Shuls (Phase 3) into map_pois
 
-## Status Check — What's Already Working
+## Overview
+Insert 22 new shul records from the uploaded CSV into the `map_pois` table. No duplicates exist with current data.
 
-- **368 POIs** all geocoded with valid coordinates, zero nulls
-- **No duplicates** found in the data
-- **RLS** is correctly configured (public SELECT policy, RLS enabled)
-- **LayersMenu** has all 5 POI toggles wired correctly
-- **POILayer** already filters by bounds and zoom >= 13, handles null coords, shows denomination/english_level badges, and fixes website URLs without `https://`
+## Data Mapping
 
-## What Needs Fixing
+| CSV Column | DB Column |
+|------------|-----------|
+| NAME | name |
+| CATEGORY | category (lowercase: "shul") |
+| SUBCATEGORY | subcategory |
+| STREET_ADDRESS | address |
+| CITY | city |
+| PHONE | phone |
+| WEBSITE | website |
+| DENOMINATION_OR_SPECIALTY | denomination |
+| ENGLISH_LEVEL | english_level |
+| NOTES | description |
+| SOURCE_URL | source_url |
 
-### 1. Truncate long descriptions in popups
-Some descriptions are up to 301 characters — too long for a compact InfoWindow. I'll add a 120-character truncation with "..." so popups stay tidy.
+- `geocode_status` defaults to `'pending'`
+- `latitude`/`longitude` left null — will be geocoded by the existing `geocode-pois` edge function after insert
 
-### 2. Clear selected POI when categories change
-If a user deselects a category while a POI popup from that category is open, the InfoWindow will remain visible for a hidden marker. I'll reset `selected` when `activeCategories` changes.
+## Steps
 
-### 3. Add subcategory display in popup
-The data has a `subcategory` field (e.g., type of medical facility, type of grocery store) that isn't shown. I'll add it below the category name for more context.
+1. **Insert 22 rows** into `map_pois` using the insert tool with proper field mapping (category lowercased to "shul", empty phone/website stored as null)
+2. **Trigger geocoding** by invoking the `geocode-pois` edge function to fill in lat/lng for the new entries
 
-### 4. Performance guard — cap visible POIs
-If all 5 layers are toggled at once over a dense area, we could have 100+ markers. I'll add a cap (e.g., 150 markers max per viewport) to keep things responsive, prioritizing POIs closer to center.
+## Cities Covered
+- Beit Shemesh (7 shuls)
+- Jerusalem (12 shuls)
+- Netanya (1 shul)
+- Ra'anana (1 shul)
+- Rehovot (2 shuls — one has address needing verification)
 
-## Files to Change
-
-| File | Change |
-|------|--------|
-| `src/components/map-search/POILayer.tsx` | Truncate descriptions, clear selection on category change, show subcategory, add marker cap |
-
-No database changes needed.
+No schema changes needed. No code changes needed.
 
