@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
     .select("id, name, address, city")
     .in("geocode_status", ["failed", "pending"])
     .not("address", "is", null)
-    .limit(30); // Nominatim rate limit: 1 req/sec
+    .limit(15); // Nominatim rate limit: 1 req/sec, ~15 per edge function timeout
 
   if (error) {
     return new Response(JSON.stringify({ error: error.message }), {
