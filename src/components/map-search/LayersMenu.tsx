@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Train, MapPin, Heart, Landmark, Flame } from 'lucide-react';
+import { Train, MapPin, Heart, Landmark, Flame, BookOpen, GraduationCap } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Switch } from '@/components/ui/switch';
 
