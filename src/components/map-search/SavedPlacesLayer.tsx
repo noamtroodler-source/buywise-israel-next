@@ -1,6 +1,7 @@
 import { useMemo, useState, useCallback } from 'react';
 import { Marker, InfoWindow } from '@react-google-maps/api';
 import { useSavedLocations } from '@/hooks/useSavedLocations';
+import { MapInfoCard } from './MapInfoCard';
 
 interface SavedPlacesLayerProps {
   map: google.maps.Map;
