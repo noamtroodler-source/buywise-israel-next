@@ -1,6 +1,7 @@
 import { useMemo, useState, useCallback } from 'react';
 import { Marker, InfoWindow } from '@react-google-maps/api';
 import { TRAIN_STATIONS } from '@/data/trainStations';
+import { MapInfoCard } from './MapInfoCard';
 
 interface TrainStationLayerProps {
   map: google.maps.Map;
@@ -42,10 +43,11 @@ export function TrainStationLayer({ map, bounds }: TrainStationLayerProps) {
           position={{ lat: selected.latitude, lng: selected.longitude }}
           onCloseClick={handleClose}
         >
-          <div className="p-1">
-            <div className="text-sm font-medium">{selected.name}</div>
-            <div className="text-xs text-gray-500">{selected.nameHe}</div>
-          </div>
+          <MapInfoCard
+              name={selected.name}
+              hebrewName={selected.nameHe}
+              subtitle="🚂 Train Station"
+            />
         </InfoWindow>
       )}
     </>

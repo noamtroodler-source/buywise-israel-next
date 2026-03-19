@@ -1,6 +1,7 @@
 import { useMemo, useState, useCallback } from 'react';
 import { Marker, InfoWindow } from '@react-google-maps/api';
 import { useCityAnchors } from '@/hooks/useCityAnchors';
+import { MapInfoCard } from './MapInfoCard';
 
 interface CityAnchorsLayerProps {
   map: google.maps.Map;
@@ -51,15 +52,11 @@ export function CityAnchorsLayer({ map, cityFilter, bounds }: CityAnchorsLayerPr
           position={{ lat: selected.latitude!, lng: selected.longitude! }}
           onCloseClick={handleClose}
         >
-          <div className="p-1">
-            <div className="text-sm font-medium">{selected.name}</div>
-            {selected.name_he && (
-              <div className="text-xs text-gray-500">{selected.name_he}</div>
-            )}
-            {selected.description && (
-              <div className="text-xs text-gray-500 mt-0.5">{selected.description}</div>
-            )}
-          </div>
+          <MapInfoCard
+              name={selected.name}
+              hebrewName={selected.name_he}
+              description={selected.description}
+            />
         </InfoWindow>
       )}
     </>

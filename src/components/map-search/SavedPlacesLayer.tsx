@@ -1,6 +1,7 @@
 import { useMemo, useState, useCallback } from 'react';
 import { Marker, InfoWindow } from '@react-google-maps/api';
 import { useSavedLocations } from '@/hooks/useSavedLocations';
+import { MapInfoCard } from './MapInfoCard';
 
 interface SavedPlacesLayerProps {
   map: google.maps.Map;
@@ -51,10 +52,10 @@ export function SavedPlacesLayer({ map, bounds }: SavedPlacesLayerProps) {
           position={{ lat: selected.latitude, lng: selected.longitude }}
           onCloseClick={handleClose}
         >
-          <div className="p-1">
-            <div className="text-sm font-medium">{selected.label}</div>
-            <div className="text-xs text-gray-500">{selected.address}</div>
-          </div>
+          <MapInfoCard
+              name={selected.label}
+              address={selected.address}
+            />
         </InfoWindow>
       )}
     </>

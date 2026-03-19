@@ -3,6 +3,7 @@ import { GoogleMap, Marker, InfoWindow } from '@react-google-maps/api';
 import { useGoogleMaps } from './GoogleMapsProvider';
 import { MapPin, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { MapInfoCard } from '@/components/map-search/MapInfoCard';
 
 interface POIMarker {
   category: string;
@@ -179,10 +180,10 @@ export function GoogleMiniMap({
             position={{ lat: selectedPOI.lat, lng: selectedPOI.lng }}
             onCloseClick={() => setSelectedPOI(null)}
           >
-            <div className="p-1">
-              <strong className="block text-sm">{selectedPOI.name}</strong>
-              <span className="text-xs text-gray-500">{selectedPOI.category}</span>
-            </div>
+            <MapInfoCard
+              name={selectedPOI.name}
+              subtitle={selectedPOI.category}
+            />
           </InfoWindow>
         )}
       </GoogleMap>

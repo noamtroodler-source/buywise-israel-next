@@ -1,6 +1,7 @@
 import { useMemo, useState, useCallback, useEffect } from 'react';
 import { Marker, InfoWindow } from '@react-google-maps/api';
 import { useMapPois, MapPoi } from '@/hooks/useMapPois';
+import { MapInfoCard } from './MapInfoCard';
 
 interface POILayerProps {
   map: google.maps.Map;
@@ -35,9 +36,6 @@ const ENGLISH_LEVEL_COLORS: Record<string, string> = {
   'English Available': '#6b7280',
 };
 
-function truncate(text: string, max: number) {
-  return text.length > max ? text.slice(0, max).trimEnd() + '…' : text;
-}
 
 export function POILayer({ map, bounds, activeCategories }: POILayerProps) {
   const { data: pois = [] } = useMapPois(activeCategories);
@@ -112,50 +110,19 @@ export function POILayer({ map, bounds, activeCategories }: POILayerProps) {
           position={{ lat: selected.latitude, lng: selected.longitude }}
           onCloseClick={handleClose}
         >
-          <div className="p-1 max-w-[220px]">
-            <div className="text-sm font-medium">{selected.name}</div>
-            {selected.name_he && (
-              <div className="text-xs text-gray-500">{selected.name_he}</div>
-            )}
-            {selected.subcategory && (
-              <div className="text-xs text-gray-400 mt-0.5">{selected.subcategory}</div>
-            )}
-            {selected.denomination && (
-              <div className="text-xs text-gray-500 mt-0.5">{selected.denomination}</div>
-            )}
-            {selected.english_level && (
-              <span
-                className="inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded mt-1"
-                style={{
-                  backgroundColor: `${ENGLISH_LEVEL_COLORS[selected.english_level] || '#6b7280'}20`,
-                  color: ENGLISH_LEVEL_COLORS[selected.english_level] || '#6b7280',
-                }}
-              >
-                {selected.english_level}
-              </span>
-            )}
-            {selected.description && (
-              <div className="text-xs text-gray-500 mt-0.5">{truncate(selected.description, 120)}</div>
-            )}
-            {selected.address && (
-              <div className="text-xs text-gray-400 mt-0.5">{selected.address}</div>
-            )}
-            {selected.phone && (
-              <a href={`tel:${selected.phone}`} className="text-xs text-primary mt-0.5 block">
-                {selected.phone}
-              </a>
-            )}
-            {selected.website && (
-              <a
-                href={selected.website.startsWith('http') ? selected.website : `https://${selected.website}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-primary mt-0.5 block"
-              >
-                Website →
-              </a>
-            )}
-          </div>
+          <MapInfoCard
+              name={selected.name}
+              hebrewName={selected.name_he}
+              subtitle={[selected.subcategory, selected.denomination].filter(Boolean).join(' · ') || null}
+              badge={selected.english_level ? {
+                label: selected.english_level,
+                color: ENGLISH_LEVEL_COLORS[selected.english_level] || '#6b7280',
+              } : null}
+              description={selected.description}
+              address={selected.address}
+              phone={selected.phone}
+              website={selected.website}
+            />
         </InfoWindow>
       )}
     </>
