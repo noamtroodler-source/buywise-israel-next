@@ -134,7 +134,29 @@ export default function SoldTransactionsAdmin() {
     },
   });
 
-  // Seed mutation
+  // Batch geocode mutation (parallel, larger batches)
+  const batchGeocodeMutation = useMutation({
+    mutationFn: async () => {
+      const response = await supabase.functions.invoke('batch-geocode-sold', {
+        body: {
+          city: selectedCity || undefined,
+          batchSize: 200,
+        },
+      });
+      if (response.error) throw response.error;
+      return response.data;
+    },
+    onSuccess: (data) => {
+      setBatchGeocodeProgress({ geocoded: data.geocoded, failed: data.failed, remaining: data.remaining });
+      toast.success(`Batch geocoded ${data.geocoded}/${data.total} transactions. ${data.remaining} remaining.`);
+      queryClient.invalidateQueries({ queryKey: ['sold-transactions-stats'] });
+    },
+    onError: (error) => {
+      toast.error(`Batch geocoding failed: ${error.message}`);
+    },
+  });
+
+
   const seedMutation = useMutation({
     mutationFn: async (options: { clearExisting: boolean }) => {
       const response = await supabase.functions.invoke('seed-sold-transactions', {
