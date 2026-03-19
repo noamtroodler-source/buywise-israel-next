@@ -1,6 +1,7 @@
 import { useMemo, useState, useCallback } from 'react';
 import { Marker, InfoWindow } from '@react-google-maps/api';
 import { TRAIN_STATIONS } from '@/data/trainStations';
+import { MapInfoCard } from './MapInfoCard';
 
 interface TrainStationLayerProps {
   map: google.maps.Map;
