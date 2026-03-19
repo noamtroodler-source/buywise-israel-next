@@ -3,6 +3,7 @@ import { GoogleMap, Marker, InfoWindow } from '@react-google-maps/api';
 import { useGoogleMaps } from './GoogleMapsProvider';
 import { MapPin, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { MapInfoCard } from '@/components/map-search/MapInfoCard';
 
 interface POIMarker {
   category: string;
