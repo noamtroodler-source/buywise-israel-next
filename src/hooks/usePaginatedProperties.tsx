@@ -143,7 +143,7 @@ export function usePaginatedProperties(
     enabled: page === 1 && boostedIds.length > 0,
     staleTime: 60_000,
   });
-...
+
 function applyFilters(query: any, filters?: PropertyFilters) {
   if (!filters) return query;
 
