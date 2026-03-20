@@ -287,6 +287,13 @@ export function CityNeighborhoods({ cityName, neighborhoods }: CityNeighborhoods
           Prices: CBS (Central Bureau of Statistics) · 4-room avg · 3-year trend
         </p>
       </div>
+
+      <NeighborhoodDetailDialog
+        neighborhood={selectedNeighborhood}
+        cityName={cityName}
+        open={!!selectedNeighborhood}
+        onOpenChange={(open) => { if (!open) setSelectedNeighborhood(null); }}
+      />
     </section>
   );
 }
