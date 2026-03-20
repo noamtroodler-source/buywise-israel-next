@@ -184,12 +184,13 @@ export function usePageContext(): PageContext {
     // Areas
     if (path.match(/^\/areas\/.+/)) {
       const citySlug = path.replace('/areas/', '');
+      const cityName = citySlug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
       return {
-        description: `Viewing area details for ${citySlug.replace(/-/g, ' ')}`,
+        description: `Viewing area details for ${cityName}`,
         suggestions: [
-          'Is this a good area for investment?',
-          "What's the rental yield here?",
-          'How are prices trending?',
+          `What neighborhoods should I consider in ${cityName}?`,
+          `Is ${cityName} good for investment?`,
+          `Show me listings in ${cityName}`,
         ],
       };
     }
