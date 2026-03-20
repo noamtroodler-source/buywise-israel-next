@@ -718,6 +718,185 @@ async function executeGetUserSavedListings(supabase: any, _args: any, userId?: s
   return JSON.stringify({ count: results.length, saved_listings: results });
 }
 
+// ─── Affordability Tool ──────────────────────────────────────────────────────
+
+async function executeCalculateAffordability(_supabase: any, args: any): Promise<string> {
+  const monthlyIncome = args.monthly_income || 0;
+  const existingDebts = args.existing_debts || 0;
+  const downPayment = args.down_payment || 0;
+  const buyerType = args.buyer_type || "first_time";
+
+  const ltvLimits: Record<string, number> = {
+    first_time: 0.75, oleh: 0.75, investor: 0.50, foreign: 0.50, upgrader: 0.70,
+  };
+  const ltvLimit = ltvLimits[buyerType] || 0.75;
+  const maxPtiRatio = 0.40;
+
+  const rates = { low: 4.5, mid: 5.25, high: 6.0 };
+  const termYears = 25;
+
+  const calcMonthlyPayment = (principal: number, annualRate: number): number => {
+    if (principal <= 0) return 0;
+    const r = annualRate / 100 / 12;
+    const n = termYears * 12;
+    if (r === 0) return principal / n;
+    return principal * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+  };
+
+  const calcMaxMortgage = (maxPayment: number, annualRate: number): number => {
+    const r = annualRate / 100 / 12;
+    const n = termYears * 12;
+    if (r === 0 || maxPayment <= 0) return 0;
+    return maxPayment * (Math.pow(1 + r, n) - 1) / (r * Math.pow(1 + r, n));
+  };
+
+  const maxMonthlyPayment = Math.max(0, (monthlyIncome * maxPtiRatio) - existingDebts);
+
+  const scenarios = Object.entries(rates).map(([label, rate]) => {
+    const maxMortgage = calcMaxMortgage(maxMonthlyPayment, rate);
+    const maxPriceFromMortgage = maxMortgage / ltvLimit;
+    const maxPriceFromDown = downPayment > 0 ? downPayment / (1 - ltvLimit) : Infinity;
+    const maxPrice = Math.min(maxPriceFromMortgage, maxPriceFromDown);
+    const actualMortgage = maxPrice * ltvLimit;
+    const monthlyPayment = calcMonthlyPayment(actualMortgage, rate);
+    const downRequired = maxPrice * (1 - ltvLimit);
+    return { label, rate, maxPrice: Math.round(maxPrice), maxMortgage: Math.round(maxMortgage), monthlyPayment: Math.round(monthlyPayment), downRequired: Math.round(downRequired) };
+  });
+
+  const low = scenarios.find(s => s.label === "low")!;
+  const high = scenarios.find(s => s.label === "high")!;
+  const mid = scenarios.find(s => s.label === "mid")!;
+
+  const ptiAtMid = monthlyIncome > 0 ? (mid.monthlyPayment + existingDebts) / monthlyIncome : 0;
+  let comfortLevel: string;
+  if (ptiAtMid < 0.25) comfortLevel = "Comfortable — room to breathe";
+  else if (ptiAtMid <= 0.33) comfortLevel = "Manageable — but watch your budget";
+  else if (ptiAtMid <= 0.40) comfortLevel = "Stretched — at the Bank of Israel limit";
+  else comfortLevel = "Over limit — banks won't approve this";
+
+  return JSON.stringify({
+    max_property_price_range: `₪${(high.maxPrice / 1e6).toFixed(1)}M – ₪${(low.maxPrice / 1e6).toFixed(1)}M`,
+    max_mortgage_range: `₪${(high.maxMortgage / 1e6).toFixed(1)}M – ₪${(low.maxMortgage / 1e6).toFixed(1)}M`,
+    monthly_payment_range: `₪${high.monthlyPayment.toLocaleString()} – ₪${low.monthlyPayment.toLocaleString()}/mo`,
+    down_payment_required: `₪${mid.downRequired.toLocaleString()}`,
+    ltv_limit: `${(ltvLimit * 100).toFixed(0)}%`,
+    pti_limit: "40% (Bank of Israel cap)",
+    comfort_level: comfortLevel,
+    buyer_type: buyerType,
+    rate_assumption: "4.5% – 6.0% (current market range)",
+    term: `${termYears} years`,
+    note: "BuyWise Estimate — rates and approval depend on your specific bank and financial profile.",
+    calculator_link: "/tools?tool=affordability",
+  });
+}
+
+// ─── Rental Yield Tool ──────────────────────────────────────────────────────
+
+async function executeCalculateRentalYield(supabase: any, args: any): Promise<string> {
+  const price = args.property_price;
+  const city = args.city;
+  const bedrooms = args.bedrooms || 3;
+  let monthlyRent = args.monthly_rent;
+
+  if (!monthlyRent) {
+    const { data: cityData } = await supabase
+      .from("cities")
+      .select("rental_3_room_min, rental_3_room_max, rental_4_room_min, rental_4_room_max, rental_5_room_min, rental_5_room_max, gross_yield_percent, gross_yield_percent_min, gross_yield_percent_max")
+      .ilike("name", `%${city}%`)
+      .limit(1)
+      .maybeSingle();
+
+    if (cityData) {
+      const roomKey = bedrooms >= 5 ? 5 : bedrooms >= 4 ? 4 : 3;
+      const minRent = cityData[`rental_${roomKey}_room_min`];
+      const maxRent = cityData[`rental_${roomKey}_room_max`];
+
+      if (minRent && maxRent) {
+        const grossYieldLow = price > 0 ? ((minRent * 12) / price * 100).toFixed(1) : "0";
+        const grossYieldHigh = price > 0 ? ((maxRent * 12) / price * 100).toFixed(1) : "0";
+        const netYieldLow = (parseFloat(grossYieldLow) * 0.75).toFixed(1);
+        const netYieldHigh = (parseFloat(grossYieldHigh) * 0.75).toFixed(1);
+
+        return JSON.stringify({
+          property_price: price, city, bedrooms: roomKey,
+          monthly_rent_range: `₪${minRent.toLocaleString()} – ₪${maxRent.toLocaleString()}/mo`,
+          gross_yield_range: `${grossYieldLow}% – ${grossYieldHigh}%`,
+          net_yield_estimate: `${netYieldLow}% – ${netYieldHigh}% (after expenses)`,
+          city_avg_yield: cityData.gross_yield_percent ? `${cityData.gross_yield_percent}%` : null,
+          city_yield_range: cityData.gross_yield_percent_min && cityData.gross_yield_percent_max
+            ? `${cityData.gross_yield_percent_min}% – ${cityData.gross_yield_percent_max}%` : null,
+          expenses_note: "Net yield deducts ~25% for arnona, va'ad bayit, maintenance, and vacancy",
+          label: "BuyWise Estimate",
+          calculator_link: "/tools?tool=true-cost",
+        });
+      }
+    }
+    return JSON.stringify({ property_price: price, city, error: `No rental data found for ${bedrooms}BR in ${city}. Try providing a monthly_rent value directly.` });
+  }
+
+  const grossYield = price > 0 ? ((monthlyRent * 12) / price * 100).toFixed(1) : "0";
+  const netYield = (parseFloat(grossYield) * 0.75).toFixed(1);
+  return JSON.stringify({
+    property_price: price, city, monthly_rent: `₪${monthlyRent.toLocaleString()}/mo`,
+    annual_rent: `₪${(monthlyRent * 12).toLocaleString()}`,
+    gross_yield: `${grossYield}%`, net_yield_estimate: `${netYield}% (after expenses)`,
+    expenses_note: "Net yield deducts ~25% for arnona, va'ad bayit, maintenance, and vacancy",
+    label: "BuyWise Estimate",
+  });
+}
+
+// ─── Compare Listings Tool ──────────────────────────────────────────────────
+
+async function executeCompareListings(supabase: any, args: any): Promise<string> {
+  const ids = args.property_ids?.slice(0, 3);
+  if (!ids?.length || ids.length < 2) return "Please provide 2-3 property IDs to compare.";
+
+  const { data: properties, error } = await supabase
+    .from("properties")
+    .select("id, title, city, neighborhood, price, currency, bedrooms, bathrooms, size_sqm, property_type, listing_status, condition, floor, total_floors, features, parking, year_built, vaad_bayit_monthly, entry_date")
+    .in("id", ids);
+
+  if (error) return `Error fetching properties: ${error.message}`;
+  if (!properties?.length) return "None of those property IDs were found.";
+  if (properties.length < 2) return `Only found ${properties.length} property. Need at least 2 to compare.`;
+
+  const comparison = properties.map((p: any) => ({
+    id: p.id, title: p.title || `${p.bedrooms}BR ${p.property_type} in ${p.neighborhood || p.city}`,
+    city: p.city, neighborhood: p.neighborhood, price: p.price, currency: p.currency || "ILS",
+    price_per_sqm: p.size_sqm ? Math.round(p.price / p.size_sqm) : null,
+    bedrooms: p.bedrooms, bathrooms: p.bathrooms, size_sqm: p.size_sqm,
+    property_type: p.property_type, condition: p.condition,
+    floor: p.floor ? `${p.floor}/${p.total_floors || '?'}` : null,
+    year_built: p.year_built, parking: p.parking, features: p.features?.slice(0, 6),
+    vaad_bayit: p.vaad_bayit_monthly, entry_date: p.entry_date, link: `/property/${p.id}`,
+  }));
+
+  const idParams = properties.map((p: any) => p.id).join(",");
+  return JSON.stringify({ count: comparison.length, properties: comparison, compare_link: `/compare?ids=${idParams}&category=resale` });
+}
+
+// ─── Explain Term Tool ──────────────────────────────────────────────────────
+
+async function executeExplainTerm(supabase: any, args: any): Promise<string> {
+  const term = args.term;
+  const { data, error } = await supabase
+    .from("glossary_terms")
+    .select("english_term, hebrew_term, transliteration, simple_explanation, detailed_explanation, category")
+    .or(`english_term.ilike.%${term}%,hebrew_term.ilike.%${term}%,transliteration.ilike.%${term}%`)
+    .limit(3);
+
+  if (error) return `Error searching glossary: ${error.message}`;
+  if (!data?.length) return `No glossary entry found for "${term}". Try a different spelling or ask me to explain it.`;
+
+  return JSON.stringify({
+    results: data.map((g: any) => ({
+      english: g.english_term, hebrew: g.hebrew_term, transliteration: g.transliteration,
+      simple: g.simple_explanation, detailed: g.detailed_explanation, category: g.category,
+    })),
+    glossary_link: "/glossary",
+  });
+}
+
 // ─── Tool Router ────────────────────────────────────────────────────────────
 
 async function executeTool(supabase: any, toolName: string, args: any, userId?: string): Promise<string> {
@@ -731,6 +910,10 @@ async function executeTool(supabase: any, toolName: string, args: any, userId?: 
     case "calculate_purchase_tax": return executeCalculatePurchaseTax(supabase, args);
     case "get_neighborhood_profile": return executeGetNeighborhoodProfile(supabase, args);
     case "get_user_saved_listings": return executeGetUserSavedListings(supabase, args, userId);
+    case "calculate_affordability": return executeCalculateAffordability(supabase, args);
+    case "calculate_rental_yield": return executeCalculateRentalYield(supabase, args);
+    case "compare_listings": return executeCompareListings(supabase, args);
+    case "explain_term": return executeExplainTerm(supabase, args);
     default: return `Unknown tool: ${toolName}`;
   }
 }
