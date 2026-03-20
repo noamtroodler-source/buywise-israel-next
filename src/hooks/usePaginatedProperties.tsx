@@ -144,6 +144,64 @@ export function usePaginatedProperties(
     staleTime: 60_000,
   });
 
+  // Prepend boosted properties on page 1, accumulate on subsequent pages
+  const organicProperties = page === 1 
+    ? (pageData ?? []) 
+    : [...allProperties.slice(0, (page - 1) * pageSize), ...(pageData ?? [])];
+  
+  let properties = page === 1 
+    ? [...boostedProperties, ...organicProperties]
+    : organicProperties;
+
+  // Client-side distance filtering for saved location commute destinations
+  if (isSavedDest && savedLocation && filters?.max_commute_minutes) {
+    properties = filterByDistance(properties, savedLocation, filters.max_commute_minutes);
+  }
+
+  const totalPages = Math.ceil(totalCount / pageSize);
+  const hasNextPage = page < totalPages;
+  const hasPreviousPage = page > 1;
+
+  const loadMore = useCallback(() => {
+    if (hasNextPage && !isFetching) {
+      setAllProperties(properties);
+      setPage(prev => prev + 1);
+    }
+  }, [hasNextPage, isFetching, properties]);
+
+  const reset = useCallback(() => {
+    setPage(1);
+    setAllProperties([]);
+    queryClient.invalidateQueries({ queryKey: ['properties', 'paginated', filters] });
+  }, [queryClient, filters]);
+
+  // Reset page when filters change
+  const prevFilterKeyRef = useRef(filterKey);
+  useEffect(() => {
+    if (filterKey !== prevFilterKeyRef.current) {
+      prevFilterKeyRef.current = filterKey;
+      // Reset pagination, but do NOT clear existing results immediately.
+      // The query uses `placeholderData: keepPreviousData`, so the UI stays stable
+      // while the new filter/bounds query is fetching.
+      setPage(1);
+      setAllProperties([]);
+    }
+  }, [filterKey]);
+
+  return {
+    properties,
+    totalCount,
+    currentPage: page,
+    totalPages,
+    hasNextPage,
+    hasPreviousPage,
+    isLoading,
+    isFetching,
+    loadMore,
+    reset,
+  };
+}
+
 function applyFilters(query: any, filters?: PropertyFilters) {
   if (!filters) return query;
 
