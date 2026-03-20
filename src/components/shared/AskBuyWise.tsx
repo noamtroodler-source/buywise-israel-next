@@ -172,7 +172,7 @@ function CopyButton({ content }: { content: string }) {
       className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
       title="Copy answer"
     >
-      {copied ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
+      {copied ? <Check className="w-3 h-3 text-primary" /> : <Copy className="w-3 h-3" />}
     </button>
   );
 }
