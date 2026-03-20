@@ -24,6 +24,7 @@ function formatCompactPrice(price: number): string {
 }
 
 export function NeighborhoodDetailDialog({ neighborhood: n, cityName, open, onOpenChange }: NeighborhoodDetailDialogProps) {
+  const navigate = useNavigate();
   const { data: profile, isLoading } = useNeighborhoodProfile(cityName, n?.name);
 
   if (!n) return null;
