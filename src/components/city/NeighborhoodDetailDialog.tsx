@@ -115,7 +115,7 @@ export function NeighborhoodDetailDialog({ neighborhood: n, cityName, open, onOp
             size="sm"
             onClick={() => {
               onOpenChange(false);
-              navigate(`/properties?city=${encodeURIComponent(cityName)}&neighborhoods=${encodeURIComponent(n.name)}`);
+              navigate(`/listings?city=${encodeURIComponent(cityName)}&neighborhoods=${encodeURIComponent(n.name)}`);
             }}
           >
             Browse Properties
