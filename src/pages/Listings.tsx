@@ -47,45 +47,69 @@ export default function Listings() {
     const initialFilters: PropertyFiltersType = {
       listing_status: listingStatus,
     };
-    
+
     // Parse URL params into filters
     const city = searchParams.get('city');
     if (city) initialFilters.city = city;
-    
+
+    const neighborhoods = searchParams.get('neighborhoods');
+    if (neighborhoods) {
+      initialFilters.neighborhoods = neighborhoods.split(',').map((value) => value.trim()).filter(Boolean);
+    }
+
     const type = searchParams.get('type');
     if (type) initialFilters.property_type = type as any;
-    
+
     const minPrice = searchParams.get('min_price');
     if (minPrice) initialFilters.min_price = Number(minPrice);
-    
+
     const maxPrice = searchParams.get('max_price');
     if (maxPrice) initialFilters.max_price = Number(maxPrice);
-    
+
     const minRooms = searchParams.get('min_rooms');
     if (minRooms) initialFilters.min_rooms = Number(minRooms);
-    
+
     const sortBy = searchParams.get('sort');
     if (sortBy) initialFilters.sort_by = sortBy as any;
 
     return initialFilters;
   });
 
-  // Keep listing_status in sync with URL
+  // Keep filters in sync with URL
   useEffect(() => {
-    if (filters.listing_status !== listingStatus) {
-      setFilters(prev => ({ ...prev, listing_status: listingStatus }));
-    }
-  }, [listingStatus, filters.listing_status]);
+    const city = searchParams.get('city') || undefined;
+    const neighborhoods = searchParams.get('neighborhoods')
+      ?.split(',')
+      .map((value) => value.trim())
+      .filter(Boolean);
+    const type = searchParams.get('type') || undefined;
+    const minPrice = searchParams.get('min_price');
+    const maxPrice = searchParams.get('max_price');
+    const minRooms = searchParams.get('min_rooms');
+    const sortBy = searchParams.get('sort') || undefined;
+
+    setFilters((prev) => ({
+      ...prev,
+      listing_status: listingStatus,
+      city,
+      neighborhoods: neighborhoods?.length ? neighborhoods : undefined,
+      property_type: type as any,
+      min_price: minPrice ? Number(minPrice) : undefined,
+      max_price: maxPrice ? Number(maxPrice) : undefined,
+      min_rooms: minRooms ? Number(minRooms) : undefined,
+      sort_by: sortBy as any,
+    }));
+  }, [listingStatus, searchParams]);
 
   // Use paginated properties hook
-  const { 
-    properties, 
-    totalCount, 
-    isLoading, 
-    isFetching, 
-    hasNextPage, 
+  const {
+    properties,
+    totalCount,
+    isLoading,
+    isFetching,
+    hasNextPage,
     loadMore,
-    reset 
+    reset
   } = usePaginatedProperties(filters);
 
   // Pull-to-refresh handler
@@ -126,7 +150,7 @@ export default function Listings() {
   // Sticky filter bar detection
   useEffect(() => {
     if (isDesktop) return;
-    
+
     const handleScroll = () => {
       if (filterBarRef.current) {
         const rect = filterBarRef.current.getBoundingClientRect();
@@ -142,18 +166,19 @@ export default function Listings() {
     // Always keep the listing_status from URL
     const updatedFilters = { ...newFilters, listing_status: listingStatus };
     setFilters(updatedFilters);
-    
+
     // Track filter application
     trackEvent('filter', 'filter_apply', 'search', {
       component: 'PropertyFilters',
       properties: updatedFilters,
     });
-    
-    
+
+
     // Update URL params - use replace: true to preserve scroll position
     const params = new URLSearchParams();
     params.set('status', urlStatus);
     if (updatedFilters.city) params.set('city', updatedFilters.city);
+    if (updatedFilters.neighborhoods?.length) params.set('neighborhoods', updatedFilters.neighborhoods.join(','));
     if (updatedFilters.property_type) params.set('type', updatedFilters.property_type);
     if (updatedFilters.min_price) params.set('min_price', String(updatedFilters.min_price));
     if (updatedFilters.max_price) params.set('max_price', String(updatedFilters.max_price));
