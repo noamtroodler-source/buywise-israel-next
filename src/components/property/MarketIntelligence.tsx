@@ -216,7 +216,8 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
         {/* Hero Verdict Badge */}
         <MarketVerdictBadge 
           avgComparison={verdictData.avgComparison} 
-          compsCount={verdictData.compsCount} 
+          compsCount={verdictData.compsCount}
+          radiusUsedM={verdictData.radiusUsedM}
         />
 
         {/* Value Snapshot Cards (no header) */}
