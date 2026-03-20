@@ -125,7 +125,7 @@ export function usePaginatedProperties(
 
   // Fetch boosted properties (only on page 1)
   const { data: boostedProperties = [] } = useQuery({
-    queryKey: ['properties', 'search-boosted', boostedIds, filters?.listing_status],
+    queryKey: ['properties', 'search-boosted', boostedIds, filters],
     queryFn: async () => {
       if (!boostedIds.length) return [] as Property[];
       let query = supabase
@@ -133,9 +133,9 @@ export function usePaginatedProperties(
         .select(`*, agent:agents(*, agency:agencies(id, name, logo_url))`)
         .in('id', boostedIds)
         .eq('is_published', true);
-      if (filters?.listing_status) {
-        query = query.eq('listing_status', filters.listing_status);
-      }
+
+      query = applyFilters(query, filters);
+
       const { data, error } = await query;
       if (error) return [] as Property[];
       return shuffleFeatured((data ?? []).map(p => ({ ...p, _isBoosted: true })) as Property[]);
@@ -143,73 +143,16 @@ export function usePaginatedProperties(
     enabled: page === 1 && boostedIds.length > 0,
     staleTime: 60_000,
   });
-
-  // Prepend boosted properties on page 1, accumulate on subsequent pages
-  const organicProperties = page === 1 
-    ? (pageData ?? []) 
-    : [...allProperties.slice(0, (page - 1) * pageSize), ...(pageData ?? [])];
-  
-  let properties = page === 1 
-    ? [...boostedProperties, ...organicProperties]
-    : organicProperties;
-
-  // Client-side distance filtering for saved location commute destinations
-  if (isSavedDest && savedLocation && filters?.max_commute_minutes) {
-    properties = filterByDistance(properties, savedLocation, filters.max_commute_minutes);
-  }
-
-  const totalPages = Math.ceil(totalCount / pageSize);
-  const hasNextPage = page < totalPages;
-  const hasPreviousPage = page > 1;
-
-  const loadMore = useCallback(() => {
-    if (hasNextPage && !isFetching) {
-      setAllProperties(properties);
-      setPage(prev => prev + 1);
-    }
-  }, [hasNextPage, isFetching, properties]);
-
-  const reset = useCallback(() => {
-    setPage(1);
-    setAllProperties([]);
-    queryClient.invalidateQueries({ queryKey: ['properties', 'paginated', filters] });
-  }, [queryClient, filters]);
-
-  // Reset page when filters change
-  const prevFilterKeyRef = useRef(filterKey);
-  useEffect(() => {
-    if (filterKey !== prevFilterKeyRef.current) {
-      prevFilterKeyRef.current = filterKey;
-      // Reset pagination, but do NOT clear existing results immediately.
-      // The query uses `placeholderData: keepPreviousData`, so the UI stays stable
-      // while the new filter/bounds query is fetching.
-      setPage(1);
-      setAllProperties([]);
-    }
-  }, [filterKey]);
-
-  return {
-    properties,
-    totalCount,
-    currentPage: page,
-    totalPages,
-    hasNextPage,
-    hasPreviousPage,
-    isLoading,
-    isFetching,
-    loadMore,
-    reset,
-  };
-}
-
-// Helper function to apply filters to query
+...
 function applyFilters(query: any, filters?: PropertyFilters) {
   if (!filters) return query;
 
   if (filters.city) {
     query = query.ilike('city', `%${filters.city}%`);
   }
-  if (filters.neighborhood) {
+  if (filters.neighborhoods && filters.neighborhoods.length > 0) {
+    query = query.in('neighborhood', filters.neighborhoods);
+  } else if (filters.neighborhood) {
     query = query.ilike('neighborhood', `%${filters.neighborhood}%`);
   }
   if (filters.property_types && filters.property_types.length > 0) {
