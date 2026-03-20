@@ -1,6 +1,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { MapPin, Sparkles, TrendingUp, TrendingDown, Minus, ExternalLink } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useNeighborhoodProfile } from '@/hooks/useNeighborhoodProfile';
 import { UnifiedNeighborhood } from './CityNeighborhoods';
@@ -24,6 +24,7 @@ function formatCompactPrice(price: number): string {
 }
 
 export function NeighborhoodDetailDialog({ neighborhood: n, cityName, open, onOpenChange }: NeighborhoodDetailDialogProps) {
+  const navigate = useNavigate();
   const { data: profile, isLoading } = useNeighborhoodProfile(cityName, n?.name);
 
   if (!n) return null;
@@ -109,14 +110,16 @@ export function NeighborhoodDetailDialog({ neighborhood: n, cityName, open, onOp
           )}
 
           {/* Browse Properties CTA */}
-          <Button asChild className="w-full mt-2" size="sm">
-            <Link
-              to={`/properties?city=${encodeURIComponent(cityName)}&neighborhood=${encodeURIComponent(n.name)}`}
-              onClick={() => onOpenChange(false)}
-            >
-              Browse Properties
-              <ExternalLink className="h-3.5 w-3.5 ml-1.5" />
-            </Link>
+          <Button
+            className="w-full mt-2"
+            size="sm"
+            onClick={() => {
+              onOpenChange(false);
+              navigate(`/properties?city=${encodeURIComponent(cityName)}&neighborhoods=${encodeURIComponent(n.name)}`);
+            }}
+          >
+            Browse Properties
+            <ExternalLink className="h-3.5 w-3.5 ml-1.5" />
           </Button>
 
           {/* Source footnote */}
