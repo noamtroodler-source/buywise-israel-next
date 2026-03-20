@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { MapPin, Search, TrendingUp, TrendingDown, Minus, ChevronLeft, ChevronRight, ArrowUpDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { PriceTier } from '@/types/neighborhood';
+import { NeighborhoodDetailDialog } from './NeighborhoodDetailDialog';
 
 export interface UnifiedNeighborhood {
   name: string;
@@ -79,13 +80,15 @@ function TrendIndicator({ yoyChange }: { yoyChange: number | null }) {
   );
 }
 
-function NeighborhoodCard({ n }: { n: UnifiedNeighborhood }) {
+function NeighborhoodCard({ n, onClick }: { n: UnifiedNeighborhood; onClick: () => void }) {
   const hasPrice = n.avg_price != null;
 
   return (
-    <div
+    <button
+      type="button"
+      onClick={onClick}
       className={cn(
-        'rounded-lg border border-border/50 bg-card/80 backdrop-blur-sm px-3 py-2.5 transition-colors hover:bg-muted/40',
+        'rounded-lg border border-border/50 bg-card/80 backdrop-blur-sm px-3 py-2.5 transition-colors hover:bg-muted/40 text-left w-full cursor-pointer',
         n.is_featured && 'border-l-2 border-l-primary/30'
       )}
     >
@@ -119,13 +122,14 @@ function NeighborhoodCard({ n }: { n: UnifiedNeighborhood }) {
           <TrendIndicator yoyChange={n.yoy_change_percent} />
         </div>
       )}
-    </div>
+    </button>
   );
 }
 
 export function CityNeighborhoods({ cityName, neighborhoods }: CityNeighborhoodsProps) {
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
+  const [selectedNeighborhood, setSelectedNeighborhood] = useState<UnifiedNeighborhood | null>(null);
 
   const isSearching = search.trim().length > 0;
 
@@ -273,7 +277,7 @@ export function CityNeighborhoods({ cityName, neighborhoods }: CityNeighborhoods
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {displayed.map(n => (
-              <NeighborhoodCard key={n.name} n={n} />
+              <NeighborhoodCard key={n.name} n={n} onClick={() => setSelectedNeighborhood(n)} />
             ))}
           </div>
         )}
@@ -283,6 +287,13 @@ export function CityNeighborhoods({ cityName, neighborhoods }: CityNeighborhoods
           Prices: CBS (Central Bureau of Statistics) · 4-room avg · 3-year trend
         </p>
       </div>
+
+      <NeighborhoodDetailDialog
+        neighborhood={selectedNeighborhood}
+        cityName={cityName}
+        open={!!selectedNeighborhood}
+        onOpenChange={(open) => { if (!open) setSelectedNeighborhood(null); }}
+      />
     </section>
   );
 }
