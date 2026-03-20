@@ -359,7 +359,7 @@ export function PropertyMap({
         {map && showNeighborhoods && (
           <NeighborhoodBoundariesLayer
             map={map}
-            city={cityFilter}
+            city={resolvedBoundaryCity}
             highlightedNeighborhood={selectedNeighborhood}
             onNeighborhoodClick={(name) => {
               setSelectedNeighborhood(name);
