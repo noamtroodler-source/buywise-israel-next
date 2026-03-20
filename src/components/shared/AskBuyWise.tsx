@@ -95,21 +95,21 @@ function FeedbackButtons({ messageId, onFeedback }: { messageId: string; onFeedb
 
   if (submitted) {
     return (
-      <span className="text-[10px] text-muted-foreground ml-9 mt-0.5 block">
-        {submitted === 'good' ? 'Thanks for the feedback! 👍' : 'Thanks — we\'ll improve! 🙏'}
+      <span className="text-[10px] text-muted-foreground">
+        {submitted === 'good' ? '👍' : '🙏'}
       </span>
     );
   }
 
   return (
-    <div className="flex gap-1 ml-9 mt-0.5">
+    <>
       <button onClick={() => handleClick('good')} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors" title="Helpful">
         <ThumbsUp className="w-3 h-3" />
       </button>
       <button onClick={() => handleClick('bad')} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors" title="Not helpful">
         <ThumbsDown className="w-3 h-3" />
       </button>
-    </div>
+    </>
   );
 }
 
