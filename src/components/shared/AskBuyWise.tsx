@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect, FormEvent } from 'react';
+import { useState, useRef, useEffect, FormEvent, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircle, X, Send, Square, RotateCcw, Sparkles, ThumbsUp, ThumbsDown, Loader2, History, ChevronLeft, Calculator, BookOpen, UserPlus } from 'lucide-react';
+import { MessageCircle, X, Send, Square, RotateCcw, Sparkles, ThumbsUp, ThumbsDown, Loader2, History, ChevronLeft, Calculator, BookOpen, UserPlus, Copy, Check } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import ReactMarkdown from 'react-markdown';
 import { useNavigate, Link } from 'react-router-dom';
