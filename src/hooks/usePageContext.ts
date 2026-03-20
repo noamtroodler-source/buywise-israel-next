@@ -210,6 +210,30 @@ export function usePageContext(): PageContext {
       };
     }
 
+    // For Agents page
+    if (path === '/for-agents') {
+      return {
+        description: 'Viewing the For Agents page — agents join via agency invite only',
+        suggestions: [
+          'How do I join BuyWise as an agent?',
+          'What features do agents get?',
+          'How does my agency sign up?',
+        ],
+      };
+    }
+
+    // Advertise page
+    if (path === '/advertise') {
+      return {
+        description: 'Viewing the Advertise with BuyWise page — agency registration',
+        suggestions: [
+          'How do I register my agency?',
+          'What does BuyWise offer agencies?',
+          'How do I invite my agents after signing up?',
+        ],
+      };
+    }
+
     // Listings
     if (path === '/listings') {
       return {
