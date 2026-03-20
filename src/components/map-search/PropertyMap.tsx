@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { GoogleMap } from '@react-google-maps/api';
+import { useQuery } from '@tanstack/react-query';
 import { useGoogleMaps } from '@/components/maps/GoogleMapsProvider';
 import { MapToolbar } from './MapToolbar';
 import { MapLoadingIndicator } from './MapLoadingIndicator';
@@ -19,6 +20,7 @@ import { useMapKeyboardShortcuts } from '@/hooks/useMapKeyboardShortcuts';
 import type { Property } from '@/types/database';
 import type { Project } from '@/types/projects';
 import type { Polygon } from '@/lib/utils/geometry';
+import { getDistanceInKm } from '@/lib/utils/geometry';
 import { supabase } from '@/integrations/supabase/client';
 
 const ISRAEL_CENTER = { lat: 31.2, lng: 34.8 };
