@@ -1,6 +1,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { MapPin, Sparkles, TrendingUp, TrendingDown, Minus, ExternalLink } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useNeighborhoodProfile } from '@/hooks/useNeighborhoodProfile';
 import { UnifiedNeighborhood } from './CityNeighborhoods';
