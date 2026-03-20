@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect, FormEvent } from 'react';
+import { useState, useRef, useEffect, FormEvent, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircle, X, Send, Square, RotateCcw, Sparkles, ThumbsUp, ThumbsDown, Loader2, History, ChevronLeft, Calculator, BookOpen, UserPlus } from 'lucide-react';
+import { MessageCircle, X, Send, Square, RotateCcw, Sparkles, ThumbsUp, ThumbsDown, Loader2, History, ChevronLeft, Calculator, BookOpen, UserPlus, Copy, Check } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import ReactMarkdown from 'react-markdown';
 import { useNavigate, Link } from 'react-router-dom';
@@ -95,21 +95,21 @@ function FeedbackButtons({ messageId, onFeedback }: { messageId: string; onFeedb
 
   if (submitted) {
     return (
-      <span className="text-[10px] text-muted-foreground ml-9 mt-0.5 block">
-        {submitted === 'good' ? 'Thanks for the feedback! 👍' : 'Thanks — we\'ll improve! 🙏'}
+      <span className="text-[10px] text-muted-foreground">
+        {submitted === 'good' ? '👍' : '🙏'}
       </span>
     );
   }
 
   return (
-    <div className="flex gap-1 ml-9 mt-0.5">
+    <>
       <button onClick={() => handleClick('good')} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors" title="Helpful">
         <ThumbsUp className="w-3 h-3" />
       </button>
       <button onClick={() => handleClick('bad')} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors" title="Not helpful">
         <ThumbsDown className="w-3 h-3" />
       </button>
-    </div>
+    </>
   );
 }
 
@@ -152,6 +152,28 @@ function FollowUpChips({ followUps, onSelect, disabled }: { followUps: string[];
         </button>
       ))}
     </div>
+  );
+}
+
+// --- Copy Button ---
+function CopyButton({ content }: { content: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = useCallback(() => {
+    navigator.clipboard.writeText(content).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }, [content]);
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+      title="Copy answer"
+    >
+      {copied ? <Check className="w-3 h-3 text-primary" /> : <Copy className="w-3 h-3" />}
+    </button>
   );
 }
 
@@ -198,7 +220,12 @@ function ChatBubble({
         </div>
       </div>
       {showCTAs && <InlineCTAs content={message.content} />}
-      {showFeedback && <FeedbackButtons messageId={message.id!} onFeedback={onFeedback} />}
+      {showFeedback && (
+        <div className="flex gap-1 ml-9 mt-0.5 items-center">
+          <CopyButton content={message.content} />
+          <FeedbackButtons messageId={message.id!} onFeedback={onFeedback} />
+        </div>
+      )}
       {showFollowUps && <FollowUpChips followUps={message.followUps!} onSelect={onFollowUp} disabled={isStreaming} />}
     </div>
   );
@@ -399,27 +426,30 @@ function ChatInput({ onSubmit, isStreaming, isAtLimit, onStop }: { onSubmit: (ms
   };
 
   return (
-    <form onSubmit={handleSubmit} className="px-4 py-3 border-t border-border">
-      <div className="flex gap-2 items-center">
-        <input
-          ref={inputRef}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder={isAtLimit ? 'Session limit reached' : 'Ask anything about buying in Israel...'}
-          disabled={isAtLimit}
-          className="flex-1 bg-muted/50 border border-border rounded-full px-4 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
-        />
-        {isStreaming ? (
-          <Button type="button" size="icon" variant="outline" className="h-9 w-9 rounded-full flex-shrink-0" onClick={onStop}>
-            <Square className="w-3.5 h-3.5" />
-          </Button>
-        ) : (
-          <Button type="submit" size="icon" className="h-9 w-9 rounded-full flex-shrink-0" disabled={!input.trim() || isAtLimit}>
-            <Send className="w-3.5 h-3.5" />
-          </Button>
-        )}
-      </div>
-    </form>
+    <div className="px-4 py-3 border-t border-border">
+      <form onSubmit={handleSubmit}>
+        <div className="flex gap-2 items-center">
+          <input
+            ref={inputRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder={isAtLimit ? 'Session limit reached' : 'Ask anything about buying in Israel...'}
+            disabled={isAtLimit}
+            className="flex-1 bg-muted/50 border border-border rounded-full px-4 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+          />
+          {isStreaming ? (
+            <Button type="button" size="icon" variant="outline" className="h-9 w-9 rounded-full flex-shrink-0" onClick={onStop}>
+              <Square className="w-3.5 h-3.5" />
+            </Button>
+          ) : (
+            <Button type="submit" size="icon" className="h-9 w-9 rounded-full flex-shrink-0" disabled={!input.trim() || isAtLimit}>
+              <Send className="w-3.5 h-3.5" />
+            </Button>
+          )}
+        </div>
+      </form>
+      <p className="text-[9px] text-muted-foreground text-center mt-1.5">AI-powered • Always verify with a licensed professional</p>
+    </div>
   );
 }
 
