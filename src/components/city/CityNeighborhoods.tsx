@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { PriceTier } from '@/types/neighborhood';
+import { NeighborhoodDetailDialog } from './NeighborhoodDetailDialog';
 
 export interface UnifiedNeighborhood {
   name: string;
