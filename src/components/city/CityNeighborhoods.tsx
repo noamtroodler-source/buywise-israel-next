@@ -129,6 +129,7 @@ function NeighborhoodCard({ n, onClick }: { n: UnifiedNeighborhood; onClick: () 
 export function CityNeighborhoods({ cityName, neighborhoods }: CityNeighborhoodsProps) {
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
+  const [selectedNeighborhood, setSelectedNeighborhood] = useState<UnifiedNeighborhood | null>(null);
 
   const isSearching = search.trim().length > 0;
 
