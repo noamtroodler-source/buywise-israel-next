@@ -1,86 +1,43 @@
 
 
-## Improve Ask BuyWise Chatbot — Phased Implementation
+## Fix: Chatbot Giving Wrong Agent Registration Info
 
-### Phase 1: New Tools — Affordability Calculator + Rental Yield (Backend)
-Add two new tools to the edge function that the AI can call inline during conversation.
+### Problem
+The chatbot tells users that individual agents can sign up independently. This is **wrong** — the platform uses an agency-first model where agencies register first, then invite agents via unique invite links. The chatbot has no guidance about this in its system prompt.
 
-**`calculate_affordability` tool**
-- Accepts: monthly income, existing debts, down payment, currency, buyer type
-- Uses DB `calculator_constants` for LTV/PTI limits (same logic as `useAffordability` hook)
-- Returns: max property price range, max mortgage range (4.5-6% rate spread), monthly payment estimate, down payment required, and a comfort level tag
-- Links to `/tools?tool=affordability`
+### Root Cause
+The `SYSTEM_PROMPT_IDENTITY` in `supabase/functions/ask-buywise/index.ts` has zero information about:
+1. The agency-first registration model
+2. How agents join (invite links only)
+3. The `/for-agents` and `/advertise` pages
+4. What to say when someone asks about becoming an agent
 
-**`calculate_rental_yield` tool**
-- Accepts: property price, city, bedrooms (optional)
-- Pulls rental ranges from `cities` table (`rental_3_room_min/max`, `rental_4_room_min/max`)
-- Returns: gross yield %, net yield estimate, monthly rental range, comparison to city average
-- Labels estimates as "BuyWise Estimate"
+Additionally, `src/hooks/usePageContext.ts` has no context entries for `/for-agents` or `/advertise` pages, so when a user opens the chatbot on those pages, it gets no relevant context.
 
-**Files changed:**
-- `supabase/functions/ask-buywise/index.ts` — add tool definitions + executors + router entries
+### Changes
 
----
+**1. Add registration rules to system prompt** (`supabase/functions/ask-buywise/index.ts`)
 
-### Phase 2: New Tool — Compare Listings (Backend)
-Add a `compare_listings` tool for side-by-side property comparison.
+Add a new section to `SYSTEM_PROMPT_IDENTITY` after the Guardrails section:
 
-- Accepts: array of 2-3 property IDs
-- Fetches full details for each, builds a structured comparison (price, size, price/sqm, bedrooms, floor, condition, neighborhood, features)
-- Returns a formatted comparison object the AI renders as a markdown table
-- Links to `/compare?ids=x,y&category=resale`
+```
+## CRITICAL: Agent & Agency Registration Rules (NEVER get this wrong)
+- Agencies register first at /advertise. Individual agents CANNOT register independently.
+- Agents join ONLY via a unique invite link provided by their agency.
+- If someone asks about becoming an agent: tell them their agency needs to sign up first at [Advertise with BuyWise](/advertise), then the agency admin will send them an invite link.
+- If someone says they ARE an agency or want to list properties as a company: direct them to [Advertise with BuyWise](/advertise).
+- NEVER say agents can "create their own accounts" or "sign up independently."
+- NEVER link to /agent/register directly — that page requires an invite code.
+```
 
-**Files changed:**
-- `supabase/functions/ask-buywise/index.ts` — add tool definition + executor
+**2. Add page context for /for-agents and /advertise** (`src/hooks/usePageContext.ts`)
 
----
+Add two new route handlers so the chatbot knows what page the user is on:
 
-### Phase 3: Context-Aware Starter Prompts (Frontend)
-Improve `usePageContext` to generate smarter, more specific suggestions based on page data.
+- `/for-agents`: Description "Viewing the For Agents page", suggestions like "How do I join as an agent?", "What features do agents get?", "How does my agency sign up?"
+- `/advertise`: Description "Viewing the Advertise page", suggestions like "How do I register my agency?", "What does BuyWise offer agencies?", "How do I invite my agents?"
 
-- **Property page**: Use actual price, city, bedrooms to generate "Is ₪X.XM fair for a YBR in Z?" instead of generic text. Add "Compare with similar listings" and "What's my total cost at ₪X.XM?"
-- **Area page**: Pull city name from URL slug, add "What neighborhoods should I consider in [City]?" and "Show me listings under ₪X in [City]"
-- **Tools page**: After calculator use, suggest "Ask BuyWise to explain these results"
-- **Project page**: Add "What guarantees should I get?" and "Compare this with resale options in [City]"
-
-**Files changed:**
-- `src/hooks/usePageContext.ts` — enrich suggestion builders with more specific, data-driven prompts
-
----
-
-### Phase 4: UX Polish — Response Length Awareness + Save Answer (Frontend)
-Small but impactful UX improvements to the chat panel.
-
-**Typing indicator improvement**: Show "Searching listings..." or "Calculating..." text during tool execution instead of generic dots (requires a small SSE metadata change or a pre-message insertion).
-
-**"Copy Answer" button**: Add a small copy icon on assistant messages so users can save useful answers (clipboard copy).
-
-**Disclaimer footer**: Add a subtle "Always verify with a professional" one-liner below the input, replacing the header subtitle to declutter.
-
-**Files changed:**
-- `src/components/shared/AskBuyWise.tsx` — add copy button to ChatBubble, update disclaimer placement
-
----
-
-### Phase 5: Hebrew Glossary Inline Tool (Backend)
-Add a `explain_term` tool so the AI can pull exact definitions from the `glossary_terms` table on demand.
-
-- Accepts: term (English or Hebrew)
-- Searches `glossary_terms` by `english_term`, `hebrew_term`, or `transliteration` (ilike)
-- Returns: hebrew, transliteration, simple explanation, detailed explanation, category
-- More reliable than the system prompt glossary dump (which is truncated at 50 terms)
-
-**Files changed:**
-- `supabase/functions/ask-buywise/index.ts` — add tool definition + executor
-
----
-
-### Implementation Order
-1. **Phase 1** (affordability + yield tools) — highest user impact
-2. **Phase 3** (context-aware prompts) — quick frontend win
-3. **Phase 2** (compare listings tool)
-4. **Phase 4** (UX polish)
-5. **Phase 5** (glossary tool)
-
-Each phase is independently deployable and testable.
+### Files Modified
+1. `supabase/functions/ask-buywise/index.ts` — add registration rules section to system prompt
+2. `src/hooks/usePageContext.ts` — add `/for-agents` and `/advertise` page contexts
 
