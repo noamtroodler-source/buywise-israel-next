@@ -79,13 +79,15 @@ function TrendIndicator({ yoyChange }: { yoyChange: number | null }) {
   );
 }
 
-function NeighborhoodCard({ n }: { n: UnifiedNeighborhood }) {
+function NeighborhoodCard({ n, onClick }: { n: UnifiedNeighborhood; onClick: () => void }) {
   const hasPrice = n.avg_price != null;
 
   return (
-    <div
+    <button
+      type="button"
+      onClick={onClick}
       className={cn(
-        'rounded-lg border border-border/50 bg-card/80 backdrop-blur-sm px-3 py-2.5 transition-colors hover:bg-muted/40',
+        'rounded-lg border border-border/50 bg-card/80 backdrop-blur-sm px-3 py-2.5 transition-colors hover:bg-muted/40 text-left w-full cursor-pointer',
         n.is_featured && 'border-l-2 border-l-primary/30'
       )}
     >
@@ -119,7 +121,7 @@ function NeighborhoodCard({ n }: { n: UnifiedNeighborhood }) {
           <TrendIndicator yoyChange={n.yoy_change_percent} />
         </div>
       )}
-    </div>
+    </button>
   );
 }
 
