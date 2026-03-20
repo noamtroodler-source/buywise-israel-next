@@ -60,13 +60,22 @@ function formatPrice(price: number): string {
 
 function buildPropertySuggestions(data: PageContextData): string[] {
   const suggestions: string[] = [];
-  if (data.price && data.city) {
+  if (data.price && data.city && data.bedrooms) {
+    suggestions.push(`Is ${formatPrice(data.price)} fair for a ${data.bedrooms}BR in ${data.city}?`);
+  } else if (data.price && data.city) {
     suggestions.push(`Is ${formatPrice(data.price)} fair for ${data.city}?`);
   }
   if (data.price) {
-    suggestions.push(`What are the hidden costs on a ${formatPrice(data.price)} purchase?`);
+    suggestions.push(`What's my total cost at ${formatPrice(data.price)}?`);
   }
-  suggestions.push('What should I ask the agent?');
+  if (data.listingStatus === 'for_rent' && data.price) {
+    suggestions.push('Is this rent reasonable for the area?');
+  } else {
+    suggestions.push('What should I ask the agent?');
+  }
+  if (data.price && data.city) {
+    suggestions.push('Compare with similar listings');
+  }
   return suggestions.slice(0, 3);
 }
 
@@ -76,7 +85,11 @@ function buildProjectSuggestions(data: PageContextData): string[] {
     suggestions.push(`Is ${formatPrice(data.priceFrom)} fair for new construction in ${data.city}?`);
   }
   suggestions.push('What guarantees should I get from the developer?');
-  suggestions.push('How does the payment schedule work?');
+  if (data.city) {
+    suggestions.push(`Compare this with resale options in ${data.city}`);
+  } else {
+    suggestions.push('How does the payment schedule work?');
+  }
   return suggestions.slice(0, 3);
 }
 
