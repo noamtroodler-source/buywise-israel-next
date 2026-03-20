@@ -260,8 +260,48 @@ export function PropertyMap({
     return properties.find(p => p.id === activePropertyId) ?? null;
   }, [activePropertyId, properties, projects]);
 
+  const { data: cityCenters = [] } = useQuery({
+    queryKey: ['map-city-centers'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('cities')
+        .select('name, center_lat, center_lng')
+        .not('center_lat', 'is', null)
+        .not('center_lng', 'is', null);
+
+      if (error || !data) return [];
+      return data;
+    },
+    staleTime: 60 * 60 * 1000,
+  });
+
+  const resolvedBoundaryCity = useMemo(() => {
+    if (cityFilter) return cityFilter;
+    if (!currentBounds || zoom < 13 || cityCenters.length === 0) return null;
+
+    const center = currentBounds.getCenter();
+    const candidates = cityCenters.filter((city) =>
+      city.center_lat != null &&
+      city.center_lng != null &&
+      currentBounds.contains(new google.maps.LatLng(city.center_lat, city.center_lng))
+    );
+
+    const pool = candidates.length > 0 ? candidates : cityCenters;
+    const nearest = pool
+      .map((city) => ({
+        name: city.name,
+        distanceKm: getDistanceInKm(
+          [center.lng(), center.lat()],
+          [city.center_lng as number, city.center_lat as number]
+        ),
+      }))
+      .sort((a, b) => a.distanceKm - b.distanceKm)[0];
+
+    return nearest && nearest.distanceKm <= 20 ? nearest.name : null;
+  }, [cityFilter, currentBounds, zoom, cityCenters]);
+
   const isActiveProject = activePropertyId?.startsWith('project-') ?? false;
-  const showNeighborhoods = zoom >= 13 && !activeLayers.has('hide-neighborhoods');
+  const showNeighborhoods = zoom >= 13 && !activeLayers.has('hide-neighborhoods') && !!resolvedBoundaryCity;
 
   const activePoiCategories = useMemo(() => {
     const cats: string[] = [];
