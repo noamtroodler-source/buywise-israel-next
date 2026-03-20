@@ -155,6 +155,28 @@ function FollowUpChips({ followUps, onSelect, disabled }: { followUps: string[];
   );
 }
 
+// --- Copy Button ---
+function CopyButton({ content }: { content: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = useCallback(() => {
+    navigator.clipboard.writeText(content).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }, [content]);
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+      title="Copy answer"
+    >
+      {copied ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
+    </button>
+  );
+}
+
 // --- Chat Bubble ---
 function ChatBubble({
   message, isLast, isStreaming, onFeedback, onFollowUp,
@@ -198,7 +220,12 @@ function ChatBubble({
         </div>
       </div>
       {showCTAs && <InlineCTAs content={message.content} />}
-      {showFeedback && <FeedbackButtons messageId={message.id!} onFeedback={onFeedback} />}
+      {showFeedback && (
+        <div className="flex gap-1 ml-9 mt-0.5 items-center">
+          <CopyButton content={message.content} />
+          <FeedbackButtons messageId={message.id!} onFeedback={onFeedback} />
+        </div>
+      )}
       {showFollowUps && <FollowUpChips followUps={message.followUps!} onSelect={onFollowUp} disabled={isStreaming} />}
     </div>
   );
