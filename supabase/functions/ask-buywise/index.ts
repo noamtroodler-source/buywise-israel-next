@@ -175,6 +175,77 @@ const TOOLS = [
       },
     },
   },
+  {
+    type: "function" as const,
+    function: {
+      name: "calculate_affordability",
+      description: "Calculate how much property a buyer can afford based on income, debts, and down payment. Uses Bank of Israel PTI/LTV rules. Use when users ask 'how much can I afford?', 'what's my budget?', or 'can I afford X?'.",
+      parameters: {
+        type: "object",
+        properties: {
+          monthly_income: { type: "number", description: "Monthly gross income in ILS" },
+          existing_debts: { type: "number", description: "Existing monthly debt payments in ILS (default 0)" },
+          down_payment: { type: "number", description: "Available down payment in ILS" },
+          buyer_type: { type: "string", enum: ["first_time", "oleh", "investor", "foreign"], description: "Buyer category for LTV limits" },
+          currency: { type: "string", enum: ["ILS", "USD"], description: "Currency of income (for display). Default ILS." },
+        },
+        required: ["monthly_income", "down_payment"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "calculate_rental_yield",
+      description: "Calculate estimated rental yield for a property. Use when users ask about investment returns, rental income, or 'is this a good investment?'.",
+      parameters: {
+        type: "object",
+        properties: {
+          property_price: { type: "number", description: "Property purchase price in ILS" },
+          city: { type: "string", description: "City name to look up rental ranges" },
+          bedrooms: { type: "number", description: "Number of bedrooms (3, 4, or 5). Affects rental estimate." },
+          monthly_rent: { type: "number", description: "Known monthly rent in ILS. If provided, skips city lookup." },
+        },
+        required: ["property_price", "city"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "compare_listings",
+      description: "Compare 2-3 property listings side by side. Use when a user asks to compare specific properties, says 'compare these', or wants a side-by-side view.",
+      parameters: {
+        type: "object",
+        properties: {
+          property_ids: {
+            type: "array",
+            items: { type: "string" },
+            description: "Array of 2-3 property UUIDs to compare",
+          },
+        },
+        required: ["property_ids"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "explain_term",
+      description: "Look up a Hebrew real estate term from the BuyWise glossary. Use when users ask 'what is X?', 'what does Y mean?', or encounter unfamiliar Hebrew/legal terms.",
+      parameters: {
+        type: "object",
+        properties: {
+          term: { type: "string", description: "The term to look up — can be English, Hebrew, or transliteration" },
+        },
+        required: ["term"],
+        additionalProperties: false,
+      },
+    },
+  },
 ];
 
 // ─── Tool Executors ─────────────────────────────────────────────────────────
