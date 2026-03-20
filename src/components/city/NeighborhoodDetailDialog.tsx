@@ -110,14 +110,16 @@ export function NeighborhoodDetailDialog({ neighborhood: n, cityName, open, onOp
           )}
 
           {/* Browse Properties CTA */}
-          <Button asChild className="w-full mt-2" size="sm">
-            <Link
-              to={`/properties?city=${encodeURIComponent(cityName)}&neighborhood=${encodeURIComponent(n.name)}`}
-              onClick={() => onOpenChange(false)}
-            >
-              Browse Properties
-              <ExternalLink className="h-3.5 w-3.5 ml-1.5" />
-            </Link>
+          <Button
+            className="w-full mt-2"
+            size="sm"
+            onClick={() => {
+              onOpenChange(false);
+              navigate(`/properties?city=${encodeURIComponent(cityName)}&neighborhoods=${encodeURIComponent(n.name)}`);
+            }}
+          >
+            Browse Properties
+            <ExternalLink className="h-3.5 w-3.5 ml-1.5" />
           </Button>
 
           {/* Source footnote */}
