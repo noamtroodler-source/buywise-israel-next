@@ -125,7 +125,7 @@ export function usePaginatedProperties(
 
   // Fetch boosted properties (only on page 1)
   const { data: boostedProperties = [] } = useQuery({
-    queryKey: ['properties', 'search-boosted', boostedIds, filters?.listing_status],
+    queryKey: ['properties', 'search-boosted', boostedIds, filters],
     queryFn: async () => {
       if (!boostedIds.length) return [] as Property[];
       let query = supabase
@@ -133,9 +133,9 @@ export function usePaginatedProperties(
         .select(`*, agent:agents(*, agency:agencies(id, name, logo_url))`)
         .in('id', boostedIds)
         .eq('is_published', true);
-      if (filters?.listing_status) {
-        query = query.eq('listing_status', filters.listing_status);
-      }
+
+      query = applyFilters(query, filters);
+
       const { data, error } = await query;
       if (error) return [] as Property[];
       return shuffleFeatured((data ?? []).map(p => ({ ...p, _isBoosted: true })) as Property[]);
@@ -202,14 +202,15 @@ export function usePaginatedProperties(
   };
 }
 
-// Helper function to apply filters to query
 function applyFilters(query: any, filters?: PropertyFilters) {
   if (!filters) return query;
 
   if (filters.city) {
     query = query.ilike('city', `%${filters.city}%`);
   }
-  if (filters.neighborhood) {
+  if (filters.neighborhoods && filters.neighborhoods.length > 0) {
+    query = query.in('neighborhood', filters.neighborhoods);
+  } else if (filters.neighborhood) {
     query = query.ilike('neighborhood', `%${filters.neighborhood}%`);
   }
   if (filters.property_types && filters.property_types.length > 0) {
