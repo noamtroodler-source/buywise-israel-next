@@ -3346,6 +3346,36 @@ export type Database = {
         }
         Relationships: []
       }
+      neighborhood_boundaries: {
+        Row: {
+          city: string
+          created_at: string
+          geojson_coords: Json
+          geom_type: string
+          id: string
+          neighborhood: string
+          neighborhood_id: string | null
+        }
+        Insert: {
+          city: string
+          created_at?: string
+          geojson_coords: Json
+          geom_type?: string
+          id?: string
+          neighborhood: string
+          neighborhood_id?: string | null
+        }
+        Update: {
+          city?: string
+          created_at?: string
+          geojson_coords?: Json
+          geom_type?: string
+          id?: string
+          neighborhood?: string
+          neighborhood_id?: string | null
+        }
+        Relationships: []
+      }
       neighborhood_cbs_mappings: {
         Row: {
           anglo_name: string
