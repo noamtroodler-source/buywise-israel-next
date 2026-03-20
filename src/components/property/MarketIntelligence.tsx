@@ -57,8 +57,7 @@ interface MarketIntelligenceProps {
   } | null | undefined;
 }
 
-function MarketVerdictBadge({ avgComparison, compsCount }: { avgComparison: number | null; compsCount: number }) {
-  const areaLabels = useAreaLabel();
+function MarketVerdictBadge({ avgComparison, compsCount, radiusUsedM }: { avgComparison: number | null; compsCount: number; radiusUsedM: number }) {
   if (avgComparison === null) {
     return (
       <Badge variant="secondary" className="text-xs">
@@ -67,19 +66,28 @@ function MarketVerdictBadge({ avgComparison, compsCount }: { avgComparison: numb
     );
   }
 
-  const badge = avgComparison <= 10 ? (
+  const abs = Math.abs(avgComparison);
+  const radiusLabel = radiusUsedM >= 1000 ? '1km' : '500m';
+
+  const badge = avgComparison < -15 ? (
     <Badge className="bg-semantic-green text-semantic-green-foreground border-semantic-green">
-      {avgComparison < -5 
-        ? `Below average — potential value (${avgComparison.toFixed(0)}%)` 
-        : 'Priced in line with recent sales'}
+      May be underpriced by {abs.toFixed(0)}% vs. recent sales
+    </Badge>
+  ) : avgComparison < -5 ? (
+    <Badge className="bg-semantic-green text-semantic-green-foreground border-semantic-green">
+      Priced {abs.toFixed(0)}% below recent sales — potential value
+    </Badge>
+  ) : avgComparison <= 10 ? (
+    <Badge className="bg-semantic-green text-semantic-green-foreground border-semantic-green">
+      Priced in line with recent sales
     </Badge>
   ) : avgComparison <= 20 ? (
     <Badge className="bg-semantic-amber text-semantic-amber-foreground border-semantic-amber">
-      Above average for this area (+{avgComparison.toFixed(0)}%)
+      May be overpriced by {abs.toFixed(0)}% — room to negotiate
     </Badge>
   ) : (
     <Badge className="bg-semantic-red text-semantic-red-foreground border-semantic-red">
-      Significantly above market (+{avgComparison.toFixed(0)}%)
+      May be overpriced by {abs.toFixed(0)}% vs. recent sales — negotiate hard
     </Badge>
   );
 
@@ -92,7 +100,7 @@ function MarketVerdictBadge({ avgComparison, compsCount }: { avgComparison: numb
         </TooltipTrigger>
         <TooltipContent side="right" className="max-w-xs">
           <p className="text-xs">
-            Based on {compsCount} nearby sale{compsCount > 1 ? 's' : ''} comparing price{areaLabels.slashArea}.
+            Based on {compsCount} government-recorded sale{compsCount > 1 ? 's' : ''} within {radiusLabel} over the past 12–24 months.
           </p>
         </TooltipContent>
       </Tooltip>
@@ -208,7 +216,8 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
         {/* Hero Verdict Badge */}
         <MarketVerdictBadge 
           avgComparison={verdictData.avgComparison} 
-          compsCount={verdictData.compsCount} 
+          compsCount={verdictData.compsCount}
+          radiusUsedM={verdictData.radiusUsedM}
         />
 
         {/* Value Snapshot Cards (no header) */}
