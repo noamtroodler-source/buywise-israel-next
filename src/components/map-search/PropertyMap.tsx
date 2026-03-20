@@ -315,7 +315,15 @@ export function PropertyMap({
         )}
 
         {map && showNeighborhoods && (
-          <NeighborhoodBoundariesLayer map={map} city={cityFilter} highlightedNeighborhood={selectedNeighborhood} />
+          <NeighborhoodBoundariesLayer
+            map={map}
+            city={cityFilter}
+            highlightedNeighborhood={selectedNeighborhood}
+            onNeighborhoodClick={(name) => {
+              setSelectedNeighborhood(name);
+              onNeighborhoodFilter?.(name);
+            }}
+          />
         )}
 
         {map && (isDrawMode || drawnPolygon) && (
