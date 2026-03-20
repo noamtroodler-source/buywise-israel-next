@@ -259,7 +259,7 @@ export function PropertyMap({
   }, [activePropertyId, properties, projects]);
 
   const isActiveProject = activePropertyId?.startsWith('project-') ?? false;
-  const showNeighborhoods = activeLayers.has('neighborhoods') && zoom >= 13;
+  const showNeighborhoods = zoom >= 13 && !activeLayers.has('hide-neighborhoods');
 
   const activePoiCategories = useMemo(() => {
     const cats: string[] = [];
@@ -315,7 +315,15 @@ export function PropertyMap({
         )}
 
         {map && showNeighborhoods && (
-          <NeighborhoodBoundariesLayer map={map} city={cityFilter} highlightedNeighborhood={selectedNeighborhood} />
+          <NeighborhoodBoundariesLayer
+            map={map}
+            city={cityFilter}
+            highlightedNeighborhood={selectedNeighborhood}
+            onNeighborhoodClick={(name) => {
+              setSelectedNeighborhood(name);
+              onNeighborhoodFilter?.(name);
+            }}
+          />
         )}
 
         {map && (isDrawMode || drawnPolygon) && (
