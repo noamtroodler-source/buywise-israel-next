@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { X, Loader2, Image as ImageIcon, AlertTriangle } from 'lucide-react';
+import { useState, useCallback } from 'react';
+import { X, Loader2, Image as ImageIcon, AlertTriangle, Sparkles } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { useProjectWizard } from '../ProjectWizardContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,7 +9,32 @@ import { cn } from '@/lib/utils';
 export function StepPhotos() {
   const { data, updateData } = useProjectWizard();
   const [isUploading, setIsUploading] = useState(false);
+  const [isEnhancing, setIsEnhancing] = useState(false);
   const [brokenImages, setBrokenImages] = useState<Set<number>>(new Set());
+
+  const enhanceUploadedImage = useCallback(async (publicUrl: string): Promise<string> => {
+    try {
+      const enhancePath = `projects/enhanced-${Date.now()}-${Math.random().toString(36).substring(2)}.png`;
+      const { data, error } = await supabase.functions.invoke('enhance-image', {
+        body: {
+          image_url: publicUrl,
+          bucket: 'property-images',
+          path: enhancePath,
+        },
+      });
+      if (error) {
+        console.error('Enhancement error:', error);
+        return publicUrl;
+      }
+      if (data?.success && data?.enhanced && data?.image_url) {
+        return data.image_url;
+      }
+      return publicUrl;
+    } catch (err) {
+      console.error('Enhancement failed:', err);
+      return publicUrl;
+    }
+  }, []);
 
   const handleImageError = (index: number) => {
     setBrokenImages(prev => new Set(prev).add(index));
@@ -54,8 +79,34 @@ export function StepPhotos() {
       }
 
       if (newUrls.length > 0) {
-        updateData({ images: [...data.images, ...newUrls] });
+        const allImages = [...data.images, ...newUrls];
+        updateData({ images: allImages });
         toast.success(`Uploaded ${newUrls.length} image${newUrls.length > 1 ? 's' : ''}`);
+
+        // Enhance all uploaded images with AI
+        setIsEnhancing(true);
+        toast.info(`Enhancing ${newUrls.length} photo${newUrls.length > 1 ? 's' : ''} with AI...`, { duration: 5000 });
+
+        const enhanceResults = await Promise.allSettled(
+          newUrls.map(url => enhanceUploadedImage(url))
+        );
+
+        let enhancedCount = 0;
+        let updatedImages = [...allImages];
+        enhanceResults.forEach((result, idx) => {
+          if (result.status === 'fulfilled' && result.value !== newUrls[idx]) {
+            updatedImages = updatedImages.map(img =>
+              img === newUrls[idx] ? result.value : img
+            );
+            enhancedCount++;
+          }
+        });
+
+        if (enhancedCount > 0) {
+          updateData({ images: updatedImages });
+          toast.success(`${enhancedCount} photo${enhancedCount > 1 ? 's' : ''} enhanced with AI`);
+        }
+        setIsEnhancing(false);
       }
     } finally {
       setIsUploading(false);
@@ -141,6 +192,11 @@ export function StepPhotos() {
           <label className="flex flex-col items-center justify-center aspect-video rounded-lg border-2 border-dashed border-muted-foreground/25 hover:border-primary/50 cursor-pointer transition-colors">
             {isUploading ? (
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            ) : isEnhancing ? (
+              <>
+                <Sparkles className="h-8 w-8 animate-pulse text-primary mb-2" />
+                <span className="text-sm text-primary">Enhancing...</span>
+              </>
             ) : (
               <>
                 <ImageIcon className="h-8 w-8 text-muted-foreground mb-2" />
@@ -153,7 +209,7 @@ export function StepPhotos() {
               multiple
               onChange={handleImageUpload}
               className="hidden"
-              disabled={isUploading}
+              disabled={isUploading || isEnhancing}
             />
           </label>
         </div>
