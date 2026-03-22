@@ -79,8 +79,34 @@ export function StepPhotos() {
       }
 
       if (newUrls.length > 0) {
-        updateData({ images: [...data.images, ...newUrls] });
+        const allImages = [...data.images, ...newUrls];
+        updateData({ images: allImages });
         toast.success(`Uploaded ${newUrls.length} image${newUrls.length > 1 ? 's' : ''}`);
+
+        // Enhance all uploaded images with AI
+        setIsEnhancing(true);
+        toast.info(`Enhancing ${newUrls.length} photo${newUrls.length > 1 ? 's' : ''} with AI...`, { duration: 5000 });
+
+        const enhanceResults = await Promise.allSettled(
+          newUrls.map(url => enhanceUploadedImage(url))
+        );
+
+        let enhancedCount = 0;
+        let updatedImages = [...allImages];
+        enhanceResults.forEach((result, idx) => {
+          if (result.status === 'fulfilled' && result.value !== newUrls[idx]) {
+            updatedImages = updatedImages.map(img =>
+              img === newUrls[idx] ? result.value : img
+            );
+            enhancedCount++;
+          }
+        });
+
+        if (enhancedCount > 0) {
+          updateData({ images: updatedImages });
+          toast.success(`${enhancedCount} photo${enhancedCount > 1 ? 's' : ''} enhanced with AI`);
+        }
+        setIsEnhancing(false);
       }
     } finally {
       setIsUploading(false);
