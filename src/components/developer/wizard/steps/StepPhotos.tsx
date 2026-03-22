@@ -9,7 +9,32 @@ import { cn } from '@/lib/utils';
 export function StepPhotos() {
   const { data, updateData } = useProjectWizard();
   const [isUploading, setIsUploading] = useState(false);
+  const [isEnhancing, setIsEnhancing] = useState(false);
   const [brokenImages, setBrokenImages] = useState<Set<number>>(new Set());
+
+  const enhanceUploadedImage = useCallback(async (publicUrl: string): Promise<string> => {
+    try {
+      const enhancePath = `projects/enhanced-${Date.now()}-${Math.random().toString(36).substring(2)}.png`;
+      const { data, error } = await supabase.functions.invoke('enhance-image', {
+        body: {
+          image_url: publicUrl,
+          bucket: 'property-images',
+          path: enhancePath,
+        },
+      });
+      if (error) {
+        console.error('Enhancement error:', error);
+        return publicUrl;
+      }
+      if (data?.success && data?.enhanced && data?.image_url) {
+        return data.image_url;
+      }
+      return publicUrl;
+    } catch (err) {
+      console.error('Enhancement failed:', err);
+      return publicUrl;
+    }
+  }, []);
 
   const handleImageError = (index: number) => {
     setBrokenImages(prev => new Set(prev).add(index));
