@@ -200,7 +200,7 @@ export function MobileFilterSheet({
                 className="rounded-xl"
               />
               <div className="flex flex-wrap gap-2 max-h-[160px] overflow-y-auto">
-                {filteredCities.slice(0, 12).map(city => (
+                {filteredCities.map(city => (
                   <button
                     key={city.id}
                     className={cn(
