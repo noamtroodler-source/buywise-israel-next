@@ -32,6 +32,8 @@ const MAP_STYLES = [
   { featureType: 'road', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
   { featureType: 'water', elementType: 'geometry.fill', stylers: [{ color: '#c9e4f5' }] },
   { featureType: 'landscape', elementType: 'geometry.fill', stylers: [{ color: '#f0f0f0' }] },
+  { featureType: 'administrative.neighborhood', elementType: 'labels', stylers: [{ visibility: 'off' }] },
+  { featureType: 'administrative.land_parcel', elementType: 'labels', stylers: [{ visibility: 'off' }] },
 ];
 
 const containerStyle = { width: '100%', height: '100%' };
