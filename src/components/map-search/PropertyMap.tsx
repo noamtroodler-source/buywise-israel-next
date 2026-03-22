@@ -27,17 +27,11 @@ const ISRAEL_CENTER = { lat: 31.2, lng: 34.8 };
 const DEFAULT_ZOOM = 7;
 
 const MAP_STYLES = [
-  { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] },
-  { featureType: 'transit', elementType: 'labels', stylers: [{ visibility: 'off' }] },
-  { featureType: 'road', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
-  { featureType: 'road', elementType: 'labels.text', stylers: [{ visibility: 'off' }] },
-  { featureType: 'administrative.neighborhood', elementType: 'labels', stylers: [{ visibility: 'off' }] },
-  { featureType: 'administrative.land_parcel', elementType: 'labels', stylers: [{ visibility: 'off' }] },
-  { featureType: 'administrative.locality', elementType: 'labels', stylers: [{ visibility: 'off' }] },
-  { featureType: 'administrative.province', elementType: 'labels', stylers: [{ visibility: 'off' }] },
-  { featureType: 'landscape', elementType: 'labels', stylers: [{ visibility: 'off' }] },
+  { featureType: 'all', elementType: 'labels.text', stylers: [{ visibility: 'off' }] },
+  { featureType: 'all', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
   { featureType: 'water', elementType: 'geometry.fill', stylers: [{ color: '#c9e4f5' }] },
   { featureType: 'landscape', elementType: 'geometry.fill', stylers: [{ color: '#f0f0f0' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ visibility: 'simplified' }] },
 ];
 
 const containerStyle = { width: '100%', height: '100%' };

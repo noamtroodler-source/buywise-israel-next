@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -24,19 +24,18 @@ function computeCentroid(coords: Array<{ lat: number; lng: number }>): { lat: nu
 /** Convert GeoJSON coordinates to Google Maps LatLng paths */
 function toGooglePaths(coords: number[][][] | number[][][][], geomType: string): Array<{ lat: number; lng: number }>[] {
   if (geomType === 'MultiPolygon') {
-    // coords is number[][][][] — array of polygons, each with rings
     return (coords as number[][][][]).map(polygon => 
       polygon[0].map(([lng, lat]) => ({ lat, lng }))
     );
   }
-  // Polygon — coords is number[][][] — array of rings
   return [(coords as number[][][])[0].map(([lng, lat]) => ({ lat, lng }))];
 }
 
 export function NeighborhoodBoundariesLayer({ map, city, highlightedNeighborhood, onNeighborhoodClick }: NeighborhoodBoundariesLayerProps) {
   const polygonsRef = useRef<google.maps.Polygon[]>([]);
-  const labelsRef = useRef<google.maps.Marker[]>([]);
+  const tooltipRef = useRef<HTMLDivElement | null>(null);
   const hoveredRef = useRef<string | null>(null);
+  const [, forceUpdate] = useState(0);
 
   const { data: boundaries = [] } = useQuery({
     queryKey: ['neighborhood-boundaries', city],
@@ -66,21 +65,54 @@ export function NeighborhoodBoundariesLayer({ map, city, highlightedNeighborhood
     };
   }, [highlightedNeighborhood]);
 
+  // Create/destroy tooltip div
+  useEffect(() => {
+    const tooltip = document.createElement('div');
+    tooltip.style.cssText = `
+      position: fixed;
+      pointer-events: none;
+      z-index: 10000;
+      background: hsl(0 0% 100% / 0.95);
+      backdrop-filter: blur(4px);
+      color: hsl(213, 20%, 25%);
+      font-size: 11px;
+      font-weight: 500;
+      padding: 4px 10px;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      white-space: nowrap;
+      display: none;
+      font-family: Inter, system-ui, sans-serif;
+    `;
+    document.body.appendChild(tooltip);
+    tooltipRef.current = tooltip;
+    return () => {
+      document.body.removeChild(tooltip);
+      tooltipRef.current = null;
+    };
+  }, []);
+
   useEffect(() => {
     // Clear old
     polygonsRef.current.forEach(p => p.setMap(null));
     polygonsRef.current = [];
-    labelsRef.current.forEach(m => m.setMap(null));
-    labelsRef.current = [];
 
     if (!boundaries.length) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (tooltipRef.current && hoveredRef.current) {
+        tooltipRef.current.style.left = `${e.clientX + 12}px`;
+        tooltipRef.current.style.top = `${e.clientY - 28}px`;
+      }
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
 
     boundaries.forEach((b) => {
       const paths = toGooglePaths(b.geojson_coords, b.geom_type);
       const style = getStyle(b.neighborhood, false);
 
-      // For MultiPolygon, create a polygon per sub-polygon
-      paths.forEach((path, pathIdx) => {
+      paths.forEach((path) => {
         const polygon = new google.maps.Polygon({
           paths: path,
           ...style,
@@ -90,14 +122,19 @@ export function NeighborhoodBoundariesLayer({ map, city, highlightedNeighborhood
 
         polygon.addListener('mouseover', () => {
           hoveredRef.current = b.neighborhood;
-          const hStyle = getStyle(b.neighborhood, true);
-          polygon.setOptions(hStyle);
+          polygon.setOptions(getStyle(b.neighborhood, true));
+          if (tooltipRef.current) {
+            tooltipRef.current.textContent = b.neighborhood;
+            tooltipRef.current.style.display = 'block';
+          }
         });
 
         polygon.addListener('mouseout', () => {
           hoveredRef.current = null;
-          const nStyle = getStyle(b.neighborhood, false);
-          polygon.setOptions(nStyle);
+          polygon.setOptions(getStyle(b.neighborhood, false));
+          if (tooltipRef.current) {
+            tooltipRef.current.style.display = 'none';
+          }
         });
 
         polygon.addListener('click', () => {
@@ -105,53 +142,16 @@ export function NeighborhoodBoundariesLayer({ map, city, highlightedNeighborhood
         });
 
         polygonsRef.current.push(polygon);
-
-        // Add label only for first path of each neighborhood
-        if (pathIdx === 0) {
-          const centroid = computeCentroid(path);
-          const label = new google.maps.Marker({
-            position: centroid,
-            map,
-            icon: {
-              path: google.maps.SymbolPath.CIRCLE,
-              scale: 0,
-            },
-            label: {
-              text: b.neighborhood,
-              color: 'hsl(213, 10%, 58%)',
-              fontSize: '9px',
-              fontWeight: '400',
-              className: 'neighborhood-label',
-            },
-            clickable: false,
-            zIndex: 3,
-          });
-          labelsRef.current.push(label);
-        }
       });
     });
 
     return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
       polygonsRef.current.forEach(p => p.setMap(null));
       polygonsRef.current = [];
-      labelsRef.current.forEach(m => m.setMap(null));
-      labelsRef.current = [];
+      if (tooltipRef.current) tooltipRef.current.style.display = 'none';
     };
   }, [map, boundaries, highlightedNeighborhood, getStyle, onNeighborhoodClick]);
-
-  // Show/hide labels based on zoom
-  useEffect(() => {
-    if (!map) return;
-    const listener = map.addListener('zoom_changed', () => {
-      const z = map.getZoom() ?? 0;
-      const visible = z >= 15;
-      labelsRef.current.forEach(m => m.setVisible(visible));
-    });
-    // Set initial visibility
-    const z = map.getZoom() ?? 0;
-    labelsRef.current.forEach(m => m.setVisible(z >= 15));
-    return () => google.maps.event.removeListener(listener);
-  }, [map, boundaries]);
 
   return null;
 }
