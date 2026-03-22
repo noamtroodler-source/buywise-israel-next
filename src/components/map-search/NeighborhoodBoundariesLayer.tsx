@@ -58,11 +58,11 @@ export function NeighborhoodBoundariesLayer({ map, city, highlightedNeighborhood
     const isHighlighted = name === highlightedNeighborhood;
     const active = isHighlighted || isHovered;
     return {
-      strokeColor: active ? 'hsl(213, 94%, 40%)' : 'hsl(213, 60%, 55%)',
-      strokeWeight: active ? 2.5 : 1.2,
-      strokeOpacity: active ? 0.9 : 0.6,
-      fillColor: active ? 'hsl(213, 80%, 50%)' : 'hsl(213, 60%, 55%)',
-      fillOpacity: active ? 0.18 : 0.06,
+      strokeColor: active ? 'hsl(213, 70%, 45%)' : 'hsl(213, 20%, 65%)',
+      strokeWeight: active ? 1.8 : 0.7,
+      strokeOpacity: active ? 0.7 : 0.35,
+      fillColor: active ? 'hsl(213, 60%, 55%)' : 'hsl(213, 30%, 70%)',
+      fillOpacity: active ? 0.12 : 0.02,
     };
   }, [highlightedNeighborhood]);
 
@@ -118,9 +118,9 @@ export function NeighborhoodBoundariesLayer({ map, city, highlightedNeighborhood
             },
             label: {
               text: b.neighborhood,
-              color: 'hsl(213, 40%, 30%)',
-              fontSize: '11px',
-              fontWeight: '500',
+              color: 'hsl(213, 15%, 45%)',
+              fontSize: '10px',
+              fontWeight: '400',
               className: 'neighborhood-label',
             },
             clickable: false,
