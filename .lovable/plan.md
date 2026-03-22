@@ -1,43 +1,50 @@
 
 
-## Display Neighborhood Boundaries on the Map
+# Mobile Fixes Plan
 
-### What you have now
-- A `NeighborhoodBoundariesLayer` component that reads `boundary_coords` from the `cities` table — but most neighborhoods lack this data
-- A 6MB GeoJSON file with **310 real CBS polygon boundaries** across 25 cities
-- The layer is already wired into `PropertyMap` (toggled via the Layers menu at zoom ≥ 13)
+## Issues Found in Audit
 
-### Plan
+1. **Sticky contact bar overlaps MobileBottomNav** — On property and project detail pages, the fixed-bottom contact bar sits at `bottom-0` with `z-50`, same z-index as MobileBottomNav. They stack on top of each other, cutting off content.
 
-**Step 1: Create `neighborhood_boundaries` table**
-- Columns: `id`, `city`, `neighborhood`, `neighborhood_id`, `geojson_coords` (JSONB — the coordinates array from the GeoJSON)
-- Unique constraint on `(city, neighborhood)`
-- Public SELECT RLS policy (boundaries are non-sensitive display data)
+2. **Header logo truncation** — "BuyWise Israel" text at `text-[1.3rem]` can clip on narrow screens (320–360px).
 
-**Step 2: Import the GeoJSON data**
-- Parse the uploaded GeoJSON file, extract each feature's `city`, `neighborhood`, `neighborhood_id`, and `geometry.coordinates`
-- Insert all 310 rows into the new table via script
+3. **Map marker label truncation** — Minor: cluster labels like "Ash…" truncate at low zoom. Low priority cosmetic issue.
 
-**Step 3: Rewrite `NeighborhoodBoundariesLayer`**
-- Query `neighborhood_boundaries` filtered by city instead of reading `boundary_coords` from the `cities` table
-- Use the real GeoJSON polygon coordinates (which are `[lng, lat]` format per GeoJSON spec) to render `google.maps.Polygon` objects
-- Add neighborhood name labels at polygon centroids (visible at zoom ≥ 14)
-- Add click handler: clicking a polygon filters listings to that neighborhood
-- Styling: semi-transparent fill with BuyWise blue, highlighted state for selected/hovered neighborhoods
+---
 
-**Step 4: Auto-show boundaries when zoomed into a city**
-- Currently boundaries require toggling the "Neighborhoods" layer manually
-- Change behavior: auto-detect the primary city visible on the map and load its boundaries when zoom ≥ 13, without requiring the layer toggle
-- Keep the layer toggle as an override to hide them if the user prefers a clean map
+## Fixes
 
-### What this gives you
-- Real, gapless neighborhood boundaries visible on the map when zoomed into any of the 25 cities
-- Clickable polygons that filter property results to that neighborhood
-- Neighborhood name labels so users can orient themselves
-- Data stored permanently in the database for reuse across features
+### 1. Fix contact bar / bottom nav overlap (High Priority)
 
-### Technical details
-- GeoJSON coordinates are `[longitude, latitude]` — will be converted to Google Maps `{lat, lng}` format during rendering
-- Per-city queries keep payloads small (~50-200KB per city vs 6MB for all)
-- The `geojson_coords` column stores the raw coordinate arrays as JSONB, avoiding PostGIS dependency
+**Problem**: `ProjectMobileContactBar` and `MobileContactBar` both use `fixed bottom-0 z-50` — same position as `MobileBottomNav` (also `fixed bottom-0 z-50`). They overlap.
+
+**Fix**: Add `bottom-16` (64px = nav height) to both mobile contact bars so they sit above the nav, and add `pb-safe` for notch devices.
+
+**Files**:
+- `src/components/project/ProjectStickyCard.tsx` — line 304: change `bottom-0` → `bottom-16` and add `pb-safe`
+- `src/components/property/StickyContactCard.tsx` — line 299: change `bottom-0` → `bottom-16` (already has `pb-safe`)
+- `src/pages/ProjectDetail.tsx` — line 107: increase `pb-24` → `pb-36` to account for combined bar height
+- `src/pages/PropertyDetail.tsx` — line 165: same `pb-24` → `pb-36`
+
+### 2. Fix header logo truncation on small screens (Medium Priority)
+
+**Problem**: Two `text-[1.3rem]` spans for "BuyWise" and "Israel" can overflow on 320px devices.
+
+**Fix**: Scale down text on small screens using responsive sizing: `text-[1.1rem] sm:text-[1.3rem]`.
+
+**File**: `src/components/layout/Header.tsx` — lines 116-117
+
+### 3. Map marker truncation (Low Priority — cosmetic)
+
+This is a Google Maps rendering limitation at low zoom when clusters overlap. No code fix needed — the existing compact marker logic already handles this at zoom ≤ 13. Noting as "won't fix" since it resolves itself as users zoom in.
+
+---
+
+## Summary
+
+| Fix | Severity | Files Changed |
+|-----|----------|---------------|
+| Contact bar overlap | High | 4 files |
+| Logo truncation | Medium | 1 file |
+| Map marker labels | Low | No change |
 
