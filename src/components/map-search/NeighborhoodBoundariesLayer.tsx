@@ -149,7 +149,7 @@ export function NeighborhoodBoundariesLayer({ map, city, highlightedNeighborhood
     });
     // Set initial visibility
     const z = map.getZoom() ?? 0;
-    labelsRef.current.forEach(m => m.setVisible(z >= 14));
+    labelsRef.current.forEach(m => m.setVisible(z >= 15));
     return () => google.maps.event.removeListener(listener);
   }, [map, boundaries]);
 
