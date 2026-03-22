@@ -118,8 +118,8 @@ export function NeighborhoodBoundariesLayer({ map, city, highlightedNeighborhood
             },
             label: {
               text: b.neighborhood,
-              color: 'hsl(213, 15%, 45%)',
-              fontSize: '10px',
+              color: 'hsl(213, 10%, 58%)',
+              fontSize: '9px',
               fontWeight: '400',
               className: 'neighborhood-label',
             },
@@ -144,12 +144,12 @@ export function NeighborhoodBoundariesLayer({ map, city, highlightedNeighborhood
     if (!map) return;
     const listener = map.addListener('zoom_changed', () => {
       const z = map.getZoom() ?? 0;
-      const visible = z >= 14;
+      const visible = z >= 15;
       labelsRef.current.forEach(m => m.setVisible(visible));
     });
     // Set initial visibility
     const z = map.getZoom() ?? 0;
-    labelsRef.current.forEach(m => m.setVisible(z >= 14));
+    labelsRef.current.forEach(m => m.setVisible(z >= 15));
     return () => google.maps.event.removeListener(listener);
   }, [map, boundaries]);
 
