@@ -162,7 +162,7 @@ export default function PropertyDetail() {
       {/* Mobile Section Navigation */}
       <MobileSectionNav />
       
-      <div className="container py-6 md:py-8 pb-24 md:pb-8">
+      <div className="container py-6 md:py-8 pb-36 md:pb-8">
         {/* Dual Navigation - Desktop only (mobile has MobileHeaderBack) */}
         <div className="hidden lg:block mb-4">
           <DualNavigation
