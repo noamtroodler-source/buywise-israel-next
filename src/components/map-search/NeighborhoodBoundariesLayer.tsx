@@ -144,7 +144,7 @@ export function NeighborhoodBoundariesLayer({ map, city, highlightedNeighborhood
     if (!map) return;
     const listener = map.addListener('zoom_changed', () => {
       const z = map.getZoom() ?? 0;
-      const visible = z >= 14;
+      const visible = z >= 15;
       labelsRef.current.forEach(m => m.setVisible(visible));
     });
     // Set initial visibility
