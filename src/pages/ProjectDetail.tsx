@@ -104,7 +104,7 @@ export default function ProjectDetail() {
         type="product"
         jsonLd={jsonLd}
       />
-      <div className="min-h-screen pb-24 lg:pb-8">
+      <div className="min-h-screen pb-36 lg:pb-8">
         <div className="container py-4 md:py-6">
           {/* Dual Navigation - Desktop only */}
           <div className="hidden lg:block">

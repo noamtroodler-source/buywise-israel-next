@@ -301,7 +301,7 @@ export function ProjectMobileContactBar({ project, developer, representingAgent 
 
   return (
     <>
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-sm border-t border-border lg:hidden z-50">
+      <div className="fixed bottom-16 left-0 right-0 p-4 pb-safe bg-background/95 backdrop-blur-sm border-t border-border lg:hidden z-50">
         <div className="max-w-lg mx-auto space-y-2">
           <div className="flex gap-3">
             {primaryPhone ? (

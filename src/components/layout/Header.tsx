@@ -113,8 +113,8 @@ export function Header() {
         <Link to="/" className="flex items-center gap-0.5">
           <img src={logoIcon} alt="BuyWise Israel" className="h-[34px] w-[34px] object-contain" />
           <div className="flex items-baseline gap-1">
-            <span className="text-[1.3rem] font-bold tracking-tight text-foreground">BuyWise</span>
-            <span className="text-[1.3rem] font-extrabold tracking-tight text-primary">Israel</span>
+            <span className="text-[1.1rem] sm:text-[1.3rem] font-bold tracking-tight text-foreground">BuyWise</span>
+            <span className="text-[1.1rem] sm:text-[1.3rem] font-extrabold tracking-tight text-primary">Israel</span>
           </div>
         </Link>
 
