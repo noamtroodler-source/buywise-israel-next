@@ -199,7 +199,7 @@ export function MobileFilterSheet({
                 onChange={(e) => setCitySearch(e.target.value)}
                 className="rounded-xl"
               />
-              <div className="flex flex-wrap gap-2 max-h-[96px] overflow-y-auto">
+              <div className="flex flex-wrap gap-2 max-h-[160px] overflow-y-auto">
                 {filteredCities.slice(0, 12).map(city => (
                   <button
                     key={city.id}
