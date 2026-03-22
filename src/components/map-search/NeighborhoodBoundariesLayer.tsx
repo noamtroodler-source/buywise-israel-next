@@ -118,8 +118,8 @@ export function NeighborhoodBoundariesLayer({ map, city, highlightedNeighborhood
             },
             label: {
               text: b.neighborhood,
-              color: 'hsl(213, 15%, 45%)',
-              fontSize: '10px',
+              color: 'hsl(213, 10%, 58%)',
+              fontSize: '9px',
               fontWeight: '400',
               className: 'neighborhood-label',
             },
