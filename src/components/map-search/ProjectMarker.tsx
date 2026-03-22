@@ -69,8 +69,8 @@ export const ProjectMarker = memo(function ProjectMarker({
       onMouseOut={handleMouseOut}
     >
       <div className={pillClass}>
-        {!compact && <Building2 size={11} style={{ flexShrink: 0, color: 'hsl(213,94%,45%)' }} strokeWidth={2.5} />}
-        <span style={{ marginLeft: compact ? 0 : 3 }}>From {priceLabel}</span>
+        {!compact && <Building2 size={11} style={{ flexShrink: 0, color: 'hsl(var(--primary))' }} strokeWidth={2.5} />}
+        <span style={{ marginLeft: compact ? 0 : 3 }}>{priceLabel}</span>
       </div>
     </GoogleOverlayView>
   );
