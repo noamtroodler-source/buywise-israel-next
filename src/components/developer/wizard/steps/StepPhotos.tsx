@@ -192,6 +192,11 @@ export function StepPhotos() {
           <label className="flex flex-col items-center justify-center aspect-video rounded-lg border-2 border-dashed border-muted-foreground/25 hover:border-primary/50 cursor-pointer transition-colors">
             {isUploading ? (
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            ) : isEnhancing ? (
+              <>
+                <Sparkles className="h-8 w-8 animate-pulse text-primary mb-2" />
+                <span className="text-sm text-primary">Enhancing...</span>
+              </>
             ) : (
               <>
                 <ImageIcon className="h-8 w-8 text-muted-foreground mb-2" />
@@ -204,7 +209,7 @@ export function StepPhotos() {
               multiple
               onChange={handleImageUpload}
               className="hidden"
-              disabled={isUploading}
+              disabled={isUploading || isEnhancing}
             />
           </label>
         </div>
