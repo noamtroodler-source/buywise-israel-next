@@ -48,7 +48,7 @@ export function MarkerClusterLayer({
     map.setZoom(13);
   }, [map]);
 
-  const compact = zoom <= 12;
+  const compact = zoom <= 13;
 
   if (zoom <= 9) {
     return (
