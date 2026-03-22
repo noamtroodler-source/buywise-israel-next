@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { X, Loader2, Image as ImageIcon, AlertTriangle } from 'lucide-react';
+import { useState, useCallback } from 'react';
+import { X, Loader2, Image as ImageIcon, AlertTriangle, Sparkles } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { useProjectWizard } from '../ProjectWizardContext';
 import { supabase } from '@/integrations/supabase/client';
