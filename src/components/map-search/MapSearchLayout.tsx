@@ -228,13 +228,6 @@ export default function MapSearchLayout() {
     setFilter('sort_by', value);
   }, [setFilter]);
 
-  const handleNeighborhoodFilter = useCallback((name: string | null) => {
-    if (name) {
-      setFilter('neighborhoods', name);
-    } else {
-      setFilter('neighborhoods', null);
-    }
-  }, [setFilter]);
 
   const handleMarkerHover = useCallback((id: string | null) => {
     setHoveredPropertyId(id);
