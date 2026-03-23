@@ -5,14 +5,12 @@
  * Get your ID from: https://analytics.google.com → Admin → Data Streams → your stream → Measurement ID
  */
 
-// Replace with your actual GA4 Measurement ID (format: G-XXXXXXXXXX)
-export const GA_MEASUREMENT_ID = 'G-XXXXXXXXXX';
+export const GA_MEASUREMENT_ID = 'G-VV7WR2N63C';
 
 // Check if GA is loaded and measurement ID is configured
-const isGAEnabled = (): boolean => {
+export const isGAEnabled = () => {
   return typeof window !== 'undefined' && 
-         'gtag' in window && 
-         GA_MEASUREMENT_ID !== 'G-XXXXXXXXXX';
+         'gtag' in window;
 };
 
 // Declare gtag for TypeScript
