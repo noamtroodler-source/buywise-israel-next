@@ -20,6 +20,18 @@ interface CitySourceAttributionProps {
   districtName?: string | null;
 }
 
+function CityFreshnessRow({ category, label }: { category: string; label: string }) {
+  const { getCategoryFreshness } = useDataFreshness();
+  const freshness = getCategoryFreshness(category);
+  if (!freshness) return null;
+  return (
+    <div className="flex items-center justify-between">
+      <span className="font-medium text-foreground/80">{label}:</span>
+      <DataFreshnessIndicator {...freshness} showLabel />
+    </div>
+  );
+}
+
 export function CitySourceAttribution({ sources, lastVerified, className, cityName, districtName }: CitySourceAttributionProps) {
   const [isMethodologyOpen, setIsMethodologyOpen] = useState(false);
   const [isDataExplainerOpen, setIsDataExplainerOpen] = useState(false);
