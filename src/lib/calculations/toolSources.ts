@@ -157,7 +157,8 @@ export const TOOL_SOURCES: Record<string, ToolSourceConfig> = {
       }
     ],
     lastVerified: '2025-01',
-    categories: ['Required Documents', 'Registration Process', 'Timeline']
+    categories: ['Required Documents', 'Registration Process', 'Timeline'],
+    reviewCategories: ['tabu_fees'],
   },
   
   rentalIncome: {
