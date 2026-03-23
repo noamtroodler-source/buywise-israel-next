@@ -3,6 +3,8 @@ import { Shield, ExternalLink, ChevronDown, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { TOOL_SOURCES, formatEffectiveDate, type ToolSourceConfig } from '@/lib/calculations/toolSources';
+import { useDataFreshness } from '@/hooks/useDataFreshness';
+import { MultiFreshnessIndicator } from '@/components/shared/DataFreshnessIndicator';
 
 interface SourceAttributionProps {
   toolType: string;
