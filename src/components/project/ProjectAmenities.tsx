@@ -3,6 +3,7 @@ import {
   Wifi, Sun, Building, Sofa, Wind, Zap, Users, Coffee
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { getAmenityLabel } from '@/lib/utils/amenityLabels';
 
 interface ProjectAmenitiesProps {
   amenities: string[];
