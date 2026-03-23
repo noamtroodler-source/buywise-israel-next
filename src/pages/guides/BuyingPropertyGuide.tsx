@@ -162,7 +162,7 @@ const timelineStages = [
   {
     number: 13,
     title: "Registration",
-    whatHappens: "Your lawyer files to whatHappens: "Your lawyer files to register ownership in Tabu, RMI (Minhal), or a housing company; this can take months. Until registration, a He'arat Azhara protects your rights.",; this can take months. Until registration, a He'arat Azhara protects your rights.",
+    whatHappens: "Your lawyer files to register ownership in Tabu, RMI (Minhal), or a housing company; this can take months. Until registration, a He'arat Azhara protects your rights.",
     whoInvolved: ["Lawyer", "Land registry officials"],
     documents: "Registration application; tax receipts",
     risks: ["Long delays", "Missing documents", "Misunderstanding that keys = ownership"],
