@@ -1,67 +1,109 @@
 
 
-# Phase 4: Labeling & Transparency — Structural Changes
+# Phase 5: Ongoing Governance — Data Freshness & Review Tracking
 
-This phase addresses data presented as fact when no authoritative source exists, adding proper disclaimers, labels, and methodology disclosures across the platform.
+This phase builds infrastructure so the team knows when data is stale and what needs updating, rather than relying on memory.
+
+---
+
+## Overview
+
+Phase 5 creates three things:
+1. A **Data Governance Dashboard** in the admin panel showing staleness per data category
+2. A **`data_review_schedule`** database table tracking review cycles and next-due dates
+3. **Per-category "last updated" indicators** on public-facing pages
 
 ---
 
-## 1. Arnona Estimates — Add "BuyWise estimate" label (3 files)
+## 1. New Database Table: `data_review_schedule`
 
-Arnona rates displayed as single figures per city lack zone-level granularity. Add estimate disclaimers:
+Tracks review cadence for each data category with next-due dates and responsible source.
 
-- **`src/components/city/CityArnonaCard.tsx`** — Add "(est.)" after "Monthly Estimate" label and a footnote: "BuyWise estimate based on municipal rate tables. Actual rates vary by zone and property classification."
-- **`src/components/city/MarketOverviewCards.tsx`** — Add "(est.)" after the arnona monthly value and same disclaimer text
-- **`src/components/city/CitySourceAttribution.tsx`** — Update methodology text for "Arnona Rates" from "sourced directly from municipality rate tables and verified against government publications" to "Estimated from municipal rate tables. Actual rates vary by zone, property classification, and exemption eligibility."
+```sql
+CREATE TABLE public.data_review_schedule (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  category TEXT NOT NULL UNIQUE,
+  label TEXT NOT NULL,
+  review_frequency TEXT NOT NULL, -- 'annual', 'quarterly', 'monthly', 'on_change'
+  last_reviewed_at TIMESTAMPTZ,
+  next_review_due TIMESTAMPTZ,
+  source_authority TEXT NOT NULL,
+  source_url TEXT,
+  notes TEXT,
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+ALTER TABLE public.data_review_schedule ENABLE ROW LEVEL SECURITY;
+-- Admin-only read/write
+CREATE POLICY "Admins manage review schedule" ON public.data_review_schedule
+  FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin'));
+-- Public read for freshness indicators
+CREATE POLICY "Public can read review schedule" ON public.data_review_schedule
+  FOR SELECT TO anon USING (true);
+```
 
-## 2. Vaad Bayit — Add building-type context (2 files)
+Seed with these review items:
 
-Replace single-figure fallbacks with range context:
+| category | label | frequency | source_authority | next_review_due |
+|----------|-------|-----------|-----------------|-----------------|
+| `tabu_fees` | Tabu & Registration Fees | annual | Ministry of Justice | 2027-01-15 |
+| `purchase_tax` | Purchase Tax Brackets | annual | Israel Tax Authority | 2027-01-15 |
+| `vat_rate` | VAT Rate | on_change | Knesset / MoF | — |
+| `boi_directive_329` | BOI Mortgage Directive 329 | on_change | Bank of Israel | — |
+| `cbs_price_stats` | CBS Price Statistics | quarterly | CBS | 2026-06-15 |
+| `arnona_rates` | Arnona Municipal Rates | annual | Municipalities | 2027-01-15 |
+| `sei_index` | Socioeconomic Index (SEI) | ~biennial | CBS | 2027-06-01 |
+| `city_population` | City Population Data | annual | CBS | 2027-01-01 |
+| `exchange_rate` | USD/ILS Exchange Rate | monthly | Bank of Israel | 2026-04-15 |
+| `mortgage_rates` | Mortgage Interest Rates | quarterly | Bank of Israel | 2026-06-15 |
+| `cgt_exemptions` | Capital Gains Exemptions | on_change | Knesset | — |
+| `professional_fees` | Professional Fee Ranges | annual | Industry survey | 2027-01-15 |
 
-- **`src/components/tools/TotalCostCalculator.tsx`** — Already has "(est.)" from Phase 2. Add tooltip: "Typical ranges: Walk-up ₪80–150, Elevator ₪150–400, Luxury ₪800–2,000+/mo"
-- **`src/components/property/PropertyValueSnapshot.tsx`** — Add "(est.)" label and same building-type tooltip to vaad bayit display
+## 2. Admin Data Governance Dashboard
 
-## 3. "25-Year Appreciation" Claims — Add editorial caveat (database)
+New page at `/admin/data-governance` with:
 
-16 city_market_factors rows claim "25-Year X% Appreciation" with year-2000 baselines. CBS city-level data only begins ~2017.
+- **Staleness overview cards**: Overdue (red), Due soon (amber), Current (green)
+- **Table** showing each category, last reviewed, next due, days until due/overdue, source
+- **"Mark as reviewed"** button per row that updates `last_reviewed_at` to now and advances `next_review_due` based on frequency
+- **Link** to source URL for quick reference
 
-**Action:** UPDATE all 15 rows with title ILIKE '%25-year%' to prepend description with: "Editorial estimate — CBS city-level data begins ~2017. Year-2000 baselines are approximated from regional indices and historical records. "
+Add navigation link in admin sidebar.
 
-This preserves the data while being transparent about methodology.
+### File: `src/pages/admin/AdminDataGovernance.tsx`
 
-## 4. Rental Ranges — Add "Indicative" label (2 files)
+## 3. Public Freshness Indicators
 
-- **`src/components/city/CityQuickStats.tsx`** — Add small text under rent display: "Indicative — based on CBS averages and listing data"
-- **`src/components/city/CitySourceAttribution.tsx`** — Already says "derived from active listings analysis and CBS rental surveys" — update to add "Indicative ranges" prefix
+### 3a. `useDataFreshness` hook
+New hook that queries `data_review_schedule` (cached 1hr) and exposes a helper: `getCategoryFreshness(category) → { lastReviewed, nextDue, isStale, label }`.
 
-## 5. Yield Percentages — Add methodology disclosure (2 files)
+### 3b. `DataFreshnessIndicator` component
+Small inline component showing "Data as of Mar 2026" or "⚠ Review overdue" — used in:
+- **Calculator tools** (`SourceAttribution.tsx`) — show freshness per tool's data categories
+- **City pages** (`CitySourceAttribution.tsx`) — show per-category freshness in the methodology section
 
-- **`src/components/shared/BuyWiseEstimateBadge.tsx`** — Enhance tooltip to include formula: "Gross yield = (annual rent ÷ purchase price) × 100. Inputs: median 4-room rent and median purchase price from verified sources."
-- **`src/components/city/CitySourceAttribution.tsx`** — Expand "Yield Calculations" methodology: "Gross yield = (avg annual rent ÷ median purchase price) × 100. Net yield deducts ~25% for arnona, vaad bayit, maintenance, and vacancy. Inputs sourced from CBS and listing platforms."
+### 3c. Update `toolSources.ts`
+Add a `reviewCategories` field to each `ToolSourceConfig` mapping tools to `data_review_schedule` categories, so freshness indicators know which categories apply to which calculator.
 
-## 6. Renovation Cost Estimator — Add source label (1 file)
+## 4. Files to Create/Modify
 
-- **`src/components/tools/RenovationCostEstimator.tsx`** — Update InfoBanner to: "Prices based on CBS construction cost index, contractor market research, and industry surveys (2024–2025). Ranges reflect typical quotes — get 3+ estimates for your specific project."
-
-## 7. Anglo Presence — Already labeled (verify only)
-
-Phase 2 already added "Editorial assessment by BuyWise" to `AngloFriendlinessScore.tsx`. No further changes needed.
-
-## 8. Investment Score — Label as proprietary (1 file + database consideration)
-
-`investment_score` exists in the DB and admin editor but does NOT appear in any public-facing component. It's admin-only metadata.
-
-- **`src/components/admin/CityEditor.tsx`** — Add helper text: "Proprietary BuyWise score — not displayed publicly" next to the Investment Score field
-
----
+| File | Action |
+|------|--------|
+| `src/pages/admin/AdminDataGovernance.tsx` | **Create** — full governance dashboard |
+| `src/hooks/useDataFreshness.ts` | **Create** — hook for freshness queries |
+| `src/components/shared/DataFreshnessIndicator.tsx` | **Create** — inline freshness badge |
+| `src/lib/calculations/toolSources.ts` | **Modify** — add `reviewCategories` per tool |
+| `src/components/tools/shared/SourceAttribution.tsx` | **Modify** — show freshness indicators |
+| `src/components/city/CitySourceAttribution.tsx` | **Modify** — show per-category freshness |
+| `src/App.tsx` | **Modify** — add route for `/admin/data-governance` |
+| `src/pages/admin/AdminLayout.tsx` | **Modify** — add sidebar link |
 
 ## Execution Order
 
-1. Arnona estimate labels (CityArnonaCard, MarketOverviewCards, CitySourceAttribution)
-2. Vaad Bayit building-type tooltips (TotalCostCalculator, PropertyValueSnapshot)
-3. 25-year appreciation caveats (database UPDATE on 15 city_market_factors rows)
-4. Rental "Indicative" labels (CityQuickStats, CitySourceAttribution)
-5. Yield methodology disclosure (BuyWiseEstimateBadge, CitySourceAttribution)
-6. Renovation source label update (RenovationCostEstimator)
-7. Investment score admin label (CityEditor)
+1. Create `data_review_schedule` table + seed data
+2. Create `useDataFreshness` hook
+3. Create `DataFreshnessIndicator` component
+4. Create `AdminDataGovernance.tsx` dashboard
+5. Update `toolSources.ts` with review category mappings
+6. Integrate freshness indicators into `SourceAttribution` and `CitySourceAttribution`
+7. Add admin route and sidebar link
 
