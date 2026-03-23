@@ -181,7 +181,7 @@ const timelineStages = [
 const readinessChecklist = {
   "Legal & Representation": [
     "I understand who represents whom in the transaction",
-    "I know what proves ownership (Tabu, Minhal, housing company)",
+    "I know what proves ownership (Tabu, RMI/Minhal, housing company)",,
     "I know the Hebrew contract controls, even if English exists",
     "I understand land type differences (freehold vs leasehold)",
   ],

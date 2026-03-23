@@ -22,11 +22,11 @@ export type SellerCategory =
   | 'inherited'            // Inherited property
   | 'foreign';             // Foreign resident seller
 
-// 2024 Exemption thresholds
+// 2025/2026 Exemption thresholds (frozen by Temporary Order)
 const EXEMPTIONS = {
   primaryResidence: {
     maxExemption: 4522000,  // Up to ₪4.522M exempt
-    holdingPeriodMonths: 18, // Must be primary residence for 18 months
+    holdingPeriodMonths: 24, // Must be primary residence for 24 months (Amendment 76)
   },
   upgrader: {
     combinedThreshold: 2252000, // Combined value threshold

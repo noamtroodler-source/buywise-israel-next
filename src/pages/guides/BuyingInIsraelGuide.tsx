@@ -357,7 +357,7 @@ export default function BuyingInIsraelGuide() {
           <ul className="list-disc pl-5 space-y-2">
             <li><strong>Seller motivation:</strong> Why is the owner selling? Urgency can affect flexibility</li>
             <li><strong>Time on market:</strong> How long has the property been listed?</li>
-            <li><strong>Registration type:</strong> Is it Tabu (private ownership), Minhal (leasehold), or a church lease? Each carries different implications</li>
+            <li><strong>Registration type:</strong> <li><strong>Registration type:</strong> Is it Tabu (private ownership), RMI/Minhal (leasehold), or a church lease? Each carries different implications</li> Each carries different implications</li>
             <li><strong>Building infractions:</strong> Are there any unpermitted additions or modifications?</li>
             <li><strong>Structural issues:</strong> Any known defects from the inspection?</li>
             <li><strong>Mortgage & payment terms:</strong> What payment schedule works for both parties?</li>
