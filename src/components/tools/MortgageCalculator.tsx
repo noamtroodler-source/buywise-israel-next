@@ -533,7 +533,7 @@ function MortgageCalculatorContent() {
         {/* Stress test preview */}
         <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/50 text-xs text-muted-foreground">
           <TrendingUp className="h-3 w-3" />
-          <span>If rates rise 2%: up to {formatCurrency(stressTest.plus2.stressedPayment)}/mo (+{stressTest.plus2.increasePercent.toFixed(0)}%)</span>
+          <span>If rates rise 2%: up to {formatNIS(stressTest.plus2.stressedPayment)}/mo (+{stressTest.plus2.increasePercent.toFixed(0)}%)</span>
         </div>
       </div>
 
