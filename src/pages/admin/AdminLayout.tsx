@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Users, Home, Building, Building2, 
   FileText, MapPin, BarChart3, Settings, ClipboardCheck, Sliders,
   Mail, ToggleLeft, BookOpen, Megaphone, Star, Package, Globe,
-  Wrench, ChevronRight, PenLine, Bug, Zap, TrendingUp, Flame
+  Wrench, ChevronRight, PenLine, Bug, Zap, TrendingUp, Flame, Shield
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { cn } from '@/lib/utils';
@@ -51,6 +51,7 @@ export function AdminLayout() {
     { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
     { href: '/admin/accuracy-audit', label: 'Accuracy Audit', icon: BarChart3 },
     { href: '/admin/import-analytics', label: 'Import Health', icon: BarChart3 },
+    { href: '/admin/data-governance', label: 'Data Governance', icon: Shield },
   ];
 
   const homepageItems = [

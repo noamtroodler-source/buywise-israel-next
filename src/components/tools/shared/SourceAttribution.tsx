@@ -3,6 +3,8 @@ import { Shield, ExternalLink, ChevronDown, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { TOOL_SOURCES, formatEffectiveDate, type ToolSourceConfig } from '@/lib/calculations/toolSources';
+import { useDataFreshness } from '@/hooks/useDataFreshness';
+import { MultiFreshnessIndicator } from '@/components/shared/DataFreshnessIndicator';
 
 interface SourceAttributionProps {
   toolType: string;
@@ -19,8 +21,13 @@ export function SourceAttribution({
 }: SourceAttributionProps) {
   const [isOpen, setIsOpen] = useState(defaultExpanded);
   const config = TOOL_SOURCES[toolType];
+  const { getMultipleFreshness } = useDataFreshness();
   
   if (!config) return null;
+
+  const freshnessItems = config.reviewCategories 
+    ? getMultipleFreshness(config.reviewCategories) 
+    : [];
 
   // Inline variant - simple one-liner
   if (variant === 'inline') {
@@ -97,6 +104,11 @@ export function SourceAttribution({
               lastVerified={config.lastVerified} 
               categories={config.categories} 
             />
+            {freshnessItems.length > 0 && (
+              <div className="flex items-center gap-2 pt-1">
+                <MultiFreshnessIndicator items={freshnessItems} />
+              </div>
+            )}
           </div>
         </CollapsibleContent>
       </Collapsible>

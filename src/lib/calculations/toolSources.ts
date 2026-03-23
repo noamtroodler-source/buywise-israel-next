@@ -13,6 +13,7 @@ export interface ToolSourceConfig {
   primarySources: ToolSource[];
   lastVerified: string;
   categories: string[];
+  reviewCategories?: string[];
 }
 
 export const TOOL_SOURCES: Record<string, ToolSourceConfig> = {
@@ -25,7 +26,8 @@ export const TOOL_SOURCES: Record<string, ToolSourceConfig> = {
       }
     ],
     lastVerified: '2026-03',
-    categories: ['LTV Limits', 'PTI Limits', 'Track Regulations']
+    categories: ['LTV Limits', 'PTI Limits', 'Track Regulations'],
+    reviewCategories: ['boi_directive_329', 'mortgage_rates'],
   },
   
   affordability: {
@@ -37,7 +39,8 @@ export const TOOL_SOURCES: Record<string, ToolSourceConfig> = {
       }
     ],
     lastVerified: '2025-01',
-    categories: ['PTI Limits', 'LTV by Buyer Type', 'Income Verification Rules']
+    categories: ['PTI Limits', 'LTV by Buyer Type', 'Income Verification Rules'],
+    reviewCategories: ['boi_directive_329', 'mortgage_rates'],
   },
   
   trueCost: {
@@ -54,7 +57,8 @@ export const TOOL_SOURCES: Record<string, ToolSourceConfig> = {
       }
     ],
     lastVerified: '2025-01',
-    categories: ['Purchase Tax Brackets', 'Registration Fees', 'VAT Rate', 'Professional Fees']
+    categories: ['Purchase Tax Brackets', 'Registration Fees', 'VAT Rate', 'Professional Fees'],
+    reviewCategories: ['purchase_tax', 'tabu_fees', 'vat_rate', 'professional_fees'],
   },
   
   purchaseTax: {
@@ -66,7 +70,8 @@ export const TOOL_SOURCES: Record<string, ToolSourceConfig> = {
       }
     ],
     lastVerified: '2025-01',
-    categories: ['Tax Brackets', 'Buyer Type Exemptions', 'Oleh Benefits']
+    categories: ['Tax Brackets', 'Buyer Type Exemptions', 'Oleh Benefits'],
+    reviewCategories: ['purchase_tax'],
   },
   
   investment: {
@@ -83,7 +88,8 @@ export const TOOL_SOURCES: Record<string, ToolSourceConfig> = {
       }
     ],
     lastVerified: '2025-01',
-    categories: ['Capital Gains Tax', 'Rental Income Tax', 'Market Benchmarks']
+    categories: ['Capital Gains Tax', 'Rental Income Tax', 'Market Benchmarks'],
+    reviewCategories: ['cgt_exemptions', 'cbs_price_stats'],
   },
   
   rentVsBuy: {
@@ -100,7 +106,8 @@ export const TOOL_SOURCES: Record<string, ToolSourceConfig> = {
       }
     ],
     lastVerified: '2025-01',
-    categories: ['Purchase Costs', 'Mortgage Rates', 'Tax Implications']
+    categories: ['Purchase Costs', 'Mortgage Rates', 'Tax Implications'],
+    reviewCategories: ['purchase_tax', 'mortgage_rates', 'exchange_rate'],
   },
   
   renovation: {
@@ -114,7 +121,8 @@ export const TOOL_SOURCES: Record<string, ToolSourceConfig> = {
       }
     ],
     lastVerified: '2025-01',
-    categories: ['Labor Costs', 'Material Costs', 'Contractor Rates']
+    categories: ['Labor Costs', 'Material Costs', 'Contractor Rates'],
+    reviewCategories: ['professional_fees'],
   },
   
   newConstruction: {
@@ -131,7 +139,8 @@ export const TOOL_SOURCES: Record<string, ToolSourceConfig> = {
       }
     ],
     lastVerified: '2025-01',
-    categories: ['CPI Linkage', 'VAT', 'Payment Schedules']
+    categories: ['CPI Linkage', 'VAT', 'Payment Schedules'],
+    reviewCategories: ['vat_rate', 'cbs_price_stats'],
   },
   
   documents: {
@@ -148,7 +157,8 @@ export const TOOL_SOURCES: Record<string, ToolSourceConfig> = {
       }
     ],
     lastVerified: '2025-01',
-    categories: ['Required Documents', 'Registration Process', 'Timeline']
+    categories: ['Required Documents', 'Registration Process', 'Timeline'],
+    reviewCategories: ['tabu_fees'],
   },
   
   rentalIncome: {
@@ -160,7 +170,8 @@ export const TOOL_SOURCES: Record<string, ToolSourceConfig> = {
       }
     ],
     lastVerified: '2025-01',
-    categories: ['Tax Exemption Threshold', 'Flat Rate Option', 'Progressive Tax']
+    categories: ['Tax Exemption Threshold', 'Flat Rate Option', 'Progressive Tax'],
+    reviewCategories: ['purchase_tax', 'cgt_exemptions'],
   }
 };
 

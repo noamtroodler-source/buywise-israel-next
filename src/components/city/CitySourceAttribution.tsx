@@ -4,6 +4,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useDataFreshness } from '@/hooks/useDataFreshness';
+import { DataFreshnessIndicator } from '@/components/shared/DataFreshnessIndicator';
 import {
   type SourceValue,
   getDisplayableSources,
@@ -16,6 +18,18 @@ interface CitySourceAttributionProps {
   className?: string;
   cityName?: string;
   districtName?: string | null;
+}
+
+function CityFreshnessRow({ category, label }: { category: string; label: string }) {
+  const { getCategoryFreshness } = useDataFreshness();
+  const freshness = getCategoryFreshness(category);
+  if (!freshness) return null;
+  return (
+    <div className="flex items-center justify-between">
+      <span className="font-medium text-foreground/80">{label}:</span>
+      <DataFreshnessIndicator {...freshness} showLabel />
+    </div>
+  );
 }
 
 export function CitySourceAttribution({ sources, lastVerified, className, cityName, districtName }: CitySourceAttributionProps) {
@@ -194,6 +208,9 @@ export function CitySourceAttribution({ sources, lastVerified, className, cityNa
                       <span className="font-medium text-foreground/80">Yield Calculations:</span>{' '}
                       Gross yield = (avg annual rent ÷ median purchase price) × 100. Net yield deducts ~25% for arnona, vaad bayit, maintenance, and vacancy. Inputs sourced from CBS and listing platforms.
                     </div>
+                    <CityFreshnessRow category="cbs_price_stats" label="Price Data" />
+                    <CityFreshnessRow category="arnona_rates" label="Arnona Rates" />
+                    <CityFreshnessRow category="exchange_rate" label="Exchange Rate" />
                     <div className="pt-2 border-t border-border/30">
                       <span className="font-medium text-foreground/80">Update Frequency:</span>{' '}
                       Data is reviewed and updated monthly, with market factors verified quarterly 
