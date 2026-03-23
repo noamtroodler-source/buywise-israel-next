@@ -6,8 +6,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { PropertyFilters as PropertyFiltersType, PropertyType, SortOption } from '@/types/database';
 import { cn } from '@/lib/utils';
-import { useSavedLocations } from '@/hooks/useSavedLocations';
-import { getLocationIcon } from '@/types/savedLocation';
+
+
 
 // Import the filter section components from PropertyFilters
 import { PriceRangeSlider } from '@/components/filters/PriceRangeSlider';

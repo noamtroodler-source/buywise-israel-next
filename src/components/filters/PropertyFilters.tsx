@@ -22,8 +22,8 @@ import { MobileFilterSheet } from '@/components/filters/MobileFilterSheet';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { findNearestCity } from '@/lib/utils/findNearestCity';
 import { HoverOnlyTooltip } from '@/components/filters/HoverOnlyTooltip';
-import { useSavedLocations } from '@/hooks/useSavedLocations';
-import { getLocationIcon } from '@/types/savedLocation';
+
+
 interface PropertyFiltersProps {
   filters: PropertyFiltersType;
   onFiltersChange: (filters: PropertyFiltersType) => void;
