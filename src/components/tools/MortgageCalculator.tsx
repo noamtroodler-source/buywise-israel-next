@@ -556,7 +556,7 @@ function MortgageCalculatorContent() {
             <InfoTooltip content={`Range based on ${MORTGAGE_RATE_RANGES.low}–${MORTGAGE_RATE_RANGES.high}% rates. Prepaying (especially on Prime tracks) can significantly reduce this.`} />
           </div>
           <p className="text-lg font-semibold mt-0.5">
-            {formatCurrencyRange(interestRange.interestLow, interestRange.interestHigh, currencySymbol)}
+            {formatCurrencyRange(interestRange.interestLow, interestRange.interestHigh, '₪')}
           </p>
         </div>
         <div className="p-4">
