@@ -467,7 +467,7 @@ function AffordabilityCalculatorContent() {
                     </Select>
                     <div className="relative flex-1">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{CURRENCY_CONFIG[downPaymentCurrency].symbol}</span>
-                      <Input type="text" value={formatNumber(downPaymentInput)} onChange={(e) => setDownPaymentInput(parseFormattedNumber(e.target.value))} className="h-11 pl-8" />
+                      <FormattedNumberInput value={downPaymentInput || undefined} onChange={(v) => setDownPaymentInput(v ?? 0)} prefix={CURRENCY_CONFIG[downPaymentCurrency].symbol} className="h-11" />
                     </div>
                   </div>
                   {downPaymentCurrency !== 'ILS' && (
