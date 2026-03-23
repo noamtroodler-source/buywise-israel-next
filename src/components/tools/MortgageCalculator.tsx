@@ -206,7 +206,7 @@ function MortgageCalculatorContent() {
     // Interest cost context — always useful
     const interestPercentOfPrice = propertyPrice > 0 ? (mortgageResult.totalInterest / propertyPrice) * 100 : 0;
     if (interestPercentOfPrice > 50) {
-      messages.push(`Interest adds ${formatCurrency(mortgageResult.totalInterest)} over ${loanTermYears} years — that's ${interestPercentOfPrice.toFixed(0)}% of the property price. Prepaying even ${formatCurrency(Math.round(mortgageResult.monthlyPayment * 0.1))}/month extra could save significantly.`);
+      messages.push(`Interest adds ${formatNIS(mortgageResult.totalInterest)} over ${loanTermYears} years — that's ${interestPercentOfPrice.toFixed(0)}% of the property price. Prepaying even ${formatNIS(Math.round(mortgageResult.monthlyPayment * 0.1))}/month extra could save significantly.`);
     } else if (mortgageResult.totalInterest > 100000) {
       messages.push(`Total interest: ${formatCurrency(mortgageResult.totalInterest)} (${interestPercentOfPrice.toFixed(0)}% of property price). Prime-track loans in Israel allow penalty-free prepayment.`);
     }
