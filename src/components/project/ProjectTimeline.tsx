@@ -143,7 +143,9 @@ export function ProjectTimeline({ project }: ProjectTimelineProps) {
         <div className="flex justify-between items-center text-sm">
           <div>
             <span className="text-muted-foreground">Started: </span>
-            <span className="font-medium">{formatDate(project.construction_start)}</span>
+            <span className="font-medium">
+              {project.construction_start ? formatDate(project.construction_start) : (hasTimelineContradiction ? 'Not confirmed' : 'TBD')}
+            </span>
           </div>
           <div>
             <span className="text-muted-foreground">Completion: </span>
