@@ -45,7 +45,7 @@ export const FALLBACK_CONSTANTS = {
   // Tax rates
   BETTERMENT_LEVY_RATE: 0.50,
   CAPITAL_GAINS_RATE: 0.25,
-  CAPITAL_GAINS_EXEMPT_PERIOD: 18, // months
+  CAPITAL_GAINS_EXEMPT_PERIOD: 24, // months (updated per Amendment 76)
   
   // Arnona (Ministry of Interior 2025)
   ARNONA_RESIDENTIAL_MIN: 40.30,
