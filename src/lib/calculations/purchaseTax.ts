@@ -6,7 +6,7 @@
 export type BuyerType = 
   | 'first_time'      // First apartment buyer
   | 'oleh'            // New immigrant within 7 years
-  | 'upgrader'        // Selling existing property within 18 months
+  | 'upgrader'        // Selling existing property within 24 months (Amendment 76)
   | 'investor'        // Additional property buyer (Israeli resident)
   | 'foreign'         // Foreign resident/non-resident
   | 'company';        // Corporate buyer
