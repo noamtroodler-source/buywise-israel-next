@@ -1589,6 +1589,45 @@ export type Database = {
         }
         Relationships: []
       }
+      data_review_schedule: {
+        Row: {
+          category: string
+          id: string
+          label: string
+          last_reviewed_at: string | null
+          next_review_due: string | null
+          notes: string | null
+          review_frequency: string
+          source_authority: string
+          source_url: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          category: string
+          id?: string
+          label: string
+          last_reviewed_at?: string | null
+          next_review_due?: string | null
+          notes?: string | null
+          review_frequency: string
+          source_authority: string
+          source_url?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          id?: string
+          label?: string
+          last_reviewed_at?: string | null
+          next_review_due?: string | null
+          notes?: string | null
+          review_frequency?: string
+          source_authority?: string
+          source_url?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       developer_notifications: {
         Row: {
           action_url: string | null
