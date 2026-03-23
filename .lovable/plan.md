@@ -1,28 +1,45 @@
 
 
-# Enhance ALL Uploaded Photos with AI
+# Neighborhood Click on Map — Best Approach
 
-## Current State
-`SortableImageUpload.tsx` (lines 273-291) only enhances the **cover photo** (index 0). The `enhance-image` edge function and `enhanceUploadedImage` helper already exist and work. The legacy `ImageUpload.tsx` already enhances all photos — we just need to replicate that pattern.
+## The Problem
 
-## Change
+The neighborhood boundary names come from CBS (Central Bureau of Statistics) — e.g., "German Colony - Old Katamon (Gonen)", "City Center, Mamilla, Musrara, Geula, Me'a She'arim, Nahlaot, Rehavia". The property listings have short scraped names like "German Colony", "Katamon", "Rehavia". These almost never match, so filtering by boundary name returns zero results.
 
-**File: `src/components/agent/SortableImageUpload.tsx`** — Replace the cover-only enhancement block (lines 273-291) with a loop that enhances ALL newly uploaded images in parallel:
+**Making the filter "just work" would require** a fuzzy mapping table between ~310 CBS boundary names and the free-text neighborhood values in listings — an unreliable, ongoing maintenance burden with no guarantee of accuracy.
 
-- Set `enhancingCount` to `newUrls.length`
-- Show toast: "Enhancing X photo(s) with AI..."
-- `Promise.allSettled` all `enhanceUploadedImage(url)` calls
-- Map results back into `allImages`, replacing originals with enhanced versions
-- Toast success with count of actually enhanced images
-- Graceful fallback: any failed enhancement keeps the original
+## Recommended Solution: Zoom to Fit (No Filter)
 
-**File: `src/components/developer/wizard/steps/StepPhotos.tsx`** — Add the same enhancement call after successful uploads (this component currently has zero enhancement logic).
+When a user clicks a neighborhood boundary on the map:
+1. **Zoom the map to fit that polygon's bounds** — this naturally shows only the listings physically within that area (since listings outside the viewport are excluded by the existing bounds-based query)
+2. **Visually highlight** the selected polygon (already works)
+3. **Do NOT apply a text-based neighborhood filter** — let the map bounds do the filtering spatially
 
-**File: `src/components/agent/wizard/steps/StepPhotos.tsx`** — No changes needed (it delegates to `SortableImageUpload`).
+This is how Zillow and most map-based property search tools work. The map viewport IS the filter.
 
-## Cost
-~$0.01-0.02 per image × 10 images = ~$0.10-0.20 per listing. At 100 listings/month ≈ $10-20/month.
+## Changes
 
-## No database or edge function changes needed
-The existing `enhance-image` edge function handles everything — we're just calling it for more images.
+### 1. NeighborhoodBoundariesLayer.tsx
+- Update `onNeighborhoodClick` to pass both the name AND the polygon path coordinates
+- Signature: `(name: string, path: Array<{lat: number, lng: number}>)` → `void`
+
+### 2. PropertyMap.tsx
+- Update the click handler to call `map.fitBounds()` with coordinates from the clicked polygon
+- Remove the `onNeighborhoodFilter` prop entirely
+- Toggle: clicking same neighborhood again zooms back out
+
+### 3. NeighborhoodChips.tsx
+- Remove `onFilterNeighborhood` prop and its usage
+- Keep the existing pan/zoom behavior (already zooms to centroid)
+- Optionally also use `fitBounds` for better framing
+
+### 4. MapSearchLayout.tsx
+- Remove `handleNeighborhoodFilter` callback
+- Remove `onNeighborhoodFilter` prop from both desktop and mobile `PropertyMap` instances
+- The `neighborhoods` URL param will no longer be set by map clicks (the filter panel on `/listings` can still use it)
+
+## What This Means for Users
+- Click a neighborhood on map → map zooms to show that area → listings in that zone appear naturally because they're within the viewport
+- No confusing "0 results" when clicking a neighborhood that clearly has listings
+- The neighborhood filter dropdown in the filter bar (used on `/listings` page) continues to work independently
 
