@@ -562,7 +562,7 @@ function MortgageCalculatorContent() {
         <div className="p-4">
           <p className="text-xs text-muted-foreground">Total You'll Pay</p>
           <p className="text-lg font-semibold mt-0.5">
-            {formatCurrencyRange(interestRange.totalLow, interestRange.totalHigh, currencySymbol)}
+            {formatCurrencyRange(interestRange.totalLow, interestRange.totalHigh, '₪')}
           </p>
         </div>
       </div>
