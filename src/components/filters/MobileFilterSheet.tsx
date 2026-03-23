@@ -92,7 +92,7 @@ export function MobileFilterSheet({
   onSoldToggle,
 }: MobileFilterSheetProps) {
   const [citySearch, setCitySearch] = useState('');
-  const { data: savedLocations = [] } = useSavedLocations();
+  
 
   const updateFilter = <K extends keyof PropertyFiltersType>(key: K, value: PropertyFiltersType[K]) => {
     onFiltersChange({ ...filters, [key]: value });

@@ -129,7 +129,7 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [citySearch, setCitySearch] = useState('');
   const [geoError, setGeoError] = useState<string | null>(null);
-  const { data: savedLocations = [] } = useSavedLocations();
+  
   
   // Arming logic for hover-only tooltips: prevents tooltip from opening when popover appears under cursor
   const [tooltipsArmed, setTooltipsArmed] = useState(false);
