@@ -138,7 +138,7 @@ export function NeighborhoodBoundariesLayer({ map, city, highlightedNeighborhood
         });
 
         polygon.addListener('click', () => {
-          onNeighborhoodClick?.(b.neighborhood);
+          onNeighborhoodClick?.(b.neighborhood, path);
         });
 
         polygonsRef.current.push(polygon);
