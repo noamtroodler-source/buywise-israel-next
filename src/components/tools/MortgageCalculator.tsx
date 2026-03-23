@@ -698,9 +698,9 @@ function MortgageCalculatorContent() {
                 <div className="grid sm:grid-cols-2 gap-3">
                   <div className="p-4 rounded-lg bg-muted/50 border">
                     <p className="text-xs text-muted-foreground mb-1">At {(interestRate + 1).toFixed(1)}% (+1%)</p>
-                    <p className="text-xl font-semibold">{formatCurrency(stressTest.plus1.stressedPayment)}/mo</p>
+                    <p className="text-xl font-semibold">{formatNIS(stressTest.plus1.stressedPayment)}/mo</p>
                     <p className="text-xs text-semantic-amber mt-1">
-                      +{formatCurrency(stressTest.plus1.increase)} ({stressTest.plus1.increasePercent.toFixed(1)}% higher)
+                      +{formatNIS(stressTest.plus1.increase)} ({stressTest.plus1.increasePercent.toFixed(1)}% higher)
                     </p>
                   </div>
                   <div className="p-4 rounded-lg bg-muted/50 border">
