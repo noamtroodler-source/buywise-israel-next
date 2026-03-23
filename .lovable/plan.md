@@ -1,109 +1,69 @@
 
 
-# Phase 1: Critical Data Accuracy Fixes
+# Phase 2: Significant Fixes + Transparency Labels
 
-Based on the Perplexity audit report (10 critical errors, 10 significant errors), this phase addresses all items that pose financial/legal risk or contain demonstrably false data.
-
----
-
-## What's being fixed
-
-### Group A: Mortgage & Tax Calculation Errors (3 files)
-
-**1. PTI cap: 40% → 50%**
-- `src/lib/calculations/constants.ts` — `MAX_PTI: 0.40` → `0.50`, update comment to explain 40% is risk-weight trigger, not prohibition
-- `src/lib/calculations/mortgage.ts` — hardcoded `MAX_PTI = 0.40` → `0.50`, update comment
-- `src/components/tools/AffordabilityCalculator.tsx` — hardcoded `MAX_PTI = 0.40` → `0.50`, update educational text from "40%" to "50%"
-
-**2. Variable rate limit: 33.33% → 66.67%**
-- `src/lib/calculations/constants.ts` — `VARIABLE_RATE_MAX_PERCENT: 0.3333` → `0.6667`, update comment to "max 2/3 variable (min 1/3 fixed)"
-
-**3. CGT exemption period: 18 → 24 months**
-- `src/lib/calculations/constants.ts` — `CAPITAL_GAINS_EXEMPT_PERIOD: 18` → `24`, update comment
-
-**4. Nesach Tabu fee: 128.60 → 17 (electronic) / 85 (paper)**
-- `src/lib/calculations/constants.ts` — `TABU_NESACH_FEE: 128.60` → `17` (electronic default), add comment noting 85 for paper
-- Update registration fees: `178` → `185` for both `TABU_REGISTRATION_FEE` and `MORTGAGE_REGISTRATION_FEE`
-
-**5. Tax bracket threshold rounding**
-- `src/lib/calculations/purchaseTax.ts` — fix `20183560` → `20183565` (3 instances across first_time, oleh, upgrader brackets)
-- Update file header comment from "2024" to "2025/2026 (frozen by Temporary Order)"
-
-### Group B: Arnona Discount Swap (1 file)
-
-**6. Disability discounts are inverted**
-- `src/lib/calculations/arnona.ts`:
-  - `disabled_90`: `maxPercent: 80` → `40`, update description
-  - `disabled_75`: `maxPercent: 40` → `80`, update description  
-  - `idf_active`: add `areaLimitSqm: 70` (was `null`)
-
-### Group C: City Data Corrections (database updates)
-
-**7. Critical city data fixes** — SQL UPDATE statements via insert tool:
-
-| City | Field | Old → New |
-|------|-------|-----------|
-| Haifa | avg_price | 1,357,100 → 1,879,900 |
-| Hadera | avg_price | 1,662,500 → 2,032,700 |
-| Jerusalem | socioeconomic_index | 6 → 3 |
-| Jerusalem | population | 970,000 → 1,050,153 |
-| Beit Shemesh | socioeconomic_index | 5 → 2 |
-| Beit Shemesh | population | 130,000 → 176,786 |
-| Ra'anana | population | 155,000 → 82,964 |
-| Ra'anana | socioeconomic_index | 9 → 8 |
-| Ashkelon | population | 130,000 → 166,864 |
-| Eilat | socioeconomic_index | 4 → 6 |
-| Eilat | population | 69,440 → 56,004 |
-| Herzliya | socioeconomic_index | 10 → 8 |
-| Herzliya | population | 97,470 → 110,884 |
-| Ashdod | population | 225,939 → 228,562 |
-| Ashdod | socioeconomic_index | 6 → 5 |
-| Givat Shmuel | socioeconomic_index | 9 → 8 |
-| Hadera | socioeconomic_index | 5 → 6 |
-| Kfar Saba | population | 110,456 → 99,410 |
-| Ma'ale Adumim | socioeconomic_index | 7 → 6 |
-| Modi'in | socioeconomic_index | 8 → 9 |
-| Netanya | population | 278,182 → 234,813 |
-| Netanya | socioeconomic_index | 7 → 6 |
-| Pardes Hanna | socioeconomic_index | 6 → 7 |
-| Tel Aviv | population | 432,892 → 494,900 |
-| Zichron Yaakov | socioeconomic_index | 7 → 8 |
-| Zichron Yaakov | population | 26,375 → 24,201 |
-| Ramat Gan | population | 167,794 → 172,242 |
-| Beer Sheva | population | 228,808 → 223,587 |
-| Efrat | population | 11,000 → 12,114 |
-| Gush Etzion | population | 40,000 → 27,812 |
-| Hod HaSharon | population | 68,000 → 66,398 |
-| Mevaseret Zion | population | 28,144 → 25,789 |
-| Petah Tikva | population | 260,000 → 270,403 |
-
-**8. Ashkelon false editorial claims** — UPDATE `city_market_factors` to remove "-20% decline" and "population exodus" claims, replace with verified CBS data (~-1.7% YoY)
-
-### Group D: Directive 329 & Source References (2 files)
-
-**9. Update Directive version references**
-- `src/lib/calculations/toolSources.ts` — all "Directive 329 v11" → "Directive 329 v12", effectiveDate → '2026-02-08'
-- `src/pages/guides/MortgagesGuide.tsx` — update "40%" display to "50%"
-
-**10. Database constants update** — UPDATE `calculator_constants` table for PTI, variable rate, CGT exemption, and fee values
-
-### Group E: Glossary Fixes (database update)
-
-**11. Glossary corrections:**
-- UPDATE `glossary_terms` — "Minhal" / "Israel Land Authority" → "Rashut Mekarkei Yisrael (RMI)" with note about 2009 rename
-- UPDATE `glossary_terms` — Add TAMA 38 status note: "Program ended Aug 2024 in most cities; active in select cities until May 2026"
-
-Also update hardcoded references:
-- `src/lib/calculations/toolSources.ts` line 145: 'Israel Land Authority' → 'Israel Land Administration (RMI)'
-- `src/pages/guides/BuyingPropertyGuide.tsx` line 51: update glossary entry
+Phase 1 (critical calculation fixes and city data) is complete. This phase covers the remaining audit items: stale "18 months" upgrader references, glossary remnants, TAMA 38 tooltip accuracy, and the Phase 4 transparency/labeling work.
 
 ---
 
-## Execution order
+## Group A: Upgrader Timeline 18 → 24 Months (5 files)
 
-1. Fix code files (constants.ts, mortgage.ts, AffordabilityCalculator.tsx, arnona.ts, purchaseTax.ts, toolSources.ts, MortgagesGuide.tsx, BuyingPropertyGuide.tsx)
-2. Update database `calculator_constants` values
-3. Update database `cities` table (population, SEI)
-4. Update database `city_market_factors` (Ashkelon claims)
-5. Update database `glossary_terms` (ILA name, TAMA 38)
+The audit confirmed Amendment 76 extended the upgrader sell-deadline to 24 months. Phase 1 updated the comment in `purchaseTax.ts` line 51 but missed the hardcoded "18 months" text in these locations:
+
+| File | Line | Current | Fix |
+|------|------|---------|-----|
+| `purchaseTax.ts` | 9 | `within 18 months` | `within 24 months` |
+| `purchaseTax.ts` | 196 | `deadline.setMonth(+18)` | `+24` |
+| `BuyerTypeInfoBanner.tsx` | 36 | `within 18 months` | `within 24 months` |
+| `buyerProfile.ts` | 108, 114, 117, 120 | All say "18 months" | Change to "24 months" |
+| `PurchaseTaxGuide.tsx` | 142, 410 | `within 18 months` | `within 24 months` |
+| `ask-buywise/index.ts` | 142 | `within 18 months` | `within 24 months` |
+
+## Group B: Remaining Glossary / Name Fixes (3 files)
+
+| File | Line | Fix |
+|------|------|-----|
+| `BuyingInIsraelGuide.tsx` | 116 | "Israel Land Authority" → "RMI (Rashut Mekarkei Yisrael)" |
+| `ListingsGuide.tsx` | 125 | "leasehold (Minhal)" → "leasehold (RMI/Minhal)" — acceptable as "Minhal" is colloquially used |
+| `decode-listing/index.ts` | 135 | "Minhal/Taboo Rashut" → "RMI (Minhal)" |
+
+## Group C: TAMA 38 Tooltip Accuracy (2 files)
+
+The program ended Aug 2024 in most cities. Tooltips still say "may require seismic retrofitting (TAMA 38 eligibility)" without the expiration caveat.
+
+| File | Line | Fix |
+|------|------|-----|
+| `ListingDecoderTool.tsx` | 408 | Add: "Note: TAMA 38 ended Aug 2024 in most areas" |
+| `PropertyQuickSummary.tsx` | 557 | Same caveat |
+
+## Group D: Anglo Presence — Editorial Label (1 file)
+
+Add a small "Editorial assessment" note to `AngloFriendlinessScore.tsx` to comply with the audit's requirement that Anglo presence be labeled as editorial rather than government-sourced data.
+
+## Group E: Vaad Bayit & Arnona Estimate Labels (2 files)
+
+Where city-level Vaad Bayit or Arnona averages are displayed, add "(est.)" suffix or tooltip noting these are BuyWise estimates, not municipal quotes. Key locations:
+- `TotalCostCalculator.tsx` — where `average_vaad_bayit` fallback is used
+- `CityMarketSnapshot.tsx` — if displaying arnona/vaad
+
+## Group F: Exchange Rate Refresh (database)
+
+Invoke the existing `update-exchange-rate` edge function to refresh the stale DB value to the current market rate.
+
+## Group G: Database Updates
+
+- Update `glossary_terms`: Add TAMA 38 expiration note if not already done in Phase 1
+- Update `calculator_constants`: Ensure upgrader period constant is 24
+
+---
+
+## Execution Order
+
+1. Code fixes: upgrader 18→24 across all files (Group A)
+2. Code fixes: glossary name corrections (Group B)
+3. Code fixes: TAMA 38 tooltips (Group C)
+4. Code fixes: Anglo editorial label (Group D)
+5. Code fixes: estimate labels (Group E)
+6. Database: exchange rate refresh (Group F)
+7. Database: glossary/constants updates (Group G)
 
