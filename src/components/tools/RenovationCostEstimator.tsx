@@ -1000,7 +1000,7 @@ export function RenovationCostEstimator() {
       headerActions={headerActions}
       infoBanner={
         <InfoBanner variant="info">
-          Prices based on CBS construction cost index and contractor market research (Q4 2024). Actual costs vary by location, contractor, and specific requirements.
+          Prices based on CBS construction cost index, contractor market research, and industry surveys (2024–2025). Ranges reflect typical quotes — get 3+ estimates for your specific project.
         </InfoBanner>
       }
       leftColumn={leftColumn}

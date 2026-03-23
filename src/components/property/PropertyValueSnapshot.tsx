@@ -144,9 +144,18 @@ export function PropertyValueSnapshot({
             <p className="text-2xl font-bold text-foreground">
               {formatPrice(totalMonthlyCommitment, 'ILS')}/mo
             </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Rent + Arnona + Va'ad <span className="text-muted-foreground/60">(est.)</span>
-            </p>
+            <TooltipProvider delayDuration={0}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <p className="text-xs text-muted-foreground mt-1 cursor-help">
+                    Rent + Arnona + Va'ad <span className="text-muted-foreground/60">(est.)</span>
+                  </p>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <p className="text-xs">Va'ad Bayit typical ranges: Walk-up ₪80–150, Elevator ₪150–400, Luxury ₪800–2,000+/mo. Arnona estimated from municipal rates.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
 
           {/* City Average Total Monthly */}

@@ -174,6 +174,7 @@ export function CityQuickStats({ citySlug, cityData, dataSources, lastVerified }
               <span className="text-xs text-muted-foreground/70 uppercase tracking-wide mr-1">Rent</span>
               <span className="text-lg font-semibold text-foreground">{rentalRange}</span>
               <span className="text-sm text-muted-foreground">/mo</span>
+              <span className="text-[10px] text-muted-foreground/60 ml-1">Indicative</span>
               <Select
                 value={selectedRooms.toString()}
                 onValueChange={(value) => setSelectedRooms(parseInt(value))}

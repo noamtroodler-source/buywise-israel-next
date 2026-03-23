@@ -108,6 +108,9 @@ export function CityArnonaCard({ arnonaRateSqm, arnonaMonthlyAvg, cityName }: Ci
           <p className="text-xs text-muted-foreground mt-1">
             ₪{Math.round(arnonaEstimate.discountedMonthly * 12).toLocaleString()}/year
           </p>
+          <p className="text-[10px] text-muted-foreground/60 mt-2">
+            BuyWise estimate based on municipal rate tables. Actual rates vary by zone and property classification.
+          </p>
         </div>
         
       </CardContent>

@@ -307,7 +307,10 @@ export function CityEditor({ city, onClose }: CityEditorProps) {
             maxField="net_yield_percent_max"
             suffix="%"
           />
-          <NumberInput field="investment_score" label="Investment Score" suffix="/100" />
+          <div className="space-y-1">
+            <NumberInput field="investment_score" label="Investment Score" suffix="/100" />
+            <p className="text-xs text-muted-foreground italic">Proprietary BuyWise score — not displayed publicly</p>
+          </div>
         </TabsContent>
 
         <TabsContent value="lifestyle" className="space-y-4 pt-4">

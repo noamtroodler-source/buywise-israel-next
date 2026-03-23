@@ -411,10 +411,17 @@ export function TotalCostCalculator() {
                   <span className="text-muted-foreground">Arnona (ארנונה) <span className="text-xs italic">(est.)</span>:</span>
                   <span className="font-medium">{formatCurrency(calculations.monthlyArnona)}/mo</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Vaad Bayit (ועד בית) <span className="text-xs italic">(est.)</span>:</span>
-                  <span className="font-medium">{formatCurrency(calculations.monthlyVaadBayit)}/mo</span>
-                </div>
+                 <div className="flex justify-between">
+                   <Tooltip>
+                     <TooltipTrigger className="text-muted-foreground text-left cursor-help">
+                       Vaad Bayit (ועד בית) <span className="text-xs italic">(est.)</span>:
+                     </TooltipTrigger>
+                     <TooltipContent className="max-w-xs">
+                       <p className="text-xs">Typical ranges: Walk-up ₪80–150, Elevator ₪150–400, Luxury ₪800–2,000+/mo</p>
+                     </TooltipContent>
+                   </Tooltip>
+                   <span className="font-medium">{formatCurrency(calculations.monthlyVaadBayit)}/mo</span>
+                 </div>
                 <hr />
                 <div className="flex justify-between font-semibold">
                   <span>Total Monthly:</span>
