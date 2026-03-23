@@ -13,6 +13,7 @@ export interface ToolSourceConfig {
   primarySources: ToolSource[];
   lastVerified: string;
   categories: string[];
+  reviewCategories?: string[];
 }
 
 export const TOOL_SOURCES: Record<string, ToolSourceConfig> = {
