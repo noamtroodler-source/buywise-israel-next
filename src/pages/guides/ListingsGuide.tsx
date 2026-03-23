@@ -122,7 +122,7 @@ const whatOmitted = [
   {
     icon: FileText,
     title: 'Land Tenure and Registration',
-    description: 'Whether the property is freehold (Tabu), leasehold (Minhal) or under a housing company is left to lawyers.',
+    description: 'Whether the property is freehold (Tabu), leasehold (RMI/Minhal) or under a housing company is left to lawyers.',
   },
   {
     icon: Scale,

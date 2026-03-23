@@ -139,7 +139,7 @@ const olehBrackets = [
 const workedExamples = [
   {
     label: 'Israeli Resident — Single Residence',
-    subtitle: 'First-time buyers or upgraders selling existing home within 18 months',
+    subtitle: 'First-time buyers or upgraders selling existing home within 24 months',
     price: '₪2,500,000',
     calculation: '₪0 on first ₪1.98M + 3.5% on ₪368K + 5% on ₪153K',
     tax: '₪20,530',
@@ -407,7 +407,7 @@ export default function PurchaseTaxGuide() {
                     ))}
                   </div>
                   <p className="text-xs text-muted-foreground mt-3">
-                    Also applies to upgraders selling within 18 months.
+                    Also applies to upgraders selling within 24 months (Amendment 76).
                   </p>
                 </Card>
 

@@ -408,11 +408,11 @@ export function TotalCostCalculator() {
               </h4>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Arnona (ארנונה):</span>
+                  <span className="text-muted-foreground">Arnona (ארנונה) <span className="text-xs italic">(est.)</span>:</span>
                   <span className="font-medium">{formatCurrency(calculations.monthlyArnona)}/mo</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Vaad Bayit (ועד בית):</span>
+                  <span className="text-muted-foreground">Vaad Bayit (ועד בית) <span className="text-xs italic">(est.)</span>:</span>
                   <span className="font-medium">{formatCurrency(calculations.monthlyVaadBayit)}/mo</span>
                 </div>
                 <hr />
@@ -425,7 +425,7 @@ export function TotalCostCalculator() {
 
             {!selectedCity && (
               <p className="text-xs text-muted-foreground text-center">
-                Select a city for accurate Arnona and Vaad estimates
+                Select a city for Arnona and Vaad estimates (BuyWise averages, not municipal quotes)
               </p>
             )}
           </div>

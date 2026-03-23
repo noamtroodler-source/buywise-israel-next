@@ -113,7 +113,7 @@ export default function BuyingInIsraelGuide() {
               <strong><GlossaryTooltip term="טאבו">Tabu / Freehold (Full Ownership)</GlossaryTooltip>:</strong> Complete private ownership of both land and building, registered with the Land Registry.
             </li>
             <li>
-              <strong>Minhal / Leasehold:</strong> Long-term lease of state-owned land (usually up to 99 years) while owning the building. Resale or renovation may require approval from the Israel Land Authority.
+              <strong>RMI / Leasehold:</strong> Long-term lease of state-owned land (usually up to 99 years) while owning the building. Resale or renovation may require approval from the Israel Land Administration (RMI, formerly Minhal).
             </li>
             <li>
               <strong>Cooperative Housing:</strong> Ownership of shares in a housing company

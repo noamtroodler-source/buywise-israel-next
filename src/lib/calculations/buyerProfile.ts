@@ -105,19 +105,19 @@ export function deriveEffectiveBuyerType(profile: BuyerProfileDimensions): Deriv
     };
   }
 
-  // 5. Upgrader - selling existing property within 18 months
+  // 5. Upgrader - selling existing property within 24 months (Amendment 76)
   if (is_upgrading) {
     return {
       taxType: 'upgrader',
       label: 'Upgrader',
       shortLabel: 'Upgrader',
-      description: 'Selling existing property within 18 months',
+      description: 'Selling existing property within 24 months',
       benefits: [
         'First-time buyer rates apply',
-        'Must sell existing property within 18 months',
+        'Must sell existing property within 24 months',
         'Zero tax on first ₪1.98M',
       ],
-      warnings: ['18-month deadline applies from purchase date'],
+      warnings: ['24-month deadline applies from purchase date'],
     };
   }
 
@@ -177,7 +177,7 @@ export function getProfileDimensionsSummary(profile: BuyerProfileDimensions): Ar
   
   // Property ownership
   if (profile.is_upgrading) {
-    items.push({ label: 'Property Status', value: 'Upgrading (selling within 18 months)' });
+    items.push({ label: 'Property Status', value: 'Upgrading (selling within 24 months)' });
   } else if (profile.is_first_property) {
     items.push({ label: 'Property Status', value: 'First Property' });
   } else {

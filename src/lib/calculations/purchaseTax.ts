@@ -6,7 +6,7 @@
 export type BuyerType = 
   | 'first_time'      // First apartment buyer
   | 'oleh'            // New immigrant within 7 years
-  | 'upgrader'        // Selling existing property within 18 months
+  | 'upgrader'        // Selling existing property within 24 months (Amendment 76)
   | 'investor'        // Additional property buyer (Israeli resident)
   | 'foreign'         // Foreign resident/non-resident
   | 'company';        // Corporate buyer
@@ -190,7 +190,7 @@ export function calculateUpgraderTimeline(purchaseDate: Date): {
   isEligible: boolean;
 } {
   const deadline = new Date(purchaseDate);
-  deadline.setMonth(deadline.getMonth() + 18);
+  deadline.setMonth(deadline.getMonth() + 24);
   
   const now = new Date();
   const daysRemaining = Math.max(0, Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
