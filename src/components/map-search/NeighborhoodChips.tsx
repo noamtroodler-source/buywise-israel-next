@@ -8,7 +8,7 @@ interface NeighborhoodChipsProps {
   onSelect: (name: string | null) => void;
 }
 
-export function NeighborhoodChips({ city, map, selectedNeighborhood, onSelect, onFilterNeighborhood }: NeighborhoodChipsProps) {
+export function NeighborhoodChips({ city, map, selectedNeighborhood, onSelect }: NeighborhoodChipsProps) {
   const { data: neighborhoods = [] } = useQuery({
     queryKey: ['neighborhood-names', city],
     queryFn: async () => {
