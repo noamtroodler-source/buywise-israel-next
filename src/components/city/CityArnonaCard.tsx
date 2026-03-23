@@ -87,7 +87,7 @@ export function CityArnonaCard({ arnonaRateSqm, arnonaMonthlyAvg, cityName }: Ci
         </div>
         
         <div className="bg-muted/50 rounded-lg p-4 text-center">
-          <p className="text-sm text-muted-foreground mb-1">Monthly Estimate</p>
+          <p className="text-sm text-muted-foreground mb-1">Monthly Estimate <span className="text-xs italic">(est.)</span></p>
           <div className="flex items-center justify-center gap-2">
             <p className="text-2xl font-bold text-foreground">₪{arnonaEstimate.discountedMonthly.toLocaleString()}</p>
             {arnonaEstimate.discountPercent > 0 && (
