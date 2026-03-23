@@ -121,7 +121,8 @@ export const TOOL_SOURCES: Record<string, ToolSourceConfig> = {
       }
     ],
     lastVerified: '2025-01',
-    categories: ['Labor Costs', 'Material Costs', 'Contractor Rates']
+    categories: ['Labor Costs', 'Material Costs', 'Contractor Rates'],
+    reviewCategories: ['professional_fees'],
   },
   
   newConstruction: {
