@@ -6,7 +6,7 @@ interface NeighborhoodBoundariesLayerProps {
   map: google.maps.Map;
   city: string | null;
   highlightedNeighborhood?: string | null;
-  onNeighborhoodClick?: (name: string) => void;
+  onNeighborhoodClick?: (name: string, path: Array<{ lat: number; lng: number }>) => void;
 }
 
 interface BoundaryRow {
