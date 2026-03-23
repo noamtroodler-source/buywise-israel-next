@@ -57,7 +57,8 @@ export const TOOL_SOURCES: Record<string, ToolSourceConfig> = {
       }
     ],
     lastVerified: '2025-01',
-    categories: ['Purchase Tax Brackets', 'Registration Fees', 'VAT Rate', 'Professional Fees']
+    categories: ['Purchase Tax Brackets', 'Registration Fees', 'VAT Rate', 'Professional Fees'],
+    reviewCategories: ['purchase_tax', 'tabu_fees', 'vat_rate', 'professional_fees'],
   },
   
   purchaseTax: {
