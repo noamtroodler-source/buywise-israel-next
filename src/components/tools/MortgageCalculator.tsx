@@ -390,7 +390,7 @@ function MortgageCalculatorContent() {
               <InfoTooltip content="Israeli property prices are typically listed in Shekels (₪). For luxury or investment properties, you may also see USD pricing." />
             </div>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">{currencySymbol}</span>
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">₪</span>
               <Input
                 type="text"
                 inputMode="numeric"
