@@ -28,6 +28,10 @@ export function ProjectTimeline({ project }: ProjectTimelineProps) {
     });
   };
 
+  // Check for contradictory timeline: no start date but completion is soon
+  const hasTimelineContradiction = !project.construction_start && project.completion_date && 
+    new Date(project.completion_date) < new Date(Date.now() + 18 * 30 * 24 * 60 * 60 * 1000);
+
   // Mobile vertical timeline
   const renderMobileTimeline = () => (
     <div className="space-y-1">
