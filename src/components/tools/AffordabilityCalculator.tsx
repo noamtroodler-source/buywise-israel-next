@@ -436,7 +436,7 @@ function AffordabilityCalculatorContent() {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-medium flex items-center">Spouse/Partner Gross Income<InfoTooltip content="Banks evaluate each income separately — if one spouse is self-employed, only that portion gets discounted. Combined gross household income increases buying power." /></Label>
-                  <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{currencySymbol}</span><Input type="text" value={formatNumber(spouseIncome)} onChange={(e) => setSpouseIncome(parseFormattedNumber(e.target.value))} className="h-11 pl-8" /></div>
+                  <FormattedNumberInput value={spouseIncome || undefined} onChange={(v) => setSpouseIncome(v ?? 0)} prefix={currencySymbol} className="h-11" />
                 </div>
                 <div className="space-y-3">
                    <Label className="text-sm font-medium flex items-center">Income Earned Abroad<InfoTooltip content="If part of your salary comes from a foreign employer or overseas work, Israeli banks discount it 30-40% because it's harder to verify. This reduces your borrowing power." /></Label>
