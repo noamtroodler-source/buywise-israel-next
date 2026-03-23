@@ -4,6 +4,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useDataFreshness } from '@/hooks/useDataFreshness';
+import { DataFreshnessIndicator } from '@/components/shared/DataFreshnessIndicator';
 import {
   type SourceValue,
   getDisplayableSources,
