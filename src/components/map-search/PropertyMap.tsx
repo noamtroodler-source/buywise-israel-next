@@ -85,6 +85,7 @@ export function PropertyMap({
   const [activeLayers, setActiveLayers] = useState<Set<string>>(new Set());
   const [drawnPolygon, setDrawnPolygon] = useState<Polygon | null>(null);
   const [selectedNeighborhood, setSelectedNeighborhood] = useState<string | null>(null);
+  const prevNeighborhoodBoundsRef = useRef<google.maps.LatLngBounds | null>(null);
   const [boundsChanged, setBoundsChanged] = useState(false);
   const lastQueriedBoundsRef = useRef<string | null>(null);
   const [showHelp, setShowHelp] = useState(false);
