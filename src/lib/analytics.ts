@@ -10,8 +10,7 @@ export const GA_MEASUREMENT_ID = 'G-VV7WR2N63C';
 // Check if GA is loaded and measurement ID is configured
 export const isGAEnabled = () => {
   return typeof window !== 'undefined' && 
-         'gtag' in window && 
-         GA_MEASUREMENT_ID !== 'G-XXXXXXXXXX';
+         'gtag' in window;
 };
 
 // Declare gtag for TypeScript
