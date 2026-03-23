@@ -117,7 +117,8 @@ export function NeighborhoodBoundariesLayer({ map, city, highlightedNeighborhood
           paths: path,
           ...style,
           map,
-          zIndex: b.neighborhood === highlightedNeighborhood ? 2 : 1,
+          clickable: true,
+          zIndex: 1, // Keep below markers (default marker zIndex is higher)
         });
 
         polygon.addListener('mouseover', () => {

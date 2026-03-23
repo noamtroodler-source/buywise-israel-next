@@ -363,18 +363,28 @@ export function PropertyMap({
             city={resolvedBoundaryCity}
             highlightedNeighborhood={selectedNeighborhood}
             onNeighborhoodClick={(name, path) => {
+              // If a property popup is active, ignore neighborhood clicks
+              if (activeProperty) return;
+
               if (selectedNeighborhood === name) {
+                // Deselect: zoom back out
                 setSelectedNeighborhood(null);
                 if (prevNeighborhoodBoundsRef.current) {
-                  map.fitBounds(prevNeighborhoodBoundsRef.current);
+                  map.panTo(prevNeighborhoodBoundsRef.current.getCenter());
                   prevNeighborhoodBoundsRef.current = null;
                 }
               } else {
                 prevNeighborhoodBoundsRef.current = map.getBounds() ?? null;
                 setSelectedNeighborhood(name);
+                // Gentle pan to centroid instead of aggressive fitBounds
                 const bounds = new google.maps.LatLngBounds();
                 path.forEach(coord => bounds.extend(coord));
-                map.fitBounds(bounds, 50);
+                map.panTo(bounds.getCenter());
+                // Only zoom in if we're zoomed out relative to neighborhood size
+                const currentZoom = map.getZoom() ?? 13;
+                if (currentZoom < 15) {
+                  map.setZoom(Math.max(currentZoom, 15));
+                }
               }
             }}
           />
