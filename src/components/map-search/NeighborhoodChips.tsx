@@ -6,10 +6,9 @@ interface NeighborhoodChipsProps {
   map: google.maps.Map | null;
   selectedNeighborhood: string | null;
   onSelect: (name: string | null) => void;
-  onFilterNeighborhood?: (name: string | null) => void;
 }
 
-export function NeighborhoodChips({ city, map, selectedNeighborhood, onSelect, onFilterNeighborhood }: NeighborhoodChipsProps) {
+export function NeighborhoodChips({ city, map, selectedNeighborhood, onSelect }: NeighborhoodChipsProps) {
   const { data: neighborhoods = [] } = useQuery({
     queryKey: ['neighborhood-names', city],
     queryFn: async () => {
@@ -40,10 +39,8 @@ export function NeighborhoodChips({ city, map, selectedNeighborhood, onSelect, o
   const handleClick = (n: { name: string; center: [number, number] }) => {
     if (selectedNeighborhood === n.name) {
       onSelect(null);
-      onFilterNeighborhood?.(null);
     } else {
       onSelect(n.name);
-      onFilterNeighborhood?.(n.name);
       map?.panTo({ lat: n.center[0], lng: n.center[1] });
       map?.setZoom(15);
     }

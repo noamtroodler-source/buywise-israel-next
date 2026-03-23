@@ -53,7 +53,7 @@ interface PropertyMapProps {
   initialCenter?: [number, number];
   initialZoom?: number;
   onMapMove?: (lat: number, lng: number, zoom: number) => void;
-  onNeighborhoodFilter?: (name: string | null) => void;
+  
 }
 
 export function PropertyMap({
@@ -73,7 +73,7 @@ export function PropertyMap({
   initialCenter,
   initialZoom,
   onMapMove,
-  onNeighborhoodFilter,
+  
 }: PropertyMapProps) {
   const { isLoaded } = useGoogleMaps();
   const [map, setMap] = useState<google.maps.Map | null>(null);
@@ -85,6 +85,7 @@ export function PropertyMap({
   const [activeLayers, setActiveLayers] = useState<Set<string>>(new Set());
   const [drawnPolygon, setDrawnPolygon] = useState<Polygon | null>(null);
   const [selectedNeighborhood, setSelectedNeighborhood] = useState<string | null>(null);
+  const prevNeighborhoodBoundsRef = useRef<google.maps.LatLngBounds | null>(null);
   const [boundsChanged, setBoundsChanged] = useState(false);
   const lastQueriedBoundsRef = useRef<string | null>(null);
   const [showHelp, setShowHelp] = useState(false);
@@ -361,9 +362,20 @@ export function PropertyMap({
             map={map}
             city={resolvedBoundaryCity}
             highlightedNeighborhood={selectedNeighborhood}
-            onNeighborhoodClick={(name) => {
-              setSelectedNeighborhood(name);
-              onNeighborhoodFilter?.(name);
+            onNeighborhoodClick={(name, path) => {
+              if (selectedNeighborhood === name) {
+                setSelectedNeighborhood(null);
+                if (prevNeighborhoodBoundsRef.current) {
+                  map.fitBounds(prevNeighborhoodBoundsRef.current);
+                  prevNeighborhoodBoundsRef.current = null;
+                }
+              } else {
+                prevNeighborhoodBoundsRef.current = map.getBounds() ?? null;
+                setSelectedNeighborhood(name);
+                const bounds = new google.maps.LatLngBounds();
+                path.forEach(coord => bounds.extend(coord));
+                map.fitBounds(bounds, 50);
+              }
             }}
           />
         )}
@@ -420,7 +432,6 @@ export function PropertyMap({
           map={map}
           selectedNeighborhood={selectedNeighborhood}
           onSelect={setSelectedNeighborhood}
-          onFilterNeighborhood={onNeighborhoodFilter}
         />
       )}
     </div>

@@ -6,7 +6,7 @@ interface NeighborhoodBoundariesLayerProps {
   map: google.maps.Map;
   city: string | null;
   highlightedNeighborhood?: string | null;
-  onNeighborhoodClick?: (name: string) => void;
+  onNeighborhoodClick?: (name: string, path: Array<{ lat: number; lng: number }>) => void;
 }
 
 interface BoundaryRow {
@@ -138,7 +138,7 @@ export function NeighborhoodBoundariesLayer({ map, city, highlightedNeighborhood
         });
 
         polygon.addListener('click', () => {
-          onNeighborhoodClick?.(b.neighborhood);
+          onNeighborhoodClick?.(b.neighborhood, path);
         });
 
         polygonsRef.current.push(polygon);
