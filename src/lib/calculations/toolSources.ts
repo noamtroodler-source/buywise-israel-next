@@ -170,7 +170,8 @@ export const TOOL_SOURCES: Record<string, ToolSourceConfig> = {
       }
     ],
     lastVerified: '2025-01',
-    categories: ['Tax Exemption Threshold', 'Flat Rate Option', 'Progressive Tax']
+    categories: ['Tax Exemption Threshold', 'Flat Rate Option', 'Progressive Tax'],
+    reviewCategories: ['purchase_tax', 'cgt_exemptions'],
   }
 };
 
