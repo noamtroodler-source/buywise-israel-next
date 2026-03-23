@@ -236,9 +236,9 @@ export default function MortgagesGuide() {
                 <p className="text-xs text-muted-foreground mt-1">75% for first-time Israeli residents · 50% for investors</p>
               </div>
               <div className="p-5 rounded-xl border border-border bg-card">
-                <p className="text-3xl font-bold text-primary mb-1">40%</p>
+                <p className="text-3xl font-bold text-primary mb-1">50%</p>
                 <p className="text-sm font-medium text-foreground">Max debt-to-income ratio</p>
-                <p className="text-xs text-muted-foreground mt-1">Bank of Israel Directive 329 · Applied to net monthly income</p>
+                <p className="text-xs text-muted-foreground mt-1">Bank of Israel Directive 329 v12 · Hard cap on net income (above 40% triggers higher risk-weighting)</p>
               </div>
             </div>
           </motion.div>

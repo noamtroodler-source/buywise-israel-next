@@ -48,7 +48,7 @@ const bigPictureInsights = [
 // Data: Glossary terms (top 8 most essential for this guide)
 const glossaryTerms = [
   { hebrew: "טאבו", english: "Tabu", definition: "Israel's Land Registry; registering here provides the strongest ownership right. About 7% of Israeli land is privately owned and registered in Tabu." },
-  { hebrew: "מנהל / רמ״י", english: "Minhal / ILA", definition: "Israel Land Authority, managing ~93% of state-owned land. Most homes are on long-term leases (49+49 years), renewable and transferable." },
+  { hebrew: "מנהל / רמ״י", english: "RMI (Rashut Mekarkei Yisrael)", definition: "Israel Land Administration (renamed from 'Minhal' in 2009), managing ~93% of state-owned land. Most homes are on long-term leases (49+49 years), renewable and transferable." },
   { hebrew: "הערת אזהרה", english: "He'arat Azhara", definition: "A warning note registered on title to protect buyer's rights before final registration. Register immediately after contract signing." },
   { hebrew: "זיכרון דברים", english: "Zichron Devarim", definition: "A memorandum of understanding — can be legally binding if it contains essential terms. Courts have enforced these as contracts. Never sign without lawyer review." },
   { hebrew: "מס רכישה", english: "Mas Rechisha", definition: "Purchase tax due within 60 days of signing. Rates vary by buyer status: 0-10% for residents, 8-10% for investors/foreign buyers." },

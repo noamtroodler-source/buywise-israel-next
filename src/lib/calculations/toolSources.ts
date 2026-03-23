@@ -142,7 +142,7 @@ export const TOOL_SOURCES: Record<string, ToolSourceConfig> = {
         effectiveDate: '2025-01-01' 
       },
       { 
-        name: 'Israel Land Authority', 
+        name: 'Israel Land Administration (RMI)', 
         url: 'https://land.gov.il/en', 
         effectiveDate: '2025-01-01' 
       }

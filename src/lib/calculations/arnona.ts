@@ -85,8 +85,8 @@ export const ARNONA_DISCOUNTS: Record<ArnonaDiscountCategory, ArnonaDiscount> = 
     key: 'idf_active',
     label: 'Active IDF Soldier',
     maxPercent: 100,
-    areaLimitSqm: null,
-    description: '100% exemption for active IDF soldiers',
+    areaLimitSqm: 70,
+    description: '100% exemption for active IDF soldiers (first 70m²)',
   },
 };
 
