@@ -6,7 +6,7 @@
  * 
  * Sources:
  * - Israel Tax Authority (taxes.gov.il)
- * - Bank of Israel Directive 329 v11 (April 2025)
+ * - Bank of Israel Directive 329 v12 (February 2026)
  * - Ministry of Interior (Arnona regulations)
  * - Ministry of Justice (Tabu fees)
  */
@@ -25,8 +25,8 @@ export const FALLBACK_CONSTANTS = {
   LTV_INVESTOR: 0.50,
   LTV_FOREIGN: 0.50,
   LTV_OLEH: 0.75,
-  MAX_PTI: 0.40, // Bank of Israel limits to 33-40% of net income
-  VARIABLE_RATE_MAX_PERCENT: 0.3333, // 1/3 limit
+  MAX_PTI: 0.50, // Bank of Israel Directive 329 v12: hard cap 50% of net income (40% triggers higher risk-weighting but is not a prohibition)
+  VARIABLE_RATE_MAX_PERCENT: 0.6667, // max 2/3 variable-rate tracks (min 1/3 must be fixed)
   
   // Professional fees
   LAWYER_RATE_MIN: 0.005,
@@ -37,15 +37,15 @@ export const FALLBACK_CONSTANTS = {
   APPRAISAL_FEE_MAX: 3500,
   
   // Government fees
-  TABU_NESACH_FEE: 128.60,
-  TABU_REGISTRATION_FEE: 178,
-  MORTGAGE_REGISTRATION_FEE: 178,
+  TABU_NESACH_FEE: 17, // Electronic extract (paper: ₪85)
+  TABU_REGISTRATION_FEE: 185,
+  MORTGAGE_REGISTRATION_FEE: 185,
   MORTGAGE_ORIGINATION_MAX: 360,
   
   // Tax rates
   BETTERMENT_LEVY_RATE: 0.50,
   CAPITAL_GAINS_RATE: 0.25,
-  CAPITAL_GAINS_EXEMPT_PERIOD: 18, // months
+  CAPITAL_GAINS_EXEMPT_PERIOD: 24, // months (updated per Amendment 76)
   
   // Arnona (Ministry of Interior 2025)
   ARNONA_RESIDENTIAL_MIN: 40.30,

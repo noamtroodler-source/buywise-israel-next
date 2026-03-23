@@ -19,21 +19,21 @@ export const TOOL_SOURCES: Record<string, ToolSourceConfig> = {
   mortgage: {
     primarySources: [
       { 
-        name: 'Bank of Israel Directive 329 v11', 
+        name: 'Bank of Israel Directive 329 v12', 
         url: 'https://www.boi.org.il/en/banking-supervision/', 
-        effectiveDate: '2025-04-01' 
+        effectiveDate: '2026-02-08' 
       }
     ],
-    lastVerified: '2025-01',
+    lastVerified: '2026-03',
     categories: ['LTV Limits', 'PTI Limits', 'Track Regulations']
   },
   
   affordability: {
     primarySources: [
       { 
-        name: 'Bank of Israel Directive 329 v11', 
+        name: 'Bank of Israel Directive 329 v12', 
         url: 'https://www.boi.org.il/en/banking-supervision/', 
-        effectiveDate: '2025-04-01' 
+        effectiveDate: '2026-02-08' 
       }
     ],
     lastVerified: '2025-01',
@@ -142,7 +142,7 @@ export const TOOL_SOURCES: Record<string, ToolSourceConfig> = {
         effectiveDate: '2025-01-01' 
       },
       { 
-        name: 'Israel Land Authority', 
+        name: 'Israel Land Administration (RMI)', 
         url: 'https://land.gov.il/en', 
         effectiveDate: '2025-01-01' 
       }

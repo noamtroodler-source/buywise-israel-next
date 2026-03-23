@@ -1,6 +1,6 @@
 /**
  * Purchase Tax (Mas Rechisha) Calculation Utilities
- * Based on 2024 Israeli tax brackets
+ * Based on 2025/2026 Israeli tax brackets (frozen by Temporary Order)
  */
 
 export type BuyerType = 
@@ -32,28 +32,28 @@ export interface PurchaseTaxResult {
   };
 }
 
-// 2024 Tax Brackets (updated January 2024)
+// 2025/2026 Tax Brackets (frozen by Temporary Order — thresholds unchanged from Jan 2024)
 const TAX_BRACKETS: Record<BuyerType, TaxBracket[]> = {
   first_time: [
     { min: 0, max: 1978745, rate: 0 },
     { min: 1978745, max: 2347040, rate: 0.035 },
     { min: 2347040, max: 6055070, rate: 0.05 },
-    { min: 6055070, max: 20183560, rate: 0.08 },
-    { min: 20183560, max: null, rate: 0.10 },
+    { min: 6055070, max: 20183565, rate: 0.08 },
+    { min: 20183565, max: null, rate: 0.10 },
   ],
   oleh: [
     { min: 0, max: 1978745, rate: 0 },
     { min: 1978745, max: 6055070, rate: 0.005 }, // Special 0.5% rate
-    { min: 6055070, max: 20183560, rate: 0.08 },
-    { min: 20183560, max: null, rate: 0.10 },
+    { min: 6055070, max: 20183565, rate: 0.08 },
+    { min: 20183565, max: null, rate: 0.10 },
   ],
   upgrader: [
-    // Same as first_time if selling within 18 months
+    // Same as first_time if selling within 24 months (updated from 18)
     { min: 0, max: 1978745, rate: 0 },
     { min: 1978745, max: 2347040, rate: 0.035 },
     { min: 2347040, max: 6055070, rate: 0.05 },
-    { min: 6055070, max: 20183560, rate: 0.08 },
-    { min: 20183560, max: null, rate: 0.10 },
+    { min: 6055070, max: 20183565, rate: 0.08 },
+    { min: 20183565, max: null, rate: 0.10 },
   ],
   investor: [
     { min: 0, max: 6055070, rate: 0.08 },
