@@ -139,7 +139,8 @@ export const TOOL_SOURCES: Record<string, ToolSourceConfig> = {
       }
     ],
     lastVerified: '2025-01',
-    categories: ['CPI Linkage', 'VAT', 'Payment Schedules']
+    categories: ['CPI Linkage', 'VAT', 'Payment Schedules'],
+    reviewCategories: ['vat_rate', 'cbs_price_stats'],
   },
   
   documents: {
