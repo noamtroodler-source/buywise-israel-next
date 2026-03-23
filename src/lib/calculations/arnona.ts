@@ -49,16 +49,16 @@ export const ARNONA_DISCOUNTS: Record<ArnonaDiscountCategory, ArnonaDiscount> = 
   disabled_90: {
     key: 'disabled_90',
     label: '90%+ Disability',
-    maxPercent: 80,
+    maxPercent: 40,
     areaLimitSqm: null,
-    description: 'Up to 80% discount for 90%+ disability rating',
+    description: 'Up to 40% discount for 90%+ disability rating',
   },
   disabled_75: {
     key: 'disabled_75',
     label: '75-89% Disability',
-    maxPercent: 40,
+    maxPercent: 80,
     areaLimitSqm: null,
-    description: 'Up to 40% discount for 75-89% disability rating',
+    description: 'Up to 80% discount for 75-89% disability rating',
   },
   holocaust_survivor: {
     key: 'holocaust_survivor',
