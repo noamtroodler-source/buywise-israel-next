@@ -2,18 +2,13 @@ import { useMemo, useState, useCallback } from 'react';
 import { Marker, InfoWindow } from '@react-google-maps/api';
 import { useCityAnchors } from '@/hooks/useCityAnchors';
 import { MapInfoCard } from './MapInfoCard';
+import { getBrandedMarkerIcon } from './mapMarkerIcons';
 
 interface CityAnchorsLayerProps {
   map: google.maps.Map;
   cityFilter: string | null;
   bounds: google.maps.LatLngBounds | null;
 }
-
-const ANCHOR_COLORS: Record<string, string> = {
-  shul: '#e11d48',
-  supermarket: '#10b981',
-  landmark: '#3b82f6',
-};
 
 export function CityAnchorsLayer({ map, cityFilter, bounds }: CityAnchorsLayerProps) {
   const { data: anchors = [] } = useCityAnchors(cityFilter ?? undefined);
@@ -36,14 +31,7 @@ export function CityAnchorsLayer({ map, cityFilter, bounds }: CityAnchorsLayerPr
           key={anchor.id}
           position={{ lat: anchor.latitude!, lng: anchor.longitude! }}
           onClick={() => setSelected(anchor)}
-          icon={{
-            path: google.maps.SymbolPath.CIRCLE,
-            scale: 8,
-            fillColor: ANCHOR_COLORS[anchor.anchor_type] || '#6b7280',
-            fillOpacity: 1,
-            strokeColor: '#ffffff',
-            strokeWeight: 2,
-          }}
+          icon={getBrandedMarkerIcon(anchor.anchor_type)}
           title={anchor.name}
         />
       ))}
@@ -53,10 +41,10 @@ export function CityAnchorsLayer({ map, cityFilter, bounds }: CityAnchorsLayerPr
           onCloseClick={handleClose}
         >
           <MapInfoCard
-              name={selected.name}
-              hebrewName={selected.name_he}
-              description={selected.description}
-            />
+            name={selected.name}
+            hebrewName={selected.name_he}
+            description={selected.description}
+          />
         </InfoWindow>
       )}
     </>
