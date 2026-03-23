@@ -92,7 +92,7 @@ const CITY_ROOM_SIZE_INSIGHTS: Record<string, RoomInsightFn> = {
 
   'ramat-gan': (m) =>
     `Ramat Gan's room-size pricing reflects its position as Tel Aviv's most popular alternative. ` +
-    (m.room3Price ? `(m.room3Price ? `3-room units at ${fmt(m.room3Price)} are the entry play — mostly in older buildings with urban renewal potential. ` : '') + : '') +
+    (m.room3Price ? `3-room units at ${fmt(m.room3Price)} are the entry play — mostly in older buildings with urban renewal potential. ` : '') +
     (m.gapSmallToLarge ? `The ${fmtGap(m.gapSmallToLarge)} gap to the top end is significant, but urban renewal is creating new inventory across all sizes.` : ''),
 
   'petah-tikva': (m) =>
