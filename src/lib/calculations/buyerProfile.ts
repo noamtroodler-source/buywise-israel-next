@@ -177,7 +177,7 @@ export function getProfileDimensionsSummary(profile: BuyerProfileDimensions): Ar
   
   // Property ownership
   if (profile.is_upgrading) {
-    items.push({ label: 'Property Status', value: 'Upgrading (selling within 18 months)' });
+    items.push({ label: 'Property Status', value: 'Upgrading (selling within 24 months)' });
   } else if (profile.is_first_property) {
     items.push({ label: 'Property Status', value: 'First Property' });
   } else {

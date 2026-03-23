@@ -190,7 +190,7 @@ export function calculateUpgraderTimeline(purchaseDate: Date): {
   isEligible: boolean;
 } {
   const deadline = new Date(purchaseDate);
-  deadline.setMonth(deadline.getMonth() + 18);
+  deadline.setMonth(deadline.getMonth() + 24);
   
   const now = new Date();
   const daysRemaining = Math.max(0, Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));

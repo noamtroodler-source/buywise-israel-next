@@ -215,7 +215,7 @@ export function BuyerProfileSelector({
                     <RadioGroupItem value="upgrading" className="h-3.5 w-3.5" />
                     <div>
                       <span>Upgrading</span>
-                      <span className="text-xs text-muted-foreground ml-1">(selling within 18 months)</span>
+                      <span className="text-xs text-muted-foreground ml-1">(selling within 24 months)</span>
                     </div>
                   </Label>
                   <Label

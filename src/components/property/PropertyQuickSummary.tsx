@@ -554,7 +554,7 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
               </div>
             </TooltipTrigger>
             <TooltipContent className="max-w-xs">
-              <p>Buildings from before 1980 may require seismic retrofitting (TAMA 38 eligibility).</p>
+              <p>Buildings from before 1980 may require seismic retrofitting. Note: TAMA 38 ended Aug 2024 in most areas; active in select cities until May 2026.</p>
             </TooltipContent>
           </Tooltip>
 

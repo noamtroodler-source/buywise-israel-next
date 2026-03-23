@@ -92,6 +92,9 @@ export function AngloFriendlinessScore({ angloPresence, socioeconomicRank, cityN
                 : `${cityName} has a smaller Anglo community. Hebrew proficiency recommended.`
             }
           </p>
+          <p className="text-xs text-muted-foreground/70 mt-2 italic">
+            Editorial assessment by BuyWise — not sourced from government data.
+          </p>
         </div>
       </CardContent>
     </Card>

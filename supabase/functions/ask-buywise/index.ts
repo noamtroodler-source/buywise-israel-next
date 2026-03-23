@@ -139,7 +139,7 @@ const TOOLS = [
         type: "object",
         properties: {
           price: { type: "number", description: "Property price in ILS" },
-          buyer_type: { type: "string", enum: ["first_time", "oleh", "upgrader", "investor", "foreign", "company"], description: "Buyer category. first_time = first apartment, oleh = new immigrant within 7 years, upgrader = selling existing within 18 months, investor = additional property, foreign = non-resident, company = corporate." },
+          buyer_type: { type: "string", enum: ["first_time", "oleh", "upgrader", "investor", "foreign", "company"], description: "Buyer category. first_time = first apartment, oleh = new immigrant within 7 years, upgrader = selling existing within 24 months (Amendment 76), investor = additional property, foreign = non-resident, company = corporate." },
         },
         required: ["price", "buyer_type"],
         additionalProperties: false,

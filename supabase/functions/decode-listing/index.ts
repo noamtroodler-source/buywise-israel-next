@@ -132,7 +132,7 @@ MISSING DATA CHECKLIST — check if each is present. If missing, explain WHY it 
 - Floor number and total floors in building
 - Year built
 - Tofes 4 (occupancy permit) status
-- Tabu (land registry) status — vs. Minhal/Taboo Rashut
+- Tabu (land registry) status — vs. RMI (Minhal) leasehold
 - Parking details (how many spots, covered/uncovered)
 - Elevator
 - Storage room (machsan)

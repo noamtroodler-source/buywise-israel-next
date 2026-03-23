@@ -597,7 +597,7 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
                       <ArrowUpDown className="h-5 w-5 text-primary" />
                       <div>
                         <p className="font-medium">Upgrading</p>
-                        <p className="text-sm text-muted-foreground">I'm selling my current home within 18 months</p>
+                        <p className="text-sm text-muted-foreground">I'm selling my current home within 24 months</p>
                       </div>
                     </Label>
                   </div>

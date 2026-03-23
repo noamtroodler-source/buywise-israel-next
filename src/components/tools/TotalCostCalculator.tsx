@@ -425,7 +425,7 @@ export function TotalCostCalculator() {
 
             {!selectedCity && (
               <p className="text-xs text-muted-foreground text-center">
-                Select a city for accurate Arnona and Vaad estimates
+                Select a city for Arnona and Vaad estimates (BuyWise averages, not municipal quotes)
               </p>
             )}
           </div>

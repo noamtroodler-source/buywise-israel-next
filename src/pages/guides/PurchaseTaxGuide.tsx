@@ -407,7 +407,7 @@ export default function PurchaseTaxGuide() {
                     ))}
                   </div>
                   <p className="text-xs text-muted-foreground mt-3">
-                    Also applies to upgraders selling within 18 months.
+                    Also applies to upgraders selling within 24 months (Amendment 76).
                   </p>
                 </Card>
 
