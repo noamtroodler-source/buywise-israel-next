@@ -362,9 +362,20 @@ export function PropertyMap({
             map={map}
             city={resolvedBoundaryCity}
             highlightedNeighborhood={selectedNeighborhood}
-            onNeighborhoodClick={(name) => {
-              setSelectedNeighborhood(name);
-              onNeighborhoodFilter?.(name);
+            onNeighborhoodClick={(name, path) => {
+              if (selectedNeighborhood === name) {
+                setSelectedNeighborhood(null);
+                if (prevNeighborhoodBoundsRef.current) {
+                  map.fitBounds(prevNeighborhoodBoundsRef.current);
+                  prevNeighborhoodBoundsRef.current = null;
+                }
+              } else {
+                prevNeighborhoodBoundsRef.current = map.getBounds() ?? null;
+                setSelectedNeighborhood(name);
+                const bounds = new google.maps.LatLngBounds();
+                path.forEach(coord => bounds.extend(coord));
+                map.fitBounds(bounds, 50);
+              }
             }}
           />
         )}
