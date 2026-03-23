@@ -152,6 +152,7 @@ const AdminWarmLeads = lazy(() => import("./pages/admin/AdminWarmLeads"));
 const AdminDuplicates = lazy(() => import("./pages/admin/AdminDuplicates"));
 const AdminImportAnalytics = lazy(() => import("./pages/admin/AdminImportAnalytics"));
 const ImportNeighborhoodProfiles = lazy(() => import("./pages/admin/ImportNeighborhoodProfiles"));
+const AdminDataGovernance = lazy(() => import("./pages/admin/AdminDataGovernance"));
 // Global query client config for optimal caching
 const queryClient = new QueryClient({
   defaultOptions: {
