@@ -26,7 +26,8 @@ export const TOOL_SOURCES: Record<string, ToolSourceConfig> = {
       }
     ],
     lastVerified: '2026-03',
-    categories: ['LTV Limits', 'PTI Limits', 'Track Regulations']
+    categories: ['LTV Limits', 'PTI Limits', 'Track Regulations'],
+    reviewCategories: ['boi_directive_329', 'mortgage_rates'],
   },
   
   affordability: {
