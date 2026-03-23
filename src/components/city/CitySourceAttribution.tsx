@@ -196,6 +196,9 @@ export function CitySourceAttribution({ sources, lastVerified, className, cityNa
                       <span className="font-medium text-foreground/80">Yield Calculations:</span>{' '}
                       Gross yield = (avg annual rent ÷ median purchase price) × 100. Net yield deducts ~25% for arnona, vaad bayit, maintenance, and vacancy. Inputs sourced from CBS and listing platforms.
                     </div>
+                    <CityFreshnessRow category="cbs_price_stats" label="Price Data" />
+                    <CityFreshnessRow category="arnona_rates" label="Arnona Rates" />
+                    <CityFreshnessRow category="exchange_rate" label="Exchange Rate" />
                     <div className="pt-2 border-t border-border/30">
                       <span className="font-medium text-foreground/80">Update Frequency:</span>{' '}
                       Data is reviewed and updated monthly, with market factors verified quarterly 

@@ -507,6 +507,7 @@ const App = () => (
                           <Route path="duplicates" element={<AdminDuplicates />} />
                           <Route path="import-analytics" element={<AdminImportAnalytics />} />
                           <Route path="import-neighborhood-profiles" element={<ImportNeighborhoodProfiles />} />
+                          <Route path="data-governance" element={<AdminDataGovernance />} />
                         </Route>
                         
                         <Route path="*" element={<NotFound />} />

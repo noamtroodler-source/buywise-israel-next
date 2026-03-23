@@ -104,6 +104,11 @@ export function SourceAttribution({
               lastVerified={config.lastVerified} 
               categories={config.categories} 
             />
+            {freshnessItems.length > 0 && (
+              <div className="flex items-center gap-2 pt-1">
+                <MultiFreshnessIndicator items={freshnessItems} />
+              </div>
+            )}
           </div>
         </CollapsibleContent>
       </Collapsible>

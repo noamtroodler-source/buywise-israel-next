@@ -51,6 +51,7 @@ export function AdminLayout() {
     { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
     { href: '/admin/accuracy-audit', label: 'Accuracy Audit', icon: BarChart3 },
     { href: '/admin/import-analytics', label: 'Import Health', icon: BarChart3 },
+    { href: '/admin/data-governance', label: 'Data Governance', icon: Shield },
   ];
 
   const homepageItems = [
