@@ -432,7 +432,6 @@ export function PropertyMap({
           map={map}
           selectedNeighborhood={selectedNeighborhood}
           onSelect={setSelectedNeighborhood}
-          onFilterNeighborhood={onNeighborhoodFilter}
         />
       )}
     </div>
