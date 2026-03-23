@@ -48,7 +48,7 @@ const CITY_ROOM_SIZE_INSIGHTS: Record<string, RoomInsightFn> = {
   'herzliya': (m) =>
     (m.room3Price ? `Even Herzliya's 3-room apartments command serious prices at ${fmt(m.room3Price)}. ` : '') +
     (m.gapSmallToLarge ? `The gap to a 5-room is around ${fmtGap(m.gapSmallToLarge)} — comparable to buying an entire apartment in some southern cities. ` : '') +
-    `Size upgrades here are a long-term play. Most buyers start with what they can afford and leverage urban renewal or neighborhood improvement programs later.`,,
+    `Size upgrades here are a long-term play. Most buyers start with what they can afford and leverage urban renewal or neighborhood improvement `Size upgrades here are a long-term play. Most buyers start with what they can afford and leverage urban renewal or neighborhood improvement programs later.`,
 
   'raanana': (m) =>
     `Ra'anana is a family-first market, and that shows in the room-size data. ` +
