@@ -198,6 +198,7 @@ const App = () => (
                         <Route path="/tools/total-cost-calculator" element={<Navigate to="/tools?tool=totalcost" replace />} />
                         <Route path="/tools/true-cost-calculator" element={<Navigate to="/tools?tool=totalcost" replace />} />
                         <Route path="/tools/true-cost" element={<Navigate to="/tools?tool=totalcost" replace />} />
+                        <Route path="/tools/total-cost" element={<Navigate to="/tools?tool=totalcost" replace />} />
                         <Route path="/tools/affordability-calculator" element={<Navigate to="/tools?tool=affordability" replace />} />
                         <Route path="/tools/affordability" element={<Navigate to="/tools?tool=affordability" replace />} />
                         <Route path="/tools/rent-vs-buy" element={<Navigate to="/tools?tool=rentvsbuy" replace />} />
