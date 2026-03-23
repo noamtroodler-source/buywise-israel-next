@@ -87,7 +87,7 @@ const timelineStages = [
   {
     number: 4,
     title: "Attorney Engagement & Title Checks",
-    whatHappens: "A lawyer conducts due diligence: verifies ownership in Tabu or Minhal, checks liens, mortgages, building permits, and land lease terms.",
+    whatHappens: "A lawyer conducts due diligence: verifies ownership in Tabu or RMI (Minhal), checks liens, mortgages, building permits, and land lease terms.",
     whoInvolved: ["Buyer's lawyer (essential)", "Sometimes seller's lawyer"],
     documents: "Power of attorney; identity documents",
     risks: ["Involving a lawyer too late", "Assuming 'standard contracts' exist", "Not verifying land type (freehold vs leasehold)"],
@@ -162,7 +162,7 @@ const timelineStages = [
   {
     number: 13,
     title: "Registration",
-    whatHappens: "Your lawyer files to register ownership in Tabu, Minhal, or a housing company; this can take months. Until registration, a He'arat Azhara protects your rights.",
+    whatHappens: "Your lawyer files to register ownership in Tabu, RMI (Minhal), or a housing company; this can take months. Until registration, a He'arat Azhara protects your rights.",
     whoInvolved: ["Lawyer", "Land registry officials"],
     documents: "Registration application; tax receipts",
     risks: ["Long delays", "Missing documents", "Misunderstanding that keys = ownership"],
@@ -181,7 +181,7 @@ const timelineStages = [
 const readinessChecklist = {
   "Legal & Representation": [
     "I understand who represents whom in the transaction",
-    "I know what proves ownership (Tabu, Minhal, housing company)",
+    "I know what proves ownership (Tabu, RMI/Minhal, housing company)",,
     "I know the Hebrew contract controls, even if English exists",
     "I understand land type differences (freehold vs leasehold)",
   ],

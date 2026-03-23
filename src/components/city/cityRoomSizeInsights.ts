@@ -31,7 +31,7 @@ const CITY_ROOM_SIZE_INSIGHTS: Record<string, RoomInsightFn> = {
   'tel-aviv': (m) =>
     `The jump from a 3-room to a 5-room in Tel Aviv is roughly ${m.gapSmallToLarge ? fmtGap(m.gapSmallToLarge) : 'significant'} — one of the steepest size premiums in Israel. ` +
     (m.room3Price ? `If you're flexible on size, a 3-room at around ${fmt(m.room3Price)} is the most realistic entry point. ` : '') +
-    `Upsizing later through TAMA 38 or renovation is a strategy many buyers here use.`,
+    `Upsizing later through urban renewal programs or renovation is a strategy many buyers here use.`,
 
   'jerusalem': (m) =>
     `Jerusalem's apartment sizes tell a story of demand segmentation. ` +
@@ -48,7 +48,7 @@ const CITY_ROOM_SIZE_INSIGHTS: Record<string, RoomInsightFn> = {
   'herzliya': (m) =>
     (m.room3Price ? `Even Herzliya's 3-room apartments command serious prices at ${fmt(m.room3Price)}. ` : '') +
     (m.gapSmallToLarge ? `The gap to a 5-room is around ${fmtGap(m.gapSmallToLarge)} — comparable to buying an entire apartment in some southern cities. ` : '') +
-    `Size upgrades here are a long-term play. Most buyers start with what they can afford and leverage TAMA 38 or neighborhood renewal later.`,
+    `Size upgrades here are a long-term play. Most buyers start with what they can afford and leverage urban renewal or neighborhood improvement programs later.`,
 
   'raanana': (m) =>
     `Ra'anana is a family-first market, and that shows in the room-size data. ` +
@@ -92,7 +92,7 @@ const CITY_ROOM_SIZE_INSIGHTS: Record<string, RoomInsightFn> = {
 
   'ramat-gan': (m) =>
     `Ramat Gan's room-size pricing reflects its position as Tel Aviv's most popular alternative. ` +
-    (m.room3Price ? `3-room units at ${fmt(m.room3Price)} are the entry play — mostly in older buildings with TAMA 38 potential. ` : '') +
+    (m.room3Price ? `3-room units at ${fmt(m.room3Price)} are the entry play — mostly in older buildings with urban renewal potential. ` : '') +
     (m.gapSmallToLarge ? `The ${fmtGap(m.gapSmallToLarge)} gap to the top end is significant, but urban renewal is creating new inventory across all sizes.` : ''),
 
   'petah-tikva': (m) =>
