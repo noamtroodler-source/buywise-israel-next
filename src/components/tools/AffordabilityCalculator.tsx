@@ -102,8 +102,8 @@ const EMPLOYMENT_OPTIONS = [
   { value: 'mixed', label: 'Mixed Income', multiplier: 0.85 },
 ];
 
-// Bank of Israel Directive 329 v11 - LTV & PTI limits by buyer category
-const MAX_PTI = 0.40; // 40% PTI cap for all buyers (BoI Directive 329)
+// Bank of Israel Directive 329 v12 - LTV & PTI limits by buyer category
+const MAX_PTI = 0.50; // 50% hard PTI cap (40% triggers higher risk-weighting, not a prohibition)
 const LTV_BY_CATEGORY: Record<string, number> = {
   first_time: 0.75,
   oleh: 0.75,
