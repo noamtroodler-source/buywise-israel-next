@@ -87,7 +87,7 @@ const timelineStages = [
   {
     number: 4,
     title: "Attorney Engagement & Title Checks",
-    whatHappens: "A lawyer conducts due diligence: verifies ownership in Tabu or Minhal, checks liens, mortgages, building permits, and land lease terms.",
+    whatHappens: "A lawyer conducts due diligence: whatHappens: "A lawyer conducts due diligence: verifies ownership in Tabu or RMI (Minhal), checks liens, mortgages, building permits, and land lease terms.",, checks liens, mortgages, building permits, and land lease terms.",
     whoInvolved: ["Buyer's lawyer (essential)", "Sometimes seller's lawyer"],
     documents: "Power of attorney; identity documents",
     risks: ["Involving a lawyer too late", "Assuming 'standard contracts' exist", "Not verifying land type (freehold vs leasehold)"],
