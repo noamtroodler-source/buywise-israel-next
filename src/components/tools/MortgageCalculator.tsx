@@ -583,8 +583,8 @@ function MortgageCalculatorContent() {
           <div className="bg-muted-foreground/30 h-full flex-1" />
         </div>
         <div className="flex items-center justify-between text-xs mt-1.5">
-          <span className="font-medium">{formatCurrency(loanAmount)}</span>
-          <span className="font-medium">{formatCurrencyRange(interestRange.interestLow, interestRange.interestHigh, currencySymbol)}</span>
+          <span className="font-medium">{formatNIS(loanAmount)}</span>
+          <span className="font-medium">{formatCurrencyRange(interestRange.interestLow, interestRange.interestHigh, '₪')}</span>
         </div>
       </div>
     </Card>
