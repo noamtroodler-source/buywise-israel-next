@@ -21,8 +21,13 @@ export function SourceAttribution({
 }: SourceAttributionProps) {
   const [isOpen, setIsOpen] = useState(defaultExpanded);
   const config = TOOL_SOURCES[toolType];
+  const { getMultipleFreshness } = useDataFreshness();
   
   if (!config) return null;
+
+  const freshnessItems = config.reviewCategories 
+    ? getMultipleFreshness(config.reviewCategories) 
+    : [];
 
   // Inline variant - simple one-liner
   if (variant === 'inline') {
