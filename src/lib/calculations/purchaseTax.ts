@@ -1,6 +1,6 @@
 /**
  * Purchase Tax (Mas Rechisha) Calculation Utilities
- * Based on 2024 Israeli tax brackets
+ * Based on 2025/2026 Israeli tax brackets (frozen by Temporary Order)
  */
 
 export type BuyerType = 
