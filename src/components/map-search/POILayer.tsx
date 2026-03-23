@@ -2,6 +2,7 @@ import { useMemo, useState, useCallback, useEffect } from 'react';
 import { Marker, InfoWindow } from '@react-google-maps/api';
 import { useMapPois, MapPoi } from '@/hooks/useMapPois';
 import { MapInfoCard } from './MapInfoCard';
+import { getBrandedMarkerIcon, MARKER_COLORS } from './mapMarkerIcons';
 
 interface POILayerProps {
   map: google.maps.Map;
@@ -9,33 +10,12 @@ interface POILayerProps {
   activeCategories: string[];
 }
 
-const CATEGORY_COLORS: Record<string, string> = {
-  shul: '#e11d48',
-  school: '#f59e0b',
-  mikveh: '#8b5cf6',
-  community: '#06b6d4',
-  grocery: '#10b981',
-  medical: '#ef4444',
-  restaurant: '#f97316',
-};
-
-const CATEGORY_LABELS: Record<string, string> = {
-  shul: '🕍',
-  school: '🏫',
-  mikveh: '🛁',
-  community: '🏘️',
-  grocery: '🛒',
-  medical: '🏥',
-  restaurant: '🍽️',
-};
-
 const ENGLISH_LEVEL_COLORS: Record<string, string> = {
   'Anglo Hub': '#16a34a',
   'English Primary': '#2563eb',
   'English Friendly': '#7c3aed',
   'English Available': '#6b7280',
 };
-
 
 export function POILayer({ map, bounds, activeCategories }: POILayerProps) {
   const { data: pois = [] } = useMapPois(activeCategories);
@@ -49,7 +29,6 @@ export function POILayer({ map, bounds, activeCategories }: POILayerProps) {
     return () => google.maps.event.removeListener(listener);
   }, [map]);
 
-  // Clear selected POI when categories change (prevents orphaned InfoWindows)
   useEffect(() => {
     setSelected(null);
   }, [activeCategories]);
@@ -63,7 +42,6 @@ export function POILayer({ map, bounds, activeCategories }: POILayerProps) {
       bounds.contains(new google.maps.LatLng(p.latitude, p.longitude))
     );
 
-    // Cap at 150 markers, prioritizing those closest to center
     if (inBounds.length > 150) {
       const center = bounds.getCenter();
       const cLat = center.lat();
@@ -90,18 +68,7 @@ export function POILayer({ map, bounds, activeCategories }: POILayerProps) {
           key={poi.id}
           position={{ lat: poi.latitude, lng: poi.longitude }}
           onClick={() => setSelected(poi)}
-          icon={{
-            path: google.maps.SymbolPath.CIRCLE,
-            scale: 9,
-            fillColor: CATEGORY_COLORS[poi.category] || '#6b7280',
-            fillOpacity: 0.9,
-            strokeColor: '#ffffff',
-            strokeWeight: 2,
-          }}
-          label={{
-            text: CATEGORY_LABELS[poi.category] || '📍',
-            fontSize: '12px',
-          }}
+          icon={getBrandedMarkerIcon(poi.category, 0.875)}
           title={poi.name}
         />
       ))}
@@ -111,18 +78,18 @@ export function POILayer({ map, bounds, activeCategories }: POILayerProps) {
           onCloseClick={handleClose}
         >
           <MapInfoCard
-              name={selected.name}
-              hebrewName={selected.name_he}
-              subtitle={[selected.subcategory, selected.denomination].filter(Boolean).join(' · ') || null}
-              badge={selected.english_level ? {
-                label: selected.english_level,
-                color: ENGLISH_LEVEL_COLORS[selected.english_level] || '#6b7280',
-              } : null}
-              description={selected.description}
-              address={selected.address}
-              phone={selected.phone}
-              website={selected.website}
-            />
+            name={selected.name}
+            hebrewName={selected.name_he}
+            subtitle={[selected.subcategory, selected.denomination].filter(Boolean).join(' · ') || null}
+            badge={selected.english_level ? {
+              label: selected.english_level,
+              color: ENGLISH_LEVEL_COLORS[selected.english_level] || '#6b7280',
+            } : null}
+            description={selected.description}
+            address={selected.address}
+            phone={selected.phone}
+            website={selected.website}
+          />
         </InfoWindow>
       )}
     </>

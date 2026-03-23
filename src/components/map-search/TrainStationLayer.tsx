@@ -2,6 +2,7 @@ import { useMemo, useState, useCallback } from 'react';
 import { Marker, InfoWindow } from '@react-google-maps/api';
 import { TRAIN_STATIONS } from '@/data/trainStations';
 import { MapInfoCard } from './MapInfoCard';
+import { getTrainMarkerIcon } from './mapMarkerIcons';
 
 interface TrainStationLayerProps {
   map: google.maps.Map;
@@ -27,14 +28,7 @@ export function TrainStationLayer({ map, bounds }: TrainStationLayerProps) {
           key={station.id}
           position={{ lat: station.latitude, lng: station.longitude }}
           onClick={() => setSelected(station)}
-          icon={{
-            path: google.maps.SymbolPath.CIRCLE,
-            scale: 8,
-            fillColor: '#3b82f6',
-            fillOpacity: 1,
-            strokeColor: '#ffffff',
-            strokeWeight: 2,
-          }}
+          icon={getTrainMarkerIcon()}
           title={station.name}
         />
       ))}
@@ -44,10 +38,10 @@ export function TrainStationLayer({ map, bounds }: TrainStationLayerProps) {
           onCloseClick={handleClose}
         >
           <MapInfoCard
-              name={selected.name}
-              hebrewName={selected.nameHe}
-              subtitle="🚂 Train Station"
-            />
+            name={selected.name}
+            hebrewName={selected.nameHe}
+            subtitle="Train Station"
+          />
         </InfoWindow>
       )}
     </>
