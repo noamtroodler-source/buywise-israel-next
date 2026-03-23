@@ -106,7 +106,8 @@ export const TOOL_SOURCES: Record<string, ToolSourceConfig> = {
       }
     ],
     lastVerified: '2025-01',
-    categories: ['Purchase Costs', 'Mortgage Rates', 'Tax Implications']
+    categories: ['Purchase Costs', 'Mortgage Rates', 'Tax Implications'],
+    reviewCategories: ['purchase_tax', 'mortgage_rates', 'exchange_rate'],
   },
   
   renovation: {
