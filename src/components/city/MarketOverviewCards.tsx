@@ -172,6 +172,7 @@ export function MarketOverviewCards({
                     <p className="text-3xl font-bold text-foreground">
                       ₪{arnonaEstimate.discountedMonthly.toLocaleString()}
                       <span className="text-base font-normal text-muted-foreground">/mo</span>
+                      <span className="text-xs font-normal italic text-muted-foreground ml-1">(est.)</span>
                     </p>
                     {(arnonaEstimate.discountPercent > 0 || arnonaEstimate.olehStatusChecked) && (
                       <TooltipProvider delayDuration={0}>

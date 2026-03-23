@@ -183,18 +183,16 @@ export function CitySourceAttribution({ sources, lastVerified, className, cityNa
                     </div>
                     <div>
                       <span className="font-medium text-foreground/80">Rental Data:</span>{' '}
-                      Rental ranges are derived from active listings analysis and CBS rental surveys, 
+                      Indicative ranges derived from active listings analysis and CBS rental surveys, 
                       validated against market observations.
                     </div>
                     <div>
                       <span className="font-medium text-foreground/80">Arnona Rates:</span>{' '}
-                      Municipal tax rates are sourced directly from municipality rate tables and 
-                      verified against government publications.
+                      Estimated from municipal rate tables. Actual rates vary by zone, property classification, and exemption eligibility.
                     </div>
                     <div>
                       <span className="font-medium text-foreground/80">Yield Calculations:</span>{' '}
-                      Gross yields are calculated using verified price and rental data, following 
-                      standard industry methodology.
+                      Gross yield = (avg annual rent ÷ median purchase price) × 100. Net yield deducts ~25% for arnona, vaad bayit, maintenance, and vacancy. Inputs sourced from CBS and listing platforms.
                     </div>
                     <div className="pt-2 border-t border-border/30">
                       <span className="font-medium text-foreground/80">Update Frequency:</span>{' '}

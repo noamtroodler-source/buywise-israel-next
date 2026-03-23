@@ -27,8 +27,8 @@ export function BuyWiseEstimateBadge({
   };
 
   const tooltipContent = hasMethodology
-    ? `BuyWise Estimate · Calculated from avg 4-room rent ${formatPrice(rental4RoomMin, 'ILS')}–${formatPrice(rental4RoomMax, 'ILS')}/mo ÷ median purchase price ${formatPrice(medianPrice, 'ILS')}.${sources ? ` Sources: ${sources}.` : ''}${verifiedAt ? ` Verified ${formatVerifiedDate(verifiedAt)}.` : ''}`
-    : `BuyWise Estimate · Editorial estimate based on market research.${sources ? ` Sources: ${sources}.` : ''}${verifiedAt ? ` Verified ${formatVerifiedDate(verifiedAt)}.` : ''}`;
+    ? `BuyWise Estimate · Gross yield = (annual rent ÷ purchase price) × 100. Inputs: avg 4-room rent ${formatPrice(rental4RoomMin, 'ILS')}–${formatPrice(rental4RoomMax, 'ILS')}/mo, median purchase price ${formatPrice(medianPrice, 'ILS')}.${sources ? ` Sources: ${sources}.` : ''}${verifiedAt ? ` Verified ${formatVerifiedDate(verifiedAt)}.` : ''}`
+    : `BuyWise Estimate · Editorial estimate based on market research. Gross yield = (annual rent ÷ purchase price) × 100.${sources ? ` Sources: ${sources}.` : ''}${verifiedAt ? ` Verified ${formatVerifiedDate(verifiedAt)}.` : ''}`;
 
   return (
     <TooltipProvider delayDuration={200}>
