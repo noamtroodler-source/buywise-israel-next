@@ -430,7 +430,7 @@ function MortgageCalculatorContent() {
             </div>
             <p className="text-xs text-muted-foreground">
               {downPaymentMode === 'percent' 
-                ? `= ${formatCurrency(downPaymentAmount)}`
+                ? `= ${formatNIS(downPaymentAmount)}`
                 : `= ${effectiveDownPaymentPercent.toFixed(0)}% of price`
               }
               {effectiveDownPaymentPercent < downPaymentPercent && 
