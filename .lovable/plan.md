@@ -1,102 +1,109 @@
 
 
-# Site Review Fixes — Phased Implementation Plan
+# Phase 1: Critical Data Accuracy Fixes
 
-## Summary of All Issues (Excluding Deferred Items)
-
-Based on the comprehensive site review, here are all actionable items organized into 4 phases. The deferred items (city data issues, empty floor plans, non-Israeli stock photos, mock data disclaimer) are excluded per your request.
+Based on the Perplexity audit report (10 critical errors, 10 significant errors), this phase addresses all items that pose financial/legal risk or contain demonstrably false data.
 
 ---
 
-## Phase 1: Critical Fixes (Immediate)
+## What's being fixed
 
-### 1.1 Google Analytics Placeholder
-**Problem:** GA4 tag uses "G-XXXXXXXXXX" — zero data collection.
-**Fix:** Ask you for your real GA4 Measurement ID, then replace it in `index.html` and `src/lib/analytics.ts`.
-**Files:** `index.html`, `src/lib/analytics.ts`
+### Group A: Mortgage & Tax Calculation Errors (3 files)
 
-### 1.2 Project Amenity Raw Strings
-**Problem:** Amenities display as `ev_charging`, `security_24_7` instead of "EV Charging", "24/7 Security" on public project detail pages.
-**Fix:** `ProjectAmenities.tsx` (line 100) displays `{amenity}` raw. Add the same `amenityLabels` lookup map that already exists in 5 other files (admin, wizard, review). Centralize it into a shared util and use it in the display component.
-**Files:** New `src/lib/utils/amenityLabels.ts`, update `src/components/project/ProjectAmenities.tsx` + deduplicate from admin components.
+**1. PTI cap: 40% → 50%**
+- `src/lib/calculations/constants.ts` — `MAX_PTI: 0.40` → `0.50`, update comment to explain 40% is risk-weight trigger, not prohibition
+- `src/lib/calculations/mortgage.ts` — hardcoded `MAX_PTI = 0.40` → `0.50`, update comment
+- `src/components/tools/AffordabilityCalculator.tsx` — hardcoded `MAX_PTI = 0.40` → `0.50`, update educational text from "40%" to "50%"
 
-### 1.3 Mortgage Calculator Currency Bug
-**Problem:** The calculator does all math in NIS (property price ₪2,750,000 → loan → monthly payment). But `formatCurrency` (from `useFormatPrice`) converts NIS→USD when user has USD preference, making payments appear ~3.6x too high. Meanwhile `formatCurrencyRange` does NOT convert — just slaps on whatever symbol is passed. Result: inconsistent and overstated payments.
-**Fix:** The mortgage calculator should work entirely in NIS internally and clearly label all outputs as NIS. When user has USD preference, show a secondary USD equivalent. Replace raw `formatCurrencyRange` calls with the preference-aware `useFormatPriceRange` hook, or make the calculator explicitly NIS-only with a conversion note.
-**Files:** `src/components/tools/MortgageCalculator.tsx`, `src/components/tools/shared/ResultRange.tsx`
+**2. Variable rate limit: 33.33% → 66.67%**
+- `src/lib/calculations/constants.ts` — `VARIABLE_RATE_MAX_PERCENT: 0.3333` → `0.6667`, update comment to "max 2/3 variable (min 1/3 fixed)"
 
-### 1.4 Affordability Calculator Input Bug
-**Problem:** Income field appends values instead of replacing — typing "15000" into "25,000" yields "2,500,015,000". The `value={formatNumber(monthlyIncome)}` + `onChange` pattern fights cursor position.
-**Fix:** Replace raw `<Input>` fields with the existing `FormattedNumberInput` component (already used in `InvestmentReturnCalculator.tsx`) which properly handles formatted number input with commas.
-**Files:** `src/components/tools/AffordabilityCalculator.tsx`
+**3. CGT exemption period: 18 → 24 months**
+- `src/lib/calculations/constants.ts` — `CAPITAL_GAINS_EXEMPT_PERIOD: 18` → `24`, update comment
+
+**4. Nesach Tabu fee: 128.60 → 17 (electronic) / 85 (paper)**
+- `src/lib/calculations/constants.ts` — `TABU_NESACH_FEE: 128.60` → `17` (electronic default), add comment noting 85 for paper
+- Update registration fees: `178` → `185` for both `TABU_REGISTRATION_FEE` and `MORTGAGE_REGISTRATION_FEE`
+
+**5. Tax bracket threshold rounding**
+- `src/lib/calculations/purchaseTax.ts` — fix `20183560` → `20183565` (3 instances across first_time, oleh, upgrader brackets)
+- Update file header comment from "2024" to "2025/2026 (frozen by Temporary Order)"
+
+### Group B: Arnona Discount Swap (1 file)
+
+**6. Disability discounts are inverted**
+- `src/lib/calculations/arnona.ts`:
+  - `disabled_90`: `maxPercent: 80` → `40`, update description
+  - `disabled_75`: `maxPercent: 40` → `80`, update description  
+  - `idf_active`: add `areaLimitSqm: 70` (was `null`)
+
+### Group C: City Data Corrections (database updates)
+
+**7. Critical city data fixes** — SQL UPDATE statements via insert tool:
+
+| City | Field | Old → New |
+|------|-------|-----------|
+| Haifa | avg_price | 1,357,100 → 1,879,900 |
+| Hadera | avg_price | 1,662,500 → 2,032,700 |
+| Jerusalem | socioeconomic_index | 6 → 3 |
+| Jerusalem | population | 970,000 → 1,050,153 |
+| Beit Shemesh | socioeconomic_index | 5 → 2 |
+| Beit Shemesh | population | 130,000 → 176,786 |
+| Ra'anana | population | 155,000 → 82,964 |
+| Ra'anana | socioeconomic_index | 9 → 8 |
+| Ashkelon | population | 130,000 → 166,864 |
+| Eilat | socioeconomic_index | 4 → 6 |
+| Eilat | population | 69,440 → 56,004 |
+| Herzliya | socioeconomic_index | 10 → 8 |
+| Herzliya | population | 97,470 → 110,884 |
+| Ashdod | population | 225,939 → 228,562 |
+| Ashdod | socioeconomic_index | 6 → 5 |
+| Givat Shmuel | socioeconomic_index | 9 → 8 |
+| Hadera | socioeconomic_index | 5 → 6 |
+| Kfar Saba | population | 110,456 → 99,410 |
+| Ma'ale Adumim | socioeconomic_index | 7 → 6 |
+| Modi'in | socioeconomic_index | 8 → 9 |
+| Netanya | population | 278,182 → 234,813 |
+| Netanya | socioeconomic_index | 7 → 6 |
+| Pardes Hanna | socioeconomic_index | 6 → 7 |
+| Tel Aviv | population | 432,892 → 494,900 |
+| Zichron Yaakov | socioeconomic_index | 7 → 8 |
+| Zichron Yaakov | population | 26,375 → 24,201 |
+| Ramat Gan | population | 167,794 → 172,242 |
+| Beer Sheva | population | 228,808 → 223,587 |
+| Efrat | population | 11,000 → 12,114 |
+| Gush Etzion | population | 40,000 → 27,812 |
+| Hod HaSharon | population | 68,000 → 66,398 |
+| Mevaseret Zion | population | 28,144 → 25,789 |
+| Petah Tikva | population | 260,000 → 270,403 |
+
+**8. Ashkelon false editorial claims** — UPDATE `city_market_factors` to remove "-20% decline" and "population exodus" claims, replace with verified CBS data (~-1.7% YoY)
+
+### Group D: Directive 329 & Source References (2 files)
+
+**9. Update Directive version references**
+- `src/lib/calculations/toolSources.ts` — all "Directive 329 v11" → "Directive 329 v12", effectiveDate → '2026-02-08'
+- `src/pages/guides/MortgagesGuide.tsx` — update "40%" display to "50%"
+
+**10. Database constants update** — UPDATE `calculator_constants` table for PTI, variable rate, CGT exemption, and fee values
+
+### Group E: Glossary Fixes (database update)
+
+**11. Glossary corrections:**
+- UPDATE `glossary_terms` — "Minhal" / "Israel Land Authority" → "Rashut Mekarkei Yisrael (RMI)" with note about 2009 rename
+- UPDATE `glossary_terms` — Add TAMA 38 status note: "Program ended Aug 2024 in most cities; active in select cities until May 2026"
+
+Also update hardcoded references:
+- `src/lib/calculations/toolSources.ts` line 145: 'Israel Land Authority' → 'Israel Land Administration (RMI)'
+- `src/pages/guides/BuyingPropertyGuide.tsx` line 51: update glossary entry
 
 ---
 
-## Phase 2: SEO & Routing Fixes
+## Execution order
 
-### 2.1 Add `/tools/total-cost` Route
-**Problem:** `/tools/total-cost` returns 404. Existing redirects cover `total-cost-calculator` and `true-cost` but not `total-cost`.
-**Fix:** Add `<Route path="/tools/total-cost" element={<Navigate to="/tools?tool=totalcost" replace />} />` to App.tsx.
-**Files:** `src/App.tsx`
-
-### 2.2 Canonical Tags on All Pages
-**Problem:** Many pages already have `canonicalUrl` passed to `useSEO` (Index, Listings, PropertyDetail, ProjectDetail, Guides, Professionals, Privacy, etc.). But some pages are missing it.
-**Fix:** Audit all pages using `useSEO` and ensure every page passes a `canonicalUrl`. Add canonical to pages that are missing it (Blog, Glossary, Tools, Areas, Contact, Terms, agent/developer pages).
-**Files:** Multiple page files under `src/pages/`
-
-### 2.3 JSON-LD Structured Data Gaps
-**Problem:** Review says no Organization/WebSite/BreadcrumbList schema detected on homepage. However, `src/lib/seo/jsonLd.ts` already exports `generateHomepageJsonLd`, `generateOrganizationJsonLd`, etc. — and `Index.tsx` uses `generateHomepageJsonLd()`. Need to verify these are actually rendering correctly and add BreadcrumbList to key pages.
-**Fix:** Verify homepage JSON-LD renders in DOM. Add BreadcrumbList to property detail, project detail, city pages, and guide pages. Ensure Organization schema is on every page (via layout or homepage).
-**Files:** `src/lib/seo/jsonLd.ts`, `src/lib/seo/useSEO.ts`, page files
-
-### 2.4 Meta Description Length
-**Problem:** Meta description may exceed 160 characters and get truncated.
-**Fix:** Audit and trim meta descriptions across all pages to ≤155 characters.
-**Files:** Multiple page files
-
----
-
-## Phase 3: Data & Content Polish
-
-### 3.1 Jerusalem Region Classification
-**Problem:** Jerusalem and surrounding cities (Beit Shemesh, Efrat, etc.) are grouped under "Central" on the Areas page, but Jerusalem is its own administrative district.
-**Fix:** Create a new "Jerusalem & Hills" region in `src/pages/Areas.tsx`, moving Jerusalem, Beit Shemesh, Efrat, Gush Etzion, Ma'ale Adumim, and Mevaseret Zion out of "Central". Also update `src/components/home/RegionExplorer.tsx` if it has a similar grouping.
-**Files:** `src/pages/Areas.tsx`, `src/components/home/RegionExplorer.tsx`
-
-### 3.2 City Name Standardization
-**Problem:** Inconsistent transliterations — "Modiin" vs "Modi'in", "3 Room apartment" vs "3-Room Duplex".
-**Fix:** This is partially a database issue (listing titles), but the Areas page and any hardcoded references should use consistent names with proper transliteration (Modi'in, Ra'anana, Ma'ale Adumim). Already correct in Areas.tsx — check other references.
-**Files:** Audit across components
-
-### 3.3 Currency Display Standardization Across Tools
-**Problem:** Different tools use $ for both USD and NIS. Buy listings show USD, projects show NIS.
-**Fix:** Ensure all calculators clearly label the currency (₪ for NIS, $ for USD) and show the user's preferred currency with proper conversion. The key issue is `formatCurrencyRange` in `ResultRange.tsx` — it takes a raw symbol but doesn't convert. Update it to be preference-aware or deprecate it in favor of `useFormatPriceRange`.
-**Files:** `src/components/tools/shared/ResultRange.tsx`, all calculator files
-
----
-
-## Phase 4: Footer & Minor Polish
-
-### 4.1 Social Media Links in Footer
-**Problem:** No social media links anywhere.
-**Fix:** Add social media icon links (Instagram, Facebook, LinkedIn, YouTube — whichever you have) to the Footer's contact section.
-**Files:** `src/components/layout/Footer.tsx`
-
-### 4.2 Accessibility: Chat Widget ARIA Labels
-**Problem:** Chat widget missing aria-labels.
-**Fix:** Add `aria-label` to the AskBuyWise floating button.
-**Files:** `src/components/shared/AskBuyWise.tsx` (or similar)
-
-### 4.3 Contradictory Project Timeline
-**Problem:** "Started: TBD" with completion Feb 2027.
-**Fix:** Add validation logic — if `construction_start` is null/TBD but completion date is < 12 months away, show a disclaimer or adjust display. This is partially a data issue but the UI should handle the inconsistency gracefully.
-**Files:** `src/components/project/ProjectTimeline.tsx` or equivalent
-
----
-
-## Implementation Order
-
-Phases 1 → 2 → 3 → 4, tackling each issue within the phase sequentially. Phase 1 is the most critical for credibility. Phase 2 is important for SEO before any marketing push. Phase 3 is polish. Phase 4 is low-priority cleanup.
-
-**Note:** For item 1.1 (Google Analytics), I'll need your GA4 Measurement ID to complete the fix.
+1. Fix code files (constants.ts, mortgage.ts, AffordabilityCalculator.tsx, arnona.ts, purchaseTax.ts, toolSources.ts, MortgagesGuide.tsx, BuyingPropertyGuide.tsx)
+2. Update database `calculator_constants` values
+3. Update database `cities` table (population, SEI)
+4. Update database `city_market_factors` (Ashkelon claims)
+5. Update database `glossary_terms` (ILA name, TAMA 38)
 
