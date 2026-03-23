@@ -226,7 +226,7 @@ function MortgageCalculatorContent() {
     }
     
     return messages.slice(0, 3);
-  }, [ltv, loanTermYears, mortgageResult.totalInterest, mortgageResult.monthlyPayment, propertyPrice, formatCurrency, currentBuyerType, maxLtv, buyerType]);
+  }, [ltv, loanTermYears, mortgageResult.totalInterest, mortgageResult.monthlyPayment, propertyPrice, formatNIS, currentBuyerType, maxLtv, buyerType]);
 
   // Handlers
   const handleBuyerTypeChange = (value: BuyerType) => {
