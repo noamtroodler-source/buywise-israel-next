@@ -541,7 +541,7 @@ function MortgageCalculatorContent() {
       <div className="grid grid-cols-2 divide-x divide-y divide-border">
         <div className="p-4">
           <p className="text-xs text-muted-foreground">You'll Borrow</p>
-          <p className="text-lg font-semibold mt-0.5">{formatCurrency(loanAmount)}</p>
+          <p className="text-lg font-semibold mt-0.5">{formatNIS(loanAmount)}</p>
         </div>
         <div className="p-4">
           <div className="flex items-center gap-1">
