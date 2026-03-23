@@ -449,7 +449,7 @@ function AffordabilityCalculatorContent() {
               <CardContent className="space-y-5">
                 <div className="space-y-2">
                   <Label className="text-sm font-medium flex items-center">Monthly Debt Payments<InfoTooltip content="Include car loans, credit cards, other loans. Banks count these against your borrowing capacity." /></Label>
-                  <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{currencySymbol}</span><FormattedNumberInput value={monthlyDebts || undefined} onChange={(v) => setMonthlyDebts(v ?? 0)} prefix={currencySymbol} className="h-11" /></div>
+                  <FormattedNumberInput value={monthlyDebts || undefined} onChange={(v) => setMonthlyDebts(v ?? 0)} prefix={currencySymbol} className="h-11" />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-medium flex items-center">Down Payment Available<InfoTooltip content={`Cash you have for down payment. ${selectedBuyerType === 'first_time' || selectedBuyerType === 'oleh' ? 'First-time buyers/Olim need at least 25% down.' : selectedBuyerType === 'additional' || selectedBuyerType === 'upgrader' ? 'Upgraders need at least 30% down.' : 'Investors/foreign buyers need at least 50% down.'}`} /></Label>
