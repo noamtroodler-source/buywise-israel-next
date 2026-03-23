@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Waves, Building, Mountain, Sun } from 'lucide-react';
+import { ArrowRight, Waves, Building, Mountain, Sun, MapPin } from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
 import { Button } from '@/components/ui/button';
 import { CarouselDots } from '@/components/shared/CarouselDots';
