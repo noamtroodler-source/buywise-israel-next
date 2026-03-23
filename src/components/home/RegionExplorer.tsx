@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Waves, Building, Mountain, Sun } from 'lucide-react';
+import { ArrowRight, Waves, Building, Mountain, Sun, MapPin } from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
 import { Button } from '@/components/ui/button';
 import { CarouselDots } from '@/components/shared/CarouselDots';
@@ -22,7 +22,7 @@ import beerShevaImg from '@/assets/cities/beer-sheva.jpg';
 import eilatImg from '@/assets/cities/eilat.jpg';
 import ashkelonImg from '@/assets/cities/ashkelon.jpg';
 
-type Region = 'coastal' | 'central' | 'north' | 'south';
+type Region = 'coastal' | 'central' | 'jerusalem' | 'north' | 'south';
 
 interface City {
   name: string;
@@ -45,10 +45,16 @@ const regions: Record<Region, { label: string; icon: React.ElementType; cities: 
     label: 'Central',
     icon: Building,
     cities: [
-      { name: 'Jerusalem', slug: 'jerusalem', image: jerusalemImg },
       { name: "Ra'anana", slug: 'raanana', image: raananaImg },
       { name: "Modi'in", slug: 'modiin', image: modiinImg },
       { name: 'Kfar Saba', slug: 'kfar-saba', image: kfarSabaImg },
+    ],
+  },
+  jerusalem: {
+    label: 'Jerusalem',
+    icon: MapPin,
+    cities: [
+      { name: 'Jerusalem', slug: 'jerusalem', image: jerusalemImg },
     ],
   },
   north: {

@@ -3,6 +3,7 @@ import {
   Wifi, Sun, Building, Sofa, Wind, Zap, Users, Coffee
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { getAmenityLabel } from '@/lib/utils/amenityLabels';
 
 interface ProjectAmenitiesProps {
   amenities: string[];
@@ -97,7 +98,7 @@ export function ProjectAmenities({ amenities }: ProjectAmenitiesProps) {
                       className="flex items-center gap-2 p-2.5 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
                     >
                       <Icon className="h-4 w-4 text-primary shrink-0" />
-                      <span className="text-sm truncate">{amenity}</span>
+                      <span className="text-sm truncate">{getAmenityLabel(amenity)}</span>
                     </div>
                   );
                 })}

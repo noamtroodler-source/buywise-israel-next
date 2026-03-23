@@ -78,7 +78,10 @@ function InfoTooltip({ content }: { content: string }) {
 
 function MortgageCalculatorContent() {
   const formatCurrency = useFormatPrice();
-  const currencySymbol = useCurrencySymbol();
+  const userCurrencySymbol = useCurrencySymbol();
+  // Mortgage calculator always works in NIS — all bank calculations are in Shekels
+  const currencySymbol = '₪';
+  const formatNIS = (value: number) => `₪${value.toLocaleString('en-US')}`;
   const { data: buyerProfile, isLoading: isProfileLoading } = useBuyerProfile();
   const { data: mortgageTracks, isLoading: isTracksLoading } = useMortgageTracks();
   const { toast: showToast } = useToast();
@@ -203,9 +206,9 @@ function MortgageCalculatorContent() {
     // Interest cost context — always useful
     const interestPercentOfPrice = propertyPrice > 0 ? (mortgageResult.totalInterest / propertyPrice) * 100 : 0;
     if (interestPercentOfPrice > 50) {
-      messages.push(`Interest adds ${formatCurrency(mortgageResult.totalInterest)} over ${loanTermYears} years — that's ${interestPercentOfPrice.toFixed(0)}% of the property price. Prepaying even ${formatCurrency(Math.round(mortgageResult.monthlyPayment * 0.1))}/month extra could save significantly.`);
+      messages.push(`Interest adds ${formatNIS(mortgageResult.totalInterest)} over ${loanTermYears} years — that's ${interestPercentOfPrice.toFixed(0)}% of the property price. Prepaying even ${formatNIS(Math.round(mortgageResult.monthlyPayment * 0.1))}/month extra could save significantly.`);
     } else if (mortgageResult.totalInterest > 100000) {
-      messages.push(`Total interest: ${formatCurrency(mortgageResult.totalInterest)} (${interestPercentOfPrice.toFixed(0)}% of property price). Prime-track loans in Israel allow penalty-free prepayment.`);
+      messages.push(`Total interest: ${formatNIS(mortgageResult.totalInterest)} (${interestPercentOfPrice.toFixed(0)}% of property price). Prime-track loans in Israel allow penalty-free prepayment.`);
     }
     
     // LTV-based insights
@@ -223,7 +226,7 @@ function MortgageCalculatorContent() {
     }
     
     return messages.slice(0, 3);
-  }, [ltv, loanTermYears, mortgageResult.totalInterest, mortgageResult.monthlyPayment, propertyPrice, formatCurrency, currentBuyerType, maxLtv, buyerType]);
+  }, [ltv, loanTermYears, mortgageResult.totalInterest, mortgageResult.monthlyPayment, propertyPrice, formatNIS, currentBuyerType, maxLtv, buyerType]);
 
   // Handlers
   const handleBuyerTypeChange = (value: BuyerType) => {
@@ -387,7 +390,7 @@ function MortgageCalculatorContent() {
               <InfoTooltip content="Israeli property prices are typically listed in Shekels (₪). For luxury or investment properties, you may also see USD pricing." />
             </div>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">{currencySymbol}</span>
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">₪</span>
               <Input
                 type="text"
                 inputMode="numeric"
@@ -427,7 +430,7 @@ function MortgageCalculatorContent() {
             </div>
             <p className="text-xs text-muted-foreground">
               {downPaymentMode === 'percent' 
-                ? `= ${formatCurrency(downPaymentAmount)}`
+                ? `= ${formatNIS(downPaymentAmount)}`
                 : `= ${effectiveDownPaymentPercent.toFixed(0)}% of price`
               }
               {effectiveDownPaymentPercent < downPaymentPercent && 
@@ -522,7 +525,7 @@ function MortgageCalculatorContent() {
           animate={{ opacity: 1, scale: 1 }}
           className="text-4xl md:text-5xl font-bold text-primary tracking-tight"
         >
-          {formatCurrencyRange(paymentRange.low, paymentRange.high, currencySymbol)}
+          {formatCurrencyRange(paymentRange.low, paymentRange.high, '₪')}
         </motion.p>
         <p className="text-xs text-muted-foreground mt-2">
           Based on {MORTGAGE_RATE_RANGES.low}–{MORTGAGE_RATE_RANGES.high}% rates, {loanTermYears}-year term
@@ -530,7 +533,7 @@ function MortgageCalculatorContent() {
         {/* Stress test preview */}
         <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/50 text-xs text-muted-foreground">
           <TrendingUp className="h-3 w-3" />
-          <span>If rates rise 2%: up to {formatCurrency(stressTest.plus2.stressedPayment)}/mo (+{stressTest.plus2.increasePercent.toFixed(0)}%)</span>
+          <span>If rates rise 2%: up to {formatNIS(stressTest.plus2.stressedPayment)}/mo (+{stressTest.plus2.increasePercent.toFixed(0)}%)</span>
         </div>
       </div>
 
@@ -538,7 +541,7 @@ function MortgageCalculatorContent() {
       <div className="grid grid-cols-2 divide-x divide-y divide-border">
         <div className="p-4">
           <p className="text-xs text-muted-foreground">You'll Borrow</p>
-          <p className="text-lg font-semibold mt-0.5">{formatCurrency(loanAmount)}</p>
+          <p className="text-lg font-semibold mt-0.5">{formatNIS(loanAmount)}</p>
         </div>
         <div className="p-4">
           <div className="flex items-center gap-1">
@@ -553,13 +556,13 @@ function MortgageCalculatorContent() {
             <InfoTooltip content={`Range based on ${MORTGAGE_RATE_RANGES.low}–${MORTGAGE_RATE_RANGES.high}% rates. Prepaying (especially on Prime tracks) can significantly reduce this.`} />
           </div>
           <p className="text-lg font-semibold mt-0.5">
-            {formatCurrencyRange(interestRange.interestLow, interestRange.interestHigh, currencySymbol)}
+            {formatCurrencyRange(interestRange.interestLow, interestRange.interestHigh, '₪')}
           </p>
         </div>
         <div className="p-4">
           <p className="text-xs text-muted-foreground">Total You'll Pay</p>
           <p className="text-lg font-semibold mt-0.5">
-            {formatCurrencyRange(interestRange.totalLow, interestRange.totalHigh, currencySymbol)}
+            {formatCurrencyRange(interestRange.totalLow, interestRange.totalHigh, '₪')}
           </p>
         </div>
       </div>
@@ -580,8 +583,8 @@ function MortgageCalculatorContent() {
           <div className="bg-muted-foreground/30 h-full flex-1" />
         </div>
         <div className="flex items-center justify-between text-xs mt-1.5">
-          <span className="font-medium">{formatCurrency(loanAmount)}</span>
-          <span className="font-medium">{formatCurrencyRange(interestRange.interestLow, interestRange.interestHigh, currencySymbol)}</span>
+          <span className="font-medium">{formatNIS(loanAmount)}</span>
+          <span className="font-medium">{formatCurrencyRange(interestRange.interestLow, interestRange.interestHigh, '₪')}</span>
         </div>
       </div>
     </Card>
@@ -695,16 +698,16 @@ function MortgageCalculatorContent() {
                 <div className="grid sm:grid-cols-2 gap-3">
                   <div className="p-4 rounded-lg bg-muted/50 border">
                     <p className="text-xs text-muted-foreground mb-1">At {(interestRate + 1).toFixed(1)}% (+1%)</p>
-                    <p className="text-xl font-semibold">{formatCurrency(stressTest.plus1.stressedPayment)}/mo</p>
+                    <p className="text-xl font-semibold">{formatNIS(stressTest.plus1.stressedPayment)}/mo</p>
                     <p className="text-xs text-semantic-amber mt-1">
-                      +{formatCurrency(stressTest.plus1.increase)} ({stressTest.plus1.increasePercent.toFixed(1)}% higher)
+                      +{formatNIS(stressTest.plus1.increase)} ({stressTest.plus1.increasePercent.toFixed(1)}% higher)
                     </p>
                   </div>
                   <div className="p-4 rounded-lg bg-muted/50 border">
                     <p className="text-xs text-muted-foreground mb-1">At {(interestRate + 2).toFixed(1)}% (+2%)</p>
-                    <p className="text-xl font-semibold">{formatCurrency(stressTest.plus2.stressedPayment)}/mo</p>
+                    <p className="text-xl font-semibold">{formatNIS(stressTest.plus2.stressedPayment)}/mo</p>
                     <p className="text-xs text-semantic-red mt-1">
-                      +{formatCurrency(stressTest.plus2.increase)} ({stressTest.plus2.increasePercent.toFixed(1)}% higher)
+                      +{formatNIS(stressTest.plus2.increase)} ({stressTest.plus2.increasePercent.toFixed(1)}% higher)
                     </p>
                   </div>
                 </div>

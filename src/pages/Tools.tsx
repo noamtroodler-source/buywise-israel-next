@@ -298,7 +298,7 @@ export default function Tools() {
     <Layout>
       <SEOHead
         title="Property Calculators & Tools | BuyWise Israel"
-        description="Free calculators for Israeli real estate: mortgage calculator, affordability check, true cost breakdown, rent vs buy analysis, and more. Built for international buyers."
+        description="Free Israeli real estate calculators: mortgage, affordability, true cost, rent vs buy, and more. Built for international buyers."
         canonicalUrl="https://buywiseisrael.com/tools"
       />
       

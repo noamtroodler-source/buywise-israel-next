@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
+import { FormattedNumberInput } from '@/components/ui/formatted-number-input';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
@@ -432,11 +432,11 @@ function AffordabilityCalculatorContent() {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-medium flex items-center">Your Monthly Gross Income<InfoTooltip content="Your salary before taxes and deductions. Israeli banks use gross income for debt-to-income (PTI) calculations." /></Label>
-                  <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{currencySymbol}</span><Input type="text" value={formatNumber(monthlyIncome)} onChange={(e) => setMonthlyIncome(parseFormattedNumber(e.target.value))} className="h-11 pl-8" /></div>
+                  <FormattedNumberInput value={monthlyIncome || undefined} onChange={(v) => setMonthlyIncome(v ?? 0)} prefix={currencySymbol} className="h-11" />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-medium flex items-center">Spouse/Partner Gross Income<InfoTooltip content="Banks evaluate each income separately — if one spouse is self-employed, only that portion gets discounted. Combined gross household income increases buying power." /></Label>
-                  <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{currencySymbol}</span><Input type="text" value={formatNumber(spouseIncome)} onChange={(e) => setSpouseIncome(parseFormattedNumber(e.target.value))} className="h-11 pl-8" /></div>
+                  <FormattedNumberInput value={spouseIncome || undefined} onChange={(v) => setSpouseIncome(v ?? 0)} prefix={currencySymbol} className="h-11" />
                 </div>
                 <div className="space-y-3">
                    <Label className="text-sm font-medium flex items-center">Income Earned Abroad<InfoTooltip content="If part of your salary comes from a foreign employer or overseas work, Israeli banks discount it 30-40% because it's harder to verify. This reduces your borrowing power." /></Label>
@@ -449,7 +449,7 @@ function AffordabilityCalculatorContent() {
               <CardContent className="space-y-5">
                 <div className="space-y-2">
                   <Label className="text-sm font-medium flex items-center">Monthly Debt Payments<InfoTooltip content="Include car loans, credit cards, other loans. Banks count these against your borrowing capacity." /></Label>
-                  <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{currencySymbol}</span><Input type="text" value={formatNumber(monthlyDebts)} onChange={(e) => setMonthlyDebts(parseFormattedNumber(e.target.value))} className="h-11 pl-8" /></div>
+                  <FormattedNumberInput value={monthlyDebts || undefined} onChange={(v) => setMonthlyDebts(v ?? 0)} prefix={currencySymbol} className="h-11" />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-medium flex items-center">Down Payment Available<InfoTooltip content={`Cash you have for down payment. ${selectedBuyerType === 'first_time' || selectedBuyerType === 'oleh' ? 'First-time buyers/Olim need at least 25% down.' : selectedBuyerType === 'additional' || selectedBuyerType === 'upgrader' ? 'Upgraders need at least 30% down.' : 'Investors/foreign buyers need at least 50% down.'}`} /></Label>
@@ -465,9 +465,8 @@ function AffordabilityCalculatorContent() {
                         <SelectItem value="GBP">£ GBP</SelectItem>
                       </SelectContent>
                     </Select>
-                    <div className="relative flex-1">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{CURRENCY_CONFIG[downPaymentCurrency].symbol}</span>
-                      <Input type="text" value={formatNumber(downPaymentInput)} onChange={(e) => setDownPaymentInput(parseFormattedNumber(e.target.value))} className="h-11 pl-8" />
+                    <div className="flex-1">
+                      <FormattedNumberInput value={downPaymentInput || undefined} onChange={(v) => setDownPaymentInput(v ?? 0)} prefix={CURRENCY_CONFIG[downPaymentCurrency].symbol} className="h-11" />
                     </div>
                   </div>
                   {downPaymentCurrency !== 'ILS' && (

@@ -71,7 +71,7 @@ const regions: Region[] = [
     id: 'central',
     name: 'Central',
     shortName: 'Central',
-    subtitle: 'Family suburbs, Jerusalem area & growing communities',
+    subtitle: 'Family suburbs & growing communities',
     icon: Building,
     cities: [
       { name: "Ra'anana", slug: 'raanana', image: raananaImg, description: "Ra'anana is the gold standard for Anglo suburban life — top schools, walkable center, and a mature market with premium pricing to match." },
@@ -82,6 +82,15 @@ const regions: Region[] = [
       { name: 'Petah Tikva', slug: 'petah-tikva', image: petahTikvaImg, description: "Petah Tikva is Israel's first agricultural colony turned major city — diverse neighborhoods ranging from historic to high-rise renewal." },
       { name: 'Hadera', slug: 'hadera', image: haderaImg, description: "Hadera is a train-connected coastal city offering some of the best value between Tel Aviv and Haifa — still early in its growth story." },
       { name: 'Caesarea', slug: 'caesarea', image: caesareaImg, description: "Caesarea is Israel's most exclusive residential address — a small, gated community with premium pricing and a lifestyle unlike anywhere else." },
+    ],
+  },
+  {
+    id: 'jerusalem',
+    name: 'Jerusalem & Hills',
+    shortName: 'Jerusalem',
+    subtitle: 'The capital, Judean Hills & surrounding communities',
+    icon: MapPin,
+    cities: [
       { name: 'Jerusalem', slug: 'jerusalem', image: jerusalemImg, description: "Jerusalem is a city like no other — deeply diverse neighborhoods, strong Anglo communities, and a market driven by significance as much as economics." },
       { name: 'Beit Shemesh', slug: 'beit-shemesh', image: beitShemeshImg, description: "Beit Shemesh is booming between Jerusalem and Tel Aviv — large Anglo and religious communities with some of Israel's biggest new housing projects." },
       { name: 'Efrat', slug: 'efrat', image: efratImg, description: "Efrat is one of Israel's strongest Anglo communities — a close-knit Judean Hills town with excellent schools and English as a daily language." },

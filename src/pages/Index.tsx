@@ -16,7 +16,7 @@ const Index = () => {
     <Layout>
       <SEOHead
         title="BuyWise Israel - Property Search for English Speakers"
-        description="Buying in Israel shouldn't feel like guesswork. Compare 30+ markets, calculate purchase taxes & costs, and connect with verified agents — all in English, built for international buyers."
+        description="Compare 30+ Israeli markets, calculate taxes & costs, and connect with verified agents — all in English, built for international buyers."
         canonicalUrl="https://buywiseisrael.com"
         jsonLd={generateHomepageJsonLd()}
       />
