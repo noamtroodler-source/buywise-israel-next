@@ -25,8 +25,8 @@ export const FALLBACK_CONSTANTS = {
   LTV_INVESTOR: 0.50,
   LTV_FOREIGN: 0.50,
   LTV_OLEH: 0.75,
-  MAX_PTI: 0.40, // Bank of Israel limits to 33-40% of net income
-  VARIABLE_RATE_MAX_PERCENT: 0.3333, // 1/3 limit
+  MAX_PTI: 0.50, // Bank of Israel Directive 329 v12: hard cap 50% of net income (40% triggers higher risk-weighting but is not a prohibition)
+  VARIABLE_RATE_MAX_PERCENT: 0.6667, // max 2/3 variable-rate tracks (min 1/3 must be fixed)
   
   // Professional fees
   LAWYER_RATE_MIN: 0.005,
