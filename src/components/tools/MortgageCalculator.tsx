@@ -525,7 +525,7 @@ function MortgageCalculatorContent() {
           animate={{ opacity: 1, scale: 1 }}
           className="text-4xl md:text-5xl font-bold text-primary tracking-tight"
         >
-          {formatCurrencyRange(paymentRange.low, paymentRange.high, currencySymbol)}
+          {formatCurrencyRange(paymentRange.low, paymentRange.high, '₪')}
         </motion.p>
         <p className="text-xs text-muted-foreground mt-2">
           Based on {MORTGAGE_RATE_RANGES.low}–{MORTGAGE_RATE_RANGES.high}% rates, {loanTermYears}-year term
