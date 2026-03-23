@@ -39,7 +39,8 @@ export const TOOL_SOURCES: Record<string, ToolSourceConfig> = {
       }
     ],
     lastVerified: '2025-01',
-    categories: ['PTI Limits', 'LTV by Buyer Type', 'Income Verification Rules']
+    categories: ['PTI Limits', 'LTV by Buyer Type', 'Income Verification Rules'],
+    reviewCategories: ['boi_directive_329', 'mortgage_rates'],
   },
   
   trueCost: {
