@@ -88,7 +88,8 @@ export const TOOL_SOURCES: Record<string, ToolSourceConfig> = {
       }
     ],
     lastVerified: '2025-01',
-    categories: ['Capital Gains Tax', 'Rental Income Tax', 'Market Benchmarks']
+    categories: ['Capital Gains Tax', 'Rental Income Tax', 'Market Benchmarks'],
+    reviewCategories: ['cgt_exemptions', 'cbs_price_stats'],
   },
   
   rentVsBuy: {
