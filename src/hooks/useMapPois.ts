@@ -23,10 +23,17 @@ export function useMapPois(categories: string[]) {
     queryKey: ['map-pois', categories],
     queryFn: async () => {
       if (categories.length === 0) return [];
-      const { data, error } = await supabase
+      let query = supabase
         .from('map_pois')
         .select('*')
         .in('category', categories);
+
+      // Exclude Reform and Conservative shuls — not relevant for target audience
+      if (categories.includes('shul')) {
+        query = query.not('denomination', 'in', '("Reform","Conservative")');
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       return (data ?? []) as MapPoi[];
     },
