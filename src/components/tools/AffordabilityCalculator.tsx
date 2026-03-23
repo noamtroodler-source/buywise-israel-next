@@ -432,7 +432,7 @@ function AffordabilityCalculatorContent() {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-medium flex items-center">Your Monthly Gross Income<InfoTooltip content="Your salary before taxes and deductions. Israeli banks use gross income for debt-to-income (PTI) calculations." /></Label>
-                  <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{currencySymbol}</span><Input type="text" value={formatNumber(monthlyIncome)} onChange={(e) => setMonthlyIncome(parseFormattedNumber(e.target.value))} className="h-11 pl-8" /></div>
+                  <FormattedNumberInput value={monthlyIncome || undefined} onChange={(v) => setMonthlyIncome(v ?? 0)} prefix={currencySymbol} className="h-11" />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-medium flex items-center">Spouse/Partner Gross Income<InfoTooltip content="Banks evaluate each income separately — if one spouse is self-employed, only that portion gets discounted. Combined gross household income increases buying power." /></Label>
