@@ -166,6 +166,12 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
   );
 
   const effectiveAvgPriceSqm = roomPrice?.avgPriceSqm ?? cityData?.average_price_sqm ?? null;
+
+  // Premium segment detection
+  const propertyPricePerSqm = property.size_sqm ? Math.round(property.price / property.size_sqm) : null;
+  const isPremiumSegment = propertyPricePerSqm && effectiveAvgPriceSqm
+    ? propertyPricePerSqm > effectiveAvgPriceSqm * 1.30
+    : false;
   const effectiveYoyChange = roomPrice?.yoyChange ?? cityData?.yoy_price_change ?? null;
   const effectiveRoomCount = roomPrice ? israeliRooms : null;
   const isRoomPriceFallback = roomPrice?.isFallback ?? false;
