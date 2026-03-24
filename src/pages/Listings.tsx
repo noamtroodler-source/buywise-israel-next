@@ -8,7 +8,7 @@ import { PropertyFilters as PropertyFiltersType, ListingStatus } from '@/types/d
 import { PropertyFilters } from '@/components/filters/PropertyFilters';
 import { QuickFilterChips } from '@/components/filters/QuickFilterChips';
 import { CreateAlertDialog } from '@/components/filters/CreateAlertDialog';
-import { ViewToggle } from '@/components/filters/ViewToggle';
+
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { History, Search, Bell, MapPin, RotateCcw, BookOpen, Home, Compass, Calculator, Lightbulb, Loader2 } from 'lucide-react';
