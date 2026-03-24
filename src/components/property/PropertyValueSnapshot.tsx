@@ -3,6 +3,7 @@ import { useFormatPrice, useFormatPricePerArea, useAreaLabel } from '@/contexts/
 import { useMemo } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { FALLBACK_CONSTANTS } from '@/lib/calculations/constants';
+import type { PriceTier } from '@/hooks/usePriceTier';
 
 interface PropertyValueSnapshotProps {
   price: number;
