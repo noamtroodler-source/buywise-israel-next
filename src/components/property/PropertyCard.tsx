@@ -33,9 +33,11 @@ interface PropertyCardProps {
   compareCategory?: 'buy' | 'rent';
   /** Always show a compare checkbox (for Favorites page) */
   alwaysShowCompare?: boolean;
+  /** Hide the property title on the card */
+  hideTitle?: boolean;
 }
 
-const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardProps>(function PropertyCard({ property, className, showCompareButton = false, showShareButton = true, showMonthlyEstimate = false, hideStatusBadge = false, compact = false, maxBadges = 2, showCategoryBadge = false, hideFeaturedBadge = false, compareCategory, alwaysShowCompare = false }, ref) {
+const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardProps>(function PropertyCard({ property, className, showCompareButton = false, showShareButton = true, showMonthlyEstimate = false, hideStatusBadge = false, compact = false, maxBadges = 2, showCategoryBadge = false, hideFeaturedBadge = false, compareCategory, alwaysShowCompare = false, hideTitle = false }, ref) {
   const formatPrice = useFormatPrice();
   const formatArea = useFormatArea();
   const navigate = useNavigate();
