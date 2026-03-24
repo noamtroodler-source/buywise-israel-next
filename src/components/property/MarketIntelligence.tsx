@@ -13,6 +13,8 @@ import { AIMarketInsight } from './AIMarketInsight';
 import { useMarketInsight } from '@/hooks/useMarketInsight';
 import { useRoomSpecificCityPrice } from '@/hooks/useRoomSpecificCityPrice';
 import { useNeighborhoodAvgPrice } from '@/hooks/useNeighborhoodPrices';
+import { usePriceTier } from '@/hooks/usePriceTier';
+import type { PriceTier } from '@/hooks/usePriceTier';
 
 interface MarketIntelligenceProps {
   property: {
@@ -57,7 +59,7 @@ interface MarketIntelligenceProps {
   } | null | undefined;
 }
 
-function MarketVerdictBadge({ avgComparison, compsCount, radiusUsedM, isPremiumSegment }: { avgComparison: number | null; compsCount: number; radiusUsedM: number; isPremiumSegment?: boolean }) {
+function MarketVerdictBadge({ avgComparison, compsCount, radiusUsedM, priceTier }: { avgComparison: number | null; compsCount: number; radiusUsedM: number; priceTier?: PriceTier | null }) {
   // Quality gate: suppress verdict when comps are too few
   if (avgComparison === null || compsCount < 3) {
     return (
@@ -91,8 +93,8 @@ function MarketVerdictBadge({ avgComparison, compsCount, radiusUsedM, isPremiumS
         Above recent sales avg
       </Badge>
     );
-    contextLine = isPremiumSegment
-      ? 'Premium property — city/neighborhood averages include all market segments'
+    contextLine = priceTier && priceTier !== 'standard'
+      ? `Comparing against similar ${priceTier}-tier properties`
       : 'Typical for active listings — room to negotiate';
   } else if (avgComparison <= 20) {
     badge = (
@@ -100,8 +102,8 @@ function MarketVerdictBadge({ avgComparison, compsCount, radiusUsedM, isPremiumS
         Well above recent sales — negotiate
       </Badge>
     );
-    contextLine = isPremiumSegment
-      ? 'Premium property — city/neighborhood averages include all market segments'
+    contextLine = priceTier && priceTier !== 'standard'
+      ? `Comparing against similar ${priceTier}-tier properties`
       : 'Higher than area avg — negotiate or investigate';
   } else {
     badge = (
@@ -109,8 +111,8 @@ function MarketVerdictBadge({ avgComparison, compsCount, radiusUsedM, isPremiumS
         Significantly above recent sales
       </Badge>
     );
-    contextLine = isPremiumSegment
-      ? 'Premium property — city/neighborhood averages include all market segments'
+    contextLine = priceTier && priceTier !== 'standard'
+      ? `Comparing against similar ${priceTier}-tier properties`
       : 'Review comparable sales before proceeding';
   }
 
@@ -169,11 +171,13 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
 
   const effectiveAvgPriceSqm = roomPrice?.avgPriceSqm ?? cityData?.average_price_sqm ?? null;
 
-  // Premium segment detection
+  // Price tier classification (replaces old isPremiumSegment hack)
   const propertyPricePerSqm = property.size_sqm ? Math.round(property.price / property.size_sqm) : null;
-  const isPremiumSegment = propertyPricePerSqm && effectiveAvgPriceSqm
-    ? propertyPricePerSqm > effectiveAvgPriceSqm * 1.30
-    : false;
+  const { tier: priceTier, tierLabel, tierAvgPriceSqm } = usePriceTier(
+    property.city,
+    israeliRooms,
+    propertyPricePerSqm
+  );
   const effectiveYoyChange = roomPrice?.yoyChange ?? cityData?.yoy_price_change ?? null;
   const effectiveRoomCount = roomPrice ? israeliRooms : null;
   const isRoomPriceFallback = roomPrice?.isFallback ?? false;
@@ -247,12 +251,34 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
           </Tooltip>
         </div>
 
+        {/* Tier Badge */}
+        {priceTier && priceTier !== 'standard' && (
+          <div className="flex items-center gap-2">
+            <Badge className={priceTier === 'luxury'
+              ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800'
+              : 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800'
+            }>
+              {tierLabel}
+            </Badge>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent side="right" className="max-w-xs">
+                <p className="text-xs">
+                  Price tier based on {priceTier === 'luxury' ? 'top' : 'middle'} third of government-recorded sale prices in {property.city} for similar room counts over the past 2 years.
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        )}
+
         {/* Hero Verdict Badge */}
         <MarketVerdictBadge 
           avgComparison={verdictData.avgComparison} 
           compsCount={verdictData.compsCount}
           radiusUsedM={verdictData.radiusUsedM}
-          isPremiumSegment={isPremiumSegment}
+          priceTier={priceTier}
         />
 
         {/* Value Snapshot Cards (no header) */}
@@ -260,7 +286,7 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
           price={property.price}
           sizeSqm={property.size_sqm}
           city={property.city}
-          averagePriceSqm={effectiveAvgPriceSqm}
+          averagePriceSqm={tierAvgPriceSqm ?? effectiveAvgPriceSqm}
           priceChange={effectiveYoyChange}
           listingStatus={property.listing_status}
           bedrooms={israeliRooms}
@@ -269,6 +295,8 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
           roomSpecificCityAvgPrice={roomPrice?.avgPrice ?? null}
           neighborhoodAvgPriceSqm={neighborhoodAvgPriceSqm}
           neighborhoodName={property.neighborhood}
+          priceTier={priceTier}
+          tierLabel={tierLabel}
           hideHeader
         />
 

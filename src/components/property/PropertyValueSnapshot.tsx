@@ -3,6 +3,7 @@ import { useFormatPrice, useFormatPricePerArea, useAreaLabel } from '@/contexts/
 import { useMemo } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { FALLBACK_CONSTANTS } from '@/lib/calculations/constants';
+import type { PriceTier } from '@/hooks/usePriceTier';
 
 interface PropertyValueSnapshotProps {
   price: number;
@@ -26,6 +27,10 @@ interface PropertyValueSnapshotProps {
   neighborhoodAvgPriceSqm?: number | null;
   /** Neighborhood name for label (e.g. "Arnona") */
   neighborhoodName?: string | null;
+  /** Price tier classification from usePriceTier */
+  priceTier?: PriceTier | null;
+  /** Display label for tier (e.g. "Premium", "Luxury") */
+  tierLabel?: string | null;
 }
 
 export function PropertyValueSnapshot({ 
@@ -45,6 +50,8 @@ export function PropertyValueSnapshot({
   hideHeader = false,
   neighborhoodAvgPriceSqm,
   neighborhoodName,
+  priceTier,
+  tierLabel,
 }: PropertyValueSnapshotProps) {
   const formatPrice = useFormatPrice();
   const formatPricePerArea = useFormatPricePerArea();
@@ -96,19 +103,14 @@ export function PropertyValueSnapshot({
     ? Math.round(((totalMonthlyCommitment - cityAvgTotalMonthly) / cityAvgTotalMonthly) * 100)
     : null;
   
-  // Premium segment detection: listing price/sqm >30% above city average
-  const isPremiumSegment = propertyPricePerSqm && averagePriceSqm
-    ? propertyPricePerSqm > averagePriceSqm * 1.30
-    : false;
-
   // For purchases: calculate comparison to neighborhood or city average
-  // Prefer neighborhood when available, fall back to city
+  // When tier data is available, averagePriceSqm already reflects tier-specific avg
   const comparisonAvgSqm = neighborhoodAvgPriceSqm ?? averagePriceSqm;
+  const tierSuffix = priceTier && priceTier !== 'standard' && tierLabel ? ` ${tierLabel}` : '';
   const comparisonLabel = neighborhoodAvgPriceSqm && neighborhoodName
     ? neighborhoodName
-    : city;
+    : `${city}${tierSuffix}`;
   const isNeighborhoodComparison = !!(neighborhoodAvgPriceSqm && neighborhoodName);
-  // Note: roomCount is intentionally NOT shown in the purchase comparison card label
 
   const purchaseComparisonPercent = propertyPricePerSqm && comparisonAvgSqm
     ? Math.round(((propertyPricePerSqm - comparisonAvgSqm) / comparisonAvgSqm) * 100)
@@ -299,9 +301,9 @@ export function PropertyValueSnapshot({
                 <p className="text-xs text-muted-foreground mt-1">
                   {comparisonLabel}: {formatPricePerArea(comparisonAvgSqm, 'ILS')}
                 </p>
-                {isPremiumSegment && purchaseComparisonPercent > 0 && (
+                {priceTier && priceTier !== 'standard' && tierLabel && purchaseComparisonPercent > 0 && (
                   <p className="text-[10px] text-muted-foreground/70 mt-1 italic">
-                    Premium segment — averages include all market tiers
+                    Compared to {tierLabel.toLowerCase()}-tier avg
                   </p>
                 )}
               </>
@@ -338,7 +340,7 @@ export function PropertyValueSnapshot({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <span className="text-sm cursor-help border-b border-dotted border-muted-foreground/30">
-                        {hasRoomData ? `vs ${city} ${bedrooms}-Room Avg` : `vs ${city} Avg`}
+                        {hasRoomData ? `vs ${city}${tierSuffix} ${bedrooms}-Room Avg` : `vs ${city} Avg`}
                       </span>
                     </TooltipTrigger>
                     <TooltipContent side="top" className="max-w-xs">
@@ -360,9 +362,9 @@ export function PropertyValueSnapshot({
                   <p className="text-xs text-muted-foreground mt-1">
                     {city} avg: {formatPrice(roomSpecificCityAvgPrice!, 'ILS')}
                   </p>
-                  {isPremiumSegment && roomCompPercent > 0 && (
+                  {priceTier && priceTier !== 'standard' && tierLabel && roomCompPercent > 0 && (
                     <p className="text-[10px] text-muted-foreground/70 mt-1 italic">
-                      Premium segment — averages include all market tiers
+                      Compared to {tierLabel.toLowerCase()}-tier avg
                     </p>
                   )}
                 </>

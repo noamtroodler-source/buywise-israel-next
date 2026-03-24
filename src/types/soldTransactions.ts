@@ -1,3 +1,5 @@
+export type PriceTier = 'standard' | 'premium' | 'luxury';
+
 export interface SoldTransaction {
   id: string;
   sold_price: number;
