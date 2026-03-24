@@ -7,7 +7,6 @@ import { cn } from '@/lib/utils';
 interface ViewToggleProps {
   activeView: 'grid' | 'map';
   className?: string;
-  size?: 'default' | 'sm';
 }
 
 export function ViewToggle({ activeView, className, size = 'default' }: ViewToggleProps) {
