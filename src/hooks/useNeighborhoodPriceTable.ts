@@ -11,6 +11,7 @@ export interface NeighborhoodPriceRow {
   latest_quarter: number;
   price_tier: PriceTier | null;
   is_featured: boolean;
+  is_fallback: boolean;
 }
 
 const CBS_CITY_VARIANTS: Record<string, string> = {
