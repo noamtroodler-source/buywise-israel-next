@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { BarChart3, ArrowUp, ArrowDown, ArrowUpDown, MapPin, TrendingUp, TrendingDown, Minus, Search, ChevronRight } from 'lucide-react';
+import { BarChart3, ArrowUp, ArrowDown, ArrowUpDown, MapPin, TrendingUp, TrendingDown, Minus, Search, ChevronRight, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
