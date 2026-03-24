@@ -860,6 +860,11 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
                 </div>
               )}
 
+              {/* View Toggle: Grid / Map - hidden in mapMode */}
+              {!mapMode && (
+                <ViewToggleInline activeView={activeView || 'grid'} />
+              )}
+
               {/* Create Alert Button */}
               {onCreateAlert && (
                 <Tooltip>
