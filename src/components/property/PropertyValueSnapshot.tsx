@@ -340,7 +340,7 @@ export function PropertyValueSnapshot({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <span className="text-sm cursor-help border-b border-dotted border-muted-foreground/30">
-                        {hasRoomData ? `vs ${city} ${bedrooms}-Room Avg` : `vs ${city} Avg`}
+                        {hasRoomData ? `vs ${city}${tierSuffix} ${bedrooms}-Room Avg` : `vs ${city} Avg`}
                       </span>
                     </TooltipTrigger>
                     <TooltipContent side="top" className="max-w-xs">
