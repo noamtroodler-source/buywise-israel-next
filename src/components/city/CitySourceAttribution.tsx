@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { isNonCbsCity } from '@/lib/constants/cbsCoverage';
 import { CheckCircle2, ChevronDown, ChevronUp, BookOpen, Building2, BarChart3 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
