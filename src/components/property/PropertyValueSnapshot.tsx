@@ -27,6 +27,10 @@ interface PropertyValueSnapshotProps {
   neighborhoodAvgPriceSqm?: number | null;
   /** Neighborhood name for label (e.g. "Arnona") */
   neighborhoodName?: string | null;
+  /** Price tier classification from usePriceTier */
+  priceTier?: PriceTier | null;
+  /** Display label for tier (e.g. "Premium", "Luxury") */
+  tierLabel?: string | null;
 }
 
 export function PropertyValueSnapshot({ 
