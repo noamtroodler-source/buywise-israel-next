@@ -5851,6 +5851,17 @@ export type Database = {
           property_id: string
         }[]
       }
+      get_city_price_tiers: {
+        Args: { p_city: string; p_months_back?: number; p_rooms?: number }
+        Returns: {
+          p33_price_sqm: number
+          p67_price_sqm: number
+          tier_avg_luxury: number
+          tier_avg_premium: number
+          tier_avg_standard: number
+          transaction_count: number
+        }[]
+      }
       get_city_property_counts: {
         Args: { p_listing_status: string }
         Returns: {
