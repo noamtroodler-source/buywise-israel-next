@@ -18,6 +18,7 @@ import { useCities } from '@/hooks/useCities';
 import { CityComparisonSelector } from './CityComparisonSelector';
 import { getCityRoomSizeInsight } from './cityRoomSizeInsights';
 import { cn } from '@/lib/utils';
+import { isNonCbsCity } from '@/lib/constants/cbsCoverage';
 
 interface PriceByApartmentSizeProps {
   citySlug: string;
