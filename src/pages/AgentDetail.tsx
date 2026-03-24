@@ -285,7 +285,10 @@ export default function AgentDetail() {
             </div>
 
             {agent.bio && (
-              <p className="mt-6 text-muted-foreground leading-relaxed line-clamp-2">{agent.bio}</p>
+              <div className="mt-6">
+                <h3 className="text-sm font-medium text-foreground mb-2">About</h3>
+                <p className="text-muted-foreground leading-relaxed">{agent.bio}</p>
+              </div>
             )}
 
             {agent.neighborhoods_covered && agent.neighborhoods_covered.length > 0 && (
