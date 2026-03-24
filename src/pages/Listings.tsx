@@ -306,9 +306,7 @@ export default function Listings() {
           ) : (
             <div className="h-5 w-40 bg-muted/50 rounded animate-pulse" />
           )}
-          {isDesktop && (
-            <ViewToggle activeView="grid" size="sm" />
-          )}
+          <ViewToggle activeView="grid" />
         </div>
 
         {/* Property Grid with loading overlay - wrapped in PullToRefresh on mobile */}
