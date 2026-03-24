@@ -489,7 +489,7 @@ export function RecentNearbySales({
                 Above average for this area (+{avgComparison.toFixed(0)}%)
               </Badge>
             ) : avgComparison > 20 ? (
-              <Badge className="bg-semantic-red text-semantic-red-foreground border-semantic-red">
+              <Badge className="bg-semantic-amber text-semantic-amber-foreground border-semantic-amber">
                 Significantly above market (+{avgComparison.toFixed(0)}%)
               </Badge>
             ) : avgComparison < -5 ? (
