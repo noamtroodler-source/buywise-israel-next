@@ -173,7 +173,7 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
 
   // Price tier classification (replaces old isPremiumSegment hack)
   const propertyPricePerSqm = property.size_sqm ? Math.round(property.price / property.size_sqm) : null;
-  const { tier: priceTier, tierLabel, tierAvgPriceSqm } = usePriceTier(
+  const { tier: priceTier, tierLabel, tierAvgPriceSqm, tierAvgTotalPrice } = usePriceTier(
     property.city,
     israeliRooms,
     propertyPricePerSqm
@@ -292,7 +292,7 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
           bedrooms={israeliRooms}
           cityArnonaRate={cityData?.arnona_rate_sqm}
           cityAvgVaadBayit={cityData?.average_vaad_bayit}
-          roomSpecificCityAvgPrice={roomPrice?.avgPrice ?? null}
+          roomSpecificCityAvgPrice={tierAvgTotalPrice ?? roomPrice?.avgPrice ?? null}
           neighborhoodAvgPriceSqm={neighborhoodAvgPriceSqm}
           neighborhoodName={property.neighborhood}
           priceTier={priceTier}

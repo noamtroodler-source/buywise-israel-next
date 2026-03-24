@@ -7,6 +7,7 @@ export interface PriceTierResult {
   tier: PriceTier | null;
   tierLabel: string | null;
   tierAvgPriceSqm: number | null;
+  tierAvgTotalPrice: number | null;
   p33: number | null;
   p67: number | null;
   transactionCount: number;
@@ -52,6 +53,9 @@ export function usePriceTier(
         tierAvgStandard: Number(row.tier_avg_standard),
         tierAvgPremium: Number(row.tier_avg_premium),
         tierAvgLuxury: Number(row.tier_avg_luxury),
+        tierAvgPriceStandard: Number(row.tier_avg_price_standard),
+        tierAvgPricePremium: Number(row.tier_avg_price_premium),
+        tierAvgPriceLuxury: Number(row.tier_avg_price_luxury),
       };
     },
     enabled: Boolean(city),
@@ -59,21 +63,25 @@ export function usePriceTier(
   });
 
   if (!data || !propertyPriceSqm) {
-    return { tier: null, tierLabel: null, tierAvgPriceSqm: null, p33: null, p67: null, transactionCount: 0 };
+    return { tier: null, tierLabel: null, tierAvgPriceSqm: null, tierAvgTotalPrice: null, p33: null, p67: null, transactionCount: 0 };
   }
 
   let tier: PriceTier;
   let tierAvgPriceSqm: number;
+  let tierAvgTotalPrice: number;
 
   if (propertyPriceSqm <= data.p33) {
     tier = 'standard';
     tierAvgPriceSqm = data.tierAvgStandard;
+    tierAvgTotalPrice = data.tierAvgPriceStandard;
   } else if (propertyPriceSqm <= data.p67) {
     tier = 'premium';
     tierAvgPriceSqm = data.tierAvgPremium;
+    tierAvgTotalPrice = data.tierAvgPricePremium;
   } else {
     tier = 'luxury';
     tierAvgPriceSqm = data.tierAvgLuxury;
+    tierAvgTotalPrice = data.tierAvgPriceLuxury;
   }
 
   const tierLabel = tier.charAt(0).toUpperCase() + tier.slice(1);
@@ -82,6 +90,7 @@ export function usePriceTier(
     tier,
     tierLabel,
     tierAvgPriceSqm,
+    tierAvgTotalPrice,
     p33: data.p33,
     p67: data.p67,
     transactionCount: data.transactionCount,
