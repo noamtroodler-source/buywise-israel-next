@@ -41,7 +41,7 @@ export default function CityDetail() {
   const { data: priceTableRows = [] } = useNeighborhoodPriceTable(slug || '', city?.name);
   const districtName = city ? getDistrictForCity(city.name) : null;
 
-  // Merge featured neighborhoods + CBS price table into unified list
+  // Merge featured neighborhoods + market price data into unified list
   const unifiedNeighborhoods: UnifiedNeighborhood[] = useMemo(() => {
     const seen = new Set<string>();
     const result: UnifiedNeighborhood[] = [];
