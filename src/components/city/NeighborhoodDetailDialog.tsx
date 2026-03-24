@@ -24,7 +24,7 @@ function formatCompactPrice(price: number): string {
   return `₪${price.toLocaleString()}`;
 }
 
-export function NeighborhoodDetailDialog({ neighborhood: n, cityName, open, onOpenChange }: NeighborhoodDetailDialogProps) {
+export function NeighborhoodDetailDialog({ neighborhood: n, cityName, open, onOpenChange, isFallback }: NeighborhoodDetailDialogProps) {
   const navigate = useNavigate();
   const { data: profile, isLoading } = useNeighborhoodProfile(cityName, n?.name);
 
@@ -33,6 +33,7 @@ export function NeighborhoodDetailDialog({ neighborhood: n, cityName, open, onOp
   const hasNarrative = profile?.narrative;
   const hasBestFor = profile?.best_for;
   const hasPrice = n.avg_price != null;
+  const showFallback = isFallback ?? n.is_fallback;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
