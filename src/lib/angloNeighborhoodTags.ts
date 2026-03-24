@@ -8,7 +8,7 @@ const angloTagsRaw: Record<string, string[]> = {
   jerusalem: [
     'German Colony', 'Baka', 'Rehavia', 'Katamon', 'Katamonim', 'Talbiyeh',
     'Arnona', 'Har Nof', 'Ramot', 'Sanhedria', 'Maalot Dafna', 'Ramat Eshkol',
-    "Sha'arei Chesed",
+    "Sha'arei Chesed", 'French Hill', 'Talpiot', 'Armon HaNatziv',
   ],
   'tel-aviv': ['Old North'],
   raanana: ['Neve Zemer', 'Kikar HaSharon', "Old Ra'anana", 'Central', 'West Ra\'anana'],
