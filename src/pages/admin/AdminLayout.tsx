@@ -84,6 +84,7 @@ export function AdminLayout() {
 
   const contentItems = [
     { href: '/admin/properties', label: 'Properties', icon: Home },
+    { href: '/admin/agency-import', label: 'Agency Import', icon: Globe },
     { href: '/admin/duplicates', label: 'Duplicates', icon: Building, badge: pendingDuplicateCount },
     { href: '/admin/blog', label: 'Blog Posts', icon: FileText },
     { href: '/admin/glossary', label: 'Glossary', icon: BookOpen },
