@@ -89,8 +89,48 @@ const YEAR_BUILT_PRESETS = [
   { value: 2010, label: '2010+' },
   { value: 2000, label: '2000+' },
 ];
+function ViewToggleInline({ activeView }: { activeView: 'grid' | 'map' }) {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
-// Rental-specific options
+  const handleView = (view: 'grid' | 'map') => {
+    if (view === activeView) return;
+    const params = searchParams.toString();
+    const path = view === 'map' ? '/map' : '/listings';
+    navigate(`${path}${params ? `?${params}` : ''}`);
+  };
+
+  return (
+    <div className="flex items-center border border-border rounded-lg p-0.5 bg-muted/30">
+      <button
+        onClick={() => handleView('grid')}
+        className={cn(
+          "flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all",
+          activeView === 'grid'
+            ? "bg-primary text-primary-foreground shadow-sm"
+            : "text-muted-foreground hover:text-foreground"
+        )}
+      >
+        <LayoutGrid className="h-3.5 w-3.5" />
+        Grid
+      </button>
+      <button
+        onClick={() => handleView('map')}
+        className={cn(
+          "flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all",
+          activeView === 'map'
+            ? "bg-primary text-primary-foreground shadow-sm"
+            : "text-muted-foreground hover:text-foreground"
+        )}
+      >
+        <MapIcon className="h-3.5 w-3.5" />
+        Map
+      </button>
+    </div>
+  );
+}
+
+
 const AVAILABILITY_OPTIONS = [
   { value: 'any', label: 'Any Time' },
   { value: 'now', label: 'Available Now' },
