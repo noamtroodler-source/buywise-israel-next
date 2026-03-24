@@ -6,6 +6,7 @@ export interface NeighborhoodPriceRow {
   name: string;
   avg_price: number;
   yoy_change_percent: number | null;
+  yoy_warning: boolean;
   latest_year: number;
   latest_quarter: number;
   price_tier: PriceTier | null;
