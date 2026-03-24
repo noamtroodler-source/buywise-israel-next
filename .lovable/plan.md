@@ -1,38 +1,34 @@
 
 
-# Phase N3: Price Tier Corrections & Anglo Tag Updates
+# Phase N4: Room Count Disclaimer & Admin Data Quality Indicators
 
 ---
 
-## 1. Fix 3 Incorrect Price Tier Classifications (Database)
+## 1. Room-count data disclaimer in PriceByApartmentSize
 
-Update `featured_neighborhoods` JSONB in the `cities` table for these neighborhoods:
+**`src/components/city/PriceByApartmentSize.tsx`** — Add a small disclaimer below the source attribution (line ~488) noting that room-specific price breakdowns use aggregated transaction data, not official CBS neighborhood statistics:
 
-| City | Neighborhood | Current Tier | Correct Tier |
-|------|-------------|-------------|-------------|
-| Tel Aviv | Florentin | budget | mid-range |
-| Jerusalem | Katamon | mid-range | premium |
-| Jerusalem | German Colony / Baka | premium | ultra-premium |
+Add text: `"Room-size breakdowns derived from aggregated transaction records, not official CBS neighborhood statistics."`
 
-Three separate UPDATE statements using JSONB manipulation to find and update the `price_tier` field within the `featured_neighborhoods` array.
+This goes inside the existing source attribution area as an additional `text-xs text-muted-foreground` line.
 
-## 2. Add 7 Missing Anglo Neighborhoods
+## 2. Admin data quality indicator per city
 
-Update `src/lib/angloNeighborhoodTags.ts`:
+**`src/pages/admin/MapNeighborhoods.tsx`** — Add a summary card/section above the mappings table showing per-city "% Real Data" coverage:
 
-- **Jerusalem** (line 9-11): Add `'French Hill'`, `'Talpiot'`, `'Armon HaNatziv'`
-- **Beit Shemesh** (line 18): Add `'RBS Bet'`, `'RBS Hey'`, `'Neve Shamir'`
-- **Gush Etzion** (line 21): Add `"Ma'ale Amos"`, `'Meitzad'`
+- After loading `dbMappings`, group by city and calculate:
+  - Total neighborhoods per city
+  - Neighborhoods with `status = 'approved'` and valid zone IDs
+  - Percentage = approved with data / total
+- Display as a small grid of city cards showing `CityName: X% coverage (Y/Z neighborhoods)`
+- Color-code: green (>70%), yellow (30-70%), red (<30%)
 
-## 3. Review 2 Flagged Anglo Tags
+This gives admins at-a-glance visibility into which cities have meaningful neighborhood-level data vs. fallback-heavy coverage.
 
-- **Katamonim** — Keep. It's a real Jerusalem neighborhood with a growing Anglo presence. No code change needed.
-- **Kikar HaSharon** — Keep. It's the central Ra'anana square area and a legitimate residential zone. No change needed.
+---
 
 ## Execution Order
 
-1. Update `angloNeighborhoodTags.ts` with new entries
-2. Update database: Florentin tier → mid-range
-3. Update database: Katamon tier → premium
-4. Update database: German Colony/Baka tier → ultra-premium
+1. Add room-count disclaimer to `PriceByApartmentSize.tsx`
+2. Add data quality summary section to `MapNeighborhoods.tsx`
 
