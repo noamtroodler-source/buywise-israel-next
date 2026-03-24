@@ -297,7 +297,7 @@ export default function Listings() {
           )}
         </div>
 
-        {/* Results Count Row - with View Toggle on desktop */}
+        {/* Results Count Row */}
         <div className="flex items-center justify-between mb-4">
           {!isLoading ? (
             <p className="text-sm text-muted-foreground">
@@ -306,7 +306,6 @@ export default function Listings() {
           ) : (
             <div className="h-5 w-40 bg-muted/50 rounded animate-pulse" />
           )}
-          <ViewToggle activeView="grid" />
         </div>
 
         {/* Property Grid with loading overlay - wrapped in PullToRefresh on mobile */}
