@@ -38,13 +38,21 @@ function formatCompactPrice(price: number): string {
   return `₪${price.toLocaleString()}`;
 }
 
-function TrendIndicator({ yoyChange }: { yoyChange: number | null }) {
+function TrendIndicator({ yoyChange, yoyWarning }: { yoyChange: number | null; yoyWarning?: boolean }) {
   if (yoyChange == null) return <span className="text-muted-foreground">—</span>;
+  
+  const warningIcon = yoyWarning ? (
+    <span title="Low transaction volume — trend may not be reliable" className="cursor-help">
+      <AlertTriangle className="h-3 w-3 text-amber-500 ml-0.5" />
+    </span>
+  ) : null;
+
   if (yoyChange > 0.5) {
     return (
       <span className="inline-flex items-center gap-0.5 text-xs font-medium text-semantic-green">
         <TrendingUp className="h-3 w-3" />
         +{yoyChange}%
+        {warningIcon}
       </span>
     );
   }
@@ -53,6 +61,7 @@ function TrendIndicator({ yoyChange }: { yoyChange: number | null }) {
       <span className="inline-flex items-center gap-0.5 text-xs font-medium text-destructive">
         <TrendingDown className="h-3 w-3" />
         {yoyChange}%
+        {warningIcon}
       </span>
     );
   }
