@@ -1,33 +1,37 @@
 
 
-# Fix JRE Agent Profile Photos — Correct Avatar URLs
+# Best Cover Photo Selection for JRE + Erez Listings
 
-## Problem
-All 11 JRE agent `avatar_url` values use incorrect WordPress upload date paths (e.g., `/2023/08/` instead of `/2025/09/`), so the images likely 404 and agents show fallback initials instead of photos.
+## Scope
+- **142 listings** with multiple images (105 JRE + 37 Erez)
+- Currently `images[0]` is used as cover photo everywhere in the UI
+- Goal: Use AI vision to pick the most appealing photo and move it to position [0]
 
-## Solution
-One-shot edge function `fix-jre-avatars` that updates each agent's `avatar_url` to the correct URL as found on the live JRE team page.
+## Approach — Edge Function: `select-best-covers`
 
-## Correct URLs
+### How It Works
+1. Query all properties for JRE (`0eb2a33b`) and Erez (`cf4682bd`) agencies that have 2+ images
+2. For each property, send the image URLs to **Gemini 2.5 Flash** (vision-capable, fast, cost-efficient) with a prompt like:
+   > "Which image would make the best real estate listing cover photo? Consider: exterior shots, bright lighting, wide angles, attractive staging, curb appeal. Return the index (0-based) of the best image."
+3. If the best image isn't already at index 0, reorder the images array to put it first
+4. Update the property record
 
-| Agent (ID) | Correct avatar_url |
-|---|---|
-| Michael Steinmetz (`8a39b05f`) | `.../2025/09/Michael-Steinmetz-hs-sq.jpg` |
-| Abby Brill Schloss (`c87a9efc`) | `.../2025/09/Abby-Schloss-hs-sq.jpg` |
-| Simone Gershon (`237e667d`) | `.../2025/09/Simone-Gershon-hs-sq.jpg` |
-| Elad Ginzburg (`e7245ea3`) | `.../2026/02/Elad-Ginzburg-headshot-t.png` |
-| Atara Abelman (`a2cf9bc4`) | `.../2025/09/Atara-Abelman-hs-sq.jpg` |
-| Penina Abramowitz (`9d6e0972`) | `.../2025/09/Untitled-design.jpg` |
-| Igal Elmaleh (`5d3e6418`) | `.../2025/09/Igal-Elmaleh-hs-sq.jpg` |
-| Naftali Berezin (`f0bc5a38`) | `.../2026/02/Naftali_Berezin-headshot-t.png` |
-| Tammy Ziv (`596363a8`) | `.../2026/02/Tammy_Ziv-headshot-t.png` |
-| Jonas Halfon (`8b01e2b7`) | `.../2026/02/Jonas_Halfon-headshot-t.png` |
-| Shimon Mozes (`06696c2f`) | `.../2026/02/Shimon_Mozes-headshot-t.png` |
+### Batching Strategy
+- Process 10 properties at a time to stay within edge function timeout
+- Accept a `batch` query param (0, 1, 2, ...) so you can invoke it multiple times: ~15 invocations to cover all 142
+- Each invocation processes 10 listings, evaluating up to 12 images per listing
 
-## Implementation
-1. **New**: `supabase/functions/fix-jre-avatars/index.ts` — one-shot edge function with 11 UPDATE statements
-2. Deploy, invoke once, verify photos load, delete function
+### AI Prompt Design
+Send up to 8 image URLs per property (skip if listing has 20+ images — just use first 8). Ask Gemini to pick the single best cover based on:
+- Exterior/facade shots preferred over interior details
+- Good lighting and composition
+- Wide-angle views that show the full space
+- Avoid close-ups of fixtures, bathrooms, or construction
 
 ## Files
-1. `supabase/functions/fix-jre-avatars/index.ts` (new, temporary)
+1. **New**: `supabase/functions/select-best-covers/index.ts` — AI-powered cover selection
+2. No frontend changes needed (already uses `images[0]`)
+
+## Execution
+Deploy, invoke ~15 times with incrementing batch param, verify cover photos improved, delete function.
 
