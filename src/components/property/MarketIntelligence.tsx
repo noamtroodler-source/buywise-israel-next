@@ -100,7 +100,9 @@ function MarketVerdictBadge({ avgComparison, compsCount, radiusUsedM, isPremiumS
         Well above recent sales — negotiate
       </Badge>
     );
-    contextLine = 'Higher than area avg — negotiate or investigate';
+    contextLine = isPremiumSegment
+      ? 'Premium property — city/neighborhood averages include all market segments'
+      : 'Higher than area avg — negotiate or investigate';
   } else {
     badge = (
       <Badge className="bg-semantic-amber text-semantic-amber-foreground border-semantic-amber">
