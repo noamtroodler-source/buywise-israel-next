@@ -148,6 +148,7 @@ export function FeaturedShowcase() {
                       showCompareButton={false} 
                       maxBadges={1}
                       compact
+                      hideTitle
                     />
                   </div>
                 ))}
