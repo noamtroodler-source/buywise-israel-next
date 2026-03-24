@@ -23,10 +23,12 @@ interface PropertyValueSnapshotProps {
   roomSpecificCityAvgPrice?: number | null;
   /** When true, skip the section header (used when embedded in MarketIntelligence) */
   hideHeader?: boolean;
-  /** Neighborhood avg price per sqm (takes priority over city avg in middle card) */
-  neighborhoodAvgPriceSqm?: number | null;
-  /** Neighborhood name for label (e.g. "Arnona") */
-  neighborhoodName?: string | null;
+  /** Average price/sqm from nearby sold comps */
+  nearbyCompAvgPriceSqm?: number | null;
+  /** Number of nearby comps used */
+  nearbyCompCount?: number;
+  /** Search radius used for comps (meters) */
+  nearbyCompRadiusM?: number;
   /** Price tier classification from usePriceTier */
   priceTier?: PriceTier | null;
   /** Display label for tier (e.g. "Premium", "Luxury") */
@@ -48,8 +50,9 @@ export function PropertyValueSnapshot({
   cityAvgVaadBayit,
   roomSpecificCityAvgPrice,
   hideHeader = false,
-  neighborhoodAvgPriceSqm,
-  neighborhoodName,
+  nearbyCompAvgPriceSqm,
+  nearbyCompCount = 0,
+  nearbyCompRadiusM = 500,
   priceTier,
   tierLabel,
 }: PropertyValueSnapshotProps) {
@@ -103,14 +106,13 @@ export function PropertyValueSnapshot({
     ? Math.round(((totalMonthlyCommitment - cityAvgTotalMonthly) / cityAvgTotalMonthly) * 100)
     : null;
   
-  // For purchases: calculate comparison to neighborhood or city average
-  // When tier data is available, averagePriceSqm already reflects tier-specific avg
-  const comparisonAvgSqm = neighborhoodAvgPriceSqm ?? averagePriceSqm;
+  // For purchases: Card 2 uses nearby comp avg when available, falls back to city avg
+  const comparisonAvgSqm = nearbyCompAvgPriceSqm ?? averagePriceSqm;
   const tierSuffix = priceTier && priceTier !== 'standard' && tierLabel ? ` ${tierLabel}` : '';
-  const comparisonLabel = neighborhoodAvgPriceSqm && neighborhoodName
-    ? neighborhoodName
+  const isCompComparison = !!nearbyCompAvgPriceSqm;
+  const comparisonLabel = isCompComparison
+    ? `Nearby Sales`
     : `${city}${tierSuffix}`;
-  const isNeighborhoodComparison = !!(neighborhoodAvgPriceSqm && neighborhoodName);
 
   const purchaseComparisonPercent = propertyPricePerSqm && comparisonAvgSqm
     ? Math.round(((propertyPricePerSqm - comparisonAvgSqm) / comparisonAvgSqm) * 100)
@@ -285,9 +287,11 @@ export function PropertyValueSnapshot({
                     </span>
                   </TooltipTrigger>
                   <TooltipContent side="top" className="max-w-xs">
-                    <p className="font-medium mb-1">Price vs {isNeighborhoodComparison ? 'Neighborhood' : 'City'} Average</p>
+                    <p className="font-medium mb-1">{isCompComparison ? 'Nearby Sales Comparison' : 'City Price Comparison'}</p>
                     <p className="text-xs text-muted-foreground">
-                      Compares this property's price {perArea} against the average sale price in {comparisonLabel}, based on the past year of government-recorded transactions. A positive % means priced above average; negative means below.
+                      {isCompComparison
+                        ? `Compares this property's price per m² against the average of ${nearbyCompCount} recently sold properties within ${nearbyCompRadiusM >= 1000 ? '1km' : '500m'}, based on government transaction records.`
+                        : `Compares this property's price ${perArea} against the average sale price in ${comparisonLabel}, based on government-recorded transactions.`}
                     </p>
                   </TooltipContent>
                 </Tooltip>
@@ -299,18 +303,18 @@ export function PropertyValueSnapshot({
                   {purchaseComparisonPercent > 0 ? '+' : ''}{purchaseComparisonPercent}%
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {comparisonLabel}: {formatPricePerArea(comparisonAvgSqm, 'ILS')}
+                  {isCompComparison ? 'Comp avg' : comparisonLabel}: {formatPricePerArea(comparisonAvgSqm, 'ILS')}
                 </p>
-                {!isNeighborhoodComparison && priceTier && priceTier !== 'standard' && tierLabel && purchaseComparisonPercent > 0 && (
+                {isCompComparison && nearbyCompCount > 0 && (
                   <p className="text-[10px] text-muted-foreground/70 mt-1 italic">
-                    Compared to {tierLabel.toLowerCase()}-tier avg
+                    Based on {nearbyCompCount} sale{nearbyCompCount > 1 ? 's' : ''} within {nearbyCompRadiusM >= 1000 ? '1km' : '500m'}
                   </p>
                 )}
               </>
             ) : (
               <>
                 <p className="text-lg font-semibold text-muted-foreground/60">No data yet</p>
-                <p className="text-xs text-muted-foreground mt-1">{isNeighborhoodComparison ? 'Neighborhood' : 'City'} average unavailable</p>
+                <p className="text-xs text-muted-foreground mt-1">Nearby sales data unavailable</p>
               </>
             )}
         </div>
