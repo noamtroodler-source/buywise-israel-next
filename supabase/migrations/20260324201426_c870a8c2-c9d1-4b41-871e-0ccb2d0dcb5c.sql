@@ -1,0 +1,10 @@
+UPDATE agents SET phone = '972501234501' WHERE id = '82e4ebb9-e839-481e-972f-9eddfaffff97';
+UPDATE agents SET phone = '972501234502' WHERE id = 'cbdd51a1-41ac-41e2-b706-a5c89fa2590e';
+UPDATE agents SET phone = '972501234503' WHERE id = '10fe10fd-ccb5-430d-9133-9797271ba77b';
+UPDATE agents SET phone = '972501234504' WHERE id = '3cbf5f88-6491-428f-a7bd-0c3497194e89';
+UPDATE agents SET phone = '972501234505' WHERE id = '37712f5b-e91d-4fa4-8a48-dbc3828d118a';
+UPDATE agents SET phone = '972501234506' WHERE id = 'c622a092-8801-4551-8fa6-aa5214705d0d';
+UPDATE agents SET phone = '972501234507' WHERE id = 'c8128a99-c8f5-400a-9846-bb5d46d2f9d1';
+UPDATE agents SET phone = '972501234508' WHERE id = 'cc49a89b-cf84-456e-9a8d-3a90ae9c978c';
+UPDATE agents SET phone = '972501234509' WHERE id = '4835eb4c-6968-46a3-86d9-ef3e7618837f';
+UPDATE agents SET phone = '972501234510' WHERE id = '40fa27f9-3d38-4e24-8d31-978a6e05d0d8';
