@@ -287,9 +287,11 @@ export function PropertyValueSnapshot({
                     </span>
                   </TooltipTrigger>
                   <TooltipContent side="top" className="max-w-xs">
-                    <p className="font-medium mb-1">Price vs {isNeighborhoodComparison ? 'Neighborhood' : 'City'} Average</p>
+                    <p className="font-medium mb-1">{isCompComparison ? 'Nearby Sales Comparison' : 'City Price Comparison'}</p>
                     <p className="text-xs text-muted-foreground">
-                      Compares this property's price {perArea} against the average sale price in {comparisonLabel}, based on the past year of government-recorded transactions. A positive % means priced above average; negative means below.
+                      {isCompComparison
+                        ? `Compares this property's price per m² against the average of ${nearbyCompCount} recently sold properties within ${nearbyCompRadiusM >= 1000 ? '1km' : '500m'}, based on government transaction records.`
+                        : `Compares this property's price ${perArea} against the average sale price in ${comparisonLabel}, based on government-recorded transactions.`}
                     </p>
                   </TooltipContent>
                 </Tooltip>
@@ -301,18 +303,18 @@ export function PropertyValueSnapshot({
                   {purchaseComparisonPercent > 0 ? '+' : ''}{purchaseComparisonPercent}%
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {comparisonLabel}: {formatPricePerArea(comparisonAvgSqm, 'ILS')}
+                  {isCompComparison ? 'Comp avg' : comparisonLabel}: {formatPricePerArea(comparisonAvgSqm, 'ILS')}
                 </p>
-                {!isNeighborhoodComparison && priceTier && priceTier !== 'standard' && tierLabel && purchaseComparisonPercent > 0 && (
+                {isCompComparison && nearbyCompCount > 0 && (
                   <p className="text-[10px] text-muted-foreground/70 mt-1 italic">
-                    Compared to {tierLabel.toLowerCase()}-tier avg
+                    Based on {nearbyCompCount} sale{nearbyCompCount > 1 ? 's' : ''} within {nearbyCompRadiusM >= 1000 ? '1km' : '500m'}
                   </p>
                 )}
               </>
             ) : (
               <>
                 <p className="text-lg font-semibold text-muted-foreground/60">No data yet</p>
-                <p className="text-xs text-muted-foreground mt-1">{isNeighborhoodComparison ? 'Neighborhood' : 'City'} average unavailable</p>
+                <p className="text-xs text-muted-foreground mt-1">Nearby sales data unavailable</p>
               </>
             )}
         </div>
