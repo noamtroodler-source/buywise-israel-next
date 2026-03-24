@@ -325,7 +325,7 @@ export function PropertyValueSnapshot({
               <div className="flex items-center gap-2 text-muted-foreground mb-1">
                 {roomCompPercent !== null ? (
                   roomCompPercent > 0 ? (
-                    <TrendingUp className="h-4 w-4 text-semantic-red" />
+                    <TrendingUp className="h-4 w-4 text-semantic-amber" />
                   ) : roomCompPercent < 0 ? (
                     <TrendingDown className="h-4 w-4 text-semantic-green" />
                   ) : (
