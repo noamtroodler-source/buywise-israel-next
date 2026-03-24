@@ -111,8 +111,8 @@ function MarketVerdictBadge({ avgComparison, compsCount, radiusUsedM, priceTier 
         Significantly above recent sales
       </Badge>
     );
-    contextLine = isPremiumSegment
-      ? 'Premium property — city/neighborhood averages include all market segments'
+    contextLine = priceTier && priceTier !== 'standard'
+      ? `Comparing against similar ${priceTier}-tier properties`
       : 'Review comparable sales before proceeding';
   }
 
