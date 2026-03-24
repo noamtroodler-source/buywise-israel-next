@@ -913,6 +913,70 @@ async function executeExplainTerm(supabase: any, args: any): Promise<string> {
   });
 }
 
+// ─── Phase 3: Platform Overview Tool ────────────────────────────────────────
+
+async function executeGetPlatformOverview(supabase: any, args: any): Promise<string> {
+  const listingStatus = args.listing_status || "for_sale";
+  
+  let query = supabase
+    .from("properties")
+    .select("id, city, neighborhood, price, bedrooms, size_sqm, property_type, agent_id, agents:agent_id(name, agency_id, agencies:agency_id(name))")
+    .eq("is_published", true)
+    .eq("listing_status", listingStatus);
+
+  if (args.city) query = query.ilike("city", `%${args.city}%`);
+
+  const { data: properties, error } = await query.limit(500);
+  if (error) return `Error fetching overview: ${error.message}`;
+  if (!properties?.length) return `No ${listingStatus.replace('_', ' ')} listings found${args.city ? ` in ${args.city}` : ''}.`;
+
+  // Group by neighborhood
+  const byNeighborhood: Record<string, { count: number; minPrice: number; maxPrice: number; types: Record<string, number> }> = {};
+  const byType: Record<string, number> = {};
+  const prices: number[] = [];
+  const agencySet = new Set<string>();
+
+  for (const p of properties) {
+    const hood = p.neighborhood || 'Unknown';
+    if (!byNeighborhood[hood]) byNeighborhood[hood] = { count: 0, minPrice: Infinity, maxPrice: 0, types: {} };
+    byNeighborhood[hood].count++;
+    if (p.price < byNeighborhood[hood].minPrice) byNeighborhood[hood].minPrice = p.price;
+    if (p.price > byNeighborhood[hood].maxPrice) byNeighborhood[hood].maxPrice = p.price;
+    byNeighborhood[hood].types[p.property_type] = (byNeighborhood[hood].types[p.property_type] || 0) + 1;
+    
+    byType[p.property_type] = (byType[p.property_type] || 0) + 1;
+    prices.push(p.price);
+    
+    const agency = (p as any).agents?.agencies?.name;
+    if (agency) agencySet.add(agency);
+  }
+
+  prices.sort((a, b) => a - b);
+  const q25 = prices[Math.floor(prices.length * 0.25)];
+  const median = prices[Math.floor(prices.length * 0.5)];
+  const q75 = prices[Math.floor(prices.length * 0.75)];
+
+  const fmtP = (n: number) => n >= 1e6 ? `₪${(n / 1e6).toFixed(1)}M` : `₪${(n / 1e3).toFixed(0)}K`;
+
+  return JSON.stringify({
+    total_listings: properties.length,
+    listing_status: listingStatus,
+    city: args.city || "all cities",
+    price_quartiles: { q25: fmtP(q25), median: fmtP(median), q75: fmtP(q75), min: fmtP(prices[0]), max: fmtP(prices[prices.length - 1]) },
+    by_property_type: byType,
+    by_neighborhood: Object.entries(byNeighborhood)
+      .sort((a, b) => b[1].count - a[1].count)
+      .slice(0, 15)
+      .map(([name, data]) => ({
+        neighborhood: name,
+        count: data.count,
+        price_range: `${fmtP(data.minPrice)} – ${fmtP(data.maxPrice)}`,
+        types: data.types,
+      })),
+    agencies_present: [...agencySet],
+  });
+}
+
 // ─── Tool Router ────────────────────────────────────────────────────────────
 
 async function executeTool(supabase: any, toolName: string, args: any, userId?: string): Promise<string> {
@@ -930,6 +994,7 @@ async function executeTool(supabase: any, toolName: string, args: any, userId?: 
     case "calculate_rental_yield": return executeCalculateRentalYield(supabase, args);
     case "compare_listings": return executeCompareListings(supabase, args);
     case "explain_term": return executeExplainTerm(supabase, args);
+    case "get_platform_overview": return executeGetPlatformOverview(supabase, args);
     default: return `Unknown tool: ${toolName}`;
   }
 }
