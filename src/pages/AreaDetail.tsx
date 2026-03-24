@@ -80,6 +80,7 @@ export default function CityDetail() {
         yoy_warning: r.yoy_warning ?? false,
         is_featured: false,
         anglo_tag: isAngloNeighborhood(slug || '', r.name),
+        is_fallback: r.is_fallback ?? false,
       });
     }
 
