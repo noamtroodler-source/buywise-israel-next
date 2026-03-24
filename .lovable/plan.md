@@ -1,46 +1,39 @@
 
 
-# Enrich Erez Listings: Addresses + Agent Avatars
+# Update MarketVerdictBadge: No Red, Recalibrated Ranges, Quality Gate
 
-## 1. Upload Agent Avatar Photos
+## What changes
 
-Upload the two provided photos to the `property-images` storage bucket (it's public) and update the agent records:
+### 1. Quality gate — suppress badge when comps are weak
+In `MarketVerdictBadge`, if `compsCount < 3`, show "Limited market data" (neutral gray) instead of any price verdict. This prevents misleading badges based on 1-2 unrepresentative comps.
 
-- **Guy Erez** (`8dd585fe-...`) — first photo (white shirt)
-- **Anna Levenson** (`82e4ebb9-...`) — second photo (beige blazer)
+### 2. Recalibrated ranges with new wording (no red)
 
-Technical: Copy images to project assets, then use an edge function to upload to storage and update `agents.avatar_url`.
+| Variance | Label | Color |
+|---|---|---|
+| **< 0%** | "Below recent sales avg — potential value" | Green |
+| **0% to +5%** | "In line with recent sales" | Green |
+| **+5% to +12%** | "Above recent sales avg" | Neutral (muted-foreground/secondary) |
+| **+12% to +20%** | "Well above recent sales — negotiate" | Amber |
+| **> +20%** | "Significantly above recent sales" | Amber |
 
-## 2. Assign Realistic Addresses to 38 Listings
+- No red badges ever
+- +5–12% uses `Badge variant="secondary"` (neutral gray) with subtitle "Typical for active listings — room to negotiate"
+- Max severity is amber
 
-Create a temporary edge function `enrich-erez-addresses` that assigns real Tel Aviv street addresses based on neighborhood + property characteristics, using streets from `sold_transactions` data:
+### 3. Tooltip context update
+Update the tooltip to include context about asking-vs-sold gap: "Asking prices typically run 5–15% above final sale prices."
 
-| Neighborhood | Streets to use |
-|---|---|
-| Bavli | Sanhedrin, Dvora HaNevi'a |
-| Old North | Nordau, Yehoshua Bin Nun, Jabotinsky |
-| Lev HaIr / Lev HaIr North | Frischmann, Shenkin, Dizengoff |
-| Kerem HaTeimanim | Nahman, Yehuda HaYamit |
-| Neve Tzedek | Pines, Shabazi |
-| Florentin | Florentin, Vital |
-| Jaffa | Yefet, Olei Tziyon |
-| Central Tel Aviv | Rothschild, Allenby, HaYarkon |
-| Old North - North | Ben Yehuda, Arlozorov |
-| HaRishonim | HaRishonim |
+## Files changed
 
-Logic: Each listing gets a street name appropriate to its neighborhood + a realistic house number (even numbers, range 2-120). The function deterministically assigns based on property ID hash to avoid duplicates.
+**`src/components/property/MarketIntelligence.tsx`** — Rewrite `MarketVerdictBadge` function:
+- Add `compsCount < 3` early return → "Limited market data" badge
+- Replace all 5 badge tiers with new ranges/wording/colors
+- Remove all `semantic-red` references
+- Add a small context line under the badge for the +5-12% and +12-20% tiers
 
-## 3. Fix the 5 Listings That Already Have Partial Addresses
-
-- "Herbert Samuel Reef" → "Herbert Samuel 42" (proper format)
-- "Ibn Gabirol" → "Ibn Gabirol 38"
-- "Old North - North" → "Nordau 64" (was using neighborhood as address)
-- "Frischmann Corner" → "Frischmann 22"
-- "Pines" → "Pines 8"
-
-## Execution Order
-
-1. Copy avatar images into project, create edge function to upload to storage + update agent avatar_url
-2. Create `enrich-erez-addresses` edge function with neighborhood→street mapping
-3. Deploy, invoke, verify, delete both functions
+## Technical details
+- The `avgComparison` value comes from `RecentNearbySales` which already computes average %-deviation of listing price vs comp sold prices per sqm
+- `compsCount` is already passed to the badge component
+- No backend changes needed — purely UI/copy update
 
