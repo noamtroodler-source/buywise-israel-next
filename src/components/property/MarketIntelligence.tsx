@@ -13,6 +13,8 @@ import { AIMarketInsight } from './AIMarketInsight';
 import { useMarketInsight } from '@/hooks/useMarketInsight';
 import { useRoomSpecificCityPrice } from '@/hooks/useRoomSpecificCityPrice';
 import { useNeighborhoodAvgPrice } from '@/hooks/useNeighborhoodPrices';
+import { usePriceTier } from '@/hooks/usePriceTier';
+import type { PriceTier } from '@/hooks/usePriceTier';
 
 interface MarketIntelligenceProps {
   property: {
