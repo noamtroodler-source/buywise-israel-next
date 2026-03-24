@@ -9,7 +9,7 @@ interface ViewToggleProps {
   className?: string;
 }
 
-export function ViewToggle({ activeView, className, size = 'default' }: ViewToggleProps) {
+export function ViewToggle({ activeView, className }: ViewToggleProps) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
