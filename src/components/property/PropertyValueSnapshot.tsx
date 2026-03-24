@@ -33,6 +33,10 @@ interface PropertyValueSnapshotProps {
   priceTier?: PriceTier | null;
   /** Display label for tier (e.g. "Premium", "Luxury") */
   tierLabel?: string | null;
+  /** Neighborhood avg price per sqm (fallback for Card 3) */
+  neighborhoodAvgPriceSqm?: number | null;
+  /** Neighborhood name (for label) */
+  neighborhood?: string | null;
 }
 
 export function PropertyValueSnapshot({ 
@@ -55,6 +59,8 @@ export function PropertyValueSnapshot({
   nearbyCompRadiusM = 500,
   priceTier,
   tierLabel,
+  neighborhoodAvgPriceSqm,
+  neighborhood,
 }: PropertyValueSnapshotProps) {
   const formatPrice = useFormatPrice();
   const formatPricePerArea = useFormatPricePerArea();
@@ -319,20 +325,46 @@ export function PropertyValueSnapshot({
             )}
         </div>
 
-        {/* Card 3: Room-Specific City Price Comparison */}
+        {/* Card 3: Room-Specific City Price Comparison with fallback chain */}
         {(() => {
           const hasRoomData = bedrooms != null && bedrooms >= 3 && bedrooms <= 5 && roomSpecificCityAvgPrice != null;
-          const roomCompPercent = hasRoomData
-            ? Math.round(((price - roomSpecificCityAvgPrice!) / roomSpecificCityAvgPrice!) * 100)
+          
+          // Fallback chain: room-specific → neighborhood avg → city avg
+          let fallbackAvgPrice: number | null = null;
+          let fallbackLabel = '';
+          let fallbackTooltip = '';
+          let fallbackSource: 'room' | 'neighborhood' | 'city' | null = null;
+
+          if (hasRoomData) {
+            fallbackAvgPrice = roomSpecificCityAvgPrice!;
+            fallbackLabel = `vs ${city}${tierSuffix} ${bedrooms}-Room Avg`;
+            fallbackSource = 'room';
+            fallbackTooltip = priceTier && priceTier !== 'standard' && tierLabel
+              ? `Compares this listing against the average ${tierLabel.toLowerCase()}-tier ${bedrooms}-room sale price in ${city}. Properties are grouped into Standard, Premium, and Luxury tiers based on price-per-m² percentiles from government transaction data (last 2 years).`
+              : `Compares this listing's price against the average ${bedrooms}-room apartment sale price in ${city}, based on government transaction data.`;
+          } else if (neighborhoodAvgPriceSqm && sizeSqm) {
+            fallbackAvgPrice = Math.round(neighborhoodAvgPriceSqm * sizeSqm);
+            fallbackLabel = `vs ${neighborhood || 'Neighborhood'} Avg`;
+            fallbackSource = 'neighborhood';
+            fallbackTooltip = `Compares this listing against the neighborhood average price per m² (${formatPricePerArea(neighborhoodAvgPriceSqm, 'ILS')}) × property size, based on CBS transaction data.`;
+          } else if (averagePriceSqm && sizeSqm) {
+            fallbackAvgPrice = Math.round(averagePriceSqm * sizeSqm);
+            fallbackLabel = `vs ${city} Avg`;
+            fallbackSource = 'city';
+            fallbackTooltip = `Compares this listing against the city-wide average price per m² in ${city}, based on government transaction data.`;
+          }
+
+          const compPercent = fallbackAvgPrice
+            ? Math.round(((price - fallbackAvgPrice) / fallbackAvgPrice) * 100)
             : null;
 
           return (
             <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
               <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                {roomCompPercent !== null ? (
-                  roomCompPercent > 0 ? (
+                {compPercent !== null ? (
+                  compPercent > 0 ? (
                     <TrendingUp className="h-4 w-4 text-semantic-amber" />
-                  ) : roomCompPercent < 0 ? (
+                  ) : compPercent < 0 ? (
                     <TrendingDown className="h-4 w-4 text-semantic-green" />
                   ) : (
                     <Minus className="h-4 w-4" />
@@ -344,44 +376,41 @@ export function PropertyValueSnapshot({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <span className="text-sm cursor-help border-b border-dotted border-muted-foreground/30">
-                        {hasRoomData ? `vs ${city}${tierSuffix} ${bedrooms}-Room Avg` : `vs ${city} Avg`}
+                        {fallbackLabel || `vs ${city} Avg`}
                       </span>
                     </TooltipTrigger>
                     <TooltipContent side="top" className="max-w-xs">
                       <p className="font-medium mb-1">City Price Comparison</p>
                       <p className="text-xs text-muted-foreground">
-                        {hasRoomData
-                          ? priceTier && priceTier !== 'standard' && tierLabel
-                            ? `Compares this listing against the average ${tierLabel.toLowerCase()}-tier ${bedrooms}-room sale price in ${city}. Properties are grouped into Standard, Premium, and Luxury tiers based on price-per-m² percentiles from government transaction data (last 2 years). This ensures an apples-to-apples comparison.`
-                            : `Compares this listing's price against the average ${bedrooms}-room apartment sale price in ${city}, based on government transaction data.`
-                          : `Room-specific price comparison is available for 3, 4, and 5-room apartments.`}
+                        {fallbackTooltip || `Room-specific price comparison is available for 3, 4, and 5-room apartments.`}
                       </p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               </div>
-              {roomCompPercent !== null ? (
+              {compPercent !== null && fallbackAvgPrice ? (
                 <>
                   <p className="text-2xl font-bold text-foreground">
-                    {roomCompPercent > 0 ? '+' : ''}{roomCompPercent}%
+                    {compPercent > 0 ? '+' : ''}{compPercent}%
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {city} avg: {formatPrice(roomSpecificCityAvgPrice!, 'ILS')}
+                    {fallbackSource === 'room' ? `${city} avg` : fallbackSource === 'neighborhood' ? `${neighborhood || 'Neighborhood'} avg` : `${city} avg`}: {formatPrice(fallbackAvgPrice, 'ILS')}
                   </p>
-                  {priceTier && priceTier !== 'standard' && tierLabel && roomCompPercent > 0 && (
+                  {fallbackSource === 'room' && priceTier && priceTier !== 'standard' && tierLabel && compPercent > 0 && (
                     <p className="text-[10px] text-muted-foreground/70 mt-1 italic">
                       Compared to {tierLabel.toLowerCase()}-tier avg
+                    </p>
+                  )}
+                  {fallbackSource !== 'room' && (
+                    <p className="text-[10px] text-muted-foreground/70 mt-1 italic">
+                      Based on {fallbackSource === 'neighborhood' ? 'neighborhood' : 'city-wide'} avg price/m²
                     </p>
                   )}
                 </>
               ) : (
                 <>
                   <p className="text-lg font-semibold text-muted-foreground/60">No data yet</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {bedrooms != null && (bedrooms < 3 || bedrooms > 5)
-                      ? `We track 3–5 room averages — ${bedrooms}-room data isn't available yet`
-                      : 'Room-specific city data unavailable'}
-                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">City price data unavailable</p>
                 </>
               )}
             </div>
