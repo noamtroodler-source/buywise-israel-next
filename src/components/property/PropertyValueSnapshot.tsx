@@ -347,7 +347,9 @@ export function PropertyValueSnapshot({
                       <p className="font-medium mb-1">City Price Comparison</p>
                       <p className="text-xs text-muted-foreground">
                         {hasRoomData
-                          ? `Compares this listing's price against the average ${bedrooms}-room apartment sale price in ${city}, based on government transaction data.`
+                          ? priceTier && priceTier !== 'standard' && tierLabel
+                            ? `Compares this listing against the average ${tierLabel.toLowerCase()}-tier ${bedrooms}-room sale price in ${city}. Properties are grouped into Standard, Premium, and Luxury tiers based on price-per-m² percentiles from government transaction data (last 2 years). This ensures an apples-to-apples comparison.`
+                            : `Compares this listing's price against the average ${bedrooms}-room apartment sale price in ${city}, based on government transaction data.`
                           : `Room-specific price comparison is available for 3, 4, and 5-room apartments.`}
                       </p>
                     </TooltipContent>
