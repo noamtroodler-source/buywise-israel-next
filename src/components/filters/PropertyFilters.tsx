@@ -13,7 +13,7 @@ import { useNeighborhoodNames } from '@/hooks/useNeighborhoodNames';
 import { NeighborhoodSelector } from '@/components/filters/NeighborhoodSelector';
 import { cn } from '@/lib/utils';
 import { matchCities } from '@/lib/utils/cityMatcher';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { usePreferences } from '@/contexts/PreferencesContext';
 import { useIsMobile } from '@/hooks/use-mobile';
