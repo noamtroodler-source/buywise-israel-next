@@ -208,7 +208,7 @@ function NeighborhoodDrawerTable({ rows, cityName }: { rows: NeighborhoodPriceRo
 
       {/* Footer */}
       <div className="px-4 py-3 border-t text-xs text-muted-foreground text-center">
-        Source: CBS (Central Bureau of Statistics) · 4-room apartment averages
+        Source: Market transaction data · 4-room apartment averages
       </div>
     </div>
   );
