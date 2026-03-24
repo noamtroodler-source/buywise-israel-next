@@ -362,9 +362,9 @@ export function PropertyValueSnapshot({
                   <p className="text-xs text-muted-foreground mt-1">
                     {city} avg: {formatPrice(roomSpecificCityAvgPrice!, 'ILS')}
                   </p>
-                  {isPremiumSegment && roomCompPercent > 0 && (
+                  {priceTier && priceTier !== 'standard' && tierLabel && roomCompPercent > 0 && (
                     <p className="text-[10px] text-muted-foreground/70 mt-1 italic">
-                      Premium segment — averages include all market tiers
+                      Compared to {tierLabel.toLowerCase()}-tier avg
                     </p>
                   )}
                 </>
