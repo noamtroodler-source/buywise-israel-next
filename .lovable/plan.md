@@ -1,42 +1,36 @@
 
 
-# Create City Zen Agent Profiles + Redistribute Listings
+# Hide Mock Listings — Keep Only JRE, City Zen, Erez
 
-## Summary
-Create 9 new agent profiles for City Zen (update existing Ido Langer), pull headshots from Yad2, write realistic bios, and redistribute 84 listings across all 10 agents via round-robin.
+## What
+Unpublish all properties that don't belong to the 3 real agencies, so they stop appearing everywhere on the site. Mock projects remain untouched.
 
-## Agents Found (Yad2 Team Page)
+## How
+Single database migration that sets `is_published = false` on all properties whose agent belongs to a non-real agency.
 
-| Agent | Avatar URL (Yad2) | Bio Theme |
-|---|---|---|
-| **Ido Langer** (existing — update) | `3a9c6066-f2a0-4fbd-8c6f-405d11e01d46.jpeg` | Founder/lead, 10+ yrs Sharon region, new construction specialist |
-| **Lior Fridman** (new) | `c5777951-99ff-4034-944e-a50089bb4c8c.jpeg` | Senior agent, luxury apartments, Ir Yamim/Ramat Poleg expert |
-| **Barak** (new) | No photo (placeholder) | Residential specialist, Even Yehuda & moshav communities |
-| **Roei Malka** (new) | No photo (placeholder) | Young dynamic agent, first-time buyers, Netanya north |
-| **Tal Chiyon** (new) | `798abf8a-887c-4651-9f66-c321ffe6d3f8.jpeg` | Investment properties, rental portfolio strategy |
-| **Erez Ashkenazi** (new) | `32543cc7-eb64-446d-bb2a-0781cd72d296.jpg` | Veteran agent, Kfar Saba & Hod HaSharon markets |
-| **Nitzan Galanter** (new) | `cc3f1187-21cc-4ecd-b5e9-af22089a7ad8.jpeg` | New developments & off-plan projects, coastal Netanya |
-| **Elichai Givon** (new) | No photo (placeholder) | Commercial-to-residential transitions, urban renewal |
-| **Doron Reuveni** (new) | `4f40bf0a-5d91-4dc5-9483-2b300720beae.jpeg` | Houses & cottages specialist, Sharon communities |
-| **Liora Ben Ari** (new) | `0ced5e4b-f2ae-40d1-bd2d-a8182f633f86.jpeg` | Client relations, relocation services, English-speaking |
+### SQL Logic
+```sql
+UPDATE properties
+SET is_published = false
+WHERE agent_id IN (
+  SELECT ag.id FROM agents ag
+  WHERE ag.agency_id NOT IN (
+    '0eb2a33b-a768-4204-ba75-29de29d6da2a',  -- JRE
+    '9361592e-c7b8-49a6-9a21-8349b5c40719',  -- City Zen
+    'cf4682bd-8ade-48a9-928e-e6770f592334'    -- Erez
+  )
+)
+AND is_published = true;
+```
 
-## Implementation — One-Shot Edge Function: `create-cityzen-agents`
+This affects ~2,900+ mock listings across 14 mock agencies. All existing queries already filter by `is_published = true`, so no code changes needed.
 
-1. **Update existing Ido** agent with full name "Ido Langer", avatar from Yad2, license number, bio, specializations, neighborhoods
-2. **Insert 9 new agents** with:
-   - `agency_id = '9361592e-c7b8-49a6-9a21-8349b5c40719'`
-   - `status = 'active'`, `is_verified = true`
-   - `avatar_url` from Yad2 image CDN (6 have photos, 3 use null)
-   - `license_number` from Yad2
-   - Realistic English bios (3-5 sentences each)
-   - `languages`: Hebrew + English for all, French for select agents
-   - `specializations` and `neighborhoods_covered` tailored to Sharon/Netanya market
-3. **Round-robin redistribute** all 84 listings across 10 agents (~8-9 each)
+### Impact
+- **Homepage featured**: Will only show JRE/City Zen/Erez properties
+- **Listings page / map search**: Same — mock listings hidden
+- **Projects**: Untouched (separate `projects` table)
+- **Reversible**: Can set `is_published = true` again anytime to bring them back
 
 ## Files
-1. **New**: `supabase/functions/create-cityzen-agents/index.ts` — one-shot function
-2. No frontend changes
-
-## Execution
-Deploy, invoke once, verify agents + photos load, delete function.
+- **Migration only** — no frontend code changes needed
 
