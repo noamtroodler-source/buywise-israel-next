@@ -387,6 +387,9 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                     </TooltipProvider>
                   )}
                 </div>
+                {property.title && (
+                  <p className="text-sm font-medium text-foreground truncate leading-tight">{property.title}</p>
+                )}
                 <p className="text-xs text-muted-foreground">
                   {property.bedrooms} bd{(property as any).additional_rooms ? ` + ${(property as any).additional_rooms}` : ''} · {property.bathrooms} ba{property.size_sqm ? ` · ${formatArea(property.size_sqm)}` : ''}
                 </p>
