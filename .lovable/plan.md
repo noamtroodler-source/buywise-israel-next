@@ -1,107 +1,71 @@
 
 
-# Neighborhood Audit Fix Phases
-
-Based on the Perplexity audit of 262 neighborhood mappings, 10 extreme YoY values, price tiers, Anglo tags, and data pipeline integrity. Organized by severity.
+# Phase N2: Fallback Data Labels, Non-CBS City Disclosure & Duplicate Cleanup
 
 ---
 
-## Phase N1: Critical — Data Sourcing Disclosure & German Colony Fix
+## Overview
 
-**The #1 issue: the platform says "CBS" for neighborhood-level data, but CBS does NOT publish at this level.** All neighborhood prices come from Madlan/CARMEN transaction aggregation via ArcGIS statistical area IDs, not official CBS codes.
-
-### 1A. Fix all "CBS" labels on neighborhood-level data
-
-Every place that says "CBS" next to neighborhood prices must be changed to "Market transaction data" or similar:
-
-| File | Current text | Fix |
-|------|-------------|-----|
-| `NeighborhoodDetailDialog.tsx` line 128 | "CBS (Central Bureau of Statistics) · 4-room avg" | "Market transaction data · 4-room avg" |
-| `CityNeighborhoodPriceTable.tsx` line 211 | "Source: CBS...4-room apartment averages" | "Source: Market transaction data · 4-room apartment averages" |
-| `CityNeighborhoodPriceTable.tsx` line 260 | "based on recent CBS transactions" | "based on recent market transactions" |
-| `PriceByApartmentSize.tsx` — InlineSourceBadge | Shows "CBS" badge | Conditional: show CBS badge only for city-level data in CBS-covered cities, show "Market Data" for neighborhood-level |
-| `CitySourceAttribution.tsx` lines 195-196 | Claims CBS for neighborhood prices | Clarify: CBS provides city-level data; neighborhood-level comes from aggregated transaction records (Madlan) |
-
-### 1B. Rename "cbs_neighborhood_id" internally
-
-The 8-digit IDs are NOT CBS codes. Rename references in comments and admin UI only (DB column rename is optional/risky):
-- `MapNeighborhoods.tsx` line 381 — change column header from showing "CBS ID" to "Zone ID"
-- Update all code comments that say "CBS IDs" to "statistical area IDs (ArcGIS/Madlan)"
-
-### 1C. Fix German Colony -49% — Add sample size safeguards
-
-In the price calculation hooks, suppress extreme YoY values when sample size is likely too small:
-- `useNeighborhoodPrices.ts` and `useNeighborhoodPriceTable.ts` — if `|yoy_change_percent| > 25%`, cap display or add warning flag
-- Add a `yoy_warning` boolean field to the return data when extreme values detected
-- UI components (`CityNeighborhoodHighlights.tsx`, `CityNeighborhoodPriceTable.tsx`) — show "⚠ Low volume" tooltip when warning is true
+Phase N2 addresses three issues: neighborhoods showing identical city-average data without labels, cities with no CBS coverage still referencing CBS, and duplicate mappings in Ashkelon.
 
 ---
 
-## Phase N2: High Priority — Fallback Data Labels & Non-CBS City Disclosure
+## 1. Fallback Detection in Data Hook
 
-### 2A. Label city-average fallback data
+**`src/hooks/useNeighborhoodPriceTable.ts`** — After building the final rows array (line ~146), detect fallback data: if 3+ rows share the exact same `avg_price`, flag them with `is_fallback: true`.
 
-100+ neighborhoods show identical city-average prices. When multiple neighborhoods in the same city return the exact same price, they're using fallback data.
+Add `is_fallback` to the `NeighborhoodPriceRow` interface.
 
-- In `useNeighborhoodPriceTable.ts` — after building rows, detect groups of 3+ neighborhoods with identical `avg_price`. Flag them with `is_fallback: true`
-- In `CityNeighborhoodPriceTable.tsx` — show "(City avg)" badge on fallback rows, mute styling
-- In `NeighborhoodDetailDialog.tsx` — if fallback, show "City-average price shown — neighborhood-specific data unavailable"
+## 2. Fallback Labels in UI
 
-### 2B. Clarify non-CBS cities
+**`src/components/city/CityNeighborhoodPriceTable.tsx`**:
+- In the drawer table rows, show a muted "(City avg)" badge next to neighborhoods flagged `is_fallback`
+- Reduce visual weight of fallback rows with `opacity-60`
 
-9 cities have no CBS coverage at all. For these cities, source attribution must never mention CBS:
-- Create a constant: `NON_CBS_CITIES = ['Eilat', 'Givat Shmuel', 'Hod HaSharon', 'Pardes Hanna', 'Zichron Yaakov', "Ma'ale Adumim", 'Efrat', 'Caesarea', "Ra'anana"]`
-- In `CitySourceAttribution.tsx` — when `cityName` is in this list, show "All market data from aggregated transaction records" instead of mentioning CBS
-- In `PriceByApartmentSize.tsx` — hide CBS badge for non-CBS cities
+**`src/components/city/CityNeighborhoods.tsx`**:
+- Add `is_fallback?: boolean` to `UnifiedNeighborhood` interface
+- Show "(City avg)" tag on neighborhood cards when flagged
 
-### 2C. Remove duplicate CBS mappings (database)
+**`src/components/city/NeighborhoodDetailDialog.tsx`**:
+- When the neighborhood has `is_fallback`, show an info note below the price: "City-average price shown — neighborhood-specific data unavailable"
 
-The audit found duplicates in Ashkelon: "Barnea" and "Barnea (ברניע)" map to same zones, same for City Center and Marina. Clean these from the `neighborhood_cbs_mappings` table.
+**`src/pages/AreaDetail.tsx`** — Pass through `is_fallback` when building `UnifiedNeighborhood` objects from price table data.
 
----
+## 3. Non-CBS City Constant & Conditional Attribution
 
-## Phase N3: Medium Priority — Price Tier Corrections & Anglo Tags
+**`src/lib/constants/cbsCoverage.ts`** (new file) — Export:
+```
+NON_CBS_CITIES = ['Eilat', 'Givat Shmuel', 'Hod HaSharon', 'Pardes Hanna', 'Zichron Yaakov', "Ma'ale Adumim", 'Efrat', 'Caesarea', "Ra'anana"]
+```
 
-### 3A. Fix 3 incorrect price tier classifications (database)
+**`src/components/city/CitySourceAttribution.tsx`**:
+- Import `NON_CBS_CITIES`
+- When `cityName` is in the list, adjust the methodology text to say "All price data from aggregated market transaction records" instead of mentioning CBS
 
-Update `featured_neighborhoods` JSONB in the `cities` table:
+**`src/components/city/PriceByApartmentSize.tsx`** line 480:
+- Import `NON_CBS_CITIES`
+- Conditional: if city is non-CBS, show `sources={{ 'Market Data': 'Aggregated transaction records' }}` instead of `{{ CBS: '...' }}`
 
-| City | Neighborhood | Current | Correct |
-|------|-------------|---------|---------|
-| Tel Aviv | Florentin | budget | mid-range |
-| Jerusalem | Katamon | mid-range | premium |
-| Jerusalem | German Colony/Baka | premium | ultra-premium |
+## 4. Remove Duplicate Ashkelon Mappings (Database)
 
-### 3B. Add 7 missing Anglo neighborhoods
+Delete the Hebrew-parenthetical duplicates from `neighborhood_cbs_mappings`:
+- "Afridar (אפרידר)" — duplicate of "Afridar"
+- "Barnea (ברניע)" — duplicate of "Barnea"
+- "City Center (מרכז העיר)" — duplicate of "City Center"
+- "Marina (מרינה)" — duplicate of "Marina"
+- "Neve Dekalim (נווה דקלים)" — duplicate of "Neve Dekalim"
 
-Update `angloNeighborhoodTags.ts`:
-- Jerusalem: add `'French Hill'`, `'Talpiot'`, `'Armon HaNatziv'`
-- Beit Shemesh: add `'RBS Bet'`, `'RBS Hey'`, `'Neve Shamir'`
-- Gush Etzion: add `'Ma'ale Amos'`, `'Meitzad'`
-
-### 3C. Review 2 flagged Anglo tags
-
-- `Katamonim` — keep but consider adding "(emerging)" qualifier in tooltip
-- `Kikar HaSharon` — verify if this is a real residential neighborhood; remove if not
-
----
-
-## Phase N4: Low Priority — Room Count Disclaimer & Data Quality Labels
-
-### 4A. Room-count data disclaimer
-
-CBS does NOT publish room-count prices at neighborhood level. `PriceByApartmentSize.tsx` should clarify that room-specific breakdowns use transaction aggregation data, not CBS statistics.
-
-### 4B. Data quality percentage display (admin only)
-
-Add a column to the admin neighborhood mapping dashboard showing "% Real Data" per city (from the audit table), so admins know which cities have meaningful coverage vs. fallback-heavy data.
-
----
+These cause double-counting in price averages.
 
 ## Execution Order
 
-1. **Phase N1** — Fix CBS sourcing claims, rename IDs, add YoY safeguards (highest legal/credibility risk)
-2. **Phase N2** — Label fallback data, clarify non-CBS cities, clean duplicates
-3. **Phase N3** — Fix price tiers, add missing Anglo tags
-4. **Phase N4** — Room-count disclaimer, admin data quality indicators
+1. Create `cbsCoverage.ts` constant file
+2. Update `useNeighborhoodPriceTable.ts` — add fallback detection + `is_fallback` field
+3. Update `CityNeighborhoods.tsx` — add `is_fallback` to interface
+4. Update `AreaDetail.tsx` — pass through `is_fallback`
+5. Update `CityNeighborhoodPriceTable.tsx` — fallback badge + muted styling
+6. Update `NeighborhoodDetailDialog.tsx` — fallback info note
+7. Update `CitySourceAttribution.tsx` — non-CBS city handling
+8. Update `PriceByApartmentSize.tsx` — conditional source badge
+9. Delete duplicate Ashkelon mappings from DB
 
