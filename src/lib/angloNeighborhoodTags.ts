@@ -15,7 +15,7 @@ const angloTagsRaw: Record<string, string[]> = {
   herzliya: ['Herzliya Pituach', 'Nof Yam'],
   modiin: ['Buchman', 'Shikun Bet', 'Shikun Gimmel', 'Shikun Vav', 'Shikun Zayin'],
   netanya: ['Ir Yamim', 'Ramat Poleg', 'North Netanya', 'Ramat Shikma'],
-  'beit-shemesh': ['RBS Alef', 'RBS Gimmel', 'RBS Dalet', 'Sheinfeld'],
+  'beit-shemesh': ['RBS Alef', 'RBS Gimmel', 'RBS Dalet', 'Sheinfeld', 'RBS Bet', 'RBS Hey', 'Neve Shamir'],
   haifa: ['Ahuza', 'Denia', 'Merkaz HaCarmel'],
   efrat: ['Zayit', 'Rimon', 'Tamar', 'Dagan', 'Gefen', 'Dekel', "Te'ena"],
   'gush-etzion': ['Neve Daniel', 'Elazar', 'Alon Shvut', 'Bat Ayin', 'Tekoa'],
