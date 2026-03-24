@@ -1136,233 +1136,151 @@ async function buildSystemPrompt(
   const parts = [SYSTEM_PROMPT_IDENTITY];
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // ─── Phase 1: Live Inventory Snapshot ─────────────────────────────────
+  // ─── Context Injection (lightweight queries, compact output) ────────────
   try {
-    // Parallel queries for inventory context
+    // Parallel queries — minimal columns only
     const [
       { data: constants },
-      { data: glossary },
-      { data: inventoryByCity },
-      { data: rentalsByCity },
       { data: agencies },
       { data: featuredSale },
       { data: featuredRent },
       { data: projects },
       { data: neighborhoodProfiles },
       { data: agents },
+      { count: saleCount },
+      { count: rentCount },
     ] = await Promise.all([
-      // Existing: calculator constants
       supabase
         .from("calculator_constants")
         .select("constant_key, value_numeric, label, category")
         .eq("is_current", true)
         .in("category", ["tax", "mortgage", "fees", "general"]),
-      // Existing: glossary
-      supabase
-        .from("glossary_terms")
-        .select("english_term, hebrew_term, transliteration, simple_explanation")
-        .limit(50),
-      // Phase 1: Sale listings by city
-      supabase
-        .from("properties")
-        .select("city, price, bedrooms, size_sqm, property_type, neighborhood")
-        .eq("is_published", true)
-        .eq("listing_status", "for_sale"),
-      // Phase 1: Rental listings by city
-      supabase
-        .from("properties")
-        .select("city, price, bedrooms, size_sqm, property_type, neighborhood")
-        .eq("is_published", true)
-        .eq("listing_status", "for_rent"),
-      // Phase 4: Agencies
       supabase
         .from("agencies")
-        .select("id, name, slug, cities_covered, specializations, description")
+        .select("id, name, cities_covered, specializations")
         .in("status", ["active", "approved"])
-        .limit(20),
-      // Phase 2: Featured sale listings
+        .limit(10),
       supabase
         .from("homepage_featured_slots")
-        .select("property_id, position, properties:property_id(id, title, city, neighborhood, price, bedrooms, size_sqm, property_type)")
+        .select("properties:property_id(id, title, city, neighborhood, price, bedrooms, property_type)")
         .eq("slot_type", "for_sale")
         .eq("is_active", true)
         .order("position", { ascending: true })
         .limit(8),
-      // Phase 2: Featured rental listings
       supabase
         .from("homepage_featured_slots")
-        .select("property_id, position, properties:property_id(id, title, city, neighborhood, price, bedrooms, size_sqm, property_type)")
+        .select("properties:property_id(id, title, city, neighborhood, price, bedrooms, property_type)")
         .eq("slot_type", "for_rent")
         .eq("is_active", true)
         .order("position", { ascending: true })
         .limit(8),
-      // Phase 5: Active projects
       supabase
         .from("projects")
-        .select("name, slug, city, neighborhood, price_from, price_to, status, min_bedrooms, max_bedrooms, estimated_completion, developer_id, developers:developer_id(name)")
+        .select("name, slug, city, price_from, status, min_bedrooms, max_bedrooms")
         .eq("is_published", true)
-        .limit(20),
-      // Phase 6: Neighborhood profiles
+        .limit(15),
       supabase
         .from("neighborhood_profiles")
-        .select("city, neighborhood, best_for")
+        .select("city, neighborhood")
         .not("narrative", "is", null),
-      // Phase 4: Agents
       supabase
         .from("agents")
-        .select("id, name, agency_id, specializations, neighborhoods_covered, languages, years_experience")
+        .select("name, agency_id, specializations, neighborhoods_covered, languages")
         .eq("status", "active")
         .eq("is_verified", true)
-        .limit(50),
+        .limit(30),
+      supabase
+        .from("properties")
+        .select("id", { count: "exact", head: true })
+        .eq("is_published", true)
+        .eq("listing_status", "for_sale"),
+      supabase
+        .from("properties")
+        .select("id", { count: "exact", head: true })
+        .eq("is_published", true)
+        .eq("listing_status", "for_rent"),
     ]);
 
-    // ─── Existing: Constants ───
+    // Constants
     if (constants?.length) {
       const constLines = constants
         .filter((c: any) => c.value_numeric !== null)
         .map((c: any) => `- ${c.label || c.constant_key}: ${c.value_numeric}`)
         .join("\n");
-      parts.push(`\n## Current Data (verified, use these numbers)\n${constLines}`);
+      parts.push(`\n## Current Data (verified)\n${constLines}`);
     }
 
-    // ─── Existing: Glossary ───
-    if (glossary?.length) {
-      const glossaryLines = glossary
-        .map((g: any) => `- ${g.english_term} (${g.hebrew_term}${g.transliteration ? `, ${g.transliteration}` : ""}): ${g.simple_explanation || ""}`)
-        .join("\n");
-      parts.push(`\n## Key Hebrew Terms (use naturally when relevant)\n${glossaryLines}`);
-    }
+    // Inventory summary (counts only — no full listing data)
+    parts.push(`\n## 📊 Platform Inventory\n${saleCount || 0} for-sale listings, ${rentCount || 0} rentals across our partner agencies. Use search_listings or get_platform_overview for details.`);
 
-    // ─── Phase 1: Inventory Snapshot ───
-    if (inventoryByCity?.length || rentalsByCity?.length) {
-      const saleListings = inventoryByCity || [];
-      const rentListings = rentalsByCity || [];
-
-      // Aggregate by city
-      const saleByCityMap: Record<string, { count: number; minPrice: number; maxPrice: number; neighborhoods: Set<string> }> = {};
-      for (const p of saleListings) {
-        if (!saleByCityMap[p.city]) saleByCityMap[p.city] = { count: 0, minPrice: Infinity, maxPrice: 0, neighborhoods: new Set() };
-        saleByCityMap[p.city].count++;
-        if (p.price < saleByCityMap[p.city].minPrice) saleByCityMap[p.city].minPrice = p.price;
-        if (p.price > saleByCityMap[p.city].maxPrice) saleByCityMap[p.city].maxPrice = p.price;
-        if (p.neighborhood) saleByCityMap[p.city].neighborhoods.add(p.neighborhood);
-      }
-
-      const rentByCityMap: Record<string, { count: number; minPrice: number; maxPrice: number }> = {};
-      for (const p of rentListings) {
-        if (!rentByCityMap[p.city]) rentByCityMap[p.city] = { count: 0, minPrice: Infinity, maxPrice: 0 };
-        rentByCityMap[p.city].count++;
-        if (p.price < rentByCityMap[p.city].minPrice) rentByCityMap[p.city].minPrice = p.price;
-        if (p.price > rentByCityMap[p.city].maxPrice) rentByCityMap[p.city].maxPrice = p.price;
-      }
-
-      const fmtPrice = (n: number) => n >= 1e6 ? `₪${(n / 1e6).toFixed(1)}M` : `₪${(n / 1e3).toFixed(0)}K`;
-
-      let inventoryText = `\n## 📊 Platform Inventory (use this to answer "what do you have?" questions)\n`;
-      inventoryText += `Total: ${saleListings.length} for-sale listings, ${rentListings.length} rental listings\n\n`;
-
-      inventoryText += `**For Sale by City:**\n`;
-      for (const [city, data] of Object.entries(saleByCityMap).sort((a, b) => b[1].count - a[1].count)) {
-        inventoryText += `- ${city}: ${data.count} listings (${fmtPrice(data.minPrice)} – ${fmtPrice(data.maxPrice)})`;
-        if (data.neighborhoods.size > 0) inventoryText += ` — neighborhoods: ${[...data.neighborhoods].slice(0, 6).join(', ')}`;
-        inventoryText += `\n`;
-      }
-
-      if (Object.keys(rentByCityMap).length > 0) {
-        inventoryText += `\n**Rentals by City:**\n`;
-        for (const [city, data] of Object.entries(rentByCityMap).sort((a, b) => b[1].count - a[1].count)) {
-          inventoryText += `- ${city}: ${data.count} rentals (${fmtPrice(data.minPrice)} – ${fmtPrice(data.maxPrice)}/mo)\n`;
-        }
-      }
-
-      parts.push(inventoryText);
-    }
-
-    // ─── Phase 2: Featured Listings ───
-    const featuredItems: string[] = [];
+    // Featured listings (compact)
+    const featuredLines: string[] = [];
     if (featuredSale?.length) {
-      featuredItems.push(`**Featured For Sale (our top sale picks):**`);
+      featuredLines.push(`**Top Sale Picks:**`);
       for (const slot of featuredSale) {
         const p = (slot as any).properties;
         if (!p) continue;
-        featuredItems.push(`- [${p.title || `${p.bedrooms}BR ${p.property_type} in ${p.neighborhood || p.city}`}](/property/${p.id}) — ${p.city}${p.neighborhood ? `, ${p.neighborhood}` : ''}, ₪${p.price?.toLocaleString()}, ${p.bedrooms}BR${p.size_sqm ? `, ${p.size_sqm}m²` : ''}`);
+        featuredLines.push(`- [${p.bedrooms}BR ${p.property_type} in ${p.neighborhood || p.city}](/property/${p.id}) ₪${(p.price/1e6).toFixed(1)}M`);
       }
     }
     if (featuredRent?.length) {
-      featuredItems.push(`\n**Featured Rentals (our top rental picks):**`);
+      featuredLines.push(`**Top Rental Picks:**`);
       for (const slot of featuredRent) {
         const p = (slot as any).properties;
         if (!p) continue;
-        featuredItems.push(`- [${p.title || `${p.bedrooms}BR ${p.property_type} in ${p.neighborhood || p.city}`}](/property/${p.id}) — ${p.city}${p.neighborhood ? `, ${p.neighborhood}` : ''}, ₪${p.price?.toLocaleString()}/mo, ${p.bedrooms}BR${p.size_sqm ? `, ${p.size_sqm}m²` : ''}`);
+        featuredLines.push(`- [${p.bedrooms}BR ${p.property_type} in ${p.neighborhood || p.city}](/property/${p.id}) ₪${p.price?.toLocaleString()}/mo`);
       }
     }
-    if (featuredItems.length > 0) {
-      parts.push(`\n## ⭐ Featured Listings (proactively recommend these when relevant)\nThese are our curated top picks — recommend them when users are browsing or undecided.\n${featuredItems.join('\n')}`);
+    if (featuredLines.length) {
+      parts.push(`\n## ⭐ Featured Listings\n${featuredLines.join('\n')}`);
     }
 
-    // ─── Phase 4: Agency & Agent Context ───
+    // Agencies & agents (compact)
     if (agencies?.length) {
-      let agencyText = `\n## 🏢 Our Partner Agencies\nWe work with ${agencies.length} verified agencies. Mention them by name when relevant.\n`;
-      const agentsByAgency: Record<string, any[]> = {};
+      const agentsByAgency: Record<string, string[]> = {};
       if (agents?.length) {
-        for (const agent of agents) {
-          if (agent.agency_id) {
-            if (!agentsByAgency[agent.agency_id]) agentsByAgency[agent.agency_id] = [];
-            agentsByAgency[agent.agency_id].push(agent);
+        for (const a of agents) {
+          if (a.agency_id) {
+            if (!agentsByAgency[a.agency_id]) agentsByAgency[a.agency_id] = [];
+            agentsByAgency[a.agency_id].push(a.name);
           }
         }
       }
-
-      for (const agency of agencies) {
-        agencyText += `\n**${agency.name}**`;
-        if (agency.cities_covered?.length) agencyText += ` — covers: ${agency.cities_covered.join(', ')}`;
-        if (agency.specializations?.length) agencyText += ` | specializes in: ${agency.specializations.join(', ')}`;
+      let agencyText = `\n## 🏢 Partner Agencies\n`;
+      for (const ag of agencies) {
+        agencyText += `- **${ag.name}**`;
+        if (ag.cities_covered?.length) agencyText += ` (${ag.cities_covered.join(', ')})`;
+        const agNames = agentsByAgency[ag.id];
+        if (agNames?.length) agencyText += ` — agents: ${agNames.slice(0, 5).join(', ')}`;
         agencyText += `\n`;
-
-        const agencyAgents = agentsByAgency[agency.id];
-        if (agencyAgents?.length) {
-          for (const agent of agencyAgents.slice(0, 5)) {
-            agencyText += `  - ${agent.name}`;
-            if (agent.neighborhoods_covered?.length) agencyText += ` (${agent.neighborhoods_covered.slice(0, 3).join(', ')})`;
-            if (agent.languages?.length) agencyText += ` — speaks: ${agent.languages.join(', ')}`;
-            if (agent.specializations?.length) agencyText += ` — focus: ${agent.specializations.slice(0, 2).join(', ')}`;
-            agencyText += `\n`;
-          }
-          if (agencyAgents.length > 5) agencyText += `  - ...and ${agencyAgents.length - 5} more agents\n`;
-        }
       }
       parts.push(agencyText);
     }
 
-    // ─── Phase 5: Project Inventory ───
+    // Projects (compact)
     if (projects?.length) {
-      let projectText = `\n## 🏗️ New Construction Projects (${projects.length} active)\n`;
-      for (const proj of projects) {
-        const dev = (proj as any).developers;
-        projectText += `- [${proj.name}](/projects/${proj.slug}) — ${proj.city}${proj.neighborhood ? `, ${proj.neighborhood}` : ''}`;
-        if (proj.price_from) projectText += ` | from ₪${proj.price_from.toLocaleString()}`;
-        if (proj.status) projectText += ` | ${proj.status.replace(/_/g, ' ')}`;
-        if (proj.min_bedrooms && proj.max_bedrooms) projectText += ` | ${proj.min_bedrooms}-${proj.max_bedrooms}BR`;
-        if (proj.estimated_completion) projectText += ` | completion: ${proj.estimated_completion}`;
-        if (dev?.name) projectText += ` | by ${dev.name}`;
-        projectText += `\n`;
+      let projText = `\n## 🏗️ Projects (${projects.length})\n`;
+      for (const p of projects) {
+        projText += `- [${p.name}](/projects/${p.slug}) ${p.city}`;
+        if (p.price_from) projText += ` from ₪${(p.price_from/1e6).toFixed(1)}M`;
+        if (p.status) projText += ` (${p.status.replace(/_/g, ' ')})`;
+        projText += `\n`;
       }
-      parts.push(projectText);
+      parts.push(projText);
     }
 
-    // ─── Phase 6: Neighborhood Coverage Map ───
+    // Neighborhood coverage (compact)
     if (neighborhoodProfiles?.length) {
-      const coverageByCity: Record<string, string[]> = {};
+      const byCity: Record<string, string[]> = {};
       for (const np of neighborhoodProfiles) {
-        if (!coverageByCity[np.city]) coverageByCity[np.city] = [];
-        coverageByCity[np.city].push(np.neighborhood);
+        if (!byCity[np.city]) byCity[np.city] = [];
+        byCity[np.city].push(np.neighborhood);
       }
-
-      let coverageText = `\n## 🗺️ Neighborhood Guide Coverage\nYou have detailed neighborhood profiles for these areas. Use get_neighborhood_profile for them. For unlisted neighborhoods, use city-level data instead.\n`;
-      for (const [city, neighborhoods] of Object.entries(coverageByCity).sort()) {
-        coverageText += `- **${city}**: ${neighborhoods.sort().join(', ')}\n`;
+      let covText = `\n## 🗺️ Neighborhood Profiles Available\n`;
+      for (const [city, hoods] of Object.entries(byCity).sort()) {
+        covText += `- ${city}: ${hoods.sort().join(', ')}\n`;
       }
-      parts.push(coverageText);
+      parts.push(covText);
     }
 
   } catch (e) {
