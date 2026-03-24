@@ -53,6 +53,9 @@ export function usePriceTier(
         tierAvgStandard: Number(row.tier_avg_standard),
         tierAvgPremium: Number(row.tier_avg_premium),
         tierAvgLuxury: Number(row.tier_avg_luxury),
+        tierAvgPriceStandard: Number(row.tier_avg_price_standard),
+        tierAvgPricePremium: Number(row.tier_avg_price_premium),
+        tierAvgPriceLuxury: Number(row.tier_avg_price_luxury),
       };
     },
     enabled: Boolean(city),
