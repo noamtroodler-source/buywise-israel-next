@@ -23,10 +23,12 @@ interface PropertyValueSnapshotProps {
   roomSpecificCityAvgPrice?: number | null;
   /** When true, skip the section header (used when embedded in MarketIntelligence) */
   hideHeader?: boolean;
-  /** Neighborhood avg price per sqm (takes priority over city avg in middle card) */
-  neighborhoodAvgPriceSqm?: number | null;
-  /** Neighborhood name for label (e.g. "Arnona") */
-  neighborhoodName?: string | null;
+  /** Average price/sqm from nearby sold comps */
+  nearbyCompAvgPriceSqm?: number | null;
+  /** Number of nearby comps used */
+  nearbyCompCount?: number;
+  /** Search radius used for comps (meters) */
+  nearbyCompRadiusM?: number;
   /** Price tier classification from usePriceTier */
   priceTier?: PriceTier | null;
   /** Display label for tier (e.g. "Premium", "Luxury") */
