@@ -1,71 +1,38 @@
 
 
-# Phase N2: Fallback Data Labels, Non-CBS City Disclosure & Duplicate Cleanup
+# Phase N3: Price Tier Corrections & Anglo Tag Updates
 
 ---
 
-## Overview
+## 1. Fix 3 Incorrect Price Tier Classifications (Database)
 
-Phase N2 addresses three issues: neighborhoods showing identical city-average data without labels, cities with no CBS coverage still referencing CBS, and duplicate mappings in Ashkelon.
+Update `featured_neighborhoods` JSONB in the `cities` table for these neighborhoods:
 
----
+| City | Neighborhood | Current Tier | Correct Tier |
+|------|-------------|-------------|-------------|
+| Tel Aviv | Florentin | budget | mid-range |
+| Jerusalem | Katamon | mid-range | premium |
+| Jerusalem | German Colony / Baka | premium | ultra-premium |
 
-## 1. Fallback Detection in Data Hook
+Three separate UPDATE statements using JSONB manipulation to find and update the `price_tier` field within the `featured_neighborhoods` array.
 
-**`src/hooks/useNeighborhoodPriceTable.ts`** — After building the final rows array (line ~146), detect fallback data: if 3+ rows share the exact same `avg_price`, flag them with `is_fallback: true`.
+## 2. Add 7 Missing Anglo Neighborhoods
 
-Add `is_fallback` to the `NeighborhoodPriceRow` interface.
+Update `src/lib/angloNeighborhoodTags.ts`:
 
-## 2. Fallback Labels in UI
+- **Jerusalem** (line 9-11): Add `'French Hill'`, `'Talpiot'`, `'Armon HaNatziv'`
+- **Beit Shemesh** (line 18): Add `'RBS Bet'`, `'RBS Hey'`, `'Neve Shamir'`
+- **Gush Etzion** (line 21): Add `"Ma'ale Amos"`, `'Meitzad'`
 
-**`src/components/city/CityNeighborhoodPriceTable.tsx`**:
-- In the drawer table rows, show a muted "(City avg)" badge next to neighborhoods flagged `is_fallback`
-- Reduce visual weight of fallback rows with `opacity-60`
+## 3. Review 2 Flagged Anglo Tags
 
-**`src/components/city/CityNeighborhoods.tsx`**:
-- Add `is_fallback?: boolean` to `UnifiedNeighborhood` interface
-- Show "(City avg)" tag on neighborhood cards when flagged
-
-**`src/components/city/NeighborhoodDetailDialog.tsx`**:
-- When the neighborhood has `is_fallback`, show an info note below the price: "City-average price shown — neighborhood-specific data unavailable"
-
-**`src/pages/AreaDetail.tsx`** — Pass through `is_fallback` when building `UnifiedNeighborhood` objects from price table data.
-
-## 3. Non-CBS City Constant & Conditional Attribution
-
-**`src/lib/constants/cbsCoverage.ts`** (new file) — Export:
-```
-NON_CBS_CITIES = ['Eilat', 'Givat Shmuel', 'Hod HaSharon', 'Pardes Hanna', 'Zichron Yaakov', "Ma'ale Adumim", 'Efrat', 'Caesarea', "Ra'anana"]
-```
-
-**`src/components/city/CitySourceAttribution.tsx`**:
-- Import `NON_CBS_CITIES`
-- When `cityName` is in the list, adjust the methodology text to say "All price data from aggregated market transaction records" instead of mentioning CBS
-
-**`src/components/city/PriceByApartmentSize.tsx`** line 480:
-- Import `NON_CBS_CITIES`
-- Conditional: if city is non-CBS, show `sources={{ 'Market Data': 'Aggregated transaction records' }}` instead of `{{ CBS: '...' }}`
-
-## 4. Remove Duplicate Ashkelon Mappings (Database)
-
-Delete the Hebrew-parenthetical duplicates from `neighborhood_cbs_mappings`:
-- "Afridar (אפרידר)" — duplicate of "Afridar"
-- "Barnea (ברניע)" — duplicate of "Barnea"
-- "City Center (מרכז העיר)" — duplicate of "City Center"
-- "Marina (מרינה)" — duplicate of "Marina"
-- "Neve Dekalim (נווה דקלים)" — duplicate of "Neve Dekalim"
-
-These cause double-counting in price averages.
+- **Katamonim** — Keep. It's a real Jerusalem neighborhood with a growing Anglo presence. No code change needed.
+- **Kikar HaSharon** — Keep. It's the central Ra'anana square area and a legitimate residential zone. No change needed.
 
 ## Execution Order
 
-1. Create `cbsCoverage.ts` constant file
-2. Update `useNeighborhoodPriceTable.ts` — add fallback detection + `is_fallback` field
-3. Update `CityNeighborhoods.tsx` — add `is_fallback` to interface
-4. Update `AreaDetail.tsx` — pass through `is_fallback`
-5. Update `CityNeighborhoodPriceTable.tsx` — fallback badge + muted styling
-6. Update `NeighborhoodDetailDialog.tsx` — fallback info note
-7. Update `CitySourceAttribution.tsx` — non-CBS city handling
-8. Update `PriceByApartmentSize.tsx` — conditional source badge
-9. Delete duplicate Ashkelon mappings from DB
+1. Update `angloNeighborhoodTags.ts` with new entries
+2. Update database: Florentin tier → mid-range
+3. Update database: Katamon tier → premium
+4. Update database: German Colony/Baka tier → ultra-premium
 
