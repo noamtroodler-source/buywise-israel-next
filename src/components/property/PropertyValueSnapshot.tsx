@@ -96,6 +96,11 @@ export function PropertyValueSnapshot({
     ? Math.round(((totalMonthlyCommitment - cityAvgTotalMonthly) / cityAvgTotalMonthly) * 100)
     : null;
   
+  // Premium segment detection: listing price/sqm >30% above city average
+  const isPremiumSegment = propertyPricePerSqm && averagePriceSqm
+    ? propertyPricePerSqm > averagePriceSqm * 1.30
+    : false;
+
   // For purchases: calculate comparison to neighborhood or city average
   // Prefer neighborhood when available, fall back to city
   const comparisonAvgSqm = neighborhoodAvgPriceSqm ?? averagePriceSqm;
