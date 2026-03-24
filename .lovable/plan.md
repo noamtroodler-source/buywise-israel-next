@@ -1,91 +1,44 @@
 
 
-# Enrich All 105 JRE Listings — Edge Function
+# Create JRE Agent Profiles + Show Full Bio on Agent Pages
 
 ## Summary
+Create 10 new agent profiles for JRE (update existing Michael), populate with real bios/photos from JRE website, distribute 105 listings across all 11 agents, and fix agent detail page to show the full bio instead of truncating it to 2 lines.
 
-Create a one-shot edge function `enrich-jre-listings` that updates all 105 listings under agency `0eb2a33b` with realistic metadata. Zero duplicates confirmed between JRE agencies.
+## Step 1 — Edge Function: `create-jre-agents`
 
-## Current Data Gaps (105 listings)
+One-shot function that:
 
-| Gap | Count |
-|---|---|
-| Missing address | 87 |
-| Missing AC type | 105 |
-| Missing floor | 94 |
-| No parking | 97 |
-| Empty features | 33 |
-| Price = 0 | 6 |
-| No bathrooms | 1 |
-| Unpublished | 105 |
+**Updates Michael Steinmetz** (existing agent `8a39b05f`):
+- Full name, avatar from JRE headshot, full bio from website, LinkedIn URL, neighborhoods, specializations, `is_verified = true`
 
-## What the Edge Function Does (Single Pass)
+**Creates 10 new agents** with data from JRE team page:
 
-### 1. Fix Zero Prices (6 listings)
-Use neighborhood avg price/sqm from `sold_transactions` (Hebrew neighborhood mappings):
-- Mamilla: ~₪37K/sqm → 240sqm penthouse ≈ ₪8.9M
-- Nachlaot: ~₪44K/sqm → 550sqm luxury ≈ ₪24.2M
-- City Center: ~₪48K/sqm → 360sqm/600sqm penthouses
-- Arnona: ~₪28K/sqm → 139sqm/280sqm penthouses
+| Agent | Title | Avatar | LinkedIn | Key Bio Detail |
+|---|---|---|---|---|
+| Abby Brill Schloss | Licensed Agent | Abby-Schloss-hs-sq.jpg | ✓ | American Olah, interior design, hand-holding service |
+| Simone Gershon | Licensed Agent | Simone-Gershon-hs-sq.jpg | ✓ | Sydney-born, 20 yrs in Jerusalem, hotel industry background |
+| Elad Ginzburg | Licensed Agent | Elad-Ginzburg-headshot-t.png | ✓ | Off-market developments, US multi-family investing, BA Economics |
+| Atara Abelman | Licensed Agent | Atara-Abelman-hs-sq.jpg | ✓ | American-South African parents, tech sales background |
+| Penina Abramowitz | Licensed Agent | Untitled-design.jpg | — | Interior design, flipped 3 homes, sees potential |
+| Igal Elmaleh | Licensed Agent | Igal-Elmaleh-hs-sq.jpg | ✓ | HUD loans, shopping mall asset management |
+| Naftali Berezin | VP Client Relations | Naftali_Berezin-headshot-t.png | ✓ | Hyatt-trained, The Beekman NY, social media presence |
+| Tammy Ziv | Licensed Agent | Tammy_Ziv-headshot-t.png | — | 26 years experience, born in Talbiya, lived in London |
+| Jonas Halfon | Licensed Agent | Jonas_Halfon-headshot-t.png | — | French, 9 yrs luxury, French/English/Hebrew |
+| Shimon Mozes | Licensed Agent | Shimon_Mozes-headshot-t.png | — | Law background, strong interpersonal skills |
 
-Round to nearest ₪50K.
+Each agent gets the **full bio paragraph** from the JRE website stored in the `bio` field.
 
-### 2. Addresses (87 missing)
-Hardcoded neighborhood → street mapping for Jerusalem:
+**Listing distribution**: Round-robin all 105 listings across 11 agents (~9-10 each).
 
-| Neighborhood | Streets |
-|---|---|
-| Old Katamon | Rachel Imenu, Bruria, Pierre Koenig, HaPalmach |
-| Baka | Derech Beit Lechem, Yehuda, Rivka |
-| German Colony | Emek Refaim, Lloyd George, Rachel Imenu |
-| City Center | Jaffa, King George, Ben Yehuda, HaNeviim |
-| Rehavia | Azza, Ramban, Alfasi, Keren Kayemet |
-| French Hill | Levi Eshkol, Churchill |
-| Arnona | Shalom Yehuda, Haim Hazaz |
-| Talbiya | Jabotinsky, Dubnov, Hovevei Tziyon |
-| Mamilla | King Solomon, Shlomtzion HaMalka |
-| Ramat Eshkol | Paran, Levi Eshkol |
-| Musrara | HaAyin Het, Shmuel HaNavi |
-| Katamonim | San Martin, Guatemala |
-| Maalot Dafna | Bar Ilan, Paran |
-| Mekor Haim | Pierre Koenig, Mekor Haim |
-| + all other neighborhoods... |
+## Step 2 — Agent Detail Page: Show Full Bio
 
-Deterministic street selection via property ID hash. Even house numbers 2–120.
-
-### 3. Heuristic Metadata
-
-**Bathrooms** (fix 1 missing): 1-2 bed → 1, 3-4 bed → 2, 5-6 bed → 3, 7+ → 4
-
-**Additional rooms**: 1-2 bed → 1, 3+ bed → 2
-
-**AC type**: Penthouses or price > ₪10M → `central`, all others → `split`
-
-**Parking**: Penthouses/houses/garden apts/≥100sqm → 1, price > ₪12M → 2, small units → 0
-
-**Floor / total_floors**:
-- Garden apartments → floor 0, total 3
-- Penthouses → floor 6–12 (size-based), total = floor
-- Houses/duplexes → floor 0, total 2–3
-- Regular apartments → floor 2–5 (hash), total = floor + 2
-
-**Features** (ensure all have baseline):
-- All: `elevator`, `mamad/safe_room`
-- Penthouses: add `rooftop`, `panoramic_view`
-- Garden apartments: add `garden`
-- 3+ bed: add `storage`
-- Anglo neighborhoods (Baka, German Colony, Old Katamon, Rehavia, Talbiya): add `sukkah_balcony`
-- Price > ₪10M: add `underfloor_heating`
-- High floor (6+): add `city_view`
-
-### 4. Publish All
-Set `is_published = true` and `verification_status = 'approved'`.
+Currently the bio is truncated with `line-clamp-2`. Changes:
+- Remove `line-clamp-2` from the bio paragraph so the full description shows
+- Optionally add an "About" section heading for longer bios (like the professional detail page pattern)
 
 ## Files
 
-1. **New**: `supabase/functions/enrich-jre-listings/index.ts` — one-shot enrichment function
-2. No frontend changes
-
-## Execution
-Deploy automatically, invoke once via the edge function tools, verify results, done.
+1. **New**: `supabase/functions/create-jre-agents/index.ts` — one-shot edge function
+2. **Edit**: `src/pages/AgentDetail.tsx` — remove `line-clamp-2` from bio display, add "About" heading for readability
 
