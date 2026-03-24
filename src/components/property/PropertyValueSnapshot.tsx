@@ -106,14 +106,13 @@ export function PropertyValueSnapshot({
     ? Math.round(((totalMonthlyCommitment - cityAvgTotalMonthly) / cityAvgTotalMonthly) * 100)
     : null;
   
-  // For purchases: calculate comparison to neighborhood or city average
-  // When tier data is available, averagePriceSqm already reflects tier-specific avg
-  const comparisonAvgSqm = neighborhoodAvgPriceSqm ?? averagePriceSqm;
+  // For purchases: Card 2 uses nearby comp avg when available, falls back to city avg
+  const comparisonAvgSqm = nearbyCompAvgPriceSqm ?? averagePriceSqm;
   const tierSuffix = priceTier && priceTier !== 'standard' && tierLabel ? ` ${tierLabel}` : '';
-  const comparisonLabel = neighborhoodAvgPriceSqm && neighborhoodName
-    ? neighborhoodName
+  const isCompComparison = !!nearbyCompAvgPriceSqm;
+  const comparisonLabel = isCompComparison
+    ? `Nearby Sales`
     : `${city}${tierSuffix}`;
-  const isNeighborhoodComparison = !!(neighborhoodAvgPriceSqm && neighborhoodName);
 
   const purchaseComparisonPercent = propertyPricePerSqm && comparisonAvgSqm
     ? Math.round(((propertyPricePerSqm - comparisonAvgSqm) / comparisonAvgSqm) * 100)
