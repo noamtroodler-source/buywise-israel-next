@@ -8,7 +8,7 @@ import { PropertyFilters as PropertyFiltersType, ListingStatus } from '@/types/d
 import { PropertyFilters } from '@/components/filters/PropertyFilters';
 import { QuickFilterChips } from '@/components/filters/QuickFilterChips';
 import { CreateAlertDialog } from '@/components/filters/CreateAlertDialog';
-import { ViewToggle } from '@/components/filters/ViewToggle';
+
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { History, Search, Bell, MapPin, RotateCcw, BookOpen, Home, Compass, Calculator, Lightbulb, Loader2 } from 'lucide-react';
@@ -285,6 +285,7 @@ export default function Listings() {
             onSoldToggle={handleSoldToggle}
             previewCount={totalCount}
             isCountLoading={isFetching}
+            activeView="grid"
           />
           
            {/* Quick Filter Chips - Mobile only, hidden when sticky */}
@@ -297,7 +298,7 @@ export default function Listings() {
           )}
         </div>
 
-        {/* Results Count Row - with View Toggle on desktop */}
+        {/* Results Count Row */}
         <div className="flex items-center justify-between mb-4">
           {!isLoading ? (
             <p className="text-sm text-muted-foreground">
@@ -306,7 +307,6 @@ export default function Listings() {
           ) : (
             <div className="h-5 w-40 bg-muted/50 rounded animate-pulse" />
           )}
-          <ViewToggle activeView="grid" />
         </div>
 
         {/* Property Grid with loading overlay - wrapped in PullToRefresh on mobile */}
