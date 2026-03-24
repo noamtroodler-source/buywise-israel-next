@@ -1,41 +1,22 @@
 
 
-# Add "Premium Segment" Label to Market Intelligence
+# Property Price Tier System
 
-## What changes
+## Status: Implemented
 
-Detect when a listing's price/sqm is >30% above the city average and add contextual labels to help users understand the gap is due to market segment, not overpricing.
+## What it does
 
-## Logic
+Classifies properties into Standard / Premium / Luxury tiers based on city-wide `sold_transactions` percentiles (33rd/67th). Comparison cards and verdict badges now compare against the same tier, eliminating misleading "overpriced" signals for premium properties.
 
-```
-isPremiumSegment = propertyPricePerSqm > cityAvgPriceSqm * 1.30
-```
+## Architecture
 
-This is computed from data already available in `PropertyValueSnapshot` and `MarketIntelligence`.
+- **DB Function**: `get_city_price_tiers(city, rooms, months_back)` — returns p33, p67 thresholds + per-tier averages. Minimum 20 transactions gate.
+- **Hook**: `usePriceTier(city, rooms, propertyPriceSqm)` — classifies property and returns tier-specific avg price/sqm
+- **UI**: Tier badge (Premium=blue, Luxury=amber) in MarketIntelligence header. PropertyValueSnapshot cards compare against tier avg when available.
 
-## Visual changes
+## Files
 
-### 1. PropertyValueSnapshot (purchase cards)
-When `isPremiumSegment` is true:
-- Add a small muted label under the "vs Neighborhood/City Avg" card (Card 2) and "vs City N-Room Avg" card (Card 3): *"Premium segment — averages include all market tiers"*
-- Replace `text-semantic-red` icon color on TrendingUp with `text-semantic-amber` for all purchase comparison cards (consistency with no-red philosophy)
-
-### 2. MarketVerdictBadge
-When `isPremiumSegment` is true AND variance is +5% to +20%:
-- Append context line: *"Premium property — city/neighborhood averages include all market segments"*
-
-### 3. Rental cards
-Same treatment: replace `text-semantic-red` on TrendingUp with `text-semantic-amber`.
-
-## Files changed
-
-**`src/components/property/PropertyValueSnapshot.tsx`**
-- Compute `isPremiumSegment` from existing props
-- Add subtitle text on Cards 2 & 3 when premium
-- Replace all `text-semantic-red` → `text-semantic-amber` on TrendingUp icons
-
-**`src/components/property/MarketIntelligence.tsx`**
-- Compute `isPremiumSegment` and pass context to `MarketVerdictBadge`
-- Add premium context line in badge component when applicable
-
+- `src/hooks/usePriceTier.ts` — new hook
+- `src/components/property/MarketIntelligence.tsx` — tier badge + passes tier avg to PropertyValueSnapshot
+- `src/components/property/PropertyValueSnapshot.tsx` — accepts priceTier/tierLabel props, tier-aware labels
+- `src/types/soldTransactions.ts` — PriceTier type export
