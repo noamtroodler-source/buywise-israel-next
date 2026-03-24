@@ -5858,6 +5858,9 @@ export type Database = {
           p67_price_sqm: number
           tier_avg_luxury: number
           tier_avg_premium: number
+          tier_avg_price_luxury: number
+          tier_avg_price_premium: number
+          tier_avg_price_standard: number
           tier_avg_standard: number
           transaction_count: number
         }[]
