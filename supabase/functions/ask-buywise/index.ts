@@ -246,6 +246,22 @@ const TOOLS = [
       },
     },
   },
+  {
+    type: "function" as const,
+    function: {
+      name: "get_platform_overview",
+      description: "Get a detailed breakdown of BuyWise platform inventory — listings by neighborhood, property type distribution, price quartiles, and agent coverage. Use when users ask 'what do you have?', 'how many listings?', 'what areas do you cover?', or want a detailed market overview.",
+      parameters: {
+        type: "object",
+        properties: {
+          city: { type: "string", description: "Optional city to filter the overview" },
+          listing_status: { type: "string", enum: ["for_sale", "for_rent"], description: "Filter by sale or rent. Defaults to for_sale." },
+        },
+        required: [],
+        additionalProperties: false,
+      },
+    },
+  },
 ];
 
 // ─── Tool Executors ─────────────────────────────────────────────────────────
