@@ -477,14 +477,19 @@ export function PriceByApartmentSize({
           )}
 
           {/* Source attribution */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <InlineSourceBadge 
-              sources={isNonCbsCity(cityName) 
-                ? { 'Market Data': 'Aggregated transaction records' } 
-                : { CBS: 'Central Bureau of Statistics' }} 
-              lastVerified={lastVerified} 
-            />
-            <span className="text-xs text-muted-foreground">Quarterly Data · {yearRange}</span>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <InlineSourceBadge 
+                sources={isNonCbsCity(cityName) 
+                  ? { 'Market Data': 'Aggregated transaction records' } 
+                  : { CBS: 'Central Bureau of Statistics' }} 
+                lastVerified={lastVerified} 
+              />
+              <span className="text-xs text-muted-foreground">Quarterly Data · {yearRange}</span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Room-size breakdowns derived from aggregated transaction records, not official CBS neighborhood statistics.
+            </p>
           </div>
         </motion.div>
       </div>
