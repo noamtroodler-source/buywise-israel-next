@@ -294,8 +294,9 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
           cityArnonaRate={cityData?.arnona_rate_sqm}
           cityAvgVaadBayit={cityData?.average_vaad_bayit}
           roomSpecificCityAvgPrice={tierAvgTotalPrice ?? roomPrice?.avgPrice ?? null}
-          neighborhoodAvgPriceSqm={neighborhoodAvgPriceSqm}
-          neighborhoodName={property.neighborhood}
+          nearbyCompAvgPriceSqm={verdictData.avgCompPriceSqm}
+          nearbyCompCount={verdictData.compsCount}
+          nearbyCompRadiusM={verdictData.radiusUsedM}
           priceTier={priceTier}
           tierLabel={tierLabel}
           hideHeader
