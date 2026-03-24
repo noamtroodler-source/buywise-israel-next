@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { BarChart3, ArrowUp, ArrowDown, ArrowUpDown, MapPin, TrendingUp, TrendingDown, Minus, Search, ChevronRight } from 'lucide-react';
+import { BarChart3, ArrowUp, ArrowDown, ArrowUpDown, MapPin, TrendingUp, TrendingDown, Minus, Search, ChevronRight, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,13 +38,21 @@ function formatCompactPrice(price: number): string {
   return `₪${price.toLocaleString()}`;
 }
 
-function TrendIndicator({ yoyChange }: { yoyChange: number | null }) {
+function TrendIndicator({ yoyChange, yoyWarning }: { yoyChange: number | null; yoyWarning?: boolean }) {
   if (yoyChange == null) return <span className="text-muted-foreground">—</span>;
+  
+  const warningIcon = yoyWarning ? (
+    <span title="Low transaction volume — trend may not be reliable" className="cursor-help">
+      <AlertTriangle className="h-3 w-3 text-amber-500 ml-0.5" />
+    </span>
+  ) : null;
+
   if (yoyChange > 0.5) {
     return (
       <span className="inline-flex items-center gap-0.5 text-xs font-medium text-semantic-green">
         <TrendingUp className="h-3 w-3" />
         +{yoyChange}%
+        {warningIcon}
       </span>
     );
   }
@@ -53,6 +61,7 @@ function TrendIndicator({ yoyChange }: { yoyChange: number | null }) {
       <span className="inline-flex items-center gap-0.5 text-xs font-medium text-destructive">
         <TrendingDown className="h-3 w-3" />
         {yoyChange}%
+        {warningIcon}
       </span>
     );
   }
@@ -195,7 +204,7 @@ function NeighborhoodDrawerTable({ rows, cityName }: { rows: NeighborhoodPriceRo
                         {formatCompactPrice(row.avg_price)}
                       </td>
                       <td className="p-3 align-middle text-right">
-                        <TrendIndicator yoyChange={row.yoy_change_percent} />
+                        <TrendIndicator yoyChange={row.yoy_change_percent} yoyWarning={row.yoy_warning} />
                       </td>
                     </tr>
                   ))
@@ -208,7 +217,7 @@ function NeighborhoodDrawerTable({ rows, cityName }: { rows: NeighborhoodPriceRo
 
       {/* Footer */}
       <div className="px-4 py-3 border-t text-xs text-muted-foreground text-center">
-        Source: CBS (Central Bureau of Statistics) · 4-room apartment averages
+        Source: Market transaction data · 4-room apartment averages
       </div>
     </div>
   );
@@ -257,7 +266,7 @@ export function CityNeighborhoodPriceTable({ cityName, rows }: CityNeighborhoodP
             <DrawerHeader className="pb-2">
               <DrawerTitle>Neighborhoods in {cityName}</DrawerTitle>
               <DrawerDescription>
-                Average 4-room apartment prices based on recent CBS transactions
+                Average 4-room apartment prices based on recent market transactions
               </DrawerDescription>
             </DrawerHeader>
             <NeighborhoodDrawerTable rows={rows} cityName={cityName} />

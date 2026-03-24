@@ -22,6 +22,7 @@ export interface UnifiedNeighborhood {
   price_tier: PriceTier | null;
   avg_price: number | null;
   yoy_change_percent: number | null;
+  yoy_warning?: boolean;
   is_featured: boolean;
   sort_order?: number;
   anglo_tag?: boolean;

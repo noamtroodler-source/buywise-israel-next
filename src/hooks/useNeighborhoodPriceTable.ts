@@ -6,6 +6,7 @@ export interface NeighborhoodPriceRow {
   name: string;
   avg_price: number;
   yoy_change_percent: number | null;
+  yoy_warning: boolean;
   latest_year: number;
   latest_quarter: number;
   price_tier: PriceTier | null;
@@ -128,10 +129,12 @@ export function useNeighborhoodPriceTable(citySlug: string, cityName: string | u
         }
 
         const feat = featuredMap.get(name);
+        const yoyWarning = yoyChange != null && Math.abs(yoyChange) > 25;
         rows.push({
           name,
           avg_price: avgPrice,
           yoy_change_percent: yoyChange,
+          yoy_warning: yoyWarning,
           latest_year: data.latestYear,
           latest_quarter: data.latestQuarter,
           price_tier: feat?.price_tier ?? null,

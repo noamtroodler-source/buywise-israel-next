@@ -41,7 +41,7 @@ export default function CityDetail() {
   const { data: priceTableRows = [] } = useNeighborhoodPriceTable(slug || '', city?.name);
   const districtName = city ? getDistrictForCity(city.name) : null;
 
-  // Merge featured neighborhoods + CBS price table into unified list
+  // Merge featured neighborhoods + market price data into unified list
   const unifiedNeighborhoods: UnifiedNeighborhood[] = useMemo(() => {
     const seen = new Set<string>();
     const result: UnifiedNeighborhood[] = [];
@@ -58,13 +58,14 @@ export default function CityDetail() {
         price_tier: n.price_tier,
         avg_price: priceRow?.avg_price ?? n.avg_price ?? null,
         yoy_change_percent: priceRow?.yoy_change_percent ?? n.yoy_change_percent ?? null,
+        yoy_warning: priceRow?.yoy_warning ?? false,
         is_featured: true,
         sort_order: n.sort_order,
         anglo_tag: isAngloNeighborhood(slug || '', n.name),
       });
     }
 
-    // CBS-only neighborhoods (not featured), sorted by price desc
+    // Market-data-only neighborhoods (not featured), sorted by price desc
     const cbsOnly = priceTableRows
       .filter(r => !seen.has(r.name))
       .sort((a, b) => b.avg_price - a.avg_price);
@@ -75,6 +76,7 @@ export default function CityDetail() {
         price_tier: r.price_tier,
         avg_price: r.avg_price,
         yoy_change_percent: r.yoy_change_percent,
+        yoy_warning: r.yoy_warning ?? false,
         is_featured: false,
         anglo_tag: isAngloNeighborhood(slug || '', r.name),
       });

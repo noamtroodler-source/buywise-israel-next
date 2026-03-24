@@ -90,6 +90,7 @@ export function useNeighborhoodPrices(cityName: string | undefined, rooms: numbe
         avg_price: number | null;
         avg_price_sqm: number | null;
         yoy_change_percent: number | null;
+        yoy_warning: boolean;
         latest_year: number | null;
         latest_quarter: number | null;
       }> = {};
@@ -104,6 +105,7 @@ export function useNeighborhoodPrices(cityName: string | undefined, rooms: numbe
             avg_price: null,
             avg_price_sqm: null,
             yoy_change_percent: null,
+            yoy_warning: false,
             latest_year: null,
             latest_quarter: null,
           };
@@ -133,6 +135,7 @@ export function useNeighborhoodPrices(cityName: string | undefined, rooms: numbe
           avg_price: avgPrice,
           avg_price_sqm: avgPrice ? Math.round(avgPrice / avgSize) : null,
           yoy_change_percent: yoyChange,
+          yoy_warning: yoyChange != null && Math.abs(yoyChange) > 25,
           latest_year: latestYear,
           latest_quarter: latestQuarter,
         };

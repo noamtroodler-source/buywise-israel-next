@@ -1,5 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { MapPin, Sparkles, TrendingUp, TrendingDown, Minus, ExternalLink } from 'lucide-react';
+import { MapPin, Sparkles, TrendingUp, TrendingDown, Minus, ExternalLink, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useNeighborhoodProfile } from '@/hooks/useNeighborhoodProfile';
@@ -68,7 +68,7 @@ export function NeighborhoodDetailDialog({ neighborhood: n, cityName, open, onOp
               {n.yoy_change_percent != null && (
                 <div className="text-right">
                   <p className="text-xs text-muted-foreground mb-0.5">3-year trend</p>
-                  <TrendBadge yoyChange={n.yoy_change_percent} />
+                  <TrendBadge yoyChange={n.yoy_change_percent} yoyWarning={n.yoy_warning} />
                 </div>
               )}
             </div>
@@ -125,7 +125,7 @@ export function NeighborhoodDetailDialog({ neighborhood: n, cityName, open, onOp
           {/* Source footnote */}
           {hasPrice && (
             <p className="text-[10px] text-muted-foreground/50 text-center">
-              CBS (Central Bureau of Statistics) · 4-room avg
+              Market transaction data · 4-room avg
             </p>
           )}
         </div>
@@ -134,12 +134,19 @@ export function NeighborhoodDetailDialog({ neighborhood: n, cityName, open, onOp
   );
 }
 
-function TrendBadge({ yoyChange }: { yoyChange: number }) {
+function TrendBadge({ yoyChange, yoyWarning }: { yoyChange: number; yoyWarning?: boolean }) {
+  const warningIcon = yoyWarning ? (
+    <span title="Low transaction volume — trend may not be reliable" className="cursor-help ml-0.5">
+      <AlertTriangle className="h-3 w-3 text-amber-500 inline" />
+    </span>
+  ) : null;
+
   if (yoyChange > 0.5) {
     return (
       <span className="inline-flex items-center gap-1 text-sm font-semibold text-semantic-green">
         <TrendingUp className="h-3.5 w-3.5" />
         +{yoyChange}%
+        {warningIcon}
       </span>
     );
   }
@@ -148,6 +155,7 @@ function TrendBadge({ yoyChange }: { yoyChange: number }) {
       <span className="inline-flex items-center gap-1 text-sm font-semibold text-destructive">
         <TrendingDown className="h-3.5 w-3.5" />
         {yoyChange}%
+        {warningIcon}
       </span>
     );
   }
