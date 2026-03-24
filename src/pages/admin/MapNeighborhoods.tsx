@@ -365,8 +365,8 @@ export default function MapNeighborhoods() {
                   <tr className="border-b">
                     <th className="text-left p-2">City</th>
                     <th className="text-left p-2">Anglo Name</th>
-                    <th className="text-left p-2">CBS Hebrew</th>
-                    <th className="text-left p-2">CBS ID</th>
+                    <th className="text-left p-2">Hebrew Name</th>
+                    <th className="text-left p-2">Zone ID</th>
                     <th className="text-left p-2">Confidence</th>
                     <th className="text-left p-2">Status</th>
                     <th className="text-left p-2">Actions</th>
