@@ -5,8 +5,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const JRE_AGENCY_ID = "0eb2a33b-da9d-4c0a-98f5-e673e5580567";
-const MICHAEL_AGENT_ID = "8a39b05f-f238-4e18-925d-886acb81afaf";
+const JRE_AGENCY_ID = "0eb2a33b-a768-4204-ba75-29de29d6da2a";
+const MICHAEL_AGENT_ID = "8a39b05f-3b6a-4f13-9e41-57d4224ffa96";
 const IMG_BASE = "https://jerusalem-real-estate.co/wp-content/uploads/";
 
 interface AgentData {
