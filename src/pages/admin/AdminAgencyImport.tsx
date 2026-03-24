@@ -48,7 +48,7 @@ function normalizeUrl(raw: string): string {
 export default function AdminAgencyImport() {
   const [selectedAgencyId, setSelectedAgencyId] = useState<string>('');
   const [websiteUrl, setWebsiteUrl] = useState('');
-  const [importType, setImportType] = useState<'resale' | 'rental' | 'all'>('resale');
+  const [importType, setImportType] = useState<'resale' | 'rental' | 'all'>('all');
   const [sourceType, setSourceType] = useState<'website' | 'yad2'>('website');
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
 
