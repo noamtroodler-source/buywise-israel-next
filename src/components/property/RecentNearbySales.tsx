@@ -139,9 +139,11 @@ function DesktopCompsList({
                       "text-xs cursor-help",
                       Math.abs(comparison) <= 2
                         ? "bg-muted text-muted-foreground hover:bg-muted/90"
-                        : comparison > 0 
-                          ? "bg-semantic-red text-semantic-red-foreground hover:bg-semantic-red/90"
-                          : "bg-semantic-green text-semantic-green-foreground hover:bg-semantic-green/90"
+                        : comparison > 12 
+                          ? "bg-semantic-amber text-semantic-amber-foreground hover:bg-semantic-amber/90"
+                          : comparison > 0
+                            ? "bg-muted text-muted-foreground hover:bg-muted/90"
+                            : "bg-semantic-green text-semantic-green-foreground hover:bg-semantic-green/90"
                     )}
                   >
                     {Math.abs(comparison) <= 2
