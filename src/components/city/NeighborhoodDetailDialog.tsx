@@ -10,6 +10,7 @@ interface NeighborhoodDetailDialogProps {
   cityName: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  isFallback?: boolean;
 }
 
 function formatCompactPrice(price: number): string {
