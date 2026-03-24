@@ -50,8 +50,9 @@ export function PropertyValueSnapshot({
   cityAvgVaadBayit,
   roomSpecificCityAvgPrice,
   hideHeader = false,
-  neighborhoodAvgPriceSqm,
-  neighborhoodName,
+  nearbyCompAvgPriceSqm,
+  nearbyCompCount = 0,
+  nearbyCompRadiusM = 500,
   priceTier,
   tierLabel,
 }: PropertyValueSnapshotProps) {
