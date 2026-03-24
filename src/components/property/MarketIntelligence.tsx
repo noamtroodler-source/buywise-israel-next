@@ -109,7 +109,9 @@ function MarketVerdictBadge({ avgComparison, compsCount, radiusUsedM, isPremiumS
         Significantly above recent sales
       </Badge>
     );
-    contextLine = 'Review comparable sales before proceeding';
+    contextLine = isPremiumSegment
+      ? 'Premium property — city/neighborhood averages include all market segments'
+      : 'Review comparable sales before proceeding';
   }
 
   return (
