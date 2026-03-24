@@ -7,6 +7,7 @@ export interface PriceTierResult {
   tier: PriceTier | null;
   tierLabel: string | null;
   tierAvgPriceSqm: number | null;
+  tierAvgTotalPrice: number | null;
   p33: number | null;
   p67: number | null;
   transactionCount: number;
