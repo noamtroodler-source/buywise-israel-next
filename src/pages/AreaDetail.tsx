@@ -65,7 +65,7 @@ export default function CityDetail() {
       });
     }
 
-    // CBS-only neighborhoods (not featured), sorted by price desc
+    // Market-data-only neighborhoods (not featured), sorted by price desc
     const cbsOnly = priceTableRows
       .filter(r => !seen.has(r.name))
       .sort((a, b) => b.avg_price - a.avg_price);

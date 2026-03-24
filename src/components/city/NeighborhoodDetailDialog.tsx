@@ -134,12 +134,19 @@ export function NeighborhoodDetailDialog({ neighborhood: n, cityName, open, onOp
   );
 }
 
-function TrendBadge({ yoyChange }: { yoyChange: number }) {
+function TrendBadge({ yoyChange, yoyWarning }: { yoyChange: number; yoyWarning?: boolean }) {
+  const warningIcon = yoyWarning ? (
+    <span title="Low transaction volume — trend may not be reliable" className="cursor-help ml-0.5">
+      <AlertTriangle className="h-3 w-3 text-amber-500 inline" />
+    </span>
+  ) : null;
+
   if (yoyChange > 0.5) {
     return (
       <span className="inline-flex items-center gap-1 text-sm font-semibold text-semantic-green">
         <TrendingUp className="h-3.5 w-3.5" />
         +{yoyChange}%
+        {warningIcon}
       </span>
     );
   }
@@ -148,6 +155,7 @@ function TrendBadge({ yoyChange }: { yoyChange: number }) {
       <span className="inline-flex items-center gap-1 text-sm font-semibold text-destructive">
         <TrendingDown className="h-3.5 w-3.5" />
         {yoyChange}%
+        {warningIcon}
       </span>
     );
   }
