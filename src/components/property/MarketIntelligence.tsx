@@ -59,7 +59,7 @@ interface MarketIntelligenceProps {
   } | null | undefined;
 }
 
-function MarketVerdictBadge({ avgComparison, compsCount, radiusUsedM, isPremiumSegment }: { avgComparison: number | null; compsCount: number; radiusUsedM: number; isPremiumSegment?: boolean }) {
+function MarketVerdictBadge({ avgComparison, compsCount, radiusUsedM, priceTier }: { avgComparison: number | null; compsCount: number; radiusUsedM: number; priceTier?: PriceTier | null }) {
   // Quality gate: suppress verdict when comps are too few
   if (avgComparison === null || compsCount < 3) {
     return (
