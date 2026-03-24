@@ -389,7 +389,7 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                     </TooltipProvider>
                   )}
                 </div>
-                {property.title && (
+                {!hideTitle && property.title && (
                   <p className="text-sm font-medium text-foreground truncate leading-tight">{property.title}</p>
                 )}
                 <p className="text-xs text-muted-foreground">
