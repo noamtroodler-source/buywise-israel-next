@@ -91,7 +91,9 @@ function MarketVerdictBadge({ avgComparison, compsCount, radiusUsedM, isPremiumS
         Above recent sales avg
       </Badge>
     );
-    contextLine = 'Typical for active listings — room to negotiate';
+    contextLine = isPremiumSegment
+      ? 'Premium property — city/neighborhood averages include all market segments'
+      : 'Typical for active listings — room to negotiate';
   } else if (avgComparison <= 20) {
     badge = (
       <Badge className="bg-semantic-amber text-semantic-amber-foreground border-semantic-amber">
