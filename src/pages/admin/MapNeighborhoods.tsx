@@ -252,8 +252,54 @@ export default function MapNeighborhoods() {
     toast({ title: 'Copied to clipboard' });
   };
 
+  // Data quality: per-city coverage
+  const cityQuality = (() => {
+    const grouped: Record<string, { total: number; approved: number }> = {};
+    dbMappings.forEach(m => {
+      if (!grouped[m.city]) grouped[m.city] = { total: 0, approved: 0 };
+      grouped[m.city].total++;
+      if (m.status === 'approved' && m.cbs_neighborhood_id) grouped[m.city].approved++;
+    });
+    return Object.entries(grouped)
+      .map(([city, { total, approved }]) => ({
+        city,
+        total,
+        approved,
+        pct: Math.round((approved / total) * 100),
+      }))
+      .sort((a, b) => a.city.localeCompare(b.city));
+  })();
+
   return (
     <div className="container py-8 max-w-6xl space-y-6">
+      {/* Data Quality Summary */}
+      {!isLoadingDb && cityQuality.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Data Quality Coverage by City</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+              {cityQuality.map(c => (
+                <div
+                  key={c.city}
+                  className={`rounded-lg border px-3 py-2 text-sm ${
+                    c.pct > 70
+                      ? 'bg-green-50 border-green-200 text-green-800'
+                      : c.pct >= 30
+                      ? 'bg-yellow-50 border-yellow-200 text-yellow-800'
+                      : 'bg-red-50 border-red-200 text-red-800'
+                  }`}
+                >
+                  <div className="font-medium truncate">{c.city}</div>
+                  <div className="text-xs opacity-80">{c.pct}% ({c.approved}/{c.total})</div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Run Mapping Section */}
       <Card>
         <CardHeader>
