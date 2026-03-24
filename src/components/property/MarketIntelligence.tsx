@@ -58,7 +58,8 @@ interface MarketIntelligenceProps {
 }
 
 function MarketVerdictBadge({ avgComparison, compsCount, radiusUsedM }: { avgComparison: number | null; compsCount: number; radiusUsedM: number }) {
-  if (avgComparison === null) {
+  // Quality gate: suppress verdict when comps are too few
+  if (avgComparison === null || compsCount < 3) {
     return (
       <Badge variant="secondary" className="text-xs">
         Limited market data
@@ -69,41 +70,62 @@ function MarketVerdictBadge({ avgComparison, compsCount, radiusUsedM }: { avgCom
   const abs = Math.abs(avgComparison);
   const radiusLabel = radiusUsedM >= 1000 ? '1km' : '500m';
 
-  const badge = avgComparison < -15 ? (
-    <Badge className="bg-semantic-green text-semantic-green-foreground border-semantic-green">
-      May be underpriced by {abs.toFixed(0)}% vs. recent sales
-    </Badge>
-  ) : avgComparison < -5 ? (
-    <Badge className="bg-semantic-green text-semantic-green-foreground border-semantic-green">
-      Priced {abs.toFixed(0)}% below recent sales — potential value
-    </Badge>
-  ) : avgComparison <= 10 ? (
-    <Badge className="bg-semantic-green text-semantic-green-foreground border-semantic-green">
-      Priced in line with recent sales
-    </Badge>
-  ) : avgComparison <= 20 ? (
-    <Badge className="bg-semantic-amber text-semantic-amber-foreground border-semantic-amber">
-      May be overpriced by {abs.toFixed(0)}% — room to negotiate
-    </Badge>
-  ) : (
-    <Badge className="bg-semantic-red text-semantic-red-foreground border-semantic-red">
-      May be overpriced by {abs.toFixed(0)}% vs. recent sales — negotiate hard
-    </Badge>
-  );
+  let badge: React.ReactNode;
+  let contextLine: string | null = null;
+
+  if (avgComparison < 0) {
+    badge = (
+      <Badge className="bg-semantic-green text-semantic-green-foreground border-semantic-green">
+        Below recent sales avg — potential value
+      </Badge>
+    );
+  } else if (avgComparison <= 5) {
+    badge = (
+      <Badge className="bg-semantic-green text-semantic-green-foreground border-semantic-green">
+        In line with recent sales
+      </Badge>
+    );
+  } else if (avgComparison <= 12) {
+    badge = (
+      <Badge variant="secondary" className="text-xs">
+        Above recent sales avg
+      </Badge>
+    );
+    contextLine = 'Typical for active listings — room to negotiate';
+  } else if (avgComparison <= 20) {
+    badge = (
+      <Badge className="bg-semantic-amber text-semantic-amber-foreground border-semantic-amber">
+        Well above recent sales — negotiate
+      </Badge>
+    );
+    contextLine = 'Higher than area avg — negotiate or investigate';
+  } else {
+    badge = (
+      <Badge className="bg-semantic-amber text-semantic-amber-foreground border-semantic-amber">
+        Significantly above recent sales
+      </Badge>
+    );
+    contextLine = 'Review comparable sales before proceeding';
+  }
 
   return (
-    <div className="flex items-center gap-2">
-      {badge}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-        </TooltipTrigger>
-        <TooltipContent side="right" className="max-w-xs">
-          <p className="text-xs">
-            Based on {compsCount} government-recorded sale{compsCount > 1 ? 's' : ''} within {radiusLabel} over the past 12–24 months.
-          </p>
-        </TooltipContent>
-      </Tooltip>
+    <div className="space-y-1">
+      <div className="flex items-center gap-2">
+        {badge}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+          </TooltipTrigger>
+          <TooltipContent side="right" className="max-w-xs">
+            <p className="text-xs">
+              Based on {compsCount} government-recorded sale{compsCount > 1 ? 's' : ''} within {radiusLabel} over the past 12–24 months. Asking prices typically run 5–15% above final sale prices.
+            </p>
+          </TooltipContent>
+        </Tooltip>
+      </div>
+      {contextLine && (
+        <p className="text-xs text-muted-foreground pl-0.5">{contextLine}</p>
+      )}
     </div>
   );
 }
