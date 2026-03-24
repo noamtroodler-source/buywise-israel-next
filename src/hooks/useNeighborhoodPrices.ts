@@ -90,6 +90,7 @@ export function useNeighborhoodPrices(cityName: string | undefined, rooms: numbe
         avg_price: number | null;
         avg_price_sqm: number | null;
         yoy_change_percent: number | null;
+        yoy_warning: boolean;
         latest_year: number | null;
         latest_quarter: number | null;
       }> = {};
