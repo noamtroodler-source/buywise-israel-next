@@ -292,7 +292,7 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
           bedrooms={israeliRooms}
           cityArnonaRate={cityData?.arnona_rate_sqm}
           cityAvgVaadBayit={cityData?.average_vaad_bayit}
-          roomSpecificCityAvgPrice={roomPrice?.avgPrice ?? null}
+          roomSpecificCityAvgPrice={tierAvgTotalPrice ?? roomPrice?.avgPrice ?? null}
           neighborhoodAvgPriceSqm={neighborhoodAvgPriceSqm}
           neighborhoodName={property.neighborhood}
           priceTier={priceTier}
