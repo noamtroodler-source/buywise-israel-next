@@ -250,6 +250,7 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
           avgComparison={verdictData.avgComparison} 
           compsCount={verdictData.compsCount}
           radiusUsedM={verdictData.radiusUsedM}
+          isPremiumSegment={isPremiumSegment}
         />
 
         {/* Value Snapshot Cards (no header) */}
