@@ -615,7 +615,7 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                 </div>
 
                 {/* Title */}
-                {property.title && (
+                {!hideTitle && property.title && (
                   <p className="text-sm font-medium text-foreground truncate leading-tight">{property.title}</p>
                 )}
 
