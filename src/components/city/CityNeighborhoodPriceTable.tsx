@@ -204,7 +204,7 @@ function NeighborhoodDrawerTable({ rows, cityName }: { rows: NeighborhoodPriceRo
                         {formatCompactPrice(row.avg_price)}
                       </td>
                       <td className="p-3 align-middle text-right">
-                        <TrendIndicator yoyChange={row.yoy_change_percent} />
+                        <TrendIndicator yoyChange={row.yoy_change_percent} yoyWarning={row.yoy_warning} />
                       </td>
                     </tr>
                   ))
