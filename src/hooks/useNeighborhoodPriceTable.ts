@@ -140,6 +140,7 @@ export function useNeighborhoodPriceTable(citySlug: string, cityName: string | u
           latest_quarter: data.latestQuarter,
           price_tier: feat?.price_tier ?? null,
           is_featured: !!feat,
+          is_fallback: false, // will be set after all rows are built
         });
       }
 
