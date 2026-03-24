@@ -103,19 +103,14 @@ export function PropertyValueSnapshot({
     ? Math.round(((totalMonthlyCommitment - cityAvgTotalMonthly) / cityAvgTotalMonthly) * 100)
     : null;
   
-  // Premium segment detection: listing price/sqm >30% above city average
-  const isPremiumSegment = propertyPricePerSqm && averagePriceSqm
-    ? propertyPricePerSqm > averagePriceSqm * 1.30
-    : false;
-
   // For purchases: calculate comparison to neighborhood or city average
-  // Prefer neighborhood when available, fall back to city
+  // When tier data is available, averagePriceSqm already reflects tier-specific avg
   const comparisonAvgSqm = neighborhoodAvgPriceSqm ?? averagePriceSqm;
+  const tierSuffix = priceTier && priceTier !== 'standard' && tierLabel ? ` ${tierLabel}` : '';
   const comparisonLabel = neighborhoodAvgPriceSqm && neighborhoodName
     ? neighborhoodName
-    : city;
+    : `${city}${tierSuffix}`;
   const isNeighborhoodComparison = !!(neighborhoodAvgPriceSqm && neighborhoodName);
-  // Note: roomCount is intentionally NOT shown in the purchase comparison card label
 
   const purchaseComparisonPercent = propertyPricePerSqm && comparisonAvgSqm
     ? Math.round(((propertyPricePerSqm - comparisonAvgSqm) / comparisonAvgSqm) * 100)
