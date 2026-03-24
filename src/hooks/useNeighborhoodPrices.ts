@@ -135,6 +135,7 @@ export function useNeighborhoodPrices(cityName: string | undefined, rooms: numbe
           avg_price: avgPrice,
           avg_price_sqm: avgPrice ? Math.round(avgPrice / avgSize) : null,
           yoy_change_percent: yoyChange,
+          yoy_warning: yoyChange != null && Math.abs(yoyChange) > 25,
           latest_year: latestYear,
           latest_quarter: latestQuarter,
         };
