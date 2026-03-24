@@ -59,6 +59,8 @@ export function PropertyValueSnapshot({
   nearbyCompRadiusM = 500,
   priceTier,
   tierLabel,
+  neighborhoodAvgPriceSqm,
+  neighborhood,
 }: PropertyValueSnapshotProps) {
   const formatPrice = useFormatPrice();
   const formatPricePerArea = useFormatPricePerArea();
