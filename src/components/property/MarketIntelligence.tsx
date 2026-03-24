@@ -57,7 +57,7 @@ interface MarketIntelligenceProps {
   } | null | undefined;
 }
 
-function MarketVerdictBadge({ avgComparison, compsCount, radiusUsedM }: { avgComparison: number | null; compsCount: number; radiusUsedM: number }) {
+function MarketVerdictBadge({ avgComparison, compsCount, radiusUsedM, isPremiumSegment }: { avgComparison: number | null; compsCount: number; radiusUsedM: number; isPremiumSegment?: boolean }) {
   // Quality gate: suppress verdict when comps are too few
   if (avgComparison === null || compsCount < 3) {
     return (
@@ -91,14 +91,18 @@ function MarketVerdictBadge({ avgComparison, compsCount, radiusUsedM }: { avgCom
         Above recent sales avg
       </Badge>
     );
-    contextLine = 'Typical for active listings — room to negotiate';
+    contextLine = isPremiumSegment
+      ? 'Premium property — city/neighborhood averages include all market segments'
+      : 'Typical for active listings — room to negotiate';
   } else if (avgComparison <= 20) {
     badge = (
       <Badge className="bg-semantic-amber text-semantic-amber-foreground border-semantic-amber">
         Well above recent sales — negotiate
       </Badge>
     );
-    contextLine = 'Higher than area avg — negotiate or investigate';
+    contextLine = isPremiumSegment
+      ? 'Premium property — city/neighborhood averages include all market segments'
+      : 'Higher than area avg — negotiate or investigate';
   } else {
     badge = (
       <Badge className="bg-semantic-amber text-semantic-amber-foreground border-semantic-amber">
@@ -162,6 +166,12 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
   );
 
   const effectiveAvgPriceSqm = roomPrice?.avgPriceSqm ?? cityData?.average_price_sqm ?? null;
+
+  // Premium segment detection
+  const propertyPricePerSqm = property.size_sqm ? Math.round(property.price / property.size_sqm) : null;
+  const isPremiumSegment = propertyPricePerSqm && effectiveAvgPriceSqm
+    ? propertyPricePerSqm > effectiveAvgPriceSqm * 1.30
+    : false;
   const effectiveYoyChange = roomPrice?.yoyChange ?? cityData?.yoy_price_change ?? null;
   const effectiveRoomCount = roomPrice ? israeliRooms : null;
   const isRoomPriceFallback = roomPrice?.isFallback ?? false;
@@ -240,6 +250,7 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
           avgComparison={verdictData.avgComparison} 
           compsCount={verdictData.compsCount}
           radiusUsedM={verdictData.radiusUsedM}
+          isPremiumSegment={isPremiumSegment}
         />
 
         {/* Value Snapshot Cards (no header) */}

@@ -96,6 +96,11 @@ export function PropertyValueSnapshot({
     ? Math.round(((totalMonthlyCommitment - cityAvgTotalMonthly) / cityAvgTotalMonthly) * 100)
     : null;
   
+  // Premium segment detection: listing price/sqm >30% above city average
+  const isPremiumSegment = propertyPricePerSqm && averagePriceSqm
+    ? propertyPricePerSqm > averagePriceSqm * 1.30
+    : false;
+
   // For purchases: calculate comparison to neighborhood or city average
   // Prefer neighborhood when available, fall back to city
   const comparisonAvgSqm = neighborhoodAvgPriceSqm ?? averagePriceSqm;
@@ -186,8 +191,8 @@ export function PropertyValueSnapshot({
             <div className="flex items-center gap-2 text-muted-foreground mb-1">
               {rentalComparisonPercent !== null ? (
                 rentalComparisonPercent > 0 ? (
-                  <TrendingUp className="h-4 w-4 text-semantic-red" />
-                ) : rentalComparisonPercent < 0 ? (
+                <TrendingUp className="h-4 w-4 text-semantic-amber" />
+              ) : rentalComparisonPercent < 0 ? (
                   <TrendingDown className="h-4 w-4 text-semantic-green" />
                 ) : (
                   <Minus className="h-4 w-4" />
@@ -261,7 +266,7 @@ export function PropertyValueSnapshot({
           <div className="flex items-center gap-2 text-muted-foreground mb-1">
             {purchaseComparisonPercent !== null ? (
               purchaseComparisonPercent > 0 ? (
-                <TrendingUp className="h-4 w-4 text-semantic-red" />
+                <TrendingUp className="h-4 w-4 text-semantic-amber" />
               ) : purchaseComparisonPercent < 0 ? (
                 <TrendingDown className="h-4 w-4 text-semantic-green" />
               ) : (
@@ -294,6 +299,11 @@ export function PropertyValueSnapshot({
                 <p className="text-xs text-muted-foreground mt-1">
                   {comparisonLabel}: {formatPricePerArea(comparisonAvgSqm, 'ILS')}
                 </p>
+                {isPremiumSegment && purchaseComparisonPercent > 0 && (
+                  <p className="text-[10px] text-muted-foreground/70 mt-1 italic">
+                    Premium segment — averages include all market tiers
+                  </p>
+                )}
               </>
             ) : (
               <>
@@ -315,7 +325,7 @@ export function PropertyValueSnapshot({
               <div className="flex items-center gap-2 text-muted-foreground mb-1">
                 {roomCompPercent !== null ? (
                   roomCompPercent > 0 ? (
-                    <TrendingUp className="h-4 w-4 text-semantic-red" />
+                    <TrendingUp className="h-4 w-4 text-semantic-amber" />
                   ) : roomCompPercent < 0 ? (
                     <TrendingDown className="h-4 w-4 text-semantic-green" />
                   ) : (
@@ -350,6 +360,11 @@ export function PropertyValueSnapshot({
                   <p className="text-xs text-muted-foreground mt-1">
                     {city} avg: {formatPrice(roomSpecificCityAvgPrice!, 'ILS')}
                   </p>
+                  {isPremiumSegment && roomCompPercent > 0 && (
+                    <p className="text-[10px] text-muted-foreground/70 mt-1 italic">
+                      Premium segment — averages include all market tiers
+                    </p>
+                  )}
                 </>
               ) : (
                 <>
