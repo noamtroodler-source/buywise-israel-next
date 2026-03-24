@@ -285,6 +285,7 @@ export default function Listings() {
             onSoldToggle={handleSoldToggle}
             previewCount={totalCount}
             isCountLoading={isFetching}
+            activeView="grid"
           />
           
            {/* Quick Filter Chips - Mobile only, hidden when sticky */}
