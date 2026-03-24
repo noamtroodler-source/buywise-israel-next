@@ -191,8 +191,8 @@ export function PropertyValueSnapshot({
             <div className="flex items-center gap-2 text-muted-foreground mb-1">
               {rentalComparisonPercent !== null ? (
                 rentalComparisonPercent > 0 ? (
-                  <TrendingUp className="h-4 w-4 text-semantic-red" />
-                ) : rentalComparisonPercent < 0 ? (
+                <TrendingUp className="h-4 w-4 text-semantic-amber" />
+              ) : rentalComparisonPercent < 0 ? (
                   <TrendingDown className="h-4 w-4 text-semantic-green" />
                 ) : (
                   <Minus className="h-4 w-4" />
