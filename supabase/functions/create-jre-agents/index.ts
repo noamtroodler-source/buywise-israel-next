@@ -251,10 +251,18 @@ Deno.serve(async (req) => {
     }
 
     // Step 3: Distribute 105 listings across all agents (round-robin)
+    // Properties don't have agency_id — find via agent_id
+    const { data: jreAgentIds } = await supabase
+      .from("agents")
+      .select("id")
+      .eq("agency_id", JRE_AGENCY_ID);
+    
+    const agentIdSet = (jreAgentIds || []).map((a: any) => a.id);
+    // Fetch all properties belonging to any JRE agent
     const { data: listings, error: listingsError } = await supabase
       .from("properties")
       .select("id")
-      .eq("agency_id", JRE_AGENCY_ID)
+      .in("agent_id", agentIdSet)
       .order("created_at", { ascending: true });
 
     if (listingsError) {
