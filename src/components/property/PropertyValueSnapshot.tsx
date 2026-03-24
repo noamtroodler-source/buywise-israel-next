@@ -50,6 +50,8 @@ export function PropertyValueSnapshot({
   hideHeader = false,
   neighborhoodAvgPriceSqm,
   neighborhoodName,
+  priceTier,
+  tierLabel,
 }: PropertyValueSnapshotProps) {
   const formatPrice = useFormatPrice();
   const formatPricePerArea = useFormatPricePerArea();
