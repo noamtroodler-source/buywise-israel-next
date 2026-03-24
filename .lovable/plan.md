@@ -1,109 +1,107 @@
 
 
-# Phase 5: Ongoing Governance — Data Freshness & Review Tracking
+# Neighborhood Audit Fix Phases
 
-This phase builds infrastructure so the team knows when data is stale and what needs updating, rather than relying on memory.
-
----
-
-## Overview
-
-Phase 5 creates three things:
-1. A **Data Governance Dashboard** in the admin panel showing staleness per data category
-2. A **`data_review_schedule`** database table tracking review cycles and next-due dates
-3. **Per-category "last updated" indicators** on public-facing pages
+Based on the Perplexity audit of 262 neighborhood mappings, 10 extreme YoY values, price tiers, Anglo tags, and data pipeline integrity. Organized by severity.
 
 ---
 
-## 1. New Database Table: `data_review_schedule`
+## Phase N1: Critical — Data Sourcing Disclosure & German Colony Fix
 
-Tracks review cadence for each data category with next-due dates and responsible source.
+**The #1 issue: the platform says "CBS" for neighborhood-level data, but CBS does NOT publish at this level.** All neighborhood prices come from Madlan/CARMEN transaction aggregation via ArcGIS statistical area IDs, not official CBS codes.
 
-```sql
-CREATE TABLE public.data_review_schedule (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  category TEXT NOT NULL UNIQUE,
-  label TEXT NOT NULL,
-  review_frequency TEXT NOT NULL, -- 'annual', 'quarterly', 'monthly', 'on_change'
-  last_reviewed_at TIMESTAMPTZ,
-  next_review_due TIMESTAMPTZ,
-  source_authority TEXT NOT NULL,
-  source_url TEXT,
-  notes TEXT,
-  updated_at TIMESTAMPTZ DEFAULT now()
-);
-ALTER TABLE public.data_review_schedule ENABLE ROW LEVEL SECURITY;
--- Admin-only read/write
-CREATE POLICY "Admins manage review schedule" ON public.data_review_schedule
-  FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin'));
--- Public read for freshness indicators
-CREATE POLICY "Public can read review schedule" ON public.data_review_schedule
-  FOR SELECT TO anon USING (true);
-```
+### 1A. Fix all "CBS" labels on neighborhood-level data
 
-Seed with these review items:
+Every place that says "CBS" next to neighborhood prices must be changed to "Market transaction data" or similar:
 
-| category | label | frequency | source_authority | next_review_due |
-|----------|-------|-----------|-----------------|-----------------|
-| `tabu_fees` | Tabu & Registration Fees | annual | Ministry of Justice | 2027-01-15 |
-| `purchase_tax` | Purchase Tax Brackets | annual | Israel Tax Authority | 2027-01-15 |
-| `vat_rate` | VAT Rate | on_change | Knesset / MoF | — |
-| `boi_directive_329` | BOI Mortgage Directive 329 | on_change | Bank of Israel | — |
-| `cbs_price_stats` | CBS Price Statistics | quarterly | CBS | 2026-06-15 |
-| `arnona_rates` | Arnona Municipal Rates | annual | Municipalities | 2027-01-15 |
-| `sei_index` | Socioeconomic Index (SEI) | ~biennial | CBS | 2027-06-01 |
-| `city_population` | City Population Data | annual | CBS | 2027-01-01 |
-| `exchange_rate` | USD/ILS Exchange Rate | monthly | Bank of Israel | 2026-04-15 |
-| `mortgage_rates` | Mortgage Interest Rates | quarterly | Bank of Israel | 2026-06-15 |
-| `cgt_exemptions` | Capital Gains Exemptions | on_change | Knesset | — |
-| `professional_fees` | Professional Fee Ranges | annual | Industry survey | 2027-01-15 |
+| File | Current text | Fix |
+|------|-------------|-----|
+| `NeighborhoodDetailDialog.tsx` line 128 | "CBS (Central Bureau of Statistics) · 4-room avg" | "Market transaction data · 4-room avg" |
+| `CityNeighborhoodPriceTable.tsx` line 211 | "Source: CBS...4-room apartment averages" | "Source: Market transaction data · 4-room apartment averages" |
+| `CityNeighborhoodPriceTable.tsx` line 260 | "based on recent CBS transactions" | "based on recent market transactions" |
+| `PriceByApartmentSize.tsx` — InlineSourceBadge | Shows "CBS" badge | Conditional: show CBS badge only for city-level data in CBS-covered cities, show "Market Data" for neighborhood-level |
+| `CitySourceAttribution.tsx` lines 195-196 | Claims CBS for neighborhood prices | Clarify: CBS provides city-level data; neighborhood-level comes from aggregated transaction records (Madlan) |
 
-## 2. Admin Data Governance Dashboard
+### 1B. Rename "cbs_neighborhood_id" internally
 
-New page at `/admin/data-governance` with:
+The 8-digit IDs are NOT CBS codes. Rename references in comments and admin UI only (DB column rename is optional/risky):
+- `MapNeighborhoods.tsx` line 381 — change column header from showing "CBS ID" to "Zone ID"
+- Update all code comments that say "CBS IDs" to "statistical area IDs (ArcGIS/Madlan)"
 
-- **Staleness overview cards**: Overdue (red), Due soon (amber), Current (green)
-- **Table** showing each category, last reviewed, next due, days until due/overdue, source
-- **"Mark as reviewed"** button per row that updates `last_reviewed_at` to now and advances `next_review_due` based on frequency
-- **Link** to source URL for quick reference
+### 1C. Fix German Colony -49% — Add sample size safeguards
 
-Add navigation link in admin sidebar.
+In the price calculation hooks, suppress extreme YoY values when sample size is likely too small:
+- `useNeighborhoodPrices.ts` and `useNeighborhoodPriceTable.ts` — if `|yoy_change_percent| > 25%`, cap display or add warning flag
+- Add a `yoy_warning` boolean field to the return data when extreme values detected
+- UI components (`CityNeighborhoodHighlights.tsx`, `CityNeighborhoodPriceTable.tsx`) — show "⚠ Low volume" tooltip when warning is true
 
-### File: `src/pages/admin/AdminDataGovernance.tsx`
+---
 
-## 3. Public Freshness Indicators
+## Phase N2: High Priority — Fallback Data Labels & Non-CBS City Disclosure
 
-### 3a. `useDataFreshness` hook
-New hook that queries `data_review_schedule` (cached 1hr) and exposes a helper: `getCategoryFreshness(category) → { lastReviewed, nextDue, isStale, label }`.
+### 2A. Label city-average fallback data
 
-### 3b. `DataFreshnessIndicator` component
-Small inline component showing "Data as of Mar 2026" or "⚠ Review overdue" — used in:
-- **Calculator tools** (`SourceAttribution.tsx`) — show freshness per tool's data categories
-- **City pages** (`CitySourceAttribution.tsx`) — show per-category freshness in the methodology section
+100+ neighborhoods show identical city-average prices. When multiple neighborhoods in the same city return the exact same price, they're using fallback data.
 
-### 3c. Update `toolSources.ts`
-Add a `reviewCategories` field to each `ToolSourceConfig` mapping tools to `data_review_schedule` categories, so freshness indicators know which categories apply to which calculator.
+- In `useNeighborhoodPriceTable.ts` — after building rows, detect groups of 3+ neighborhoods with identical `avg_price`. Flag them with `is_fallback: true`
+- In `CityNeighborhoodPriceTable.tsx` — show "(City avg)" badge on fallback rows, mute styling
+- In `NeighborhoodDetailDialog.tsx` — if fallback, show "City-average price shown — neighborhood-specific data unavailable"
 
-## 4. Files to Create/Modify
+### 2B. Clarify non-CBS cities
 
-| File | Action |
-|------|--------|
-| `src/pages/admin/AdminDataGovernance.tsx` | **Create** — full governance dashboard |
-| `src/hooks/useDataFreshness.ts` | **Create** — hook for freshness queries |
-| `src/components/shared/DataFreshnessIndicator.tsx` | **Create** — inline freshness badge |
-| `src/lib/calculations/toolSources.ts` | **Modify** — add `reviewCategories` per tool |
-| `src/components/tools/shared/SourceAttribution.tsx` | **Modify** — show freshness indicators |
-| `src/components/city/CitySourceAttribution.tsx` | **Modify** — show per-category freshness |
-| `src/App.tsx` | **Modify** — add route for `/admin/data-governance` |
-| `src/pages/admin/AdminLayout.tsx` | **Modify** — add sidebar link |
+9 cities have no CBS coverage at all. For these cities, source attribution must never mention CBS:
+- Create a constant: `NON_CBS_CITIES = ['Eilat', 'Givat Shmuel', 'Hod HaSharon', 'Pardes Hanna', 'Zichron Yaakov', "Ma'ale Adumim", 'Efrat', 'Caesarea', "Ra'anana"]`
+- In `CitySourceAttribution.tsx` — when `cityName` is in this list, show "All market data from aggregated transaction records" instead of mentioning CBS
+- In `PriceByApartmentSize.tsx` — hide CBS badge for non-CBS cities
+
+### 2C. Remove duplicate CBS mappings (database)
+
+The audit found duplicates in Ashkelon: "Barnea" and "Barnea (ברניע)" map to same zones, same for City Center and Marina. Clean these from the `neighborhood_cbs_mappings` table.
+
+---
+
+## Phase N3: Medium Priority — Price Tier Corrections & Anglo Tags
+
+### 3A. Fix 3 incorrect price tier classifications (database)
+
+Update `featured_neighborhoods` JSONB in the `cities` table:
+
+| City | Neighborhood | Current | Correct |
+|------|-------------|---------|---------|
+| Tel Aviv | Florentin | budget | mid-range |
+| Jerusalem | Katamon | mid-range | premium |
+| Jerusalem | German Colony/Baka | premium | ultra-premium |
+
+### 3B. Add 7 missing Anglo neighborhoods
+
+Update `angloNeighborhoodTags.ts`:
+- Jerusalem: add `'French Hill'`, `'Talpiot'`, `'Armon HaNatziv'`
+- Beit Shemesh: add `'RBS Bet'`, `'RBS Hey'`, `'Neve Shamir'`
+- Gush Etzion: add `'Ma'ale Amos'`, `'Meitzad'`
+
+### 3C. Review 2 flagged Anglo tags
+
+- `Katamonim` — keep but consider adding "(emerging)" qualifier in tooltip
+- `Kikar HaSharon` — verify if this is a real residential neighborhood; remove if not
+
+---
+
+## Phase N4: Low Priority — Room Count Disclaimer & Data Quality Labels
+
+### 4A. Room-count data disclaimer
+
+CBS does NOT publish room-count prices at neighborhood level. `PriceByApartmentSize.tsx` should clarify that room-specific breakdowns use transaction aggregation data, not CBS statistics.
+
+### 4B. Data quality percentage display (admin only)
+
+Add a column to the admin neighborhood mapping dashboard showing "% Real Data" per city (from the audit table), so admins know which cities have meaningful coverage vs. fallback-heavy data.
+
+---
 
 ## Execution Order
 
-1. Create `data_review_schedule` table + seed data
-2. Create `useDataFreshness` hook
-3. Create `DataFreshnessIndicator` component
-4. Create `AdminDataGovernance.tsx` dashboard
-5. Update `toolSources.ts` with review category mappings
-6. Integrate freshness indicators into `SourceAttribution` and `CitySourceAttribution`
-7. Add admin route and sidebar link
+1. **Phase N1** — Fix CBS sourcing claims, rename IDs, add YoY safeguards (highest legal/credibility risk)
+2. **Phase N2** — Label fallback data, clarify non-CBS cities, clean duplicates
+3. **Phase N3** — Fix price tiers, add missing Anglo tags
+4. **Phase N4** — Room-count disclaimer, admin data quality indicators
 
