@@ -328,26 +328,27 @@ export function RecentNearbySales({
   };
 
   // Calculate average comparison across all comps for the verdict
-  const calculateAverageComparison = (): number | null => {
-    if (!propertyPrice || !propertySizeSqm || !comps || comps.length === 0) return null;
+  const calculateAverageComparison = (): { avgComparison: number | null; avgCompPriceSqm: number | null } => {
+    if (!propertyPrice || !propertySizeSqm || !comps || comps.length === 0) return { avgComparison: null, avgCompPriceSqm: null };
     
     const listingPriceSqm = propertyPrice / propertySizeSqm;
-    const comparisons = comps
-      .filter(c => c.price_per_sqm)
-      .map(c => ((listingPriceSqm - c.price_per_sqm!) / c.price_per_sqm!) * 100);
+    const validComps = comps.filter(c => c.price_per_sqm);
+    const comparisons = validComps.map(c => ((listingPriceSqm - c.price_per_sqm!) / c.price_per_sqm!) * 100);
     
-    if (comparisons.length === 0) return null;
-    return comparisons.reduce((a, b) => a + b, 0) / comparisons.length;
+    if (comparisons.length === 0) return { avgComparison: null, avgCompPriceSqm: null };
+    const avgComp = comparisons.reduce((a, b) => a + b, 0) / comparisons.length;
+    const avgPsqm = validComps.reduce((a, c) => a + c.price_per_sqm!, 0) / validComps.length;
+    return { avgComparison: avgComp, avgCompPriceSqm: Math.round(avgPsqm) };
   };
 
-  const avgComparison = calculateAverageComparison();
+  const { avgComparison, avgCompPriceSqm } = calculateAverageComparison();
 
   // Expose verdict data to parent (must be before early returns)
   useEffect(() => {
     if (onVerdictComputed) {
-      onVerdictComputed(avgComparison, comps?.length ?? 0, radiusUsedM);
+      onVerdictComputed(avgComparison, comps?.length ?? 0, radiusUsedM, avgCompPriceSqm);
     }
-  }, [avgComparison, comps?.length, radiusUsedM, onVerdictComputed]);
+  }, [avgComparison, comps?.length, radiusUsedM, avgCompPriceSqm, onVerdictComputed]);
 
   // Show empty state if we don't have coordinates
   if (!latitude || !longitude) {
