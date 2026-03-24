@@ -17,13 +17,10 @@ export function ViewToggle({ activeView, className, size = 'default' }: ViewTogg
   const handleViewChange = (value: string) => {
     if (!value || value === activeView) return;
     
-    // Preserve all current URL params when switching views
     const currentParams = searchParams.toString();
     const targetPath = value === 'map' ? '/map' : '/listings';
     navigate(`${targetPath}${currentParams ? `?${currentParams}` : ''}`);
   };
-
-  const isSmall = size === 'sm';
 
   return (
     <TooltipProvider>
@@ -32,8 +29,7 @@ export function ViewToggle({ activeView, className, size = 'default' }: ViewTogg
         value={activeView} 
         onValueChange={handleViewChange}
         className={cn(
-          "border rounded-lg p-0.5 bg-muted/30",
-          isSmall && "rounded-md",
+          "border border-border rounded-lg p-0.5 bg-muted/40",
           className
         )}
       >
@@ -43,13 +39,14 @@ export function ViewToggle({ activeView, className, size = 'default' }: ViewTogg
               value="grid" 
               aria-label="Grid view"
               className={cn(
-                "rounded-md data-[state=on]:bg-background data-[state=on]:shadow-sm",
-                isSmall ? "h-7 w-7 p-0" : "px-3 py-1.5 text-sm gap-1.5",
+                "rounded-md px-3 py-1.5 text-sm gap-1.5 transition-all",
+                "data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:shadow-sm",
+                "data-[state=off]:text-muted-foreground data-[state=off]:hover:text-foreground",
                 activeView === 'grid' && "font-medium"
               )}
             >
-              <LayoutGrid className={cn(isSmall ? "h-3.5 w-3.5" : "h-4 w-4")} />
-              {!isSmall && <span className="hidden sm:inline">Grid</span>}
+              <LayoutGrid className="h-4 w-4" />
+              <span>Grid</span>
             </ToggleGroupItem>
           </TooltipTrigger>
           <TooltipContent side="bottom">Grid view</TooltipContent>
@@ -60,13 +57,14 @@ export function ViewToggle({ activeView, className, size = 'default' }: ViewTogg
               value="map" 
               aria-label="Map view"
               className={cn(
-                "rounded-md data-[state=on]:bg-background data-[state=on]:shadow-sm",
-                isSmall ? "h-7 w-7 p-0" : "px-3 py-1.5 text-sm gap-1.5",
+                "rounded-md px-3 py-1.5 text-sm gap-1.5 transition-all",
+                "data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:shadow-sm",
+                "data-[state=off]:text-muted-foreground data-[state=off]:hover:text-foreground",
                 activeView === 'map' && "font-medium"
               )}
             >
-              <Map className={cn(isSmall ? "h-3.5 w-3.5" : "h-4 w-4")} />
-              {!isSmall && <span className="hidden sm:inline">Map</span>}
+              <Map className="h-4 w-4" />
+              <span>Map</span>
             </ToggleGroupItem>
           </TooltipTrigger>
           <TooltipContent side="bottom">Map view</TooltipContent>
