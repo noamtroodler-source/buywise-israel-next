@@ -26,6 +26,7 @@ export interface UnifiedNeighborhood {
   is_featured: boolean;
   sort_order?: number;
   anglo_tag?: boolean;
+  is_fallback?: boolean;
 }
 
 interface CityNeighborhoodsProps {

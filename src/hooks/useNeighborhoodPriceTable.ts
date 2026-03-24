@@ -11,6 +11,7 @@ export interface NeighborhoodPriceRow {
   latest_quarter: number;
   price_tier: PriceTier | null;
   is_featured: boolean;
+  is_fallback: boolean;
 }
 
 const CBS_CITY_VARIANTS: Record<string, string> = {
@@ -139,7 +140,18 @@ export function useNeighborhoodPriceTable(citySlug: string, cityName: string | u
           latest_quarter: data.latestQuarter,
           price_tier: feat?.price_tier ?? null,
           is_featured: !!feat,
+          is_fallback: false, // will be set after all rows are built
         });
+      }
+
+      // Detect fallback rows: if 3+ neighborhoods share the exact same price,
+      // they're likely using city-average fallback data
+      const priceCount = new Map<number, number>();
+      for (const row of rows) {
+        priceCount.set(row.avg_price, (priceCount.get(row.avg_price) || 0) + 1);
+      }
+      for (const row of rows) {
+        row.is_fallback = (priceCount.get(row.avg_price) || 0) >= 3;
       }
 
       // Default sort: price descending

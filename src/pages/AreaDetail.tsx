@@ -62,6 +62,7 @@ export default function CityDetail() {
         is_featured: true,
         sort_order: n.sort_order,
         anglo_tag: isAngloNeighborhood(slug || '', n.name),
+        is_fallback: priceRow?.is_fallback ?? false,
       });
     }
 
@@ -79,6 +80,7 @@ export default function CityDetail() {
         yoy_warning: r.yoy_warning ?? false,
         is_featured: false,
         anglo_tag: isAngloNeighborhood(slug || '', r.name),
+        is_fallback: r.is_fallback ?? false,
       });
     }
 

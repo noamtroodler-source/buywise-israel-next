@@ -191,12 +191,15 @@ function NeighborhoodDrawerTable({ rows, cityName }: { rows: NeighborhoodPriceRo
                   </tr>
                 ) : (
                   filtered.map((row) => (
-                    <tr key={row.name} className="border-b transition-colors hover:bg-muted/50">
+                    <tr key={row.name} className={cn("border-b transition-colors hover:bg-muted/50", row.is_fallback && "opacity-60")}>
                       <td className="p-3 align-middle font-medium">
                         <span className="inline-flex items-center gap-1.5">
                           {row.name}
                           {row.is_featured && (
                             <MapPin className="h-3 w-3 text-primary/60 shrink-0" />
+                          )}
+                          {row.is_fallback && (
+                            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full whitespace-nowrap">City avg</span>
                           )}
                         </span>
                       </td>

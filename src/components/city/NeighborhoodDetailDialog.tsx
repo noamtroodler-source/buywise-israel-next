@@ -10,6 +10,7 @@ interface NeighborhoodDetailDialogProps {
   cityName: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  isFallback?: boolean;
 }
 
 function formatCompactPrice(price: number): string {
@@ -23,7 +24,7 @@ function formatCompactPrice(price: number): string {
   return `₪${price.toLocaleString()}`;
 }
 
-export function NeighborhoodDetailDialog({ neighborhood: n, cityName, open, onOpenChange }: NeighborhoodDetailDialogProps) {
+export function NeighborhoodDetailDialog({ neighborhood: n, cityName, open, onOpenChange, isFallback }: NeighborhoodDetailDialogProps) {
   const navigate = useNavigate();
   const { data: profile, isLoading } = useNeighborhoodProfile(cityName, n?.name);
 
@@ -32,6 +33,7 @@ export function NeighborhoodDetailDialog({ neighborhood: n, cityName, open, onOp
   const hasNarrative = profile?.narrative;
   const hasBestFor = profile?.best_for;
   const hasPrice = n.avg_price != null;
+  const showFallback = isFallback ?? n.is_fallback;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -60,16 +62,23 @@ export function NeighborhoodDetailDialog({ neighborhood: n, cityName, open, onOp
         <div className="px-5 pb-5 space-y-4">
           {/* Price + Trend row */}
           {hasPrice && (
-            <div className="flex items-center justify-between rounded-lg bg-muted/40 px-4 py-3">
-              <div>
-                <p className="text-xs text-muted-foreground mb-0.5">Avg. 4-room price</p>
-                <p className="text-xl font-bold tabular-nums">{formatCompactPrice(n.avg_price!)}</p>
-              </div>
-              {n.yoy_change_percent != null && (
-                <div className="text-right">
-                  <p className="text-xs text-muted-foreground mb-0.5">3-year trend</p>
-                  <TrendBadge yoyChange={n.yoy_change_percent} yoyWarning={n.yoy_warning} />
+            <div>
+              <div className="flex items-center justify-between rounded-lg bg-muted/40 px-4 py-3">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-0.5">Avg. 4-room price</p>
+                  <p className="text-xl font-bold tabular-nums">{formatCompactPrice(n.avg_price!)}</p>
                 </div>
+                {n.yoy_change_percent != null && (
+                  <div className="text-right">
+                    <p className="text-xs text-muted-foreground mb-0.5">3-year trend</p>
+                    <TrendBadge yoyChange={n.yoy_change_percent} yoyWarning={n.yoy_warning} />
+                  </div>
+                )}
+              </div>
+              {showFallback && (
+                <p className="text-[11px] text-muted-foreground mt-1.5 px-1">
+                  City-average price shown — neighborhood-specific data unavailable
+                </p>
               )}
             </div>
           )}

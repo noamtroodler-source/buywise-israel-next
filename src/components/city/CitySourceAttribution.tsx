@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { isNonCbsCity } from '@/lib/constants/cbsCoverage';
 import { CheckCircle2, ChevronDown, ChevronUp, BookOpen, Building2, BarChart3 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -192,8 +193,10 @@ export function CitySourceAttribution({ sources, lastVerified, className, cityNa
                   <div className="space-y-3 text-xs text-muted-foreground">
                     <div>
                       <span className="font-medium text-foreground/80">Price Data:</span>{' '}
-                      City-level prices use CBS (Central Bureau of Statistics) quarterly data. Neighborhood-level 
-                      prices are derived from aggregated market transaction records, cross-referenced with listing platforms.
+                      {cityName && isNonCbsCity(cityName)
+                        ? 'All price data from aggregated market transaction records, cross-referenced with listing platforms.'
+                        : 'City-level prices use CBS (Central Bureau of Statistics) quarterly data. Neighborhood-level prices are derived from aggregated market transaction records, cross-referenced with listing platforms.'
+                      }
                     </div>
                     <div>
                       <span className="font-medium text-foreground/80">Rental Data:</span>{' '}

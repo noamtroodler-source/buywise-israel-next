@@ -18,6 +18,7 @@ import { useCities } from '@/hooks/useCities';
 import { CityComparisonSelector } from './CityComparisonSelector';
 import { getCityRoomSizeInsight } from './cityRoomSizeInsights';
 import { cn } from '@/lib/utils';
+import { isNonCbsCity } from '@/lib/constants/cbsCoverage';
 
 interface PriceByApartmentSizeProps {
   citySlug: string;
@@ -477,7 +478,12 @@ export function PriceByApartmentSize({
 
           {/* Source attribution */}
           <div className="flex items-center gap-2 flex-wrap">
-            <InlineSourceBadge sources={{ CBS: 'Central Bureau of Statistics' }} lastVerified={lastVerified} />
+            <InlineSourceBadge 
+              sources={isNonCbsCity(cityName) 
+                ? { 'Market Data': 'Aggregated transaction records' } 
+                : { CBS: 'Central Bureau of Statistics' }} 
+              lastVerified={lastVerified} 
+            />
             <span className="text-xs text-muted-foreground">Quarterly Data · {yearRange}</span>
           </div>
         </motion.div>
