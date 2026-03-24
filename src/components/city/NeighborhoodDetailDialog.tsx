@@ -125,7 +125,7 @@ export function NeighborhoodDetailDialog({ neighborhood: n, cityName, open, onOp
           {/* Source footnote */}
           {hasPrice && (
             <p className="text-[10px] text-muted-foreground/50 text-center">
-              CBS (Central Bureau of Statistics) · 4-room avg
+              Market transaction data · 4-room avg
             </p>
           )}
         </div>

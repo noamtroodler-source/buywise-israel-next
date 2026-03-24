@@ -192,8 +192,8 @@ export function CitySourceAttribution({ sources, lastVerified, className, cityNa
                   <div className="space-y-3 text-xs text-muted-foreground">
                     <div>
                       <span className="font-medium text-foreground/80">Price Data:</span>{' '}
-                      We aggregate transaction data from the Central Bureau of Statistics (CBS), cross-referenced 
-                      with listing platforms including Madlan and Kantahome to ensure accuracy.
+                      City-level prices use CBS (Central Bureau of Statistics) quarterly data. Neighborhood-level 
+                      prices are derived from aggregated market transaction records, cross-referenced with listing platforms.
                     </div>
                     <div>
                       <span className="font-medium text-foreground/80">Rental Data:</span>{' '}

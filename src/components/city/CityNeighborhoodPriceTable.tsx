@@ -257,7 +257,7 @@ export function CityNeighborhoodPriceTable({ cityName, rows }: CityNeighborhoodP
             <DrawerHeader className="pb-2">
               <DrawerTitle>Neighborhoods in {cityName}</DrawerTitle>
               <DrawerDescription>
-                Average 4-room apartment prices based on recent CBS transactions
+                Average 4-room apartment prices based on recent market transactions
               </DrawerDescription>
             </DrawerHeader>
             <NeighborhoodDrawerTable rows={rows} cityName={cityName} />
