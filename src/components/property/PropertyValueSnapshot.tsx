@@ -33,6 +33,10 @@ interface PropertyValueSnapshotProps {
   priceTier?: PriceTier | null;
   /** Display label for tier (e.g. "Premium", "Luxury") */
   tierLabel?: string | null;
+  /** Neighborhood avg price per sqm (fallback for Card 3) */
+  neighborhoodAvgPriceSqm?: number | null;
+  /** Neighborhood name (for label) */
+  neighborhood?: string | null;
 }
 
 export function PropertyValueSnapshot({ 

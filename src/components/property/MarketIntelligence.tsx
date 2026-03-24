@@ -299,6 +299,8 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
           nearbyCompRadiusM={verdictData.radiusUsedM}
           priceTier={priceTier}
           tierLabel={tierLabel}
+          neighborhoodAvgPriceSqm={neighborhoodAvgPriceSqm}
+          neighborhood={property.neighborhood}
           hideHeader
         />
 
