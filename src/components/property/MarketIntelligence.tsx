@@ -139,16 +139,17 @@ function MarketVerdictBadge({ avgComparison, compsCount, radiusUsedM, priceTier 
 }
 
 export function MarketIntelligence({ property, cityData }: MarketIntelligenceProps) {
-  const [verdictData, setVerdictData] = useState<{ avgComparison: number | null; compsCount: number; radiusUsedM: number }>({
+  const [verdictData, setVerdictData] = useState<{ avgComparison: number | null; compsCount: number; radiusUsedM: number; avgCompPriceSqm: number | null }>({
     avgComparison: null,
     compsCount: 0,
     radiusUsedM: 500,
+    avgCompPriceSqm: null,
   });
 
-  const handleVerdictComputed = useCallback((avgComparison: number | null, compsCount: number, radiusUsedM: number) => {
+  const handleVerdictComputed = useCallback((avgComparison: number | null, compsCount: number, radiusUsedM: number, avgCompPriceSqm: number | null) => {
     setVerdictData(prev => {
-      if (prev.avgComparison === avgComparison && prev.compsCount === compsCount && prev.radiusUsedM === radiusUsedM) return prev;
-      return { avgComparison, compsCount, radiusUsedM };
+      if (prev.avgComparison === avgComparison && prev.compsCount === compsCount && prev.radiusUsedM === radiusUsedM && prev.avgCompPriceSqm === avgCompPriceSqm) return prev;
+      return { avgComparison, compsCount, radiusUsedM, avgCompPriceSqm };
     });
   }, []);
 
