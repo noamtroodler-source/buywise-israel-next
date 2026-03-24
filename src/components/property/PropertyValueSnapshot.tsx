@@ -301,9 +301,9 @@ export function PropertyValueSnapshot({
                 <p className="text-xs text-muted-foreground mt-1">
                   {comparisonLabel}: {formatPricePerArea(comparisonAvgSqm, 'ILS')}
                 </p>
-                {isPremiumSegment && purchaseComparisonPercent > 0 && (
+                {priceTier && priceTier !== 'standard' && tierLabel && purchaseComparisonPercent > 0 && (
                   <p className="text-[10px] text-muted-foreground/70 mt-1 italic">
-                    Premium segment — averages include all market tiers
+                    Compared to {tierLabel.toLowerCase()}-tier avg
                   </p>
                 )}
               </>
