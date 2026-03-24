@@ -575,9 +575,11 @@ export function RecentNearbySales({
                                   "text-xs",
                                   Math.abs(comparison) <= 2
                                     ? "bg-muted text-muted-foreground"
-                                    : comparison > 0 
-                                      ? "bg-semantic-red text-semantic-red-foreground"
-                                      : "bg-semantic-green text-semantic-green-foreground"
+                                    : comparison > 12 
+                                      ? "bg-semantic-amber text-semantic-amber-foreground"
+                                      : comparison > 0
+                                        ? "bg-muted text-muted-foreground"
+                                        : "bg-semantic-green text-semantic-green-foreground"
                                 )}
                               >
                                 {Math.abs(comparison) <= 2
