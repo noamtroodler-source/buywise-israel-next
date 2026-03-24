@@ -612,6 +612,11 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                   )}
                 </div>
 
+                {/* Title */}
+                {property.title && (
+                  <p className="text-sm font-medium text-foreground truncate leading-tight">{property.title}</p>
+                )}
+
                 {/* Location */}
                 <div className="flex items-center gap-1 text-muted-foreground">
                   <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
