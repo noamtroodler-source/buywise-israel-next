@@ -68,7 +68,7 @@ export function NeighborhoodDetailDialog({ neighborhood: n, cityName, open, onOp
               {n.yoy_change_percent != null && (
                 <div className="text-right">
                   <p className="text-xs text-muted-foreground mb-0.5">3-year trend</p>
-                  <TrendBadge yoyChange={n.yoy_change_percent} />
+                  <TrendBadge yoyChange={n.yoy_change_percent} yoyWarning={n.yoy_warning} />
                 </div>
               )}
             </div>
