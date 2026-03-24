@@ -142,7 +142,7 @@ export default function AgencyImport() {
   
 
   // Stall detection: job says 'processing' but no heartbeat for 30+ minutes
-  const STALL_THRESHOLD_MS = 30 * 60 * 1000;
+  const STALL_THRESHOLD_MS = 10 * 60 * 1000;
   const isStalled = currentJob?.status === 'processing' && !isProcessingAll && (() => {
     const heartbeat = (currentJob as any).last_heartbeat || (currentJob as any).updated_at;
     if (!heartbeat) return false;
