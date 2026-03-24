@@ -58,6 +58,7 @@ export default function CityDetail() {
         price_tier: n.price_tier,
         avg_price: priceRow?.avg_price ?? n.avg_price ?? null,
         yoy_change_percent: priceRow?.yoy_change_percent ?? n.yoy_change_percent ?? null,
+        yoy_warning: priceRow?.yoy_warning ?? false,
         is_featured: true,
         sort_order: n.sort_order,
         anglo_tag: isAngloNeighborhood(slug || '', n.name),
