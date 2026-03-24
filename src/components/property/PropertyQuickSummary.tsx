@@ -439,6 +439,9 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
               </div>
             )}
 
+            {property.title && (
+              <h2 className="text-lg font-semibold text-foreground">{property.title}</h2>
+            )}
             <p className="text-muted-foreground flex items-center gap-1.5">
               <MapPin className="h-4 w-4 shrink-0" />
               <span>{property.address}, {locationText}</span>
