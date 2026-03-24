@@ -102,8 +102,8 @@ function MarketVerdictBadge({ avgComparison, compsCount, radiusUsedM, priceTier 
         Well above recent sales — negotiate
       </Badge>
     );
-    contextLine = isPremiumSegment
-      ? 'Premium property — city/neighborhood averages include all market segments'
+    contextLine = priceTier && priceTier !== 'standard'
+      ? `Comparing against similar ${priceTier}-tier properties`
       : 'Higher than area avg — negotiate or investigate';
   } else {
     badge = (
