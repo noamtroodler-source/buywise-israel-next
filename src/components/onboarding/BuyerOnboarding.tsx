@@ -504,22 +504,6 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
                     <p className="text-xs text-muted-foreground mt-0.5">Insights tailored to you</p>
                   </div>
                 </div>
-
-                {/* Trust footer */}
-                <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground pt-2">
-                  <span className="flex items-center gap-1.5">
-                    <Clock className="h-3.5 w-3.5" />
-                    Just 2 minutes
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <Shield className="h-3.5 w-3.5" />
-                    Your info stays private
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <Settings className="h-3.5 w-3.5" />
-                    Change anytime in your profile
-                  </span>
-                </div>
               </motion.div>
             )}
 
