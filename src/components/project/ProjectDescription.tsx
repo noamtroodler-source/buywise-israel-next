@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
  import { Badge } from '@/components/ui/badge';
  import { Sparkles } from 'lucide-react';
+ import { getAmenityLabel } from '@/lib/utils/amenityLabels';
 
 interface ProjectDescriptionProps {
   description?: string | null;
@@ -36,7 +37,7 @@ export function ProjectDescription({ description, amenities }: ProjectDescriptio
            <div className="flex flex-wrap gap-2">
              {amenities.map((amenity, index) => (
                <Badge key={index} variant="secondary" className="text-sm font-normal">
-                 {amenity}
+                 {getAmenityLabel(amenity)}
                </Badge>
              ))}
            </div>
