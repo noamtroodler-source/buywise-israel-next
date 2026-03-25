@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, Plane, Building2, User, ArrowRight, ArrowLeft, Check, ArrowUpDown, TrendingUp, Percent, Calendar, DollarSign, Banknote, MapPin, X, Receipt, Wallet, Target, Clock, Shield, Coins } from 'lucide-react';
+import { Home, Plane, Building2, User, ArrowRight, ArrowLeft, Check, ArrowUpDown, TrendingUp, Percent, Calendar, DollarSign, Banknote, MapPin, X, Receipt, Wallet, Target, Clock, Shield, Coins, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -436,7 +436,7 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
           <DialogTitle className="text-xl">Let's personalize your experience</DialogTitle>
           {step !== 'intro' && (
             <DialogDescription>
-              Step {getStepNumber()} of {getTotalSteps()} — This helps us show you accurate cost estimates
+              Step {getStepNumber()} of {getTotalSteps()} — You can change any of this later in your profile
             </DialogDescription>
           )}
         </DialogHeader>
@@ -514,6 +514,10 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
                   <span className="flex items-center gap-1.5">
                     <Shield className="h-3.5 w-3.5" />
                     Your info stays private
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <Settings className="h-3.5 w-3.5" />
+                    Change anytime in your profile
                   </span>
                 </div>
               </motion.div>
@@ -906,6 +910,11 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
                     </div>
                   </div>
                 )}
+
+                <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1.5">
+                  <Settings className="h-3.5 w-3.5" />
+                  You can update your financing preferences anytime in your profile
+                </p>
               </motion.div>
             )}
 
@@ -973,8 +982,8 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
                 </div>
 
                 <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1.5">
-                  <Shield className="h-3.5 w-3.5" />
-                  Only used to personalize your feed. Never shared without your permission.
+                  <Settings className="h-3.5 w-3.5" />
+                  You can adjust your budget anytime in your profile
                 </p>
               </motion.div>
             )}
