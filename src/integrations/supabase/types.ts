@@ -785,6 +785,8 @@ export type Database = {
           budget_max: number | null
           budget_min: number | null
           buyer_entity: string
+          city_of_residence: string | null
+          country: string | null
           created_at: string
           has_existing_property: boolean | null
           id: string
@@ -798,6 +800,7 @@ export type Database = {
           purchase_purpose: string
           purchase_timeline: string | null
           readiness_snapshot: Json | null
+          referral_source: string | null
           rental_budget: number | null
           residency_status: string
           saved_locations: Json | null
@@ -812,6 +815,8 @@ export type Database = {
           budget_max?: number | null
           budget_min?: number | null
           buyer_entity?: string
+          city_of_residence?: string | null
+          country?: string | null
           created_at?: string
           has_existing_property?: boolean | null
           id?: string
@@ -825,6 +830,7 @@ export type Database = {
           purchase_purpose?: string
           purchase_timeline?: string | null
           readiness_snapshot?: Json | null
+          referral_source?: string | null
           rental_budget?: number | null
           residency_status?: string
           saved_locations?: Json | null
@@ -839,6 +845,8 @@ export type Database = {
           budget_max?: number | null
           budget_min?: number | null
           buyer_entity?: string
+          city_of_residence?: string | null
+          country?: string | null
           created_at?: string
           has_existing_property?: boolean | null
           id?: string
@@ -852,6 +860,7 @@ export type Database = {
           purchase_purpose?: string
           purchase_timeline?: string | null
           readiness_snapshot?: Json | null
+          referral_source?: string | null
           rental_budget?: number | null
           residency_status?: string
           saved_locations?: Json | null
@@ -3840,6 +3849,7 @@ export type Database = {
           banned_at: string | null
           banned_by: string | null
           banned_until: string | null
+          country: string | null
           created_at: string
           email: string | null
           full_name: string | null
@@ -3853,6 +3863,7 @@ export type Database = {
           phone: string | null
           preferred_area_unit: string | null
           preferred_currency: string | null
+          referral_source: string | null
           updated_at: string
         }
         Insert: {
@@ -3861,6 +3872,7 @@ export type Database = {
           banned_at?: string | null
           banned_by?: string | null
           banned_until?: string | null
+          country?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
@@ -3874,6 +3886,7 @@ export type Database = {
           phone?: string | null
           preferred_area_unit?: string | null
           preferred_currency?: string | null
+          referral_source?: string | null
           updated_at?: string
         }
         Update: {
@@ -3882,6 +3895,7 @@ export type Database = {
           banned_at?: string | null
           banned_by?: string | null
           banned_until?: string | null
+          country?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
@@ -3895,6 +3909,7 @@ export type Database = {
           phone?: string | null
           preferred_area_unit?: string | null
           preferred_currency?: string | null
+          referral_source?: string | null
           updated_at?: string
         }
         Relationships: []
