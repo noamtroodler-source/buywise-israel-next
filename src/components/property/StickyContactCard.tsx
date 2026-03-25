@@ -262,10 +262,11 @@ export function MobileContactBar({
       });
     }
 
-    if (channel === 'whatsapp' && agent?.phone) {
+    if (channel === 'whatsapp') {
+      const phone = getEffectivePhone(agent?.phone);
       const whatsappMessage = data.message || `Hi, I'm interested in: ${propertyTitle}`;
-      const url = buildWhatsAppUrl(agent.phone, whatsappMessage);
-      openWhatsApp(url, agent.phone, whatsappMessage);
+      const url = buildWhatsAppUrl(phone, whatsappMessage);
+      openWhatsApp(url, phone, whatsappMessage);
     }
   };
 
