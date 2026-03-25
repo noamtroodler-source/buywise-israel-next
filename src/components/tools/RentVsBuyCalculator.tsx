@@ -173,13 +173,13 @@ const DEFAULTS = {
 export function RentVsBuyCalculator() {
   const { data: buyerProfile } = useBuyerProfile();
   const { data: cities } = useCities();
-  const { areaUnit } = usePreferences();
+  const { areaUnit, currency, exchangeRate } = usePreferences();
   const formatArea = useFormatArea();
-  // Calculators always work in NIS — Israeli bank rules, income, and prices are NIS-denominated
-  const currencySymbol = '₪';
+  const currencySymbol = currency === 'USD' ? '$' : '₪';
   const formatPrice = useCallback((amount: number): string => {
-    return `₪${amount.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
-  }, []);
+    const display = currency === 'USD' ? amount / exchangeRate : amount;
+    return `${currency === 'USD' ? '$' : '₪'}${display.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+  }, [currency, exchangeRate]);
   const { user } = useAuth();
   const saveToProfile = useSaveCalculatorResult();
   const { showPrompt: showSavePrompt, dismissPrompt: dismissSavePrompt, trackChange } = useSavePromptTrigger();
