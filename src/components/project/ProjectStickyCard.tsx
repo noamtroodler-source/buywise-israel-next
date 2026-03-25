@@ -178,16 +178,14 @@ export function ProjectStickyCard({ project, developer, representingAgent, selec
         </div>
       )}
       <div className="space-y-2">
-        {developer?.phone && (
-          <Button 
-            className="w-full" 
-            size="lg" 
-            onClick={() => openInquiryModal('whatsapp', 'developer')}
-          >
-            <MessageCircle className="h-4 w-4 mr-2" />
-            WhatsApp Developer
-          </Button>
-        )}
+        <Button 
+          className="w-full" 
+          size="lg" 
+          onClick={() => openInquiryModal('whatsapp', 'developer')}
+        >
+          <MessageCircle className="h-4 w-4 mr-2" />
+          WhatsApp Developer
+        </Button>
         <Button 
           variant="outline" 
           size="sm"
