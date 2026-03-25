@@ -894,11 +894,6 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
                     </div>
                   </div>
                 )}
-
-                <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1.5">
-                  <Settings className="h-3.5 w-3.5" />
-                  You can update your financing preferences anytime in your profile
-                </p>
               </motion.div>
             )}
 
@@ -964,11 +959,6 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
                     />
                   </div>
                 </div>
-
-                <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1.5">
-                  <Settings className="h-3.5 w-3.5" />
-                  You can adjust your budget anytime in your profile
-                </p>
               </motion.div>
             )}
 
@@ -1079,10 +1069,6 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
                   </p>
                 )}
 
-                <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1.5">
-                  <MapPin className="h-3.5 w-3.5 text-primary" />
-                  You can change these anytime in your profile
-                </p>
               </motion.div>
             )}
 
@@ -1198,11 +1184,6 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
                   </div>
                 )}
 
-                {/* Helper text */}
-                <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1.5">
-                  <MapPin className="h-3.5 w-3.5 text-primary" />
-                  You can always add more locations later in your profile settings
-                </p>
               </motion.div>
             )}
           </AnimatePresence>
