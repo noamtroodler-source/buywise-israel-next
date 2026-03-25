@@ -78,7 +78,7 @@ export function StickyContactCard({
     }
   };
 
-  const canWhatsApp = !!(agent?.phone);
+  const canWhatsApp = true; // Always show WhatsApp - use fallback phone if needed
   const canEmail = !!(agent?.email);
 
   return (
