@@ -436,7 +436,7 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
           <DialogTitle className="text-xl">Let's personalize your experience</DialogTitle>
           {step !== 'intro' && (
             <DialogDescription>
-              Step {getStepNumber()} of {getTotalSteps()} — This helps us show you accurate cost estimates
+              Step {getStepNumber()} of {getTotalSteps()} — You can change any of this later in your profile
             </DialogDescription>
           )}
         </DialogHeader>
