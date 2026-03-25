@@ -982,8 +982,8 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
                 </div>
 
                 <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1.5">
-                  <Shield className="h-3.5 w-3.5" />
-                  Only used to personalize your feed. Never shared without your permission.
+                  <Settings className="h-3.5 w-3.5" />
+                  You can adjust your budget anytime in your profile
                 </p>
               </motion.div>
             )}
