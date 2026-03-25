@@ -321,11 +321,13 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
     if (step === 5) return 4;
     if (step === 6) return 5;
     if (step === 7) return 6;
+    if (step === 8) return 7;
+    if (step === 9) return 8;
     return step;
   };
 
   const getTotalSteps = () => {
-    return answers.residency_status === 'oleh_hadash' ? 7 : 6;
+    return answers.residency_status === 'oleh_hadash' ? 9 : 8;
   };
 
   // Step 7: Add location helper function
