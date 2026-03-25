@@ -47,7 +47,7 @@ function CitySearchInput({ selectedCities, onToggleCity }: { selectedCities: str
     ? ALL_CITIES.filter(c => c.toLowerCase().includes(query.toLowerCase()) && !selectedCities.includes(c))
     : [];
 
-  React.useEffect(() => {
+  useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) setDropdownOpen(false);
     };
