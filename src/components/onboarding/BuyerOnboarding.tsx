@@ -125,12 +125,11 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
   const getNextStep = (currentStep: Step): Step => {
     if (currentStep === 'intro') return 1;
     if (currentStep === 1) {
-      // Skip Aliyah year if not Oleh
       return answers.residency_status === 'oleh_hadash' ? 2 : 3;
     }
-    if (currentStep === 6) {
-      return 7; // Go to optional core locations step
-    }
+    if (currentStep === 6) return 7; // Budget (optional)
+    if (currentStep === 7) return 8; // Target Cities (optional)
+    if (currentStep === 8) return 9; // Core Locations (optional)
     return (currentStep + 1) as Step;
   };
 
