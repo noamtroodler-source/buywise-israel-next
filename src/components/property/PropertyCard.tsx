@@ -1,6 +1,6 @@
 import { useState, memo, useMemo, useCallback, forwardRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Bed, Bath, Maximize, MapPin, ChevronLeft, ChevronRight, Wallet, Sparkles, Clock, TrendingDown, TrendingUp, Flame, Zap, Building2, Eye, Heart } from 'lucide-react';
+import { Bed, Bath, Maximize, MapPin, ChevronLeft, ChevronRight, Wallet, Sparkles, Clock, TrendingDown, TrendingUp, Flame, Zap, Building2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Property } from '@/types/database';
@@ -12,7 +12,6 @@ import { CompareCheckbox } from './CompareCheckbox';
 import { ShareButton } from './ShareButton';
 
 import { MonthlyEstimate } from './AffordabilityBadge';
-import { getSmartSignal } from '@/lib/smartSignal';
 import { useFormatPrice, useFormatArea } from '@/contexts/PreferencesContext';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
@@ -99,8 +98,6 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
     
     return { daysOnMarket: days, isNewListing: isNew, daysLabel: label, freshnessTier: tier, hasPriceDrop: hasDrop, priceDropPercent: dropPercent, hasPriceIncrease: hasIncrease };
   }, [property.created_at, property.original_price, property.price]);
-
-  const smartSignal = useMemo(() => getSmartSignal(property), [property]);
 
   // Check if this is a rental (for more prominent freshness treatment)
   const isRental = property.listing_status === 'for_rent';
@@ -412,12 +409,6 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                     <span>{daysLabel}</span>
                   </div>
                 )}
-                {smartSignal && (
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground/70 pt-0.5">
-                    {smartSignal.type === 'social' ? <Eye className="h-3 w-3" /> : <Sparkles className="h-3 w-3" />}
-                    <span>{smartSignal.text}</span>
-                  </div>
-                )}
               </div>
             </>
           ) : (
@@ -660,12 +651,6 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                     </div>
                   )}
                 </div>
-                {smartSignal && (
-                  <div className="flex items-center gap-1 text-muted-foreground/70 mt-1">
-                    {smartSignal.type === 'social' ? <Eye className="h-3 w-3" /> : <Sparkles className="h-3 w-3" />}
-                    <span className="text-xs">{smartSignal.text}</span>
-                  </div>
-                )}
               </CardContent>
             </>
           )}

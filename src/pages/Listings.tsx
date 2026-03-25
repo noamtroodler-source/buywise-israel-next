@@ -298,19 +298,12 @@ export default function Listings() {
           )}
         </div>
 
-        {/* Results Context Row */}
+        {/* Results Count Row */}
         <div className="flex items-center justify-between mb-4">
           {!isLoading ? (
-            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
-              <p className="text-sm text-muted-foreground">
-                Showing {properties.length} of {totalCount} {totalCount === 1 ? 'property' : 'properties'}
-              </p>
-              {filters.city && totalCount > 0 && (
-                <p className="text-xs text-muted-foreground/70 hidden sm:block">
-                  · {isRentals ? 'Rentals' : 'For sale'} in {filters.city}{filters.min_rooms ? ` · ${filters.min_rooms}+ rooms` : ''}
-                </p>
-              )}
-            </div>
+            <p className="text-sm text-muted-foreground">
+              Showing {properties.length} of {totalCount} {totalCount === 1 ? 'property' : 'properties'}
+            </p>
           ) : (
             <div className="h-5 w-40 bg-muted/50 rounded animate-pulse" />
           )}

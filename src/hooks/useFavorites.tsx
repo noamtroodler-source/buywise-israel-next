@@ -136,21 +136,13 @@ export function useFavorites() {
       if (user) {
         queryClient.invalidateQueries({ queryKey: ['favorites'] });
         queryClient.invalidateQueries({ queryKey: ['favoriteIds'] });
-        // Post-save inquiry nudge — bridge passive interest → active inquiry
-        toast.success('Saved to favorites', {
-          description: 'Want to learn more about this property?',
-          action: {
-            label: 'Contact Agent',
-            onClick: () => window.location.href = `/property/${variables.propertyId}#contact`,
-          },
-        });
       } else {
         // Guest updates are reactive via context - no invalidation needed
-        toast.success('Property saved', {
-          description: 'Interested? Reach out to the agent.',
+        toast.success('Property saved to favorites', {
+          description: 'Saved to this browser only. Create an account to keep across devices.',
           action: {
-            label: 'View & Contact',
-            onClick: () => window.location.href = `/property/${variables.propertyId}`,
+            label: 'Create account',
+            onClick: () => window.location.href = '/auth?tab=signup',
           },
         });
       }
