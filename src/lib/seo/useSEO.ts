@@ -143,5 +143,5 @@ export function useSEO(props: SEOProps) {
     return () => {
       cleanupTasks.forEach(task => task());
     };
-  }, [title, description, image, url, type, jsonLd, noindex, canonicalUrl]);
+  }, [title, description, image, url, type, jsonLd, noindex, resolvedCanonical]);
 }
