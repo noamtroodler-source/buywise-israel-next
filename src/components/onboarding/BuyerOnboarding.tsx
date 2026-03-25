@@ -981,93 +981,15 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
                   </p>
                 </div>
 
-                <div className="space-y-3">
-                  {/* Tel Aviv Region */}
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Greater Tel Aviv</p>
-                    <div className="flex flex-wrap gap-2">
-                      {['Tel Aviv', 'Ramat Gan', 'Petah Tikva', 'Hod HaSharon', 'Kfar Saba', "Ra'anana", 'Herzliya', 'Givat Shmuel'].map(city => (
-                        <Toggle
-                          key={city}
-                          size="sm"
-                          pressed={selectedCities.includes(city)}
-                          onPressedChange={(pressed) => {
-                            setSelectedCities(prev => pressed ? [...prev, city] : prev.filter(c => c !== city));
-                          }}
-                          className="h-8 px-3 text-xs rounded-full data-[state=on]:bg-primary data-[state=on]:text-primary-foreground border border-border"
-                        >
-                          {city}
-                        </Toggle>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Central */}
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Central</p>
-                    <div className="flex flex-wrap gap-2">
-                      {["Modi'in", 'Netanya', 'Hadera', 'Pardes Hanna', 'Zichron Yaakov', 'Caesarea'].map(city => (
-                        <Toggle
-                          key={city}
-                          size="sm"
-                          pressed={selectedCities.includes(city)}
-                          onPressedChange={(pressed) => {
-                            setSelectedCities(prev => pressed ? [...prev, city] : prev.filter(c => c !== city));
-                          }}
-                          className="h-8 px-3 text-xs rounded-full data-[state=on]:bg-primary data-[state=on]:text-primary-foreground border border-border"
-                        >
-                          {city}
-                        </Toggle>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Jerusalem */}
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Jerusalem & Surrounds</p>
-                    <div className="flex flex-wrap gap-2">
-                      {['Jerusalem', 'Mevaseret Zion', 'Beit Shemesh', "Ma'ale Adumim", 'Efrat', 'Gush Etzion'].map(city => (
-                        <Toggle
-                          key={city}
-                          size="sm"
-                          pressed={selectedCities.includes(city)}
-                          onPressedChange={(pressed) => {
-                            setSelectedCities(prev => pressed ? [...prev, city] : prev.filter(c => c !== city));
-                          }}
-                          className="h-8 px-3 text-xs rounded-full data-[state=on]:bg-primary data-[state=on]:text-primary-foreground border border-border"
-                        >
-                          {city}
-                        </Toggle>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* South + North */}
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">South & North</p>
-                    <div className="flex flex-wrap gap-2">
-                      {['Beer Sheva', 'Ashkelon', 'Ashdod', 'Eilat', 'Haifa'].map(city => (
-                        <Toggle
-                          key={city}
-                          size="sm"
-                          pressed={selectedCities.includes(city)}
-                          onPressedChange={(pressed) => {
-                            setSelectedCities(prev => pressed ? [...prev, city] : prev.filter(c => c !== city));
-                          }}
-                          className="h-8 px-3 text-xs rounded-full data-[state=on]:bg-primary data-[state=on]:text-primary-foreground border border-border"
-                        >
-                          {city}
-                        </Toggle>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {selectedCities.length > 0 && (
-                  <p className="text-xs text-primary text-center font-medium">
-                    {selectedCities.length} {selectedCities.length === 1 ? 'city' : 'cities'} selected
-                  </p>
-                )}
+                {/* Search input */}
+                <CitySearchInput
+                  selectedCities={selectedCities}
+                  onToggleCity={(city) => {
+                    setSelectedCities(prev => 
+                      prev.includes(city) ? prev.filter(c => c !== city) : [...prev, city]
+                    );
+                  }}
+                />
 
               </motion.div>
             )}
