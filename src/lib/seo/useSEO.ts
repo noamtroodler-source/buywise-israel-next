@@ -66,6 +66,7 @@ function injectJsonLd(data: object | object[], id: string) {
 }
 
 export function useSEO(props: SEOProps) {
+  const location = useLocation();
   const {
     title,
     description,
@@ -76,6 +77,9 @@ export function useSEO(props: SEOProps) {
     noindex = false,
     canonicalUrl,
   } = props;
+
+  // Always resolve a canonical URL: explicit prop → auto-generated from pathname
+  const resolvedCanonical = canonicalUrl || `${SITE_CONFIG.siteUrl}${location.pathname}`;
 
   useEffect(() => {
     const cleanupTasks: (() => void)[] = [];
