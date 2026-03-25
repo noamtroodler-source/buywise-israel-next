@@ -11,6 +11,7 @@ import { FormattedNumberInput } from '@/components/ui/formatted-number-input';
 import { Toggle } from '@/components/ui/toggle';
 import { useCreateBuyerProfile, useUpdateBuyerProfile, BuyerProfileInsert, BuyerProfile } from '@/hooks/useBuyerProfile';
 import { AddressAutocomplete, ParsedAddress } from '@/components/agent/wizard/AddressAutocomplete';
+import { supabase } from '@/integrations/supabase/client';
 import { GoogleMapsProvider } from '@/components/maps/GoogleMapsProvider';
 import { 
   LocationIcon, 
@@ -261,13 +262,36 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
       created_at: new Date().toISOString(),
     }));
 
+    // Convert budget to NIS if entered in USD
+    let finalBudgetMin = budgetMin;
+    let finalBudgetMax = budgetMax;
+    
+    if (budgetCurrency === 'USD' && (budgetMin || budgetMax)) {
+      let exchangeRate = 3.65; // Fallback
+      try {
+        const { data } = await supabase
+          .from('calculator_constants')
+          .select('value_numeric')
+          .eq('constant_key', 'usd_ils_rate')
+          .eq('is_current', true)
+          .maybeSingle();
+        if (data?.value_numeric) {
+          exchangeRate = data.value_numeric;
+        }
+      } catch {
+        // Use fallback rate
+      }
+      if (finalBudgetMin) finalBudgetMin = Math.round(finalBudgetMin * exchangeRate);
+      if (finalBudgetMax) finalBudgetMax = Math.round(finalBudgetMax * exchangeRate);
+    }
+
     const profileData = {
       ...answers,
       onboarding_completed: true,
       onboarding_step: 'complete',
       mortgage_preferences: mortgagePreferences,
-      ...(budgetMin && { budget_min: budgetMin }),
-      ...(budgetMax && { budget_max: budgetMax }),
+      ...(finalBudgetMin && { budget_min: finalBudgetMin }),
+      ...(finalBudgetMax && { budget_max: finalBudgetMax }),
       ...(selectedCities.length > 0 && { target_cities: selectedCities }),
       ...(savedLocations.length > 0 && { saved_locations: savedLocations }),
     };

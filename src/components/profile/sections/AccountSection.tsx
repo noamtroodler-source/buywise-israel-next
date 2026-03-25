@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import { Settings, Pencil, Loader2, RotateCcw, Check } from 'lucide-react';
+import { Settings, Pencil, Loader2, RotateCcw, Check, Globe, Megaphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useProfile, useUpdateProfile } from '@/hooks/useProfile';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useContentVisits } from '@/hooks/useContentVisits';
 import { DeleteAccountDialog } from '../DeleteAccountDialog';
+import { COUNTRY_OPTIONS, REFERRAL_OPTIONS } from '@/lib/constants/signupOptions';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -23,6 +25,8 @@ export function AccountSection() {
   const [formData, setFormData] = useState({
     fullName: profile?.full_name || '',
     phone: profile?.phone || '',
+    country: profile?.country || '',
+    referralSource: profile?.referral_source || '',
   });
 
   const handleClearHistory = async () => {
@@ -40,11 +44,23 @@ export function AccountSection() {
     updateProfile.mutate({
       full_name: formData.fullName || null,
       phone: formData.phone || null,
+      country: formData.country || null,
+      referral_source: formData.referralSource || null,
     });
     setIsEditing(false);
   };
 
   const isComplete = !!(profile?.full_name && profile?.phone);
+
+  const getCountryLabel = (value: string | null) => {
+    if (!value) return 'Not set';
+    return COUNTRY_OPTIONS.find(o => o.value === value)?.label || value;
+  };
+
+  const getReferralLabel = (value: string | null) => {
+    if (!value) return 'Not set';
+    return REFERRAL_OPTIONS.find(o => o.value === value)?.label || value;
+  };
 
   if (isLoading) {
     return (
@@ -90,6 +106,32 @@ export function AccountSection() {
               <Input type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 placeholder="+972..." className="mt-1" />
             </div>
+            <div>
+              <Label className="text-xs">Country</Label>
+              <Select value={formData.country} onValueChange={(val) => setFormData({ ...formData, country: val })}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Select your country" />
+                </SelectTrigger>
+                <SelectContent>
+                  {COUNTRY_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">How did you hear about us?</Label>
+              <Select value={formData.referralSource} onValueChange={(val) => setFormData({ ...formData, referralSource: val })}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Let us know" />
+                </SelectTrigger>
+                <SelectContent>
+                  {REFERRAL_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="flex gap-2">
               <Button size="sm" onClick={handleSave} disabled={updateProfile.isPending} className="flex-1">
                 {updateProfile.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save'}
@@ -110,6 +152,14 @@ export function AccountSection() {
                 <p className="text-xs text-muted-foreground mb-1">Phone</p>
                 <p className="text-sm font-medium">{profile?.phone || 'Not set'}</p>
               </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Country</p>
+                <p className="text-sm font-medium">{getCountryLabel(profile?.country ?? null)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Heard About Us</p>
+                <p className="text-sm font-medium">{getReferralLabel(profile?.referral_source ?? null)}</p>
+              </div>
               <div className="col-span-2">
                 <p className="text-xs text-muted-foreground mb-1">Member Since</p>
                 <p className="text-sm font-medium">
@@ -119,7 +169,12 @@ export function AccountSection() {
             </div>
 
             <Button variant="outline" size="sm" onClick={() => {
-              setFormData({ fullName: profile?.full_name || '', phone: profile?.phone || '' });
+              setFormData({
+                fullName: profile?.full_name || '',
+                phone: profile?.phone || '',
+                country: profile?.country || '',
+                referralSource: profile?.referral_source || '',
+              });
               setIsEditing(true);
             }} className="w-full">
               <Pencil className="h-3.5 w-3.5 mr-1.5" />
