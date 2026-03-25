@@ -297,9 +297,13 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
       case 5:
         return !!answers.buyer_entity;
       case 6:
-        return true; // Optional step, always can proceed
+        return true; // Optional step
       case 7:
-        return true; // Optional step, always can proceed
+        return true; // Optional budget step
+      case 8:
+        return true; // Optional target cities step
+      case 9:
+        return true; // Optional locations step
       default:
         return false;
     }
