@@ -885,10 +885,194 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
               </motion.div>
             )}
 
-            {/* Step 7: Core Locations (Optional) */}
+            {/* Step 7: Budget Range (Optional) */}
             {step === 7 && (
               <motion.div
                 key="step7"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="space-y-4"
+              >
+                <div>
+                  <h3 className="font-medium text-foreground flex items-center gap-2">
+                    <Coins className="h-5 w-5 text-primary" />
+                    What's your budget range?
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    We'll highlight properties in your range and flag great deals — never shared with anyone without your permission.
+                  </p>
+                </div>
+
+                <div className="space-y-3 p-4 rounded-lg border border-border bg-muted/30">
+                  <div className="flex items-center justify-between mb-2">
+                    <Label className="text-sm font-medium">Currency</Label>
+                    <div className="flex gap-1">
+                      <Toggle
+                        size="sm"
+                        pressed={budgetCurrency === 'ILS'}
+                        onPressedChange={() => setBudgetCurrency('ILS')}
+                        className="h-7 px-2 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                      >
+                        ₪
+                      </Toggle>
+                      <Toggle
+                        size="sm"
+                        pressed={budgetCurrency === 'USD'}
+                        onPressedChange={() => setBudgetCurrency('USD')}
+                        className="h-7 px-2 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                      >
+                        $
+                      </Toggle>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label className="text-sm">From</Label>
+                    <FormattedNumberInput
+                      value={budgetMin}
+                      onChange={setBudgetMin}
+                      prefix={budgetCurrencySymbol}
+                      placeholder={budgetCurrency === 'USD' ? '200,000' : '800,000'}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label className="text-sm">Up to</Label>
+                    <FormattedNumberInput
+                      value={budgetMax}
+                      onChange={setBudgetMax}
+                      prefix={budgetCurrencySymbol}
+                      placeholder={budgetCurrency === 'USD' ? '500,000' : '2,000,000'}
+                    />
+                  </div>
+                </div>
+
+                <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1.5">
+                  <Shield className="h-3.5 w-3.5" />
+                  Only used to personalize your feed. Never shared without your permission.
+                </p>
+              </motion.div>
+            )}
+
+            {/* Step 8: Target Cities (Optional) */}
+            {step === 8 && (
+              <motion.div
+                key="step8"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="space-y-4"
+              >
+                <div>
+                  <h3 className="font-medium text-foreground flex items-center gap-2">
+                    <MapPin className="h-5 w-5 text-primary" />
+                    Which areas are you considering?
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    We'll prioritize these in your search and alert you to new listings and price drops.
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  {/* Tel Aviv Region */}
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Greater Tel Aviv</p>
+                    <div className="flex flex-wrap gap-2">
+                      {['Tel Aviv', 'Ramat Gan', 'Petah Tikva', 'Hod HaSharon', 'Kfar Saba', "Ra'anana", 'Herzliya', 'Givat Shmuel'].map(city => (
+                        <Toggle
+                          key={city}
+                          size="sm"
+                          pressed={selectedCities.includes(city)}
+                          onPressedChange={(pressed) => {
+                            setSelectedCities(prev => pressed ? [...prev, city] : prev.filter(c => c !== city));
+                          }}
+                          className="h-8 px-3 text-xs rounded-full data-[state=on]:bg-primary data-[state=on]:text-primary-foreground border border-border"
+                        >
+                          {city}
+                        </Toggle>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Central */}
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Central</p>
+                    <div className="flex flex-wrap gap-2">
+                      {["Modi'in", 'Netanya', 'Hadera', 'Pardes Hanna', 'Zichron Yaakov', 'Caesarea'].map(city => (
+                        <Toggle
+                          key={city}
+                          size="sm"
+                          pressed={selectedCities.includes(city)}
+                          onPressedChange={(pressed) => {
+                            setSelectedCities(prev => pressed ? [...prev, city] : prev.filter(c => c !== city));
+                          }}
+                          className="h-8 px-3 text-xs rounded-full data-[state=on]:bg-primary data-[state=on]:text-primary-foreground border border-border"
+                        >
+                          {city}
+                        </Toggle>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Jerusalem */}
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Jerusalem & Surrounds</p>
+                    <div className="flex flex-wrap gap-2">
+                      {['Jerusalem', 'Mevaseret Zion', 'Beit Shemesh', "Ma'ale Adumim", 'Efrat', 'Gush Etzion'].map(city => (
+                        <Toggle
+                          key={city}
+                          size="sm"
+                          pressed={selectedCities.includes(city)}
+                          onPressedChange={(pressed) => {
+                            setSelectedCities(prev => pressed ? [...prev, city] : prev.filter(c => c !== city));
+                          }}
+                          className="h-8 px-3 text-xs rounded-full data-[state=on]:bg-primary data-[state=on]:text-primary-foreground border border-border"
+                        >
+                          {city}
+                        </Toggle>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* South + North */}
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">South & North</p>
+                    <div className="flex flex-wrap gap-2">
+                      {['Beer Sheva', 'Ashkelon', 'Ashdod', 'Eilat', 'Haifa'].map(city => (
+                        <Toggle
+                          key={city}
+                          size="sm"
+                          pressed={selectedCities.includes(city)}
+                          onPressedChange={(pressed) => {
+                            setSelectedCities(prev => pressed ? [...prev, city] : prev.filter(c => c !== city));
+                          }}
+                          className="h-8 px-3 text-xs rounded-full data-[state=on]:bg-primary data-[state=on]:text-primary-foreground border border-border"
+                        >
+                          {city}
+                        </Toggle>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {selectedCities.length > 0 && (
+                  <p className="text-xs text-primary text-center font-medium">
+                    {selectedCities.length} {selectedCities.length === 1 ? 'city' : 'cities'} selected
+                  </p>
+                )}
+
+                <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1.5">
+                  <MapPin className="h-3.5 w-3.5 text-primary" />
+                  You can change these anytime in your profile
+                </p>
+              </motion.div>
+            )}
+
+            {/* Step 9: Core Locations (Optional) */}
+            {step === 9 && (
+              <motion.div
+                key="step9"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
