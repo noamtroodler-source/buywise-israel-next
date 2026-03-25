@@ -660,6 +660,12 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                     </div>
                   )}
                 </div>
+                {smartSignal && (
+                  <div className="flex items-center gap-1 text-muted-foreground/70 mt-1">
+                    {smartSignal.type === 'social' ? <Eye className="h-3 w-3" /> : <Sparkles className="h-3 w-3" />}
+                    <span className="text-xs">{smartSignal.text}</span>
+                  </div>
+                )}
               </CardContent>
             </>
           )}
