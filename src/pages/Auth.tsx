@@ -23,9 +23,33 @@ const authSchema = z.object({
   email: z.string().email('Please enter a valid email'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   fullName: z.string().optional(),
+  country: z.string().optional(),
+  referralSource: z.string().optional(),
 });
 
 type AuthFormData = z.infer<typeof authSchema>;
+
+const COUNTRY_OPTIONS = [
+  { value: 'US', label: 'United States' },
+  { value: 'GB', label: 'United Kingdom' },
+  { value: 'CA', label: 'Canada' },
+  { value: 'AU', label: 'Australia' },
+  { value: 'FR', label: 'France' },
+  { value: 'ZA', label: 'South Africa' },
+  { value: 'DE', label: 'Germany' },
+  { value: 'AR', label: 'Argentina' },
+  { value: 'IL', label: 'Israel' },
+  { value: 'OTHER', label: 'Other' },
+];
+
+const REFERRAL_OPTIONS = [
+  { value: 'google', label: 'Google Search' },
+  { value: 'social_media', label: 'Social Media' },
+  { value: 'friend_family', label: 'Friend or Family' },
+  { value: 'agent', label: 'Real Estate Agent' },
+  { value: 'news_blog', label: 'News or Blog' },
+  { value: 'other', label: 'Other' },
+];
 
 // Intent-based messaging configuration for context-aware auth
 const intentConfig: Record<string, { signupDesc: string; signinDesc: string; icon: LucideIcon }> = {
