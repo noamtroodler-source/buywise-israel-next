@@ -264,7 +264,7 @@ export function ProjectMobileContactBar({ project, developer, representingAgent 
   const { user } = useAuth();
   const [inquiryChannel, setInquiryChannel] = useState<InquiryChannel | null>(null);
   
-  const primaryPhone = representingAgent?.phone || developer?.phone;
+  const primaryPhone = getEffectivePhone(representingAgent?.phone || developer?.phone);
   const contactName = representingAgent?.name || developer?.name || 'the developer';
 
   const handleInquirySubmit = (data: InquiryFormData) => {
