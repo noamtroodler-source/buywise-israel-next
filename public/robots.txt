@@ -15,8 +15,8 @@ Allow: /
 User-agent: *
 Allow: /
 
-# Sitemap
-Sitemap: https://buywiseisrael.com/sitemap.xml
+# Dynamic sitemap (includes all properties, areas, projects, blog posts)
+Sitemap: https://eveqhyqxdibjayliazxm.supabase.co/functions/v1/sitemap
 
 # Disallow admin and protected routes
 Disallow: /admin/
