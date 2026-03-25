@@ -27,6 +27,7 @@ import { SEOHead } from '@/components/seo/SEOHead';
 import { generateCityMeta, generateCityJsonLd, SITE_CONFIG } from '@/lib/seo';
 import { useTrackContentVisit } from '@/hooks/useTrackContentVisit';
 import { MarketDataContext } from '@/components/shared/MarketDataContext';
+import { findNamedMatch, normalizeNeighborhoodName } from '@/lib/neighborhoodMatching';
 
 import { cityHeroImages } from '@/lib/cityHeroImages';
 
@@ -48,8 +49,8 @@ export default function CityDetail() {
 
     // Featured first (sorted by sort_order)
     for (const n of neighborhoods) {
-      const priceRow = priceTableRows.find(r => r.name === n.name);
-      seen.add(n.name);
+      const priceRow = findNamedMatch(priceTableRows, n.name);
+      seen.add(normalizeNeighborhoodName(n.name));
       result.push({
         name: n.name,
         name_he: n.name_he,
@@ -68,7 +69,7 @@ export default function CityDetail() {
 
     // Market-data-only neighborhoods (not featured), sorted by price desc
     const cbsOnly = priceTableRows
-      .filter(r => !seen.has(r.name))
+      .filter(r => !seen.has(normalizeNeighborhoodName(r.name)))
       .sort((a, b) => b.avg_price - a.avg_price);
 
     for (const r of cbsOnly) {
@@ -92,7 +93,7 @@ export default function CityDetail() {
     });
 
     return result;
-  }, [neighborhoods, priceTableRows]);
+  }, [neighborhoods, priceTableRows, slug]);
 
   if (cityLoading) {
     return (

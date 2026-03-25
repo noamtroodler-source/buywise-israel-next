@@ -84,6 +84,7 @@ function TrendIndicator({ yoyChange }: { yoyChange: number | null }) {
 
 function NeighborhoodCard({ n, onClick }: { n: UnifiedNeighborhood; onClick: () => void }) {
   const hasPrice = n.avg_price != null;
+  const isFallback = !!n.is_fallback;
 
   return (
     <button
@@ -91,7 +92,8 @@ function NeighborhoodCard({ n, onClick }: { n: UnifiedNeighborhood; onClick: () 
       onClick={onClick}
       className={cn(
         'rounded-lg border border-border/50 bg-card/80 backdrop-blur-sm px-3 py-2.5 transition-colors hover:bg-muted/40 text-left w-full cursor-pointer',
-        n.is_featured && 'border-l-2 border-l-primary/30'
+        n.is_featured && 'border-l-2 border-l-primary/30',
+        isFallback && 'bg-muted/40 border-border/70'
       )}
     >
       <div className="flex items-start justify-between gap-2">
@@ -110,6 +112,14 @@ function NeighborhoodCard({ n, onClick }: { n: UnifiedNeighborhood; onClick: () 
         )}
       </div>
 
+      {isFallback && (
+        <div className="mt-1.5">
+          <Badge variant="outline" className="h-5 rounded-full border-border/60 bg-muted/70 px-2 text-[10px] font-medium text-muted-foreground">
+            City avg fallback
+          </Badge>
+        </div>
+      )}
+
       {n.is_featured && n.vibe && (
         <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
           {n.vibe}
@@ -121,7 +131,11 @@ function NeighborhoodCard({ n, onClick }: { n: UnifiedNeighborhood; onClick: () 
           <span className="text-sm font-semibold tabular-nums">
             {formatCompactPrice(n.avg_price!)}
           </span>
-          <TrendIndicator yoyChange={n.yoy_change_percent} />
+          {isFallback ? (
+            <span className="text-[11px] font-medium text-muted-foreground">City avg</span>
+          ) : (
+            <TrendIndicator yoyChange={n.yoy_change_percent} />
+          )}
         </div>
       )}
     </button>

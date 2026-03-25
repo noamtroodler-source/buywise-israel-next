@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { FeaturedNeighborhood } from '@/types/neighborhood';
 import { useNeighborhoodPrices } from '@/hooks/useNeighborhoodPrices';
+import { findValueByNeighborhoodName } from '@/lib/neighborhoodMatching';
 
 export function useCityNeighborhoods(citySlug: string) {
   const neighborhoodsQuery = useQuery({
@@ -34,8 +35,8 @@ export function useCityNeighborhoods(citySlug: string) {
   // Merge price data into neighborhoods
   const enrichedNeighborhoods = neighborhoodsQuery.data?.neighborhoods.map(n => ({
     ...n,
-    avg_price: priceData?.[n.name]?.avg_price ?? n.avg_price,
-    yoy_change_percent: priceData?.[n.name]?.yoy_change_percent ?? n.yoy_change_percent,
+    avg_price: findValueByNeighborhoodName(priceData, n.name)?.avg_price ?? n.avg_price,
+    yoy_change_percent: findValueByNeighborhoodName(priceData, n.name)?.yoy_change_percent ?? n.yoy_change_percent,
   })) || [];
 
   return {
