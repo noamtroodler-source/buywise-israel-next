@@ -59,7 +59,7 @@ import { calculateTaxAmount, BuyerType } from '@/lib/calculations/purchaseTax';
 import { BuyerCategory as BannerBuyerCategory } from './shared/BuyerTypeInfoBanner';
 import { useCities } from '@/hooks/useCities';
 import { useCityDetails } from '@/hooks/useCityDetails';
-import { usePreferences, useFormatPrice, useFormatArea, useCurrencySymbol, useAreaUnitLabel } from '@/contexts/PreferencesContext';
+import { usePreferences, useFormatArea, useAreaUnitLabel } from '@/contexts/PreferencesContext';
 import { cn } from '@/lib/utils';
 
 // Map BuyerCategory to BuyerType for tax calculations
@@ -136,9 +136,12 @@ export function TrueCostCalculator() {
   const { data: buyerProfile } = useBuyerProfile();
   const { data: calcConstants } = useCalculatorConstants();
   const { data: cities } = useCities();
-  const { areaUnit, currency, exchangeRate } = usePreferences();
-  const formatPrice = useFormatPrice();
-  const currencySymbol = useCurrencySymbol();
+  const { areaUnit } = usePreferences();
+  // Calculators always work in NIS — Israeli bank rules and prices are NIS-denominated
+  const currencySymbol = '₪';
+  const formatPrice = useCallback((amount: number): string => {
+    return `₪${amount.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+  }, []);
   const areaUnitLabel = useAreaUnitLabel();
   const { user } = useAuth();
   const saveToProfile = useSaveCalculatorResult();
@@ -774,12 +777,8 @@ export function TrueCostCalculator() {
         </motion.p>
         {(() => {
           const midpointILS = (calculations.totalCashNeededMin + calculations.totalCashNeededMax) / 2;
-          // Round in the display currency so USD shows clean thousands
-          const displayValue = currency === 'USD' ? midpointILS / exchangeRate : midpointILS;
-          const rounded = Math.round(displayValue / 1000) * 1000;
-          const formatted = currency === 'USD' 
-            ? `$${rounded.toLocaleString('en-US', { maximumFractionDigits: 0 })}` 
-            : `₪${rounded.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+          const rounded = Math.round(midpointILS / 1000) * 1000;
+          const formatted = `₪${rounded.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
           return (
             <p className="text-xs text-muted-foreground text-center mt-1">
               ~{formatted} most likely

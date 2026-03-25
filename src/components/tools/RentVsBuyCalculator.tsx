@@ -73,7 +73,7 @@ function mapCategoryToBuyerType(category: SharedBuyerCategory): BuyerType {
 }
 import { useCities } from '@/hooks/useCities';
 import { useCityDetails } from '@/hooks/useCityDetails';
-import { usePreferences, useFormatPrice, useFormatArea, useCurrencySymbol } from '@/contexts/PreferencesContext';
+import { usePreferences, useFormatArea } from '@/contexts/PreferencesContext';
 import { calculateMasShevach } from '@/lib/calculations/capitalGains';
 import { cn } from '@/lib/utils';
 
@@ -174,9 +174,12 @@ export function RentVsBuyCalculator() {
   const { data: buyerProfile } = useBuyerProfile();
   const { data: cities } = useCities();
   const { areaUnit } = usePreferences();
-  const formatPrice = useFormatPrice();
   const formatArea = useFormatArea();
-  const currencySymbol = useCurrencySymbol();
+  // Calculators always work in NIS — Israeli bank rules, income, and prices are NIS-denominated
+  const currencySymbol = '₪';
+  const formatPrice = useCallback((amount: number): string => {
+    return `₪${amount.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+  }, []);
   const { user } = useAuth();
   const saveToProfile = useSaveCalculatorResult();
   const { showPrompt: showSavePrompt, dismissPrompt: dismissSavePrompt, trackChange } = useSavePromptTrigger();
