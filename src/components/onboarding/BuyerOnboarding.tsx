@@ -91,23 +91,24 @@ function CitySearchInput({ selectedCities, onToggleCity }: { selectedCities: str
         )}
       </div>
 
-      {/* Popular picks */}
-      <div>
-        <p className="text-xs font-medium text-muted-foreground mb-2">Popular with international buyers</p>
-        <div className="flex flex-wrap gap-2">
-          {POPULAR_CITIES.map(city => (
-            <Toggle
-              key={city}
-              size="sm"
-              pressed={selectedCities.includes(city)}
-              onPressedChange={() => onToggleCity(city)}
-              className="h-8 px-3 text-xs rounded-full data-[state=on]:bg-primary data-[state=on]:text-primary-foreground border border-border"
-            >
-              {city}
-            </Toggle>
-          ))}
+      {/* Popular picks — only show unselected ones */}
+      {POPULAR_CITIES.filter(c => !selectedCities.includes(c)).length > 0 && (
+        <div>
+          <p className="text-xs font-medium text-muted-foreground mb-2">Popular with international buyers</p>
+          <div className="flex flex-wrap gap-2">
+            {POPULAR_CITIES.filter(c => !selectedCities.includes(c)).map(city => (
+              <button
+                key={city}
+                type="button"
+                onClick={() => onToggleCity(city)}
+                className="h-8 px-3 text-xs rounded-full border border-border bg-background hover:bg-muted/50 transition-colors"
+              >
+                {city}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Selected chips */}
       {selectedCities.length > 0 && (
