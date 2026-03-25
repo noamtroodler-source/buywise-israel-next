@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Calculator, 
@@ -61,6 +61,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useSavePromptTrigger } from '@/hooks/useSavePromptTrigger';
 import { useBuyerProfile } from '@/hooks/useBuyerProfile';
 import { useSaveCalculatorResult } from '@/hooks/useSavedCalculatorResults';
+import { usePreferences } from '@/contexts/PreferencesContext';
 
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -149,9 +150,12 @@ function AffordabilityCalculatorContent() {
   const { data: buyerProfile } = useBuyerProfile();
   const saveToProfile = useSaveCalculatorResult();
 
-  // Calculators always work in NIS — Israeli bank rules, income, and prices are NIS-denominated
-  const currencySymbol = '₪';
-  const formatPrice = (value: number) => `₪${formatNumber(Math.round(value))}`;
+  const { currency, exchangeRate } = usePreferences();
+  const currencySymbol = currency === 'USD' ? '$' : '₪';
+  const formatPrice = useCallback((value: number) => {
+    const display = currency === 'USD' ? value / exchangeRate : value;
+    return `${currency === 'USD' ? '$' : '₪'}${formatNumber(Math.round(display))}`;
+  }, [currency, exchangeRate]);
 
   const [monthlyIncome, setMonthlyIncome] = useState(DEFAULTS.monthlyIncome);
   const [spouseIncome, setSpouseIncome] = useState(DEFAULTS.spouseIncome);
