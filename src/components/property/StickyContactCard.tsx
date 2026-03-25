@@ -287,7 +287,7 @@ export function MobileContactBar({
     return `₪${value}`;
   };
 
-  const canWhatsApp = !!(agent?.phone);
+  const canWhatsApp = true; // Always show WhatsApp
 
   return (
     <>
