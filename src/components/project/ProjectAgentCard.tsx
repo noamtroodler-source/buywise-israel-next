@@ -35,7 +35,7 @@ export function ProjectAgentCard({ agent, projectName, projectId, developerId }:
   const { user } = useAuth();
   const [inquiryChannel, setInquiryChannel] = useState<InquiryChannel | null>(null);
 
-  const canWhatsApp = !!(agent.phone);
+  const canWhatsApp = true; // Always show WhatsApp
 
   const handleInquirySubmit = (data: InquiryFormData) => {
     const channel = inquiryChannel!;
