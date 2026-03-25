@@ -7,7 +7,7 @@ import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { trackProjectInquiry } from '@/hooks/useProjectInquiryTracking';
 import { useAuth } from '@/hooks/useAuth';
-import { buildWhatsAppUrl, openWhatsApp } from '@/lib/whatsapp';
+import { buildWhatsAppUrl, openWhatsApp, getEffectivePhone } from '@/lib/whatsapp';
 import { PermissionStatement } from '@/components/shared/PermissionStatement';
 import { InquiryModal, InquiryChannel, InquiryFormData } from '@/components/shared/InquiryModal';
 
@@ -35,7 +35,7 @@ export function ProjectAgentCard({ agent, projectName, projectId, developerId }:
   const { user } = useAuth();
   const [inquiryChannel, setInquiryChannel] = useState<InquiryChannel | null>(null);
 
-  const canWhatsApp = !!(agent.phone);
+  const canWhatsApp = true; // Always show WhatsApp
 
   const handleInquirySubmit = (data: InquiryFormData) => {
     const channel = inquiryChannel!;
@@ -56,11 +56,12 @@ export function ProjectAgentCard({ agent, projectName, projectId, developerId }:
       });
     }
 
-    if (channel === 'whatsapp' && agent.phone) {
+    if (channel === 'whatsapp') {
+      const phone = getEffectivePhone(agent.phone);
       const whatsappMessage = data.message || (projectName 
         ? `Hi ${agent.name}, I'm interested in ${projectName} and would like more information.`
         : `Hi ${agent.name}, I'm interested in learning more about a project you represent.`);
-      const url = buildWhatsAppUrl(agent.phone, whatsappMessage);
+      const url = buildWhatsAppUrl(phone, whatsappMessage);
       openWhatsApp(url);
     } else if (channel === 'email') {
       const subject = projectName 

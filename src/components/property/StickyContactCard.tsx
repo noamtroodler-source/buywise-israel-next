@@ -9,7 +9,7 @@ import { MessageCircle, Mail, Share2, Heart, BookOpen, ChevronRight } from 'luci
 import { motion } from 'framer-motion';
 import { trackInquiry } from '@/hooks/useInquiryTracking';
 import { useAuth } from '@/hooks/useAuth';
-import { buildWhatsAppUrl, openWhatsApp } from '@/lib/whatsapp';
+import { buildWhatsAppUrl, openWhatsApp, getEffectivePhone } from '@/lib/whatsapp';
 import { cn } from '@/lib/utils';
 import { InquiryModal, InquiryChannel, InquiryFormData } from '@/components/shared/InquiryModal';
 
@@ -66,10 +66,11 @@ export function StickyContactCard({
       });
     }
 
-    if (inquiryChannel === 'whatsapp' && agent?.phone) {
+    if (inquiryChannel === 'whatsapp') {
+      const phone = getEffectivePhone(agent?.phone);
       const whatsappMessage = data.message || `Hi, I'm interested in: ${propertyTitle}`;
-      const url = buildWhatsAppUrl(agent.phone, whatsappMessage);
-      openWhatsApp(url, agent.phone, whatsappMessage);
+      const url = buildWhatsAppUrl(phone, whatsappMessage);
+      openWhatsApp(url, phone, whatsappMessage);
     } else if (inquiryChannel === 'email' && agent?.email) {
       const subject = encodeURIComponent(`Inquiry: ${propertyTitle}`);
       const body = encodeURIComponent(data.message || '');
@@ -77,7 +78,7 @@ export function StickyContactCard({
     }
   };
 
-  const canWhatsApp = !!(agent?.phone);
+  const canWhatsApp = true; // Always show WhatsApp - use fallback phone if needed
   const canEmail = !!(agent?.email);
 
   return (
@@ -261,10 +262,11 @@ export function MobileContactBar({
       });
     }
 
-    if (channel === 'whatsapp' && agent?.phone) {
+    if (channel === 'whatsapp') {
+      const phone = getEffectivePhone(agent?.phone);
       const whatsappMessage = data.message || `Hi, I'm interested in: ${propertyTitle}`;
-      const url = buildWhatsAppUrl(agent.phone, whatsappMessage);
-      openWhatsApp(url, agent.phone, whatsappMessage);
+      const url = buildWhatsAppUrl(phone, whatsappMessage);
+      openWhatsApp(url, phone, whatsappMessage);
     }
   };
 
@@ -285,7 +287,7 @@ export function MobileContactBar({
     return `₪${value}`;
   };
 
-  const canWhatsApp = !!(agent?.phone);
+  const canWhatsApp = true; // Always show WhatsApp
 
   return (
     <>

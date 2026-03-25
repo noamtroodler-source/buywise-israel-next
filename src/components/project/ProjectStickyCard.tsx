@@ -11,7 +11,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { Project, Developer, ProjectUnit } from '@/types/projects';
 import { useProjectInquiryTracking } from '@/hooks/useProjectInquiryTracking';
-import { buildWhatsAppUrl, openWhatsApp } from '@/lib/whatsapp';
+import { buildWhatsAppUrl, openWhatsApp, getEffectivePhone } from '@/lib/whatsapp';
 import { InquiryModal, InquiryChannel, InquiryFormData } from '@/components/shared/InquiryModal';
 import { trackProjectInquiry } from '@/hooks/useProjectInquiryTracking';
 import { useAuth } from '@/hooks/useAuth';
@@ -77,12 +77,10 @@ export function ProjectStickyCard({ project, developer, representingAgent, selec
     }
 
     if (channel === 'whatsapp') {
-      const phone = target === 'agent' ? representingAgent?.phone : developer?.phone;
-      if (phone) {
-        const msg = data.message || `Hi, I'm interested in ${project.name}`;
-        const url = buildWhatsAppUrl(phone, msg);
-        openWhatsApp(url);
-      }
+      const phone = getEffectivePhone(target === 'agent' ? representingAgent?.phone : developer?.phone);
+      const msg = data.message || `Hi, I'm interested in ${project.name}`;
+      const url = buildWhatsAppUrl(phone, msg);
+      openWhatsApp(url);
     } else if (channel === 'email') {
       const email = target === 'agent' ? representingAgent?.email : developer?.email;
       if (email) {
@@ -132,16 +130,14 @@ export function ProjectStickyCard({ project, developer, representingAgent, selec
       </div>
 
       <div className="pt-3 border-t border-border/50 space-y-2">
-        {representingAgent?.phone && (
-          <Button 
-            className="w-full gap-2" 
-            size="lg" 
-            onClick={() => openInquiryModal('whatsapp', 'agent')}
-          >
-            <MessageCircle className="h-4 w-4" />
-            WhatsApp
-          </Button>
-        )}
+        <Button 
+          className="w-full gap-2" 
+          size="lg" 
+          onClick={() => openInquiryModal('whatsapp', 'agent')}
+        >
+          <MessageCircle className="h-4 w-4" />
+          WhatsApp
+        </Button>
         <Button 
           variant="outline" 
           className="w-full gap-2"
@@ -182,16 +178,14 @@ export function ProjectStickyCard({ project, developer, representingAgent, selec
         </div>
       )}
       <div className="space-y-2">
-        {developer?.phone && (
-          <Button 
-            className="w-full" 
-            size="lg" 
-            onClick={() => openInquiryModal('whatsapp', 'developer')}
-          >
-            <MessageCircle className="h-4 w-4 mr-2" />
-            WhatsApp Developer
-          </Button>
-        )}
+        <Button 
+          className="w-full" 
+          size="lg" 
+          onClick={() => openInquiryModal('whatsapp', 'developer')}
+        >
+          <MessageCircle className="h-4 w-4 mr-2" />
+          WhatsApp Developer
+        </Button>
         <Button 
           variant="outline" 
           size="sm"
@@ -270,7 +264,7 @@ export function ProjectMobileContactBar({ project, developer, representingAgent 
   const { user } = useAuth();
   const [inquiryChannel, setInquiryChannel] = useState<InquiryChannel | null>(null);
   
-  const primaryPhone = representingAgent?.phone || developer?.phone;
+  const primaryPhone = getEffectivePhone(representingAgent?.phone || developer?.phone);
   const contactName = representingAgent?.name || developer?.name || 'the developer';
 
   const handleInquirySubmit = (data: InquiryFormData) => {
@@ -292,7 +286,7 @@ export function ProjectMobileContactBar({ project, developer, representingAgent 
       });
     }
 
-    if (channel === 'whatsapp' && primaryPhone) {
+    if (channel === 'whatsapp') {
       const msg = data.message || `Hi${representingAgent ? ` ${representingAgent.name}` : ''}, I'm interested in ${project.name}`;
       const url = buildWhatsAppUrl(primaryPhone, msg);
       openWhatsApp(url);
@@ -304,17 +298,10 @@ export function ProjectMobileContactBar({ project, developer, representingAgent 
       <div className="fixed bottom-16 left-0 right-0 p-4 pb-safe bg-background/95 backdrop-blur-sm border-t border-border lg:hidden z-50">
         <div className="max-w-lg mx-auto space-y-2">
           <div className="flex gap-3">
-            {primaryPhone ? (
-              <Button className="flex-1" size="lg" onClick={() => setInquiryChannel('whatsapp')}>
-                <MessageCircle className="h-4 w-4 mr-2" />
-                {representingAgent ? 'WhatsApp Agent' : 'WhatsApp'}
-              </Button>
-            ) : (
-              <Button className="flex-1" size="lg" onClick={() => setInquiryChannel('email')}>
-                <Mail className="h-4 w-4 mr-2" />
-                Request Info
-              </Button>
-            )}
+            <Button className="flex-1" size="lg" onClick={() => setInquiryChannel('whatsapp')}>
+              <MessageCircle className="h-4 w-4 mr-2" />
+              {representingAgent ? 'WhatsApp Agent' : 'WhatsApp'}
+            </Button>
           </div>
 
           {/* Permission to Slow Down - Collapsible */}

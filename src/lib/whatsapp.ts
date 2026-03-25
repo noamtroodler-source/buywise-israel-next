@@ -1,6 +1,19 @@
 import { toast } from 'sonner';
 
 /**
+ * Fallback phone number for agents/developers without a listed phone.
+ * Ensures WhatsApp CTA is always available on every listing.
+ */
+export const FALLBACK_CONTACT_PHONE = '+972-50-000-0000';
+
+/**
+ * Returns the provided phone or a fallback so WhatsApp is always available.
+ */
+export function getEffectivePhone(phone?: string | null): string {
+  return phone && phone.trim() ? phone : FALLBACK_CONTACT_PHONE;
+}
+
+/**
  * Normalize a phone number for WhatsApp
  * Handles various formats including Israeli numbers
  */
