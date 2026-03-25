@@ -59,7 +59,7 @@ import { calculateTaxAmount, BuyerType } from '@/lib/calculations/purchaseTax';
 import { BuyerCategory as BannerBuyerCategory } from './shared/BuyerTypeInfoBanner';
 import { useCities } from '@/hooks/useCities';
 import { useCityDetails } from '@/hooks/useCityDetails';
-import { usePreferences, useFormatPrice, useFormatArea, useCurrencySymbol, useAreaUnitLabel } from '@/contexts/PreferencesContext';
+import { usePreferences, useFormatArea, useAreaUnitLabel } from '@/contexts/PreferencesContext';
 import { cn } from '@/lib/utils';
 
 // Map BuyerCategory to BuyerType for tax calculations

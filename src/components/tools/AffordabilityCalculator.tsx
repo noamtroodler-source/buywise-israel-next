@@ -61,7 +61,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useSavePromptTrigger } from '@/hooks/useSavePromptTrigger';
 import { useBuyerProfile } from '@/hooks/useBuyerProfile';
 import { useSaveCalculatorResult } from '@/hooks/useSavedCalculatorResults';
-import { usePreferences } from '@/contexts/PreferencesContext';
+
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
