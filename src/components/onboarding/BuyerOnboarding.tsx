@@ -135,15 +135,11 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
 
   const getPrevStep = (currentStep: Step): Step => {
     if (currentStep === 1) return 'intro';
-    if (currentStep === 3 && answers.residency_status !== 'oleh_hadash') {
-      return 1;
-    }
-    if (currentStep === 7) {
-      return 6;
-    }
-    if (typeof currentStep === 'number') {
-      return (currentStep - 1) as Step;
-    }
+    if (currentStep === 3 && answers.residency_status !== 'oleh_hadash') return 1;
+    if (currentStep === 9) return 8;
+    if (currentStep === 8) return 7;
+    if (currentStep === 7) return 6;
+    if (typeof currentStep === 'number') return (currentStep - 1) as Step;
     return 'intro';
   };
 
