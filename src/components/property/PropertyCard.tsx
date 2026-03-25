@@ -12,6 +12,7 @@ import { CompareCheckbox } from './CompareCheckbox';
 import { ShareButton } from './ShareButton';
 
 import { MonthlyEstimate } from './AffordabilityBadge';
+import { getSmartSignal } from '@/lib/smartSignal';
 import { useFormatPrice, useFormatArea } from '@/contexts/PreferencesContext';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
