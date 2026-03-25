@@ -74,8 +74,11 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  let listing: ListingData = { type: 'buy' };
+
   try {
-    const { listing } = await req.json() as { listing: ListingData };
+    const body = await req.json() as { listing: ListingData };
+    listing = body.listing;
     
     if (!listing || !listing.type) {
       return new Response(
@@ -268,10 +271,8 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error("Error in generate-listing-questions:", error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    // Return fallback questions so the UI always shows something
+    return await getFallbackQuestions(listing);
   }
 });
 
