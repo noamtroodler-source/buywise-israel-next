@@ -298,17 +298,10 @@ export function ProjectMobileContactBar({ project, developer, representingAgent 
       <div className="fixed bottom-16 left-0 right-0 p-4 pb-safe bg-background/95 backdrop-blur-sm border-t border-border lg:hidden z-50">
         <div className="max-w-lg mx-auto space-y-2">
           <div className="flex gap-3">
-            {primaryPhone ? (
-              <Button className="flex-1" size="lg" onClick={() => setInquiryChannel('whatsapp')}>
-                <MessageCircle className="h-4 w-4 mr-2" />
-                {representingAgent ? 'WhatsApp Agent' : 'WhatsApp'}
-              </Button>
-            ) : (
-              <Button className="flex-1" size="lg" onClick={() => setInquiryChannel('email')}>
-                <Mail className="h-4 w-4 mr-2" />
-                Request Info
-              </Button>
-            )}
+            <Button className="flex-1" size="lg" onClick={() => setInquiryChannel('whatsapp')}>
+              <MessageCircle className="h-4 w-4 mr-2" />
+              {representingAgent ? 'WhatsApp Agent' : 'WhatsApp'}
+            </Button>
           </div>
 
           {/* Permission to Slow Down - Collapsible */}
