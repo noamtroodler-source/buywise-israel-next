@@ -11,6 +11,7 @@ import { FormattedNumberInput } from '@/components/ui/formatted-number-input';
 import { Toggle } from '@/components/ui/toggle';
 import { useCreateBuyerProfile, useUpdateBuyerProfile, BuyerProfileInsert, BuyerProfile } from '@/hooks/useBuyerProfile';
 import { AddressAutocomplete, ParsedAddress } from '@/components/agent/wizard/AddressAutocomplete';
+import { supabase } from '@/integrations/supabase/client';
 import { GoogleMapsProvider } from '@/components/maps/GoogleMapsProvider';
 import { 
   LocationIcon, 

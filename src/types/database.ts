@@ -18,6 +18,8 @@ export interface Profile {
   full_name: string | null;
   phone: string | null;
   avatar_url: string | null;
+  country: string | null;
+  referral_source: string | null;
   notify_email: boolean;
   notify_price_drops: boolean;
   notify_search_alerts: boolean;
