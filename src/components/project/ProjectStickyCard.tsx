@@ -77,12 +77,10 @@ export function ProjectStickyCard({ project, developer, representingAgent, selec
     }
 
     if (channel === 'whatsapp') {
-      const phone = target === 'agent' ? representingAgent?.phone : developer?.phone;
-      if (phone) {
-        const msg = data.message || `Hi, I'm interested in ${project.name}`;
-        const url = buildWhatsAppUrl(phone, msg);
-        openWhatsApp(url);
-      }
+      const phone = getEffectivePhone(target === 'agent' ? representingAgent?.phone : developer?.phone);
+      const msg = data.message || `Hi, I'm interested in ${project.name}`;
+      const url = buildWhatsAppUrl(phone, msg);
+      openWhatsApp(url);
     } else if (channel === 'email') {
       const email = target === 'agent' ? representingAgent?.email : developer?.email;
       if (email) {
