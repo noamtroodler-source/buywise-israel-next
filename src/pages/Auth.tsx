@@ -247,17 +247,7 @@ export default function Auth() {
           }
           } else {
             setJustSignedUp(true);
-            // Save country + referral source to profile after signup
-            if (data.country || data.referralSource) {
-              supabase.auth.getUser().then(({ data: userData }) => {
-                if (userData?.user) {
-                  supabase.from('profiles').update({
-                    country: data.country || null,
-                    referral_source: data.referralSource || null,
-                  }).eq('id', userData.user.id).then(() => {});
-                }
-              });
-            }
+            
             if (isProfessionalSignup) {
               toast.success('Account created! Redirecting to complete your registration...');
             }
