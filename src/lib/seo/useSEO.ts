@@ -1,5 +1,6 @@
 // React hook for managing dynamic meta tags
 import { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { SITE_CONFIG } from './constants';
 
 interface SEOProps {
