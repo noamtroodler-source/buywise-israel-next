@@ -247,17 +247,7 @@ export default function Auth() {
           }
           } else {
             setJustSignedUp(true);
-            // Save country + referral source to profile after signup
-            if (data.country || data.referralSource) {
-              supabase.auth.getUser().then(({ data: userData }) => {
-                if (userData?.user) {
-                  supabase.from('profiles').update({
-                    country: data.country || null,
-                    referral_source: data.referralSource || null,
-                  }).eq('id', userData.user.id).then(() => {});
-                }
-              });
-            }
+            
             if (isProfessionalSignup) {
               toast.success('Account created! Redirecting to complete your registration...');
             }
@@ -357,59 +347,7 @@ export default function Auth() {
                       )}
                     />
 
-                    {!isProfessionalSignup && (
-                      <>
-                        <FormField
-                          control={form.control}
-                          name="country"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Where do you live?</FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select your country" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {COUNTRY_OPTIONS.map((opt) => (
-                                    <SelectItem key={opt.value} value={opt.value}>
-                                      {opt.label}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={form.control}
-                          name="referralSource"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>How did you hear about us?</FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Let us know — we're curious!" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {REFERRAL_OPTIONS.map((opt) => (
-                                    <SelectItem key={opt.value} value={opt.value}>
-                                      {opt.label}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </>
-                    )}
+                    
                   </TabsContent>
                   
                   <FormField
