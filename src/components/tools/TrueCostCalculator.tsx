@@ -777,12 +777,8 @@ export function TrueCostCalculator() {
         </motion.p>
         {(() => {
           const midpointILS = (calculations.totalCashNeededMin + calculations.totalCashNeededMax) / 2;
-          // Round in the display currency so USD shows clean thousands
-          const displayValue = currency === 'USD' ? midpointILS / exchangeRate : midpointILS;
-          const rounded = Math.round(displayValue / 1000) * 1000;
-          const formatted = currency === 'USD' 
-            ? `$${rounded.toLocaleString('en-US', { maximumFractionDigits: 0 })}` 
-            : `₪${rounded.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+          const rounded = Math.round(midpointILS / 1000) * 1000;
+          const formatted = `₪${rounded.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
           return (
             <p className="text-xs text-muted-foreground text-center mt-1">
               ~{formatted} most likely
