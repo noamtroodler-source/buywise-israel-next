@@ -1,5 +1,6 @@
 // React hook for managing dynamic meta tags
 import { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { SITE_CONFIG } from './constants';
 
 interface SEOProps {
@@ -65,6 +66,7 @@ function injectJsonLd(data: object | object[], id: string) {
 }
 
 export function useSEO(props: SEOProps) {
+  const location = useLocation();
   const {
     title,
     description,
@@ -75,6 +77,9 @@ export function useSEO(props: SEOProps) {
     noindex = false,
     canonicalUrl,
   } = props;
+
+  // Always resolve a canonical URL: explicit prop → auto-generated from pathname
+  const resolvedCanonical = canonicalUrl || `${SITE_CONFIG.siteUrl}${location.pathname}`;
 
   useEffect(() => {
     const cleanupTasks: (() => void)[] = [];
@@ -109,10 +114,12 @@ export function useSEO(props: SEOProps) {
     if (image) setMetaTag('twitter:image', image.startsWith('http') ? image : `${SITE_CONFIG.siteUrl}${image}`, 'name');
     setMetaTag('twitter:site', SITE_CONFIG.twitterHandle, 'name');
     
-    // Canonical URL
-    if (canonicalUrl) {
-      setLinkTag('canonical', canonicalUrl);
-    }
+    // Canonical URL — always set
+    setLinkTag('canonical', resolvedCanonical);
+    cleanupTasks.push(() => {
+      const canonicalLink = document.querySelector('link[rel="canonical"]');
+      if (canonicalLink) canonicalLink.remove();
+    });
     
     // Robots meta tag for noindex
     if (noindex) {
@@ -136,5 +143,5 @@ export function useSEO(props: SEOProps) {
     return () => {
       cleanupTasks.forEach(task => task());
     };
-  }, [title, description, image, url, type, jsonLd, noindex, canonicalUrl]);
+  }, [title, description, image, url, type, jsonLd, noindex, resolvedCanonical]);
 }
