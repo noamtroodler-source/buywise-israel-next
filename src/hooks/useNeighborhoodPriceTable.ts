@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { FeaturedNeighborhood, PriceTier } from '@/types/neighborhood';
+import { combineNeighborhoodSnapshots, computeNeighborhoodSnapshot, type NeighborhoodQuarterPrice } from '@/lib/neighborhoodPriceStats';
 
 export interface NeighborhoodPriceRow {
   name: string;
@@ -76,66 +77,42 @@ export function useNeighborhoodPriceTable(citySlug: string, cityName: string | u
 
       if (priceErr) throw priceErr;
 
-      // 4. Group prices by anglo_name, averaging across multiple CBS zones
-      const neighborhoodPrices = new Map<string, {
-        latestPrices: number[];
-        prevPrices: number[];
-        latestYear: number;
-        latestQuarter: number;
-      }>();
+      // 4. Group prices by anglo_name, blending multiple mapped zones with smoothed stats
+      const neighborhoodPrices = new Map<string, ReturnType<typeof combineNeighborhoodSnapshots>>();
+      const mappingsByNeighborhood = new Map<string, string[]>();
 
       for (const mapping of typedMappings) {
-        const prices = (priceData || []).filter(
-          (p: any) => p.neighborhood_id === mapping.cbs_neighborhood_id
-        );
-        if (prices.length === 0) continue;
-
-        const latest = prices[0] as any;
-        const existing = neighborhoodPrices.get(mapping.anglo_name);
-
-        if (!existing) {
-          const prevYear = prices.find(
-            (p: any) => p.year === latest.year - 3 && p.quarter === latest.quarter
-          ) as any;
-
-          neighborhoodPrices.set(mapping.anglo_name, {
-            latestPrices: [latest.avg_price_nis],
-            prevPrices: prevYear?.avg_price_nis ? [prevYear.avg_price_nis] : [],
-            latestYear: latest.year,
-            latestQuarter: latest.quarter,
-          });
-        } else {
-          existing.latestPrices.push(latest.avg_price_nis);
-          const prevYear = prices.find(
-            (p: any) => p.year === latest.year - 3 && p.quarter === latest.quarter
-          ) as any;
-          if (prevYear?.avg_price_nis) existing.prevPrices.push(prevYear.avg_price_nis);
+        const existingIds = mappingsByNeighborhood.get(mapping.anglo_name) || [];
+        if (!existingIds.includes(mapping.cbs_neighborhood_id)) {
+          existingIds.push(mapping.cbs_neighborhood_id);
         }
+        mappingsByNeighborhood.set(mapping.anglo_name, existingIds);
+      }
+
+      for (const [angloName, zoneIds] of mappingsByNeighborhood.entries()) {
+        const snapshots = zoneIds.map((zoneId) => {
+          const prices = (priceData || []).filter(
+            (p: any) => p.neighborhood_id === zoneId
+          ) as NeighborhoodQuarterPrice[];
+
+          return computeNeighborhoodSnapshot(prices);
+        });
+
+        neighborhoodPrices.set(angloName, combineNeighborhoodSnapshots(snapshots));
       }
 
       // 5. Build final rows
       const rows: NeighborhoodPriceRow[] = [];
       for (const [name, data] of neighborhoodPrices) {
-        const avgPrice = Math.round(
-          data.latestPrices.reduce((s, v) => s + v, 0) / data.latestPrices.length
-        );
-        if (!avgPrice) continue;
-
-        let yoyChange: number | null = null;
-        if (data.prevPrices.length > 0) {
-          const avgPrev = data.prevPrices.reduce((s, v) => s + v, 0) / data.prevPrices.length;
-          if (avgPrev > 0) {
-            yoyChange = Math.round(((avgPrice - avgPrev) / avgPrev) * 1000) / 10;
-          }
-        }
+        const avgPrice = data.currentAvgPrice;
+        if (avgPrice == null || data.latestYear == null || data.latestQuarter == null) continue;
 
         const feat = featuredMap.get(name);
-        const yoyWarning = yoyChange != null && Math.abs(yoyChange) > 25;
         rows.push({
           name,
           avg_price: avgPrice,
-          yoy_change_percent: yoyChange,
-          yoy_warning: yoyWarning,
+          yoy_change_percent: data.yoyChangePercent,
+          yoy_warning: data.yoyWarning,
           latest_year: data.latestYear,
           latest_quarter: data.latestQuarter,
           price_tier: feat?.price_tier ?? null,

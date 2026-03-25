@@ -1,14 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { combineNeighborhoodSnapshots, computeNeighborhoodSnapshot, type NeighborhoodQuarterPrice } from '@/lib/neighborhoodPriceStats';
 
 export interface NeighborhoodPriceData {
-  anglo_name: string;
-  cbs_neighborhood_id: string;
   avg_price: number | null;
+  avg_price_sqm: number | null;
   yoy_change_percent: number | null;
+  yoy_warning: boolean;
   latest_year: number | null;
   latest_quarter: number | null;
-  rooms: number;
 }
 
 const AVG_SIZE_BY_ROOMS: Record<number, number> = {
@@ -83,25 +83,33 @@ export function useNeighborhoodPrices(cityName: string | undefined, rooms: numbe
 
       if (priceErr) throw priceErr;
 
-      // Step 3: For each mapping, find latest price and calculate 3-year change
+      // Step 3: Group by neighborhood and compute smoothed, outlier-resistant stats
       const avgSize = AVG_SIZE_BY_ROOMS[effectiveRooms] || 100;
 
-      const result: Record<string, {
-        avg_price: number | null;
-        avg_price_sqm: number | null;
-        yoy_change_percent: number | null;
-        yoy_warning: boolean;
-        latest_year: number | null;
-        latest_quarter: number | null;
-      }> = {};
+      const result: Record<string, NeighborhoodPriceData> = {};
+      const mappingsByNeighborhood = new Map<string, string[]>();
 
       for (const mapping of typedMappings) {
-        const prices = (priceData || []).filter(
-          (p: any) => p.neighborhood_id === mapping.cbs_neighborhood_id
-        );
+        const existingIds = mappingsByNeighborhood.get(mapping.anglo_name) || [];
+        if (!existingIds.includes(mapping.cbs_neighborhood_id)) {
+          existingIds.push(mapping.cbs_neighborhood_id);
+        }
+        mappingsByNeighborhood.set(mapping.anglo_name, existingIds);
+      }
 
-        if (prices.length === 0) {
-          result[mapping.anglo_name] = {
+      for (const [angloName, zoneIds] of mappingsByNeighborhood.entries()) {
+        const snapshots = zoneIds.map((zoneId) => {
+          const prices = (priceData || []).filter(
+            (p: any) => p.neighborhood_id === zoneId
+          ) as NeighborhoodQuarterPrice[];
+
+          return computeNeighborhoodSnapshot(prices);
+        });
+
+        const combined = combineNeighborhoodSnapshots(snapshots);
+
+        if (combined.currentAvgPrice == null) {
+          result[angloName] = {
             avg_price: null,
             avg_price_sqm: null,
             yoy_change_percent: null,
@@ -112,32 +120,13 @@ export function useNeighborhoodPrices(cityName: string | undefined, rooms: numbe
           continue;
         }
 
-        const latest = prices[0] as any;
-        const latestYear = latest.year;
-        const latestQuarter = latest.quarter;
-
-        // Average last 4 quarters (1 year) for a stable benchmark
-        const recentPrices = prices.slice(0, 4).filter((p: any) => p.avg_price_nis);
-        const avgPrice = recentPrices.length > 0
-          ? Math.round(recentPrices.reduce((sum: number, p: any) => sum + p.avg_price_nis, 0) / recentPrices.length)
-          : null;
-
-        // Compare against 3 years ago for a stable trend
-        const prevYear = prices.find(
-          (p: any) => p.year === latestYear - 3 && p.quarter === latestQuarter
-        ) as any;
-
-        const yoyChange = prevYear?.avg_price_nis && latest.avg_price_nis
-          ? Math.round(((latest.avg_price_nis - prevYear.avg_price_nis) / prevYear.avg_price_nis) * 1000) / 10
-          : null;
-
-        result[mapping.anglo_name] = {
-          avg_price: avgPrice,
-          avg_price_sqm: avgPrice ? Math.round(avgPrice / avgSize) : null,
-          yoy_change_percent: yoyChange,
-          yoy_warning: yoyChange != null && Math.abs(yoyChange) > 25,
-          latest_year: latestYear,
-          latest_quarter: latestQuarter,
+        result[angloName] = {
+          avg_price: combined.currentAvgPrice,
+          avg_price_sqm: Math.round(combined.currentAvgPrice / avgSize),
+          yoy_change_percent: combined.yoyChangePercent,
+          yoy_warning: combined.yoyWarning,
+          latest_year: combined.latestYear,
+          latest_quarter: combined.latestQuarter,
         };
       }
 
