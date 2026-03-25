@@ -1,23 +1,48 @@
 
 
-# Fix Card 3 Fallback: Room-Specific → Neighborhood → City Avg
+# Plan: Enable USD/NIS Currency Switching in All 3 Calculators
 
-## Problem
-Card 3 in PropertyValueSnapshot shows "No data yet" for properties outside the 3-5 room range (like the 2-room Jerusalem apartment in the screenshot). The data for fallbacks already exists but isn't wired up.
+## Summary
+Replace hardcoded `₪` formatting in Affordability, Rent vs Buy, and True Cost calculators with preference-aware formatting that respects the global currency toggle. Internal math stays in NIS; display values convert using the exchange rate from `usePreferences()`.
 
-## Fallback Chain
-1. **Room-specific CBS price** (current — works for 3-5 rooms)
-2. **Neighborhood avg price/sqm × property size** (data exists in MarketIntelligence as `neighborhoodAvgPriceSqm` but never passed to Card 3)
-3. **City avg price/sqm × property size** (data exists as `averagePriceSqm` prop)
+## Approach
 
-## Changes
+**Pattern** (same for all 3 files):
 
-### File 1: `src/components/property/MarketIntelligence.tsx`
-- Pass `neighborhoodAvgPriceSqm` and `property.neighborhood` as new props to `PropertyValueSnapshot`
+1. Import `usePreferences` (already imported in RentVsBuy and TrueCost; add to Affordability)
+2. Replace the hardcoded block:
+   ```tsx
+   const currencySymbol = '₪';
+   const formatPrice = ...₪...;
+   ```
+   With:
+   ```tsx
+   const { currency, exchangeRate } = usePreferences();
+   const currencySymbol = currency === 'USD' ? '$' : '₪';
+   const formatPrice = useCallback((amount: number): string => {
+     const display = currency === 'USD' ? amount / exchangeRate : amount;
+     return `${currencySymbol}${display.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+   }, [currency, exchangeRate]);
+   ```
+3. All internal calculations remain in NIS — only the final display formatting converts
 
-### File 2: `src/components/property/PropertyValueSnapshot.tsx`
-- Add `neighborhoodAvgPriceSqm` and `neighborhood` props
-- Update Card 3 logic: when `roomSpecificCityAvgPrice` is null, compute fallback total price from `neighborhoodAvgPriceSqm * sizeSqm` (if available) or `averagePriceSqm * sizeSqm` (city fallback)
-- Update label to reflect which source is used: "vs [Neighborhood] Avg" or "vs [City] Avg" with appropriate tooltip text
-- No more "No data yet" — there will almost always be a city avg available
+## File Changes
+
+### 1. `src/components/tools/AffordabilityCalculator.tsx`
+- Add `usePreferences` import from `@/contexts/PreferencesContext`
+- Replace hardcoded `currencySymbol` and `formatPrice` with preference-aware versions
+- Note: This calculator already has a separate `downPaymentCurrency` selector (USD/EUR/GBP/ILS) for the down payment input — that stays as-is since it handles foreign savings. The global toggle only affects output display.
+
+### 2. `src/components/tools/RentVsBuyCalculator.tsx`
+- Already imports `usePreferences` — just destructure `currency` and `exchangeRate`
+- Replace hardcoded `currencySymbol` and `formatPrice`
+
+### 3. `src/components/tools/TrueCostCalculator.tsx`
+- Already imports `usePreferences` — just destructure `currency` and `exchangeRate`
+- Replace hardcoded `currencySymbol` and `formatPrice`
+
+## What stays the same
+- All regulatory limits (PTI, LTV) remain NIS-based
+- Input fields keep their current behavior (NIS-denominated inputs with the Affordability down-payment currency selector unchanged)
+- The global `PreferencesDialog` toggle (already in the header) controls all 3 tools
 
