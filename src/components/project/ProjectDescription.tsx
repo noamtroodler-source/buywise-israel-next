@@ -37,7 +37,7 @@ export function ProjectDescription({ description, amenities }: ProjectDescriptio
            <div className="flex flex-wrap gap-2">
              {amenities.map((amenity, index) => (
                <Badge key={index} variant="secondary" className="text-sm font-normal">
-                 {amenity}
+                 {getAmenityLabel(amenity)}
                </Badge>
              ))}
            </div>
