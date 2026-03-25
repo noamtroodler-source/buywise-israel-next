@@ -41,7 +41,7 @@ const POPULAR_CITIES = ['Tel Aviv', 'Jerusalem', 'Herzliya', "Ra'anana", "Modi'i
 function CitySearchInput({ selectedCities, onToggleCity }: { selectedCities: string[]; onToggleCity: (city: string) => void }) {
   const [query, setQuery] = useState('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const containerRef = React.useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const filtered = query.trim()
     ? ALL_CITIES.filter(c => c.toLowerCase().includes(query.toLowerCase()) && !selectedCities.includes(c))
