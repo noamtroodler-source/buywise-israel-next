@@ -148,14 +148,10 @@ function AffordabilityCalculatorContent() {
   const { user } = useAuth();
   const { data: buyerProfile } = useBuyerProfile();
   const saveToProfile = useSaveCalculatorResult();
-  const { currency } = usePreferences();
 
-  const currencySymbol = currency === 'USD' ? '$' : '₪';
-  const exchangeRate = currency === 'USD' ? 3.6 : 1;
-  const formatPrice = (value: number) => {
-    const converted = Math.round(value / exchangeRate);
-    return `${currencySymbol}${formatNumber(converted)}`;
-  };
+  // Calculators always work in NIS — Israeli bank rules, income, and prices are NIS-denominated
+  const currencySymbol = '₪';
+  const formatPrice = (value: number) => `₪${formatNumber(Math.round(value))}`;
 
   const [monthlyIncome, setMonthlyIncome] = useState(DEFAULTS.monthlyIncome);
   const [spouseIncome, setSpouseIncome] = useState(DEFAULTS.spouseIncome);
@@ -599,7 +595,8 @@ function AffordabilityCalculatorContent() {
               title="Properties in Your Budget"
               subtitle="Based on your income, savings, and current rates"
               minPrice={Math.round(calculations.maxPropertyHigh * exchangeRate * 0.7)}
-              maxPrice={Math.round(calculations.maxPropertyHigh * exchangeRate)}
+              minPrice={Math.round(calculations.maxPropertyHigh * 0.7)}
+              maxPrice={Math.round(calculations.maxPropertyHigh)}
               enabled={hasInteracted && calculations.maxPropertyPrice > 0}
             />
             {/* 5. Continue Exploring */}

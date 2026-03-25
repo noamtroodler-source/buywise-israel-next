@@ -136,9 +136,12 @@ export function TrueCostCalculator() {
   const { data: buyerProfile } = useBuyerProfile();
   const { data: calcConstants } = useCalculatorConstants();
   const { data: cities } = useCities();
-  const { areaUnit, currency, exchangeRate } = usePreferences();
-  const formatPrice = useFormatPrice();
-  const currencySymbol = useCurrencySymbol();
+  const { areaUnit } = usePreferences();
+  // Calculators always work in NIS — Israeli bank rules and prices are NIS-denominated
+  const currencySymbol = '₪';
+  const formatPrice = useCallback((amount: number): string => {
+    return `₪${amount.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+  }, []);
   const areaUnitLabel = useAreaUnitLabel();
   const { user } = useAuth();
   const saveToProfile = useSaveCalculatorResult();
