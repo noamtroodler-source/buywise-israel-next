@@ -59,13 +59,22 @@ export function BuyerOnboarding({ open, onComplete, onClose, existingProfile }: 
   const [incomeCurrency, setIncomeCurrency] = useState<'ILS' | 'USD'>('ILS');
   const incomeCurrencySymbol = incomeCurrency === 'USD' ? '$' : '₪';
   
-  // Step 7: Core Locations state
+  // Step 9: Core Locations state
   const [onboardingLocations, setOnboardingLocations] = useState<OnboardingLocation[]>([]);
   const [locationLabel, setLocationLabel] = useState('');
   const [locationIcon, setLocationIcon] = useState<LocationIcon>('home');
   const [locationAddress, setLocationAddress] = useState('');
   const [parsedAddress, setParsedAddress] = useState<ParsedAddress | null>(null);
-  const [addressInputKey, setAddressInputKey] = useState(0); // Force reset of AddressAutocomplete
+  const [addressInputKey, setAddressInputKey] = useState(0);
+  
+  // Step 7: Budget state
+  const [budgetMin, setBudgetMin] = useState<number | null>(null);
+  const [budgetMax, setBudgetMax] = useState<number | null>(null);
+  const [budgetCurrency, setBudgetCurrency] = useState<'ILS' | 'USD'>('ILS');
+  const budgetCurrencySymbol = budgetCurrency === 'USD' ? '$' : '₪';
+  
+  // Step 8: Target Cities state
+  const [selectedCities, setSelectedCities] = useState<string[]>([]);
   
   const createProfile = useCreateBuyerProfile();
   const updateProfile = useUpdateBuyerProfile();
