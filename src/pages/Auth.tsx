@@ -188,7 +188,7 @@ export default function Auth() {
 
   const form = useForm<AuthFormData>({
     resolver: zodResolver(authSchema),
-    defaultValues: { email: '', password: '', fullName: '' },
+    defaultValues: { email: '', password: '', fullName: '', country: '', referralSource: '' },
   });
 
   // Handle already logged-in users - respect redirect param
