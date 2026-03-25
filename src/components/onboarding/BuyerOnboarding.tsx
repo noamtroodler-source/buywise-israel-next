@@ -266,6 +266,9 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
       onboarding_completed: true,
       onboarding_step: 'complete',
       mortgage_preferences: mortgagePreferences,
+      ...(budgetMin && { budget_min: budgetMin }),
+      ...(budgetMax && { budget_max: budgetMax }),
+      ...(selectedCities.length > 0 && { target_cities: selectedCities }),
       ...(savedLocations.length > 0 && { saved_locations: savedLocations }),
     };
 
