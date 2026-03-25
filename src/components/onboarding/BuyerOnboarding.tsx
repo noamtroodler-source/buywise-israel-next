@@ -515,6 +515,10 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
                     <Shield className="h-3.5 w-3.5" />
                     Your info stays private
                   </span>
+                  <span className="flex items-center gap-1.5">
+                    <Settings className="h-3.5 w-3.5" />
+                    Change anytime in your profile
+                  </span>
                 </div>
               </motion.div>
             )}
