@@ -286,7 +286,7 @@ export function ProjectMobileContactBar({ project, developer, representingAgent 
       });
     }
 
-    if (channel === 'whatsapp' && primaryPhone) {
+    if (channel === 'whatsapp') {
       const msg = data.message || `Hi${representingAgent ? ` ${representingAgent.name}` : ''}, I'm interested in ${project.name}`;
       const url = buildWhatsAppUrl(primaryPhone, msg);
       openWhatsApp(url);
