@@ -1,45 +1,55 @@
 
 
-## Plan: Add "Change Anytime" Reassurance + Polish Wizard to Brand Standards
+## Plan: Simplify Target Cities Step — Search + Popular Picks
 
 ### What's Changing
 
-Two refinements to the onboarding wizard:
+Replace the overwhelming 4-region city grid (Step 8) with a clean search-first design:
 
-1. **Add clear "change anytime" messaging** to the intro step and ensure consistency across all optional steps
-2. **Minor brand polish** to ensure the wizard matches BuyWise Israel's trusted-friend voice and elevated design system
+1. **Search input** at the top — autocompletes from the 25 whitelisted cities
+2. **Popular picks** — 5-6 quick-select chips below: Tel Aviv, Jerusalem, Herzliya, Ra'anana, Modi'in, Netanya
+3. **Selected cities** shown as dismissible chips below the search
+4. All other cities accessible via search typing
 
----
+### Visual Layout
+
+```text
+┌─────────────────────────────────┐
+│ 🗺  Which areas are you         │
+│    considering?                  │
+│ We'll prioritize these...        │
+│                                  │
+│ ┌─ 🔍 Search cities... ────────┐│
+│ │                               ││
+│ └───────────────────────────────┘│
+│  (autocomplete dropdown appears) │
+│                                  │
+│ Popular with international buyers│
+│ [Tel Aviv] [Jerusalem] [Herzliya]│
+│ [Ra'anana] [Modi'in] [Netanya]   │
+│                                  │
+│ Selected:                        │
+│ [Tel Aviv ✕] [Herzliya ✕]       │
+│                                  │
+│ 2 cities selected                │
+└─────────────────────────────────┘
+```
 
 ### File Changes
 
-**File: `src/components/onboarding/BuyerOnboarding.tsx`**
+**`src/components/onboarding/BuyerOnboarding.tsx`** — Replace lines ~984-1063 (the 4 regional group divs) with:
 
-#### 1. Intro Step — Add "change anytime" reassurance
-In the intro step (around line 508-518), update the trust footer to include a third item:
-- Current: "Just 2 minutes" + "Your info stays private"
-- New: "Just 2 minutes" + "Your info stays private" + "Change anytime in your profile"
-- Uses `Pencil` or `Settings` icon for consistency with the profile settings tab icon
+- A search `Input` with `Search` icon, filtering from the full 25-city list
+- Autocomplete dropdown (same pattern as `CityAutocomplete.tsx` — inline dropdown, click to add)
+- "Popular with international buyers" section with 6 Toggle chips for quick picks
+- Selected cities rendered as dismissible chips (click ✕ to remove)
+- Keep the existing `selectedCities` state and counter — no state changes needed
 
-#### 2. Standardize helper text across optional steps
-- **Step 6** (Financing): No helper text currently — add "You can update your financing preferences anytime in your profile settings" at the bottom
-- **Step 7** (Budget): Already has privacy note — add "You can adjust this anytime in your profile" alongside or replacing the duplicate privacy line
-- **Step 8** (Target Cities, line 1089-1092): Already says "You can change these anytime in your profile" — keep as-is
-- **Step 9** (Locations, line 1209-1212): Already says "You can always add more locations later in your profile settings" — keep as-is
+### Technical Details
 
-#### 3. Dialog description update
-Update the `DialogDescription` (line 439) from:
-> "Step X of Y — This helps us show you accurate cost estimates"
-
-To:
-> "Step X of Y — You can change any of this later in your profile"
-
-This is the single most visible place to communicate the "change anytime" message since it appears on every step.
-
----
-
-### Design Notes
-- All changes use existing component patterns (muted text, small icons, flex layouts)
+- Reuses existing `Input` component + inline dropdown pattern from `CityAutocomplete.tsx`
+- All 25 cities defined inline (already hardcoded in current step) — filtered by search query
 - No new components or dependencies needed
-- Matches the trusted-friend voice: reassuring, low-pressure
+- Toggle chips for popular cities use same styling as current step
+- Search uses simple `toLowerCase().includes()` filtering
 
