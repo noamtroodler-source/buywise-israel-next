@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
 import { useBuyerProfile } from '@/hooks/useBuyerProfile';
@@ -23,9 +24,33 @@ const authSchema = z.object({
   email: z.string().email('Please enter a valid email'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   fullName: z.string().optional(),
+  country: z.string().optional(),
+  referralSource: z.string().optional(),
 });
 
 type AuthFormData = z.infer<typeof authSchema>;
+
+const COUNTRY_OPTIONS = [
+  { value: 'US', label: 'United States' },
+  { value: 'GB', label: 'United Kingdom' },
+  { value: 'CA', label: 'Canada' },
+  { value: 'AU', label: 'Australia' },
+  { value: 'FR', label: 'France' },
+  { value: 'ZA', label: 'South Africa' },
+  { value: 'DE', label: 'Germany' },
+  { value: 'AR', label: 'Argentina' },
+  { value: 'IL', label: 'Israel' },
+  { value: 'OTHER', label: 'Other' },
+];
+
+const REFERRAL_OPTIONS = [
+  { value: 'google', label: 'Google Search' },
+  { value: 'social_media', label: 'Social Media' },
+  { value: 'friend_family', label: 'Friend or Family' },
+  { value: 'agent', label: 'Real Estate Agent' },
+  { value: 'news_blog', label: 'News or Blog' },
+  { value: 'other', label: 'Other' },
+];
 
 // Intent-based messaging configuration for context-aware auth
 const intentConfig: Record<string, { signupDesc: string; signinDesc: string; icon: LucideIcon }> = {
@@ -164,7 +189,7 @@ export default function Auth() {
 
   const form = useForm<AuthFormData>({
     resolver: zodResolver(authSchema),
-    defaultValues: { email: '', password: '', fullName: '' },
+    defaultValues: { email: '', password: '', fullName: '', country: '', referralSource: '' },
   });
 
   // Handle already logged-in users - respect redirect param
@@ -242,6 +267,17 @@ export default function Auth() {
           }
           } else {
             setJustSignedUp(true);
+            // Save country + referral source to profile after signup
+            if (data.country || data.referralSource) {
+              supabase.auth.getUser().then(({ data: userData }) => {
+                if (userData?.user) {
+                  supabase.from('profiles').update({
+                    country: data.country || null,
+                    referral_source: data.referralSource || null,
+                  }).eq('id', userData.user.id).then(() => {});
+                }
+              });
+            }
             if (isProfessionalSignup) {
               toast.success('Account created! Redirecting to complete your registration...');
             }
@@ -340,6 +376,60 @@ export default function Auth() {
                         </FormItem>
                       )}
                     />
+
+                    {!isProfessionalSignup && (
+                      <>
+                        <FormField
+                          control={form.control}
+                          name="country"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Where do you live?</FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select your country" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {COUNTRY_OPTIONS.map((opt) => (
+                                    <SelectItem key={opt.value} value={opt.value}>
+                                      {opt.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="referralSource"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>How did you hear about us?</FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Let us know — we're curious!" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {REFERRAL_OPTIONS.map((opt) => (
+                                    <SelectItem key={opt.value} value={opt.value}>
+                                      {opt.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </>
+                    )}
                   </TabsContent>
                   
                   <FormField

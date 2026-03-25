@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, Plane, Building2, User, ArrowRight, ArrowLeft, Check, ArrowUpDown, TrendingUp, Percent, Calendar, DollarSign, Banknote, MapPin, X, Receipt, Wallet, Target, Clock, Shield } from 'lucide-react';
+import { Home, Plane, Building2, User, ArrowRight, ArrowLeft, Check, ArrowUpDown, TrendingUp, Percent, Calendar, DollarSign, Banknote, MapPin, X, Receipt, Wallet, Target, Clock, Shield, Coins } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -27,7 +27,7 @@ interface BuyerOnboardingProps {
   existingProfile?: BuyerProfile | null;
 }
 
-type Step = 'intro' | 1 | 2 | 3 | 4 | 5 | 6 | 7;
+type Step = 'intro' | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 
 interface OnboardingLocation {
   label: string;
@@ -59,13 +59,22 @@ export function BuyerOnboarding({ open, onComplete, onClose, existingProfile }: 
   const [incomeCurrency, setIncomeCurrency] = useState<'ILS' | 'USD'>('ILS');
   const incomeCurrencySymbol = incomeCurrency === 'USD' ? '$' : '₪';
   
-  // Step 7: Core Locations state
+  // Step 9: Core Locations state
   const [onboardingLocations, setOnboardingLocations] = useState<OnboardingLocation[]>([]);
   const [locationLabel, setLocationLabel] = useState('');
   const [locationIcon, setLocationIcon] = useState<LocationIcon>('home');
   const [locationAddress, setLocationAddress] = useState('');
   const [parsedAddress, setParsedAddress] = useState<ParsedAddress | null>(null);
-  const [addressInputKey, setAddressInputKey] = useState(0); // Force reset of AddressAutocomplete
+  const [addressInputKey, setAddressInputKey] = useState(0);
+  
+  // Step 7: Budget state
+  const [budgetMin, setBudgetMin] = useState<number | null>(null);
+  const [budgetMax, setBudgetMax] = useState<number | null>(null);
+  const [budgetCurrency, setBudgetCurrency] = useState<'ILS' | 'USD'>('ILS');
+  const budgetCurrencySymbol = budgetCurrency === 'USD' ? '$' : '₪';
+  
+  // Step 8: Target Cities state
+  const [selectedCities, setSelectedCities] = useState<string[]>([]);
   
   const createProfile = useCreateBuyerProfile();
   const updateProfile = useUpdateBuyerProfile();
@@ -80,7 +89,7 @@ export function BuyerOnboarding({ open, onComplete, onClose, existingProfile }: 
           existingProfile.onboarding_step !== 'complete' &&
           !existingProfile.onboarding_completed) {
         const savedStep = parseInt(existingProfile.onboarding_step);
-        if (!isNaN(savedStep) && savedStep >= 1 && savedStep <= 7) {
+        if (!isNaN(savedStep) && savedStep >= 1 && savedStep <= 9) {
           setStep(savedStep as Step);
         } else {
           setStep('intro');
@@ -116,26 +125,21 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
   const getNextStep = (currentStep: Step): Step => {
     if (currentStep === 'intro') return 1;
     if (currentStep === 1) {
-      // Skip Aliyah year if not Oleh
       return answers.residency_status === 'oleh_hadash' ? 2 : 3;
     }
-    if (currentStep === 6) {
-      return 7; // Go to optional core locations step
-    }
+    if (currentStep === 6) return 7; // Budget (optional)
+    if (currentStep === 7) return 8; // Target Cities (optional)
+    if (currentStep === 8) return 9; // Core Locations (optional)
     return (currentStep + 1) as Step;
   };
 
   const getPrevStep = (currentStep: Step): Step => {
     if (currentStep === 1) return 'intro';
-    if (currentStep === 3 && answers.residency_status !== 'oleh_hadash') {
-      return 1;
-    }
-    if (currentStep === 7) {
-      return 6;
-    }
-    if (typeof currentStep === 'number') {
-      return (currentStep - 1) as Step;
-    }
+    if (currentStep === 3 && answers.residency_status !== 'oleh_hadash') return 1;
+    if (currentStep === 9) return 8;
+    if (currentStep === 8) return 7;
+    if (currentStep === 7) return 6;
+    if (typeof currentStep === 'number') return (currentStep - 1) as Step;
     return 'intro';
   };
 
@@ -190,7 +194,7 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
       await saveStepProgress(step);
     }
     
-    if (nextStep === 'intro' || (typeof nextStep === 'number' && nextStep <= 7)) {
+    if (nextStep === 'intro' || (typeof nextStep === 'number' && nextStep <= 9)) {
       setStep(nextStep);
     } else {
       handleComplete();
@@ -204,7 +208,6 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
   };
 
   const handleSkipStep = async () => {
-    // Save step 6 progress before skipping
     if (step === 6) {
       const mortgagePreferences = {
         include_mortgage: financingMethod === 'mortgage',
@@ -227,7 +230,11 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
         console.error('Failed to save mortgage step:', error);
       }
       
-      setStep(7); // Skip mortgage, go to locations
+      setStep(7); // Skip to budget
+    } else if (step === 7) {
+      setStep(8); // Skip budget, go to target cities
+    } else if (step === 8) {
+      setStep(9); // Skip target cities, go to locations
     } else {
       handleComplete(); // Skip locations, complete onboarding
     }
@@ -259,6 +266,9 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
       onboarding_completed: true,
       onboarding_step: 'complete',
       mortgage_preferences: mortgagePreferences,
+      ...(budgetMin && { budget_min: budgetMin }),
+      ...(budgetMax && { budget_max: budgetMax }),
+      ...(selectedCities.length > 0 && { target_cities: selectedCities }),
       ...(savedLocations.length > 0 && { saved_locations: savedLocations }),
     };
 
@@ -287,9 +297,13 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
       case 5:
         return !!answers.buyer_entity;
       case 6:
-        return true; // Optional step, always can proceed
+        return true; // Optional step
       case 7:
-        return true; // Optional step, always can proceed
+        return true; // Optional budget step
+      case 8:
+        return true; // Optional target cities step
+      case 9:
+        return true; // Optional locations step
       default:
         return false;
     }
@@ -307,11 +321,13 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
     if (step === 5) return 4;
     if (step === 6) return 5;
     if (step === 7) return 6;
+    if (step === 8) return 7;
+    if (step === 9) return 8;
     return step;
   };
 
   const getTotalSteps = () => {
-    return answers.residency_status === 'oleh_hadash' ? 7 : 6;
+    return answers.residency_status === 'oleh_hadash' ? 9 : 8;
   };
 
   // Step 7: Add location helper function
@@ -869,10 +885,194 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
               </motion.div>
             )}
 
-            {/* Step 7: Core Locations (Optional) */}
+            {/* Step 7: Budget Range (Optional) */}
             {step === 7 && (
               <motion.div
                 key="step7"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="space-y-4"
+              >
+                <div>
+                  <h3 className="font-medium text-foreground flex items-center gap-2">
+                    <Coins className="h-5 w-5 text-primary" />
+                    What's your budget range?
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    We'll highlight properties in your range and flag great deals — never shared with anyone without your permission.
+                  </p>
+                </div>
+
+                <div className="space-y-3 p-4 rounded-lg border border-border bg-muted/30">
+                  <div className="flex items-center justify-between mb-2">
+                    <Label className="text-sm font-medium">Currency</Label>
+                    <div className="flex gap-1">
+                      <Toggle
+                        size="sm"
+                        pressed={budgetCurrency === 'ILS'}
+                        onPressedChange={() => setBudgetCurrency('ILS')}
+                        className="h-7 px-2 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                      >
+                        ₪
+                      </Toggle>
+                      <Toggle
+                        size="sm"
+                        pressed={budgetCurrency === 'USD'}
+                        onPressedChange={() => setBudgetCurrency('USD')}
+                        className="h-7 px-2 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                      >
+                        $
+                      </Toggle>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label className="text-sm">From</Label>
+                    <FormattedNumberInput
+                      value={budgetMin}
+                      onChange={setBudgetMin}
+                      prefix={budgetCurrencySymbol}
+                      placeholder={budgetCurrency === 'USD' ? '200,000' : '800,000'}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label className="text-sm">Up to</Label>
+                    <FormattedNumberInput
+                      value={budgetMax}
+                      onChange={setBudgetMax}
+                      prefix={budgetCurrencySymbol}
+                      placeholder={budgetCurrency === 'USD' ? '500,000' : '2,000,000'}
+                    />
+                  </div>
+                </div>
+
+                <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1.5">
+                  <Shield className="h-3.5 w-3.5" />
+                  Only used to personalize your feed. Never shared without your permission.
+                </p>
+              </motion.div>
+            )}
+
+            {/* Step 8: Target Cities (Optional) */}
+            {step === 8 && (
+              <motion.div
+                key="step8"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="space-y-4"
+              >
+                <div>
+                  <h3 className="font-medium text-foreground flex items-center gap-2">
+                    <MapPin className="h-5 w-5 text-primary" />
+                    Which areas are you considering?
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    We'll prioritize these in your search and alert you to new listings and price drops.
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  {/* Tel Aviv Region */}
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Greater Tel Aviv</p>
+                    <div className="flex flex-wrap gap-2">
+                      {['Tel Aviv', 'Ramat Gan', 'Petah Tikva', 'Hod HaSharon', 'Kfar Saba', "Ra'anana", 'Herzliya', 'Givat Shmuel'].map(city => (
+                        <Toggle
+                          key={city}
+                          size="sm"
+                          pressed={selectedCities.includes(city)}
+                          onPressedChange={(pressed) => {
+                            setSelectedCities(prev => pressed ? [...prev, city] : prev.filter(c => c !== city));
+                          }}
+                          className="h-8 px-3 text-xs rounded-full data-[state=on]:bg-primary data-[state=on]:text-primary-foreground border border-border"
+                        >
+                          {city}
+                        </Toggle>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Central */}
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Central</p>
+                    <div className="flex flex-wrap gap-2">
+                      {["Modi'in", 'Netanya', 'Hadera', 'Pardes Hanna', 'Zichron Yaakov', 'Caesarea'].map(city => (
+                        <Toggle
+                          key={city}
+                          size="sm"
+                          pressed={selectedCities.includes(city)}
+                          onPressedChange={(pressed) => {
+                            setSelectedCities(prev => pressed ? [...prev, city] : prev.filter(c => c !== city));
+                          }}
+                          className="h-8 px-3 text-xs rounded-full data-[state=on]:bg-primary data-[state=on]:text-primary-foreground border border-border"
+                        >
+                          {city}
+                        </Toggle>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Jerusalem */}
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Jerusalem & Surrounds</p>
+                    <div className="flex flex-wrap gap-2">
+                      {['Jerusalem', 'Mevaseret Zion', 'Beit Shemesh', "Ma'ale Adumim", 'Efrat', 'Gush Etzion'].map(city => (
+                        <Toggle
+                          key={city}
+                          size="sm"
+                          pressed={selectedCities.includes(city)}
+                          onPressedChange={(pressed) => {
+                            setSelectedCities(prev => pressed ? [...prev, city] : prev.filter(c => c !== city));
+                          }}
+                          className="h-8 px-3 text-xs rounded-full data-[state=on]:bg-primary data-[state=on]:text-primary-foreground border border-border"
+                        >
+                          {city}
+                        </Toggle>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* South + North */}
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">South & North</p>
+                    <div className="flex flex-wrap gap-2">
+                      {['Beer Sheva', 'Ashkelon', 'Ashdod', 'Eilat', 'Haifa'].map(city => (
+                        <Toggle
+                          key={city}
+                          size="sm"
+                          pressed={selectedCities.includes(city)}
+                          onPressedChange={(pressed) => {
+                            setSelectedCities(prev => pressed ? [...prev, city] : prev.filter(c => c !== city));
+                          }}
+                          className="h-8 px-3 text-xs rounded-full data-[state=on]:bg-primary data-[state=on]:text-primary-foreground border border-border"
+                        >
+                          {city}
+                        </Toggle>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {selectedCities.length > 0 && (
+                  <p className="text-xs text-primary text-center font-medium">
+                    {selectedCities.length} {selectedCities.length === 1 ? 'city' : 'cities'} selected
+                  </p>
+                )}
+
+                <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1.5">
+                  <MapPin className="h-3.5 w-3.5 text-primary" />
+                  You can change these anytime in your profile
+                </p>
+              </motion.div>
+            )}
+
+            {/* Step 9: Core Locations (Optional) */}
+            {step === 9 && (
+              <motion.div
+                key="step9"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -1005,7 +1205,7 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
             </Button>
           )}
           <div className="flex gap-2">
-            {(step === 6 || step === 7) && (
+            {(step === 6 || step === 7 || step === 8 || step === 9) && (
               <Button
                 variant="outline"
                 onClick={handleSkipStep}
@@ -1015,11 +1215,11 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
               </Button>
             )}
             <Button
-              onClick={step === 7 ? handleComplete : handleNext}
+              onClick={step === 9 ? handleComplete : handleNext}
               disabled={!canProceed() || isPending}
               className="gap-2"
             >
-              {step === 7 ? (
+              {step === 9 ? (
                 <>
                   {isPending ? 'Saving...' : 'Complete'}
                   <Check className="h-4 w-4" />
