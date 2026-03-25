@@ -1205,7 +1205,7 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
             </Button>
           )}
           <div className="flex gap-2">
-            {(step === 6 || step === 7) && (
+            {(step === 6 || step === 7 || step === 8 || step === 9) && (
               <Button
                 variant="outline"
                 onClick={handleSkipStep}
@@ -1215,11 +1215,11 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
               </Button>
             )}
             <Button
-              onClick={step === 7 ? handleComplete : handleNext}
+              onClick={step === 9 ? handleComplete : handleNext}
               disabled={!canProceed() || isPending}
               className="gap-2"
             >
-              {step === 7 ? (
+              {step === 9 ? (
                 <>
                   {isPending ? 'Saving...' : 'Complete'}
                   <Check className="h-4 w-4" />
