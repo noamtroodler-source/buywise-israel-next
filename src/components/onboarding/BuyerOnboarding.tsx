@@ -208,7 +208,6 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
   };
 
   const handleSkipStep = async () => {
-    // Save step 6 progress before skipping
     if (step === 6) {
       const mortgagePreferences = {
         include_mortgage: financingMethod === 'mortgage',
@@ -231,7 +230,11 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
         console.error('Failed to save mortgage step:', error);
       }
       
-      setStep(7); // Skip mortgage, go to locations
+      setStep(7); // Skip to budget
+    } else if (step === 7) {
+      setStep(8); // Skip budget, go to target cities
+    } else if (step === 8) {
+      setStep(9); // Skip target cities, go to locations
     } else {
       handleComplete(); // Skip locations, complete onboarding
     }
