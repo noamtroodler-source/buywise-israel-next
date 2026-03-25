@@ -114,10 +114,12 @@ export function useSEO(props: SEOProps) {
     if (image) setMetaTag('twitter:image', image.startsWith('http') ? image : `${SITE_CONFIG.siteUrl}${image}`, 'name');
     setMetaTag('twitter:site', SITE_CONFIG.twitterHandle, 'name');
     
-    // Canonical URL
-    if (canonicalUrl) {
-      setLinkTag('canonical', canonicalUrl);
-    }
+    // Canonical URL — always set
+    setLinkTag('canonical', resolvedCanonical);
+    cleanupTasks.push(() => {
+      const canonicalLink = document.querySelector('link[rel="canonical"]');
+      if (canonicalLink) canonicalLink.remove();
+    });
     
     // Robots meta tag for noindex
     if (noindex) {
