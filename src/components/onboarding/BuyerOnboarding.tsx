@@ -1069,10 +1069,6 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
                   </p>
                 )}
 
-                <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1.5">
-                  <MapPin className="h-3.5 w-3.5 text-primary" />
-                  You can change these anytime in your profile
-                </p>
               </motion.div>
             )}
 
