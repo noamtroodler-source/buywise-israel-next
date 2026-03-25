@@ -1184,11 +1184,6 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
                   </div>
                 )}
 
-                {/* Helper text */}
-                <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1.5">
-                  <MapPin className="h-3.5 w-3.5 text-primary" />
-                  You can always add more locations later in your profile settings
-                </p>
               </motion.div>
             )}
           </AnimatePresence>
