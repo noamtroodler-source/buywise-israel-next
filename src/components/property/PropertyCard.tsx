@@ -100,6 +100,8 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
     return { daysOnMarket: days, isNewListing: isNew, daysLabel: label, freshnessTier: tier, hasPriceDrop: hasDrop, priceDropPercent: dropPercent, hasPriceIncrease: hasIncrease };
   }, [property.created_at, property.original_price, property.price]);
 
+  const smartSignal = useMemo(() => getSmartSignal(property), [property]);
+
   // Check if this is a rental (for more prominent freshness treatment)
   const isRental = property.listing_status === 'for_rent';
 
