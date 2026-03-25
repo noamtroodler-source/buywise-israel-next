@@ -595,6 +595,7 @@ function AffordabilityCalculatorContent() {
               title="Properties in Your Budget"
               subtitle="Based on your income, savings, and current rates"
               minPrice={Math.round(calculations.maxPropertyHigh * exchangeRate * 0.7)}
+              minPrice={Math.round(calculations.maxPropertyHigh * 0.7)}
               maxPrice={Math.round(calculations.maxPropertyHigh)}
               enabled={hasInteracted && calculations.maxPropertyPrice > 0}
             />
