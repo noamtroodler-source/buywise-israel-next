@@ -1,0 +1,12 @@
+UPDATE properties SET latitude = 32.04960790000001, longitude = 34.7588317 WHERE id = 'd91fa96a-6c28-413a-b46f-479805acf95c';
+UPDATE properties SET latitude = 32.0810305, longitude = 34.777274 WHERE id = 'c041d5e9-a2a8-4d72-87e6-c782cf648880';
+UPDATE properties SET latitude = 32.0571241, longitude = 34.7671708 WHERE id = '46b56fee-4b90-41e4-8aad-e846b55c8fbb';
+UPDATE properties SET latitude = 32.0943833, longitude = 34.7943088 WHERE id = 'b75605db-92b6-45e0-b490-d3fb382949d6';
+UPDATE properties SET latitude = 32.0803412, longitude = 34.7701938 WHERE id = 'ed14085b-5216-46e9-8240-443034ee4e04';
+UPDATE properties SET latitude = 32.0756904, longitude = 34.768191 WHERE id = 'e0757eb1-f7eb-45e1-b2ae-e5c66247ccf1';
+UPDATE properties SET latitude = 32.0764071, longitude = 34.7747779 WHERE id = '7784e792-80e7-4375-841d-42d874b290d3';
+UPDATE properties SET latitude = 32.0599595, longitude = 34.76796059999999 WHERE id = 'a505840e-9ca8-4f26-8ea5-01099bb663d9';
+UPDATE properties SET latitude = 32.0599595, longitude = 34.76796059999999 WHERE id = '85807b17-2783-45c8-9849-2c11f37dcf2c';
+UPDATE properties SET latitude = 32.0559475, longitude = 34.7725392 WHERE id = '6e4d338f-39fb-4773-ab8c-caf3f360292a';
+UPDATE properties SET latitude = 32.0585092, longitude = 34.7653974 WHERE id = '468174da-04bd-4348-9742-ab030cd59ba4';
+UPDATE properties SET latitude = 32.2900529, longitude = 34.8512254 WHERE id = '8ec40282-61b1-4306-9a04-95c83f259bf5';
