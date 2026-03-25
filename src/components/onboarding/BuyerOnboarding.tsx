@@ -28,7 +28,114 @@ interface BuyerOnboardingProps {
   existingProfile?: BuyerProfile | null;
 }
 
-type Step = 'intro' | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+const ALL_CITIES = [
+  'Tel Aviv', 'Jerusalem', 'Herzliya', "Ra'anana", "Modi'in", 'Netanya',
+  'Ramat Gan', 'Petah Tikva', 'Hod HaSharon', 'Kfar Saba', 'Givat Shmuel',
+  'Hadera', 'Pardes Hanna', 'Zichron Yaakov', 'Caesarea',
+  'Mevaseret Zion', 'Beit Shemesh', "Ma'ale Adumim", 'Efrat', 'Gush Etzion',
+  'Beer Sheva', 'Ashkelon', 'Ashdod', 'Eilat', 'Haifa'
+];
+
+const POPULAR_CITIES = ['Tel Aviv', 'Jerusalem', 'Herzliya', "Ra'anana", "Modi'in", 'Netanya'];
+
+function CitySearchInput({ selectedCities, onToggleCity }: { selectedCities: string[]; onToggleCity: (city: string) => void }) {
+  const [query, setQuery] = useState('');
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  const filtered = query.trim()
+    ? ALL_CITIES.filter(c => c.toLowerCase().includes(query.toLowerCase()) && !selectedCities.includes(c))
+    : [];
+
+  React.useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setDropdownOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  return (
+    <div className="space-y-3">
+      {/* Search */}
+      <div ref={containerRef} className="relative">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            value={query}
+            onChange={(e) => { setQuery(e.target.value); setDropdownOpen(true); }}
+            onFocus={() => query.trim() && setDropdownOpen(true)}
+            placeholder="Search cities..."
+            className="h-11 pl-9 rounded-xl"
+            autoComplete="off"
+          />
+        </div>
+        {dropdownOpen && filtered.length > 0 && (
+          <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-xl shadow-lg max-h-48 overflow-auto">
+            {filtered.map(city => (
+              <button
+                key={city}
+                type="button"
+                onClick={() => { onToggleCity(city); setQuery(''); setDropdownOpen(false); }}
+                className="w-full px-3 py-2.5 text-left text-sm hover:bg-muted/50 first:rounded-t-xl last:rounded-b-xl"
+              >
+                {city}
+              </button>
+            ))}
+          </div>
+        )}
+        {dropdownOpen && query.trim() && filtered.length === 0 && (
+          <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-xl shadow-lg p-3 text-sm text-muted-foreground">
+            No city found
+          </div>
+        )}
+      </div>
+
+      {/* Popular picks */}
+      <div>
+        <p className="text-xs font-medium text-muted-foreground mb-2">Popular with international buyers</p>
+        <div className="flex flex-wrap gap-2">
+          {POPULAR_CITIES.map(city => (
+            <Toggle
+              key={city}
+              size="sm"
+              pressed={selectedCities.includes(city)}
+              onPressedChange={() => onToggleCity(city)}
+              className="h-8 px-3 text-xs rounded-full data-[state=on]:bg-primary data-[state=on]:text-primary-foreground border border-border"
+            >
+              {city}
+            </Toggle>
+          ))}
+        </div>
+      </div>
+
+      {/* Selected chips */}
+      {selectedCities.length > 0 && (
+        <div>
+          <p className="text-xs font-medium text-muted-foreground mb-2">Selected</p>
+          <div className="flex flex-wrap gap-2">
+            {selectedCities.map(city => (
+              <span
+                key={city}
+                className="inline-flex items-center gap-1 h-8 px-3 text-xs rounded-full bg-primary text-primary-foreground"
+              >
+                {city}
+                <button type="button" onClick={() => onToggleCity(city)} className="hover:opacity-70">
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+          <p className="text-xs text-primary text-center font-medium mt-2">
+            {selectedCities.length} {selectedCities.length === 1 ? 'city' : 'cities'} selected
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 
 interface OnboardingLocation {
   label: string;
