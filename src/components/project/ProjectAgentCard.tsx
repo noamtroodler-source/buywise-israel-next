@@ -56,11 +56,12 @@ export function ProjectAgentCard({ agent, projectName, projectId, developerId }:
       });
     }
 
-    if (channel === 'whatsapp' && agent.phone) {
+    if (channel === 'whatsapp') {
+      const phone = getEffectivePhone(agent.phone);
       const whatsappMessage = data.message || (projectName 
         ? `Hi ${agent.name}, I'm interested in ${projectName} and would like more information.`
         : `Hi ${agent.name}, I'm interested in learning more about a project you represent.`);
-      const url = buildWhatsAppUrl(agent.phone, whatsappMessage);
+      const url = buildWhatsAppUrl(phone, whatsappMessage);
       openWhatsApp(url);
     } else if (channel === 'email') {
       const subject = projectName 
