@@ -44,16 +44,22 @@ interface QuestionsResponse {
 }
 
 async function fetchListingQuestions(listing: ListingData): Promise<QuestionsResponse> {
-  const { data, error } = await supabase.functions.invoke('generate-listing-questions', {
-    body: { listing }
-  });
+  try {
+    const { data, error } = await supabase.functions.invoke('generate-listing-questions', {
+      body: { listing }
+    });
 
-  if (error) {
-    console.error('Error calling generate-listing-questions:', error);
-    throw error;
+    if (error) {
+      console.error('Error calling generate-listing-questions:', error);
+      // Return empty fallback instead of throwing so the component can handle gracefully
+      return { questions: [], source: 'fallback' };
+    }
+
+    return data as QuestionsResponse;
+  } catch (err) {
+    console.error('Network error calling generate-listing-questions:', err);
+    return { questions: [], source: 'fallback' };
   }
-
-  return data as QuestionsResponse;
 }
 
 /**

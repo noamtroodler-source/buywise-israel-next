@@ -268,10 +268,16 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error("Error in generate-listing-questions:", error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    // Instead of returning 500, return fallback questions so the UI always shows something
+    try {
+      const { listing } = await req.clone().json().catch(() => ({ listing: { type: 'buy' } as ListingData }));
+      return await getFallbackQuestions(listing as ListingData);
+    } catch {
+      return new Response(
+        JSON.stringify({ questions: [], source: "fallback" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
   }
 });
 
