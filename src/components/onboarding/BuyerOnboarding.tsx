@@ -89,7 +89,7 @@ export function BuyerOnboarding({ open, onComplete, onClose, existingProfile }: 
           existingProfile.onboarding_step !== 'complete' &&
           !existingProfile.onboarding_completed) {
         const savedStep = parseInt(existingProfile.onboarding_step);
-        if (!isNaN(savedStep) && savedStep >= 1 && savedStep <= 7) {
+        if (!isNaN(savedStep) && savedStep >= 1 && savedStep <= 9) {
           setStep(savedStep as Step);
         } else {
           setStep('intro');
