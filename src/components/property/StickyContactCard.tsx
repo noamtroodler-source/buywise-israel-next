@@ -9,7 +9,7 @@ import { MessageCircle, Mail, Share2, Heart, BookOpen, ChevronRight } from 'luci
 import { motion } from 'framer-motion';
 import { trackInquiry } from '@/hooks/useInquiryTracking';
 import { useAuth } from '@/hooks/useAuth';
-import { buildWhatsAppUrl, openWhatsApp } from '@/lib/whatsapp';
+import { buildWhatsAppUrl, openWhatsApp, getEffectivePhone } from '@/lib/whatsapp';
 import { cn } from '@/lib/utils';
 import { InquiryModal, InquiryChannel, InquiryFormData } from '@/components/shared/InquiryModal';
 
