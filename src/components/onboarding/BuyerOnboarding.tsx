@@ -194,7 +194,7 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
       await saveStepProgress(step);
     }
     
-    if (nextStep === 'intro' || (typeof nextStep === 'number' && nextStep <= 7)) {
+    if (nextStep === 'intro' || (typeof nextStep === 'number' && nextStep <= 9)) {
       setStep(nextStep);
     } else {
       handleComplete();
