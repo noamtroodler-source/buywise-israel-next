@@ -910,6 +910,11 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
                     </div>
                   </div>
                 )}
+
+                <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1.5">
+                  <Settings className="h-3.5 w-3.5" />
+                  You can update your financing preferences anytime in your profile
+                </p>
               </motion.div>
             )}
 
