@@ -1,17 +1,30 @@
 import { Layout } from '@/components/layout/Layout';
-import { Loader2, Compass, ArrowRight } from 'lucide-react';
+import { Loader2, Compass, ArrowRight, MapPin, Banknote, Heart, Target, Building2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useBuyerJourneyStage } from '@/hooks/useBuyerJourneyStage';
+import { useBuyerProfile } from '@/hooks/useBuyerProfile';
+import { useFavorites } from '@/hooks/useFavorites';
+import { useSavedLocations } from '@/hooks/useSavedLocations';
 import { JourneyStepper } from '@/components/journey/JourneyStepper';
 import { StageContent } from '@/components/journey/StageContent';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+
+function formatBudget(min?: number | null, max?: number | null) {
+  const fmt = (n: number) => n >= 1_000_000 ? `₪${(n / 1_000_000).toFixed(1)}M` : `₪${(n / 1_000).toFixed(0)}K`;
+  if (min && max) return `${fmt(min)} – ${fmt(max)}`;
+  if (max) return `Up to ${fmt(max)}`;
+  if (min) return `From ${fmt(min)}`;
+  return null;
+}
 
 export default function MyJourney() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { currentStage, stageInfo, stages, setStage, isLoading, isUpdating, hasProfile, currentIndex } = useBuyerJourneyStage();
+  const { currentStage, stageInfo, stages, setStage, isLoading, isUpdating, currentIndex } = useBuyerJourneyStage();
+  const { data: profile } = useBuyerProfile();
+  const { favoriteIds } = useFavorites();
+  const { data: savedLocations = [] } = useSavedLocations();
 
   if (!user) {
     return (
@@ -37,34 +50,66 @@ export default function MyJourney() {
   }
 
   const nextStage = currentIndex < stages.length - 1 ? stages[currentIndex + 1] : null;
+  const budgetStr = formatBudget(profile?.budget_min, profile?.budget_max);
+  const targetCities = profile?.target_cities || [];
+  const savedCount = favoriteIds?.length || 0;
+  const locationsCount = savedLocations.length;
+
+  // Build context chips from buyer profile data
+  const contextChips: { icon: React.ReactNode; label: string; href: string }[] = [];
+  if (budgetStr) contextChips.push({ icon: <Banknote className="h-3.5 w-3.5" />, label: budgetStr, href: '/profile' });
+  if (targetCities.length > 0) {
+    const cityLabel = targetCities.length <= 2 ? targetCities.join(', ') : `${targetCities.length} cities`;
+    contextChips.push({ icon: <Target className="h-3.5 w-3.5" />, label: cityLabel, href: '/profile' });
+  }
+  if (savedCount > 0) contextChips.push({ icon: <Heart className="h-3.5 w-3.5" />, label: `${savedCount} saved`, href: '/favorites' });
+  if (locationsCount > 0) contextChips.push({ icon: <MapPin className="h-3.5 w-3.5" />, label: `${locationsCount} location${locationsCount !== 1 ? 's' : ''}`, href: '/profile' });
 
   return (
     <Layout>
       <div className="container py-6 md:py-10 max-w-3xl">
         {/* Page header */}
-        <div className="mb-8">
+        <div className="mb-6">
           <div className="flex items-center gap-2 mb-1">
-            <Compass className="h-5 w-5 text-primary" />
-            <h1 className="text-xl md:text-2xl font-bold text-foreground">My Buying Journey</h1>
+            <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+              <Compass className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="text-xl md:text-2xl font-bold text-foreground">My Buying Journey</h1>
+              <p className="text-sm text-muted-foreground">
+                Your personal roadmap. Click any stage to see what matters most right now.
+              </p>
+            </div>
           </div>
-          <p className="text-sm text-muted-foreground">
-            Your personal roadmap. Click any stage to see what matters most right now.
-          </p>
+
+          {/* Context chips — show buyer's key data points */}
+          {contextChips.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-3 ml-11">
+              {contextChips.map((chip) => (
+                <button
+                  key={chip.label}
+                  onClick={() => navigate(chip.href)}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                >
+                  {chip.icon}
+                  {chip.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Stepper */}
-        <Card className="mb-6">
-          <CardContent className="p-4">
-            <JourneyStepper
-              currentStage={currentStage}
-              onStageClick={setStage}
-              disabled={isUpdating}
-            />
-          </CardContent>
-        </Card>
+        <div className="rounded-2xl border border-border/50 bg-card shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08),0_2px_8px_-2px_rgba(0,0,0,0.04)] p-4 mb-6">
+          <JourneyStepper
+            currentStage={currentStage}
+            onStageClick={setStage}
+            disabled={isUpdating}
+          />
+        </div>
 
         {/* Stage header */}
-        <div className="mb-6">
+        <div className="mb-5">
           <h2 className="text-lg font-semibold text-foreground">{stageInfo.subtitle}</h2>
           <p className="text-sm text-muted-foreground mt-1">{stageInfo.insight}</p>
         </div>
