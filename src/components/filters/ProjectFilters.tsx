@@ -12,7 +12,7 @@ import { useCities } from '@/hooks/useCities';
 import { useDevelopers, useProjectCount } from '@/hooks/useProjects';
 import { cn } from '@/lib/utils';
 import { matchCities } from '@/lib/utils/cityMatcher';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { usePreferences } from '@/contexts/PreferencesContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ProjectMobileFilterSheet } from '@/components/filters/ProjectMobileFilterSheet';
