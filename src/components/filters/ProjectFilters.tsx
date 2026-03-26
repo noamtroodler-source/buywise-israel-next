@@ -737,6 +737,11 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
               </div>
             </div>
 
+      {/* Grid / Map Toggle */}
+      {!isMobile && (
+        <ProjectViewToggle />
+      )}
+
 
             {/* Size Section */}
             <div className="space-y-3">
