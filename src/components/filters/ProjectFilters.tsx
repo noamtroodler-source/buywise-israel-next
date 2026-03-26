@@ -88,6 +88,42 @@ const parseCommaNumber = (value: string): number | undefined => {
   return isNaN(num) ? undefined : num;
 };
 
+function ProjectViewToggle() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  const handleView = (view: 'grid' | 'map') => {
+    if (view === 'grid') return; // already on grid
+    const params = searchParams.toString();
+    navigate(`/map${params ? `?${params}` : ''}`);
+  };
+
+  return (
+    <div className="flex items-center border border-border rounded-lg p-0.5 bg-muted/30">
+      <button
+        onClick={() => handleView('grid')}
+        className={cn(
+          "flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all",
+          "bg-primary text-primary-foreground shadow-sm"
+        )}
+      >
+        <LayoutGrid className="h-3.5 w-3.5" />
+        Grid
+      </button>
+      <button
+        onClick={() => handleView('map')}
+        className={cn(
+          "flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all",
+          "text-muted-foreground hover:text-foreground"
+        )}
+      >
+        <Map className="h-3.5 w-3.5" />
+        Map
+      </button>
+    </div>
+  );
+}
+
 
 export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: ProjectFiltersProps) {
   const [cityOpen, setCityOpen] = useState(false);
