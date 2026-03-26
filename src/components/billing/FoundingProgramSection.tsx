@@ -65,9 +65,6 @@ export function FoundingProgramSection() {
         ))}
       </div>
 
-      <p className="text-center text-sm text-muted-foreground mt-6">
-        Use code <strong className="text-primary">FOUNDING2026</strong> at checkout to activate your founding partner benefits.
-      </p>
     </div>
   );
 }
