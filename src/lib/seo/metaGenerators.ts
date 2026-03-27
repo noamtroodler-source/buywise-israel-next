@@ -33,40 +33,76 @@ interface PropertyMetaInput {
   description?: string | null;
   condition?: string | null;
   features?: string[] | null;
+  featured_highlight?: string | null;
+  is_furnished?: boolean | null;
+  parking?: number | null;
   agent?: { name: string } | null;
 }
 
 export function generatePropertyMeta(property: PropertyMetaInput): { title: string; description: string } {
   const typeLabel = PROPERTY_TYPE_LABELS[property.property_type || 'apartment'] || 'Property';
-  const statusLabel = LISTING_STATUS_LABELS[property.listing_status || 'for_sale'] || 'For Sale';
-  const location = property.neighborhood 
-    ? `${property.neighborhood}, ${property.city}` 
-    : property.city;
-  
-  // Generate title: "3 Bed Apartment in Tel Aviv | ₪2,500,000 | BuyWise Israel"
-  const bedsText = property.bedrooms ? `${property.bedrooms} Bed ` : '';
-  const priceText = formatPrice(property.price, property.currency);
   const isRental = property.listing_status === 'for_rent';
+  const location = property.neighborhood
+    ? `${property.neighborhood}, ${property.city}`
+    : property.city;
+
+  // Format price compactly: ₪4.2M or ₪4,200,000 for smaller values
+  const formatCompact = (price: number, currency: string = 'ILS'): string => {
+    const symbol = currency === 'USD' ? '$' : '₪';
+    if (price >= 1_000_000) {
+      const millions = price / 1_000_000;
+      return `${symbol}${parseFloat(millions.toFixed(1))}M`;
+    }
+    return `${symbol}${price.toLocaleString()}`;
+  };
+
+  const priceText = formatCompact(property.price, property.currency);
   const priceWithSuffix = isRental ? `${priceText}/mo` : priceText;
-  
-  const title = `${bedsText}${typeLabel} in ${location} | ${priceWithSuffix} | ${SITE_CONFIG.siteName}`;
-  
-  // Generate description: "3 bedroom apartment for sale in Neve Tzedek, Tel Aviv. 95 sqm, renovated, with balcony and parking."
-  const bedsDesc = property.bedrooms ? `${property.bedrooms} bedroom ` : '';
-  const sizeText = property.size_sqm ? `${property.size_sqm} sqm` : '';
-  const conditionText = property.condition ? `, ${property.condition}` : '';
-  
-  // Extract top features
-  const topFeatures = property.features?.slice(0, 2).join(' and ') || '';
-  const featuresText = topFeatures ? `, with ${topFeatures}` : '';
-  
-  let description = `${bedsDesc}${typeLabel.toLowerCase()} ${statusLabel.toLowerCase()} in ${location}.`;
-  if (sizeText) description += ` ${sizeText}${conditionText}${featuresText}.`;
-  if (property.agent?.name) description += ` Listed by ${property.agent.name}.`;
-  
+
+  // Title: "3BR Apartment for Rent in Neve Tzedek, Tel Aviv | ₪9,500/mo | BuyWise Israel"
+  const bedsPrefix = property.bedrooms ? `${property.bedrooms}BR ` : '';
+  const statusVerb = isRental ? 'for Rent' : 'for Sale';
+  const title = `${bedsPrefix}${typeLabel} ${statusVerb} in ${location} | ${priceWithSuffix} | ${SITE_CONFIG.siteName}`;
+
+  // Description: build modular parts, pick best combo to hit ~155 chars
+  // Part 1: core spec line "3BR · 92sqm apartment for sale in Rechavia, Jerusalem · ₪4.2M."
+  const specParts: string[] = [];
+  if (property.bedrooms) specParts.push(`${property.bedrooms}BR`);
+  if (property.size_sqm) specParts.push(`${property.size_sqm}sqm`);
+  const specLine = specParts.length
+    ? `${specParts.join(' · ')} ${typeLabel.toLowerCase()} ${statusVerb.toLowerCase()} in ${location} · ${priceWithSuffix}.`
+    : `${typeLabel} ${statusVerb.toLowerCase()} in ${location} · ${priceWithSuffix}.`;
+
+  // Part 2: hook — agent's featured highlight > condition > furnished > top feature
+  let hook = '';
+  if (property.featured_highlight) {
+    hook = property.featured_highlight.trim().replace(/\.$/, '') + '.';
+  } else if (property.condition && property.condition !== 'standard') {
+    const condLabel = property.condition.charAt(0).toUpperCase() + property.condition.slice(1).replace(/_/g, ' ');
+    hook = `${condLabel} condition.`;
+  } else if (property.is_furnished) {
+    hook = 'Fully furnished.';
+  } else if (property.features?.length) {
+    hook = property.features[0].charAt(0).toUpperCase() + property.features[0].slice(1) + '.';
+  }
+
+  // Part 3: BuyWise value prop (listing-type specific)
+  const cta = isRental
+    ? 'Compare vaad bayit costs & rental market data on BuyWise.'
+    : 'See price trends, arnona rates & similar listings on BuyWise.';
+
+  // Assemble, respecting 160-char limit
+  let description = specLine;
+  if (hook) {
+    const withHook = `${specLine} ${hook} ${cta}`;
+    description = withHook.length <= 160 ? withHook : `${specLine} ${cta}`;
+  } else {
+    description = `${specLine} ${cta}`;
+  }
+
   return {
-    title: title.slice(0, 60), // Google truncates at ~60 chars
-    description: truncateDescription(description),
+    title,
+    description: truncateDescription(description, 160),
   };
 }
 
@@ -89,29 +125,41 @@ interface ProjectMetaInput {
 
 export function generateProjectMeta(project: ProjectMetaInput): { title: string; description: string } {
   const statusLabel = PROJECT_STATUS_LABELS[project.status] || project.status;
-  const priceText = project.price_from ? formatPrice(project.price_from, project.currency || 'ILS') : '';
-  const developerName = project.developer?.name || '';
-  
-  // Generate title: "Haifa Heights | New Project in Haifa | From ₪1,800,000"
-  let title = `${project.name} | New Project in ${project.city}`;
-  if (priceText) title += ` | From ${priceText}`;
-  
-  // Generate description
-  const unitsText = `${project.total_units} total units`;
-  
-  const completionText = project.completion_date 
-    ? ` Completion: ${new Date(project.completion_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}.`
+  const location = project.neighborhood
+    ? `${project.neighborhood}, ${project.city}`
+    : project.city;
+
+  const formatCompact = (price: number, currency: string = 'ILS'): string => {
+    const symbol = currency === 'USD' ? '$' : '₪';
+    if (price >= 1_000_000) return `${symbol}${parseFloat((price / 1_000_000).toFixed(1))}M`;
+    return `${symbol}${price.toLocaleString()}`;
+  };
+
+  const priceFrom = project.price_from
+    ? `from ${formatCompact(project.price_from, project.currency || 'ILS')}`
     : '';
-  
-  let description = `${project.name}: ${unitsText} in ${project.city}`;
-  if (developerName) description += ` by ${developerName}`;
-  description += `.`;
-  if (priceText) description += ` From ${priceText}.`;
-  description += ` ${statusLabel}.${completionText}`;
-  
+
+  // Title: "Haifa Heights | New Development in Haifa | From ₪1.8M | BuyWise Israel"
+  let title = `${project.name} | New Development in ${location}`;
+  if (priceFrom) title += ` | ${priceFrom.charAt(0).toUpperCase() + priceFrom.slice(1)}`;
+  title += ` | ${SITE_CONFIG.siteName}`;
+
+  // Description parts
+  const developerText = project.developer?.name ? ` by ${project.developer.name}` : '';
+  const completionText = project.completion_date
+    ? `Delivery ${new Date(project.completion_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}. `
+    : '';
+  const unitsText = project.total_units ? `${project.total_units} units ` : '';
+
+  let description =
+    `${project.name}: ${unitsText}in ${location}${developerText}. ` +
+    `${statusLabel}. ${priceFrom ? `Prices start ${formatCompact(project.price_from!, project.currency || 'ILS')}. ` : ''}` +
+    `${completionText}` +
+    `Floor plans, pricing & developer history on BuyWise.`;
+
   return {
-    title: title.slice(0, 60),
-    description: truncateDescription(description),
+    title,
+    description: truncateDescription(description, 160),
   };
 }
 
