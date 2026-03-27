@@ -1,0 +1,30 @@
+{
+  "version": 2,
+  "buildCommand": "npm install && npm run build",
+  "framework": null,
+  "functions": {
+    "server.ts": {
+      "runtime": "nodejs20.x",
+      "includeFiles": "dist/**",
+      "maxDuration": 10
+    }
+  },
+  "routes": [
+    {
+      "comment": "Serve hashed static assets directly from dist/ with long-lived cache",
+      "src": "^/assets/(.+)",
+      "headers": { "cache-control": "public, max-age=31536000, immutable" },
+      "dest": "/dist/assets/$1"
+    },
+    {
+      "comment": "Serve other static files (favicon, manifest, images) from dist/",
+      "src": "^/(.+\\.(?:png|ico|svg|webp|jpg|jpeg|gif|woff2?|ttf|json|txt|xml))$",
+      "dest": "/dist/$1"
+    },
+    {
+      "comment": "All other requests (SPA routes + SSR routes) go through the Express server",
+      "src": "/(.*)",
+      "dest": "/server.ts"
+    }
+  ]
+}

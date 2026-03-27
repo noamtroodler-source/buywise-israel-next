@@ -3,50 +3,48 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    
-    <!-- Allow search engine indexing -->
     <meta name="robots" content="index, follow" />
-    
-    <!-- Theme color for browser UI -->
     <meta name="theme-color" content="#2563eb" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="BuyWise Israel" />
-    
+
     <!-- DNS Prefetch for external resources -->
     <link rel="dns-prefetch" href="https://images.unsplash.com">
     <link rel="dns-prefetch" href="https://eveqhyqxdibjayliazxm.supabase.co">
-    
+
     <!-- Preconnect to Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    
-    <!-- Load Inter font with display=swap for faster text rendering -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
+
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    
+    <link rel="icon" type="image/png" href="/favicon.png">
+
+    <!--SSR_META_START-->
     <title>BuyWise Israel | Property Discovery for International Buyers</title>
-    <meta name="description" content="Compare 30+ Israeli markets, calculate taxes & costs, and connect with verified agents — all in English, built for international buyers.">
+    <meta name="description" content="Compare 30+ Israeli markets, calculate taxes &amp; costs, and connect with verified agents — all in English, built for international buyers." />
+    <link rel="canonical" href="https://buywiseisrael.com" />
+    <meta property="og:title" content="BuyWise Israel | Property Discovery for International Buyers" />
+    <meta property="og:description" content="Buying in Israel shouldn't feel like guesswork. Compare 30+ markets, calculate purchase taxes &amp; costs, and connect with verified agents — all in English, built for international buyers." />
+    <meta property="og:url" content="https://buywiseisrael.com" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://buywiseisrael.com/og-image.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="BuyWise Israel | Property Discovery for International Buyers" />
+    <meta name="twitter:description" content="Buying in Israel shouldn't feel like guesswork. Compare 30+ markets, calculate purchase taxes &amp; costs, and connect with verified agents." />
+    <meta name="twitter:image" content="https://buywiseisrael.com/og-image.png" />
+    <!--SSR_META_END-->
+
+    <!-- Static site-wide meta (unchanged per page) -->
     <meta name="author" content="BuyWise Israel" />
     <meta name="keywords" content="Israel real estate, buy property Israel, apartments Tel Aviv, Jerusalem real estate, Olim Hadashim, international buyers Israel" />
-    <link rel="canonical" href="https://buywiseisrael.com" />
-
-
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://buywiseisrael.com" />
-    <meta property="og:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/6b84b0d3-677c-442c-a85a-7b509ac57cdf?Expires=1773328762&amp;GoogleAccessId=go-api-on-aws%40gpt-engineer-390607.iam.gserviceaccount.com&amp;Signature=DAtf8sFAkoCr5GOQ3CvQlBlGjwTVjbXHoq%2BEilcIt1rUbgpdsagpRXUJaGE1ToZhJuzWXrLnL63CHV0s4uEzEVvmCIekebQco1rrSh3KOqnRhK5pWPPQD0QWktvWNPK49CyY067%2BGFLAc1e%2BszAASp3Vu%2FHObVog3Ef9d9aunS0O5hUmjRabxFRe3lIv2xwyBwvzeqj%2BmsOlsl%2Fo90JySAv%2FTDwYbfwltXWpkzjI4SYBAyv%2F3C7hFrjqSGua6n1pCQzeSUR1Yo1suh3R1YN60zqVow5yBhtP2VZLeqofoAhOHdVak1kmzvfFLD79Ioewi7ZpEI8Ns9zTTUz0Yv22oA%3D%3D">
     <meta property="og:site_name" content="BuyWise Israel" />
-
-    <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@BuyWiseIsrael" />
-    
-    
-    <meta name="twitter:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/6b84b0d3-677c-442c-a85a-7b509ac57cdf?Expires=1773328762&amp;GoogleAccessId=go-api-on-aws%40gpt-engineer-390607.iam.gserviceaccount.com&amp;Signature=DAtf8sFAkoCr5GOQ3CvQlBlGjwTVjbXHoq%2BEilcIt1rUbgpdsagpRXUJaGE1ToZhJuzWXrLnL63CHV0s4uEzEVvmCIekebQco1rrSh3KOqnRhK5pWPPQD0QWktvWNPK49CyY067%2BGFLAc1e%2BszAASp3Vu%2FHObVog3Ef9d9aunS0O5hUmjRabxFRe3lIv2xwyBwvzeqj%2BmsOlsl%2Fo90JySAv%2FTDwYbfwltXWpkzjI4SYBAyv%2F3C7hFrjqSGua6n1pCQzeSUR1Yo1suh3R1YN60zqVow5yBhtP2VZLeqofoAhOHdVak1kmzvfFLD79Ioewi7ZpEI8Ns9zTTUz0Yv22oA%3D%3D">
-    
+
     <!-- Google Analytics 4 -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-VV7WR2N63C"></script>
     <script>
@@ -55,106 +53,53 @@
       gtag('js', new Date());
       gtag('config', 'G-VV7WR2N63C');
     </script>
-    <meta property="og:title" content="BuyWise Israel | Property Discovery for International Buyers">
-  <meta name="twitter:title" content="BuyWise Israel | Property Discovery for International Buyers">
-  <meta property="og:description" content="Buying in Israel shouldn't feel like guesswork. Compare 30+ markets, calculate purchase taxes & costs, and connect with verified agents — all in English, built for international buyers.">
-  <meta name="twitter:description" content="Buying in Israel shouldn't feel like guesswork. Compare 30+ markets, calculate purchase taxes & costs, and connect with verified agents — all in English, built for international buyers.">
-  <link rel="icon" type="image/png" href="/favicon.png">
 
-  <!-- JSON-LD: Organization -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    "@id": "https://buywiseisrael.com/#organization",
-    "name": "BuyWise Israel",
-    "url": "https://buywiseisrael.com",
-    "logo": {
-      "@type": "ImageObject",
-      "url": "https://buywiseisrael.com/favicon.png"
-    },
-    "description": "Navigate Israeli real estate with clarity and confidence. Explore properties, calculate costs, and understand the market — built for international buyers.",
-    "sameAs": ["https://twitter.com/BuyWiseIsrael"],
-    "contactPoint": {
-      "@type": "ContactPoint",
-      "contactType": "customer service",
-      "url": "https://buywiseisrael.com/contact",
-      "availableLanguage": ["English"]
-    }
-  }
-  </script>
-
-  <!-- JSON-LD: WebSite with SearchAction -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    "@id": "https://buywiseisrael.com",
-    "name": "BuyWise Israel",
-    "description": "Navigate Israeli real estate with clarity and confidence. Explore properties, calculate costs, and understand the market — built for international buyers.",
-    "url": "https://buywiseisrael.com",
-    "publisher": {
+    <!-- JSON-LD: Organization -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
       "@type": "Organization",
+      "@id": "https://buywiseisrael.com/#organization",
       "name": "BuyWise Israel",
       "url": "https://buywiseisrael.com",
-      "logo": {
-        "@type": "ImageObject",
-        "url": "https://buywiseisrael.com/favicon.png"
-      }
-    },
-    "potentialAction": {
-      "@type": "SearchAction",
-      "target": {
-        "@type": "EntryPoint",
-        "urlTemplate": "https://buywiseisrael.com/listings?search={search_term_string}"
-      },
-      "query-input": "required name=search_term_string"
+      "logo": { "@type": "ImageObject", "url": "https://buywiseisrael.com/favicon.png" },
+      "description": "Navigate Israeli real estate with clarity and confidence. Explore properties, calculate costs, and understand the market — built for international buyers.",
+      "sameAs": ["https://twitter.com/BuyWiseIsrael"],
+      "contactPoint": { "@type": "ContactPoint", "contactType": "customer service", "url": "https://buywiseisrael.com/contact", "availableLanguage": ["English"] }
     }
-  }
-  </script>
+    </script>
 
-  <!-- JSON-LD: FAQPage -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": [
-      {
-        "@type": "Question",
-        "name": "What is BuyWise Israel?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "BuyWise Israel is a market intelligence platform built for international buyers exploring Israeli real estate. We help you compare 30+ markets, calculate purchase taxes and costs, and connect with verified professionals — all in English."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Is BuyWise free for buyers?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Yes, BuyWise Israel is completely free for property buyers. You can explore markets, use our calculators, read guides, and browse listings at no cost."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Can I buy property in Israel as a foreign resident?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Yes, foreign residents can buy property in Israel. However, the purchase tax rates are higher for non-residents, and there are specific legal and financial considerations. Our guides and calculators are designed to help international buyers navigate these differences."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "What costs are involved in buying property in Israel?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Buying property in Israel involves purchase tax (mas rechisha), lawyer fees, mortgage arrangement fees, and potentially agent commissions. Use our free Purchase Tax Calculator and Cost Estimator to get a full breakdown based on your specific situation."
-        }
+    <!-- JSON-LD: WebSite with SearchAction -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "@id": "https://buywiseisrael.com",
+      "name": "BuyWise Israel",
+      "url": "https://buywiseisrael.com",
+      "publisher": { "@type": "Organization", "name": "BuyWise Israel", "url": "https://buywiseisrael.com" },
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": { "@type": "EntryPoint", "urlTemplate": "https://buywiseisrael.com/listings?search={search_term_string}" },
+        "query-input": "required name=search_term_string"
       }
-    ]
-  }
-  </script>
-</head>
+    }
+    </script>
+
+    <!-- JSON-LD: FAQPage -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        { "@type": "Question", "name": "What is BuyWise Israel?", "acceptedAnswer": { "@type": "Answer", "text": "BuyWise Israel is a market intelligence platform built for international buyers exploring Israeli real estate. We help you compare 30+ markets, calculate purchase taxes and costs, and connect with verified professionals — all in English." } },
+        { "@type": "Question", "name": "Is BuyWise free for buyers?", "acceptedAnswer": { "@type": "Answer", "text": "Yes, BuyWise Israel is completely free for property buyers. You can explore markets, use our calculators, read guides, and browse listings at no cost." } },
+        { "@type": "Question", "name": "Can I buy property in Israel as a foreign resident?", "acceptedAnswer": { "@type": "Answer", "text": "Yes, foreign residents can buy property in Israel. Purchase tax rates are higher for non-residents. Our guides and calculators help international buyers navigate these differences." } },
+        { "@type": "Question", "name": "What costs are involved in buying property in Israel?", "acceptedAnswer": { "@type": "Answer", "text": "Buying property in Israel involves purchase tax (mas rechisha), lawyer fees, mortgage arrangement fees, and potentially agent commissions. Use our free Purchase Tax Calculator and Cost Estimator to get a full breakdown." } }
+      ]
+    }
+    </script>
+  </head>
 
   <body>
     <div id="root"></div>
