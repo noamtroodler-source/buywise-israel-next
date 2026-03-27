@@ -4,7 +4,6 @@
   "framework": null,
   "functions": {
     "server.ts": {
-      "runtime": "nodejs20.x",
       "includeFiles": "dist/**",
       "maxDuration": 10
     }
