@@ -134,12 +134,19 @@ export function useVerifyAgency() {
 
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_data, agencyId) => {
       queryClient.invalidateQueries({ queryKey: ['admin-agencies'] });
       queryClient.invalidateQueries({ queryKey: ['admin-agency-stats'] });
       queryClient.invalidateQueries({ queryKey: ['my-agency'] });
       queryClient.invalidateQueries({ queryKey: ['agency'] });
       toast.success('Agency verified successfully');
+
+      // Send approval email (fire-and-forget)
+      supabase.functions.invoke('send-agency-approval-email', {
+        body: { agencyId },
+      }).then(({ error }) => {
+        if (error) console.error('Failed to send approval email:', error);
+      });
     },
     onError: (error) => {
       toast.error('Failed to verify agency');
