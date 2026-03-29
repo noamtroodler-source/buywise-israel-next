@@ -1,0 +1,2 @@
+ALTER TABLE public.content_visits DROP CONSTRAINT content_visits_content_type_check;
+ALTER TABLE public.content_visits ADD CONSTRAINT content_visits_content_type_check CHECK (content_type = ANY (ARRAY['guide'::text, 'tool'::text, 'area'::text, 'blog'::text, 'glossary'::text, 'nav'::text]));
