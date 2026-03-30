@@ -2,20 +2,26 @@ import { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useMyAgency } from '@/hooks/useAgencyManagement';
 import { AppRole } from '@/types/database';
 import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
   children: ReactNode;
   requiredRole?: AppRole;
+  allowAgencyOwner?: boolean;
 }
 
-export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
+export function ProtectedRoute({ children, requiredRole, allowAgencyOwner }: ProtectedRouteProps) {
   const { user, loading: authLoading } = useAuth();
   const { hasRole, isLoading: rolesLoading } = useUserRole();
+  const { isAgencyAdmin, isLoading: agencyLoading } = useMyAgency();
   const location = useLocation();
 
-  if (authLoading || rolesLoading) {
+  const needsAgencyCheck = allowAgencyOwner || location.pathname.startsWith('/agency');
+  const isLoading = authLoading || rolesLoading || (needsAgencyCheck && agencyLoading);
+
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -38,6 +44,10 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
   }
 
   if (requiredRole && !hasRole(requiredRole)) {
+    // For agency routes, also allow agency owners even without the "agent" role
+    if (needsAgencyCheck && isAgencyAdmin) {
+      return <>{children}</>;
+    }
     return <Navigate to="/" replace />;
   }
 
