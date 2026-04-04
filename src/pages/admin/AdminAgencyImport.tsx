@@ -49,7 +49,7 @@ export default function AdminAgencyImport() {
   const [selectedAgencyId, setSelectedAgencyId] = useState<string>('');
   const [websiteUrl, setWebsiteUrl] = useState('');
   const [importType, setImportType] = useState<'resale' | 'rental' | 'all'>('all');
-  const [sourceType, setSourceType] = useState<'website' | 'yad2'>('website');
+  const [sourceType, setSourceType] = useState<'website' | 'yad2' | 'madlan'>('website');
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
 
   // Fetch all agencies for the dropdown
@@ -191,7 +191,7 @@ export default function AdminAgencyImport() {
             </CardHeader>
             <CardContent className="pt-4 space-y-4">
               <div className="flex flex-wrap gap-2">
-                {(['website', 'yad2'] as const).map((type) => (
+                {(['website', 'yad2', 'madlan'] as const).map((type) => (
                   <Button
                     key={type}
                     type="button"
@@ -200,7 +200,7 @@ export default function AdminAgencyImport() {
                     className="rounded-lg"
                     onClick={() => setSourceType(type)}
                   >
-                    {type === 'website' ? 'Agency Website' : 'Yad2'}
+                    {type === 'website' ? 'Agency Website' : type === 'yad2' ? 'Yad2' : 'Madlan'}
                   </Button>
                 ))}
               </div>
@@ -209,7 +209,7 @@ export default function AdminAgencyImport() {
                 <Input
                   value={websiteUrl}
                   onChange={(e) => setWebsiteUrl(e.target.value)}
-                  placeholder={sourceType === 'yad2' ? 'https://www.yad2.co.il/realestate/agency/...' : 'https://agency-website.com'}
+                  placeholder={sourceType === 'yad2' ? 'https://www.yad2.co.il/realestate/agency/...' : sourceType === 'madlan' ? 'https://www.madlan.co.il/for-sale/israel--office--...' : 'https://agency-website.com'}
                   className="rounded-xl flex-1"
                   required
                   disabled={isDiscovering}
@@ -225,7 +225,7 @@ export default function AdminAgencyImport() {
 
               {isDiscovering && (
                 <p className="text-sm text-muted-foreground mt-3 animate-pulse">
-                  {discoveringSourceType === 'yad2'
+                  {discoveringSourceType === 'yad2' || discoveringSourceType === 'madlan'
                     ? 'Scanning Yad2 agency page... This may take 2-5 minutes.'
                     : 'Scanning website for listing pages... This may take 2-5 minutes.'}
                 </p>

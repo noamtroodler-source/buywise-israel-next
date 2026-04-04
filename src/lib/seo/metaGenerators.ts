@@ -37,6 +37,10 @@ interface PropertyMetaInput {
   is_furnished?: boolean | null;
   parking?: number | null;
   agent?: { name: string } | null;
+  // Sourced listing fields
+  import_source?: string | null;
+  is_claimed?: boolean;
+  source_agency_name?: string | null;
 }
 
 export function generatePropertyMeta(property: PropertyMetaInput): { title: string; description: string } {
@@ -56,8 +60,12 @@ export function generatePropertyMeta(property: PropertyMetaInput): { title: stri
     return `${symbol}${price.toLocaleString()}`;
   };
 
-  const priceText = formatCompact(property.price, property.currency);
-  const priceWithSuffix = isRental ? `${priceText}/mo` : priceText;
+  // Handle price=0 for sourced listings with price on request
+  const hasPrice = property.price > 0;
+  const priceText = hasPrice ? formatCompact(property.price, property.currency) : 'Price on Request';
+  const priceWithSuffix = hasPrice
+    ? (isRental ? `${priceText}/mo` : priceText)
+    : priceText;
 
   // Title: "3BR Apartment for Rent in Neve Tzedek, Tel Aviv | ₪9,500/mo | BuyWise Israel"
   const bedsPrefix = property.bedrooms ? `${property.bedrooms}BR ` : '';
@@ -86,8 +94,14 @@ export function generatePropertyMeta(property: PropertyMetaInput): { title: stri
     hook = property.features[0].charAt(0).toUpperCase() + property.features[0].slice(1) + '.';
   }
 
-  // Part 3: BuyWise value prop (listing-type specific)
-  const cta = isRental
+  // Part 3: BuyWise value prop — sourced listings get different CTA
+  const isSourced = !!(property as any).import_source && !(property as any).is_claimed;
+  const sourceName = (property as any).source_agency_name ||
+    ((property as any).import_source === 'yad2' ? 'Yad2' :
+     (property as any).import_source === 'madlan' ? 'Madlan' : 'agency site');
+  const cta = isSourced
+    ? `Sourced from ${sourceName}. See market data & similar listings on BuyWise.`
+    : isRental
     ? 'Compare vaad bayit costs & rental market data on BuyWise.'
     : 'See price trends, arnona rates & similar listings on BuyWise.';
 

@@ -279,6 +279,16 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                     if ((property as any)._isBoosted) {
                       badges.push(<PromotedBadge key="promoted" compact />);
                     }
+                    // Sourced badge for unclaimed imported listings
+                    if ((property as any).import_source && !(property as any).is_claimed) {
+                      badges.push(
+                        <Badge key="sourced" className="bg-amber-100 text-amber-800 border border-amber-200 text-xs font-medium">
+                          <Building2 className="h-3 w-3 mr-1" />
+                          Sourced
+                        </Badge>
+                      );
+                    }
+
                     if (showCategoryBadge && !hideStatusBadge) {
                       badges.push(
                         <Badge key="category" className={cn("text-xs font-medium", getStatusColor(property.listing_status))}>
@@ -409,6 +419,17 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                     <span>{daysLabel}</span>
                   </div>
                 )}
+                {/* Staleness indicator for sourced listings */}
+                {(property as any).import_source && !(property as any).is_claimed && (property as any).source_last_checked_at && (() => {
+                  const daysSinceCheck = Math.floor((Date.now() - new Date((property as any).source_last_checked_at).getTime()) / 86400000);
+                  if (daysSinceCheck >= 3) return (
+                    <div className="flex items-center gap-1 text-xs pt-0.5 text-amber-600">
+                      <Clock className="h-3 w-3" />
+                      <span>Verified {daysSinceCheck}d ago</span>
+                    </div>
+                  );
+                  return null;
+                })()}
               </div>
             </>
           ) : (
@@ -502,6 +523,16 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                     if ((property as any)._isBoosted) {
                       badges.push(<PromotedBadge key="promoted" compact />);
                     }
+                    // Sourced badge for unclaimed imported listings
+                    if ((property as any).import_source && !(property as any).is_claimed) {
+                      badges.push(
+                        <Badge key="sourced" className="bg-amber-100 text-amber-800 border border-amber-200 text-xs font-medium">
+                          <Building2 className="h-3 w-3 mr-1" />
+                          Sourced
+                        </Badge>
+                      );
+                    }
+
                     if (showCategoryBadge && !hideStatusBadge) {
                       badges.push(
                         <Badge key="category" className={cn("text-xs font-medium", getStatusColor(property.listing_status))}>
