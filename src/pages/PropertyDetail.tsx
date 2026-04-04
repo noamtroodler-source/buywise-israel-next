@@ -28,6 +28,7 @@ import { SupportFooter } from '@/components/shared/SupportFooter';
 import { ListingDisclaimer } from '@/components/shared/ListingDisclaimer';
 import { UnclaimedListingBanner, StreetViewFallback, ClaimListingDialog } from '@/components/property/UnclaimedListingBanner';
 import { CoListingAgents } from '@/components/property/CoListingAgents';
+import { SourcedListingEnrichment } from '@/components/property/SourcedListingEnrichment';
 import { MarketDataContext } from '@/components/shared/MarketDataContext';
 import { ListingFeedback } from '@/components/listings/ListingFeedback';
 import { ReportListingButton } from '@/components/property/ReportListingButton';
@@ -214,6 +215,15 @@ export default function PropertyDetail() {
             {/* Description */}
             <PropertyDescription description={property.description} />
 
+            {/* Sourced listing enrichment — BuyWise data for unclaimed listings */}
+            {(property as any).import_source && !(property as any).is_claimed && (
+              <SourcedListingEnrichment
+                property={property as any}
+                citySlug={citySlug}
+                className="py-2"
+              />
+            )}
+
             {/* Market Intelligence (sale/sold) or Rental Snapshot */}
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
@@ -369,6 +379,12 @@ export default function PropertyDetail() {
                   ...(!property.size_sqm ? ['size_sqm'] : []),
                   ...(!property.floor && property.floor !== 0 ? ['floor'] : []),
                   ...(!property.year_built ? ['year_built'] : []),
+                  ...(!property.bathrooms ? ['bathrooms'] : []),
+                  // For sourced listings, flag additional missing fields
+                  ...((property as any).import_source && !(property as any).is_claimed ? [
+                    ...(!property.address || property.address.trim().length < 3 ? ['address'] : []),
+                    ...(!(property as any).features?.length ? ['features'] : []),
+                  ] : []),
                 ],
               }}
             />
@@ -379,6 +395,7 @@ export default function PropertyDetail() {
               citySlug={citySlug}
               propertyPrice={property.price}
               listingStatus={property.listing_status}
+              isSourced={!!(property as any).import_source && !(property as any).is_claimed}
             />
 
             {/* Listing Feedback */}

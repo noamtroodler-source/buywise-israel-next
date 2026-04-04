@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
-import { TrendingUp, Calculator, PiggyBank, BookOpen } from 'lucide-react';
+import { TrendingUp, Calculator, PiggyBank, BookOpen, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { ListingStatus } from '@/types/database';
 
@@ -9,9 +9,10 @@ interface PropertyNextStepsProps {
   citySlug: string;
   propertyPrice?: number;
   listingStatus?: ListingStatus;
+  isSourced?: boolean; // unclaimed scraped listing
 }
 
-export function PropertyNextSteps({ cityName, citySlug, propertyPrice, listingStatus }: PropertyNextStepsProps) {
+export function PropertyNextSteps({ cityName, citySlug, propertyPrice, listingStatus, isSourced }: PropertyNextStepsProps) {
   // Determine which guide to show based on listing type
   const guideStep = listingStatus === 'for_rent'
     ? {
@@ -48,6 +49,16 @@ export function PropertyNextSteps({ cityName, citySlug, propertyPrice, listingSt
     },
     guideStep,
   ];
+
+  // For sourced listings, add a 'connect with vetted agent' step
+  if (isSourced) {
+    steps.unshift({
+      to: `/agencies?city=${encodeURIComponent(cityName)}`,
+      icon: Users,
+      title: 'Find a Vetted Agent',
+      description: `BuyWise-verified agencies in ${cityName}`,
+    });
+  }
 
   return (
     <motion.section
