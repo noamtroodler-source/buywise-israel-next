@@ -35,15 +35,19 @@ export function useAutoGeocode(
       return;
     }
 
-    if (!entityId || !address || !city) return;
+    // For sourced listings with no address, geocode using neighborhood or city
+    const geocodeTarget = address?.trim() || neighborhood?.trim() || '';
+    if (!entityId || !geocodeTarget || !city) return;
 
     const geocodeAddress = async () => {
       setIsLoading(true);
       setError(null);
 
       try {
+        // Use address if available, otherwise fall back to neighborhood for approximate location
+        const geocodeAddress_str = address?.trim() || neighborhood?.trim() || city;
         const { data, error: fnError } = await supabase.functions.invoke('geocode-address', {
-          body: { entityType, entityId, address, city, neighborhood }
+          body: { entityType, entityId, address: geocodeAddress_str, city, neighborhood, skipDbSave: !address?.trim() }
         });
 
         if (fnError) {

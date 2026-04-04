@@ -27,6 +27,7 @@ import { SimilarProperties } from '@/components/property/SimilarProperties';
 import { SupportFooter } from '@/components/shared/SupportFooter';
 import { ListingDisclaimer } from '@/components/shared/ListingDisclaimer';
 import { UnclaimedListingBanner, StreetViewFallback, ClaimListingDialog } from '@/components/property/UnclaimedListingBanner';
+import { CoListingAgents } from '@/components/property/CoListingAgents';
 import { MarketDataContext } from '@/components/shared/MarketDataContext';
 import { ListingFeedback } from '@/components/listings/ListingFeedback';
 import { ReportListingButton } from '@/components/property/ReportListingButton';
@@ -396,7 +397,7 @@ export default function PropertyDetail() {
 
           {/* Sticky Sidebar - Desktop Only */}
           <div className="hidden lg:block">
-            <div className="sticky top-20">
+            <div className="sticky top-20 space-y-4">
               <StickyContactCard 
                 agent={property.agent}
                 propertyId={property.id}
@@ -404,6 +405,10 @@ export default function PropertyDetail() {
                 onSave={handleSave}
                 isSaved={isSaved}
               />
+              {/* Co-listing agents — shown when multiple agencies list same property */}
+              {(property as any).co_agents?.length > 0 && (
+                <CoListingAgents coAgents={(property as any).co_agents} />
+              )}
             </div>
           </div>
         </div>
