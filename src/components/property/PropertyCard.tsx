@@ -405,9 +405,11 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                   <p className="text-sm font-medium text-foreground truncate leading-tight">{property.title}</p>
                 )}
                 <p className="text-xs text-muted-foreground">
-                  {property.bedrooms > 0 ? `${property.bedrooms}bd` : (property as any).source_rooms ? `${Math.max(0, (property as any).source_rooms - 1)}bd` : null}
-                  {property.bathrooms ? ` · ${property.bathrooms}ba` : null}
-                  {property.size_sqm ? ` · ${formatArea(property.size_sqm)}` : null}
+                  {[
+                    property.bedrooms > 0 ? `${property.bedrooms}bd` : (property as any).source_rooms ? `${Math.max(0, (property as any).source_rooms - 1)}bd` : '',
+                    property.bathrooms ? `${property.bathrooms}ba` : '',
+                    property.size_sqm ? formatArea(property.size_sqm) : '',
+                  ].filter(Boolean).join(' · ')}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">
                   {property.neighborhood ? `${property.neighborhood}, ` : ''}{property.city}
