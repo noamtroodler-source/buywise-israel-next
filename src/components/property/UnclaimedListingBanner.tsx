@@ -176,7 +176,7 @@ export function StreetViewFallback({
 
 // ─── Claim Listing Dialog ────────────────────────────────────────────────────
 
-import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Dialog,
   DialogContent,
@@ -184,12 +184,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 interface ClaimListingDialogProps {
   open: boolean;
@@ -204,42 +199,16 @@ export function ClaimListingDialog({
   propertyId,
   propertyTitle,
 }: ClaimListingDialogProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [form, setForm] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    agency_name: '',
-    verification_note: '',
-  });
+  const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.name || !form.email) return;
+  const handleRegister = () => {
+    onOpenChange(false);
+    navigate(`/agency/register?claim=${propertyId}`);
+  };
 
-    setIsSubmitting(true);
-    try {
-      const { error } = await supabase.from('listing_claim_requests').insert({
-        property_id: propertyId,
-        claimant_name: form.name,
-        claimant_email: form.email,
-        claimant_phone: form.phone || null,
-        agency_name: form.agency_name || null,
-        verification_note: form.verification_note || null,
-        status: 'pending',
-      });
-
-      if (error) throw error;
-
-      toast.success("Claim request submitted! We'll review it within 24 hours.");
-      onOpenChange(false);
-      setForm({ name: '', email: '', phone: '', agency_name: '', verification_note: '' });
-    } catch (err) {
-      console.error('Claim submission error:', err);
-      toast.error('Failed to submit claim. Please try again or contact us directly.');
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleAdvertise = () => {
+    onOpenChange(false);
+    navigate(`/advertise?claim=${propertyId}`);
   };
 
   return (
@@ -249,97 +218,46 @@ export function ClaimListingDialog({
           <DialogTitle>Claim this listing</DialogTitle>
           <DialogDescription>
             {propertyTitle
-              ? `Are you the listing agent for "${propertyTitle}"?`
-              : 'Are you the agent or agency for this property?'}{' '}
-            Claiming it lets you add photos, update details, and receive buyer
-            inquiries directly.
+              ? `Is "${propertyTitle}" your listing?`
+              : 'Is this your listing?'}{' '}
+            Register your agency on BuyWiseIsrael to claim it, add photos,
+            and receive international buyer inquiries directly.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 mt-2">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5 col-span-2">
-              <Label htmlFor="claim-name">Your name *</Label>
-              <Input
-                id="claim-name"
-                placeholder="David Cohen"
-                value={form.name}
-                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                required
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="claim-email">Email *</Label>
-              <Input
-                id="claim-email"
-                type="email"
-                placeholder="david@agency.co.il"
-                value={form.email}
-                onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                required
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="claim-phone">Phone</Label>
-              <Input
-                id="claim-phone"
-                type="tel"
-                placeholder="+972 50 000 0000"
-                value={form.phone}
-                onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-1.5 col-span-2">
-              <Label htmlFor="claim-agency">Agency name</Label>
-              <Input
-                id="claim-agency"
-                placeholder="Anglo Saxon Jerusalem"
-                value={form.agency_name}
-                onChange={(e) => setForm((f) => ({ ...f, agency_name: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-1.5 col-span-2">
-              <Label htmlFor="claim-note">
-                How can we verify you're the agent?{' '}
-                <span className="text-muted-foreground font-normal">(optional)</span>
-              </Label>
-              <Textarea
-                id="claim-note"
-                placeholder="e.g. My listing ID on Yad2 is 12345678, or my license number is..."
-                value={form.verification_note}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, verification_note: e.target.value }))
-                }
-                rows={2}
-              />
-            </div>
+        <div className="space-y-3 mt-2">
+          {/* What claiming gets you */}
+          <div className="rounded-lg bg-muted/50 px-4 py-3 space-y-2">
+            {[
+              'Add your photos and full listing details',
+              'Receive buyer inquiries directly',
+              'Your agency profile on every listing',
+              'Access to all BuyWiseIsrael buyer leads',
+            ].map((benefit) => (
+              <div key={benefit} className="flex items-start gap-2 text-sm text-foreground">
+                <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                <span>{benefit}</span>
+              </div>
+            ))}
           </div>
 
-          <div className="flex gap-2 pt-1">
-            <Button
-              type="button"
-              variant="outline"
-              className="flex-1"
-              onClick={() => onOpenChange(false)}
-            >
-              Cancel
+          <div className="flex flex-col gap-2 pt-1">
+            <Button className="w-full" onClick={handleRegister}>
+              Register your agency
+              <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
-            <Button
-              type="submit"
-              className="flex-1"
-              disabled={isSubmitting || !form.name || !form.email}
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Submitting...
-                </>
-              ) : (
-                'Submit claim'
-              )}
+            <Button variant="outline" className="w-full" onClick={handleAdvertise}>
+              Learn more first
             </Button>
           </div>
-        </form>
+
+          <p className="text-xs text-center text-muted-foreground">
+            Already registered?{' '}
+            <a href="/agency/register" className="text-primary underline underline-offset-2">
+              Sign in to your agency account
+            </a>
+          </p>
+        </div>
       </DialogContent>
     </Dialog>
   );

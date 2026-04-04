@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Building2, 
@@ -94,6 +94,8 @@ interface DraftData {
 
 export default function AgencyRegister() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const claimPropertyId = searchParams.get('claim');
   const { user, loading } = useAuth();
   const { data: cities = [] } = useCities();
   const [currentStep, setCurrentStep] = useState(0);
@@ -428,6 +430,27 @@ export default function AgencyRegister() {
         .single();
 
       if (agencyError) throw agencyError;
+
+      // If the agency registered via a listing claim, store the pending claim
+      if (claimPropertyId && agency?.id) {
+        try {
+          await supabase
+            .from('listing_claim_requests' as any)
+            .insert({
+              property_id: claimPropertyId,
+              agency_id: agency.id,
+              claimant_name: formData.name,
+              claimant_email: formData.email,
+              claimant_phone: formData.phone || null,
+              agency_name: formData.name,
+              verification_note: 'Submitted via agency registration flow',
+              status: 'pending',
+            });
+        } catch (claimErr) {
+          // Non-fatal — claim can be associated manually
+          console.error('Failed to store listing claim:', claimErr);
+        }
+      }
 
       // Create the default invite code
       await supabase
@@ -896,14 +919,27 @@ export default function AgencyRegister() {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-8"
           >
+            {/* Claim context banner */}
+            {claimPropertyId && (
+              <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 flex items-start gap-3">
+                <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-semibold text-foreground">You're claiming a listing</p>
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    Once your agency is approved, that listing will be automatically linked to your account.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Back Navigation */}
             <Button 
               variant="ghost" 
-              onClick={() => navigate('/')} 
+              onClick={() => navigate(claimPropertyId ? `/property/${claimPropertyId}` : '/')} 
               className="rounded-xl hover:bg-primary/5 -ml-2"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Home
+              {claimPropertyId ? 'Back to listing' : 'Back to Home'}
             </Button>
 
             {/* Premium Progress Indicator */}
