@@ -142,9 +142,7 @@ export function SpecBasedComps({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <BarChart3 className="w-4 h-4 text-muted-foreground" />
-          <span className="text-sm font-semibold text-foreground">
-            Similar sales in {locationLabel}
-          </span>
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Similar sales in {locationLabel}</p>
         </div>
         <TooltipProvider>
           <Tooltip>
@@ -161,7 +159,7 @@ export function SpecBasedComps({
 
       {/* Summary stats bar */}
       {stats && stats.count >= 2 && (
-        <div className="rounded-xl bg-muted/50 px-4 py-3 grid grid-cols-3 gap-2 text-center">
+        <div className="rounded-xl bg-muted/40 px-4 py-3 grid grid-cols-3 gap-2 text-center border border-border/30">
           <div>
             <p className="text-xs text-muted-foreground">Avg ₪/m²</p>
             <p className="text-sm font-bold text-foreground">

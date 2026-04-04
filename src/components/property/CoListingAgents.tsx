@@ -43,9 +43,7 @@ export function CoListingAgents({ coAgents, className }: CoListingAgentsProps) {
 
   return (
     <div className={cn('space-y-2', className)}>
-      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-        Also listed by
-      </p>
+      <div className="flex items-center gap-2 mb-2"><p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Also listed by</p></div>
       <div className="space-y-2">
         {coAgents.map((coAgent) => {
           const agencyName =
@@ -58,7 +56,7 @@ export function CoListingAgents({ coAgents, className }: CoListingAgentsProps) {
           return (
             <div
               key={coAgent.id}
-              className="flex items-center justify-between gap-3 rounded-lg border border-border/50 bg-muted/30 px-3 py-2"
+              className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/20 px-3 py-2 hover:bg-muted/40 transition-colors"
             >
               <div className="flex items-center gap-2 min-w-0">
                 <Avatar className="h-7 w-7 flex-shrink-0">

@@ -21,18 +21,18 @@ export function SourcedListingsBanner({ className }: SourcedListingsBannerProps)
 
   return (
     <div className={cn(
-      'rounded-xl border border-amber-200 bg-amber-50/70 px-4 py-4 space-y-3',
+      'rounded-xl border border-semantic-amber/25 bg-semantic-amber/5 px-4 py-4 space-y-3',
       className
     )}>
       <div className="flex items-start gap-3">
         <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-          <Building2 className="w-4 h-4 text-amber-600" />
+          <Building2 className="w-4 h-4 text-semantic-amber" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-amber-900">
+          <p className="text-sm font-semibold text-foreground">
             Showing sourced listings
           </p>
-          <p className="text-sm text-amber-800 mt-0.5 leading-relaxed">
+          <p className="text-sm text-muted-foreground mt-0.5 leading-relaxed">
             These properties are pulled automatically from Yad2, Madlan, and agency websites. 
             They're real listings — but some details may be incomplete and availability isn't guaranteed. 
             Each listing links back to its original source.
@@ -40,7 +40,7 @@ export function SourcedListingsBanner({ className }: SourcedListingsBannerProps)
         </div>
         <button
           onClick={() => setDismissed(true)}
-          className="flex-shrink-0 text-amber-500 hover:text-amber-700 transition-colors"
+          className="flex-shrink-0 text-muted-foreground hover:text-foreground transition-colors"
           aria-label="Dismiss"
         >
           <X className="w-4 h-4" />
@@ -54,7 +54,7 @@ export function SourcedListingsBanner({ className }: SourcedListingsBannerProps)
           { icon: CheckCircle2, text: 'Links back to original listing on source site' },
           { icon: Info, text: 'Claim this listing → agency can add full details' },
         ].map(({ icon: Icon, text }) => (
-          <div key={text} className="flex items-start gap-1.5 text-xs text-amber-700">
+          <div key={text} className="flex items-start gap-1.5 text-xs text-muted-foreground">
             <Icon className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
             <span>{text}</span>
           </div>

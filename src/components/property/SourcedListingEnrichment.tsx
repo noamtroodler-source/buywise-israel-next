@@ -140,11 +140,11 @@ export function SourcedListingEnrichment({
 
       {/* Price Intelligence */}
       {hasPrice && (
-        <div className="rounded-xl border border-border bg-white p-4 space-y-3">
+        <div className="rounded-xl border border-border bg-card p-4 space-y-3">
           <div className="flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-primary" />
-            <p className="text-sm font-semibold text-foreground">Price Intelligence</p>
-            <Badge variant="outline" className="text-xs ml-auto">BuyWise Data</Badge>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Price Intelligence</p>
+            <Badge variant="secondary" className="text-xs ml-auto font-normal">BuyWise data</Badge>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -169,8 +169,8 @@ export function SourcedListingEnrichment({
           {vsAvgSqmPct !== null && (
             <div className={cn(
               'flex items-center gap-2 rounded-lg px-3 py-2 text-sm',
-              vsAvgSqmPct > 10 ? 'bg-destructive/8 text-destructive' :
-              vsAvgSqmPct < -10 ? 'bg-semantic-green/8 text-semantic-green' :
+              vsAvgSqmPct > 10 ? 'bg-destructive/10 text-destructive' :
+              vsAvgSqmPct < -10 ? 'bg-semantic-green/10 text-semantic-green' :
               'bg-muted/60 text-muted-foreground'
             )}>
               {vsAvgSqmPct > 0
@@ -197,10 +197,10 @@ export function SourcedListingEnrichment({
 
       {/* True Cost for Foreign Buyer */}
       {isForSale && hasPrice && totalExtraCosts && (
-        <div className="rounded-xl border border-border bg-white p-4 space-y-3">
+        <div className="rounded-xl border border-border bg-card p-4 space-y-3">
           <div className="flex items-center gap-2">
             <Calculator className="w-4 h-4 text-primary" />
-            <p className="text-sm font-semibold text-foreground">True Cost (Foreign Buyer)</p>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">True Cost (Foreign Buyer)</p>
           </div>
 
           <div className="space-y-2">
@@ -238,11 +238,11 @@ export function SourcedListingEnrichment({
 
       {/* Monthly Running Costs */}
       {(arnonaMonthly || vaadBayit) && (
-        <div className="rounded-xl border border-border bg-white p-4 space-y-3">
+        <div className="rounded-xl border border-border bg-card p-4 space-y-3">
           <div className="flex items-center gap-2">
             <Home className="w-4 h-4 text-primary" />
-            <p className="text-sm font-semibold text-foreground">Estimated Monthly Costs</p>
-            <Badge variant="outline" className="text-xs ml-auto">{property.city} averages</Badge>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Estimated Monthly Costs</p>
+            <Badge variant="secondary" className="text-xs ml-auto font-normal">{property.city} averages</Badge>
           </div>
           <div className="grid grid-cols-2 gap-3">
             {arnonaMonthly && (
@@ -273,11 +273,11 @@ export function SourcedListingEnrichment({
 
       {/* Rental Yield (for sale listings) */}
       {isForSale && hasPrice && grossYield && impliedMonthlyRent && (
-        <div className="rounded-xl border border-border bg-white p-4 space-y-2">
+        <div className="rounded-xl border border-border bg-card p-4 space-y-2">
           <div className="flex items-center gap-2">
             <Percent className="w-4 h-4 text-primary" />
-            <p className="text-sm font-semibold text-foreground">Investment Snapshot</p>
-            <Badge variant="outline" className="text-xs ml-auto">{property.city} avg</Badge>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Investment Snapshot</p>
+            <Badge variant="secondary" className="text-xs ml-auto font-normal">{property.city} avg</Badge>
           </div>
           <div className="grid grid-cols-3 gap-3 text-center">
             <div className="rounded-lg bg-muted/40 p-2">
@@ -301,10 +301,10 @@ export function SourcedListingEnrichment({
 
       {/* Anglo community signal */}
       {city.anglo_presence && (
-        <div className="rounded-xl border border-border bg-white p-4 space-y-2">
+        <div className="rounded-xl border border-border bg-card p-4 space-y-2">
           <div className="flex items-center gap-2">
             <Users className="w-4 h-4 text-primary" />
-            <p className="text-sm font-semibold text-foreground">International Community</p>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">International Community</p>
           </div>
           <p className="text-sm text-foreground/80 leading-relaxed">{city.anglo_presence}</p>
           {neighborhood?.anglo_community && (
@@ -318,12 +318,12 @@ export function SourcedListingEnrichment({
 
       {/* What to verify checklist */}
       {missing.length > 0 && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-4 space-y-3">
+        <div className="rounded-xl border border-semantic-amber/30 bg-semantic-amber/5 p-4 space-y-3">
           <div className="flex items-center gap-2">
             <AlertCircle className="w-4 h-4 text-amber-600" />
-            <p className="text-sm font-semibold text-amber-900">Verify before proceeding</p>
+            <p className="text-sm font-semibold text-foreground">Verify before proceeding</p>
           </div>
-          <p className="text-xs text-amber-800">
+          <p className="text-xs text-muted-foreground">
             This listing is missing key details. Ask the agent or a vetted professional about:
           </p>
           <div className="space-y-2">
@@ -334,8 +334,8 @@ export function SourcedListingEnrichment({
                   severity === 'high' ? 'bg-red-500' : 'bg-amber-500'
                 )} />
                 <div>
-                  <span className="text-xs font-medium text-amber-900">{label}</span>
-                  <span className="text-xs text-amber-700"> — {why}</span>
+                  <span className="text-xs font-medium text-foreground">{label}</span>
+                  <span className="text-xs text-muted-foreground"> — {why}</span>
                 </div>
               </div>
             ))}

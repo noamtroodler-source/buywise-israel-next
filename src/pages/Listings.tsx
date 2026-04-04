@@ -309,8 +309,8 @@ export default function Listings() {
                 className={cn(
                   'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors',
                   filters.sourced_only
-                    ? 'bg-amber-100 text-amber-800 border-amber-300'
-                    : 'bg-background text-muted-foreground border-border hover:border-amber-300 hover:text-amber-700'
+                    ? 'bg-semantic-amber/15 text-foreground border-semantic-amber/40'
+                    : 'bg-background text-muted-foreground border-border hover:border-semantic-amber/40 hover:text-foreground'
                 )}
               >
                 <span className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0" />

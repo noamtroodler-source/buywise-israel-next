@@ -471,19 +471,19 @@ export default function AdminScrapingSources() {
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: 'Total sources', value: stats?.total ?? '—', icon: Globe },
-          { label: 'Active', value: stats?.active ?? '—', icon: CheckCircle2 },
-          { label: 'Failing', value: stats?.failing ?? '—', icon: AlertTriangle, danger: (stats?.failing || 0) > 0 },
-          { label: 'Pending claims', value: claimStats?.pending ?? '—', icon: ClipboardCheck, warn: (claimStats?.pending || 0) > 0 },
-        ].map(({ label, value, icon: Icon, danger, warn }) => (
-          <Card key={label} className="p-4">
-            <div className="flex items-center gap-2">
-              <Icon className={cn('w-4 h-4', danger ? 'text-red-500' : warn ? 'text-amber-500' : 'text-muted-foreground')} />
-              <span className="text-xs text-muted-foreground">{label}</span>
-            </div>
-            <p className={cn('text-2xl font-bold mt-1', danger ? 'text-red-600' : warn ? 'text-amber-600' : 'text-foreground')}>
-              {value}
-            </p>
+          { label: 'Total sources', value: stats?.total ?? '—', icon: Globe, variant: 'default' as const },
+          { label: 'Active', value: stats?.active ?? '—', icon: CheckCircle2, variant: 'default' as const },
+          { label: 'Failing', value: stats?.failing ?? '—', icon: AlertTriangle, variant: (stats?.failing || 0) > 0 ? 'danger' : 'default' as any },
+          { label: 'Pending claims', value: claimStats?.pending ?? '—', icon: ClipboardCheck, variant: (claimStats?.pending || 0) > 0 ? 'warn' : 'default' as any },
+        ].map(({ label, value, icon: Icon, variant }) => (
+          <Card key={label}>
+            <CardContent className="pt-5 flex items-center gap-3">
+              <Icon className={cn('h-5 w-5', variant === 'danger' ? 'text-destructive' : variant === 'warn' ? 'text-semantic-amber' : 'text-muted-foreground')} />
+              <div>
+                <div className={cn('text-2xl font-bold', variant === 'danger' ? 'text-destructive' : variant === 'warn' ? 'text-semantic-amber' : 'text-foreground')}>{value}</div>
+                <p className="text-xs text-muted-foreground">{label}</p>
+              </div>
+            </CardContent>
           </Card>
         ))}
       </div>

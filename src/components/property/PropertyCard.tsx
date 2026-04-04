@@ -282,7 +282,7 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                     // Sourced badge for unclaimed imported listings
                     if ((property as any).import_source && !(property as any).is_claimed) {
                       badges.push(
-                        <Badge key="sourced" className="bg-amber-100 text-amber-800 border border-amber-200 text-xs font-medium">
+                        <Badge key="sourced" className="bg-semantic-amber/15 text-foreground border-semantic-amber/30 text-xs font-medium">
                           <Building2 className="h-3 w-3 mr-1" />
                           Sourced
                         </Badge>
@@ -425,9 +425,9 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                 {(property as any).import_source && !(property as any).is_claimed && (property as any).source_last_checked_at && (() => {
                   const daysSinceCheck = Math.floor((Date.now() - new Date((property as any).source_last_checked_at).getTime()) / 86400000);
                   if (daysSinceCheck >= 3) return (
-                    <div className="flex items-center gap-1 text-xs pt-0.5 text-amber-600">
+                    <div className="flex items-center gap-1 text-xs pt-0.5 text-semantic-amber">
                       <Clock className="h-3 w-3" />
-                      <span>Verified {daysSinceCheck}d ago</span>
+                      <span className="text-muted-foreground">Verified {daysSinceCheck}d ago</span>
                     </div>
                   );
                   return null;
@@ -528,7 +528,7 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                     // Sourced badge for unclaimed imported listings
                     if ((property as any).import_source && !(property as any).is_claimed) {
                       badges.push(
-                        <Badge key="sourced" className="bg-amber-100 text-amber-800 border border-amber-200 text-xs font-medium">
+                        <Badge key="sourced" className="bg-semantic-amber/15 text-foreground border-semantic-amber/30 text-xs font-medium">
                           <Building2 className="h-3 w-3 mr-1" />
                           Sourced
                         </Badge>

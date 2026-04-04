@@ -95,7 +95,7 @@ export function UnclaimedListingBanner({
             variant="outline"
             size="sm"
             onClick={onClaimClick}
-            className="h-7 text-xs border-amber-300 text-amber-800 hover:bg-amber-100 hover:border-amber-400"
+            className="h-7 text-xs"
           >
             Agent? Claim this listing
           </Button>
@@ -184,7 +184,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, CheckCircle2 } from 'lucide-react';
 
 interface ClaimListingDialogProps {
   open: boolean;

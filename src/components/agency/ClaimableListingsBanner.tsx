@@ -68,7 +68,7 @@ export function ClaimableListingsBanner({ agencyId, citiesCovered }: ClaimableLi
   if (claimableCount === 0) return null;
 
   return (
-    <div className="rounded-xl border border-primary/20 bg-gradient-to-r from-primary/5 to-transparent p-4 space-y-3">
+    <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3">
       <div className="flex items-start gap-3">
         <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
           <Sparkles className="w-4 h-4 text-primary" />
@@ -103,7 +103,7 @@ export function ClaimableListingsBanner({ agencyId, citiesCovered }: ClaimableLi
                 </p>
               )}
               <div className="mt-1.5">
-                <span className="inline-flex items-center gap-1 text-xs text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">
+                <span className="inline-flex items-center gap-1 text-xs text-semantic-amber-foreground bg-semantic-amber/10 border border-semantic-amber/20 px-1.5 py-0.5 rounded-full">
                   <Building2 className="w-2.5 h-2.5" />
                   Unclaimed
                 </span>
