@@ -122,12 +122,22 @@ function AddSourceDialog({
         <form onSubmit={handleSubmit} className="space-y-4 mt-2">
           <div className="space-y-1.5">
             <Label>Agency *</Label>
-            <Select value={form.agency_id} onValueChange={(v) => setForm((f) => ({ ...f, agency_id: v }))}>
+<Select value={form.agency_id} onValueChange={(v) => setForm((f) => ({ ...f, agency_id: v }))}>
               <SelectTrigger><SelectValue placeholder="Select agency..." /></SelectTrigger>
               <SelectContent>
-                {(agencies as any[]).map((a: any) => (
-                  <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
-                ))}
+                <div className="px-2 pb-1">
+                  <Input
+                    placeholder="Search agencies..."
+                    value={agencySearch}
+                    onChange={(e) => setAgencySearch(e.target.value)}
+                    className="h-8 text-sm"
+                  />
+                </div>
+                {(agencies as any[])
+                  .filter((a: any) => !agencySearch || a.name.toLowerCase().includes(agencySearch.toLowerCase()))
+                  .map((a: any) => (
+                    <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>
@@ -410,6 +420,7 @@ function ClaimRow({ claim }: { claim: ClaimRequest }) {
 export default function AdminScrapingSources() {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const [agencySearch, setAgencySearch] = useState('');
   const [activeTab, setActiveTab] = useState<'sources' | 'claims'>('sources');
 
   const { data: sources = [], isLoading: sourcesLoading } = useAgencySources();

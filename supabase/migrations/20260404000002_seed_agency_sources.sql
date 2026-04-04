@@ -22,8 +22,26 @@ CREATE OR REPLACE FUNCTION insert_agency_source_if_exists(
 ) RETURNS VOID AS $$
 DECLARE
   v_agency_id UUID;
+  v_normalized TEXT;
 BEGIN
+  -- Normalize: lowercase, remove hyphens/apostrophes/dots, collapse spaces
+  v_normalized := lower(regexp_replace(p_agency_name, '[''\-\.]+', ' ', 'g'));
+  v_normalized := regexp_replace(v_normalized, '\s+', ' ', 'g');
+  v_normalized := trim(v_normalized);
+
+  -- Try exact match first (case-insensitive)
   SELECT id INTO v_agency_id FROM public.agencies WHERE name ILIKE p_agency_name LIMIT 1;
+
+  -- Try normalized fuzzy match if no exact match
+  IF v_agency_id IS NULL THEN
+    SELECT id INTO v_agency_id
+    FROM public.agencies
+    WHERE lower(regexp_replace(regexp_replace(name, '[''\-\.]+', ' ', 'g'), '\s+', ' ', 'g')) ILIKE '%' || v_normalized || '%'
+       OR v_normalized ILIKE '%' || lower(regexp_replace(regexp_replace(name, '[''\-\.]+', ' ', 'g'), '\s+', ' ', 'g')) || '%'
+    ORDER BY length(name) ASC
+    LIMIT 1;
+  END IF;
+
   IF v_agency_id IS NOT NULL THEN
     INSERT INTO public.agency_sources (agency_id, source_type, source_url, priority)
     VALUES (v_agency_id, p_source_type, p_source_url, p_priority)
