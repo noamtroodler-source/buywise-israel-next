@@ -2370,6 +2370,17 @@ async function processOneItem(
 
         await sb.from("properties").update(patch).eq("id", crossSourceMatchId);
 
+        // Record this as a co-listing agent (different agency, same property)
+        if (agentId) {
+          await sb.from("property_co_agents").upsert({
+            property_id: crossSourceMatchId,
+            agent_id: agentId,
+            agency_id: job.agency_id,
+            source_url: item.url,
+            source_type: job.source_type || "website",
+          }, { onConflict: "property_id,source_url", ignoreDuplicates: true });
+        }
+
         // Mark this import item as merged (not a new property)
         await sb.from("import_job_items").update({
           status: "done",

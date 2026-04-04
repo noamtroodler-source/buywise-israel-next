@@ -8,6 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { PropertyValueSnapshot } from './PropertyValueSnapshot';
 import { RecentNearbySales } from './RecentNearbySales';
+import { SpecBasedComps } from './SpecBasedComps';
 import { MarketDataContext } from '@/components/shared/MarketDataContext';
 import { AIMarketInsight } from './AIMarketInsight';
 import { useMarketInsight } from '@/hooks/useMarketInsight';
@@ -316,18 +317,29 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
           <Separator className="flex-1" />
         </div>
 
-        {/* Comps List (no header, no verdict) */}
-        <RecentNearbySales
-          latitude={property.latitude}
-          longitude={property.longitude}
-          city={property.city}
-          propertyRooms={israeliRooms ?? undefined}
-          propertyPrice={property.price}
-          propertySizeSqm={property.size_sqm ?? undefined}
-          hideHeader
-          hideVerdict
-          onVerdictComputed={handleVerdictComputed}
-        />
+        {/* Comps List — use spec-based when no coordinates (sourced listings with no address) */}
+        {property.latitude && property.longitude ? (
+          <RecentNearbySales
+            latitude={property.latitude}
+            longitude={property.longitude}
+            city={property.city}
+            propertyRooms={israeliRooms ?? undefined}
+            propertyPrice={property.price}
+            propertySizeSqm={property.size_sqm ?? undefined}
+            hideHeader
+            hideVerdict
+            onVerdictComputed={handleVerdictComputed}
+          />
+        ) : (
+          <SpecBasedComps
+            city={property.city}
+            neighborhood={property.neighborhood}
+            bedrooms={property.bedrooms}
+            sizeSqm={property.size_sqm}
+            price={property.price}
+            currency={property.currency}
+          />
+        )}
 
         {/* AI Market Insight — placed after evidence so it reads as a conclusion */}
         <AIMarketInsight insight={insight} isLoading={insightLoading} />
