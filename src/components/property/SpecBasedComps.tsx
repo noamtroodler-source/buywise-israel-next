@@ -37,11 +37,7 @@ function CompRow({ comp, subjectPriceSqm }: { comp: SpecBasedComp; subjectPriceS
       ? ((subjectPriceSqm - comp.price_per_sqm) / comp.price_per_sqm) * 100
       : null;
 
-  const locationLabel = comp.neighborhood
-    ? comp.neighborhood
-    : comp.street
-    ? comp.street
-    : null;
+  const locationLabel = comp.neighborhood || null;
 
   return (
     <div className="flex items-center gap-3 py-2.5 border-b border-border/50 last:border-0">

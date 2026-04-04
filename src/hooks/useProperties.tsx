@@ -344,8 +344,7 @@ export function useProperty(id: string) {
         .from('properties')
         .select(`
           *,
-          agent:agents(*, agency:agencies(id, name, logo_url)),
-          co_agents:property_co_agents(id, source_url, source_type, agent:agents(id, name, agency_name, phone, avatar_url, agency:agencies(id, name, logo_url)))
+          agent:agents(*, agency:agencies(id, name, logo_url))
         `)
         .eq('id', id)
         .maybeSingle();

@@ -23,7 +23,6 @@ export interface SpecBasedComp {
   size_sqm: number | null;
   price_per_sqm: number | null;
   neighborhood: string | null;
-  street: string | null;
   property_type: string | null;
 }
 
@@ -53,7 +52,7 @@ export function useSpecBasedSoldComps(
 
       let query = supabase
         .from('sold_transactions')
-        .select('id, sold_price, sold_date, rooms, size_sqm, price_per_sqm, neighborhood, street, property_type')
+        .select('id, sold_price, sold_date, rooms, size_sqm, price_per_sqm, neighborhood, address, property_type')
         .ilike('city', `%${city}%`)
         .gte('sold_date', cutoffDate.toISOString().split('T')[0])
         .not('sold_price', 'is', null)

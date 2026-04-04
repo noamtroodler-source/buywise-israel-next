@@ -405,7 +405,9 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                   <p className="text-sm font-medium text-foreground truncate leading-tight">{property.title}</p>
                 )}
                 <p className="text-xs text-muted-foreground">
-                  {(() => { const beds = property.bedrooms > 0 ? property.bedrooms : ((property as any).source_rooms ? Math.max(0, (property as any).source_rooms - 1) : null); const roomsLabel = beds !== null ? `${beds}bd${(property as any).additional_rooms ? ` +${(property as any).additional_rooms}` : ''}` : (property as any).source_rooms ? `${(property as any).source_rooms}rm` : null; return roomsLabel; })()} {(property.bedrooms > 0 || (property as any).source_rooms) && property.bathrooms ? '· ' : ''}{property.bathrooms ? `${property.bathrooms}ba` : ''}{property.size_sqm ? ` · ${formatArea(property.size_sqm)}` : ''}
+                  {property.bedrooms > 0 ? `${property.bedrooms}bd` : (property as any).source_rooms ? `${Math.max(0, (property as any).source_rooms - 1)}bd` : null}
+                  {property.bathrooms ? ` · ${property.bathrooms}ba` : null}
+                  {property.size_sqm ? ` · ${formatArea(property.size_sqm)}` : null}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">
                   {property.neighborhood ? `${property.neighborhood}, ` : ''}{property.city}
