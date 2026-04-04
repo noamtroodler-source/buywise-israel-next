@@ -169,8 +169,7 @@ export function useProperties(filters?: PropertyFilters) {
         .from('properties')
         .select(`
           *,
-          agent:agents(*, agency:agencies(id, name, logo_url)),
-          co_agents:property_co_agents(id, source_url, source_type, agent:agents(id, name, agency_name, phone, avatar_url, agency:agencies(id, name, logo_url)))
+          agent:agents(*, agency:agencies(id, name, logo_url))
         `)
         .eq('is_published', true)
         .order('created_at', { ascending: false });
@@ -324,8 +323,7 @@ export function useFeaturedProperties() {
         .from('properties')
         .select(`
           *,
-          agent:agents(*, agency:agencies(id, name, logo_url)),
-          co_agents:property_co_agents(id, source_url, source_type, agent:agents(id, name, agency_name, phone, avatar_url, agency:agencies(id, name, logo_url)))
+          agent:agents(*, agency:agencies(id, name, logo_url))
         `)
         .eq('is_published', true)
         .eq('is_featured', true)
@@ -346,8 +344,7 @@ export function useProperty(id: string) {
         .from('properties')
         .select(`
           *,
-          agent:agents(*, agency:agencies(id, name, logo_url)),
-          co_agents:property_co_agents(id, source_url, source_type, agent:agents(id, name, agency_name, phone, avatar_url, agency:agencies(id, name, logo_url)))
+          agent:agents(*, agency:agencies(id, name, logo_url))
         `)
         .eq('id', id)
         .maybeSingle();
@@ -480,8 +477,7 @@ export function useRecommendedProperties() {
         .from('properties')
         .select(`
           *,
-          agent:agents(*, agency:agencies(id, name, logo_url)),
-          co_agents:property_co_agents(id, source_url, source_type, agent:agents(id, name, agency_name, phone, avatar_url, agency:agencies(id, name, logo_url)))
+          agent:agents(*, agency:agencies(id, name, logo_url))
         `)
         .eq('is_published', true)
         .order('views_count', { ascending: false })
