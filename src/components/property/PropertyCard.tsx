@@ -288,7 +288,6 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                         </Badge>
                       );
                     }
-
                     if (showCategoryBadge && !hideStatusBadge) {
                       badges.push(
                         <Badge key="category" className={cn("text-xs font-medium", getStatusColor(property.listing_status))}>
@@ -358,10 +357,8 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                 <div className="flex items-center justify-between">
                   <div className="flex items-baseline gap-2">
                     <p className="font-bold text-foreground text-lg">
-                      {property.price > 0
-                        ? formatPrice(property.price, property.currency || 'ILS')
-                        : <span className="text-muted-foreground text-sm font-medium">Price on Request</span>}
-                      {property.price > 0 && property.listing_status === 'for_rent' && (
+                      {formatPrice(property.price, property.currency || 'ILS')}
+                      {property.listing_status === 'for_rent' && (
                         <span className="text-xs font-normal text-muted-foreground">/mo</span>
                       )}
                     </p>
@@ -405,11 +402,7 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                   <p className="text-sm font-medium text-foreground truncate leading-tight">{property.title}</p>
                 )}
                 <p className="text-xs text-muted-foreground">
-                  {[
-                    property.bedrooms > 0 ? `${property.bedrooms}bd` : (property as any).source_rooms ? `${Math.max(0, (property as any).source_rooms - 1)}bd` : '',
-                    property.bathrooms ? `${property.bathrooms}ba` : '',
-                    property.size_sqm ? formatArea(property.size_sqm) : '',
-                  ].filter(Boolean).join(' · ')}
+                  {property.bedrooms} bd{(property as any).additional_rooms ? ` + ${(property as any).additional_rooms}` : ''} · {property.bathrooms} ba{property.size_sqm ? ` · ${formatArea(property.size_sqm)}` : ''}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">
                   {property.neighborhood ? `${property.neighborhood}, ` : ''}{property.city}
@@ -425,17 +418,6 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                     <span>{daysLabel}</span>
                   </div>
                 )}
-                {/* Staleness indicator for sourced listings */}
-                {(property as any).import_source && !(property as any).is_claimed && (property as any).source_last_checked_at && (() => {
-                  const daysSinceCheck = Math.floor((Date.now() - new Date((property as any).source_last_checked_at).getTime()) / 86400000);
-                  if (daysSinceCheck >= 3) return (
-                    <div className="flex items-center gap-1 text-xs pt-0.5 text-semantic-amber">
-                      <Clock className="h-3 w-3" />
-                      <span className="text-muted-foreground">Verified {daysSinceCheck}d ago</span>
-                    </div>
-                  );
-                  return null;
-                })()}
               </div>
             </>
           ) : (
@@ -538,7 +520,6 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                         </Badge>
                       );
                     }
-
                     if (showCategoryBadge && !hideStatusBadge) {
                       badges.push(
                         <Badge key="category" className={cn("text-xs font-medium", getStatusColor(property.listing_status))}>
