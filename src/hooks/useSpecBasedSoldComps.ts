@@ -38,12 +38,13 @@ export function useSpecBasedSoldComps(
   bedrooms: number | null | undefined,
   sizeSqm: number | null | undefined,
   neighborhood?: string | null,
+  sourceRooms?: number | null, // Israeli room count from source site
   options: UseSpecBasedSoldCompsOptions = {}
 ) {
   const { monthsBack = 18, limit = 6, enabled = true } = options;
 
   return useQuery({
-    queryKey: ['spec-based-sold-comps', city, bedrooms, sizeSqm, neighborhood, monthsBack, limit],
+    queryKey: ['spec-based-sold-comps', city, bedrooms, sizeSqm, neighborhood, sourceRooms, monthsBack, limit],
     queryFn: async (): Promise<SpecBasedComp[]> => {
       if (!city) return [];
 
@@ -60,9 +61,11 @@ export function useSpecBasedSoldComps(
         .order('sold_date', { ascending: false })
         .limit(limit * 3); // fetch more, filter in JS
 
-      // Filter by rooms if available
-      if (bedrooms != null) {
-        const israeliRooms = bedrooms + 1; // convert bedrooms to Israeli room count
+      // Filter by rooms — prefer source_rooms (Israeli count) for accuracy
+      // source_rooms = exact Israeli room count as scraped (e.g. 4 for "4 חדרים")
+      // bedrooms = source_rooms - 1 (our Western count)
+      const israeliRooms = sourceRooms ?? (bedrooms != null ? bedrooms + 1 : null);
+      if (israeliRooms != null) {
         query = query
           .gte('rooms', israeliRooms - 1)
           .lte('rooms', israeliRooms + 1);

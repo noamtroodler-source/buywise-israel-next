@@ -358,8 +358,10 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                 <div className="flex items-center justify-between">
                   <div className="flex items-baseline gap-2">
                     <p className="font-bold text-foreground text-lg">
-                      {formatPrice(property.price, property.currency || 'ILS')}
-                      {property.listing_status === 'for_rent' && (
+                      {property.price > 0
+                        ? formatPrice(property.price, property.currency || 'ILS')
+                        : <span className="text-muted-foreground text-sm font-medium">Price on Request</span>}
+                      {property.price > 0 && property.listing_status === 'for_rent' && (
                         <span className="text-xs font-normal text-muted-foreground">/mo</span>
                       )}
                     </p>
@@ -403,7 +405,7 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                   <p className="text-sm font-medium text-foreground truncate leading-tight">{property.title}</p>
                 )}
                 <p className="text-xs text-muted-foreground">
-                  {property.bedrooms} bd{(property as any).additional_rooms ? ` + ${(property as any).additional_rooms}` : ''} · {property.bathrooms} ba{property.size_sqm ? ` · ${formatArea(property.size_sqm)}` : ''}
+                  {(() => { const beds = property.bedrooms > 0 ? property.bedrooms : ((property as any).source_rooms ? Math.max(0, (property as any).source_rooms - 1) : null); const roomsLabel = beds !== null ? `${beds}bd${(property as any).additional_rooms ? ` +${(property as any).additional_rooms}` : ''}` : (property as any).source_rooms ? `${(property as any).source_rooms}rm` : null; return roomsLabel; })()} {(property.bedrooms > 0 || (property as any).source_rooms) && property.bathrooms ? '· ' : ''}{property.bathrooms ? `${property.bathrooms}ba` : ''}{property.size_sqm ? ` · ${formatArea(property.size_sqm)}` : ''}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">
                   {property.neighborhood ? `${property.neighborhood}, ` : ''}{property.city}

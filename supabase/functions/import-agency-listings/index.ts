@@ -59,7 +59,14 @@ function generateListingTitle(listing: any, fallbackDomain?: string): string {
     : listing.city || listing.neighborhood || fallbackDomain || "Israel";
 
   if (listing.bedrooms && listing.bedrooms > 0) {
-    return toTitleCase(`${listing.bedrooms}-Bedroom ${type} in ${location}`);
+    // Show both bedroom count AND original Israeli room count for international buyers
+    const roomSuffix = listing.source_rooms ? ` (${listing.source_rooms}-Room)` : "";
+    return toTitleCase(`${listing.bedrooms}-Bedroom${roomSuffix} ${type} in ${location}`);
+  }
+  // Fall back to source_rooms if bedrooms not available
+  if (listing.source_rooms && listing.source_rooms > 0) {
+    const beds = Math.max(0, Math.floor(listing.source_rooms) - 1);
+    return toTitleCase(`${beds > 0 ? `${beds}-Bedroom ` : ""}${listing.source_rooms}-Room ${type} in ${location}`);
   }
   if (listing.size_sqm && listing.size_sqm > 0) {
     return toTitleCase(`${listing.size_sqm}sqm ${type} in ${location}`);
@@ -2031,8 +2038,9 @@ async function processOneItem(
                   description: { type: "string" },
                   price: { type: "number", description: "Price (0 if Price on Request)" },
                   currency: { type: "string", enum: ["ILS", "USD"] },
-                  bedrooms: { type: "number", description: "Bedrooms (rooms - 1)" },
-                  bathrooms: { type: "number" },
+                  bedrooms: { type: "number", description: "Sleeping bedrooms only (Israeli rooms minus 1 living room). E.g. '4 rooms' in Hebrew = 3 bedrooms." },
+                  source_rooms: { type: "number", description: "Original Israeli room count as shown on the source site (חדרים). E.g. '4 חדרים' = 4. Store this EXACTLY as shown — do not subtract." },
+                  bathrooms: { type: "number", description: "Number of bathrooms. If not mentioned, omit — do not default to 1." },
                   size_sqm: { type: "number" },
                   address: { type: "string" },
                   city: { type: "string", description: "Must be one of the supported cities" },
@@ -2432,8 +2440,14 @@ async function processOneItem(
         city: listing.city,
         neighborhood: listing.neighborhood || null,
         latitude, longitude,
-        bedrooms: Math.floor(listing.bedrooms ?? 0),
-        bathrooms: Math.floor(listing.bathrooms ?? 1),
+        // Use source_rooms to derive bedrooms if bedrooms not explicitly extracted
+        bedrooms: listing.bedrooms != null
+          ? Math.floor(listing.bedrooms)
+          : listing.source_rooms != null
+          ? Math.max(0, Math.floor(listing.source_rooms) - 1)
+          : null,
+        bathrooms: listing.bathrooms != null ? Math.floor(listing.bathrooms) : null,
+        source_rooms: listing.source_rooms ?? null,
         size_sqm: listing.size_sqm || null,
         floor: listing.floor ?? null,
         total_floors: listing.total_floors ?? null,

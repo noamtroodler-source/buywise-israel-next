@@ -338,6 +338,7 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
             sizeSqm={property.size_sqm}
             price={property.price}
             currency={property.currency}
+            sourceRooms={(property as any).source_rooms}
           />
         )}
 

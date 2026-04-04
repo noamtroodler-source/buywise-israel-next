@@ -481,32 +481,62 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
 
         {/* Hero Stats Bar */}
         <div className="grid grid-cols-4 gap-2 md:flex md:flex-wrap md:gap-6 py-4 border-y border-border">
-          {property.bedrooms !== undefined && property.bedrooms !== null && (
-            (property as any).additional_rooms ? (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center gap-2 cursor-help">
-                    <Bed className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="text-lg font-semibold">{property.bedrooms} + {(property as any).additional_rooms}</p>
-                      <p className="text-xs text-muted-foreground border-b border-dotted border-muted-foreground/30">Bedrooms + Other</p>
-                    </div>
+          {(property.bedrooms !== undefined && property.bedrooms !== null && property.bedrooms > 0) || (property as any).source_rooms ? (
+            (() => {
+              const sourceRooms = (property as any).source_rooms;
+              const additionalRooms = (property as any).additional_rooms;
+              const beds = property.bedrooms ?? (sourceRooms ? Math.max(0, sourceRooms - 1) : null);
+
+              if (additionalRooms) {
+                return (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center gap-2 cursor-help">
+                        <Bed className="h-5 w-5 text-muted-foreground" />
+                        <div>
+                          <p className="text-lg font-semibold">{beds} + {additionalRooms}</p>
+                          <p className="text-xs text-muted-foreground border-b border-dotted border-muted-foreground/30">Bedrooms + Other</p>
+                        </div>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <p><strong>{beds} sleeping bedrooms</strong> plus <strong>{additionalRooms} additional room{additionalRooms > 1 ? 's' : ''}</strong> (living room, office, etc.)</p>
+                      {sourceRooms && <p className="mt-1 text-muted-foreground">Listed as {sourceRooms} rooms on Israeli sites.</p>}
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              }
+
+              if (sourceRooms && beds !== null) {
+                return (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center gap-2 cursor-help">
+                        <Bed className="h-5 w-5 text-muted-foreground" />
+                        <div>
+                          <p className="text-lg font-semibold">{beds}</p>
+                          <p className="text-xs text-muted-foreground border-b border-dotted border-muted-foreground/30">Bedrooms</p>
+                        </div>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <p><strong>{beds} sleeping bedrooms</strong> — listed as <strong>{sourceRooms} rooms</strong> on Israeli sites (includes living room).</p>
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              }
+
+              return beds !== null ? (
+                <div className="flex items-center gap-2">
+                  <Bed className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <p className="text-lg font-semibold">{beds}</p>
+                    <p className="text-xs text-muted-foreground">Bedrooms</p>
                   </div>
-                </TooltipTrigger>
-                <TooltipContent className="max-w-xs">
-                  <p><strong>{property.bedrooms} sleeping bedrooms</strong> plus <strong>{(property as any).additional_rooms} additional room{(property as any).additional_rooms > 1 ? 's' : ''}</strong> (living room, office, etc.)</p>
-                </TooltipContent>
-              </Tooltip>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Bed className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="text-lg font-semibold">{property.bedrooms}</p>
-                  <p className="text-xs text-muted-foreground">Bedrooms</p>
                 </div>
-              </div>
-            )
-          )}
+              ) : null;
+            })()
+          ) : null}
           {property.bathrooms !== undefined && property.bathrooms !== null && (
             <div className="flex items-center gap-2">
               <Bath className="h-5 w-5 text-muted-foreground" />
