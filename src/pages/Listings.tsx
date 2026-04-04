@@ -72,6 +72,9 @@ export default function Listings() {
     const sortBy = searchParams.get('sort');
     if (sortBy) initialFilters.sort_by = sortBy as any;
 
+    const sourcedOnly = searchParams.get('sourced_only');
+    if (sourcedOnly === 'true') initialFilters.sourced_only = true;
+
     return initialFilters;
   });
 
@@ -295,6 +298,30 @@ export default function Listings() {
               onFiltersChange={handleFiltersChange}
               listingType={isRentals ? 'for_rent' : 'for_sale'}
             />
+          )}
+
+          {/* Sourced listings chip — always visible */}
+          {!isSoldView && (
+            <div className="flex items-center gap-2 mt-2">
+              <button
+                onClick={() => handleFiltersChange({ ...filters, sourced_only: filters.sourced_only ? undefined : true })}
+                className={cn(
+                  'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors',
+                  filters.sourced_only
+                    ? 'bg-amber-100 text-amber-800 border-amber-300'
+                    : 'bg-background text-muted-foreground border-border hover:border-amber-300 hover:text-amber-700'
+                )}
+              >
+                <span className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0" />
+                Sourced listings
+                {filters.sourced_only && <span className="ml-1 opacity-60">✕</span>}
+              </button>
+              {filters.sourced_only && (
+                <span className="text-xs text-muted-foreground">
+                  Showing listings pulled from agency sites &amp; portals
+                </span>
+              )}
+            </div>
           )}
         </div>
 

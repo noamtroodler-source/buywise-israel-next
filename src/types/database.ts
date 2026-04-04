@@ -181,6 +181,8 @@ export interface PropertyFilters {
   // Commute filter
   commute_destination?: 'tel_aviv' | 'jerusalem' | string;
   max_commute_minutes?: number;
+  // Sourced listings filter
+  sourced_only?: boolean;
 }
 
 export interface SearchAlert {
