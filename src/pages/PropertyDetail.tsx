@@ -196,7 +196,24 @@ export default function PropertyDetail() {
                     latitude={property.latitude}
                     longitude={property.longitude}
                     neighborhood={property.neighborhood}
-                    className="w-full h-48 md:h-64 street-view-container"
+                    className="w-full h-[300px] md:h-[420px] street-view-container"
+                  />
+                </div>
+              )}
+              {/* Unclaimed banner — right under hero where buyers see it */}
+              {!(property as any).is_claimed && (property as any).import_source && (
+                <div className="mt-3 px-4 md:px-0">
+                  <UnclaimedListingBanner
+                    sourceUrl={(property as any).source_url}
+                    sourceName={
+                      (property as any).import_source === 'yad2'
+                        ? 'Yad2'
+                        : (property as any).import_source === 'madlan'
+                        ? 'Madlan'
+                        : (property as any).source_agency_name || 'an agency website'
+                    }
+                    lastCheckedAt={(property as any).source_last_checked_at}
+                    onClaimClick={() => setShowClaimDialog(true)}
                   />
                 </div>
               )}
@@ -214,15 +231,6 @@ export default function PropertyDetail() {
 
             {/* Description */}
             <PropertyDescription description={property.description} />
-
-            {/* Sourced listing enrichment — BuyWise data for unclaimed listings */}
-            {(property as any).import_source && !(property as any).is_claimed && (
-              <SourcedListingEnrichment
-                property={property as any}
-                citySlug={citySlug}
-                className="py-2"
-              />
-            )}
 
             {/* Market Intelligence (sale/sold) or Rental Snapshot */}
             <motion.div 
@@ -421,7 +429,17 @@ export default function PropertyDetail() {
                 propertyTitle={property.title}
                 onSave={handleSave}
                 isSaved={isSaved}
+                isSourced={!!(property as any).import_source && !(property as any).is_claimed}
+                propertyCity={property.city}
               />
+              {/* Sourced listing enrichment card in sidebar — price intel, costs, community */}
+              {(property as any).import_source && !(property as any).is_claimed && (
+                <SourcedListingEnrichment
+                  property={property as any}
+                  citySlug={citySlug}
+                />
+              )}
+
               {/* Co-listing agents — shown when multiple agencies list same property */}
               {(property as any).co_agents?.length > 0 && (
                 <CoListingAgents coAgents={(property as any).co_agents} />
@@ -435,22 +453,7 @@ export default function PropertyDetail() {
           <SimilarProperties currentProperty={property} />
         </div>
 
-        {/* Unclaimed listing banner */}
-        {!(property as any).is_claimed && (property as any).import_source && (
-          <UnclaimedListingBanner
-            sourceUrl={(property as any).source_url}
-            sourceName={
-              (property as any).import_source === 'yad2'
-                ? 'Yad2'
-                : (property as any).import_source === 'madlan'
-                ? 'Madlan'
-                : (property as any).source_agency_name || 'an agency website'
-            }
-            lastCheckedAt={(property as any).source_last_checked_at}
-            className="mb-6"
-            onClaimClick={() => setShowClaimDialog(true)}
-          />
-        )}
+
 
         {/* Disclaimer */}
         <ListingDisclaimer variant="detail" className="py-6" />

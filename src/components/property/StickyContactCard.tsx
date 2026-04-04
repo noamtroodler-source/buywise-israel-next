@@ -30,6 +30,8 @@ interface StickyContactCardProps {
   onContactClick?: () => void;
   onSave?: () => void;
   isSaved?: boolean;
+  isSourced?: boolean; // unclaimed scraped listing — show 'find agent' CTA
+  propertyCity?: string;
 }
 
 export function StickyContactCard({ 
@@ -40,6 +42,8 @@ export function StickyContactCard({
   onContactClick,
   onSave,
   isSaved,
+  isSourced,
+  propertyCity,
 }: StickyContactCardProps) {
   const { user } = useAuth();
   const [inquiryChannel, setInquiryChannel] = useState<InquiryChannel | null>(null);
@@ -150,7 +154,19 @@ export function StickyContactCard({
               </Button>
             )}
 
-            {!agent && (
+            {!agent && isSourced && (
+              <div className="space-y-2">
+                <Link to={`/agencies${propertyCity ? `?city=${encodeURIComponent(propertyCity)}` : ''}`}>
+                  <Button className="w-full" size="lg">
+                    Find a Vetted Agent
+                  </Button>
+                </Link>
+                <p className="text-xs text-center text-muted-foreground">
+                  BuyWise-verified agencies specialising in international buyers
+                </p>
+              </div>
+            )}
+            {!agent && !isSourced && (
               <Button 
                 className="w-full" 
                 size="lg"
