@@ -36,20 +36,20 @@ export function UnclaimedListingBanner({
   return (
     <div
       className={cn(
-        'rounded-xl border border-amber-200 bg-amber-50/60 px-5 py-4 space-y-3',
+        'rounded-xl border border-semantic-amber/25 bg-semantic-amber/5 px-5 py-4 space-y-3',
         className
       )}
     >
       {/* Header */}
       <div className="flex items-start gap-3">
-        <div className="mt-0.5 flex-shrink-0 w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
-          <Building2 className="w-4 h-4 text-amber-600" />
+        <div className="mt-0.5 flex-shrink-0 w-8 h-8 rounded-full bg-semantic-amber/15 flex items-center justify-center">
+          <Building2 className="w-4 h-4 text-semantic-amber" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-amber-900">
+          <p className="text-sm font-semibold text-foreground">
             Sourced listing — not yet verified
           </p>
-          <p className="text-sm text-amber-800 mt-0.5 leading-relaxed">
+          <p className="text-sm text-muted-foreground mt-0.5 leading-relaxed">
             This listing was pulled from{' '}
             <span className="font-medium">{sourceName}</span> to help
             international buyers discover more options. Details may not
@@ -70,7 +70,7 @@ export function UnclaimedListingBanner({
               : 'Availability unconfirmed',
           },
         ].map(({ icon: Icon, text }) => (
-          <div key={text} className="flex items-center gap-2 text-xs text-amber-700">
+          <div key={text} className="flex items-center gap-2 text-xs text-muted-foreground">
             <Icon className="w-3.5 h-3.5 flex-shrink-0" />
             <span>{text}</span>
           </div>
@@ -84,7 +84,7 @@ export function UnclaimedListingBanner({
             href={sourceUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-amber-700 hover:text-amber-900 underline underline-offset-2"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 underline underline-offset-2"
           >
             <ExternalLink className="w-3.5 h-3.5" />
             View original listing

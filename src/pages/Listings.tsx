@@ -313,7 +313,7 @@ export default function Listings() {
                     : 'bg-background text-muted-foreground border-border hover:border-semantic-amber/40 hover:text-foreground'
                 )}
               >
-                <span className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0" />
+                <span className="w-2 h-2 rounded-full bg-semantic-amber flex-shrink-0" />
                 Sourced listings
                 {filters.sourced_only && <span className="ml-1 opacity-60">✕</span>}
               </button>

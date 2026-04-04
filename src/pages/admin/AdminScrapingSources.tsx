@@ -50,9 +50,9 @@ import {
 // ─── Source type config ──────────────────────────────────────────────────────
 
 const SOURCE_LABELS: Record<string, { label: string; color: string }> = {
-  yad2: { label: 'Yad2', color: 'bg-blue-100 text-blue-800' },
-  madlan: { label: 'Madlan', color: 'bg-purple-100 text-purple-800' },
-  website: { label: 'Website', color: 'bg-gray-100 text-gray-800' },
+  yad2: { label: 'Yad2', color: 'bg-primary/10 text-primary' },
+  madlan: { label: 'Madlan', color: 'bg-accent text-accent-foreground' },
+  website: { label: 'Website', color: 'bg-muted text-muted-foreground' },
 };
 
 const PRIORITY_LABELS: Record<number, string> = {
@@ -237,14 +237,14 @@ function SourceRow({ source }: { source: AgencySource }) {
             </span>
           )}
           {source.consecutive_failures > 0 && (
-            <span className="text-xs text-red-600 flex items-center gap-1">
+            <span className="text-xs text-destructive flex items-center gap-1">
               <AlertTriangle className="w-3 h-3" />
               {source.consecutive_failures} failure{source.consecutive_failures > 1 ? 's' : ''}
             </span>
           )}
         </div>
         {source.last_failure_reason && (
-          <p className="text-xs text-red-500 mt-1 truncate">{source.last_failure_reason}</p>
+          <p className="text-xs text-destructive mt-1 truncate">{source.last_failure_reason}</p>
         )}
       </div>
 
@@ -298,10 +298,10 @@ function ClaimRow({ claim }: { claim: ClaimRequest }) {
   const rejectRequest = useRejectClaimRequest();
 
   const statusConfig = {
-    pending: { label: 'Pending', color: 'bg-yellow-100 text-yellow-800' },
-    approved: { label: 'Approved', color: 'bg-green-100 text-green-800' },
-    rejected: { label: 'Rejected', color: 'bg-red-100 text-red-800' },
-    duplicate: { label: 'Duplicate', color: 'bg-gray-100 text-gray-800' },
+    pending: { label: 'Pending', color: 'bg-semantic-amber/15 text-foreground' },
+    approved: { label: 'Approved', color: 'bg-semantic-green/15 text-semantic-green' },
+    rejected: { label: 'Rejected', color: 'bg-destructive/10 text-destructive' },
+    duplicate: { label: 'Duplicate', color: 'bg-muted text-muted-foreground' },
   };
 
   const cfg = statusConfig[claim.status];
@@ -375,7 +375,7 @@ function ClaimRow({ claim }: { claim: ClaimRequest }) {
             <Button
               size="sm"
               variant="outline"
-              className="flex-1 text-red-600 border-red-200 hover:bg-red-50"
+              className="flex-1 text-destructive border-destructive/20 hover:bg-destructive/5"
               disabled={rejectRequest.isPending}
               onClick={() => rejectRequest.mutate({ claimId: claim.id, notes })}
             >
@@ -498,7 +498,7 @@ export default function AdminScrapingSources() {
           <TabsTrigger value="claims">
             Claim Requests
             {(claimStats?.pending || 0) > 0 && (
-              <Badge className="ml-2 text-xs bg-amber-500 text-white">{claimStats?.pending}</Badge>
+              <Badge className="ml-2 text-xs bg-semantic-amber text-semantic-amber-foreground">{claimStats?.pending}</Badge>
             )}
           </TabsTrigger>
         </TabsList>
@@ -564,7 +564,7 @@ export default function AdminScrapingSources() {
             <>
               {pendingClaims.length > 0 && (
                 <div className="space-y-2">
-                  <p className="text-sm font-semibold text-amber-700">
+                  <p className="text-sm font-semibold text-semantic-amber">
                     {pendingClaims.length} pending review
                   </p>
                   {pendingClaims.map((c) => <ClaimRow key={c.id} claim={c} />)}

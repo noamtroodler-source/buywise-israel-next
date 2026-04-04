@@ -91,7 +91,7 @@ export function ClaimableListingsBanner({ agencyId, citiesCovered }: ClaimableLi
             <Link
               key={listing.id}
               to={`/property/${listing.id}`}
-              className="rounded-lg border border-border bg-white p-3 hover:border-primary/30 hover:shadow-sm transition-all text-left"
+              className="rounded-lg border border-border bg-card p-3 hover:border-primary/30 hover:shadow-sm transition-all text-left"
             >
               <p className="text-xs font-medium text-foreground truncate">{listing.title}</p>
               <p className="text-xs text-muted-foreground mt-0.5">

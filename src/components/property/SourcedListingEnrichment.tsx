@@ -320,7 +320,7 @@ export function SourcedListingEnrichment({
       {missing.length > 0 && (
         <div className="rounded-xl border border-semantic-amber/30 bg-semantic-amber/5 p-4 space-y-3">
           <div className="flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-amber-600" />
+            <AlertCircle className="w-4 h-4 text-semantic-amber" />
             <p className="text-sm font-semibold text-foreground">Verify before proceeding</p>
           </div>
           <p className="text-xs text-muted-foreground">
@@ -331,7 +331,7 @@ export function SourcedListingEnrichment({
               <div key={label} className="flex items-start gap-2">
                 <div className={cn(
                   'w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0',
-                  severity === 'high' ? 'bg-red-500' : 'bg-amber-500'
+                  severity === 'high' ? 'bg-destructive' : 'bg-semantic-amber'
                 )} />
                 <div>
                   <span className="text-xs font-medium text-foreground">{label}</span>
