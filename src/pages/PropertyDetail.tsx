@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
-import { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { setPageContextData } from '@/hooks/usePageContext';
 import { Layout } from '@/components/layout/Layout';
 import { useProperty } from '@/hooks/useProperties';
@@ -26,6 +26,7 @@ import { SimilarProperties } from '@/components/property/SimilarProperties';
 // RecentNearbySales is now used inside MarketIntelligence
 import { SupportFooter } from '@/components/shared/SupportFooter';
 import { ListingDisclaimer } from '@/components/shared/ListingDisclaimer';
+import { UnclaimedListingBanner, StreetViewFallback, ClaimListingDialog } from '@/components/property/UnclaimedListingBanner';
 import { MarketDataContext } from '@/components/shared/MarketDataContext';
 import { ListingFeedback } from '@/components/listings/ListingFeedback';
 import { ReportListingButton } from '@/components/property/ReportListingButton';
@@ -86,6 +87,7 @@ export default function PropertyDetail() {
   const { data: cityData } = useCityDetails(citySlug);
 
   const isSaved = property ? isFavorite(property.id) : false;
+  const [showClaimDialog, setShowClaimDialog] = React.useState(false);
 
   const handleSave = async () => {
     if (!property) return;
@@ -183,6 +185,19 @@ export default function PropertyDetail() {
                 onShare={handleShare}
                 isSaved={isSaved}
               />
+              {/* Street View fallback for unclaimed listings with no photos */}
+              {!(property as any).is_claimed && !property.images?.length && (
+                <div className="mt-3 px-4 md:px-0">
+                  <StreetViewFallback
+                    address={property.address}
+                    city={property.city}
+                    latitude={property.latitude}
+                    longitude={property.longitude}
+                    neighborhood={property.neighborhood}
+                    className="w-full h-48 md:h-64 street-view-container"
+                  />
+                </div>
+              )}
             </div>
 
             {/* Quick Summary - Price, Title, Stats */}
@@ -398,9 +413,36 @@ export default function PropertyDetail() {
           <SimilarProperties currentProperty={property} />
         </div>
 
+        {/* Unclaimed listing banner */}
+        {!(property as any).is_claimed && (property as any).import_source && (
+          <UnclaimedListingBanner
+            sourceUrl={(property as any).source_url}
+            sourceName={
+              (property as any).import_source === 'yad2'
+                ? 'Yad2'
+                : (property as any).import_source === 'madlan'
+                ? 'Madlan'
+                : (property as any).source_agency_name || 'an agency website'
+            }
+            lastCheckedAt={(property as any).source_last_checked_at}
+            className="mb-6"
+            onClaimClick={() => setShowClaimDialog(true)}
+          />
+        )}
+
         {/* Disclaimer */}
         <ListingDisclaimer variant="detail" className="py-6" />
       </div>
+
+      {/* Claim listing dialog (for unclaimed scraped listings) */}
+      {property && (
+        <ClaimListingDialog
+          open={showClaimDialog}
+          onOpenChange={setShowClaimDialog}
+          propertyId={property.id}
+          propertyTitle={property.title}
+        />
+      )}
 
       {/* Mobile Contact Bar */}
       <MobileContactBar 
