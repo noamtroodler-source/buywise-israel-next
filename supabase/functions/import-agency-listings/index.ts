@@ -2386,10 +2386,17 @@ async function processOneItem(
         agent_fee_required: listing.agent_fee_required ?? null,
         bank_guarantee_required: listing.bank_guarantee_required ?? null,
         checks_required: listing.checks_required ?? null,
-        is_published: false, is_featured: false, views_count: 0,
-        verification_status: "draft",
-        import_source: job.source_type === "yad2" ? "yad2" : "website_scrape",
+        // Auto-publish if quality score >= 60, else keep as draft
+        is_published: confidenceScore >= 60,
+        is_featured: false, views_count: 0,
+        verification_status: confidenceScore >= 60 ? "verified" : "draft",
+        import_source: job.source_type === "yad2" ? "yad2" : job.source_type === "madlan" ? "madlan" : "website_scrape",
         source_url: item.url,
+        data_quality_score: confidenceScore,
+        location_confidence: listing.address?.length > 3 ? "exact" : listing.neighborhood ? "neighborhood" : "city",
+        is_claimed: false,
+        source_status: "active",
+        source_last_checked_at: new Date().toISOString(),
       })
       .select("id")
       .single();
