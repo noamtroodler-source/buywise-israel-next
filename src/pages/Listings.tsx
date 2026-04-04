@@ -16,6 +16,7 @@ import { ListingsGrid } from '@/components/listings/ListingsGrid';
 import { BackToTopButton } from '@/components/shared/BackToTopButton';
 import { SupportFooter } from '@/components/shared/SupportFooter';
 import { ListingDisclaimer } from '@/components/shared/ListingDisclaimer';
+import { SourcedListingsBanner } from '@/components/listings/SourcedListingsBanner';
 import { PullToRefresh } from '@/components/shared/PullToRefresh';
 import { MobileListingsSkeletonGrid } from '@/components/shared/MobilePropertySkeleton';
 import { EnhancedEmptyState } from '@/components/shared/EnhancedEmptyState';
@@ -324,6 +325,11 @@ export default function Listings() {
             </div>
           )}
         </div>
+
+        {/* Sourced listings explainer banner */}
+        {filters.sourced_only && (
+          <SourcedListingsBanner className="mb-6" />
+        )}
 
         {/* Results Count Row */}
         <div className="flex items-center justify-between mb-4">

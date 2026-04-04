@@ -3195,6 +3195,320 @@ function mapYad2PropertyType(type: string): string {
 
 // [REMOVED] processYad2Item — dead code, all items now route through processOneItem
 
+// ─── MADLAN ADAPTER ─────────────────────────────────────────────────────────
+
+/**
+ * Madlan URL patterns for agency listings:
+ * - Agency/office page: https://www.madlan.co.il/for-sale/israel--office--{SLUG}
+ * - Agent page: https://www.madlan.co.il/for-sale/israel--agent--{ID}
+ * - Individual listing: https://www.madlan.co.il/nadlan/listing/{ID}
+ * - Rental variant: /for-rent/ prefix instead of /for-sale/
+ */
+
+function isMadlanAgencyUrl(url: string): boolean {
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    return host.includes("madlan");
+  } catch {
+    return false;
+  }
+}
+
+function getMadlanDiscoveryUrls(rawUrl: string, importType: string): string[] {
+  const urls = new Set<string>();
+  try {
+    const parsed = new URL(rawUrl);
+    const pathBase = parsed.pathname
+      .replace(/\/(for-sale|for-rent)\/?/i, "")
+      .replace(/\/+$/, "");
+    const entity = pathBase.replace(/^\//, ""); // e.g. "israel--office--anglo-saxon"
+
+    const normalizedType = normalizeImportType(importType);
+    const modes = normalizedType === "both"
+      ? ["for-sale", "for-rent"]
+      : [normalizedType === "rental" ? "for-rent" : "for-sale"];
+
+    for (const mode of modes) {
+      const u = new URL(rawUrl);
+      u.pathname = `/${mode}/${entity}`;
+      u.search = "";
+      urls.add(u.toString());
+    }
+  } catch {
+    urls.add(rawUrl);
+  }
+  return Array.from(urls);
+}
+
+function buildMadlanPageUrl(baseUrl: string, page: number): string {
+  try {
+    const u = new URL(baseUrl);
+    if (page <= 1) {
+      u.searchParams.delete("page");
+    } else {
+      u.searchParams.set("page", String(page));
+    }
+    return u.toString();
+  } catch {
+    return baseUrl;
+  }
+}
+
+function extractMadlanListingUrls(html: string, pageUrl: string): string[] {
+  const urls = new Set<string>();
+  // Madlan individual listing URLs look like:
+  // /nadlan/listing/XXXXXXXX or /listing/XXXXXXXX
+  const patterns = [
+    /href=["']([^"']*\/nadlan\/listing\/[\w-]+)["']/gi,
+    /href=["']([^"']*\/listing\/[\w-]+)["']/gi,
+  ];
+
+  for (const pattern of patterns) {
+    let match: RegExpExecArray | null;
+    while ((match = pattern.exec(html)) !== null) {
+      try {
+        const absolute = new URL(match[1], pageUrl).toString();
+        // Only keep madlan.co.il listing URLs
+        if (absolute.includes("madlan.co.il") && absolute.includes("/listing/")) {
+          urls.add(normalizeUrl(absolute));
+        }
+      } catch { /* ignore */ }
+    }
+  }
+
+  // Also try JSON data embedded in __NEXT_DATA__ or window.__STATE__
+  const jsonPatterns = [
+    /"url":"(https?:\/\/www\.madlan\.co\.il\/(?:nadlan\/)?listing\/[^"]+)"/g,
+    /"canonicalUrl":"(https?:\/\/www\.madlan\.co\.il\/(?:nadlan\/)?listing\/[^"]+)"/g,
+  ];
+  for (const pattern of jsonPatterns) {
+    let match: RegExpExecArray | null;
+    while ((match = pattern.exec(html)) !== null) {
+      try {
+        urls.add(normalizeUrl(match[1]));
+      } catch { /* ignore */ }
+    }
+  }
+
+  return Array.from(urls);
+}
+
+function extractMadlanTotalCount(html: string): number | null {
+  // Madlan shows counts like "נמצאו 47 דירות" or in JSON data
+  const patterns = [
+    /נמצאו\s+(\d[\d,]*)/u,
+    /(\d[\d,]*)\s*(?:דירות|נכסים|תוצאות)/u,
+    /"totalCount":(\d+)/,
+    /"total":(\d+)/,
+    /"count":(\d+)/,
+  ];
+  for (const p of patterns) {
+    const m = html.match(p);
+    if (m?.[1]) {
+      const n = parseInt(m[1].replace(/,/g, ""));
+      if (Number.isFinite(n) && n > 0) return n;
+    }
+  }
+  return null;
+}
+
+async function runMadlanAgencyDiscoverJob(params: {
+  jobId: string;
+  agencyId: string;
+  websiteUrl: string;
+  effectiveImportType: "resale" | "rental" | "both";
+}) {
+  const { jobId, agencyId, websiteUrl, effectiveImportType } = params;
+  const sb = supabaseAdmin();
+  const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
+
+  try {
+    console.log(`[Madlan] background discovery started for job ${jobId}: ${websiteUrl}`);
+
+    const discoveryUrls = getMadlanDiscoveryUrls(websiteUrl, effectiveImportType);
+    const discoveredUrls = new Set<string>();
+
+    for (const discoveryUrl of discoveryUrls) {
+      const firstPageUrl = buildMadlanPageUrl(discoveryUrl, 1);
+      let firstPageHtml = "";
+
+      // Use Firecrawl to render the JS-heavy Madlan page
+      if (FIRECRAWL_API_KEY) {
+        try {
+          const res = await fetch("https://api.firecrawl.dev/v1/scrape", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${FIRECRAWL_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              url: firstPageUrl,
+              formats: ["html"],
+              onlyMainContent: false,
+              waitFor: 4000, // Madlan needs time to render listings
+            }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            firstPageHtml = data?.data?.html || data?.html || "";
+          }
+        } catch (e) {
+          console.warn(`[Madlan] Firecrawl error:`, e);
+        }
+      }
+
+      if (!firstPageHtml) {
+        console.warn(`[Madlan] Could not fetch first page: ${firstPageUrl}`);
+        continue;
+      }
+
+      const firstPageItems = extractMadlanListingUrls(firstPageHtml, firstPageUrl);
+      const totalCount = extractMadlanTotalCount(firstPageHtml) ?? firstPageItems.length;
+      // Madlan shows ~20 per page
+      const pageSize = Math.max(firstPageItems.length, 20);
+      const totalPages = Math.min(Math.ceil(totalCount / pageSize), 50); // cap at 50 pages
+
+      firstPageItems.forEach((url) => discoveredUrls.add(url));
+      console.log(`[Madlan] page 1: ${firstPageItems.length} items, total: ${totalCount}, pages: ${totalPages}`);
+
+      // Crawl remaining pages
+      const PAGE_BATCH_SIZE = 2;
+      for (let startPage = 2; startPage <= totalPages; startPage += PAGE_BATCH_SIZE) {
+        const pageBatch = Array.from(
+          { length: Math.min(PAGE_BATCH_SIZE, totalPages - startPage + 1) },
+          (_, i) => startPage + i
+        );
+
+        const pageResults = await Promise.allSettled(
+          pageBatch.map(async (pageNum) => {
+            const pageUrl = buildMadlanPageUrl(discoveryUrl, pageNum);
+            if (!FIRECRAWL_API_KEY) return [];
+            const res = await fetch("https://api.firecrawl.dev/v1/scrape", {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${FIRECRAWL_API_KEY}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                url: pageUrl,
+                formats: ["html"],
+                onlyMainContent: false,
+                waitFor: 3000,
+              }),
+            });
+            if (!res.ok) return [];
+            const data = await res.json();
+            const html = data?.data?.html || data?.html || "";
+            return extractMadlanListingUrls(html, pageUrl);
+          })
+        );
+
+        pageResults.forEach((r, i) => {
+          if (r.status === "fulfilled") {
+            console.log(`[Madlan] page ${pageBatch[i]}: ${r.value.length} items`);
+            r.value.forEach((url) => discoveredUrls.add(url));
+          }
+        });
+
+        // Pace between batches
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+      }
+    }
+
+    const dedupedUrls = Array.from(discoveredUrls);
+    console.log(`[Madlan] discovered ${dedupedUrls.length} unique listing URLs`);
+
+    // Filter out already-imported URLs
+    const { data: existingProps } = await sb
+      .from("properties")
+      .select("source_url")
+      .eq("agency_id", agencyId)
+      .not("source_url", "is", null);
+
+    const knownUrls = new Set<string>();
+    if (existingProps) {
+      for (const p of existingProps) {
+        if (p.source_url) knownUrls.add(normalizeUrl(p.source_url));
+      }
+    }
+
+    const newUrls = dedupedUrls.filter((url) => !knownUrls.has(normalizeUrl(url)));
+    console.log(`[Madlan] ${newUrls.length} new URLs after dedup`);
+
+    if (newUrls.length > 0) {
+      const BATCH = 200;
+      for (let i = 0; i < newUrls.length; i += BATCH) {
+        const items = newUrls.slice(i, i + BATCH).map((url) => ({
+          job_id: jobId,
+          url,
+          status: "pending",
+        }));
+        await sb.from("import_job_items").insert(items);
+      }
+    }
+
+    await sb.from("import_jobs").update({
+      status: newUrls.length > 0 ? "ready" : "completed",
+      total_urls: newUrls.length,
+      discovered_urls: dedupedUrls,
+      processed_count: 0,
+      failed_count: 0,
+    }).eq("id", jobId);
+
+    console.log(`[Madlan] discovery finished for job ${jobId}: ${newUrls.length} new URLs`);
+  } catch (err) {
+    console.error(`[Madlan] discovery failed for job ${jobId}:`, err);
+    await sb.from("import_jobs").update({ status: "failed" }).eq("id", jobId);
+  }
+}
+
+async function handleMadlanAgencyDiscover(body: any) {
+  const { agency_id, website_url, import_type = "resale" } = body;
+  if (!agency_id || !website_url) throw new Error("agency_id and website_url required");
+
+  const sb = supabaseAdmin();
+  const effectiveImportType = normalizeImportType(import_type);
+
+  const { data: agency, error: agencyErr } = await sb
+    .from("agencies").select("id").eq("id", agency_id).single();
+  if (agencyErr || !agency) throw new Error("Agency not found");
+
+  const { data: job, error: jobErr } = await sb
+    .from("import_jobs")
+    .insert({
+      agency_id,
+      website_url,
+      status: "discovering",
+      total_urls: 0,
+      discovered_urls: [],
+      processed_count: 0,
+      failed_count: 0,
+      import_type: effectiveImportType,
+      source_type: "madlan",
+    })
+    .select("id")
+    .single();
+  if (jobErr || !job) throw new Error(`Failed to create import job: ${jobErr?.message}`);
+
+  EdgeRuntime.waitUntil(
+    runMadlanAgencyDiscoverJob({
+      jobId: job.id,
+      agencyId: agency_id,
+      websiteUrl: website_url,
+      effectiveImportType,
+    })
+  );
+
+  return {
+    job_id: job.id,
+    total_listings: 0,
+    total_discovered: 0,
+    new_urls: 0,
+    skipped_existing: 0,
+    started_async: true,
+  };
+}
+
 // ─── RESUME STALLED JOB ─────────────────────────────────────────────────────
 
 async function handleResumeJob(body: any) {
@@ -3393,7 +3707,6 @@ Deno.serve(async (req) => {
 
     let result;
     if (action === "discover") {
-      // Route to Yad2 adapter if source_type is yad2
       if (body.source_type === "yad2") {
         // Auto-detect agency profile page vs search results
         if (isYad2AgencyUrl(body.website_url)) {
@@ -3401,8 +3714,11 @@ Deno.serve(async (req) => {
         } else {
           result = await handleYad2Discover(body);
         }
+      } else if (body.source_type === "madlan" || isMadlanAgencyUrl(body.website_url)) {
+        result = await handleMadlanAgencyDiscover(body);
+      } else {
+        result = await handleDiscover(body);
       }
-      else result = await handleDiscover(body);
     }
     else if (action === "process_batch") result = await handleProcessBatch(body);
     else if (action === "retry_failed") result = await handleRetryFailed(body);
