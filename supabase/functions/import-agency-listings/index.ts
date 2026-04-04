@@ -2279,51 +2279,107 @@ async function processOneItem(
       }
     }
 
-    // ── DEDUP: Tier 3 — Cross-source (cross-agency) ──
-    const crossSourceWarnings: string[] = [];
+    // ── DEDUP: Tier 3 — Cross-source merge ──
+    // If this listing already exists from another source, MERGE rather than duplicate.
+    // Merge strategy: keep the richer version of each field, track all source URLs.
+    let crossSourceMatchId: string | null = null;
+
+    // Search by address + city (most reliable)
     if (listing.address && listing.city) {
       const normalizedAddr = normalizeAddressForDedup(listing.address);
       const addrPattern = buildAddressQueryPattern(normalizedAddr);
       if (normalizedAddr.length > 0) {
         const { data: crossDupes } = await sb
-          .from("properties").select("id, agent_id")
-          .neq("agent_id", agentId)
+          .from("properties")
+          .select("id, agent_id, price, size_sqm, bedrooms, images, description, address, floor, year_built, features, merged_source_urls, source_url, data_quality_score")
           .ilike("address", addrPattern)
           .ilike("city", listing.city.trim())
+          .not("import_source", "is", null) // only merge sourced listings
+          .neq("id", "00000000-0000-0000-0000-000000000000") // avoid null comparison
           .limit(1);
-        if (crossDupes && crossDupes.length > 0) {
-          listing.cross_source_match_id = crossDupes[0].id;
-          crossSourceWarnings.push(`Potential cross-source duplicate with property ${crossDupes[0].id} (same address + city, different agent)`);
-        }
-      }
-    }
-    if (!listing.cross_source_match_id && listing.city && listing.bedrooms != null && listing.size_sqm && listing.price && listing.price > 0) {
-      const priceLow = listing.price * 0.90;
-      const priceHigh = listing.price * 1.10;
-      const sizeLow = listing.size_sqm - 5;
-      const sizeHigh = listing.size_sqm + 5;
-      const { data: crossFuzzy } = await sb
-        .from("properties").select("id, agent_id")
-        .neq("agent_id", agentId)
-        .ilike("city", listing.city.trim())
-        .eq("bedrooms", Math.floor(listing.bedrooms))
-        .gte("size_sqm", sizeLow).lte("size_sqm", sizeHigh)
-        .gte("price", priceLow).lte("price", priceHigh)
-        .limit(1);
-      if (crossFuzzy && crossFuzzy.length > 0) {
-        listing.cross_source_match_id = crossFuzzy[0].id;
-        crossSourceWarnings.push(`Potential cross-source duplicate with property ${crossFuzzy[0].id} (similar specs, different agent)`);
+        if (crossDupes && crossDupes.length > 0) crossSourceMatchId = crossDupes[0].id;
       }
     }
 
-    // Apply cross-source penalty to confidence and merge warnings
-    if (crossSourceWarnings.length > 0) {
-      validationWarnings.push(...crossSourceWarnings);
-      const adjustedScore = Math.max(0, confidenceScore - 10);
-      await sb.from("import_job_items").update({
-        confidence_score: adjustedScore,
-        extracted_data: { ...listing, confidence_score: adjustedScore, validation_warnings: validationWarnings },
-      }).eq("id", item.id);
+    // Fuzzy search by city + bedrooms + size + price (when no address)
+    if (!crossSourceMatchId && listing.city && listing.bedrooms != null && listing.size_sqm && listing.price > 0) {
+      const { data: crossFuzzy } = await sb
+        .from("properties")
+        .select("id, agent_id, price, size_sqm, bedrooms, images, description, address, floor, year_built, features, merged_source_urls, source_url, data_quality_score")
+        .ilike("city", listing.city.trim())
+        .eq("bedrooms", Math.floor(listing.bedrooms))
+        .gte("size_sqm", listing.size_sqm - 5)
+        .lte("size_sqm", listing.size_sqm + 5)
+        .gte("price", listing.price * 0.90)
+        .lte("price", listing.price * 1.10)
+        .not("import_source", "is", null)
+        .limit(1);
+      if (crossFuzzy && crossFuzzy.length > 0) crossSourceMatchId = crossFuzzy[0].id;
+    }
+
+    if (crossSourceMatchId) {
+      // ── MERGE: enrich existing property with better data from this source ──
+      const { data: existing } = await sb
+        .from("properties")
+        .select("id, price, size_sqm, bedrooms, images, description, address, floor, year_built, features, merged_source_urls, source_url, data_quality_score, neighborhood")
+        .eq("id", crossSourceMatchId)
+        .single();
+
+      if (existing) {
+        const mergedUrls: string[] = Array.isArray(existing.merged_source_urls)
+          ? [...existing.merged_source_urls]
+          : (existing.source_url ? [existing.source_url] : []);
+        if (item.url && !mergedUrls.includes(item.url)) mergedUrls.push(item.url);
+
+        // Build patch: only overwrite if new value is better (non-null, more complete)
+        const patch: Record<string, any> = {
+          merged_source_urls: mergedUrls,
+          source_last_checked_at: new Date().toISOString(),
+        };
+
+        // Fill gaps: use new data only if existing field is missing/zero
+        if ((!existing.address || existing.address.trim() === "") && listing.address) patch.address = normalizeAddressForStorage(listing.address);
+        if (!existing.floor && listing.floor != null) patch.floor = listing.floor;
+        if (!existing.year_built && listing.year_built) patch.year_built = listing.year_built;
+        if (!existing.neighborhood && listing.neighborhood) patch.neighborhood = listing.neighborhood;
+        if ((!existing.size_sqm || existing.size_sqm === 0) && listing.size_sqm) patch.size_sqm = listing.size_sqm;
+        if ((!existing.bedrooms || existing.bedrooms === 0) && listing.bedrooms != null) patch.bedrooms = Math.floor(listing.bedrooms);
+        // Prefer non-zero price; if both non-zero, keep existing (first source wins)
+        if ((!existing.price || existing.price === 0) && listing.price > 0) patch.price = listing.price;
+        // Description: prefer longer one
+        if (listing.description && (!existing.description || listing.description.length > existing.description.length)) {
+          patch.description = listing.description;
+        }
+        // Images: merge arrays, deduplicate
+        if (imageUrls.length > 0) {
+          const existingImages: string[] = Array.isArray(existing.images) ? existing.images : [];
+          const mergedImages = [...new Set([...existingImages, ...imageUrls])];
+          if (mergedImages.length > existingImages.length) patch.images = mergedImages;
+        }
+        // Features: union of both arrays
+        if (listing.features?.length && existing.features) {
+          patch.features = [...new Set([...(existing.features as string[]), ...listing.features])];
+        } else if (listing.features?.length && !existing.features) {
+          patch.features = listing.features;
+        }
+        // Recalculate quality score as max of both
+        if (confidenceScore > (existing.data_quality_score ?? 0)) {
+          patch.data_quality_score = confidenceScore;
+          if (confidenceScore >= 60) patch.is_published = true;
+        }
+
+        await sb.from("properties").update(patch).eq("id", crossSourceMatchId);
+
+        // Mark this import item as merged (not a new property)
+        await sb.from("import_job_items").update({
+          status: "done",
+          property_id: crossSourceMatchId,
+          error_message: `Merged into existing property ${crossSourceMatchId} (cross-source enrichment)`,
+        }).eq("id", item.id);
+
+        console.log(`[Merge] Enriched property ${crossSourceMatchId} with data from ${item.url}`);
+        return { succeeded: true };
+      }
     }
 
     // Download and re-host images (with placeholder detection + SHA-256 dedup)

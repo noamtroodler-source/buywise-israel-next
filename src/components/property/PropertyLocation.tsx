@@ -77,7 +77,12 @@ export function PropertyLocation({
     setSearchedLocations(prev => prev.filter(l => l.id !== id));
   };
   
-  const fullAddress = `${address}${neighborhood ? `, ${neighborhood}` : ''}, ${city}, Israel`;
+  const hasAddress = address && address.trim().length > 3;
+  const fullAddress = hasAddress
+    ? `${address}${neighborhood ? `, ${neighborhood}` : ''}, ${city}, Israel`
+    : neighborhood
+    ? `${neighborhood}, ${city}, Israel`
+    : `${city}, Israel`;
   
   const openGoogleMaps = () => {
     const query = latitude && longitude 
@@ -183,17 +188,29 @@ export function PropertyLocation({
             </div>
           </div>
         ) : (
-          <div className="h-[200px] bg-muted rounded-xl flex items-center justify-center">
-            <div className="text-center text-muted-foreground">
-              <MapPin className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">Map location not available</p>
+          <div className="h-[200px] bg-muted/50 rounded-xl flex items-center justify-center border border-dashed border-border">
+            <div className="text-center text-muted-foreground px-4">
+              <MapPin className="h-8 w-8 mx-auto mb-2 opacity-40" />
+              <p className="text-sm font-medium">
+                {!hasAddress ? 'Approximate area: ' + (neighborhood ? `${neighborhood}, ` : '') + city : 'Map location not available'}
+              </p>
+              {!hasAddress && (
+                <p className="text-xs mt-1 opacity-70">Exact address available from the listing agent</p>
+              )}
             </div>
           </div>
         )}
         <div className="space-y-3">
           <div className="flex items-start gap-2">
             <MapPin className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-            <p className="text-foreground">{fullAddress}</p>
+            <div>
+              <p className="text-foreground">{fullAddress}</p>
+              {!hasAddress && (
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Exact address not listed — contact the agent for full details.
+                </p>
+              )}
+            </div>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" onClick={openGoogleMaps} className="gap-2">
