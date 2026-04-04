@@ -2350,12 +2350,7 @@ async function processOneItem(
         if (listing.description && (!existing.description || listing.description.length > existing.description.length)) {
           patch.description = listing.description;
         }
-        // Images: merge arrays, deduplicate
-        if (imageUrls.length > 0) {
-          const existingImages: string[] = Array.isArray(existing.images) ? existing.images : [];
-          const mergedImages = [...new Set([...existingImages, ...imageUrls])];
-          if (mergedImages.length > existingImages.length) patch.images = mergedImages;
-        }
+        // Images: NOT merged from scraped sources (copyright — agency must upload via dashboard)
         // Features: union of both arrays
         if (listing.features?.length && existing.features) {
           patch.features = [...new Set([...(existing.features as string[]), ...listing.features])];
@@ -2393,9 +2388,12 @@ async function processOneItem(
       }
     }
 
-    // Download and re-host images (with placeholder detection + SHA-256 dedup)
-    const { urls: imageUrls, hashes: imageHashes } = await parallelImageDownload(listing.image_urls || [], sb, "property-images", jobId);
-    listing.image_hashes = imageHashes;
+    // ⚠️  LEGAL NOTE: Do NOT download or re-host images from Yad2, Madlan, or agency
+    // websites. Those photos are copyrighted by the photographer/agency. We only
+    // store the source URLs for reference — images are left null on scraped listings.
+    // Agencies must upload their own photos through the BuyWise dashboard after claiming.
+    const imageUrls: string[] = [];
+    listing.image_hashes = [];
 
     // Geocode — use Yad2 coordinates if available
     let latitude: number | null = listing._yad2_latitude || null;
@@ -2686,11 +2684,9 @@ async function handleApproveItem(body: any) {
   if (!matchedCity) throw new Error(`City not supported: "${listing.city}"`);
   listing.city = matchedCity;
 
-  // Download images if not already done
-  let imageUrls: string[] = [];
-  if (listing.image_urls?.length) {
-    imageUrls = await parallelImageDownload(listing.image_urls, sb, "property-images", item.job_id);
-  }
+  // ⚠️  Do NOT download images from external sources (Yad2/Madlan/agency sites).
+  // Images are copyrighted. Agency must upload their own photos via the BuyWise dashboard.
+  const imageUrls: string[] = [];
 
   // Geocode
   let latitude: number | null = null;
