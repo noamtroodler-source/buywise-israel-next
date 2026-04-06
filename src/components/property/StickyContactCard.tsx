@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { buildWhatsAppUrl, openWhatsApp, getEffectivePhone } from '@/lib/whatsapp';
 import { cn } from '@/lib/utils';
 import { InquiryModal, InquiryChannel, InquiryFormData } from '@/components/shared/InquiryModal';
+import { PartnerBadge } from '@/components/shared/PartnerBadge';
 
 interface Agent {
   id?: string;
@@ -124,6 +125,8 @@ export function StickyContactCard({
                   {agent.agency_name && (
                     <p className="text-sm text-muted-foreground truncate">{agent.agency_name}</p>
                   )}
+                  {/* Partner trust signal — only for direct/onboarded (non-scraped) listings */}
+                  {!isSourced && <PartnerBadge className="mt-1.5" />}
                 </div>
               </div>
               <Separator />

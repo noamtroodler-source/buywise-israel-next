@@ -9,8 +9,10 @@ import { ExternalLink, Building2, Camera, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { useOutboundTracking } from '@/hooks/useOutboundTracking';
 
 interface UnclaimedListingBannerProps {
+  propertyId?: string | null;
   sourceUrl?: string | null;
   sourceName?: string; // "Yad2", "Madlan", or agency website name
   lastCheckedAt?: string | null;
@@ -19,12 +21,14 @@ interface UnclaimedListingBannerProps {
 }
 
 export function UnclaimedListingBanner({
+  propertyId,
   sourceUrl,
   sourceName = 'an external portal',
   lastCheckedAt,
   className,
   onClaimClick,
 }: UnclaimedListingBannerProps) {
+  const { trackOutbound } = useOutboundTracking();
   const lastChecked = lastCheckedAt
     ? new Date(lastCheckedAt).toLocaleDateString('en-US', {
         month: 'short',
@@ -47,7 +51,7 @@ export function UnclaimedListingBanner({
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-foreground">
-            Sourced listing — not yet verified
+            Aggregated listing — not yet verified
           </p>
           <p className="text-sm text-muted-foreground mt-0.5 leading-relaxed">
             This listing was pulled from{' '}
@@ -80,15 +84,20 @@ export function UnclaimedListingBanner({
       {/* CTAs */}
       <div className="flex flex-wrap gap-2 pt-1">
         {sourceUrl && (
-          <a
-            href={sourceUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            onClick={() =>
+              trackOutbound({
+                propertyId,
+                source: sourceName.toLowerCase().replace(/\s+/g, '_'),
+                sourceUrl,
+                page: 'detail',
+              })
+            }
             className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 underline underline-offset-2"
           >
             <ExternalLink className="w-3.5 h-3.5" />
             View original listing
-          </a>
+          </button>
         )}
         {onClaimClick && (
           <Button
@@ -130,13 +139,12 @@ export function StreetViewFallback({
   let streetViewUrl: string | null = null;
 
   if (googleMapsKey) {
+    const baseParams = `size=800x400&fov=90&heading=0&pitch=10&return_error_code=true&key=${googleMapsKey}`;
     if (latitude && longitude) {
-      // Best: use coordinates
-      streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=800x400&location=${latitude},${longitude}&fov=90&heading=0&pitch=10&key=${googleMapsKey}`;
+      streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?${baseParams}&location=${latitude},${longitude}`;
     } else if (address && city) {
-      // Fallback: use address string
       const query = encodeURIComponent(`${address}, ${city}, Israel`);
-      streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=800x400&location=${query}&fov=90&heading=0&pitch=10&key=${googleMapsKey}`;
+      streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?${baseParams}&location=${query}`;
     }
   }
 
@@ -253,7 +261,7 @@ export function ClaimListingDialog({
 
           <p className="text-xs text-center text-muted-foreground">
             Already registered?{' '}
-            <a href="/agency/register" className="text-primary underline underline-offset-2">
+            <a href={`/agency/dashboard?claim=${propertyId}`} className="text-primary underline underline-offset-2">
               Sign in to your agency account
             </a>
           </p>

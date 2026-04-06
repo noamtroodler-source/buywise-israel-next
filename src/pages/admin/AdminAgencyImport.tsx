@@ -51,6 +51,8 @@ export default function AdminAgencyImport() {
   const [importType, setImportType] = useState<'resale' | 'rental' | 'all'>('all');
   const [sourceType, setSourceType] = useState<'website' | 'yad2' | 'madlan'>('website');
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
+  const [isRunningAll, setIsRunningAll] = useState(false);
+  const [runAllStatus, setRunAllStatus] = useState<{url: string; type: string; status: 'pending'|'running'|'done'|'error'}[]>([]);
 
   // Fetch all agencies for the dropdown
   const { data: agencies = [], isLoading: agenciesLoading } = useQuery({
@@ -64,6 +66,53 @@ export default function AdminAgencyImport() {
       return data || [];
     },
   });
+
+  const [agencySearch, setAgencySearch] = useState('');
+  const filteredAgencies = agencies.filter(a =>
+    !agencySearch || a.name.toLowerCase().includes(agencySearch.toLowerCase())
+  );
+
+  // Fetch registered sources for the selected agency
+  const { data: agencySources = [] } = useQuery({
+    queryKey: ['admin-agency-sources', selectedAgencyId],
+    queryFn: async () => {
+      if (!selectedAgencyId) return [];
+      const { data, error } = await supabase
+        .from('agency_sources' as any)
+        .select('id, source_type, source_url, is_active')
+        .eq('agency_id', selectedAgencyId)
+        .eq('is_active', true)
+        .order('source_type');
+      if (error) throw error;
+      return (data || []) as { id: string; source_type: string; source_url: string; is_active: boolean }[];
+    },
+    enabled: !!selectedAgencyId,
+  });
+
+  const handleRunAllSources = async () => {
+    if (!selectedAgencyId || agencySources.length === 0) return;
+    setIsRunningAll(true);
+    const statuses = agencySources.map(s => ({ url: s.source_url, type: s.source_type, status: 'pending' as const }));
+    setRunAllStatus(statuses);
+
+    for (let i = 0; i < agencySources.length; i++) {
+      const source = agencySources[i];
+      setRunAllStatus(prev => prev.map((s, idx) => idx === i ? { ...s, status: 'running' } : s));
+      try {
+        const result = await discoverMutation.mutateAsync({
+          agencyId: selectedAgencyId,
+          websiteUrl: source.source_url,
+          importType,
+          sourceType: source.source_type as 'yad2' | 'madlan' | 'website',
+        });
+        if (result.job_id) setActiveJobId(result.job_id);
+        setRunAllStatus(prev => prev.map((s, idx) => idx === i ? { ...s, status: 'done' } : s));
+      } catch {
+        setRunAllStatus(prev => prev.map((s, idx) => idx === i ? { ...s, status: 'error' } : s));
+      }
+    }
+    setIsRunningAll(false);
+  };
 
   const selectedAgency = agencies.find(a => a.id === selectedAgencyId);
 
@@ -156,7 +205,15 @@ export default function AdminAgencyImport() {
                 <SelectValue placeholder="Choose an agency..." />
               </SelectTrigger>
               <SelectContent>
-                {agencies.map(a => (
+                <div className="px-2 pb-1">
+                  <Input
+                    placeholder="Search agencies..."
+                    value={agencySearch}
+                    onChange={(e) => setAgencySearch(e.target.value)}
+                    className="h-8 text-sm"
+                  />
+                </div>
+                {filteredAgencies.map(a => (
                   <SelectItem key={a.id} value={a.id}>
                     {a.name}
                   </SelectItem>
@@ -190,6 +247,50 @@ export default function AdminAgencyImport() {
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-4 space-y-4">
+              {/* Registered sources — auto-loaded from agency_sources */}
+              {agencySources.length > 0 ? (
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    {agencySources.length} registered source{agencySources.length > 1 ? 's' : ''} found for this agency.
+                    {agencySources.length > 1 && ' All will be scraped and cross-referenced — duplicate listings across sources will be merged into the most complete version.'}
+                  </p>
+                  <div className="space-y-2">
+                    {agencySources.map((src, i) => {
+                      const st = runAllStatus[i];
+                      return (
+                        <div key={src.id} className="flex items-center gap-3 rounded-xl border border-border/60 bg-muted/30 px-3 py-2.5">
+                          <Badge variant="outline" className="text-[10px] uppercase shrink-0">
+                            {src.source_type}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground truncate flex-1">{src.source_url}</span>
+                          {st && (
+                            st.status === 'running' ? <Loader2 className="h-3.5 w-3.5 animate-spin text-primary shrink-0" /> :
+                            st.status === 'done' ? <CheckCircle2 className="h-3.5 w-3.5 text-green-500 shrink-0" /> :
+                            st.status === 'error' ? <XCircle className="h-3.5 w-3.5 text-destructive shrink-0" /> :
+                            <div className="h-3.5 w-3.5 rounded-full border border-border shrink-0" />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <Button
+                    onClick={handleRunAllSources}
+                    disabled={isRunningAll || isDiscovering}
+                    className="rounded-xl w-full"
+                  >
+                    {isRunningAll ? (
+                      <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Scanning all sources...</>
+                    ) : (
+                      <><Globe className="h-4 w-4 mr-2" />Run All Sources ({agencySources.length})</>
+                    )}
+                  </Button>
+                  <p className="text-xs text-muted-foreground text-center">Or add a one-off URL manually below</p>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No registered sources for this agency. Enter a URL manually below.</p>
+              )}
+
+              {/* Manual fallback */}
               <div className="flex flex-wrap gap-2">
                 {(['website', 'yad2', 'madlan'] as const).map((type) => (
                   <Button
@@ -204,17 +305,15 @@ export default function AdminAgencyImport() {
                   </Button>
                 ))}
               </div>
-
               <form onSubmit={handleDiscover} className="flex flex-col sm:flex-row gap-3">
                 <Input
                   value={websiteUrl}
                   onChange={(e) => setWebsiteUrl(e.target.value)}
                   placeholder={sourceType === 'yad2' ? 'https://www.yad2.co.il/realestate/agency/...' : sourceType === 'madlan' ? 'https://www.madlan.co.il/for-sale/israel--office--...' : 'https://agency-website.com'}
                   className="rounded-xl flex-1"
-                  required
-                  disabled={isDiscovering}
+                  disabled={isDiscovering || isRunningAll}
                 />
-                <Button type="submit" disabled={isDiscovering || !websiteUrl.trim()} className="rounded-xl">
+                <Button type="submit" disabled={isDiscovering || isRunningAll || !websiteUrl.trim()} className="rounded-xl">
                   {isDiscovering ? (
                     <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Scanning...</>
                   ) : (
@@ -226,7 +325,7 @@ export default function AdminAgencyImport() {
               {isDiscovering && (
                 <p className="text-sm text-muted-foreground mt-3 animate-pulse">
                   {discoveringSourceType === 'yad2' || discoveringSourceType === 'madlan'
-                    ? 'Scanning Yad2 agency page... This may take 2-5 minutes.'
+                    ? 'Scanning source page... This may take 2-5 minutes.'
                     : 'Scanning website for listing pages... This may take 2-5 minutes.'}
                 </p>
               )}

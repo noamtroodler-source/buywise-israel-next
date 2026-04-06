@@ -278,12 +278,14 @@ export function useApproveClaimRequest() {
       notes?: string;
     }) => {
       // 1. Approve the claim request
+      const { data: { user: reviewer } } = await supabase.auth.getUser();
       const { error: claimErr } = await (supabase as any)
         .from('listing_claim_requests')
         .update({
           status: 'approved',
           review_notes: notes || null,
           reviewed_at: new Date().toISOString(),
+          reviewed_by: reviewer?.id ?? null,
         })
         .eq('id', claimId);
       if (claimErr) throw claimErr;
@@ -321,12 +323,14 @@ export function useRejectClaimRequest() {
       claimId: string;
       notes?: string;
     }) => {
+      const { data: { user: reviewer } } = await supabase.auth.getUser();
       const { error } = await (supabase as any)
         .from('listing_claim_requests')
         .update({
           status: 'rejected',
           review_notes: notes || null,
           reviewed_at: new Date().toISOString(),
+          reviewed_by: reviewer?.id ?? null,
         })
         .eq('id', claimId);
       if (error) throw error;
