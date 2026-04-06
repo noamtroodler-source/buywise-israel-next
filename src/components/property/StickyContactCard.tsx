@@ -33,18 +33,20 @@ interface StickyContactCardProps {
   isSaved?: boolean;
   isSourced?: boolean; // unclaimed scraped listing — show 'find agent' CTA
   propertyCity?: string;
+  sourceAgencyName?: string | null;
 }
 
-export function StickyContactCard({ 
-  agent, 
+export function StickyContactCard({
+  agent,
   propertyId,
-  propertyTitle, 
-  className = '', 
+  propertyTitle,
+  className = '',
   onContactClick,
   onSave,
   isSaved,
   isSourced,
   propertyCity,
+  sourceAgencyName,
 }: StickyContactCardProps) {
   const { user } = useAuth();
   const [inquiryChannel, setInquiryChannel] = useState<InquiryChannel | null>(null);
@@ -127,6 +129,24 @@ export function StickyContactCard({
                   )}
                   {/* Partner trust signal — only for direct/onboarded (non-scraped) listings */}
                   {!isSourced && <PartnerBadge className="mt-1.5" />}
+                </div>
+              </div>
+              <Separator />
+            </>
+          )}
+
+          {/* Sourced listing — show agency name header when no agent linked */}
+          {!agent && isSourced && sourceAgencyName && (
+            <>
+              <div className="p-5 flex items-center gap-3 bg-muted/30">
+                <Avatar className="h-12 w-12 ring-2 ring-border">
+                  <AvatarFallback className="bg-gradient-to-br from-primary/10 to-primary/20 text-primary font-semibold text-base">
+                    {sourceAgencyName.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0">
+                  <p className="text-xs font-medium text-muted-foreground mb-0.5">Listed by</p>
+                  <p className="font-semibold text-foreground truncate">{sourceAgencyName}</p>
                 </div>
               </div>
               <Separator />
