@@ -261,7 +261,7 @@ export function ClaimListingDialog({
 
           <p className="text-xs text-center text-muted-foreground">
             Already registered?{' '}
-            <a href="/agency/register" className="text-primary underline underline-offset-2">
+            <a href={`/agency/dashboard?claim=${propertyId}`} className="text-primary underline underline-offset-2">
               Sign in to your agency account
             </a>
           </p>
