@@ -136,7 +136,7 @@ export function StickyContactCard({
           )}
 
           {/* Sourced listing — show agency name header when no agent linked */}
-          {!agent && isSourced && sourceAgencyName && (
+          {isSourced && sourceAgencyName && (
             <>
               <div className="p-5 flex items-center gap-3 bg-muted/30">
                 <Avatar className="h-12 w-12 ring-2 ring-border">
