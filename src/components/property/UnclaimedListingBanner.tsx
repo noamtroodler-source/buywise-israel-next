@@ -139,7 +139,8 @@ export function StreetViewFallback({
   let streetViewUrl: string | null = null;
 
   if (googleMapsKey) {
-    const baseParams = `size=800x400&fov=90&heading=0&pitch=10&return_error_code=true&key=${googleMapsKey}`;
+    // No heading= param → Google auto-orients toward the property. source=outdoor avoids indoor panoramas.
+    const baseParams = `size=800x450&fov=90&pitch=5&source=outdoor&return_error_code=true&key=${googleMapsKey}`;
     if (latitude && longitude) {
       streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?${baseParams}&location=${latitude},${longitude}`;
     } else if (address && city) {

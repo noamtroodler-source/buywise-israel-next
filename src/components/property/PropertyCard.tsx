@@ -64,24 +64,26 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
   const [streetViewFailed, setStreetViewFailed] = useState(false);
   const [streetViewLoaded, setStreetViewLoaded] = useState(false);
 
-  // Build Street View URL for sourced listings with no photos
+  // Build Street View URLs for sourced listings with no photos.
+  // No heading= → Google auto-orients toward the property. source=outdoor avoids indoor panoramas.
+  // Compact cards are 4:3, non-compact are 16:10 — request matching sizes for sharpest crop.
   const streetViewUrl = useMemo(() => {
     if (!showNoPhotos) return null;
     const googleMapsKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
     if (!googleMapsKey) return null;
-    const baseParams = `size=800x450&fov=90&heading=0&pitch=10&return_error_code=true&key=${googleMapsKey}`;
     const lat = (property as any).latitude;
     const lng = (property as any).longitude;
     const address = (property as any).address;
     const city = property.city;
-    if (lat && lng) {
-      return `https://maps.googleapis.com/maps/api/streetview?${baseParams}&location=${lat},${lng}`;
-    } else if (address && city) {
-      const query = encodeURIComponent(`${address}, ${city}, Israel`);
-      return `https://maps.googleapis.com/maps/api/streetview?${baseParams}&location=${query}`;
-    }
-    return null;
-  }, [showNoPhotos, property]);
+    const makeUrl = (size: string) => {
+      const base = `size=${size}&fov=90&pitch=5&source=outdoor&return_error_code=true&key=${googleMapsKey}`;
+      if (lat && lng) return `https://maps.googleapis.com/maps/api/streetview?${base}&location=${lat},${lng}`;
+      if (address && city) return `https://maps.googleapis.com/maps/api/streetview?${base}&location=${encodeURIComponent(`${address}, ${city}, Israel`)}`;
+      return null;
+    };
+    // compact=true → aspect-[4/3] → 600x450; compact=false → aspect-[16/10] → 720x450
+    return compact ? makeUrl('600x450') : makeUrl('720x450');
+  }, [showNoPhotos, property, compact]);
 
   // Freshness tier for "Days on Market" prominence
   type FreshnessTier = 'hot' | 'fresh' | 'standard' | 'stale';
