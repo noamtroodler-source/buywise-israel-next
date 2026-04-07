@@ -194,7 +194,7 @@ const CITY_ALIASES: Record<string, string[]> = {
   "Ramat Gan": ["ramat gan", "ramatgan", "ramat-gan", "רמת גן", "רמת-גן"],
   "Rehovot": ["rechovot", "rehovoth", "רחובות"],
   "Rishon LeZion": ["rishon lezion", "rishon le zion", "rishon le-zion", "rishon", "ראשון לציון"],
-  "Tel Aviv": ["telaviv", "tel aviv", "tlv", "tel avive", "tel-aviv", "tel aviv-yafo", "tel aviv yafo", "תל אביב", "תל אביב יפו", "תל-אביב"],
+  "Tel Aviv": ["telaviv", "tel aviv", "tlv", "tel avive", "tel-aviv", "tel aviv-yafo", "tel aviv yafo", "תל אביב", "תל אביב יפו", "תל-אביב", "jaffa", "yafo", "yaffo", "jaffa-yafo", "tel aviv jaffa", "יפו", "יפו תל אביב", "ajami", "florentin", "neve tzedek", "neve tsedek"],
   "Zichron Yaakov": ["zichron yaakov", "zichron yakov", "zichron jacob", "zichron ya'akov", "zikhron", "זכרון יעקב"],
 };
 
