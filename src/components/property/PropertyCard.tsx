@@ -62,6 +62,7 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
   const isSourced = !!(property as any).import_source && !(property as any).is_claimed;
   const showNoPhotos = isSourced && images.length === 0;
   const [streetViewFailed, setStreetViewFailed] = useState(false);
+  const [streetViewLoaded, setStreetViewLoaded] = useState(false);
 
   // Build Street View URL for sourced listings with no photos
   const streetViewUrl = useMemo(() => {
@@ -214,13 +215,20 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                 {showNoPhotos ? (
                   streetViewUrl && !streetViewFailed ? (
                     <>
+                      {!streetViewLoaded && (
+                        <div className="absolute inset-0 bg-muted animate-pulse" />
+                      )}
                       <img
                         src={streetViewUrl}
                         alt={`Street view of ${(property as any).neighborhood || property.city}`}
-                        className="absolute inset-0 w-full h-full object-cover"
+                        className={cn(
+                          "absolute inset-0 w-full h-full object-cover select-none group-hover:scale-105 transition-all duration-300",
+                          streetViewLoaded ? "opacity-100" : "opacity-0"
+                        )}
+                        onLoad={() => setStreetViewLoaded(true)}
                         onError={() => setStreetViewFailed(true)}
                       />
-                      <div className="absolute bottom-2 left-2">
+                      <div className="absolute bottom-2 left-2 z-10">
                         <span className="bg-black/60 text-white text-xs px-2 py-0.5 rounded-full backdrop-blur-sm flex items-center gap-1">
                           <Camera className="w-3 h-3" />
                           Street view
@@ -475,13 +483,20 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                 {showNoPhotos ? (
                   streetViewUrl && !streetViewFailed ? (
                     <>
+                      {!streetViewLoaded && (
+                        <div className="absolute inset-0 bg-muted animate-pulse" />
+                      )}
                       <img
                         src={streetViewUrl}
                         alt={`Street view of ${(property as any).neighborhood || property.city}`}
-                        className="absolute inset-0 w-full h-full object-cover"
+                        className={cn(
+                          "absolute inset-0 w-full h-full object-cover select-none group-hover:scale-105 transition-all duration-300",
+                          streetViewLoaded ? "opacity-100" : "opacity-0"
+                        )}
+                        onLoad={() => setStreetViewLoaded(true)}
                         onError={() => setStreetViewFailed(true)}
                       />
-                      <div className="absolute bottom-2 left-2">
+                      <div className="absolute bottom-2 left-2 z-10">
                         <span className="bg-black/60 text-white text-xs px-2 py-0.5 rounded-full backdrop-blur-sm flex items-center gap-1">
                           <Camera className="w-3 h-3" />
                           Street view
