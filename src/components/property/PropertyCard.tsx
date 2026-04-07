@@ -1,6 +1,6 @@
 import { useState, memo, useMemo, useCallback, forwardRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Bed, Bath, Maximize, MapPin, ChevronLeft, ChevronRight, Wallet, Sparkles, Clock, TrendingDown, TrendingUp, Flame, Zap, Building2 } from 'lucide-react';
+import { Bed, Bath, Maximize, MapPin, ChevronLeft, ChevronRight, Wallet, Sparkles, Clock, TrendingDown, TrendingUp, Flame, Zap, Building2, ImageOff } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Property } from '@/types/database';
@@ -59,6 +59,8 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
   const images = property.images?.length ? property.images : [];
   const hasMultipleImages = images.length > 1;
   const placeholderImage = 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&auto=format&fit=crop&q=60';
+  const isSourced = !!(property as any).import_source && !(property as any).is_claimed;
+  const showNoPhotos = isSourced && images.length === 0;
 
   // Freshness tier for "Days on Market" prominence
   type FreshnessTier = 'hot' | 'fresh' | 'standard' | 'stale';
@@ -189,28 +191,37 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
             /* Compact Mode: Stacked Layout - Image + Content Below (Zillow-style) */
             <>
               <div className="relative aspect-[4/3] overflow-hidden rounded-t-xl" {...touchHandlers}>
-                {/* Loading skeleton */}
-                {!imageLoaded && (
-                  <div className="absolute inset-0 bg-muted animate-pulse" />
+                {showNoPhotos ? (
+                  <div className="absolute inset-0 bg-muted flex flex-col items-center justify-center gap-1.5 text-muted-foreground">
+                    <ImageOff className="h-7 w-7 opacity-30" />
+                    <p className="text-xs font-medium opacity-50">No photos yet</p>
+                  </div>
+                ) : (
+                  <>
+                    {/* Loading skeleton */}
+                    {!imageLoaded && (
+                      <div className="absolute inset-0 bg-muted animate-pulse" />
+                    )}
+                    <img
+                      src={currentImage}
+                      srcSet={currentImage.includes('unsplash.com')
+                        ? `${currentImage.replace('w=800', 'w=400')} 400w, ${currentImage.replace('w=800', 'w=600')} 600w, ${currentImage} 800w`
+                        : undefined}
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      alt={property.title}
+                      loading="lazy"
+                      decoding="async"
+                      draggable={false}
+                      onDragStart={(e) => e.preventDefault()}
+                      className={cn(
+                        "absolute inset-0 w-full h-full object-cover select-none group-hover:scale-105 transition-all duration-300",
+                        imageLoaded ? "opacity-100" : "opacity-0"
+                      )}
+                      onLoad={handleImageLoad}
+                      onError={handleImageError}
+                    />
+                  </>
                 )}
-                <img
-                  src={currentImage}
-                  srcSet={currentImage.includes('unsplash.com') 
-                    ? `${currentImage.replace('w=800', 'w=400')} 400w, ${currentImage.replace('w=800', 'w=600')} 600w, ${currentImage} 800w`
-                    : undefined}
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  alt={property.title}
-                  loading="lazy"
-                  decoding="async"
-                  draggable={false}
-                  onDragStart={(e) => e.preventDefault()}
-                  className={cn(
-                    "absolute inset-0 w-full h-full object-cover select-none group-hover:scale-105 transition-all duration-300",
-                    imageLoaded ? "opacity-100" : "opacity-0"
-                  )}
-                  onLoad={handleImageLoad}
-                  onError={handleImageError}
-                />
 
                 {/* Progress Bar - Bottom of image, always visible on mobile */}
                 {hasMultipleImages && (
@@ -424,28 +435,37 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
             /* Non-Compact Mode: Standard Layout */
             <>
               <div className="relative aspect-[16/10] overflow-hidden" {...touchHandlers}>
-                {/* Loading skeleton */}
-                {!imageLoaded && (
-                  <div className="absolute inset-0 bg-muted animate-pulse" />
+                {showNoPhotos ? (
+                  <div className="absolute inset-0 bg-muted flex flex-col items-center justify-center gap-1.5 text-muted-foreground">
+                    <ImageOff className="h-8 w-8 opacity-30" />
+                    <p className="text-xs font-medium opacity-50">No photos yet</p>
+                  </div>
+                ) : (
+                  <>
+                    {/* Loading skeleton */}
+                    {!imageLoaded && (
+                      <div className="absolute inset-0 bg-muted animate-pulse" />
+                    )}
+                    <img
+                      src={currentImage}
+                      srcSet={currentImage.includes('unsplash.com')
+                        ? `${currentImage.replace('w=800', 'w=400')} 400w, ${currentImage.replace('w=800', 'w=600')} 600w, ${currentImage} 800w`
+                        : undefined}
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      alt={property.title}
+                      loading="lazy"
+                      decoding="async"
+                      draggable={false}
+                      onDragStart={(e) => e.preventDefault()}
+                      className={cn(
+                        "w-full h-full object-cover select-none group-hover:scale-105 transition-all duration-300",
+                        imageLoaded ? "opacity-100" : "opacity-0"
+                      )}
+                      onLoad={handleImageLoad}
+                      onError={handleImageError}
+                    />
+                  </>
                 )}
-                 <img
-                   src={currentImage}
-                   srcSet={currentImage.includes('unsplash.com') 
-                     ? `${currentImage.replace('w=800', 'w=400')} 400w, ${currentImage.replace('w=800', 'w=600')} 600w, ${currentImage} 800w`
-                     : undefined}
-                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                   alt={property.title}
-                   loading="lazy"
-                   decoding="async"
-                   draggable={false}
-                   onDragStart={(e) => e.preventDefault()}
-                   className={cn(
-                     "w-full h-full object-cover select-none group-hover:scale-105 transition-all duration-300",
-                     imageLoaded ? "opacity-100" : "opacity-0"
-                   )}
-                   onLoad={handleImageLoad}
-                   onError={handleImageError}
-                 />
                 
                 {/* Image Navigation Arrows */}
                 {hasMultipleImages && (
