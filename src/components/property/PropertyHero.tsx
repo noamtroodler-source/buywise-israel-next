@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ImageOff } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
@@ -23,9 +23,10 @@ interface PropertyHeroProps {
   onSave?: () => void;
   onShare?: () => void;
   isSaved?: boolean;
+  isSourced?: boolean;
 }
 
-export function PropertyHero({ property, onSave, onShare, isSaved }: PropertyHeroProps) {
+export function PropertyHero({ property, onSave, onShare, isSaved, isSourced }: PropertyHeroProps) {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [emblaRef, emblaApi] = useEmblaCarousel({ 
@@ -37,8 +38,13 @@ export function PropertyHero({ property, onSave, onShare, isSaved }: PropertyHer
   const formatPrice = useFormatPrice();
   const formatArea = useFormatArea();
   
-  const images = property.images?.length 
-    ? property.images 
+  // For sourced (scraped) listings with no photos, use null so we render
+  // the branded no-photos placeholder instead of a misleading stock image.
+  const hasImages = !!property.images?.length;
+  const images = hasImages
+    ? property.images!
+    : isSourced
+    ? [] // render no-photos placeholder below
     : ['https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1200'];
 
   const scrollPrev = useCallback(() => {
@@ -105,7 +111,15 @@ export function PropertyHero({ property, onSave, onShare, isSaved }: PropertyHer
       >
         {/* Main Image */}
         <div className="relative w-full">
-          <div 
+          {/* No-photos placeholder for sourced listings */}
+          {isSourced && !hasImages ? (
+            <div className="relative aspect-[16/10] md:rounded-xl overflow-hidden bg-muted flex flex-col items-center justify-center gap-3 text-muted-foreground">
+              <ImageOff className="h-10 w-10 opacity-40" />
+              <p className="text-sm font-medium opacity-60">No photos available</p>
+              <p className="text-xs opacity-40 text-center px-8">The agency can add photos after claiming this listing</p>
+            </div>
+          ) : (
+          <div
             className="relative aspect-[16/10] md:rounded-xl overflow-hidden bg-muted cursor-pointer group touch-pan-y"
             onClick={handleImageClick}
             onTouchStart={(e) => {
@@ -124,8 +138,8 @@ export function PropertyHero({ property, onSave, onShare, isSaved }: PropertyHer
               }
             }}
           >
-              <img 
-                src={images[selectedImageIndex]} 
+              <img
+                src={images[selectedImageIndex]}
                 alt={property.title}
                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
               />
@@ -192,6 +206,7 @@ export function PropertyHero({ property, onSave, onShare, isSaved }: PropertyHer
                 </div>
               )}
           </div>
+          )} {/* end isSourced no-photos conditional */}
         </div>
 
         {/* Horizontal Thumbnail Carousel - Hidden on mobile */}

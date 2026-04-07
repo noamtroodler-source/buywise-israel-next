@@ -186,6 +186,7 @@ export default function PropertyDetail() {
                 onSave={handleSave}
                 onShare={handleShare}
                 isSaved={isSaved}
+                isSourced={!!(property as any).import_source && !(property as any).is_claimed}
               />
               {/* Street View fallback for sourced (scraped) listings with no photos */}
               {!(property as any).is_claimed && !!(property as any).import_source && !property.images?.length && (
