@@ -2471,6 +2471,7 @@ async function processOneItem(
         verification_status: confidenceScore >= 60 ? "verified" : "draft",
         import_source: job.source_type === "yad2" ? "yad2" : job.source_type === "madlan" ? "madlan" : "website_scrape",
         source_url: item.url,
+        source_agency_name: (job.agencies as any)?.name || null,
         data_quality_score: confidenceScore,
         location_confidence: listing.address?.length > 3 ? "exact" : listing.neighborhood ? "neighborhood" : "city",
         is_claimed: false,
@@ -2527,7 +2528,7 @@ async function handleProcessBatch(body: any) {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
 
   const { data: job, error: jobErr } = await sb
-    .from("import_jobs").select("*, agencies!inner(id, admin_user_id)").eq("id", job_id).single();
+    .from("import_jobs").select("*, agencies!inner(id, admin_user_id, name)").eq("id", job_id).single();
   if (jobErr || !job) throw new Error("Import job not found");
 
   const cachedDomainCity = inferCityFromDomain(job.website_url);
