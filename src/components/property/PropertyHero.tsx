@@ -111,14 +111,8 @@ export function PropertyHero({ property, onSave, onShare, isSaved, isSourced }: 
       >
         {/* Main Image */}
         <div className="relative w-full">
-          {/* No-photos placeholder for sourced listings */}
-          {isSourced && !hasImages ? (
-            <div className="relative aspect-[16/10] md:rounded-xl overflow-hidden bg-muted flex flex-col items-center justify-center gap-3 text-muted-foreground">
-              <ImageOff className="h-10 w-10 opacity-40" />
-              <p className="text-sm font-medium opacity-60">No photos available</p>
-              <p className="text-xs opacity-40 text-center px-8">The agency can add photos after claiming this listing</p>
-            </div>
-          ) : (
+          {/* No-photos placeholder — skip for sourced listings (Street View below takes over) */}
+          {isSourced && !hasImages ? null : (
           <div
             className="relative aspect-[16/10] md:rounded-xl overflow-hidden bg-muted cursor-pointer group touch-pan-y"
             onClick={handleImageClick}
