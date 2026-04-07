@@ -1,6 +1,6 @@
 import { useState, memo, useMemo, useCallback, forwardRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Bed, Bath, Maximize, MapPin, ChevronLeft, ChevronRight, Wallet, Sparkles, Clock, TrendingDown, TrendingUp, Flame, Zap, Building2, ImageOff } from 'lucide-react';
+import { Bed, Bath, Maximize, MapPin, ChevronLeft, ChevronRight, Wallet, Sparkles, Clock, TrendingDown, TrendingUp, Flame, Zap, Building2, ImageOff, Camera } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Property } from '@/types/database';
@@ -61,6 +61,26 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
   const placeholderImage = 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&auto=format&fit=crop&q=60';
   const isSourced = !!(property as any).import_source && !(property as any).is_claimed;
   const showNoPhotos = isSourced && images.length === 0;
+  const [streetViewFailed, setStreetViewFailed] = useState(false);
+
+  // Build Street View URL for sourced listings with no photos
+  const streetViewUrl = useMemo(() => {
+    if (!showNoPhotos) return null;
+    const googleMapsKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+    if (!googleMapsKey) return null;
+    const baseParams = `size=800x450&fov=90&heading=0&pitch=10&return_error_code=true&key=${googleMapsKey}`;
+    const lat = (property as any).latitude;
+    const lng = (property as any).longitude;
+    const address = (property as any).address;
+    const city = property.city;
+    if (lat && lng) {
+      return `https://maps.googleapis.com/maps/api/streetview?${baseParams}&location=${lat},${lng}`;
+    } else if (address && city) {
+      const query = encodeURIComponent(`${address}, ${city}, Israel`);
+      return `https://maps.googleapis.com/maps/api/streetview?${baseParams}&location=${query}`;
+    }
+    return null;
+  }, [showNoPhotos, property]);
 
   // Freshness tier for "Days on Market" prominence
   type FreshnessTier = 'hot' | 'fresh' | 'standard' | 'stale';
@@ -192,10 +212,27 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
             <>
               <div className="relative aspect-[4/3] overflow-hidden rounded-t-xl" {...touchHandlers}>
                 {showNoPhotos ? (
-                  <div className="absolute inset-0 bg-muted flex flex-col items-center justify-center gap-1.5 text-muted-foreground">
-                    <ImageOff className="h-7 w-7 opacity-30" />
-                    <p className="text-xs font-medium opacity-50">No photos yet</p>
-                  </div>
+                  streetViewUrl && !streetViewFailed ? (
+                    <>
+                      <img
+                        src={streetViewUrl}
+                        alt={`Street view of ${(property as any).neighborhood || property.city}`}
+                        className="absolute inset-0 w-full h-full object-cover"
+                        onError={() => setStreetViewFailed(true)}
+                      />
+                      <div className="absolute bottom-2 left-2">
+                        <span className="bg-black/60 text-white text-xs px-2 py-0.5 rounded-full backdrop-blur-sm flex items-center gap-1">
+                          <Camera className="w-3 h-3" />
+                          Street view
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="absolute inset-0 bg-muted flex flex-col items-center justify-center gap-1.5 text-muted-foreground">
+                      <ImageOff className="h-7 w-7 opacity-30" />
+                      <p className="text-xs font-medium opacity-50">No photos yet</p>
+                    </div>
+                  )
                 ) : (
                   <>
                     {/* Loading skeleton */}
@@ -436,10 +473,27 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
             <>
               <div className="relative aspect-[16/10] overflow-hidden" {...touchHandlers}>
                 {showNoPhotos ? (
-                  <div className="absolute inset-0 bg-muted flex flex-col items-center justify-center gap-1.5 text-muted-foreground">
-                    <ImageOff className="h-8 w-8 opacity-30" />
-                    <p className="text-xs font-medium opacity-50">No photos yet</p>
-                  </div>
+                  streetViewUrl && !streetViewFailed ? (
+                    <>
+                      <img
+                        src={streetViewUrl}
+                        alt={`Street view of ${(property as any).neighborhood || property.city}`}
+                        className="absolute inset-0 w-full h-full object-cover"
+                        onError={() => setStreetViewFailed(true)}
+                      />
+                      <div className="absolute bottom-2 left-2">
+                        <span className="bg-black/60 text-white text-xs px-2 py-0.5 rounded-full backdrop-blur-sm flex items-center gap-1">
+                          <Camera className="w-3 h-3" />
+                          Street view
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="absolute inset-0 bg-muted flex flex-col items-center justify-center gap-1.5 text-muted-foreground">
+                      <ImageOff className="h-8 w-8 opacity-30" />
+                      <p className="text-xs font-medium opacity-50">No photos yet</p>
+                    </div>
+                  )
                 ) : (
                   <>
                     {/* Loading skeleton */}
