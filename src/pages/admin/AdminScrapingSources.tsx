@@ -71,6 +71,7 @@ function AddSourceDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const createSource = useCreateAgencySource();
+  const [agencySearch, setAgencySearch] = useState('');
   const [form, setForm] = useState({
     agency_id: '',
     source_type: 'yad2' as 'yad2' | 'madlan' | 'website',
@@ -420,7 +421,6 @@ function ClaimRow({ claim }: { claim: ClaimRequest }) {
 export default function AdminScrapingSources() {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const [agencySearch, setAgencySearch] = useState('');
   const [activeTab, setActiveTab] = useState<'sources' | 'claims'>('sources');
 
   const { data: sources = [], isLoading: sourcesLoading } = useAgencySources();
