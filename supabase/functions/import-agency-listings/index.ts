@@ -1956,17 +1956,39 @@ async function processOneItem(
     }
 
     // 1. Scrape
+    const isYad2Item = item.url.includes("yad2.co.il");
     console.log(`Scraping: ${item.url}`);
-    const scrapeRes = await fetch("https://api.firecrawl.dev/v1/scrape", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${firecrawlKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        url: item.url,
-        formats: ["markdown", "links", "html"],
-        onlyMainContent: true,
-        ...(item.url.includes("yad2.co.il") ? { proxy: "stealth", waitFor: 5000 } : {}),
-      }),
-    });
+
+    // For Yad2, wrap the Firecrawl call in a 35s Promise.race timeout.
+    // Stealth proxy requests occasionally hang indefinitely, blocking the whole batch.
+    let scrapeRes: Response;
+    if (isYad2Item) {
+      const scrapePromise = fetch("https://api.firecrawl.dev/v1/scrape", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${firecrawlKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ url: item.url, formats: ["markdown", "links", "html"], onlyMainContent: true, proxy: "stealth", waitFor: 5000 }),
+      });
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Yad2 stealth scrape timeout after 35s")), 35_000)
+      );
+      try {
+        scrapeRes = await Promise.race([scrapePromise, timeoutPromise]) as Response;
+      } catch (e) {
+        // Timeout — mark as transient failure so it can be retried
+        await sb.from("import_job_items").update({
+          status: "failed",
+          error_message: e instanceof Error ? e.message : "Scrape timeout",
+          error_type: "transient",
+        }).eq("id", item.id);
+        return { succeeded: false };
+      }
+    } else {
+      scrapeRes = await fetch("https://api.firecrawl.dev/v1/scrape", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${firecrawlKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ url: item.url, formats: ["markdown", "links", "html"], onlyMainContent: true }),
+      });
+    }
 
     const scrapeData = await scrapeRes.json();
     if (!scrapeRes.ok) {
@@ -1985,6 +2007,27 @@ async function processOneItem(
 
     // Track Firecrawl scrape cost
     await trackCost(sb, jobId, "firecrawl", 1, "credits");
+
+    // For Yad2: detect ShieldSquare CAPTCHA page — stealth proxy occasionally fails.
+    // CAPTCHA pages are tiny and contain specific ShieldSquare markers.
+    if (isYad2Item) {
+      const lowerHtml = pageHtml.toLowerCase();
+      const isCaptcha =
+        lowerHtml.includes("shieldsquare") ||
+        lowerHtml.includes("captcha") ||
+        lowerHtml.includes("perimeterx") ||
+        lowerHtml.includes("px-captcha") ||
+        (markdown.length < 200 && lowerHtml.includes("robot"));
+      if (isCaptcha) {
+        console.warn(`[Yad2] CAPTCHA page detected for ${item.url} — marking transient`);
+        await sb.from("import_job_items").update({
+          status: "failed",
+          error_message: "ShieldSquare CAPTCHA blocked individual listing scrape",
+          error_type: "transient",
+        }).eq("id", item.id);
+        return { succeeded: false };
+      }
+    }
 
     if (!markdown || markdown.length < 50) {
       await sb.from("import_job_items").update({ status: "skipped", error_message: "Page content too short", error_type: "permanent" }).eq("id", item.id);
