@@ -2884,8 +2884,11 @@ async function fetchYad2AgencyPageHtml(pageUrl: string): Promise<string> {
   if (FIRECRAWL_API_KEY) {
     try {
       console.log(`[Yad2] Firecrawl scraping: ${pageUrl}`);
+      const fetchController = new AbortController();
+      const fetchTimeout = setTimeout(() => fetchController.abort(), 45_000); // 45s max per page
       const res = await fetch("https://api.firecrawl.dev/v1/scrape", {
         method: "POST",
+        signal: fetchController.signal,
         headers: {
           Authorization: `Bearer ${FIRECRAWL_API_KEY}`,
           "Content-Type": "application/json",
@@ -2894,9 +2897,11 @@ async function fetchYad2AgencyPageHtml(pageUrl: string): Promise<string> {
           url: pageUrl,
           formats: ["html"],
           onlyMainContent: false,
+          proxy: "stealth",
           waitFor: 5000, // Wait 5s for JS to render all listing cards
         }),
       });
+      clearTimeout(fetchTimeout);
       
       if (res.ok) {
         const data = await res.json();
