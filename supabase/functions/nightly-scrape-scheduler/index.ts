@@ -271,19 +271,16 @@ Deno.serve(async (req) => {
       );
 
       // Immediately trigger the retry runner with force=true so Yad2 runs NOW
-      // (not just at night) — this makes "Run full sync now" truly synchronous
       if (queueResult.enqueued > 0) {
-        EdgeRuntime.waitUntil(
-          fetch(YAD2_RUNNER_URL(), {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${SERVICE_KEY()}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({}),
-          }).then(() => console.log("yad2-retry-runner triggered"))
-            .catch((e) => console.warn("Failed to trigger yad2-retry-runner:", e.message))
-        );
+        fetch(YAD2_RUNNER_URL(), {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${SERVICE_KEY()}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({}),
+        }).then(() => console.log("yad2-retry-runner triggered"))
+          .catch((e) => console.warn("Failed to trigger yad2-retry-runner:", e.message));
       }
     }
 
