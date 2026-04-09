@@ -119,6 +119,105 @@ async function processJobToCompletion(jobId: string, maxBatches = 20): Promise<n
   return totalSucceeded;
 }
 
+// ── Apify fallback ────────────────────────────────────────────────────────────
+
+async function tryApifyFallback(
+  sb: ReturnType<typeof supabaseAdmin>,
+  item: {
+    id: string;
+    agency_source_id: string;
+    agency_id: string;
+    website_url: string;
+    import_type: string;
+  },
+  lastJobId: string | null
+) {
+  const log = (msg: string) => console.log(`[Yad2Queue/Apify] ${item.website_url}: ${msg}`);
+
+  // Mark Apify attempt so we don't retry again
+  await sb.from("yad2_scrape_queue").update({
+    apify_attempted: true,
+    updated_at: new Date().toISOString(),
+  }).eq("id", item.id);
+
+  try {
+    log("Firing Apify discover...");
+    const discoverResult = await callImport({
+      action: "discover",
+      source_type: "yad2_apify",
+      website_url: item.website_url,
+      agency_id: item.agency_id,
+      import_type: item.import_type,
+    });
+
+    if (discoverResult.error) throw new Error(discoverResult.error);
+
+    const apifyJobId = discoverResult.job_id ?? null;
+    if (!apifyJobId) {
+      log("Apify returned no job — agency may have no listings");
+      await sb.from("yad2_scrape_queue").update({
+        status: "done",
+        last_job_id: lastJobId,
+        last_result: "empty",
+        apify_result: "empty",
+        updated_at: new Date().toISOString(),
+      }).eq("id", item.id);
+      return;
+    }
+
+    log(`Apify job created: ${apifyJobId}, polling...`);
+    const jobResult = await pollJobUntilDone(sb, apifyJobId, 120_000); // 2 min timeout for Apify
+
+    if (jobResult.status === "failed" || jobResult.total_urls === 0) {
+      const reason = jobResult.status === "failed" ? jobResult.failure_reason || "unknown" : "empty";
+      log(`Apify ${reason === "empty" ? "returned 0 URLs" : `failed: ${reason}`}`);
+      await sb.from("yad2_scrape_queue").update({
+        status: "exhausted",
+        last_job_id: lastJobId,
+        last_result: "captcha",
+        last_error: `Firecrawl CAPTCHA exhausted, Apify also ${reason}`,
+        apify_result: `${reason === "empty" ? "empty" : `error: ${reason}`}`,
+        updated_at: new Date().toISOString(),
+      }).eq("id", item.id);
+      return;
+    }
+
+    // Apify succeeded — process the listings
+    log(`Apify discovery succeeded: ${jobResult.total_urls} URLs. Processing...`);
+    const imported = await processJobToCompletion(apifyJobId);
+    log(`Apify imported ${imported} listings`);
+
+    await sb.from("yad2_scrape_queue").update({
+      status: "done",
+      last_job_id: apifyJobId,
+      last_result: "success",
+      listings_found: imported,
+      apify_result: "success",
+      updated_at: new Date().toISOString(),
+    }).eq("id", item.id);
+
+    await sb.from("agency_sources").update({
+      last_synced_at: new Date().toISOString(),
+      last_sync_job_id: apifyJobId,
+      last_sync_listings_found: jobResult.total_urls,
+      consecutive_failures: 0,
+      last_failure_reason: null,
+    }).eq("id", item.agency_source_id);
+
+    log(`Done via Apify fallback! ${imported} listings imported`);
+  } catch (err) {
+    const errMsg = err instanceof Error ? err.message : String(err);
+    log(`Apify fallback threw: ${errMsg}`);
+    await sb.from("yad2_scrape_queue").update({
+      status: "exhausted",
+      last_result: "captcha",
+      last_error: `Firecrawl CAPTCHA exhausted, Apify error: ${errMsg.slice(0, 400)}`,
+      apify_result: `error: ${errMsg.slice(0, 200)}`,
+      updated_at: new Date().toISOString(),
+    }).eq("id", item.id);
+  }
+}
+
 // ── Core queue item processor ─────────────────────────────────────────────────
 
 async function processQueueItem(
@@ -194,16 +293,9 @@ async function processQueueItem(
         }).eq("id", item.id);
         log(`Retry scheduled in ${retryMinutes} min (attempt ${item.attempt_number + 1}/${item.max_attempts})`);
       } else {
-        // All attempts exhausted via CAPTCHA — don't count as agency failure
-        await sb.from("yad2_scrape_queue").update({
-          status: "exhausted",
-          last_job_id: jobId,
-          last_result: "captcha",
-          last_error: `CAPTCHA blocked all ${item.max_attempts} attempts`,
-          updated_at: new Date().toISOString(),
-        }).eq("id", item.id);
-        log(`Exhausted after ${item.max_attempts} CAPTCHA blocks — will retry next week`);
-        // NOTE: do NOT increment consecutive_failures — CAPTCHA is not an agency error
+        // All Firecrawl attempts exhausted via CAPTCHA — try Apify as fallback
+        log(`All ${item.max_attempts} Firecrawl attempts CAPTCHA-blocked — trying Apify fallback`);
+        await tryApifyFallback(sb, item, jobId);
       }
       return;
     }
