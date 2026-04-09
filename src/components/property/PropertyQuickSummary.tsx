@@ -444,7 +444,7 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
             )}
             <p className="text-muted-foreground flex items-center gap-1.5">
               <MapPin className="h-4 w-4 shrink-0" />
-              <span>{property.address}, {locationText}</span>
+              <span>{property.address && property.address.trim() ? `${property.address.trim()}, ` : ''}{locationText}</span>
               <NeighborhoodAvgPriceChip cityName={property.city} neighborhoodName={property.neighborhood} propertyPrice={property.price} />
             </p>
           </div>

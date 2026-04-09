@@ -402,7 +402,11 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                   <p className="text-sm font-medium text-foreground truncate leading-tight">{property.title}</p>
                 )}
                 <p className="text-xs text-muted-foreground">
-                  {property.bedrooms} bd{(property as any).additional_rooms ? ` + ${(property as any).additional_rooms}` : ''} · {property.bathrooms} ba{property.size_sqm ? ` · ${formatArea(property.size_sqm)}` : ''}
+                  {property.bedrooms != null ? `${property.bedrooms}${(property as any).additional_rooms ? ` + ${(property as any).additional_rooms}` : ''} bd` : ''}
+                  {property.bedrooms != null && property.bathrooms != null ? ' · ' : ''}
+                  {property.bathrooms != null ? `${property.bathrooms} ba` : ''}
+                  {property.size_sqm ? ` · ${formatArea(property.size_sqm)}` : ''}
+                  {property.bedrooms == null && property.bathrooms == null && !property.size_sqm ? '—' : ''}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">
                   {property.neighborhood ? `${property.neighborhood}, ` : ''}{property.city}
@@ -647,14 +651,18 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
 
                 {/* Features */}
                 <div className="flex items-center gap-3 text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <Bed className="h-3.5 w-3.5" />
-                    <span className="text-xs">{property.bedrooms}{(property as any).additional_rooms ? ` + ${(property as any).additional_rooms}` : ''}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Bath className="h-3.5 w-3.5" />
-                    <span className="text-xs">{property.bathrooms}</span>
-                  </div>
+                  {property.bedrooms != null && (
+                    <div className="flex items-center gap-1">
+                      <Bed className="h-3.5 w-3.5" />
+                      <span className="text-xs">{property.bedrooms}{(property as any).additional_rooms ? ` + ${(property as any).additional_rooms}` : ''}</span>
+                    </div>
+                  )}
+                  {property.bathrooms != null && (
+                    <div className="flex items-center gap-1">
+                      <Bath className="h-3.5 w-3.5" />
+                      <span className="text-xs">{property.bathrooms}</span>
+                    </div>
+                  )}
                   {property.size_sqm && (
                     <div className="flex items-center gap-1">
                       <Maximize className="h-3.5 w-3.5" />
