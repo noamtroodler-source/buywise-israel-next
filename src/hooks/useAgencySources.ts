@@ -217,7 +217,7 @@ export function useTriggerNightlySync() {
     },
     onSuccess: (data) => {
       toast.success(
-        `Full sync complete — ${data.total_new_listings || 0} new listings from ${data.sources_processed || 0} sources`
+        `Full sync started — ${(data.sources_fired || data.sources_processed || 0)} sources queued, ${data.yad2_enqueued || 0} Yad2 enqueued`
       );
     },
     onError: (err: any) => toast.error(`Full sync failed: ${err.message}`),
