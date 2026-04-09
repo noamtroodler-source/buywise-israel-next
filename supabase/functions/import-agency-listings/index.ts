@@ -3085,14 +3085,12 @@ async function handleYad2AgencyDiscover(body: any) {
     .single();
   if (jobErr || !job) throw new Error(`Failed to create import job: ${jobErr?.message || 'Unknown error'}`);
 
-  EdgeRuntime.waitUntil(
-    runYad2AgencyDiscoverJob({
-      jobId: job.id,
-      agencyId: agency_id,
-      websiteUrl: website_url,
-      effectiveImportType,
-    })
-  );
+  runYad2AgencyDiscoverJob({
+    jobId: job.id,
+    agencyId: agency_id,
+    websiteUrl: website_url,
+    effectiveImportType,
+  }).catch((e) => console.error(`[Yad2] discover job failed: ${e.message}`));
 
   return {
     job_id: job.id,
