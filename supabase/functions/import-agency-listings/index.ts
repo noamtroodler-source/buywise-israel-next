@@ -3404,7 +3404,16 @@ function getMadlanDiscoveryUrls(rawUrl: string, importType: string): string[] {
   const urls = new Set<string>();
   try {
     const parsed = new URL(rawUrl);
-    const pathBase = parsed.pathname
+    const path = parsed.pathname;
+
+    // agentsOffice URLs (e.g. /agentsOffice/re_office_xxx) — pass through as-is,
+    // Madlan renders listings directly on these pages
+    if (path.startsWith("/agentsOffice/")) {
+      urls.add(rawUrl);
+      return Array.from(urls);
+    }
+
+    const pathBase = path
       .replace(/\/(for-sale|for-rent)\/?/i, "")
       .replace(/\/+$/, "");
     const entity = pathBase.replace(/^\//, ""); // e.g. "israel--office--anglo-saxon"
