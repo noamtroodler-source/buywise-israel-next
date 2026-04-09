@@ -24,7 +24,7 @@ export interface AgencySource {
   notes: string | null;
   created_at: string;
   updated_at: string;
-  agency?: { id: string; name: string; logo_url: string | null; city: string | null };
+  agency?: { id: string; name: string; logo_url: string | null };
 }
 
 export interface ClaimRequest {
@@ -60,7 +60,7 @@ export function useAgencySources(agencyId?: string) {
     queryFn: async () => {
       let q = (supabase as any)
         .from('agency_sources')
-        .select('*, agency:agencies(id, name, logo_url, city)')
+        .select('*, agency:agencies(id, name, logo_url)')
         .order('priority', { ascending: true })
         .order('last_synced_at', { ascending: true, nullsFirst: true });
       if (agencyId) q = q.eq('agency_id', agencyId);
