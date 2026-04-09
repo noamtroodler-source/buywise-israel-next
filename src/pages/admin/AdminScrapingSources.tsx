@@ -8,12 +8,12 @@
  */
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Globe, RefreshCw, Plus, Trash2, ToggleLeft, ToggleRight,
   CheckCircle2, XCircle, AlertTriangle, Clock, Building2,
   ExternalLink, Play, Loader2, ChevronDown, ChevronRight,
-  Zap, Shield, ClipboardCheck, Search,
+  Zap, Shield, ClipboardCheck, Search, Activity, X,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -39,12 +39,14 @@ import {
   useDeleteAgencySource,
   useTriggerSourceSync,
   useTriggerNightlySync,
+  useSyncProgress,
   useClaimRequests,
   useClaimRequestStats,
   useApproveClaimRequest,
   useRejectClaimRequest,
   AgencySource,
   ClaimRequest,
+  SyncJob,
 } from '@/hooks/useAgencySources';
 
 // ─── Source type config ──────────────────────────────────────────────────────
@@ -417,19 +419,157 @@ function ClaimRow({ claim }: { claim: ClaimRequest }) {
   );
 }
 
+// ─── Sync Progress Panel ─────────────────────────────────────────────────────
+
+const STATUS_CONFIG = {
+  discovering: { label: 'Discovering', color: 'text-blue-500', bg: 'bg-blue-500' },
+  ready:       { label: 'Ready',       color: 'text-yellow-500', bg: 'bg-yellow-500' },
+  processing:  { label: 'Processing',  color: 'text-blue-500', bg: 'bg-blue-500' },
+  completed:   { label: 'Done',        color: 'text-green-500', bg: 'bg-green-500' },
+  failed:      { label: 'Failed',      color: 'text-red-500',   bg: 'bg-red-500' },
+};
+
+function SyncProgressPanel({ sinceTime, onClose }: { sinceTime: string; onClose: () => void }) {
+  const [expanded, setExpanded] = useState(false);
+  const { data: jobs = [], isFetching } = useSyncProgress(true, sinceTime);
+
+  const counts = {
+    total: jobs.length,
+    completed: jobs.filter(j => j.status === 'completed').length,
+    failed: jobs.filter(j => j.status === 'failed').length,
+    processing: jobs.filter(j => j.status === 'processing' || j.status === 'discovering').length,
+    pending: jobs.filter(j => j.status === 'ready').length,
+  };
+  const done = counts.completed + counts.failed;
+  const pct = counts.total > 0 ? Math.round((done / counts.total) * 100) : 0;
+  const totalImported = jobs.reduce((s, j) => s + (j.processed_count || 0), 0);
+  const isFinished = counts.total > 0 && counts.processing === 0 && counts.pending === 0;
+
+  return (
+    <Card className="border-blue-200 bg-blue-50/50 dark:bg-blue-950/20 dark:border-blue-900">
+      <CardContent className="pt-4 pb-3 space-y-3">
+        {/* Header row */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            {isFinished
+              ? <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
+              : <Activity className={cn('w-4 h-4 text-blue-500 shrink-0', !isFinished && 'animate-pulse')} />}
+            <span className="text-sm font-medium">
+              {isFinished
+                ? `Sync complete — ${totalImported} listings imported from ${counts.completed} sources`
+                : `Syncing… ${done}/${counts.total} sources done`}
+            </span>
+            {isFetching && !isFinished && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setExpanded(v => !v)}
+              className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+            >
+              {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+              Details
+            </button>
+            <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Progress bar */}
+        <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+          <div
+            className={cn('h-2 rounded-full transition-all duration-700', isFinished ? 'bg-green-500' : 'bg-blue-500')}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+
+        {/* Stat pills */}
+        <div className="flex flex-wrap gap-2 text-xs">
+          <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+            {counts.completed} completed
+          </span>
+          {counts.processing > 0 && (
+            <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+              {counts.processing} running
+            </span>
+          )}
+          {counts.pending > 0 && (
+            <span className="px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
+              {counts.pending} queued
+            </span>
+          )}
+          {counts.failed > 0 && (
+            <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+              {counts.failed} failed
+            </span>
+          )}
+          <span className="px-2 py-0.5 rounded-full bg-muted text-muted-foreground ml-auto">
+            {totalImported} listings imported
+          </span>
+        </div>
+
+        {/* Expandable job list */}
+        <AnimatePresence>
+          {expanded && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="max-h-72 overflow-y-auto space-y-1 mt-1 pr-1">
+                {jobs.length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-center py-4">
+                    No jobs found yet — sources fire in the background, check back in a moment.
+                  </p>
+                ) : (
+                  jobs.map((job) => {
+                    const cfg = STATUS_CONFIG[job.status] || STATUS_CONFIG.processing;
+                    const domain = (() => { try { return new URL(job.website_url).hostname; } catch { return job.website_url; } })();
+                    return (
+                      <div key={job.id} className="flex items-center justify-between gap-2 text-xs bg-background rounded px-2 py-1.5">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', cfg.bg)} />
+                          <span className="truncate text-foreground">{domain}</span>
+                        </div>
+                        <div className="flex items-center gap-3 shrink-0 text-muted-foreground">
+                          {job.processed_count > 0 && (
+                            <span className="text-green-600">+{job.processed_count}</span>
+                          )}
+                          {job.failed_count > 0 && (
+                            <span className="text-red-500">{job.failed_count} failed</span>
+                          )}
+                          <span className={cfg.color}>{cfg.label}</span>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </CardContent>
+    </Card>
+  );
+}
+
 // ─── Main Page ───────────────────────────────────────────────────────────────
 
 export default function AdminScrapingSources() {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState<'sources' | 'claims'>('sources');
+  const [syncStartedAt, setSyncStartedAt] = useState<string | null>(null);
 
   const { data: sources = [], isLoading: sourcesLoading } = useAgencySources();
   const { data: stats } = useAgencySourceStats();
   const { data: claimStats } = useClaimRequestStats();
   const { data: pendingClaims = [], isLoading: claimsLoading } = useClaimRequests('pending');
   const { data: allClaims = [], isLoading: allClaimsLoading } = useClaimRequests();
-  const triggerNightly = useTriggerNightlySync();
+  const triggerNightly = useTriggerNightlySync({
+    onSuccess: () => setSyncStartedAt(new Date().toISOString()),
+  });
 
   const filteredSources = search
     ? sources.filter(
@@ -479,6 +619,22 @@ export default function AdminScrapingSources() {
           </Button>
         </div>
       </div>
+
+      {/* Sync Progress Panel */}
+      <AnimatePresence>
+        {syncStartedAt && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+          >
+            <SyncProgressPanel
+              sinceTime={syncStartedAt}
+              onClose={() => setSyncStartedAt(null)}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

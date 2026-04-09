@@ -205,7 +205,7 @@ export function useTriggerSourceSync() {
 }
 
 // Trigger the full nightly scheduler manually
-export function useTriggerNightlySync() {
+export function useTriggerNightlySync(callbacks?: { onSuccess?: (data: any) => void }) {
   return useMutation({
     mutationFn: async () => {
       const { data, error } = await supabase.functions.invoke(
@@ -219,8 +219,43 @@ export function useTriggerNightlySync() {
       toast.success(
         `Full sync started — ${(data.sources_fired || data.sources_processed || 0)} sources queued, ${data.yad2_enqueued || 0} Yad2 enqueued`
       );
+      callbacks?.onSuccess?.(data);
     },
     onError: (err: any) => toast.error(`Full sync failed: ${err.message}`),
+  });
+}
+
+// ─── Sync Progress hook ──────────────────────────────────────────────────────
+
+export interface SyncJob {
+  id: string;
+  agency_id: string;
+  website_url: string;
+  status: 'discovering' | 'ready' | 'processing' | 'completed' | 'failed';
+  total_urls: number;
+  processed_count: number;
+  failed_count: number;
+  created_at: string;
+  updated_at: string;
+  agency?: { name: string } | null;
+}
+
+export function useSyncProgress(enabled: boolean, sinceTime?: string) {
+  return useQuery({
+    queryKey: ['sync-progress', sinceTime],
+    enabled,
+    refetchInterval: enabled ? 8000 : false,
+    queryFn: async () => {
+      const cutoff = sinceTime || new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString();
+      const { data, error } = await supabase
+        .from('import_jobs')
+        .select('id, agency_id, website_url, status, total_urls, processed_count, failed_count, created_at, updated_at')
+        .gte('created_at', cutoff)
+        .order('created_at', { ascending: false })
+        .limit(300);
+      if (error) throw error;
+      return (data || []) as SyncJob[];
+    },
   });
 }
 
