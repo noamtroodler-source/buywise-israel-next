@@ -183,10 +183,29 @@ Deno.serve(async (req) => {
 
   const authHeader = req.headers.get("authorization") || "";
   const token = authHeader.replace("Bearer ", "");
-  if (
-    token !== Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") &&
-    token !== Deno.env.get("CRON_SECRET")
-  ) {
+
+  const isServiceKey = token === Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const isCronSecret = token === Deno.env.get("CRON_SECRET");
+
+  // Also allow authenticated admin users (for the admin UI "Run full sync" button)
+  let isAdminUser = false;
+  if (!isServiceKey && !isCronSecret && token) {
+    try {
+      const sb = supabaseAdmin();
+      const { data: { user } } = await sb.auth.getUser(token);
+      if (user) {
+        const { data: roleRow } = await sb
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .eq("role", "admin")
+          .maybeSingle();
+        isAdminUser = !!roleRow;
+      }
+    } catch (_) { /* not a valid JWT */ }
+  }
+
+  if (!isServiceKey && !isCronSecret && !isAdminUser) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
