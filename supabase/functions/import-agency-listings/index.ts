@@ -1943,14 +1943,16 @@ async function processOneItem(
       return { succeeded: false };
     }
 
-    // 0c. Pre-check
-    const preCheck = await preCheckUrl(item.url);
-    if (!preCheck.ok) {
-      const errorType = (preCheck.skipReason?.includes("timed out") || preCheck.skipReason?.includes("network error")) ? "transient" : "permanent";
-      await sb.from("import_job_items")
-        .update({ status: "skipped", error_message: preCheck.skipReason, error_type: errorType })
-        .eq("id", item.id);
-      return { succeeded: false };
+    // 0c. Pre-check (skip for Yad2 — direct fetch hits ShieldSquare, stealth proxy handles it)
+    if (!item.url.includes("yad2.co.il")) {
+      const preCheck = await preCheckUrl(item.url);
+      if (!preCheck.ok) {
+        const errorType = (preCheck.skipReason?.includes("timed out") || preCheck.skipReason?.includes("network error")) ? "transient" : "permanent";
+        await sb.from("import_job_items")
+          .update({ status: "skipped", error_message: preCheck.skipReason, error_type: errorType })
+          .eq("id", item.id);
+        return { succeeded: false };
+      }
     }
 
     // 1. Scrape
