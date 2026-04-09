@@ -326,10 +326,7 @@ export default function Listings() {
           )}
         </div>
 
-        {/* Sourced listings explainer banner */}
-        {filters.sourced_only && (
-          <SourcedListingsBanner className="mb-6" />
-        )}
+        {/* Sourced listings explainer banner — hidden since filter now shows partner agencies, not scraped */}
 
         {/* Results Count Row */}
         <div className="flex items-center justify-between mb-4">
