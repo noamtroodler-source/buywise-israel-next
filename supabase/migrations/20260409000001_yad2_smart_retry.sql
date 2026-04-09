@@ -30,6 +30,10 @@ CREATE TABLE IF NOT EXISTS public.yad2_scrape_queue (
   last_error        TEXT,
   listings_found    INTEGER,
 
+  -- Apify fallback (auto-fires after 3 Firecrawl CAPTCHA blocks)
+  apify_attempted   BOOLEAN     NOT NULL DEFAULT false,
+  apify_result      TEXT,       -- 'success' | 'empty' | 'error: ...'
+
   -- Prevent duplicate queuing for the same week
   week_start        DATE        NOT NULL,
 

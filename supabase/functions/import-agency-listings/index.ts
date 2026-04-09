@@ -2898,8 +2898,13 @@ async function fetchYad2AgencyPageHtml(pageUrl: string): Promise<string> {
           url: pageUrl,
           formats: ["html"],
           onlyMainContent: false,
-          waitFor: 8000, // Wait 8s for JS to render all listing cards
-          proxy: "stealth", // Use stealth residential proxies to bypass ShieldSquare/PerimeterX on Yad2
+          waitFor: 8000,
+          proxy: "stealth", // Stealth residential proxies bypass ShieldSquare/PerimeterX
+          // Session cookies: logged-in Yad2 sessions pass ShieldSquare far more reliably.
+          // Set YAD2_SESSION_COOKIES secret to a Cookie header string from a logged-in browser session.
+          ...(Deno.env.get("YAD2_SESSION_COOKIES")
+            ? { headers: { Cookie: Deno.env.get("YAD2_SESSION_COOKIES")! } }
+            : {}),
         }),
       });
 
@@ -3821,8 +3826,10 @@ Deno.serve(async (req) => {
 
     let result;
     if (action === "discover") {
-      if (body.source_type === "yad2") {
-        // Auto-detect agency profile page vs search results
+      if (body.source_type === "yad2_apify") {
+        // Force Apify path — used as automatic Firecrawl fallback by yad2-retry-runner
+        result = await handleYad2Discover(body);
+      } else if (body.source_type === "yad2") {
         if (isYad2AgencyUrl(body.website_url)) {
           result = await handleYad2AgencyDiscover(body);
         } else {
