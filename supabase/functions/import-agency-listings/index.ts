@@ -2715,6 +2715,32 @@ async function handleProcessBatch(body: any) {
 
   await sb.from("import_jobs").update({ processed_count: doneCount, failed_count: failedCount, status: newStatus }).eq("id", job_id);
 
+  // ── Self-chain: if items remain, fire the next batch in the background ──
+  if (remainingCount > 0) {
+    console.log(`Self-chaining: ${remainingCount} items remaining for job ${job_id}`);
+    const selfChainUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/import-agency-listings`;
+    EdgeRuntime.waitUntil(
+      (async () => {
+        // Small delay to let the current response flush
+        await new Promise((r) => setTimeout(r, 1000));
+        try {
+          const res = await fetch(selfChainUrl, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ action: "process_batch", job_id }),
+          });
+          const data = await res.json();
+          console.log(`Self-chain batch for ${job_id}: ${data.succeeded || 0} ok, ${data.remaining || 0} remaining`);
+        } catch (e) {
+          console.error(`Self-chain failed for ${job_id}:`, e);
+        }
+      })()
+    );
+  }
+
   return { processed: totalProcessed, succeeded: totalSucceeded, failed: totalFailed, remaining: remainingCount, status: newStatus };
 }
 
