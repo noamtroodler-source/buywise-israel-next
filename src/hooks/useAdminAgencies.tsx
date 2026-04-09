@@ -165,7 +165,7 @@ export function useVerifyAgency() {
                 claimed_at: new Date().toISOString(),
                 claimed_by_agency_id: agencyId,
                 is_published: true,
-                verification_status: 'verified',
+                verification_status: 'approved' as any,
                 updated_at: new Date().toISOString(),
               })
               .eq('id', claim.property_id);
