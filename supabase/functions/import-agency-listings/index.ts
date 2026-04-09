@@ -2870,11 +2870,21 @@ function extractYad2AgencyTotalCount(html: string, listingMode: "forsale" | "ren
   return null;
 }
 
+// Detect ShieldSquare / PerimeterX CAPTCHA pages served by Yad2
+function isYad2CaptchaPage(html: string): boolean {
+  return (
+    html.includes("ShieldSquare Captcha") ||
+    html.includes("captcha-assets.yad2.co.il") ||
+    html.includes("robot_checkup") ||
+    (html.includes("hcaptcha") && html.includes("yad2"))
+  );
+}
+
 async function fetchYad2AgencyPageHtml(pageUrl: string): Promise<string> {
   // Yad2 is a JS-rendered SPA — raw fetch only returns ~5 server-rendered items.
   // Use Firecrawl's headless browser to get the fully rendered HTML.
   const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
-  
+
   if (FIRECRAWL_API_KEY) {
     try {
       console.log(`[Yad2] Firecrawl scraping: ${pageUrl}`);
@@ -2892,11 +2902,16 @@ async function fetchYad2AgencyPageHtml(pageUrl: string): Promise<string> {
           proxy: "stealth", // Use stealth residential proxies to bypass ShieldSquare/PerimeterX on Yad2
         }),
       });
-      
+
       if (res.ok) {
         const data = await res.json();
         const html = data?.data?.html || data?.html || "";
         if (html.length > 500) {
+          // Check for CAPTCHA before anything else — throw so yad2_scrape_queue can schedule a retry
+          if (isYad2CaptchaPage(html)) {
+            console.warn(`[Yad2] CAPTCHA detected via Firecrawl on ${pageUrl}`);
+            throw new Error("CAPTCHA_BLOCKED");
+          }
           // Verify we got listing content, not just a shell
           const itemCount = (html.match(/\/realestate\/item\//gi) || []).length;
           console.log(`[Yad2] Firecrawl returned ${html.length} chars, ${itemCount} item links`);
@@ -2910,6 +2925,8 @@ async function fetchYad2AgencyPageHtml(pageUrl: string): Promise<string> {
         console.warn(`[Yad2] Firecrawl failed (${res.status}): ${errText.slice(0, 200)}`);
       }
     } catch (e) {
+      // Re-throw CAPTCHA errors — don't fall back, let the retry queue handle it
+      if (e instanceof Error && e.message === "CAPTCHA_BLOCKED") throw e;
       console.warn(`[Yad2] Firecrawl error:`, e);
     }
   } else {
@@ -2929,7 +2946,15 @@ async function fetchYad2AgencyPageHtml(pageUrl: string): Promise<string> {
     throw new Error(`Failed to load Yad2 page (${response.status})`);
   }
 
-  return await response.text();
+  const rawHtml = await response.text();
+
+  // Check for CAPTCHA in raw fetch response too
+  if (isYad2CaptchaPage(rawHtml)) {
+    console.warn(`[Yad2] CAPTCHA detected via raw fetch on ${pageUrl}`);
+    throw new Error("CAPTCHA_BLOCKED");
+  }
+
+  return rawHtml;
 }
 
 async function runYad2AgencyDiscoverJob(params: {
@@ -3034,8 +3059,18 @@ async function runYad2AgencyDiscoverJob(params: {
       `[Yad2] background discovery finished for job ${jobId}: ${newUrls.length} new URLs, ${dedupedUrls.length} discovered, ${dedupedUrls.length - newUrls.length} existing`
     );
   } catch (err) {
-    console.error(`[Yad2] background discovery failed for job ${jobId}:`, err);
-    await sb.from("import_jobs").update({ status: "failed" }).eq("id", jobId);
+    const isCaptcha = err instanceof Error && err.message === "CAPTCHA_BLOCKED";
+    console.error(
+      `[Yad2] background discovery failed for job ${jobId}:`,
+      isCaptcha ? "CAPTCHA blocked by ShieldSquare/PerimeterX" : err
+    );
+    await sb
+      .from("import_jobs")
+      .update({
+        status: "failed",
+        failure_reason: isCaptcha ? "captcha_blocked" : "discovery_error",
+      })
+      .eq("id", jobId);
   }
 }
 
