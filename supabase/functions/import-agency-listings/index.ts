@@ -3634,23 +3634,37 @@ async function runMadlanAgencyDiscoverJob(params: {
           pageBatch.map(async (pageNum) => {
             const pageUrl = buildMadlanPageUrl(discoveryUrl, pageNum);
             if (!FIRECRAWL_API_KEY) return [];
-            const res = await fetch("https://api.firecrawl.dev/v1/scrape", {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${FIRECRAWL_API_KEY}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                url: pageUrl,
-                formats: ["html"],
-                onlyMainContent: false,
-                waitFor: 3000,
-              }),
-            });
-            if (!res.ok) return [];
-            const data = await res.json();
-            const html = data?.data?.html || data?.html || "";
-            return extractMadlanListingUrls(html, pageUrl);
+            for (let attempt = 0; attempt < 2; attempt++) {
+              try {
+                const res = await fetch("https://api.firecrawl.dev/v1/scrape", {
+                  method: "POST",
+                  headers: {
+                    Authorization: `Bearer ${FIRECRAWL_API_KEY}`,
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    url: pageUrl,
+                    formats: ["html"],
+                    onlyMainContent: false,
+                    waitFor: 3000,
+                  }),
+                });
+                if (res.ok) {
+                  const data = await res.json();
+                  const html = data?.data?.html || data?.html || "";
+                  return extractMadlanListingUrls(html, pageUrl);
+                } else if ([429, 502, 503].includes(res.status) && attempt === 0) {
+                  await res.text(); // consume body
+                  await new Promise(r => setTimeout(r, 2000));
+                } else {
+                  await res.text(); // consume body
+                  return [];
+                }
+              } catch (e) {
+                if (attempt === 0) await new Promise(r => setTimeout(r, 2000));
+              }
+            }
+            return [];
           })
         );
 
