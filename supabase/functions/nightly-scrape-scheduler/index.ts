@@ -303,10 +303,23 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ── Non-Yad2: fire ALL as background tasks, return immediately ──
-    for (const source of nonYad2Sources) {
-      EdgeRuntime.waitUntil(processSourceInBackground(source));
-    }
+    // ── Non-Yad2: fire in throttled waves to avoid Firecrawl rate limits ──
+    const WAVE_SIZE = 10;
+    const WAVE_DELAY_MS = 3000;
+
+    EdgeRuntime.waitUntil(
+      (async () => {
+        for (let i = 0; i < nonYad2Sources.length; i += WAVE_SIZE) {
+          const wave = nonYad2Sources.slice(i, i + WAVE_SIZE);
+          console.log(`[BG] Firing wave ${Math.floor(i / WAVE_SIZE) + 1}: ${wave.length} sources (${i + 1}–${i + wave.length} of ${nonYad2Sources.length})`);
+          await Promise.allSettled(wave.map((s: any) => processSourceInBackground(s)));
+          if (i + WAVE_SIZE < nonYad2Sources.length) {
+            await new Promise((r) => setTimeout(r, WAVE_DELAY_MS));
+          }
+        }
+        console.log(`[BG] All ${nonYad2Sources.length} non-Yad2 sources processed`);
+      })()
+    );
     summary.non_yad2_fired = nonYad2Sources.length;
 
     // ── Freshness check: also background ──
