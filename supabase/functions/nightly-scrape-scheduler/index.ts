@@ -364,6 +364,10 @@ Deno.serve(async (req) => {
           }
         }
         console.log(`[BG] All ${nonYad2Sources.length} non-Yad2 sources processed`);
+
+        // Wait 10 min then run stall recovery for any orphaned batches
+        await new Promise((r) => setTimeout(r, 10 * 60 * 1000));
+        await runStallRecovery();
       })()
     );
     summary.non_yad2_fired = nonYad2Sources.length;
