@@ -30,6 +30,8 @@ function supabaseAdmin() {
 
 const IMPORT_FN_URL = () =>
   `${Deno.env.get("SUPABASE_URL")}/functions/v1/import-agency-listings`;
+const YAD2_RUNNER_URL = () =>
+  `${Deno.env.get("SUPABASE_URL")}/functions/v1/yad2-retry-runner?force=true`;
 const SERVICE_KEY = () => Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 async function callImport(body: Record<string, unknown>) {
@@ -256,14 +258,33 @@ Deno.serve(async (req) => {
     console.log(`  ${yad2Sources.length} Yad2 sources → queuing for retry-runner`);
     console.log(`  ${nonYad2Sources.length} non-Yad2 sources → direct scrape`);
 
-    // ── Enqueue Yad2 sources (staggered, handled by yad2-retry-runner) ───────
+    // ── Enqueue Yad2 sources then immediately kick the retry runner ──────────
     if (yad2Sources.length > 0) {
+      // Clear any stale queue entries from this week first so we always get a fresh run
+      await sb.from("yad2_scrape_queue").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+
       const queueResult = await enqueueYad2Sources(sb, yad2Sources);
       summary.yad2_enqueued = queueResult.enqueued;
       summary.yad2_skipped = queueResult.skipped;
       console.log(
-        `Yad2: ${queueResult.enqueued} enqueued, ${queueResult.skipped} skipped (already queued this week)`
+        `Yad2: ${queueResult.enqueued} enqueued, ${queueResult.skipped} skipped`
       );
+
+      // Immediately trigger the retry runner with force=true so Yad2 runs NOW
+      // (not just at night) — this makes "Run full sync now" truly synchronous
+      if (queueResult.enqueued > 0) {
+        EdgeRuntime.waitUntil(
+          fetch(YAD2_RUNNER_URL(), {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${SERVICE_KEY()}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({}),
+          }).then(() => console.log("yad2-retry-runner triggered"))
+            .catch((e) => console.warn("Failed to trigger yad2-retry-runner:", e.message))
+        );
+      }
     }
 
     // ── Direct scrape non-Yad2 sources ───────────────────────────────────────
