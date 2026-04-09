@@ -446,13 +446,21 @@ Deno.serve(async (req) => {
   const israelHour = getIsraelHour();
   const inWindow = isGoodScrapingWindow();
 
+  // Allow force=true to bypass time window check (for manual testing)
+  const url = new URL(req.url);
+  const force = url.searchParams.get("force") === "true";
+
   // ── Time window check ────────────────────────────────────────────────────
-  if (!inWindow) {
+  if (!inWindow && !force) {
     console.log(`[Yad2Queue] Outside scraping window (Israel hour: ${israelHour}) — skipping`);
     return new Response(
       JSON.stringify({ skipped: true, reason: "outside_scraping_window", israel_hour: israelHour }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
+  }
+
+  if (force && !inWindow) {
+    console.log(`[Yad2Queue] Force mode — bypassing time window (Israel hour: ${israelHour})`);
   }
 
   console.log(`[Yad2Queue] Running — Israel hour: ${israelHour}, in good window`);
