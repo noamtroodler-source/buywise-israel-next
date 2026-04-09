@@ -2880,15 +2880,16 @@ async function fetchYad2AgencyPageHtml(pageUrl: string): Promise<string> {
   // Yad2 is a JS-rendered SPA — raw fetch only returns ~5 server-rendered items.
   // Use Firecrawl's headless browser to get the fully rendered HTML.
   const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
-  
+
+  const timeoutMs = 30_000; // 30s hard cap per page — prevents hanging in edge functions
+
   if (FIRECRAWL_API_KEY) {
     try {
       console.log(`[Yad2] Firecrawl scraping: ${pageUrl}`);
-      const fetchController = new AbortController();
-      const fetchTimeout = setTimeout(() => fetchController.abort(), 45_000); // 45s max per page
-      const res = await fetch("https://api.firecrawl.dev/v1/scrape", {
+
+      // Use Promise.race for timeout — AbortController + setTimeout unreliable in Deno edge runtime
+      const firecrawlPromise = fetch("https://api.firecrawl.dev/v1/scrape", {
         method: "POST",
-        signal: fetchController.signal,
         headers: {
           Authorization: `Bearer ${FIRECRAWL_API_KEY}`,
           "Content-Type": "application/json",
@@ -2897,52 +2898,55 @@ async function fetchYad2AgencyPageHtml(pageUrl: string): Promise<string> {
           url: pageUrl,
           formats: ["html"],
           onlyMainContent: false,
-          waitFor: 5000, // Wait 5s for JS to render all listing cards
+          waitFor: 5000,
         }),
       });
-      clearTimeout(fetchTimeout);
-      
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Firecrawl timeout")), timeoutMs)
+      );
+
+      const res = await Promise.race([firecrawlPromise, timeoutPromise]) as Response;
+
       if (res.ok) {
         const data = await res.json();
         const html = data?.data?.html || data?.html || "";
         if (html.length > 500) {
-          // Verify we got listing content, not just a shell
           const itemCount = (html.match(/\/realestate\/item\//gi) || []).length;
           console.log(`[Yad2] Firecrawl returned ${html.length} chars, ${itemCount} item links`);
           if (itemCount > 0) return html;
-          console.warn(`[Yad2] Firecrawl HTML has no item links, falling back to raw fetch`);
+          console.warn(`[Yad2] Firecrawl HTML has no item links — ShieldSquare CAPTCHA page likely`);
         } else {
-          console.warn(`[Yad2] Firecrawl returned very short HTML (${html.length} chars), falling back`);
+          console.warn(`[Yad2] Firecrawl returned very short HTML (${html.length} chars)`);
         }
       } else {
         const errText = await res.text();
         console.warn(`[Yad2] Firecrawl failed (${res.status}): ${errText.slice(0, 200)}`);
       }
     } catch (e) {
-      console.warn(`[Yad2] Firecrawl error:`, e);
+      console.warn(`[Yad2] Firecrawl error:`, e instanceof Error ? e.message : e);
     }
-  } else {
-    console.warn(`[Yad2] FIRECRAWL_API_KEY not set — using raw fetch (will only get ~5 items)`);
   }
 
-  // Fallback: raw fetch (will only get server-rendered items, typically ~5)
-  // ShieldSquare may block this — return empty string rather than throwing so
-  // the discovery job can detect 0 items and mark CAPTCHA-blocked gracefully.
+  // Fallback: raw fetch — ShieldSquare likely blocks this too, return "" gracefully
   try {
-    const response = await fetch(pageUrl, {
+    const rawPromise = fetch(pageUrl, {
       headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "Accept-Language": "he-IL,he;q=0.9,en;q=0.8",
       },
     });
+    const rawTimeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("Raw fetch timeout")), 10_000)
+    );
+    const response = await Promise.race([rawPromise, rawTimeout]) as Response;
     if (!response.ok) {
-      console.warn(`[Yad2] Raw fetch blocked (${response.status}) — ShieldSquare likely`);
+      console.warn(`[Yad2] Raw fetch blocked (${response.status})`);
       return "";
     }
     return await response.text();
   } catch (e) {
-    console.warn(`[Yad2] Raw fetch error:`, e);
+    console.warn(`[Yad2] Raw fetch error:`, e instanceof Error ? e.message : e);
     return "";
   }
 }
@@ -2968,6 +2972,13 @@ async function runYad2AgencyDiscoverJob(params: {
       const firstPageUrl = buildYad2AgencyPageUrl(discoveryUrl, 1);
       const firstPageHtml = await fetchYad2AgencyPageHtml(firstPageUrl);
       const firstPageItems = extractYad2AgencyItemUrls(firstPageHtml, firstPageUrl);
+
+      // If page 1 returned nothing, ShieldSquare is blocking — skip pagination entirely
+      if (firstPageItems.length === 0) {
+        console.warn(`[Yad2] Page 1 returned 0 items — ShieldSquare blocking, skipping pagination`);
+        continue;
+      }
+
       const totalCount = extractYad2AgencyTotalCount(firstPageHtml, listingMode) ?? firstPageItems.length;
       const pageSize = Math.max(firstPageItems.length, 5);
       const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
