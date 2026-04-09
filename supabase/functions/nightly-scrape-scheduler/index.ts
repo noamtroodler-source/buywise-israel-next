@@ -230,9 +230,8 @@ Deno.serve(async (req) => {
     // Load all active agency sources
     const { data: sources, error: sourcesErr } = await sb
       .from("agency_sources")
-      .select("*, agencies!inner(id, name, is_active)")
+      .select("*, agencies(id, name)")
       .eq("is_active", true)
-      .eq("agencies.is_active", true)
       .order("priority", { ascending: true })
       .order("last_synced_at", { ascending: true, nullsFirst: true });
 
