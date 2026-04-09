@@ -2888,7 +2888,8 @@ async function fetchYad2AgencyPageHtml(pageUrl: string): Promise<string> {
           url: pageUrl,
           formats: ["html"],
           onlyMainContent: false,
-          waitFor: 5000, // Wait 5s for JS to render all listing cards
+          waitFor: 8000, // Wait 8s for JS to render all listing cards
+          proxy: "stealth", // Use stealth residential proxies to bypass ShieldSquare/PerimeterX on Yad2
         }),
       });
       
