@@ -2926,19 +2926,25 @@ async function fetchYad2AgencyPageHtml(pageUrl: string): Promise<string> {
   }
 
   // Fallback: raw fetch (will only get server-rendered items, typically ~5)
-  const response = await fetch(pageUrl, {
-    headers: {
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-      "Accept-Language": "he-IL,he;q=0.9,en;q=0.8",
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to load Yad2 page (${response.status})`);
+  // ShieldSquare may block this — return empty string rather than throwing so
+  // the discovery job can detect 0 items and mark CAPTCHA-blocked gracefully.
+  try {
+    const response = await fetch(pageUrl, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "he-IL,he;q=0.9,en;q=0.8",
+      },
+    });
+    if (!response.ok) {
+      console.warn(`[Yad2] Raw fetch blocked (${response.status}) — ShieldSquare likely`);
+      return "";
+    }
+    return await response.text();
+  } catch (e) {
+    console.warn(`[Yad2] Raw fetch error:`, e);
+    return "";
   }
-
-  return await response.text();
 }
 
 async function runYad2AgencyDiscoverJob(params: {
@@ -2997,6 +3003,16 @@ async function runYad2AgencyDiscoverJob(params: {
 
     const dedupedUrls = Array.from(discoveredUrls);
     console.log(`Yad2 agency HTML discovery found ${dedupedUrls.length} unique listings across ${discoveryUrls.length} page set(s)`);
+
+    // If 0 URLs found, ShieldSquare likely blocked all pages — mark as CAPTCHA failure
+    if (dedupedUrls.length === 0) {
+      console.warn(`[Yad2] 0 listings discovered — ShieldSquare likely blocked Firecrawl`);
+      await sb.from("import_jobs").update({
+        status: "failed",
+        failure_reason: "captcha_blocked",
+      }).eq("id", jobId);
+      return;
+    }
 
     const { data: existingProperties } = await sb
       .from("properties")
@@ -3795,7 +3811,10 @@ Deno.serve(async (req) => {
 
     let result;
     if (action === "discover") {
-      if (body.source_type === "yad2") {
+      if (body.source_type === "yad2_apify") {
+        // Force Apify path — used as automatic Firecrawl fallback by yad2-retry-runner
+        result = await handleYad2Discover(body);
+      } else if (body.source_type === "yad2") {
         // Auto-detect agency profile page vs search results
         if (isYad2AgencyUrl(body.website_url)) {
           result = await handleYad2AgencyDiscover(body);
