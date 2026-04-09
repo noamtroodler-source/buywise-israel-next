@@ -1995,6 +1995,34 @@ async function processOneItem(
       });
     }
 
+    // Retry logic for transient errors (401/500/502/503)
+    if (!scrapeRes.ok && [401, 500, 502, 503].includes(scrapeRes.status)) {
+      const firstStatus = scrapeRes.status;
+      console.warn(`Scrape ${item.url} got ${firstStatus}, retrying in 2s...`);
+      await scrapeRes.text(); // consume body
+      await new Promise(r => setTimeout(r, 2000));
+      if (isYad2Item) {
+        const retryPromise = fetch("https://api.firecrawl.dev/v1/scrape", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${firecrawlKey}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ url: item.url, formats: ["markdown", "links", "html"], onlyMainContent: true, proxy: "stealth", waitFor: 5000 }),
+        });
+        const retryTimeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Yad2 retry timeout")), 35_000));
+        try {
+          scrapeRes = await Promise.race([retryPromise, retryTimeout]) as Response;
+        } catch (_e) {
+          await sb.from("import_job_items").update({ status: "failed", error_message: `Scrape retry timeout after initial ${firstStatus}`, error_type: "transient" }).eq("id", item.id);
+          return { succeeded: false };
+        }
+      } else {
+        scrapeRes = await fetch("https://api.firecrawl.dev/v1/scrape", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${firecrawlKey}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ url: item.url, formats: ["markdown", "links", "html"], onlyMainContent: true }),
+        });
+      }
+    }
+
     const scrapeData = await scrapeRes.json();
     if (!scrapeRes.ok) {
       const statusCode = scrapeRes.status;
@@ -2002,7 +2030,8 @@ async function processOneItem(
         await sb.from("import_job_items").update({ status: "skipped", error_message: `Page not found (${statusCode})`, error_type: "permanent" }).eq("id", item.id);
         return { succeeded: false };
       }
-      await sb.from("import_job_items").update({ status: "failed", error_message: `Scrape failed (${statusCode})`, error_type: "transient" }).eq("id", item.id);
+      const errorType = statusCode === 401 ? "blocked" : "transient";
+      await sb.from("import_job_items").update({ status: "failed", error_message: `Scrape failed (${statusCode}) after retry`, error_type: errorType }).eq("id", item.id);
       return { succeeded: false };
     }
 
@@ -2551,7 +2580,7 @@ async function processOneItem(
         // Auto-publish if quality score >= 60, else keep as draft
         is_published: confidenceScore >= 60,
         is_featured: false, views_count: 0,
-        verification_status: confidenceScore >= 60 ? "verified" : "draft",
+        verification_status: confidenceScore >= 60 ? "approved" : "draft",
         import_source: job.source_type === "yad2" ? "yad2" : job.source_type === "madlan" ? "madlan" : "website_scrape",
         source_url: item.url,
         data_quality_score: confidenceScore,
@@ -2634,8 +2663,8 @@ async function handleProcessBatch(body: any) {
   _geoQueue = Promise.resolve();
   _batchImageUrlCounts.clear();
 
-  let currentConcurrency = 5;
-  const MAX_CONCURRENCY = 5;
+  let currentConcurrency = 3;
+  const MAX_CONCURRENCY = 3;
   const MIN_CONCURRENCY = 2;
   const REFILL_SIZE = 10;
   const MAX_ITEMS = 25;
