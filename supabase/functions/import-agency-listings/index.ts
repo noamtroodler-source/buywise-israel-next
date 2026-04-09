@@ -2395,16 +2395,44 @@ async function processOneItem(
           source_last_checked_at: new Date().toISOString(),
         };
 
-        // Fill gaps: use new data only if existing field is missing/zero
-        if ((!existing.address || existing.address.trim() === "") && listing.address) patch.address = normalizeAddressForStorage(listing.address);
-        if (!existing.floor && listing.floor != null) patch.floor = listing.floor;
-        if (!existing.year_built && listing.year_built) patch.year_built = listing.year_built;
-        if (!existing.neighborhood && listing.neighborhood) patch.neighborhood = listing.neighborhood;
-        if ((!existing.size_sqm || existing.size_sqm === 0) && listing.size_sqm) patch.size_sqm = listing.size_sqm;
-        if ((!existing.bedrooms || existing.bedrooms === 0) && listing.bedrooms != null) patch.bedrooms = Math.floor(listing.bedrooms);
-        // Prefer non-zero price; if both non-zero, keep existing (first source wins)
-        if ((!existing.price || existing.price === 0) && listing.price > 0) patch.price = listing.price;
-        // Description: prefer longer one
+        // Structured data (Yad2 API via Apify) is authoritative for structural fields.
+        // It comes from the listing's own database record — more reliable than AI extraction
+        // from a scraped agency website page. Allow it to upgrade existing AI-extracted values.
+        const isStructuredSource = listing._has_structured_data === true;
+
+        if (isStructuredSource) {
+          // Structured source WINS on structural fields — overwrite AI-extracted values
+          if (listing.floor != null) patch.floor = listing.floor;
+          if (listing.size_sqm && listing.size_sqm > 0) patch.size_sqm = listing.size_sqm;
+          if (listing.bedrooms != null) patch.bedrooms = Math.floor(listing.bedrooms);
+          if (listing.price > 0) {
+            // Log significant price discrepancy before overwriting
+            if (existing.price && existing.price > 0) {
+              const priceDiff = Math.abs(existing.price - listing.price) / existing.price;
+              if (priceDiff > 0.15) {
+                console.log(`[Merge] Price discrepancy ${Math.round(priceDiff * 100)}%: existing=${existing.price} new(structured)=${listing.price} — ${item.url}`);
+              }
+            }
+            patch.price = listing.price;
+          }
+          if (listing.parking != null) patch.parking = listing.parking;
+          if (listing.condition) patch.condition = listing.condition;
+          if (listing.year_built) patch.year_built = listing.year_built;
+          if (!existing.neighborhood && listing.neighborhood) patch.neighborhood = listing.neighborhood;
+          if ((!existing.address || existing.address.trim() === "") && listing.address) patch.address = normalizeAddressForStorage(listing.address);
+        } else {
+          // Non-structured source (AI-extracted from agency website / Madlan): gap-fill only
+          if ((!existing.address || existing.address.trim() === "") && listing.address) patch.address = normalizeAddressForStorage(listing.address);
+          if (!existing.floor && listing.floor != null) patch.floor = listing.floor;
+          if (!existing.year_built && listing.year_built) patch.year_built = listing.year_built;
+          if (!existing.neighborhood && listing.neighborhood) patch.neighborhood = listing.neighborhood;
+          if ((!existing.size_sqm || existing.size_sqm === 0) && listing.size_sqm) patch.size_sqm = listing.size_sqm;
+          if ((!existing.bedrooms || existing.bedrooms === 0) && listing.bedrooms != null) patch.bedrooms = Math.floor(listing.bedrooms);
+          // Non-zero price: keep existing (first source wins for AI-extracted data)
+          if ((!existing.price || existing.price === 0) && listing.price > 0) patch.price = listing.price;
+        }
+
+        // Description: longer wins regardless of source
         if (listing.description && (!existing.description || listing.description.length > existing.description.length)) {
           patch.description = listing.description;
         }
