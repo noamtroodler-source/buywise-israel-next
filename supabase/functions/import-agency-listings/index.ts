@@ -159,27 +159,12 @@ async function trackCost(sb: any, jobId: string, resourceType: string, quantity:
 // ─── SUPPORTED CITIES WHITELIST ─────────────────────────────────────────────
 
 const SUPPORTED_CITIES = [
-  // Greater Tel Aviv & Central
-  "Tel Aviv", "Ramat Gan", "Givatayim", "Bnei Brak",
-  "Bat Yam", "Holon", "Petah Tikva", "Rishon LeZion",
-  "Rehovot", "Ness Ziona", "Lod", "Ramla", "Yavne",
-  "Rosh HaAyin", "Or Yehuda", "Kiryat Ono", "Yehud",
-  // Sharon & North Tel Aviv suburbs
-  "Herzliya", "Ra'anana", "Kfar Saba", "Hod HaSharon",
-  "Ramat HaSharon", "Givat Shmuel", "Netanya", "Hadera",
-  "Pardes Hanna", "Binyamina", "Zichron Yaakov", "Caesarea",
-  // Jerusalem & surroundings
-  "Jerusalem", "Beit Shemesh", "Mevaseret Zion",
-  "Ma'ale Adumim", "Efrat", "Gush Etzion",
-  // Haifa & North
-  "Haifa", "Kiryat Bialik", "Kiryat Ata", "Kiryat Motzkin",
-  "Nahariya", "Acre", "Karmiel", "Yokneam", "Kiryat Tivon",
-  // Modi'in corridor
-  "Modi'in",
-  // South
-  "Ashdod", "Ashkelon", "Beer Sheva", "Eilat",
-  // Other Anglo/foreign-buyer markets
-  "Tiberias", "Safed",
+  "Ashdod", "Ashkelon", "Beer Sheva", "Beit Shemesh", "Caesarea",
+  "Efrat", "Eilat", "Givat Shmuel", "Gush Etzion", "Hadera",
+  "Haifa", "Herzliya", "Hod HaSharon", "Jerusalem", "Kfar Saba",
+  "Ma'ale Adumim", "Mevaseret Zion", "Modi'in", "Netanya",
+  "Pardes Hanna", "Petah Tikva", "Ra'anana", "Ramat Gan",
+  "Rehovot", "Rishon LeZion", "Tel Aviv", "Zichron Yaakov",
 ];
 
 // Common aliases/transliterations for supported cities
@@ -209,33 +194,8 @@ const CITY_ALIASES: Record<string, string[]> = {
   "Ramat Gan": ["ramat gan", "ramatgan", "ramat-gan", "רמת גן", "רמת-גן"],
   "Rehovot": ["rechovot", "rehovoth", "רחובות"],
   "Rishon LeZion": ["rishon lezion", "rishon le zion", "rishon le-zion", "rishon", "ראשון לציון"],
-  "Tel Aviv": ["telaviv", "tel aviv", "tlv", "tel avive", "tel-aviv", "tel aviv-yafo", "tel aviv yafo", "תל אביב", "תל אביב יפו", "תל-אביב"],
+  "Tel Aviv": ["telaviv", "tel aviv", "tlv", "tel avive", "tel-aviv", "tel aviv-yafo", "tel aviv yafo", "תל אביב", "תל אביב יפו", "תל-אביב", "jaffa", "yafo", "yaffo", "jaffa-yafo", "tel aviv jaffa", "יפו", "יפו תל אביב", "ajami", "florentin", "neve tzedek", "neve tsedek"],
   "Zichron Yaakov": ["zichron yaakov", "zichron yakov", "zichron jacob", "zichron ya'akov", "zikhron", "זכרון יעקב"],
-  // New cities
-  "Givatayim": ["givataim", "givatayim", "givat ayim", "גבעתיים"],
-  "Bnei Brak": ["bnei brak", "bene beraq", "bene brak", "bnai brak", "בני ברק"],
-  "Bat Yam": ["bat yam", "batyam", "bat-yam", "בת ים"],
-  "Holon": ["cholon", "חולון"],
-  "Ness Ziona": ["ness ziona", "nes ziona", "nes tziona", "ness tziona", "נס ציונה"],
-  "Lod": ["lod", "lydda", "לוד"],
-  "Ramla": ["ramle", "ramleh", "ramla", "רמלה"],
-  "Yavne": ["yavneh", "yavne", "jabne", "יבנה"],
-  "Rosh HaAyin": ["rosh ha'ayin", "rosh haayin", "rosh haain", "ראש העין"],
-  "Or Yehuda": ["or yehuda", "or jehuda", "אור יהודה"],
-  "Kiryat Ono": ["kiryat ono", "qiryat ono", "kiriat ono", "קריית אונו"],
-  "Yehud": ["yehud", "yehud monosson", "יהוד", "יהוד מונסון"],
-  "Ramat HaSharon": ["ramat hasharon", "ramat ha-sharon", "ramat sharon", "רמת השרון"],
-  "Binyamina": ["binyamina giv'at ada", "binyamina givat ada", "binyamina-giv'at ada", "בנימינה", "בנימינה גבעת עדה"],
-  "Kiryat Bialik": ["kiryat bialik", "qiryat bialik", "kiriat bialik", "קריית ביאליק"],
-  "Kiryat Ata": ["kiryat ata", "qiryat ata", "kiriat ata", "קריית אתא"],
-  "Kiryat Motzkin": ["kiryat motzkin", "qiryat motzkin", "kiriat motzkin", "קריית מוצקין"],
-  "Nahariya": ["nahariyya", "nahariyah", "naharya", "נהריה"],
-  "Acre": ["akko", "acco", "akka", "akra", "עכו"],
-  "Karmiel": ["carmiel", "qarmiel", "כרמיאל"],
-  "Yokneam": ["yokneam illit", "yoqne'am", "יוקנעם", "יוקנעם עילית"],
-  "Kiryat Tivon": ["kiryat tivon", "qiryat tiv'on", "kiriat tivon", "קריית טבעון"],
-  "Tiberias": ["tveria", "tiberiya", "tverya", "טבריה"],
-  "Safed": ["zfat", "tzfat", "safad", "sfat", "צפת"],
 };
 
 // Domain keywords → city mapping for inferring city from URL
@@ -271,29 +231,6 @@ const DOMAIN_CITY_HINTS: Record<string, string> = {
   "rechovot": "Rehovot",
   "rishon": "Rishon LeZion",
   "rishonlezion": "Rishon LeZion",
-  "ramathasharon": "Ramat HaSharon",
-  "ramatsharon": "Ramat HaSharon",
-  "batyam": "Bat Yam",
-  "holon": "Holon",
-  "bnei brak": "Bnei Brak",
-  "bneibrak": "Bnei Brak",
-  "givatayim": "Givatayim",
-  "nessziona": "Ness Ziona",
-  "nesziona": "Ness Ziona",
-  "roshhaayin": "Rosh HaAyin",
-  "kiriatono": "Kiryat Ono",
-  "nahariya": "Nahariya",
-  "nahariyya": "Nahariya",
-  "akko": "Acre",
-  "karmiel": "Karmiel",
-  "yokneam": "Yokneam",
-  "tiberias": "Tiberias",
-  "tveria": "Tiberias",
-  "safed": "Safed",
-  "tzfat": "Safed",
-  "binyamina": "Binyamina",
-  "yavne": "Yavne",
-  "ramla": "Ramla",
 };
 
 function normalizeCityStr(str: string): string {
@@ -1187,6 +1124,13 @@ async function handleDiscover(body: any) {
   const { error: itemsErr } = await sb.from("import_job_items").insert(items);
   if (itemsErr) throw new Error(`Failed to create job items: ${itemsErr.message}`);
 
+  // Kick off first process_batch immediately — it will self-chain until done
+  fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/import-agency-listings`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "process_batch", job_id: job.id }),
+  }).catch((e) => console.warn(`Failed to start processing job ${job.id}: ${e.message}`));
+
   return { job_id: job.id, total_listings: listingUrls.length, total_discovered: allUrls.length, new_urls: listingUrls.length, skipped_existing: skippedExisting };
 }
 
@@ -1654,9 +1598,6 @@ FOR PROPERTIES — extract these fields:
   If the description is already in good English, keep it as-is.
   Do NOT include the agent's name, phone number, or any Hebrew text in the description.
   Aim for 150-400 words. Write in paragraph form, not bullet points.
-- address: Always write in English/Latin characters. Transliterate Hebrew street names (e.g. "רחוב דיזנגוף" → "Dizengoff Street", "רחוב בן יהודה" → "Ben Yehuda Street"). Keep house numbers as-is.
-- neighborhood: Always write in English/Latin characters (e.g. "בקה" → "Baka", "רחביה" → "Rehavia", "נווה צדק" → "Neve Tzedek"). Use the well-known Anglo-Israeli spelling.
-- city: Always write in English (e.g. "תל אביב" → "Tel Aviv", "ירושלים" → "Jerusalem", "חיפה" → "Haifa").
 - In Israel, "rooms" (חדרים) = bedrooms + 1 living room. So 4 rooms = 3 bedrooms. Always subtract 1 for bedrooms.
 - Default currency is ILS (₪) unless explicitly stated otherwise.
 - Use the dictionary above for property types, not your own guess.
@@ -2537,6 +2478,7 @@ async function processOneItem(
         verification_status: confidenceScore >= 60 ? "verified" : "draft",
         import_source: job.source_type === "yad2" ? "yad2" : job.source_type === "madlan" ? "madlan" : "website_scrape",
         source_url: item.url,
+        source_agency_name: (job.agencies as any)?.name || null,
         data_quality_score: confidenceScore,
         location_confidence: listing.address?.length > 3 ? "exact" : listing.neighborhood ? "neighborhood" : "city",
         is_claimed: false,
@@ -2593,7 +2535,7 @@ async function handleProcessBatch(body: any) {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
 
   const { data: job, error: jobErr } = await sb
-    .from("import_jobs").select("*, agencies!inner(id, admin_user_id)").eq("id", job_id).single();
+    .from("import_jobs").select("*, agencies!inner(id, admin_user_id, name)").eq("id", job_id).single();
   if (jobErr || !job) throw new Error("Import job not found");
 
   const cachedDomainCity = inferCityFromDomain(job.website_url);
@@ -2702,6 +2644,15 @@ async function handleProcessBatch(body: any) {
   const newStatus = remainingCount === 0 ? "completed" : "ready";
 
   await sb.from("import_jobs").update({ processed_count: doneCount, failed_count: failedCount, status: newStatus }).eq("id", job_id);
+
+  // Self-chain: if items remain, fire another batch immediately
+  if (remainingCount > 0) {
+    fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/import-agency-listings`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "process_batch", job_id }),
+    }).catch((e) => console.warn(`Chain process_batch failed for ${job_id}: ${e.message}`));
+  }
 
   return { processed: totalProcessed, succeeded: totalSucceeded, failed: totalFailed, remaining: remainingCount, status: newStatus };
 }
@@ -3599,6 +3550,15 @@ async function runMadlanAgencyDiscoverJob(params: {
     }).eq("id", jobId);
 
     console.log(`[Madlan] discovery finished for job ${jobId}: ${newUrls.length} new URLs`);
+
+    // Kick off processing immediately — self-chains until complete
+    if (newUrls.length > 0) {
+      fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/import-agency-listings`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "process_batch", job_id: jobId }),
+      }).catch((e) => console.warn(`[Madlan] Failed to start processing job ${jobId}: ${e.message}`));
+    }
   } catch (err) {
     console.error(`[Madlan] discovery failed for job ${jobId}:`, err);
     await sb.from("import_jobs").update({ status: "failed" }).eq("id", jobId);
@@ -3633,14 +3593,12 @@ async function handleMadlanAgencyDiscover(body: any) {
     .single();
   if (jobErr || !job) throw new Error(`Failed to create import job: ${jobErr?.message}`);
 
-  EdgeRuntime.waitUntil(
-    runMadlanAgencyDiscoverJob({
-      jobId: job.id,
-      agencyId: agency_id,
-      websiteUrl: website_url,
-      effectiveImportType,
-    })
-  );
+  runMadlanAgencyDiscoverJob({
+    jobId: job.id,
+    agencyId: agency_id,
+    websiteUrl: website_url,
+    effectiveImportType,
+  }).catch((e) => console.error(`[Madlan] discover job failed: ${e.message}`));
 
   return {
     job_id: job.id,

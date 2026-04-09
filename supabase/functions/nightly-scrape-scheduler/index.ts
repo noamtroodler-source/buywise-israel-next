@@ -119,26 +119,23 @@ async function enqueueYad2Sources(
   return { enqueued, skipped };
 }
 
-/** Process a non-Yad2 job to completion */
-async function processJobToCompletion(jobId: string, maxBatches = 20): Promise<{
-  succeeded: number;
-  failed: number;
-  batches: number;
-}> {
-  let totalSucceeded = 0;
-  let totalFailed = 0;
-  let batches = 0;
-
-  for (let i = 0; i < maxBatches; i++) {
-    const result = await callImport({ action: "process_batch", job_id: jobId });
-    batches++;
-    totalSucceeded += result.succeeded || 0;
-    totalFailed += result.failed || 0;
-    if (result.status === "completed" || (result.remaining || 0) === 0) break;
-    await new Promise((r) => setTimeout(r, 2000));
-  }
-
-  return { succeeded: totalSucceeded, failed: totalFailed, batches };
+/** Fire a source import in the background — does not wait for completion */
+function fireSourceImport(source: any): void {
+  const sourceType = detectSourceType(source.source_url);
+  fetch(IMPORT_FN_URL(), {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${SERVICE_KEY()}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      action: "discover",
+      source_type: sourceType,
+      website_url: source.source_url,
+      agency_id: source.agency_id,
+      import_type: source.import_type || "resale",
+    }),
+  }).catch((e) => console.warn(`Failed to fire ${source.source_url}: ${e.message}`));
 }
 
 /** Re-scrape listings not checked in 48h */
@@ -220,10 +217,7 @@ Deno.serve(async (req) => {
     started_at: new Date().toISOString(),
     yad2_enqueued: 0,
     yad2_skipped: 0,
-    sources_processed: 0,
-    sources_failed: 0,
-    total_new_listings: 0,
-    total_failed_listings: 0,
+    sources_fired: 0,
     freshness: null,
     errors: [] as string[],
   };
@@ -284,76 +278,15 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ── Direct scrape non-Yad2 sources ───────────────────────────────────────
+    // ── Fire all non-Yad2 sources as background tasks ────────────────────────
+    // Each source runs independently in its own edge function call so we never
+    // block here waiting — import-agency-listings self-chains process_batch
+    // until the job is fully complete.
+    console.log(`Firing ${nonYad2Sources.length} non-Yad2 sources as background tasks`);
     for (const source of nonYad2Sources) {
-      const sourceType = detectSourceType(source.source_url);
-      try {
-        console.log(
-          `Processing [${sourceType}] ${source.source_url} (agency: ${source.agencies.name})`
-        );
-
-        const discoverBody = {
-          action: "discover",
-          source_type: sourceType,
-          website_url: source.source_url,
-          agency_id: source.agency_id,
-          import_type: source.import_type || "resale",
-        };
-
-        const discoverResult = await callImport(discoverBody);
-
-        if (discoverResult.error) throw new Error(discoverResult.error);
-
-        let succeeded = 0;
-        let failed = 0;
-
-        if (discoverResult.job_id && (discoverResult.new_urls || discoverResult.total_urls || 0) > 0) {
-          const processResult = await processJobToCompletion(discoverResult.job_id);
-          succeeded = processResult.succeeded;
-          failed = processResult.failed;
-          console.log(`  → ${succeeded} new listings imported, ${failed} failed`);
-        } else {
-          console.log(`  → No new URLs found`);
-        }
-
-        // Update source sync state — only reset consecutive_failures for real successes
-        await sb.from("agency_sources").update({
-          last_synced_at: new Date().toISOString(),
-          last_sync_job_id: discoverResult.job_id || null,
-          last_sync_listings_found: discoverResult.new_urls || discoverResult.total_urls || 0,
-          consecutive_failures: 0,
-          last_failure_reason: null,
-        }).eq("id", source.id);
-
-        (summary.sources_processed as number)++;
-        (summary.total_new_listings as number) += succeeded;
-        (summary.total_failed_listings as number) += failed;
-      } catch (err: unknown) {
-        const errMsg = err instanceof Error ? err.message : String(err);
-        console.error(`Source ${source.id} failed: ${errMsg}`);
-
-        const newFailureCount = (source.consecutive_failures || 0) + 1;
-        const shouldDisable = newFailureCount >= 5;
-
-        await sb.from("agency_sources").update({
-          consecutive_failures: newFailureCount,
-          last_failure_reason: errMsg.slice(0, 500),
-          is_active: shouldDisable ? false : source.is_active,
-        }).eq("id", source.id);
-
-        if (shouldDisable) {
-          console.warn(`Source ${source.id} disabled after ${newFailureCount} consecutive failures`);
-        }
-
-        (summary.sources_failed as number)++;
-        (summary.errors as string[]).push(
-          `[${sourceType}] ${source.source_url}: ${errMsg.slice(0, 200)}`
-        );
-      }
-
-      // Pace between sources
-      await new Promise((r) => setTimeout(r, 3000));
+      fireSourceImport(source);
     }
+    summary.sources_fired = nonYad2Sources.length;
 
     // ── Freshness check ───────────────────────────────────────────────────────
     try {
