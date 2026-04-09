@@ -170,6 +170,52 @@ async function processSourceInBackground(source: any): Promise<void> {
 }
 
 /**
+ * Stall recovery: find import_jobs with pending items that haven't been
+ * updated in 10+ minutes and re-fire process_batch for them.
+ */
+async function runStallRecovery(): Promise<void> {
+  const sb = supabaseAdmin();
+  try {
+    const cutoff = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+
+    // Find jobs that still have pending items
+    const { data: stalledJobs } = await sb
+      .from("import_jobs")
+      .select("id")
+      .eq("status", "processing")
+      .lt("updated_at", cutoff)
+      .limit(20);
+
+    if (!stalledJobs?.length) {
+      console.log("[BG] Stall recovery: no stalled jobs found");
+      return;
+    }
+
+    console.log(`[BG] Stall recovery: ${stalledJobs.length} stalled jobs, re-triggering`);
+
+    for (const job of stalledJobs) {
+      try {
+        await fetch(IMPORT_FN_URL(), {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${SERVICE_KEY()}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ action: "process_batch", job_id: job.id }),
+        });
+        console.log(`[BG] Re-triggered batch for stalled job ${job.id}`);
+      } catch (e) {
+        console.warn(`[BG] Failed to re-trigger job ${job.id}:`, e);
+      }
+      // Small delay between re-triggers
+      await new Promise(r => setTimeout(r, 1000));
+    }
+  } catch (err) {
+    console.error("[BG] Stall recovery error:", err);
+  }
+}
+
+/**
  * Run freshness check for stale listings in the background.
  */
 async function runFreshnessCheckInBackground(): Promise<void> {
