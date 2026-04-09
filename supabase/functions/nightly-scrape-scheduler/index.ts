@@ -4,14 +4,11 @@
  * Runs weekly (Friday 2 AM Israel time via pg_cron).
  *
  * Strategy:
- *   - Non-Yad2 sources (agency websites, Madlan): discover + import directly
+ *   - Non-Yad2 sources (agency websites, Madlan): fire as background tasks via EdgeRuntime.waitUntil
  *   - Yad2 sources: enqueue to yad2_scrape_queue with staggered timing
  *     The yad2-retry-runner (every 30 min) handles actual scraping + retries
  *
- * This separation is critical because:
- *   - Yad2 discovery is async (EdgeRuntime.waitUntil) — no synchronous result
- *   - Yad2 is blocked by ShieldSquare — needs smart retries + CAPTCHA handling
- *   - Staggered timing prevents multiple agencies hitting Yad2 simultaneously
+ * Returns in seconds — all heavy work runs in the background.
  */
 
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -107,62 +104,108 @@ async function enqueueYad2Sources(
   return { enqueued, skipped };
 }
 
-async function processJobToCompletion(
-  jobId: string,
-  maxBatches = 20,
-): Promise<{
-  succeeded: number;
-  failed: number;
-  batches: number;
-}> {
-  let totalSucceeded = 0;
-  let totalFailed = 0;
-  let batches = 0;
+/**
+ * Process a single non-Yad2 source end-to-end in the background.
+ * Discover → process all batches → update agency_sources.
+ */
+async function processSourceInBackground(source: any): Promise<void> {
+  const sb = supabaseAdmin();
+  const sourceType = detectSourceType(source.source_url);
 
-  for (let i = 0; i < maxBatches; i++) {
-    const result = await callImport({ action: "process_batch", job_id: jobId });
-    batches++;
-    totalSucceeded += result.succeeded || 0;
-    totalFailed += result.failed || 0;
-    if (result.status === "completed" || (result.remaining || 0) === 0) break;
-    await new Promise((r) => setTimeout(r, 2000));
+  try {
+    console.log(`[BG] Processing [${sourceType}] ${source.source_url} (agency: ${source.agencies?.name})`);
+
+    // 1. Discover
+    const discoverResult = await callImport({
+      action: "discover",
+      source_type: sourceType,
+      website_url: source.source_url,
+      agency_id: source.agency_id,
+      import_type: source.import_type || "resale",
+    });
+
+    if (discoverResult.error) throw new Error(discoverResult.error);
+
+    let succeeded = 0;
+    let failed = 0;
+
+    // 2. Process all batches (import-agency-listings self-chains, but kick off the first batch)
+    if (discoverResult.job_id && (discoverResult.new_urls || discoverResult.total_urls || 0) > 0) {
+      // Fire the first batch — import-agency-listings will self-chain remaining batches
+      const processResult = await callImport({ action: "process_batch", job_id: discoverResult.job_id });
+      succeeded = processResult.succeeded || 0;
+      failed = processResult.failed || 0;
+      console.log(`[BG] ${source.source_url}: first batch ${succeeded} ok, ${failed} failed, ${processResult.remaining || 0} remaining (self-chaining)`);
+    } else {
+      console.log(`[BG] ${source.source_url}: No new URLs found`);
+    }
+
+    // 3. Update agency_sources
+    await sb
+      .from("agency_sources")
+      .update({
+        last_synced_at: new Date().toISOString(),
+        last_sync_job_id: discoverResult.job_id || null,
+        last_sync_listings_found: discoverResult.new_urls || discoverResult.total_urls || 0,
+        consecutive_failures: 0,
+        last_failure_reason: null,
+      })
+      .eq("id", source.id);
+  } catch (err: unknown) {
+    const errMsg = err instanceof Error ? err.message : String(err);
+    console.error(`[BG] Source ${source.id} failed: ${errMsg}`);
+
+    const newFailureCount = (source.consecutive_failures || 0) + 1;
+    const shouldDisable = newFailureCount >= 5;
+
+    await sb
+      .from("agency_sources")
+      .update({
+        consecutive_failures: newFailureCount,
+        last_failure_reason: errMsg.slice(0, 500),
+        is_active: shouldDisable ? false : source.is_active,
+      })
+      .eq("id", source.id);
   }
-
-  return { succeeded: totalSucceeded, failed: totalFailed, batches };
 }
 
-async function runFreshnessCheck(sb: ReturnType<typeof supabaseAdmin>): Promise<{
-  checked: number;
-  removed: number;
-  priceChanges: number;
-}> {
-  const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+/**
+ * Run freshness check for stale listings in the background.
+ */
+async function runFreshnessCheckInBackground(): Promise<void> {
+  const sb = supabaseAdmin();
+  try {
+    const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
 
-  const { data: staleListings } = await sb
-    .from("properties")
-    .select("id, source_url, price")
-    .not("source_url", "is", null)
-    .eq("is_published", true)
-    .or(`source_last_checked_at.is.null,source_last_checked_at.lt.${cutoff}`)
-    .neq("source_status", "removed")
-    .limit(100);
+    const { data: staleListings } = await sb
+      .from("properties")
+      .select("id, source_url, price")
+      .not("source_url", "is", null)
+      .eq("is_published", true)
+      .or(`source_last_checked_at.is.null,source_last_checked_at.lt.${cutoff}`)
+      .neq("source_status", "removed")
+      .limit(100);
 
-  if (!staleListings?.length) return { checked: 0, removed: 0, priceChanges: 0 };
+    if (!staleListings?.length) {
+      console.log("[BG] Freshness check: 0 stale listings");
+      return;
+    }
 
-  console.log(`Freshness check: ${staleListings.length} listings to check`);
+    console.log(`[BG] Freshness check: ${staleListings.length} listings to check`);
 
-  const items = staleListings.map((l: any) => ({
-    property_id: l.id,
-    source_url: l.source_url,
-    current_price: l.price,
-  }));
+    const items = staleListings.map((l: any) => ({
+      property_id: l.id,
+      source_url: l.source_url,
+      current_price: l.price,
+    }));
 
-  const result = await callImport({ action: "check_existing", agency_id: "system", items });
-  return {
-    checked: result.checked || 0,
-    removed: result.removed?.length || 0,
-    priceChanges: result.price_changes?.length || 0,
-  };
+    const result = await callImport({ action: "check_existing", agency_id: "system", items });
+    console.log(
+      `[BG] Freshness: checked=${result.checked || 0}, removed=${result.removed?.length || 0}, price_changes=${result.price_changes?.length || 0}`,
+    );
+  } catch (err: unknown) {
+    console.error("[BG] Freshness check failed:", err);
+  }
 }
 
 Deno.serve(async (req) => {
@@ -205,17 +248,13 @@ Deno.serve(async (req) => {
   }
 
   const sb = supabaseAdmin();
-  const startTime = Date.now();
   const summary: Record<string, unknown> = {
     started_at: new Date().toISOString(),
     yad2_enqueued: 0,
     yad2_skipped: 0,
-    sources_processed: 0,
-    sources_failed: 0,
-    total_new_listings: 0,
-    total_failed_listings: 0,
-    freshness: null,
-    errors: [] as string[],
+    non_yad2_fired: 0,
+    freshness_fired: true,
+    mode: "background",
   };
 
   try {
@@ -239,8 +278,9 @@ Deno.serve(async (req) => {
     const nonYad2Sources = sources.filter((s: any) => detectSourceType(s.source_url) !== "yad2");
 
     console.log(`  ${yad2Sources.length} Yad2 sources → queuing for retry-runner`);
-    console.log(`  ${nonYad2Sources.length} non-Yad2 sources → direct scrape`);
+    console.log(`  ${nonYad2Sources.length} non-Yad2 sources → firing as background tasks`);
 
+    // ── Yad2: enqueue for retry-runner ──
     if (yad2Sources.length > 0) {
       await sb.from("yad2_scrape_queue").delete().neq("id", "00000000-0000-0000-0000-000000000000");
 
@@ -263,85 +303,16 @@ Deno.serve(async (req) => {
       }
     }
 
+    // ── Non-Yad2: fire ALL as background tasks, return immediately ──
     for (const source of nonYad2Sources) {
-      const sourceType = detectSourceType(source.source_url);
-      try {
-        console.log(`Processing [${sourceType}] ${source.source_url} (agency: ${source.agencies?.name})`);
-
-        const discoverResult = await callImport({
-          action: "discover",
-          source_type: sourceType,
-          website_url: source.source_url,
-          agency_id: source.agency_id,
-          import_type: source.import_type || "resale",
-        });
-
-        if (discoverResult.error) throw new Error(discoverResult.error);
-
-        let succeeded = 0;
-        let failed = 0;
-
-        if (discoverResult.job_id && (discoverResult.new_urls || discoverResult.total_urls || 0) > 0) {
-          const processResult = await processJobToCompletion(discoverResult.job_id);
-          succeeded = processResult.succeeded;
-          failed = processResult.failed;
-          console.log(`  → ${succeeded} new listings imported, ${failed} failed`);
-        } else {
-          console.log(`  → No new URLs found`);
-        }
-
-        await sb
-          .from("agency_sources")
-          .update({
-            last_synced_at: new Date().toISOString(),
-            last_sync_job_id: discoverResult.job_id || null,
-            last_sync_listings_found: discoverResult.new_urls || discoverResult.total_urls || 0,
-            consecutive_failures: 0,
-            last_failure_reason: null,
-          })
-          .eq("id", source.id);
-
-        (summary.sources_processed as number)++;
-        (summary.total_new_listings as number) += succeeded;
-        (summary.total_failed_listings as number) += failed;
-      } catch (err: unknown) {
-        const errMsg = err instanceof Error ? err.message : String(err);
-        console.error(`Source ${source.id} failed: ${errMsg}`);
-
-        const newFailureCount = (source.consecutive_failures || 0) + 1;
-        const shouldDisable = newFailureCount >= 5;
-
-        await sb
-          .from("agency_sources")
-          .update({
-            consecutive_failures: newFailureCount,
-            last_failure_reason: errMsg.slice(0, 500),
-            is_active: shouldDisable ? false : source.is_active,
-          })
-          .eq("id", source.id);
-
-        (summary.sources_failed as number)++;
-        (summary.errors as string[]).push(`[${sourceType}] ${source.source_url}: ${errMsg.slice(0, 200)}`);
-      }
-
-      await new Promise((r) => setTimeout(r, 3000));
+      EdgeRuntime.waitUntil(processSourceInBackground(source));
     }
+    summary.non_yad2_fired = nonYad2Sources.length;
 
-    try {
-      const freshnessResult = await runFreshnessCheck(sb);
-      summary.freshness = freshnessResult;
-      console.log(
-        `Freshness: checked=${freshnessResult.checked}, removed=${freshnessResult.removed}, price_changes=${freshnessResult.priceChanges}`,
-      );
-    } catch (err: unknown) {
-      console.error("Freshness check failed:", err);
-      (summary.errors as string[]).push(`Freshness check failed: ${err instanceof Error ? err.message : String(err)}`);
-    }
+    // ── Freshness check: also background ──
+    EdgeRuntime.waitUntil(runFreshnessCheckInBackground());
 
-    summary.completed_at = new Date().toISOString();
-    summary.duration_seconds = Math.round((Date.now() - startTime) / 1000);
-
-    console.log("Nightly scrape complete:", JSON.stringify(summary));
+    console.log(`Nightly scrape: returning immediately. ${nonYad2Sources.length} background tasks fired.`);
 
     return new Response(JSON.stringify(summary), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
