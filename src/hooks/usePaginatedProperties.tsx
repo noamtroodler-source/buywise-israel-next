@@ -304,9 +304,9 @@ function applyFilters(query: any, filters?: PropertyFilters) {
       .lte('longitude', filters.bounds.east);
   }
 
-  // Partner agencies filter — only show direct listings (not scraped)
+  // Sourced listings filter — only show scraped/imported listings
   if (filters.sourced_only) {
-    query = query.is('import_source', null);
+    query = query.not('import_source', 'is', null);
   }
 
   return query;

@@ -1,6 +1,6 @@
 import { useState, memo, useMemo, useCallback, forwardRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Bed, Bath, Maximize, MapPin, ChevronLeft, ChevronRight, Wallet, Sparkles, Clock, TrendingDown, TrendingUp, Flame, Zap, Building2, ImageOff, Camera } from 'lucide-react';
+import { Bed, Bath, Maximize, MapPin, ChevronLeft, ChevronRight, Wallet, Sparkles, Clock, TrendingDown, TrendingUp, Flame, Zap, Building2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Property } from '@/types/database';
@@ -59,31 +59,6 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
   const images = property.images?.length ? property.images : [];
   const hasMultipleImages = images.length > 1;
   const placeholderImage = 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&auto=format&fit=crop&q=60';
-  const isSourced = !!(property as any).import_source && !(property as any).is_claimed;
-  const showNoPhotos = isSourced && images.length === 0;
-  const [streetViewFailed, setStreetViewFailed] = useState(false);
-  const [streetViewLoaded, setStreetViewLoaded] = useState(false);
-
-  // Build Street View URLs for sourced listings with no photos.
-  // No heading= → Google auto-orients toward the property. source=outdoor avoids indoor panoramas.
-  // Compact cards are 4:3, non-compact are 16:10 — request matching sizes for sharpest crop.
-  const streetViewUrl = useMemo(() => {
-    if (!showNoPhotos) return null;
-    const googleMapsKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-    if (!googleMapsKey) return null;
-    const lat = (property as any).latitude;
-    const lng = (property as any).longitude;
-    const address = (property as any).address;
-    const city = property.city;
-    const makeUrl = (size: string) => {
-      const base = `size=${size}&fov=90&pitch=5&source=outdoor&return_error_code=true&key=${googleMapsKey}`;
-      if (lat && lng) return `https://maps.googleapis.com/maps/api/streetview?${base}&location=${lat},${lng}`;
-      if (address && city) return `https://maps.googleapis.com/maps/api/streetview?${base}&location=${encodeURIComponent(`${address}, ${city}, Israel`)}`;
-      return null;
-    };
-    // compact=true → aspect-[4/3] → 600x450; compact=false → aspect-[16/10] → 720x450
-    return compact ? makeUrl('600x450') : makeUrl('720x450');
-  }, [showNoPhotos, property, compact]);
 
   // Freshness tier for "Days on Market" prominence
   type FreshnessTier = 'hot' | 'fresh' | 'standard' | 'stale';
@@ -214,61 +189,28 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
             /* Compact Mode: Stacked Layout - Image + Content Below (Zillow-style) */
             <>
               <div className="relative aspect-[4/3] overflow-hidden rounded-t-xl" {...touchHandlers}>
-                {showNoPhotos ? (
-                  streetViewUrl && !streetViewFailed ? (
-                    <>
-                      {!streetViewLoaded && (
-                        <div className="absolute inset-0 bg-muted animate-pulse" />
-                      )}
-                      <img
-                        src={streetViewUrl}
-                        alt={`Street view of ${(property as any).neighborhood || property.city}`}
-                        className={cn(
-                          "absolute inset-0 w-full h-full object-cover select-none group-hover:scale-105 transition-all duration-300",
-                          streetViewLoaded ? "opacity-100" : "opacity-0"
-                        )}
-                        onLoad={() => setStreetViewLoaded(true)}
-                        onError={() => setStreetViewFailed(true)}
-                      />
-                      <div className="absolute bottom-2 left-2 z-10">
-                        <span className="bg-black/60 text-white text-xs px-2 py-0.5 rounded-full backdrop-blur-sm flex items-center gap-1">
-                          <Camera className="w-3 h-3" />
-                          Street view
-                        </span>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="absolute inset-0 bg-muted flex flex-col items-center justify-center gap-1.5 text-muted-foreground">
-                      <ImageOff className="h-7 w-7 opacity-30" />
-                      <p className="text-xs font-medium opacity-50">No photos yet</p>
-                    </div>
-                  )
-                ) : (
-                  <>
-                    {/* Loading skeleton */}
-                    {!imageLoaded && (
-                      <div className="absolute inset-0 bg-muted animate-pulse" />
-                    )}
-                    <img
-                      src={currentImage}
-                      srcSet={currentImage.includes('unsplash.com')
-                        ? `${currentImage.replace('w=800', 'w=400')} 400w, ${currentImage.replace('w=800', 'w=600')} 600w, ${currentImage} 800w`
-                        : undefined}
-                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                      alt={property.title}
-                      loading="lazy"
-                      decoding="async"
-                      draggable={false}
-                      onDragStart={(e) => e.preventDefault()}
-                      className={cn(
-                        "absolute inset-0 w-full h-full object-cover select-none group-hover:scale-105 transition-all duration-300",
-                        imageLoaded ? "opacity-100" : "opacity-0"
-                      )}
-                      onLoad={handleImageLoad}
-                      onError={handleImageError}
-                    />
-                  </>
+                {/* Loading skeleton */}
+                {!imageLoaded && (
+                  <div className="absolute inset-0 bg-muted animate-pulse" />
                 )}
+                <img
+                  src={currentImage}
+                  srcSet={currentImage.includes('unsplash.com') 
+                    ? `${currentImage.replace('w=800', 'w=400')} 400w, ${currentImage.replace('w=800', 'w=600')} 600w, ${currentImage} 800w`
+                    : undefined}
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  alt={property.title}
+                  loading="lazy"
+                  decoding="async"
+                  draggable={false}
+                  onDragStart={(e) => e.preventDefault()}
+                  className={cn(
+                    "absolute inset-0 w-full h-full object-cover select-none group-hover:scale-105 transition-all duration-300",
+                    imageLoaded ? "opacity-100" : "opacity-0"
+                  )}
+                  onLoad={handleImageLoad}
+                  onError={handleImageError}
+                />
 
                 {/* Progress Bar - Bottom of image, always visible on mobile */}
                 {hasMultipleImages && (
@@ -340,7 +282,7 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                     // Sourced badge for unclaimed imported listings
                     if ((property as any).import_source && !(property as any).is_claimed) {
                       badges.push(
-                        <Badge key="sourced" className="bg-black/60 text-white border-0 backdrop-blur-sm text-xs font-medium">
+                        <Badge key="sourced" className="bg-semantic-amber/15 text-foreground border-semantic-amber/30 text-xs font-medium">
                           <Building2 className="h-3 w-3 mr-1" />
                           Sourced
                         </Badge>
@@ -482,61 +424,28 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
             /* Non-Compact Mode: Standard Layout */
             <>
               <div className="relative aspect-[16/10] overflow-hidden" {...touchHandlers}>
-                {showNoPhotos ? (
-                  streetViewUrl && !streetViewFailed ? (
-                    <>
-                      {!streetViewLoaded && (
-                        <div className="absolute inset-0 bg-muted animate-pulse" />
-                      )}
-                      <img
-                        src={streetViewUrl}
-                        alt={`Street view of ${(property as any).neighborhood || property.city}`}
-                        className={cn(
-                          "absolute inset-0 w-full h-full object-cover select-none group-hover:scale-105 transition-all duration-300",
-                          streetViewLoaded ? "opacity-100" : "opacity-0"
-                        )}
-                        onLoad={() => setStreetViewLoaded(true)}
-                        onError={() => setStreetViewFailed(true)}
-                      />
-                      <div className="absolute bottom-2 left-2 z-10">
-                        <span className="bg-black/60 text-white text-xs px-2 py-0.5 rounded-full backdrop-blur-sm flex items-center gap-1">
-                          <Camera className="w-3 h-3" />
-                          Street view
-                        </span>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="absolute inset-0 bg-muted flex flex-col items-center justify-center gap-1.5 text-muted-foreground">
-                      <ImageOff className="h-8 w-8 opacity-30" />
-                      <p className="text-xs font-medium opacity-50">No photos yet</p>
-                    </div>
-                  )
-                ) : (
-                  <>
-                    {/* Loading skeleton */}
-                    {!imageLoaded && (
-                      <div className="absolute inset-0 bg-muted animate-pulse" />
-                    )}
-                    <img
-                      src={currentImage}
-                      srcSet={currentImage.includes('unsplash.com')
-                        ? `${currentImage.replace('w=800', 'w=400')} 400w, ${currentImage.replace('w=800', 'w=600')} 600w, ${currentImage} 800w`
-                        : undefined}
-                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                      alt={property.title}
-                      loading="lazy"
-                      decoding="async"
-                      draggable={false}
-                      onDragStart={(e) => e.preventDefault()}
-                      className={cn(
-                        "w-full h-full object-cover select-none group-hover:scale-105 transition-all duration-300",
-                        imageLoaded ? "opacity-100" : "opacity-0"
-                      )}
-                      onLoad={handleImageLoad}
-                      onError={handleImageError}
-                    />
-                  </>
+                {/* Loading skeleton */}
+                {!imageLoaded && (
+                  <div className="absolute inset-0 bg-muted animate-pulse" />
                 )}
+                 <img
+                   src={currentImage}
+                   srcSet={currentImage.includes('unsplash.com') 
+                     ? `${currentImage.replace('w=800', 'w=400')} 400w, ${currentImage.replace('w=800', 'w=600')} 600w, ${currentImage} 800w`
+                     : undefined}
+                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                   alt={property.title}
+                   loading="lazy"
+                   decoding="async"
+                   draggable={false}
+                   onDragStart={(e) => e.preventDefault()}
+                   className={cn(
+                     "w-full h-full object-cover select-none group-hover:scale-105 transition-all duration-300",
+                     imageLoaded ? "opacity-100" : "opacity-0"
+                   )}
+                   onLoad={handleImageLoad}
+                   onError={handleImageError}
+                 />
                 
                 {/* Image Navigation Arrows */}
                 {hasMultipleImages && (
@@ -605,7 +514,7 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                     // Sourced badge for unclaimed imported listings
                     if ((property as any).import_source && !(property as any).is_claimed) {
                       badges.push(
-                        <Badge key="sourced" className="bg-black/60 text-white border-0 backdrop-blur-sm text-xs font-medium">
+                        <Badge key="sourced" className="bg-semantic-amber/15 text-foreground border-semantic-amber/30 text-xs font-medium">
                           <Building2 className="h-3 w-3 mr-1" />
                           Sourced
                         </Badge>

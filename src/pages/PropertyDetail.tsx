@@ -28,10 +28,10 @@ import { SupportFooter } from '@/components/shared/SupportFooter';
 import { ListingDisclaimer } from '@/components/shared/ListingDisclaimer';
 import { UnclaimedListingBanner, StreetViewFallback, ClaimListingDialog } from '@/components/property/UnclaimedListingBanner';
 import { CoListingAgents } from '@/components/property/CoListingAgents';
+import { SourcedListingEnrichment } from '@/components/property/SourcedListingEnrichment';
 import { MarketDataContext } from '@/components/shared/MarketDataContext';
 import { ListingFeedback } from '@/components/listings/ListingFeedback';
 import { ReportListingButton } from '@/components/property/ReportListingButton';
-import { SourceAttributionBadge } from '@/components/property/SourceAttributionBadge';
 import { MobileSectionNav } from '@/components/property/MobileSectionNav';
 import { DualNavigation } from '@/components/shared/DualNavigation';
 import { MobileCollapsibleSection } from '@/components/property/MobileCollapsibleSection';
@@ -186,10 +186,9 @@ export default function PropertyDetail() {
                 onSave={handleSave}
                 onShare={handleShare}
                 isSaved={isSaved}
-                isSourced={!!(property as any).import_source && !(property as any).is_claimed}
               />
-              {/* Street View fallback for sourced (scraped) listings with no photos */}
-              {!(property as any).is_claimed && !!(property as any).import_source && !property.images?.length && (
+              {/* Street View fallback for unclaimed listings with no photos */}
+              {!(property as any).is_claimed && !property.images?.length && (
                 <div className="mt-3 px-4 md:px-0">
                   <StreetViewFallback
                     address={property.address}
@@ -205,7 +204,6 @@ export default function PropertyDetail() {
               {!(property as any).is_claimed && (property as any).import_source && (
                 <div className="mt-3 px-4 md:px-0">
                   <UnclaimedListingBanner
-                    propertyId={property.id}
                     sourceUrl={(property as any).source_url}
                     sourceName={
                       (property as any).import_source === 'yad2'
@@ -216,22 +214,6 @@ export default function PropertyDetail() {
                     }
                     lastCheckedAt={(property as any).source_last_checked_at}
                     onClaimClick={() => setShowClaimDialog(true)}
-                  />
-                </div>
-              )}
-
-              {/* Source attribution — for CLAIMED scraped listings only.
-                  Unclaimed listings already show "View original listing" inside
-                  the UnclaimedListingBanner above, so we skip it there. */}
-              {(property as any).import_source && (property as any).is_claimed && (
-                <div className="mt-2 px-4 md:px-0">
-                  <SourceAttributionBadge
-                    propertyId={property.id}
-                    importSource={(property as any).import_source}
-                    sourceUrl={(property as any).source_url}
-                    mergedSourceUrls={(property as any).merged_source_urls}
-                    sourceAgencyName={(property as any).source_agency_name}
-                    page="detail"
                   />
                 </div>
               )}
@@ -358,8 +340,7 @@ export default function PropertyDetail() {
             </motion.div>
 
             {/* Neighborhood Guide - After location */}
-            {/* Falls back to city-level guide when neighborhood is unknown (common for scraped listings) */}
-            {(property.neighborhood || property.city) && (
+            {property.neighborhood && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -368,9 +349,9 @@ export default function PropertyDetail() {
               >
                 <MobileCollapsibleSection
                   id="neighborhood-guide"
-                  title={property.neighborhood ? `${property.neighborhood} Guide` : `${property.city} Area Guide`}
+                  title={`${property.neighborhood} Guide`}
                   icon={<Compass className="h-5 w-5" />}
-                  summary={`Know the area before you commit`}
+                  summary={`Know the neighborhood before you commit`}
                   alwaysStartClosed
                 >
                   <NeighborhoodContextCard
@@ -442,7 +423,7 @@ export default function PropertyDetail() {
           {/* Sticky Sidebar - Desktop Only */}
           <div className="hidden lg:block">
             <div className="sticky top-20 space-y-4">
-              <StickyContactCard
+              <StickyContactCard 
                 agent={property.agent}
                 propertyId={property.id}
                 propertyTitle={property.title}
@@ -450,12 +431,15 @@ export default function PropertyDetail() {
                 isSaved={isSaved}
                 isSourced={!!(property as any).import_source && !(property as any).is_claimed}
                 propertyCity={property.city}
-                sourceAgentName={(property as any).source_agent_name}
-                sourceAgentPhone={(property as any).source_agent_phone}
-                sourceAgencyName={(property as any).source_agency_name}
-                sourceUrl={(property as any).source_url}
-                importSource={(property as any).import_source}
               />
+              {/* Sourced listing enrichment card in sidebar — price intel, costs, community */}
+              {(property as any).import_source && !(property as any).is_claimed && (
+                <SourcedListingEnrichment
+                  property={property as any}
+                  citySlug={citySlug}
+                />
+              )}
+
               {/* Co-listing agents — shown when multiple agencies list same property */}
               {(property as any).co_agents?.length > 0 && (
                 <CoListingAgents coAgents={(property as any).co_agents} />
@@ -486,7 +470,7 @@ export default function PropertyDetail() {
       )}
 
       {/* Mobile Contact Bar */}
-      <MobileContactBar
+      <MobileContactBar 
         agent={property.agent}
         propertyId={property.id}
         propertyTitle={property.title}
@@ -494,8 +478,6 @@ export default function PropertyDetail() {
         isSaved={isSaved}
         onSave={handleSave}
         onShare={handleShare}
-        sourceAgentName={(property as any).source_agent_name}
-        sourceAgentPhone={(property as any).source_agent_phone}
       />
     </Layout>
   );

@@ -79,8 +79,6 @@ function AddSourceDialog({
     notes: '',
   });
 
-  const [agencySearch, setAgencySearch] = useState('');
-
   const { data: agencies = [] } = useQuery({
     queryKey: ['admin-agencies-list'],
     queryFn: async () => {
@@ -422,6 +420,7 @@ function ClaimRow({ claim }: { claim: ClaimRequest }) {
 export default function AdminScrapingSources() {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const [agencySearch, setAgencySearch] = useState('');
   const [activeTab, setActiveTab] = useState<'sources' | 'claims'>('sources');
 
   const { data: sources = [], isLoading: sourcesLoading } = useAgencySources();

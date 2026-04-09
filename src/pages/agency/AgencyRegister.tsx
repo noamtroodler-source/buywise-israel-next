@@ -447,9 +447,8 @@ export default function AgencyRegister() {
               status: 'pending',
             });
         } catch (claimErr) {
-          // Non-fatal — agency created successfully, but warn the user so the claim isn't silently lost
+          // Non-fatal — claim can be associated manually
           console.error('Failed to store listing claim:', claimErr);
-          toast.warning('Your agency was created, but we couldn\'t submit the listing claim automatically. Please contact us at hello@buywiseisrael.com to link your listing.');
         }
       }
 

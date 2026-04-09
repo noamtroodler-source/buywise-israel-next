@@ -456,86 +456,6 @@ export type Database = {
           },
         ]
       }
-      agency_sources: {
-        Row: {
-          agency_id: string | null
-          consecutive_failures: number
-          created_at: string
-          id: string
-          is_active: boolean
-          last_failure_reason: string | null
-          last_sync_job_id: string | null
-          last_sync_listings_found: number | null
-          last_synced_at: string | null
-          notes: string | null
-          priority: number
-          source_type: string
-          source_url: string
-          updated_at: string
-        }
-        Insert: {
-          agency_id?: string | null
-          consecutive_failures?: number
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          last_failure_reason?: string | null
-          last_sync_job_id?: string | null
-          last_sync_listings_found?: number | null
-          last_synced_at?: string | null
-          notes?: string | null
-          priority?: number
-          source_type: string
-          source_url: string
-          updated_at?: string
-        }
-        Update: {
-          agency_id?: string | null
-          consecutive_failures?: number
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          last_failure_reason?: string | null
-          last_sync_job_id?: string | null
-          last_sync_listings_found?: number | null
-          last_synced_at?: string | null
-          notes?: string | null
-          priority?: number
-          source_type?: string
-          source_url?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "agency_sources_agency_id_fkey"
-            columns: ["agency_id"]
-            isOneToOne: false
-            referencedRelation: "agencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "agency_sources_agency_id_fkey"
-            columns: ["agency_id"]
-            isOneToOne: false
-            referencedRelation: "agencies_public"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "agency_sources_last_sync_job_id_fkey"
-            columns: ["last_sync_job_id"]
-            isOneToOne: false
-            referencedRelation: "import_jobs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "agency_sources_last_sync_job_id_fkey"
-            columns: ["last_sync_job_id"]
-            isOneToOne: false
-            referencedRelation: "scraping_cost_by_job"
-            referencedColumns: ["job_id"]
-          },
-        ]
-      }
       agency_testimonials: {
         Row: {
           agency_id: string
@@ -2595,13 +2515,6 @@ export type Database = {
             referencedRelation: "import_jobs"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "import_job_costs_job_id_fkey"
-            columns: ["job_id"]
-            isOneToOne: false
-            referencedRelation: "scraping_cost_by_job"
-            referencedColumns: ["job_id"]
-          },
         ]
       }
       import_job_items: {
@@ -2651,13 +2564,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "import_jobs"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "import_job_items_job_id_fkey"
-            columns: ["job_id"]
-            isOneToOne: false
-            referencedRelation: "scraping_cost_by_job"
-            referencedColumns: ["job_id"]
           },
           {
             foreignKeyName: "import_job_items_project_id_fkey"
@@ -2872,79 +2778,6 @@ export type Database = {
           response_type?: string | null
         }
         Relationships: []
-      }
-      listing_claim_requests: {
-        Row: {
-          agency_id: string | null
-          agency_name: string | null
-          claimant_email: string
-          claimant_name: string | null
-          claimant_phone: string | null
-          created_at: string
-          id: string
-          property_id: string
-          review_notes: string | null
-          reviewed_at: string | null
-          reviewed_by: string | null
-          status: string
-          updated_at: string
-          verification_note: string | null
-        }
-        Insert: {
-          agency_id?: string | null
-          agency_name?: string | null
-          claimant_email: string
-          claimant_name?: string | null
-          claimant_phone?: string | null
-          created_at?: string
-          id?: string
-          property_id: string
-          review_notes?: string | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          status?: string
-          updated_at?: string
-          verification_note?: string | null
-        }
-        Update: {
-          agency_id?: string | null
-          agency_name?: string | null
-          claimant_email?: string
-          claimant_name?: string | null
-          claimant_phone?: string | null
-          created_at?: string
-          id?: string
-          property_id?: string
-          review_notes?: string | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          status?: string
-          updated_at?: string
-          verification_note?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "listing_claim_requests_agency_id_fkey"
-            columns: ["agency_id"]
-            isOneToOne: false
-            referencedRelation: "agencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "listing_claim_requests_agency_id_fkey"
-            columns: ["agency_id"]
-            isOneToOne: false
-            referencedRelation: "agencies_public"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "listing_claim_requests_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "properties"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       listing_decoder_usage: {
         Row: {
@@ -3732,47 +3565,6 @@ export type Database = {
         }
         Relationships: []
       }
-      outbound_clicks: {
-        Row: {
-          clicked_at: string
-          id: string
-          page: string
-          property_id: string | null
-          session_id: string | null
-          source: string
-          source_url: string
-          user_id: string | null
-        }
-        Insert: {
-          clicked_at?: string
-          id?: string
-          page?: string
-          property_id?: string | null
-          session_id?: string | null
-          source: string
-          source_url: string
-          user_id?: string | null
-        }
-        Update: {
-          clicked_at?: string
-          id?: string
-          page?: string
-          property_id?: string | null
-          session_id?: string | null
-          source?: string
-          source_url?: string
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "outbound_clicks_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "properties"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       overage_records: {
         Row: {
           actual_count: number
@@ -4532,20 +4324,15 @@ export type Database = {
           admin_notes: string | null
           agent_fee_required: boolean | null
           agent_id: string | null
-          ai_english_description: string | null
           allows_pets: string | null
           bank_guarantee_required: boolean | null
           bathrooms: number | null
           bedrooms: number | null
           checks_required: boolean | null
           city: string
-          claimed_at: string | null
-          claimed_by_agency_id: string | null
-          co_listing_count: number
           condition: string | null
           created_at: string
           currency: string | null
-          data_quality_score: number | null
           description: string | null
           entry_date: string | null
           featured_highlight: string | null
@@ -4560,7 +4347,6 @@ export type Database = {
           images: string[] | null
           import_source: string | null
           is_accessible: boolean | null
-          is_claimed: boolean
           is_featured: boolean | null
           is_furnished: boolean | null
           is_published: boolean | null
@@ -4569,29 +4355,20 @@ export type Database = {
           latitude: number | null
           lease_term: string | null
           listing_status: Database["public"]["Enums"]["listing_status"]
-          location_confidence: string | null
           longitude: number | null
           lot_size_sqm: number | null
-          merged_source_urls: string[] | null
           neighborhood: string | null
           original_price: number | null
           parking: number | null
           pets_policy: string | null
           price: number
           price_reduced_at: string | null
-          price_vs_avg_pct: number | null
           property_type: Database["public"]["Enums"]["property_type"]
           rejection_reason: string | null
           reviewed_at: string | null
           reviewed_by: string | null
           size_sqm: number | null
-          source_agency_name: string | null
-          source_last_checked_at: string | null
-          source_rooms: number | null
-          source_rooms_label: string | null
-          source_status: string | null
           source_url: string | null
-          street_view_url: string | null
           subletting_allowed: string | null
           submitted_at: string | null
           sync_status: string | null
@@ -4611,20 +4388,15 @@ export type Database = {
           admin_notes?: string | null
           agent_fee_required?: boolean | null
           agent_id?: string | null
-          ai_english_description?: string | null
           allows_pets?: string | null
           bank_guarantee_required?: boolean | null
           bathrooms?: number | null
           bedrooms?: number | null
           checks_required?: boolean | null
           city: string
-          claimed_at?: string | null
-          claimed_by_agency_id?: string | null
-          co_listing_count?: number
           condition?: string | null
           created_at?: string
           currency?: string | null
-          data_quality_score?: number | null
           description?: string | null
           entry_date?: string | null
           featured_highlight?: string | null
@@ -4639,7 +4411,6 @@ export type Database = {
           images?: string[] | null
           import_source?: string | null
           is_accessible?: boolean | null
-          is_claimed?: boolean
           is_featured?: boolean | null
           is_furnished?: boolean | null
           is_published?: boolean | null
@@ -4648,29 +4419,20 @@ export type Database = {
           latitude?: number | null
           lease_term?: string | null
           listing_status?: Database["public"]["Enums"]["listing_status"]
-          location_confidence?: string | null
           longitude?: number | null
           lot_size_sqm?: number | null
-          merged_source_urls?: string[] | null
           neighborhood?: string | null
           original_price?: number | null
           parking?: number | null
           pets_policy?: string | null
           price: number
           price_reduced_at?: string | null
-          price_vs_avg_pct?: number | null
           property_type?: Database["public"]["Enums"]["property_type"]
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           size_sqm?: number | null
-          source_agency_name?: string | null
-          source_last_checked_at?: string | null
-          source_rooms?: number | null
-          source_rooms_label?: string | null
-          source_status?: string | null
           source_url?: string | null
-          street_view_url?: string | null
           subletting_allowed?: string | null
           submitted_at?: string | null
           sync_status?: string | null
@@ -4690,20 +4452,15 @@ export type Database = {
           admin_notes?: string | null
           agent_fee_required?: boolean | null
           agent_id?: string | null
-          ai_english_description?: string | null
           allows_pets?: string | null
           bank_guarantee_required?: boolean | null
           bathrooms?: number | null
           bedrooms?: number | null
           checks_required?: boolean | null
           city?: string
-          claimed_at?: string | null
-          claimed_by_agency_id?: string | null
-          co_listing_count?: number
           condition?: string | null
           created_at?: string
           currency?: string | null
-          data_quality_score?: number | null
           description?: string | null
           entry_date?: string | null
           featured_highlight?: string | null
@@ -4718,7 +4475,6 @@ export type Database = {
           images?: string[] | null
           import_source?: string | null
           is_accessible?: boolean | null
-          is_claimed?: boolean
           is_featured?: boolean | null
           is_furnished?: boolean | null
           is_published?: boolean | null
@@ -4727,29 +4483,20 @@ export type Database = {
           latitude?: number | null
           lease_term?: string | null
           listing_status?: Database["public"]["Enums"]["listing_status"]
-          location_confidence?: string | null
           longitude?: number | null
           lot_size_sqm?: number | null
-          merged_source_urls?: string[] | null
           neighborhood?: string | null
           original_price?: number | null
           parking?: number | null
           pets_policy?: string | null
           price?: number
           price_reduced_at?: string | null
-          price_vs_avg_pct?: number | null
           property_type?: Database["public"]["Enums"]["property_type"]
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           size_sqm?: number | null
-          source_agency_name?: string | null
-          source_last_checked_at?: string | null
-          source_rooms?: number | null
-          source_rooms_label?: string | null
-          source_status?: string | null
           source_url?: string | null
-          street_view_url?: string | null
           subletting_allowed?: string | null
           submitted_at?: string | null
           sync_status?: string | null
@@ -4768,79 +4515,6 @@ export type Database = {
             columns: ["agent_id"]
             isOneToOne: false
             referencedRelation: "agents"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "properties_claimed_by_agency_id_fkey"
-            columns: ["claimed_by_agency_id"]
-            isOneToOne: false
-            referencedRelation: "agencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "properties_claimed_by_agency_id_fkey"
-            columns: ["claimed_by_agency_id"]
-            isOneToOne: false
-            referencedRelation: "agencies_public"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      property_co_agents: {
-        Row: {
-          added_at: string
-          agency_id: string | null
-          agent_id: string | null
-          id: string
-          property_id: string
-          source_type: string
-          source_url: string
-        }
-        Insert: {
-          added_at?: string
-          agency_id?: string | null
-          agent_id?: string | null
-          id?: string
-          property_id: string
-          source_type?: string
-          source_url: string
-        }
-        Update: {
-          added_at?: string
-          agency_id?: string | null
-          agent_id?: string | null
-          id?: string
-          property_id?: string
-          source_type?: string
-          source_url?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "property_co_agents_agency_id_fkey"
-            columns: ["agency_id"]
-            isOneToOne: false
-            referencedRelation: "agencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "property_co_agents_agency_id_fkey"
-            columns: ["agency_id"]
-            isOneToOne: false
-            referencedRelation: "agencies_public"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "property_co_agents_agent_id_fkey"
-            columns: ["agent_id"]
-            isOneToOne: false
-            referencedRelation: "agents"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "property_co_agents_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "properties"
             referencedColumns: ["id"]
           },
         ]
@@ -6152,70 +5826,6 @@ export type Database = {
         }
         Relationships: []
       }
-      scraping_cost_by_day: {
-        Row: {
-          date: string | null
-          estimated_cost_usd: number | null
-          jobs_count: number | null
-          resource_type: string | null
-          total_quantity: number | null
-          unit: string | null
-        }
-        Relationships: []
-      }
-      scraping_cost_by_job: {
-        Row: {
-          agency_id: string | null
-          agency_name: string | null
-          ai_tokens: number | null
-          estimated_cost_usd: number | null
-          failed_count: number | null
-          firecrawl_credits: number | null
-          job_id: string | null
-          job_started_at: string | null
-          processed_count: number | null
-          source_type: string | null
-          status: string | null
-          website_url: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "import_jobs_agency_id_fkey"
-            columns: ["agency_id"]
-            isOneToOne: false
-            referencedRelation: "agencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "import_jobs_agency_id_fkey"
-            columns: ["agency_id"]
-            isOneToOne: false
-            referencedRelation: "agencies_public"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      scraping_cost_total_usd: {
-        Row: {
-          total_ai_tokens: number | null
-          total_estimated_usd: number | null
-          total_firecrawl_credits: number | null
-          total_jobs: number | null
-        }
-        Relationships: []
-      }
-      scraping_cost_totals: {
-        Row: {
-          estimated_cost_usd: number | null
-          first_tracked_at: string | null
-          last_tracked_at: string | null
-          resource_type: string | null
-          total_jobs: number | null
-          total_quantity: number | null
-          unit: string | null
-        }
-        Relationships: []
-      }
     }
     Functions: {
       calculate_journey_stage: { Args: { milestones: Json }; Returns: string }
@@ -6239,10 +5849,6 @@ export type Database = {
           p_session_id?: string
           p_user_id: string
         }
-        Returns: boolean
-      }
-      claim_listing: {
-        Args: { p_agency_id: string; p_property_id: string }
         Returns: boolean
       }
       find_similar_images: {

@@ -54,7 +54,7 @@ function CompRow({ comp, subjectPriceSqm }: { comp: SpecBasedComp; subjectPriceS
           </span>
           {comp.price_per_sqm && (
             <span className="text-xs text-muted-foreground">
-              · {formatPricePerArea(comp.price_per_sqm)}
+              · {formatPricePerArea(comp.price_per_sqm)}/m²
             </span>
           )}
           {vsSubject !== null && (

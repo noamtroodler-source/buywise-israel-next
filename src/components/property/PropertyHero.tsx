@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, ImageOff } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
@@ -23,10 +23,9 @@ interface PropertyHeroProps {
   onSave?: () => void;
   onShare?: () => void;
   isSaved?: boolean;
-  isSourced?: boolean;
 }
 
-export function PropertyHero({ property, onSave, onShare, isSaved, isSourced }: PropertyHeroProps) {
+export function PropertyHero({ property, onSave, onShare, isSaved }: PropertyHeroProps) {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [emblaRef, emblaApi] = useEmblaCarousel({ 
@@ -38,13 +37,8 @@ export function PropertyHero({ property, onSave, onShare, isSaved, isSourced }: 
   const formatPrice = useFormatPrice();
   const formatArea = useFormatArea();
   
-  // For sourced (scraped) listings with no photos, use null so we render
-  // the branded no-photos placeholder instead of a misleading stock image.
-  const hasImages = !!property.images?.length;
-  const images = hasImages
-    ? property.images!
-    : isSourced
-    ? [] // render no-photos placeholder below
+  const images = property.images?.length 
+    ? property.images 
     : ['https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1200'];
 
   const scrollPrev = useCallback(() => {
@@ -111,9 +105,7 @@ export function PropertyHero({ property, onSave, onShare, isSaved, isSourced }: 
       >
         {/* Main Image */}
         <div className="relative w-full">
-          {/* No-photos placeholder — skip for sourced listings (Street View below takes over) */}
-          {isSourced && !hasImages ? null : (
-          <div
+          <div 
             className="relative aspect-[16/10] md:rounded-xl overflow-hidden bg-muted cursor-pointer group touch-pan-y"
             onClick={handleImageClick}
             onTouchStart={(e) => {
@@ -132,8 +124,8 @@ export function PropertyHero({ property, onSave, onShare, isSaved, isSourced }: 
               }
             }}
           >
-              <img
-                src={images[selectedImageIndex]}
+              <img 
+                src={images[selectedImageIndex]} 
                 alt={property.title}
                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
               />
@@ -200,7 +192,6 @@ export function PropertyHero({ property, onSave, onShare, isSaved, isSourced }: 
                 </div>
               )}
           </div>
-          )} {/* end isSourced no-photos conditional */}
         </div>
 
         {/* Horizontal Thumbnail Carousel - Hidden on mobile */}

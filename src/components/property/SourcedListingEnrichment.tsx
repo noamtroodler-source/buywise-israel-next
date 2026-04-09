@@ -106,7 +106,7 @@ export function SourcedListingEnrichment({
   // Running costs
   const arnonaMonthly = city.arnona_monthly_avg
     ? (hasSizeSqm && city.arnona_rate_sqm
-      ? Math.round((city.arnona_rate_sqm * property.size_sqm!) / 12) // arnona_rate_sqm is annual → divide by 12
+      ? Math.round(city.arnona_rate_sqm * property.size_sqm!)
       : city.arnona_monthly_avg)
     : null;
   const vaadBayit = city.average_vaad_bayit;
@@ -152,7 +152,7 @@ export function SourcedListingEnrichment({
               <div className="rounded-lg bg-muted/40 p-3">
                 <p className="text-xs text-muted-foreground">This listing</p>
                 <p className="text-base font-bold text-foreground">
-                  {formatPriceSqm(priceSqm)}
+                  {formatPriceSqm(priceSqm)}/m²
                 </p>
               </div>
             )}
@@ -160,7 +160,7 @@ export function SourcedListingEnrichment({
               <div className="rounded-lg bg-muted/40 p-3">
                 <p className="text-xs text-muted-foreground">{property.city} avg</p>
                 <p className="text-base font-bold text-foreground">
-                  {formatPriceSqm(cityAvgSqm)}
+                  {formatPriceSqm(cityAvgSqm)}/m²
                 </p>
               </div>
             )}

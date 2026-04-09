@@ -194,7 +194,7 @@ const CITY_ALIASES: Record<string, string[]> = {
   "Ramat Gan": ["ramat gan", "ramatgan", "ramat-gan", "רמת גן", "רמת-גן"],
   "Rehovot": ["rechovot", "rehovoth", "רחובות"],
   "Rishon LeZion": ["rishon lezion", "rishon le zion", "rishon le-zion", "rishon", "ראשון לציון"],
-  "Tel Aviv": ["telaviv", "tel aviv", "tlv", "tel avive", "tel-aviv", "tel aviv-yafo", "tel aviv yafo", "תל אביב", "תל אביב יפו", "תל-אביב", "jaffa", "yafo", "yaffo", "jaffa-yafo", "tel aviv jaffa", "יפו", "יפו תל אביב", "ajami", "florentin", "neve tzedek", "neve tsedek"],
+  "Tel Aviv": ["telaviv", "tel aviv", "tlv", "tel avive", "tel-aviv", "tel aviv-yafo", "tel aviv yafo", "תל אביב", "תל אביב יפו", "תל-אביב"],
   "Zichron Yaakov": ["zichron yaakov", "zichron yakov", "zichron jacob", "zichron ya'akov", "zikhron", "זכרון יעקב"],
 };
 
@@ -1958,7 +1958,12 @@ async function processOneItem(
     const scrapeRes = await fetch("https://api.firecrawl.dev/v1/scrape", {
       method: "POST",
       headers: { Authorization: `Bearer ${firecrawlKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ url: item.url, formats: ["markdown", "links", "html"], onlyMainContent: true }),
+      body: JSON.stringify({
+        url: item.url,
+        formats: ["markdown", "links", "html"],
+        onlyMainContent: true,
+        ...(item.url.includes("yad2.co.il") ? { proxy: "stealth", waitFor: 5000 } : {}),
+      }),
     });
 
     const scrapeData = await scrapeRes.json();
@@ -2471,7 +2476,6 @@ async function processOneItem(
         verification_status: confidenceScore >= 60 ? "verified" : "draft",
         import_source: job.source_type === "yad2" ? "yad2" : job.source_type === "madlan" ? "madlan" : "website_scrape",
         source_url: item.url,
-        source_agency_name: (job.agencies as any)?.name || null,
         data_quality_score: confidenceScore,
         location_confidence: listing.address?.length > 3 ? "exact" : listing.neighborhood ? "neighborhood" : "city",
         is_claimed: false,
@@ -2528,7 +2532,7 @@ async function handleProcessBatch(body: any) {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
 
   const { data: job, error: jobErr } = await sb
-    .from("import_jobs").select("*, agencies!inner(id, admin_user_id, name)").eq("id", job_id).single();
+    .from("import_jobs").select("*, agencies!inner(id, admin_user_id)").eq("id", job_id).single();
   if (jobErr || !job) throw new Error("Import job not found");
 
   const cachedDomainCity = inferCityFromDomain(job.website_url);
@@ -2870,21 +2874,11 @@ function extractYad2AgencyTotalCount(html: string, listingMode: "forsale" | "ren
   return null;
 }
 
-// Detect ShieldSquare / PerimeterX CAPTCHA pages served by Yad2
-function isYad2CaptchaPage(html: string): boolean {
-  return (
-    html.includes("ShieldSquare Captcha") ||
-    html.includes("captcha-assets.yad2.co.il") ||
-    html.includes("robot_checkup") ||
-    (html.includes("hcaptcha") && html.includes("yad2"))
-  );
-}
-
 async function fetchYad2AgencyPageHtml(pageUrl: string): Promise<string> {
   // Yad2 is a JS-rendered SPA — raw fetch only returns ~5 server-rendered items.
   // Use Firecrawl's headless browser to get the fully rendered HTML.
   const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
-
+  
   if (FIRECRAWL_API_KEY) {
     try {
       console.log(`[Yad2] Firecrawl scraping: ${pageUrl}`);
@@ -2898,25 +2892,14 @@ async function fetchYad2AgencyPageHtml(pageUrl: string): Promise<string> {
           url: pageUrl,
           formats: ["html"],
           onlyMainContent: false,
-          waitFor: 8000,
-          proxy: "stealth", // Stealth residential proxies bypass ShieldSquare/PerimeterX
-          // Session cookies: logged-in Yad2 sessions pass ShieldSquare far more reliably.
-          // Set YAD2_SESSION_COOKIES secret to a Cookie header string from a logged-in browser session.
-          ...(Deno.env.get("YAD2_SESSION_COOKIES")
-            ? { headers: { Cookie: Deno.env.get("YAD2_SESSION_COOKIES")! } }
-            : {}),
+          waitFor: 5000, // Wait 5s for JS to render all listing cards
         }),
       });
-
+      
       if (res.ok) {
         const data = await res.json();
         const html = data?.data?.html || data?.html || "";
         if (html.length > 500) {
-          // Check for CAPTCHA before anything else — throw so yad2_scrape_queue can schedule a retry
-          if (isYad2CaptchaPage(html)) {
-            console.warn(`[Yad2] CAPTCHA detected via Firecrawl on ${pageUrl}`);
-            throw new Error("CAPTCHA_BLOCKED");
-          }
           // Verify we got listing content, not just a shell
           const itemCount = (html.match(/\/realestate\/item\//gi) || []).length;
           console.log(`[Yad2] Firecrawl returned ${html.length} chars, ${itemCount} item links`);
@@ -2930,8 +2913,6 @@ async function fetchYad2AgencyPageHtml(pageUrl: string): Promise<string> {
         console.warn(`[Yad2] Firecrawl failed (${res.status}): ${errText.slice(0, 200)}`);
       }
     } catch (e) {
-      // Re-throw CAPTCHA errors — don't fall back, let the retry queue handle it
-      if (e instanceof Error && e.message === "CAPTCHA_BLOCKED") throw e;
       console.warn(`[Yad2] Firecrawl error:`, e);
     }
   } else {
@@ -2951,15 +2932,7 @@ async function fetchYad2AgencyPageHtml(pageUrl: string): Promise<string> {
     throw new Error(`Failed to load Yad2 page (${response.status})`);
   }
 
-  const rawHtml = await response.text();
-
-  // Check for CAPTCHA in raw fetch response too
-  if (isYad2CaptchaPage(rawHtml)) {
-    console.warn(`[Yad2] CAPTCHA detected via raw fetch on ${pageUrl}`);
-    throw new Error("CAPTCHA_BLOCKED");
-  }
-
-  return rawHtml;
+  return await response.text();
 }
 
 async function runYad2AgencyDiscoverJob(params: {
@@ -3064,18 +3037,8 @@ async function runYad2AgencyDiscoverJob(params: {
       `[Yad2] background discovery finished for job ${jobId}: ${newUrls.length} new URLs, ${dedupedUrls.length} discovered, ${dedupedUrls.length - newUrls.length} existing`
     );
   } catch (err) {
-    const isCaptcha = err instanceof Error && err.message === "CAPTCHA_BLOCKED";
-    console.error(
-      `[Yad2] background discovery failed for job ${jobId}:`,
-      isCaptcha ? "CAPTCHA blocked by ShieldSquare/PerimeterX" : err
-    );
-    await sb
-      .from("import_jobs")
-      .update({
-        status: "failed",
-        failure_reason: isCaptcha ? "captcha_blocked" : "discovery_error",
-      })
-      .eq("id", jobId);
+    console.error(`[Yad2] background discovery failed for job ${jobId}:`, err);
+    await sb.from("import_jobs").update({ status: "failed" }).eq("id", jobId);
   }
 }
 
@@ -3826,10 +3789,8 @@ Deno.serve(async (req) => {
 
     let result;
     if (action === "discover") {
-      if (body.source_type === "yad2_apify") {
-        // Force Apify path — used as automatic Firecrawl fallback by yad2-retry-runner
-        result = await handleYad2Discover(body);
-      } else if (body.source_type === "yad2") {
+      if (body.source_type === "yad2") {
+        // Auto-detect agency profile page vs search results
         if (isYad2AgencyUrl(body.website_url)) {
           result = await handleYad2AgencyDiscover(body);
         } else {
