@@ -1044,8 +1044,11 @@ async function handleDiscover(body: any) {
     headers: { Authorization: `Bearer ${FIRECRAWL_API_KEY}`, "Content-Type": "application/json" },
     body: JSON.stringify({ url: formattedUrl, limit: 500, includeSubdomains: false }),
   });
+  if (!mapRes.ok) {
+    const errText = await mapRes.text();
+    throw new Error(`Firecrawl MAP failed (${mapRes.status}): ${errText.slice(0, 300)}`);
+  }
   const mapData = await mapRes.json();
-  if (!mapRes.ok) throw new Error(`Firecrawl MAP failed: ${JSON.stringify(mapData)}`);
 
   const rawUrls: string[] = mapData.links || mapData.data || [];
   if (rawUrls.length === 0) throw new Error("No URLs discovered on this website");
@@ -3114,9 +3117,31 @@ async function runYad2AgencyDiscoverJob(params: {
     const dedupedUrls = Array.from(discoveredUrls);
     console.log(`Yad2 agency HTML discovery found ${dedupedUrls.length} unique listings across ${discoveryUrls.length} page set(s)`);
 
-    // If 0 URLs found, ShieldSquare likely blocked all pages — mark as CAPTCHA failure
+    // If 0 URLs found, ShieldSquare likely blocked all pages — try Apify fallback
     if (dedupedUrls.length === 0) {
-      console.warn(`[Yad2] 0 listings discovered — ShieldSquare likely blocked Firecrawl`);
+      console.warn(`[Yad2] 0 listings via Firecrawl — trying Apify fallback`);
+      const APIFY_API_KEY = Deno.env.get("APIFY_API_KEY");
+      if (APIFY_API_KEY) {
+        try {
+          const apifyResult = await handleYad2Discover({
+            agency_id: agencyId,
+            website_url: websiteUrl,
+            import_type: effectiveImportType,
+          });
+          if (apifyResult.job_id) {
+            // Apify created its own job — mark our Firecrawl job as superseded
+            await sb.from("import_jobs").update({
+              status: "completed",
+              failure_reason: "superseded_by_apify",
+            }).eq("id", jobId);
+            console.log(`[Yad2] Apify fallback succeeded — job ${apifyResult.job_id} created with ${apifyResult.new_urls} new URLs`);
+            return;
+          }
+        } catch (apifyErr) {
+          console.error(`[Yad2] Apify fallback also failed:`, apifyErr);
+        }
+      }
+      // Both failed
       await sb.from("import_jobs").update({
         status: "failed",
         failure_reason: "captcha_blocked",
@@ -3546,28 +3571,40 @@ async function runMadlanAgencyDiscoverJob(params: {
       const firstPageUrl = buildMadlanPageUrl(discoveryUrl, 1);
       let firstPageHtml = "";
 
-      // Use Firecrawl to render the JS-heavy Madlan page
+      // Use Firecrawl to render the JS-heavy Madlan page (with retry on transient errors)
       if (FIRECRAWL_API_KEY) {
-        try {
-          const res = await fetch("https://api.firecrawl.dev/v1/scrape", {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${FIRECRAWL_API_KEY}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              url: firstPageUrl,
-              formats: ["html"],
-              onlyMainContent: false,
-              waitFor: 4000, // Madlan needs time to render listings
-            }),
-          });
-          if (res.ok) {
-            const data = await res.json();
-            firstPageHtml = data?.data?.html || data?.html || "";
+        for (let attempt = 0; attempt < 2; attempt++) {
+          try {
+            const res = await fetch("https://api.firecrawl.dev/v1/scrape", {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${FIRECRAWL_API_KEY}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                url: firstPageUrl,
+                formats: ["html"],
+                onlyMainContent: false,
+                waitFor: 4000,
+              }),
+            });
+            if (res.ok) {
+              const data = await res.json();
+              firstPageHtml = data?.data?.html || data?.html || "";
+              break; // success
+            } else if ([429, 502, 503].includes(res.status) && attempt === 0) {
+              const errText = await res.text();
+              console.warn(`[Madlan] Firecrawl ${res.status} on attempt 1, retrying in 2s: ${errText.slice(0, 100)}`);
+              await new Promise(r => setTimeout(r, 2000));
+            } else {
+              const errText = await res.text();
+              console.warn(`[Madlan] Firecrawl failed (${res.status}): ${errText.slice(0, 200)}`);
+              break;
+            }
+          } catch (e) {
+            console.warn(`[Madlan] Firecrawl error (attempt ${attempt + 1}):`, e);
+            if (attempt === 0) await new Promise(r => setTimeout(r, 2000));
           }
-        } catch (e) {
-          console.warn(`[Madlan] Firecrawl error:`, e);
         }
       }
 
