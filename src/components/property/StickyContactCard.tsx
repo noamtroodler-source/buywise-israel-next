@@ -31,6 +31,9 @@ interface StickyContactCardProps {
   onSave?: () => void;
   isSaved?: boolean;
   isSourced?: boolean; // unclaimed scraped listing — show 'find agent' CTA
+  isPartner?: boolean; // BuyWise Partner agency
+  agencyName?: string | null;
+  agencyLogoUrl?: string | null;
   propertyCity?: string;
 }
 
@@ -43,6 +46,9 @@ export function StickyContactCard({
   onSave,
   isSaved,
   isSourced,
+  isPartner,
+  agencyName,
+  agencyLogoUrl,
   propertyCity,
 }: StickyContactCardProps) {
   const { user } = useAuth();
