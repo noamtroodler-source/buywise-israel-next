@@ -63,9 +63,8 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
     street_view_url?: string | null;
   };
   const isSourcedListing = !sourcedListing.is_claimed && !!sourcedListing.import_source;
-  const images = isSourcedListing && sourcedListing.street_view_url
-    ? [sourcedListing.street_view_url]
-    : property.images?.length
+  // For sourced listings: use property images if available, otherwise empty (fallback handled below)
+  const images = property.images?.length
     ? property.images
     : [];
   const hasMultipleImages = images.length > 1;

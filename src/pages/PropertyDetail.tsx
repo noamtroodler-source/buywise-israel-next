@@ -183,13 +183,10 @@ export default function PropertyDetail() {
             <div id="section-photos" className="-mx-4 md:mx-0">
               {(() => {
                 const isSourced = !(property as any).is_claimed && (property as any).import_source;
-                const streetViewUrl = (property as any).street_view_url;
                 
-                // For sourced listings: only show street view image in hero
-                const heroProperty = isSourced && streetViewUrl
-                  ? { ...property, images: [streetViewUrl] }
-                  : isSourced
-                  ? { ...property, images: [] } // will trigger fallback placeholder
+                // For sourced listings: pass empty images so PropertyHero uses neighborhood illustration fallback
+                const heroProperty = isSourced && !property.images?.length
+                  ? { ...property, images: [] }
                   : property;
                 
                 return (
@@ -200,8 +197,8 @@ export default function PropertyDetail() {
                       onShare={handleShare}
                       isSaved={isSaved}
                     />
-                    {/* Street View fallback when no street_view_url stored */}
-                    {isSourced && !streetViewUrl && (
+                    {/* Street View section for sourced listings */}
+                    {isSourced && (
                       <div className="mt-3 px-4 md:px-0">
                         <StreetViewFallback
                           address={property.address}
