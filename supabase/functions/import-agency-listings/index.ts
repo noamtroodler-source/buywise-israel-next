@@ -1184,7 +1184,7 @@ function filterNonListingUrls(urls: string[]): { listingCandidates: string[]; re
 
 // ─── GEOCODING ──────────────────────────────────────────────────────────────
 
-async function geocodeWithRateLimit(address: string, city: string): Promise<{ lat: number; lng: number } | null> {
+async function geocodeWithRateLimit(address: string, city: string, neighborhood?: string | null): Promise<{ lat: number; lng: number } | null> {
   try {
     const res = await fetch(
       `${Deno.env.get("SUPABASE_URL")}/functions/v1/geocode-address`,
@@ -1199,6 +1199,7 @@ async function geocodeWithRateLimit(address: string, city: string): Promise<{ la
           entityId: crypto.randomUUID(),
           address,
           city,
+          neighborhood: neighborhood || undefined,
           skipDbSave: true,
         }),
       }
