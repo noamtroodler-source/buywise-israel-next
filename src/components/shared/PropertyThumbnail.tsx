@@ -1,9 +1,18 @@
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useNeighborhoodIllustration } from '@/hooks/useNeighborhoodIllustration';
+import { cityHeroImages } from '@/lib/cityHeroImages';
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&auto=format&fit=crop&q=60';
 const PROJECT_FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400&auto=format&fit=crop&q=60';
+
+function cityToSlug(city: string): string {
+  return city
+    .toLowerCase()
+    .replace(/['']/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '');
+}
 
 interface PropertyThumbnailProps {
   src: string | null | undefined;
