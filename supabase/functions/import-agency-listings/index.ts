@@ -1390,7 +1390,7 @@ async function generateAndStoreStreetView(
 
 async function handleBackfillStreetView(body: any) {
   const sb = supabaseAdmin();
-  const { property_id, limit, skip_enhance } = body || {};
+  const { property_id, limit, skip_enhance, force_refresh } = body || {};
   const safeLimit = Math.min(Math.max(Number(limit) || 25, 1), 100);
   const shouldSkipEnhance = skip_enhance === true;
 
@@ -1403,6 +1403,10 @@ async function handleBackfillStreetView(body: any) {
 
   if (property_id) {
     query = query.eq("id", property_id);
+  } else if (force_refresh) {
+    // Re-generate old low-res images (800x400) or any non-enhanced ones
+    query = query.not("street_view_url", "is", null)
+      .like("street_view_url", "%size=800x400%");
   } else {
     query = query.is("street_view_url", null);
   }
@@ -1412,6 +1416,7 @@ async function handleBackfillStreetView(body: any) {
 
   let updated = 0;
   let skipped = 0;
+  let satellites = 0;
   for (const property of properties || []) {
     const result = await generateAndStoreStreetView(
       sb,
@@ -1424,14 +1429,20 @@ async function handleBackfillStreetView(body: any) {
       null,
       shouldSkipEnhance,
     );
-    if (result.updated) updated++;
-    else skipped++;
+    if (result.updated) {
+      updated++;
+      if (result.type === "satellite") satellites++;
+    } else {
+      skipped++;
+    }
   }
 
   return {
     processed: (properties || []).length,
     updated,
     skipped,
+    satellites,
+    force_refresh: !!force_refresh,
   };
 }
 
