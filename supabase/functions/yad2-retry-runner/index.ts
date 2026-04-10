@@ -478,15 +478,36 @@ Deno.serve(async (req) => {
     console.log(`[Yad2Queue] Reset ${stuckCount} stuck running items back to pending`);
   }
 
-  // ── Fetch due queue items ─────────────────────────────────────────────────
+  // ── Fetch due queue items (skip sources with recent captcha exhaustion) ───
   const now = new Date().toISOString();
+  const captchaCooloffCutoff = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+
+  // First, get sources that were captcha-exhausted in the last 48h
+  const { data: recentlyExhausted } = await sb
+    .from("yad2_scrape_queue")
+    .select("agency_source_id")
+    .eq("status", "exhausted")
+    .eq("last_result", "captcha")
+    .gte("updated_at", captchaCooloffCutoff);
+
+  const exhaustedSourceIds = new Set((recentlyExhausted || []).map((r: any) => r.agency_source_id));
+
   const { data: dueItems, error: queueErr } = await sb
     .from("yad2_scrape_queue")
     .select("*")
     .eq("status", "pending")
     .lte("scheduled_for", now)
     .order("scheduled_for", { ascending: true })
-    .limit(2); // Max 2 per invocation — each can take up to 5 min
+    .limit(6); // Fetch a few extra to filter
+
+  // Filter out sources in captcha cooloff
+  const filteredItems = (dueItems || []).filter((item: any) => {
+    if (exhaustedSourceIds.has(item.agency_source_id)) {
+      console.log(`[Yad2Queue] Skipping ${item.website_url} — captcha cooloff (48h)`);
+      return false;
+    }
+    return true;
+  }).slice(0, 2); // Max 2 per invocation
 
   if (queueErr) {
     console.error("[Yad2Queue] Failed to fetch queue:", queueErr.message);
@@ -496,19 +517,19 @@ Deno.serve(async (req) => {
     );
   }
 
-  if (!dueItems?.length) {
-    console.log("[Yad2Queue] No due items");
+  if (!filteredItems.length) {
+    console.log("[Yad2Queue] No due items (or all in captcha cooloff)");
     return new Response(
-      JSON.stringify({ processed: 0, message: "No due items" }),
+      JSON.stringify({ processed: 0, message: "No due items", captcha_cooloff: exhaustedSourceIds.size }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
-  console.log(`[Yad2Queue] ${dueItems.length} item(s) due for processing`);
+  console.log(`[Yad2Queue] ${filteredItems.length} item(s) due for processing (${exhaustedSourceIds.size} in cooloff)`);
 
   // Return immediately, process in background (Yad2 discovery takes ~2–5 min)
   const backgroundWork = async () => {
-    for (const item of dueItems) {
+    for (const item of filteredItems) {
       try {
         await processQueueItem(sb, item);
       } catch (err) {
@@ -524,7 +545,7 @@ Deno.serve(async (req) => {
   EdgeRuntime.waitUntil(backgroundWork());
 
   return new Response(
-    JSON.stringify({ processing: dueItems.length, items: dueItems.map((i) => i.website_url) }),
+    JSON.stringify({ processing: filteredItems.length, items: filteredItems.map((i: any) => i.website_url), captcha_cooloff: exhaustedSourceIds.size }),
     { headers: { ...corsHeaders, "Content-Type": "application/json" } }
   );
 });
