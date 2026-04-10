@@ -1233,6 +1233,27 @@ async function enhanceImage(imagePublicUrl: string, sb: any, bucketName: string,
   } catch { return imagePublicUrl; }
 }
 
+/**
+ * Derive a deterministic heading (0-359) from floor/unit data so that
+ * same-building listings get slightly different camera angles.
+ */
+function deriveHeading(floor?: number | null, unitNumber?: string | null): number {
+  // Base heading = 0. Offset by floor × 45° (wrapping) for visual variety.
+  let heading = 0;
+  if (floor != null && floor > 0) {
+    heading = (floor * 45) % 360;
+  }
+  // If we have a unit/apartment number, hash its last digits for extra offset
+  if (unitNumber) {
+    const digits = unitNumber.replace(/\D/g, '');
+    if (digits.length > 0) {
+      const num = parseInt(digits.slice(-3), 10) || 0;
+      heading = (heading + (num * 37) % 360) % 360;
+    }
+  }
+  return heading;
+}
+
 async function generateAndStoreStreetView(
   sb: any,
   propertyId: string,
@@ -1240,6 +1261,8 @@ async function generateAndStoreStreetView(
   longitude: number | null,
   address?: string | null,
   city?: string | null,
+  floor?: number | null,
+  unitNumber?: string | null,
 ): Promise<{ updated: boolean }> {
   try {
     if (!propertyId || (!(latitude != null && longitude != null) && !city)) {
@@ -1255,7 +1278,8 @@ async function generateAndStoreStreetView(
 
     if (!location) return { updated: false };
 
-    const streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=800x400&location=${location}&fov=90&heading=0&pitch=10&key=${GOOGLE_MAPS_KEY}`;
+    const heading = deriveHeading(floor, unitNumber);
+    const streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=800x400&location=${location}&fov=90&heading=${heading}&pitch=10&key=${GOOGLE_MAPS_KEY}`;
 
     await sb.from("properties").update({ street_view_url: streetViewUrl }).eq("id", propertyId);
 
