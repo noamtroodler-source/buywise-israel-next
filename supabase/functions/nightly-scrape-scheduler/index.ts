@@ -181,9 +181,9 @@ async function runStallRecovery(): Promise<void> {
     // Find jobs that still have pending items
     const { data: stalledJobs } = await sb
       .from("import_jobs")
-      .select("id")
+      .select("id, last_heartbeat")
       .eq("status", "processing")
-      .lt("updated_at", cutoff)
+      .lt("last_heartbeat", cutoff)
       .limit(20);
 
     if (!stalledJobs?.length) {
