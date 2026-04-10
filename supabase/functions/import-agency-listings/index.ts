@@ -1411,15 +1411,16 @@ async function handleBackfillStreetView(body: any) {
     .from("properties")
     .select("id, latitude, longitude, address, city, street_view_url, import_source, floor")
     .not("import_source", "is", null)
+    .not("latitude", "is", null)
+    .not("longitude", "is", null)
     .order("created_at", { ascending: false })
     .limit(safeLimit);
 
   if (property_id) {
     query = query.eq("id", property_id);
   } else if (force_refresh) {
-    // Re-generate old low-res images (800x400) or any non-enhanced ones
-    query = query.not("street_view_url", "is", null)
-      .like("street_view_url", "%size=800x400%");
+    // Re-generate any non-stored images (raw Google URLs) or missing ones
+    query = query.or("street_view_url.is.null,street_view_url.like.%googleapis.com%");
   } else {
     query = query.is("street_view_url", null);
   }
