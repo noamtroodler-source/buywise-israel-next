@@ -1184,7 +1184,7 @@ function filterNonListingUrls(urls: string[]): { listingCandidates: string[]; re
 
 // ─── GEOCODING ──────────────────────────────────────────────────────────────
 
-async function geocodeWithRateLimit(address: string, city: string): Promise<{ lat: number; lng: number } | null> {
+async function geocodeWithRateLimit(address: string, city: string, neighborhood?: string | null): Promise<{ lat: number; lng: number } | null> {
   try {
     const res = await fetch(
       `${Deno.env.get("SUPABASE_URL")}/functions/v1/geocode-address`,
@@ -1199,6 +1199,7 @@ async function geocodeWithRateLimit(address: string, city: string): Promise<{ la
           entityId: crypto.randomUUID(),
           address,
           city,
+          neighborhood: neighborhood || undefined,
           skipDbSave: true,
         }),
       }
@@ -1233,6 +1234,27 @@ async function enhanceImage(imagePublicUrl: string, sb: any, bucketName: string,
   } catch { return imagePublicUrl; }
 }
 
+/**
+ * Derive a deterministic heading (0-359) from floor/unit data so that
+ * same-building listings get slightly different camera angles.
+ */
+function deriveHeading(floor?: number | null, unitNumber?: string | null): number {
+  // Base heading = 0. Offset by floor × 45° (wrapping) for visual variety.
+  let heading = 0;
+  if (floor != null && floor > 0) {
+    heading = (floor * 45) % 360;
+  }
+  // If we have a unit/apartment number, hash its last digits for extra offset
+  if (unitNumber) {
+    const digits = unitNumber.replace(/\D/g, '');
+    if (digits.length > 0) {
+      const num = parseInt(digits.slice(-3), 10) || 0;
+      heading = (heading + (num * 37) % 360) % 360;
+    }
+  }
+  return heading;
+}
+
 async function generateAndStoreStreetView(
   sb: any,
   propertyId: string,
@@ -1240,6 +1262,8 @@ async function generateAndStoreStreetView(
   longitude: number | null,
   address?: string | null,
   city?: string | null,
+  floor?: number | null,
+  unitNumber?: string | null,
 ): Promise<{ updated: boolean }> {
   try {
     if (!propertyId || (!(latitude != null && longitude != null) && !city)) {
@@ -1255,7 +1279,8 @@ async function generateAndStoreStreetView(
 
     if (!location) return { updated: false };
 
-    const streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=800x400&location=${location}&fov=90&heading=0&pitch=10&key=${GOOGLE_MAPS_KEY}`;
+    const heading = deriveHeading(floor, unitNumber);
+    const streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=800x400&location=${location}&fov=90&heading=${heading}&pitch=10&key=${GOOGLE_MAPS_KEY}`;
 
     await sb.from("properties").update({ street_view_url: streetViewUrl }).eq("id", propertyId);
 
@@ -1300,7 +1325,7 @@ async function handleBackfillStreetView(body: any) {
 
   let query: any = sb
     .from("properties")
-    .select("id, latitude, longitude, address, city, street_view_url, import_source")
+    .select("id, latitude, longitude, address, city, street_view_url, import_source, floor")
     .not("import_source", "is", null)
     .order("created_at", { ascending: false })
     .limit(safeLimit);
@@ -1324,6 +1349,7 @@ async function handleBackfillStreetView(body: any) {
       property.longitude,
       property.address,
       property.city,
+      property.floor,
     );
     if (result.updated) updated++;
     else skipped++;
@@ -2622,7 +2648,7 @@ async function processOneItem(
     let latitude: number | null = listing._yad2_latitude || null;
     let longitude: number | null = listing._yad2_longitude || null;
     if (!latitude && !longitude && listing.address && listing.city) {
-      const coords = await geocodeWithRateLimit(listing.address, listing.city);
+      const coords = await geocodeWithRateLimit(listing.address, listing.city, listing.neighborhood);
       if (coords) { latitude = coords.lat; longitude = coords.lng; }
     }
 
@@ -2711,7 +2737,7 @@ async function processOneItem(
 
     // ── Generate & enhance street view image ──
     if (property?.id) {
-      await generateAndStoreStreetView(sb, property.id, latitude, longitude, listing.address, listing.city);
+      await generateAndStoreStreetView(sb, property.id, latitude, longitude, listing.address, listing.city, listing.floor, listing.apartment_number || null);
     }
 
     // Insert cross-source duplicate pair if detected
@@ -2952,7 +2978,7 @@ async function handleApproveItem(body: any) {
   let latitude: number | null = null;
   let longitude: number | null = null;
   if (listing.address && listing.city) {
-    const coords = await geocodeWithRateLimit(listing.address, listing.city);
+    const coords = await geocodeWithRateLimit(listing.address, listing.city, listing.neighborhood);
     if (coords) { latitude = coords.lat; longitude = coords.lng; }
   }
 
