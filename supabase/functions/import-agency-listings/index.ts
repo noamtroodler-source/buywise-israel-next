@@ -1285,7 +1285,7 @@ async function generateAndStoreStreetView(
 
     await sb.from("properties").update({ street_view_url: streetViewUrl }).eq("id", propertyId);
 
-    try {
+    if (!skipEnhance) try {
       const ENHANCE_URL = `${Deno.env.get("SUPABASE_URL")}/functions/v1/enhance-image`;
       const enhancePath = `street-view/${propertyId}.png`;
       const enhanceRes = await fetch(ENHANCE_URL, {
