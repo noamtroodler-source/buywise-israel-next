@@ -197,8 +197,8 @@ export default function PropertyDetail() {
                       onShare={handleShare}
                       isSaved={isSaved}
                     />
-                    {/* Street View fallback when no street_view_url stored */}
-                    {isSourced && !streetViewUrl && (
+                    {/* Street View section for sourced listings */}
+                    {isSourced && (
                       <div className="mt-3 px-4 md:px-0">
                         <StreetViewFallback
                           address={property.address}
