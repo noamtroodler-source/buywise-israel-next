@@ -1264,6 +1264,7 @@ async function generateAndStoreStreetView(
   city?: string | null,
   floor?: number | null,
   unitNumber?: string | null,
+  skipEnhance?: boolean,
 ): Promise<{ updated: boolean }> {
   try {
     if (!propertyId || (!(latitude != null && longitude != null) && !city)) {
