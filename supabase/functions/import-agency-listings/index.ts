@@ -2648,7 +2648,7 @@ async function processOneItem(
     let latitude: number | null = listing._yad2_latitude || null;
     let longitude: number | null = listing._yad2_longitude || null;
     if (!latitude && !longitude && listing.address && listing.city) {
-      const coords = await geocodeWithRateLimit(listing.address, listing.city);
+      const coords = await geocodeWithRateLimit(listing.address, listing.city, listing.neighborhood);
       if (coords) { latitude = coords.lat; longitude = coords.lng; }
     }
 
@@ -2978,7 +2978,7 @@ async function handleApproveItem(body: any) {
   let latitude: number | null = null;
   let longitude: number | null = null;
   if (listing.address && listing.city) {
-    const coords = await geocodeWithRateLimit(listing.address, listing.city);
+    const coords = await geocodeWithRateLimit(listing.address, listing.city, listing.neighborhood);
     if (coords) { latitude = coords.lat; longitude = coords.lng; }
   }
 
