@@ -103,6 +103,8 @@ export const MapListCard = memo(function MapListCard({ property, isHovered, onHo
           src={images[imageIndex]}
           alt={property.title}
           className="w-full h-full"
+          city={property.city}
+          neighborhood={property.neighborhood}
         />
 
         {/* Favorite */}

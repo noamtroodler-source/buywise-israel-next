@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import useEmblaCarousel from 'embla-carousel-react';
 import { FullscreenGallery } from '@/components/shared/FullscreenGallery';
 import { useFormatPrice, useFormatArea } from '@/contexts/PreferencesContext';
+import { useNeighborhoodIllustration } from '@/hooks/useNeighborhoodIllustration';
 
 interface PropertyHeroProps {
   property: {
@@ -19,6 +20,8 @@ interface PropertyHeroProps {
     bedrooms?: number | null;
     bathrooms?: number | null;
     size_sqm?: number | null;
+    city?: string | null;
+    neighborhood?: string | null;
   };
   onSave?: () => void;
   onShare?: () => void;
@@ -36,10 +39,12 @@ export function PropertyHero({ property, onSave, onShare, isSaved }: PropertyHer
   
   const formatPrice = useFormatPrice();
   const formatArea = useFormatArea();
+  const illustrationUrl = useNeighborhoodIllustration(property.city, property.neighborhood);
   
+  const fallbackImage = illustrationUrl || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1200';
   const images = property.images?.length 
     ? property.images 
-    : ['https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1200'];
+    : [fallbackImage];
 
   const scrollPrev = useCallback(() => {
     setSelectedImageIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1));

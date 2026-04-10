@@ -38,6 +38,8 @@ export function ComparePropertyCard({
           src={property.images?.[0]}
           alt={property.title}
           className="w-full h-full"
+          city={property.city}
+          neighborhood={property.neighborhood}
         />
         
         {/* Gradient Overlay */}

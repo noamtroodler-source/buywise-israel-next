@@ -18,6 +18,7 @@ import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/comp
 import { differenceInDays } from 'date-fns';
 import { useEventTracking } from '@/hooks/useEventTracking';
 import { useTouchSwipe } from '@/hooks/useTouchSwipe';
+import { useNeighborhoodIllustration } from '@/hooks/useNeighborhoodIllustration';
 
 interface PropertyCardProps {
   property: Property;
@@ -184,7 +185,9 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
     }
   };
 
-  const currentImage = imageError ? placeholderImage : (images[currentImageIndex] || placeholderImage);
+  const illustrationUrl = useNeighborhoodIllustration(property.city, property.neighborhood);
+  const fallbackImage = illustrationUrl || placeholderImage;
+  const currentImage = imageError ? fallbackImage : (images[currentImageIndex] || fallbackImage);
 
   return (
     <>

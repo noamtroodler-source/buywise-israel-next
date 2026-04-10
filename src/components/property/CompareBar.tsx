@@ -181,6 +181,8 @@ export function CompareBar() {
                         src={property.images?.[0]}
                         alt={property.title}
                         className="w-8 h-8 rounded"
+                        city={property.city}
+                        neighborhood={property.neighborhood}
                       />
                       <div className="flex flex-col min-w-0">
                         <span className="text-xs font-medium truncate max-w-[120px]">{property.title}</span>
