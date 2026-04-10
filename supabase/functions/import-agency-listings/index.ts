@@ -3857,11 +3857,16 @@ async function runMadlanAgencyDiscoverJob(params: {
               if (firstPageHtml && (firstPageHtml.includes("משהו בדפדפן שלך גרם לנו לחשוב שאתה רובוט") || firstPageHtml.includes("ShieldSquare") || firstPageHtml.includes("distil_r_captcha"))) {
                 console.warn(`[Madlan] CAPTCHA/bot block detected on ${firstPageUrl}`);
                 firstPageHtml = ""; // treat as failure
-                // Update agency_sources with failure info
-                await sb.from("agency_sources").update({
-                  consecutive_failures: (await sb.from("agency_sources").select("consecutive_failures").eq("id", agencySourceId).single()).data?.consecutive_failures + 1 || 1,
-                  last_failure_reason: "Madlan bot/captcha block detected",
-                }).eq("id", agencySourceId);
+                // Mark the job as captcha-blocked
+                await sb.from("import_jobs").update({
+                  status: "failed",
+                  last_heartbeat: new Date().toISOString(),
+                }).eq("id", jobId);
+                // Update matching agency_sources with failure reason
+                await sb.from("agency_sources")
+                  .update({ last_failure_reason: "Madlan bot/captcha block" })
+                  .eq("agency_id", agencyId)
+                  .eq("source_type", "madlan");
                 break;
               }
               break; // success
