@@ -30,7 +30,7 @@ const PropertyCarouselCard = memo(function PropertyCarouselCard({ property }: { 
       className="shrink-0 w-[280px] snap-start rounded-lg border border-border bg-card overflow-hidden"
     >
       <div className="relative aspect-[16/10] bg-muted">
-        <PropertyThumbnail src={image} alt={property.title} className="w-full h-full" />
+        <PropertyThumbnail src={image} alt={property.title} className="w-full h-full" city={property.city} neighborhood={property.neighborhood} />
       </div>
       <div className="p-2.5 space-y-0.5">
         <p className="text-sm font-bold text-foreground">
