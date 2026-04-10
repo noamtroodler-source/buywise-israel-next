@@ -1305,50 +1305,63 @@ async function generateAndStoreStreetView(
   skipEnhance?: boolean,
 ): Promise<{ updated: boolean; type?: string }> {
   try {
-    if (!propertyId || (!(latitude != null && longitude != null) && !city)) {
+    // GUARD: require real coordinates — city-only lookups produce "no imagery" placeholders
+    if (!propertyId || latitude == null || longitude == null) {
       return { updated: false };
     }
 
     const GOOGLE_MAPS_KEY = Deno.env.get("GOOGLE_MAPS_API_KEY") || Deno.env.get("GOOGLE_GEOCODING_API_KEY");
     if (!GOOGLE_MAPS_KEY) return { updated: false };
 
-    const hasCoords = latitude != null && longitude != null;
-    const location = hasCoords
-      ? `${latitude},${longitude}`
-      : encodeURIComponent(`${address || ""} ${city || ""}`.trim());
-
-    if (!location) return { updated: false };
+    const location = `${latitude},${longitude}`;
 
     // ── Step 1: Check Street View coverage via Metadata API ──
     let heading = deriveHeadingFallback(floor, unitNumber);
     let imageType: "street_view" | "satellite" = "street_view";
-    let imageUrl: string;
+    let sourceUrl: string;
 
-    if (hasCoords) {
-      const meta = await getStreetViewMetadata(latitude!, longitude!, GOOGLE_MAPS_KEY);
+    const meta = await getStreetViewMetadata(latitude, longitude, GOOGLE_MAPS_KEY);
 
-      if (meta?.status === "OK" && meta.camLat != null && meta.camLng != null) {
-        // Calculate bearing from camera to property for smart heading
-        heading = Math.round(calculateBearing(meta.camLat, meta.camLng, latitude!, longitude!));
-        console.log(`Smart heading for ${propertyId}: ${heading}° (camera @ ${meta.camLat.toFixed(5)},${meta.camLng.toFixed(5)})`);
-      } else if (meta?.status === "ZERO_RESULTS") {
-        // No street view coverage — use satellite fallback
-        imageType = "satellite";
-        console.log(`No street view coverage for ${propertyId}, using satellite fallback`);
-      }
-      // If metadata call failed entirely, proceed with street view + fallback heading
+    if (meta?.status === "OK" && meta.camLat != null && meta.camLng != null) {
+      // Calculate bearing from camera to property for smart heading
+      heading = Math.round(calculateBearing(meta.camLat, meta.camLng, latitude, longitude));
+      console.log(`Smart heading for ${propertyId}: ${heading}° (camera @ ${meta.camLat.toFixed(5)},${meta.camLng.toFixed(5)})`);
+    } else if (meta?.status === "ZERO_RESULTS") {
+      // No street view coverage — use satellite fallback
+      imageType = "satellite";
+      console.log(`No street view coverage for ${propertyId}, using satellite fallback`);
     }
+    // If metadata call failed entirely, proceed with street view + fallback heading
 
     if (imageType === "satellite") {
       // Satellite aerial fallback
-      imageUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${location}&zoom=19&size=1200x600&maptype=satellite&key=${GOOGLE_MAPS_KEY}`;
+      sourceUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${location}&zoom=19&size=1200x600&maptype=satellite&key=${GOOGLE_MAPS_KEY}`;
     } else {
       // Street view with improved params: 1200x600, fov=70, pitch=5
-      imageUrl = `https://maps.googleapis.com/maps/api/streetview?size=1200x600&location=${location}&fov=70&heading=${heading}&pitch=5&key=${GOOGLE_MAPS_KEY}`;
+      sourceUrl = `https://maps.googleapis.com/maps/api/streetview?size=1200x600&location=${location}&fov=70&heading=${heading}&pitch=5&key=${GOOGLE_MAPS_KEY}`;
     }
 
+    // ── Step 1b: Fetch the image and upload to storage (never store raw Google URLs) ──
+    const imgRes = await fetch(sourceUrl);
+    if (!imgRes.ok) {
+      console.warn(`Failed to fetch street view image for ${propertyId}: ${imgRes.status}`);
+      return { updated: false };
+    }
+    const imgBuffer = await imgRes.arrayBuffer();
+    const storagePath = `street-view/${propertyId}.png`;
+    const { error: uploadErr } = await sb.storage
+      .from("property-images")
+      .upload(storagePath, imgBuffer, { contentType: "image/png", upsert: true });
+    if (uploadErr) {
+      console.warn(`Failed to upload street view for ${propertyId}:`, uploadErr.message);
+      return { updated: false };
+    }
+    const { data: publicUrlData } = sb.storage.from("property-images").getPublicUrl(storagePath);
+    const storedUrl = publicUrlData?.publicUrl;
+    if (!storedUrl) return { updated: false };
+
     await sb.from("properties").update({
-      street_view_url: imageUrl,
+      street_view_url: storedUrl,
       street_view_type: imageType,
     }).eq("id", propertyId);
 
