@@ -161,6 +161,7 @@ export type Database = {
           founded_year: number | null
           id: string
           is_accepting_agents: boolean | null
+          is_partner: boolean
           is_verified: boolean | null
           last_sync_at: string | null
           logo_url: string | null
@@ -193,6 +194,7 @@ export type Database = {
           founded_year?: number | null
           id?: string
           is_accepting_agents?: boolean | null
+          is_partner?: boolean
           is_verified?: boolean | null
           last_sync_at?: string | null
           logo_url?: string | null
@@ -225,6 +227,7 @@ export type Database = {
           founded_year?: number | null
           id?: string
           is_accepting_agents?: boolean | null
+          is_partner?: boolean
           is_verified?: boolean | null
           last_sync_at?: string | null
           logo_url?: string | null
