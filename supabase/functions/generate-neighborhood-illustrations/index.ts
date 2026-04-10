@@ -6,7 +6,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-// City/neighborhood context for generating accurate, unique prompts
 const cityContext: Record<string, { vibe: string; architecture: string; landscape: string }> = {
   "tel-aviv": { vibe: "cosmopolitan Bauhaus", architecture: "white Bauhaus buildings, modern glass towers, balconies with plants", landscape: "flat coastal, palm trees, Mediterranean sea" },
   "jerusalem": { vibe: "ancient stone holy city", architecture: "Jerusalem stone buildings, domed rooftops, arched windows", landscape: "hilltop terrain, pine trees, golden limestone" },
@@ -35,9 +34,7 @@ const cityContext: Record<string, { vibe: string; architecture: string; landscap
   "gush-etzion": { vibe: "hilltop settlement bloc", architecture: "Jerusalem stone community buildings, modest homes", landscape: "Judean mountain terrain, terraced hillsides, pastoral" },
 };
 
-// Neighborhood-specific overrides for truly distinctive areas
 const neighborhoodOverrides: Record<string, string> = {
-  // Tel Aviv
   "tel-aviv:Neve Tzedek": "charming restored Ottoman-era lane with boutique galleries, low pastel buildings, bougainvillea, cobblestone",
   "tel-aviv:Florentin": "gritty urban street art covered walls, industrial-chic cafes, young creative energy, graffiti murals",
   "tel-aviv:Rothschild": "grand Bauhaus boulevard with white International Style buildings, wide tree-lined center promenade, outdoor cafes",
@@ -48,8 +45,7 @@ const neighborhoodOverrides: Record<string, string> = {
   "tel-aviv:Ramat Aviv": "upscale university district, wide boulevards, museum area, mature gardens, spacious apartments",
   "tel-aviv:HaTikva": "working-class market district, authentic Middle Eastern flavor, bustling shuk stalls, colorful signage",
   "tel-aviv:Kerem HaTeimanim": "intimate Yemenite quarter, narrow lanes, low traditional houses, authentic restaurants, close to Carmel Market",
-  // Jerusalem
-  "jerusalem:Old City": "ancient walled city, golden Dome of the Rock visible, stone arches, narrow market alleys, pilgrims",
+  "jerusalem:Old City": "ancient walled city, golden Dome visible beyond walls, stone arches, narrow market alleys",
   "jerusalem:Rehavia": "elegant tree-lined streets, Jerusalem stone garden apartments, intellectual heritage, quiet boulevards",
   "jerusalem:Talpiot": "commercial and residential mix, industrial area transitioning, views of desert hills",
   "jerusalem:German Colony": "restored Templar houses, charming stone facades, Emek Refaim cafe street, European character",
@@ -62,31 +58,26 @@ const neighborhoodOverrides: Record<string, string> = {
   "jerusalem:Arnona": "quiet residential, proximity to Haas Promenade, views of Old City, government area",
   "jerusalem:Armon HaNatziv": "elevated views of Temple Mount and desert, diplomatic quarter area, spacious",
   "jerusalem:Ein Kerem": "artistic village in a valley, church steeples, stone terraces, olive trees, springs",
-  "jerusalem:Mamilla": "luxury area adjacent to Old City walls, upscale mall, boutique hotels, David Citadel view",
+  "jerusalem:Mamilla": "luxury area adjacent to Old City walls, upscale mall, boutique hotels",
   "jerusalem:Givat Masua": "hilltop community, quiet residential, Jerusalem forest proximity",
-  // Beit Shemesh
   "beit-shemesh:Ramat Beit Shemesh Alef": "Anglo religious community, organized streets, community feel, limestone buildings, parks",
+  "beit-shemesh:Ramat Beit Shemesh Aleph": "Anglo religious community, organized streets, community feel, limestone buildings, parks",
   "beit-shemesh:Ramat Beit Shemesh Bet": "Haredi neighborhood, dense construction, community centers, modest limestone",
   "beit-shemesh:Ramat Beit Shemesh Gimel": "brand new development, construction cranes, fresh buildings on hillside, panoramic",
-  "beit-shemesh:Ramat Beit Shemesh Dalet": "newest expansion, construction in progress, hilltop views, fresh infrastructure",
+  "beit-shemesh:Ramat Beit Shemesh Dalet": "newest expansion, hilltop views, fresh infrastructure, Jerusalem stone",
   "beit-shemesh:Old Beit Shemesh": "original town center, older buildings, established trees, local market feel",
   "beit-shemesh:Sheinfeld": "upscale Anglo enclave, spacious homes, gardens, quiet tree-lined streets",
-  // Haifa
   "haifa:Carmel Center": "European-feel hilltop district, boutique shops, panoramic sea views, pine trees",
   "haifa:German Colony": "restored Templar stone buildings, Ben Gurion Boulevard, restaurants, Bahai Gardens above",
   "haifa:Hadar": "historic commercial center, dense urban, terraced streets, diverse architecture",
   "haifa:Neve Sha'anan": "university district on Carmel, academic campus, student housing, green hillside",
   "haifa:Bat Galim": "charming beachfront neighborhood, low buildings, promenade, sailing boats, Mediterranean",
-  // Eilat
   "eilat:Coral Beach": "tropical resort area, Red Sea turquoise water, palm trees, snorkeling, desert mountains backdrop",
   "eilat:North Beach": "hotel strip, bustling promenade, restaurants, yachts, nightlife, desert-meets-sea",
-  // Caesarea
   "caesarea:Aqueduct": "ancient Roman aqueduct on beach, luxury homes behind, historic meets modern",
   "caesarea:Golf Area": "manicured golf course, luxury villas, gated exclusivity, Mediterranean pines",
-  // Ashkelon
   "ashkelon:Marina": "modern waterfront development, yacht harbor, luxury towers, sea promenade",
   "ashkelon:Afridar": "established neighborhood, older character, parks, close to beach, Anglo community",
-  // Netanya
   "netanya:Galei Yam": "upscale beachfront, cliff-top luxury towers, dramatic sea views, promenades",
   "netanya:Old North": "Anglo hub, established residential, close to center, tree-lined streets",
   "netanya:Poleg": "new southern development, modern towers, commercial centers, young families",
@@ -111,20 +102,111 @@ function buildPrompt(citySlug: string, neighborhood: string): string {
   return `${baseStyle}. Scene: A Mediterranean residential street in ${neighborhood}, Israel. White and cream stone buildings, balconies, local vegetation, warm sunlight.`;
 }
 
+async function processItem(
+  sb: ReturnType<typeof createClient>,
+  lovableKey: string,
+  item: { id: string; city_slug: string; neighborhood_name: string }
+) {
+  try {
+    await sb
+      .from("neighborhood_illustrations")
+      .update({ status: "processing" })
+      .eq("id", item.id);
+
+    const prompt = buildPrompt(item.city_slug, item.neighborhood_name);
+
+    const aiResponse = await fetch(
+      "https://ai.gateway.lovable.dev/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${lovableKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-3.1-flash-image-preview",
+          messages: [{ role: "user", content: prompt }],
+          modalities: ["image", "text"],
+        }),
+      }
+    );
+
+    if (!aiResponse.ok) {
+      throw new Error(`AI API error ${aiResponse.status}`);
+    }
+
+    const aiData = await aiResponse.json();
+    const imageBase64 =
+      aiData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+
+    if (!imageBase64) {
+      throw new Error("No image returned from AI");
+    }
+
+    const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+    const binaryData = Uint8Array.from(atob(base64Data), (c) =>
+      c.charCodeAt(0)
+    );
+
+    const storagePath = `${item.city_slug}/${item.neighborhood_name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/-+$/, "")}.png`;
+
+    const { error: uploadErr } = await sb.storage
+      .from("neighborhood-illustrations")
+      .upload(storagePath, binaryData, {
+        contentType: "image/png",
+        upsert: true,
+      });
+
+    if (uploadErr) throw uploadErr;
+
+    const {
+      data: { publicUrl },
+    } = sb.storage
+      .from("neighborhood-illustrations")
+      .getPublicUrl(storagePath);
+
+    await sb
+      .from("neighborhood_illustrations")
+      .update({
+        status: "completed",
+        image_url: publicUrl,
+        storage_path: storagePath,
+        prompt_used: prompt,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", item.id);
+
+    console.log(`✅ ${item.city_slug}/${item.neighborhood_name}`);
+  } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    console.error(`❌ ${item.city_slug}/${item.neighborhood_name}: ${errorMsg}`);
+
+    await sb
+      .from("neighborhood_illustrations")
+      .update({
+        status: "failed",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", item.id);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { batch_size = 5, city_slug } = await req.json();
+    const { batch_size = 10, city_slug } = await req.json();
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const lovableKey = Deno.env.get("LOVABLE_API_KEY")!;
     const sb = createClient(supabaseUrl, supabaseKey);
 
-    // Get pending neighborhoods
     let query = sb
       .from("neighborhood_illustrations")
       .select("*")
@@ -139,148 +221,41 @@ Deno.serve(async (req) => {
     if (fetchErr) throw fetchErr;
     if (!pending || pending.length === 0) {
       return new Response(
-        JSON.stringify({ message: "No pending illustrations", remaining: 0 }),
+        JSON.stringify({ message: "No pending illustrations" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Count remaining
     const { count: remaining } = await sb
       .from("neighborhood_illustrations")
       .select("*", { count: "exact", head: true })
       .eq("status", "pending");
 
-    const results: Array<{ neighborhood: string; city: string; status: string; error?: string }> = [];
-
-    for (const item of pending) {
-      try {
-        // Mark as processing
-        await sb
-          .from("neighborhood_illustrations")
-          .update({ status: "processing" })
-          .eq("id", item.id);
-
-        const prompt = buildPrompt(item.city_slug, item.neighborhood_name);
-
-        // Generate image via Lovable AI Gateway
-        const aiResponse = await fetch(
-          "https://ai.gateway.lovable.dev/v1/chat/completions",
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${lovableKey}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              model: "google/gemini-3.1-flash-image-preview",
-              messages: [
-                {
-                  role: "user",
-                  content: prompt,
-                },
-              ],
-              modalities: ["image", "text"],
-            }),
-          }
-        );
-
-        if (!aiResponse.ok) {
-          const errText = await aiResponse.text();
-          throw new Error(`AI API error ${aiResponse.status}: ${errText}`);
+    // Process in background
+    // @ts-ignore - EdgeRuntime.waitUntil is available in Supabase Edge Functions
+    EdgeRuntime.waitUntil(
+      (async () => {
+        // Process 2 at a time for speed
+        for (let i = 0; i < pending.length; i += 2) {
+          const batch = pending.slice(i, i + 2);
+          await Promise.all(
+            batch.map((item) => processItem(sb, lovableKey, item))
+          );
         }
-
-        const aiData = await aiResponse.json();
-        const imageBase64 =
-          aiData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-
-        if (!imageBase64) {
-          throw new Error("No image returned from AI");
-        }
-
-        // Extract base64 data
-        const base64Data = imageBase64.replace(
-          /^data:image\/\w+;base64,/,
-          ""
-        );
-        const binaryData = Uint8Array.from(atob(base64Data), (c) =>
-          c.charCodeAt(0)
-        );
-
-        // Upload to storage
-        const storagePath = `${item.city_slug}/${item.neighborhood_name
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "-")
-          .replace(/-+$/, "")}.jpg`;
-
-        const { error: uploadErr } = await sb.storage
-          .from("neighborhood-illustrations")
-          .upload(storagePath, binaryData, {
-            contentType: "image/png",
-            upsert: true,
-          });
-
-        if (uploadErr) throw uploadErr;
-
-        const {
-          data: { publicUrl },
-        } = sb.storage
-          .from("neighborhood-illustrations")
-          .getPublicUrl(storagePath);
-
-        // Update record
-        await sb
-          .from("neighborhood_illustrations")
-          .update({
-            status: "completed",
-            image_url: publicUrl,
-            storage_path: storagePath,
-            prompt_used: prompt,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", item.id);
-
-        results.push({
-          neighborhood: item.neighborhood_name,
-          city: item.city_slug,
-          status: "completed",
-        });
-
-        console.log(`✅ Generated: ${item.city_slug}/${item.neighborhood_name}`);
-      } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : String(err);
-        console.error(
-          `❌ Failed: ${item.city_slug}/${item.neighborhood_name}: ${errorMsg}`
-        );
-
-        await sb
-          .from("neighborhood_illustrations")
-          .update({
-            status: "failed",
-            prompt_used: buildPrompt(item.city_slug, item.neighborhood_name),
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", item.id);
-
-        results.push({
-          neighborhood: item.neighborhood_name,
-          city: item.city_slug,
-          status: "failed",
-          error: errorMsg,
-        });
-      }
-    }
+        console.log(`Batch of ${pending.length} complete`);
+      })()
+    );
 
     return new Response(
       JSON.stringify({
-        processed: results.length,
-        remaining: (remaining || 0) - results.length,
-        results,
+        message: `Processing ${pending.length} illustrations in background`,
+        remaining: remaining || 0,
+        items: pending.map((p) => `${p.city_slug}/${p.neighborhood_name}`),
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : String(err);
-    console.error("Error:", errorMsg);
     return new Response(JSON.stringify({ error: errorMsg }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
