@@ -1233,6 +1233,109 @@ async function enhanceImage(imagePublicUrl: string, sb: any, bucketName: string,
   } catch { return imagePublicUrl; }
 }
 
+async function generateAndStoreStreetView(
+  sb: any,
+  propertyId: string,
+  latitude: number | null,
+  longitude: number | null,
+  address?: string | null,
+  city?: string | null,
+): Promise<{ updated: boolean }> {
+  try {
+    if (!propertyId || (!(latitude != null && longitude != null) && !city)) {
+      return { updated: false };
+    }
+
+    const GOOGLE_MAPS_KEY = Deno.env.get("GOOGLE_MAPS_API_KEY") || Deno.env.get("GOOGLE_GEOCODING_API_KEY");
+    if (!GOOGLE_MAPS_KEY) return { updated: false };
+
+    const location = latitude != null && longitude != null
+      ? `${latitude},${longitude}`
+      : encodeURIComponent(`${address || ""} ${city || ""}`.trim());
+
+    if (!location) return { updated: false };
+
+    const streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=800x400&location=${location}&fov=90&heading=0&pitch=10&key=${GOOGLE_MAPS_KEY}`;
+
+    await sb.from("properties").update({ street_view_url: streetViewUrl }).eq("id", propertyId);
+
+    try {
+      const ENHANCE_URL = `${Deno.env.get("SUPABASE_URL")}/functions/v1/enhance-image`;
+      const enhancePath = `street-view/${propertyId}.png`;
+      const enhanceRes = await fetch(ENHANCE_URL, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          image_url: streetViewUrl,
+          bucket: "property-images",
+          path: enhancePath,
+        }),
+      });
+
+      if (enhanceRes.ok) {
+        const enhanceData = await enhanceRes.json();
+        if (enhanceData.enhanced && enhanceData.image_url) {
+          await sb.from("properties").update({ street_view_url: enhanceData.image_url }).eq("id", propertyId);
+          console.log(`Street view enhanced for ${propertyId}`);
+        }
+      }
+    } catch (enhanceErr) {
+      console.warn(`Street view enhancement skipped for ${propertyId}:`, enhanceErr);
+    }
+
+    return { updated: true };
+  } catch (svErr) {
+    console.warn(`Street view generation failed for ${propertyId}:`, svErr);
+    return { updated: false };
+  }
+}
+
+async function handleBackfillStreetView(body: any) {
+  const sb = supabaseAdmin();
+  const { property_id, limit } = body || {};
+  const safeLimit = Math.min(Math.max(Number(limit) || 25, 1), 100);
+
+  let query: any = sb
+    .from("properties")
+    .select("id, latitude, longitude, address, city, street_view_url, import_source")
+    .not("import_source", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(safeLimit);
+
+  if (property_id) {
+    query = query.eq("id", property_id);
+  } else {
+    query = query.is("street_view_url", null);
+  }
+
+  const { data: properties, error } = await query;
+  if (error) throw new Error(`Failed to load properties for street view backfill: ${error.message}`);
+
+  let updated = 0;
+  let skipped = 0;
+  for (const property of properties || []) {
+    const result = await generateAndStoreStreetView(
+      sb,
+      property.id,
+      property.latitude,
+      property.longitude,
+      property.address,
+      property.city,
+    );
+    if (result.updated) updated++;
+    else skipped++;
+  }
+
+  return {
+    processed: (properties || []).length,
+    updated,
+    skipped,
+  };
+}
+
 // Geocoding rate-limit state
 let _lastGeoTime = 0;
 let _geoQueue: Promise<any> = Promise.resolve();
@@ -2607,46 +2710,8 @@ async function processOneItem(
     }
 
     // ── Generate & enhance street view image ──
-    if (property?.id && (latitude || longitude || listing.city)) {
-      try {
-        const GOOGLE_MAPS_KEY = Deno.env.get("GOOGLE_MAPS_API_KEY") || Deno.env.get("GOOGLE_GEOCODING_API_KEY");
-        if (GOOGLE_MAPS_KEY) {
-          const svLocation = latitude && longitude
-            ? `${latitude},${longitude}`
-            : encodeURIComponent(`${listing.address || ''} ${listing.city || ''}`.trim());
-          const streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=800x400&location=${svLocation}&fov=90&heading=0&pitch=10&key=${GOOGLE_MAPS_KEY}`;
-
-          // Store the raw street view URL immediately
-          await sb.from("properties").update({ street_view_url: streetViewUrl }).eq("id", property.id);
-
-          // Try AI enhancement of street view in background (non-blocking)
-          try {
-            const ENHANCE_URL = `${Deno.env.get("SUPABASE_URL")}/functions/v1/enhance-image`;
-            const enhancePath = `street-view/${property.id}.png`;
-            const enhanceRes = await fetch(ENHANCE_URL, {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                image_url: streetViewUrl,
-                bucket: "property-images",
-                path: enhancePath,
-              }),
-            });
-            const enhanceData = await enhanceRes.json();
-            if (enhanceData.enhanced && enhanceData.image_url) {
-              await sb.from("properties").update({ street_view_url: enhanceData.image_url }).eq("id", property.id);
-              console.log(`Street view enhanced for ${property.id}`);
-            }
-          } catch (enhanceErr) {
-            console.warn(`Street view enhancement skipped for ${property.id}:`, enhanceErr);
-          }
-        }
-      } catch (svErr) {
-        console.warn(`Street view generation failed for ${property.id}:`, svErr);
-      }
+    if (property?.id) {
+      await generateAndStoreStreetView(sb, property.id, latitude, longitude, listing.address, listing.city);
     }
 
     // Insert cross-source duplicate pair if detected
@@ -4065,6 +4130,7 @@ Deno.serve(async (req) => {
     else if (action === "approve_item") result = await handleApproveItem(body);
     else if (action === "resume_job") result = await handleResumeJob(body);
     else if (action === "check_existing") result = await handleCheckExisting(body);
+    else if (action === "backfill_street_view") result = await handleBackfillStreetView(body);
     else throw new Error(`Unknown action: ${action}`);
 
     return new Response(JSON.stringify(result), {
