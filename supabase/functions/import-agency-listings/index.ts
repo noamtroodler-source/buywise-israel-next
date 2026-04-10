@@ -1324,7 +1324,7 @@ async function handleBackfillStreetView(body: any) {
 
   let query: any = sb
     .from("properties")
-    .select("id, latitude, longitude, address, city, street_view_url, import_source")
+    .select("id, latitude, longitude, address, city, street_view_url, import_source, floor")
     .not("import_source", "is", null)
     .order("created_at", { ascending: false })
     .limit(safeLimit);
@@ -1348,6 +1348,7 @@ async function handleBackfillStreetView(body: any) {
       property.longitude,
       property.address,
       property.city,
+      property.floor,
     );
     if (result.updated) updated++;
     else skipped++;
