@@ -442,6 +442,9 @@ export default function PropertyDetail() {
                 onSave={handleSave}
                 isSaved={isSaved}
                 isSourced={!!(property as any).import_source && !(property as any).is_claimed}
+                isPartner={!!(property as any).is_partner}
+                agencyName={(property as any).source_agency_name || (property.agent?.agency_name ?? null)}
+                agencyLogoUrl={(property as any).agency_logo_url || null}
                 propertyCity={property.city}
               />
               {/* Co-listing agents — shown only for claimed listings with multiple agencies */}
