@@ -1237,14 +1237,13 @@ async function enhanceImage(imagePublicUrl: string, sb: any, bucketName: string,
 /**
  * Derive a deterministic heading (0-359) from floor/unit data so that
  * same-building listings get slightly different camera angles.
+ * Used as fallback when metadata API doesn't return camera location.
  */
-function deriveHeading(floor?: number | null, unitNumber?: string | null): number {
-  // Base heading = 0. Offset by floor × 45° (wrapping) for visual variety.
+function deriveHeadingFallback(floor?: number | null, unitNumber?: string | null): number {
   let heading = 0;
   if (floor != null && floor > 0) {
     heading = (floor * 45) % 360;
   }
-  // If we have a unit/apartment number, hash its last digits for extra offset
   if (unitNumber) {
     const digits = unitNumber.replace(/\D/g, '');
     if (digits.length > 0) {
@@ -1253,6 +1252,45 @@ function deriveHeading(floor?: number | null, unitNumber?: string | null): numbe
     }
   }
   return heading;
+}
+
+/**
+ * Calculate bearing from camera position to property coordinates.
+ * Returns degrees 0-360 (north = 0, east = 90).
+ */
+function calculateBearing(
+  camLat: number, camLng: number,
+  propLat: number, propLng: number,
+): number {
+  const toRad = (d: number) => d * Math.PI / 180;
+  const toDeg = (r: number) => r * 180 / Math.PI;
+  const dLng = toRad(propLng - camLng);
+  const lat1 = toRad(camLat);
+  const lat2 = toRad(propLat);
+  const y = Math.sin(dLng) * Math.cos(lat2);
+  const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
+  return (toDeg(Math.atan2(y, x)) + 360) % 360;
+}
+
+/**
+ * Check Street View metadata and return camera info, or null if no coverage.
+ */
+async function getStreetViewMetadata(
+  lat: number, lng: number, apiKey: string,
+): Promise<{ status: string; camLat?: number; camLng?: number } | null> {
+  try {
+    const url = `https://maps.googleapis.com/maps/api/streetview/metadata?location=${lat},${lng}&key=${apiKey}`;
+    const res = await fetch(url);
+    if (!res.ok) { await res.text(); return null; }
+    const data = await res.json();
+    return {
+      status: data.status,
+      camLat: data.location?.lat,
+      camLng: data.location?.lng,
+    };
+  } catch {
+    return null;
+  }
 }
 
 async function generateAndStoreStreetView(
@@ -1265,7 +1303,7 @@ async function generateAndStoreStreetView(
   floor?: number | null,
   unitNumber?: string | null,
   skipEnhance?: boolean,
-): Promise<{ updated: boolean }> {
+): Promise<{ updated: boolean; type?: string }> {
   try {
     if (!propertyId || (!(latitude != null && longitude != null) && !city)) {
       return { updated: false };
@@ -1274,17 +1312,47 @@ async function generateAndStoreStreetView(
     const GOOGLE_MAPS_KEY = Deno.env.get("GOOGLE_MAPS_API_KEY") || Deno.env.get("GOOGLE_GEOCODING_API_KEY");
     if (!GOOGLE_MAPS_KEY) return { updated: false };
 
-    const location = latitude != null && longitude != null
+    const hasCoords = latitude != null && longitude != null;
+    const location = hasCoords
       ? `${latitude},${longitude}`
       : encodeURIComponent(`${address || ""} ${city || ""}`.trim());
 
     if (!location) return { updated: false };
 
-    const heading = deriveHeading(floor, unitNumber);
-    const streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=800x400&location=${location}&fov=90&heading=${heading}&pitch=10&key=${GOOGLE_MAPS_KEY}`;
+    // ── Step 1: Check Street View coverage via Metadata API ──
+    let heading = deriveHeadingFallback(floor, unitNumber);
+    let imageType: "street_view" | "satellite" = "street_view";
+    let imageUrl: string;
 
-    await sb.from("properties").update({ street_view_url: streetViewUrl }).eq("id", propertyId);
+    if (hasCoords) {
+      const meta = await getStreetViewMetadata(latitude!, longitude!, GOOGLE_MAPS_KEY);
 
+      if (meta?.status === "OK" && meta.camLat != null && meta.camLng != null) {
+        // Calculate bearing from camera to property for smart heading
+        heading = Math.round(calculateBearing(meta.camLat, meta.camLng, latitude!, longitude!));
+        console.log(`Smart heading for ${propertyId}: ${heading}° (camera @ ${meta.camLat.toFixed(5)},${meta.camLng.toFixed(5)})`);
+      } else if (meta?.status === "ZERO_RESULTS") {
+        // No street view coverage — use satellite fallback
+        imageType = "satellite";
+        console.log(`No street view coverage for ${propertyId}, using satellite fallback`);
+      }
+      // If metadata call failed entirely, proceed with street view + fallback heading
+    }
+
+    if (imageType === "satellite") {
+      // Satellite aerial fallback
+      imageUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${location}&zoom=19&size=1200x600&maptype=satellite&key=${GOOGLE_MAPS_KEY}`;
+    } else {
+      // Street view with improved params: 1200x600, fov=70, pitch=5
+      imageUrl = `https://maps.googleapis.com/maps/api/streetview?size=1200x600&location=${location}&fov=70&heading=${heading}&pitch=5&key=${GOOGLE_MAPS_KEY}`;
+    }
+
+    await sb.from("properties").update({
+      street_view_url: imageUrl,
+      street_view_type: imageType,
+    }).eq("id", propertyId);
+
+    // ── Step 2: AI enhancement ──
     if (!skipEnhance) try {
       const ENHANCE_URL = `${Deno.env.get("SUPABASE_URL")}/functions/v1/enhance-image`;
       const enhancePath = `street-view/${propertyId}.png`;
@@ -1295,9 +1363,10 @@ async function generateAndStoreStreetView(
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          image_url: streetViewUrl,
+          image_url: imageUrl,
           bucket: "property-images",
           path: enhancePath,
+          style: imageType === "street_view" ? "architectural" : "photo_correct",
         }),
       });
 
@@ -1305,14 +1374,14 @@ async function generateAndStoreStreetView(
         const enhanceData = await enhanceRes.json();
         if (enhanceData.enhanced && enhanceData.image_url) {
           await sb.from("properties").update({ street_view_url: enhanceData.image_url }).eq("id", propertyId);
-          console.log(`Street view enhanced for ${propertyId}`);
+          console.log(`Street view enhanced (${imageType}) for ${propertyId}`);
         }
       }
     } catch (enhanceErr) {
       console.warn(`Street view enhancement skipped for ${propertyId}:`, enhanceErr);
     }
 
-    return { updated: true };
+    return { updated: true, type: imageType };
   } catch (svErr) {
     console.warn(`Street view generation failed for ${propertyId}:`, svErr);
     return { updated: false };
