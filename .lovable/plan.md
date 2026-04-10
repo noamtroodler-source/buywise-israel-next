@@ -1,100 +1,62 @@
 
 
-# Fix Plan: 8 Scraped Listing Issues
+# Street View Image Quality Overhaul
 
-## Summary of Findings
+## Overview
+Five improvements to the street view pipeline: better camera params, smart heading toward the building, metadata pre-check with satellite fallback, upgraded AI style transfer prompt, and higher-res source images.
 
-| # | Issue | Root Cause |
-|---|-------|------------|
-| 1 | Street view not set on scraped listings | Import pipeline never generates/stores `street_view_url`. The `StreetViewFallback` component only shows when `!is_claimed && !images.length` — but scraped listings DO have images, so it never triggers. |
-| 2 | Rentals not included in scrape | All `agency_sources` URLs end in `/forsale`. No rental URLs exist. The `agency_sources` table has no `import_type` column. The nightly scheduler defaults `import_type` to `"resale"` and the pipeline skips `for_rent` listings in resale mode. |
-| 3 | Both street view AND AI pic showing | Currently street view only shows as a fallback when there are NO images. For sourced listings WITH images, it never appears. The issue is that users want ONLY the street view (no scraped photos) — the opposite of current behavior. |
-| 4 | Right sidebar too cluttered | Sidebar currently shows: StickyContactCard + SourcedListingEnrichment (price intel, costs, community data) + CoListingAgents. User wants ONLY the agent/agency card. |
-| 5 | "Sourced" filter should mean "BuyWise Partners" | Currently `sourced_only` filter shows ALL imported listings. User wants it to show only listings from paying partner agencies. No `is_partner` or `subscription_tier` column exists on `agencies` table. |
-| 6 | AI enhancement for street view photos | The `enhance-image` edge function exists but is never called for street view images. Need to run the same touch-up pipeline on Google Street View screenshots. |
-| 7 | Cross-source merge logic | Already implemented (Tier 3 dedup in import pipeline). Structured data (Yad2 API) wins on structural fields; non-structured sources gap-fill only. Longer descriptions win. Features are unioned. Price discrepancies >15% are logged. This is working correctly. |
-| 8 | Agent card should show agency branding | Currently shows agent name + agency name as plain text. User wants: agency initials bubble with "Sourced" label for scraped listings, and "BuyWise Partner" badge for partner agencies. |
+## Changes
 
----
+### 1. Better Camera Parameters
+**File:** `supabase/functions/import-agency-listings/index.ts` — `generateAndStoreStreetView`
+- Change `size=800x400` → `size=1200x600`
+- Change `fov=90` → `fov=70` (tighter, less distortion)
+- Change `pitch=10` → `pitch=5` (slightly more natural angle)
 
-## Implementation Plan
+### 2. Smart Heading via Street View Metadata API
+**File:** `supabase/functions/import-agency-listings/index.ts`
 
-### Step 1: Database Changes
+Replace `deriveHeading()` with a new approach:
+- Call Google Street View Metadata API first: `https://maps.googleapis.com/maps/api/streetview/metadata?location=LAT,LNG&key=KEY`
+- This returns the actual camera `location` (where the Street View car was). Extract its lat/lng.
+- Calculate the **bearing from the camera position to the property coordinates** using the standard formula: `atan2(sin(dLng)*cos(lat2), cos(lat1)*sin(lat2) - sin(lat1)*cos(lat2)*cos(dLng))`
+- Use this bearing as the `heading` parameter — the camera will face the building directly.
+- Keep the old `deriveHeading` as fallback if metadata call fails or returns no location.
 
-**Migration: Add `is_partner` to `agencies` and `import_type` to `agency_sources`**
-- Add `is_partner BOOLEAN DEFAULT false` to `agencies` — marks paying BuyWise Partner agencies
-- (No `import_type` column needed on `agency_sources` — we'll add rental source URLs directly with `/forrent` in the URL, and the pipeline already detects `for_rent` from the listing content)
+### 3. Street View Coverage Check + Satellite Fallback
+**File:** `supabase/functions/import-agency-listings/index.ts` — `generateAndStoreStreetView`
 
-### Step 2: Add Rental Sources to `agency_sources`
+The metadata API response includes a `status` field:
+- If `status === "OK"` → proceed with street view fetch
+- If `status === "ZERO_RESULTS"` or other → generate a **satellite fallback** instead:
+  - URL: `https://maps.googleapis.com/maps/api/staticmap?center=LAT,LNG&zoom=19&size=1200x600&maptype=satellite&key=KEY`
+  - Store this as `street_view_url` (it's still a location image, just aerial)
+  - Add a `street_view_type` column to properties (`street_view` | `satellite`) so the UI can optionally badge it
 
-For each existing Yad2 `/forsale` URL, insert a matching `/forrent` URL. The import pipeline already handles `listing_status: for_rent` detection from Yad2 data and the nightly scheduler will pick them up.
+**Migration:** Add `street_view_type TEXT DEFAULT 'street_view'` column to `properties` table.
 
-### Step 3: Generate Street View URLs in Import Pipeline
+### 4. AI Style Transfer Upgrade
+**File:** `supabase/functions/enhance-image/index.ts`
 
-**Edit `import-agency-listings/index.ts`:**
-- After inserting a property, generate a Google Street View Static API URL using the property's lat/lng (or address+city fallback)
-- Store it in `street_view_url` column on the property
-- Apply the same AI enhancement (via `enhance-image` edge function) to the street view image, uploading the result to storage
-- Add the enhanced street view as the LAST image in the `images` array (not the cover — the cover remains AI-selected from listing photos)
+Update the AI prompt to apply a clean architectural illustration style rather than just technical corrections. Accept an optional `style` parameter in the request body:
+- When `style === "architectural"` (default for street views): Use a prompt like: *"Transform this street-level photo into a clean, professional architectural visualization. Maintain the exact building geometry, proportions, and layout. Apply a clean modern rendering style with soft natural lighting, reduced visual noise, and cohesive color grading. Remove compression artifacts, lens flare, and visual clutter (power lines, trash bins) while keeping the building facade accurate. The result should look like an architect's exterior rendering."*
+- When `style === "photo_correct"` (existing behavior): Keep the current prompt for interior photos.
 
-### Step 4: Fix Property Detail — Show Street View for Sourced Listings
+### 5. Backfill Handler Update
+**File:** `supabase/functions/import-agency-listings/index.ts` — `handleBackfillStreetView`
 
-**Edit `PropertyDetail.tsx`:**
-- For sourced listings (has `import_source`), show the street view image in the hero gallery alongside other images (it's already in the images array from Step 3)
-- Remove the separate `StreetViewFallback` block for sourced listings — street view is now part of the image gallery
+Update the backfill query to also select properties that have the old low-res street view URLs (containing `size=800x400`) so we can re-generate them at higher quality. Add a `force_refresh` parameter.
 
-**Edit `PropertyHero.tsx`:**
-- No major changes needed — street view will be in the images array
-
-### Step 5: Clean Up Right Sidebar for Sourced Listings
-
-**Edit `PropertyDetail.tsx`:**
-- Remove `SourcedListingEnrichment` from the sidebar (the price intel, cost breakdown, market intelligence sections are already on the left side — this was redundant)
-- Keep only `StickyContactCard` in the sidebar for sourced listings
-- Move any unique sourced-listing-only data from `SourcedListingEnrichment` that isn't already on the left side into the left column sections
-
-### Step 6: Rename "Sourced Listings" to "BuyWise Partners"
-
-**Edit `Listings.tsx`:**
-- Rename the filter chip from "Sourced listings" to "BuyWise Partners"
-- Change filter logic: instead of `import_source IS NOT NULL`, filter by `agent.agency.is_partner = true`
-
-**Edit `usePaginatedProperties.tsx`:**
-- Update the `sourced_only` filter to join through agents → agencies and check `is_partner = true`
-
-**Edit `SourcedListingsBanner.tsx`:**
-- Rename to "BuyWise Partners" banner explaining these are vetted partner agencies
-
-**Edit `PropertyCard.tsx`:**
-- Replace "Sourced" badge with "BuyWise Partner" badge for listings from partner agencies
-- Keep a subtle "Sourced" indicator for non-partner scraped listings if needed
-
-### Step 7: AI Enhancement for Street View Images
-
-**Edit `import-agency-listings/index.ts`:**
-- After generating the Street View URL, call the `enhance-image` edge function with the street view URL
-- Upload enhanced version to storage bucket
-- Use the enhanced URL in the property's images array
-
-### Step 8: Agent/Agency Card Branding
-
-**Edit `StickyContactCard.tsx`:**
-- For sourced (unclaimed) listings: show the agency name with a circle/bubble containing agency initials + "Sourced" label
-- For BuyWise Partner agency listings: show a "BuyWise Partner" badge next to the agent name — styled with a teal/primary color accent consistent with the brand
-- Use the agency's logo if available; fall back to initials bubble
-
-**Edit `PropertyCard.tsx`:**
-- Update the badge system to show "BuyWise Partner" (teal badge) instead of "Sourced" for partner listings
-
-### Step 9: Trigger Rental Scrape
-
-After deploying the rental source URLs, trigger the nightly scheduler to pick up the new rental sources.
-
----
+## Implementation Order
+1. DB migration (add `street_view_type` column)
+2. Update `enhance-image` edge function with style parameter
+3. Update `import-agency-listings` with all street view improvements (metadata check, bearing calc, satellite fallback, higher res params)
+4. Deploy both edge functions
+5. Test with a single property backfill to verify quality
 
 ## Technical Details
-
-- **Street View API**: Uses `https://maps.googleapis.com/maps/api/streetview?size=800x400&location={lat},{lng}&fov=90&heading=0&pitch=10` — the `heading=0` default faces north. For better results, we can compute heading toward the street (perpendicular to building) but this is a v2 enhancement.
-- **Cross-source merge (Issue 7)**: Already working correctly — Tier 3 dedup merges fields from multiple sources, structured data (Yad2 API) is authoritative for structural fields, descriptions take the longer version, features are unioned.
-- **Image order for sourced listings**: Street view goes LAST in images array. AI cover selection picks the best interior/exterior photo for index 0. Street view serves as a location reference, not the hero.
+- The Street View Metadata API call is free (no image charges), so the coverage pre-check adds no cost
+- Satellite Static Maps API costs the same as Street View per request
+- The bearing calculation uses standard geodesic math (same Haversine family already in the codebase at `src/lib/utils/geometry.ts`)
+- The `enhance-image` function already handles the upload-to-storage flow, so the style transfer just changes the prompt text
 
