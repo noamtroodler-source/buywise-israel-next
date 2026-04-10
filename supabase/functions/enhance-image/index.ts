@@ -15,10 +15,16 @@ Deno.serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-    const { image_url, bucket, path } = await req.json();
+    const { image_url, bucket, path, style } = await req.json();
     if (!image_url) throw new Error("image_url is required");
 
-    console.log("Enhancing image:", image_url.slice(0, 100));
+    console.log("Enhancing image:", image_url.slice(0, 100), "style:", style || "photo_correct");
+
+    const PROMPT_ARCHITECTURAL = "Transform this street-level or aerial photo into a clean, professional architectural visualization. Maintain the exact building geometry, proportions, and layout. Apply a clean modern rendering style with soft natural lighting, reduced visual noise, and cohesive color grading. Remove compression artifacts, lens flare, and visual clutter (power lines, trash bins, parked cars in foreground) while keeping the building facade accurate. Correct any wide-angle distortion. The result should look like a high-quality architect's exterior rendering — crisp, inviting, and realistic.";
+
+    const PROMPT_PHOTO_CORRECT = "Apply only technical photo corrections to this real estate image. Allowed adjustments: white balance correction, exposure/brightness normalization, sharpness enhancement, noise reduction, and minor lens distortion correction. Do NOT add, remove, or move any objects. Do NOT change wall colors, floor materials, or surface finishes. Do NOT replace or enhance the sky. Do NOT apply HDR effects or boost saturation beyond natural levels. Do NOT make rooms appear larger or alter geometry. The result must look like the same photo taken with a better camera and proper lighting — indistinguishable from reality.";
+
+    const promptText = style === "architectural" ? PROMPT_ARCHITECTURAL : PROMPT_PHOTO_CORRECT;
 
     // Call Lovable AI image model to enhance the image
     const aiResponse = await fetch(
@@ -37,7 +43,7 @@ Deno.serve(async (req) => {
               content: [
                 {
                   type: "text",
-                  text: "Apply only technical photo corrections to this real estate image. Allowed adjustments: white balance correction, exposure/brightness normalization, sharpness enhancement, noise reduction, and minor lens distortion correction. Do NOT add, remove, or move any objects. Do NOT change wall colors, floor materials, or surface finishes. Do NOT replace or enhance the sky. Do NOT apply HDR effects or boost saturation beyond natural levels. Do NOT make rooms appear larger or alter geometry. The result must look like the same photo taken with a better camera and proper lighting — indistinguishable from reality.",
+                  text: promptText,
                 },
                 {
                   type: "image_url",

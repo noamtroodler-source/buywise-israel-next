@@ -1,0 +1,1 @@
+ALTER TABLE public.properties ADD COLUMN IF NOT EXISTS street_view_type TEXT DEFAULT 'street_view';
