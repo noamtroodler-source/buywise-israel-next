@@ -1264,6 +1264,7 @@ async function generateAndStoreStreetView(
   city?: string | null,
   floor?: number | null,
   unitNumber?: string | null,
+  skipEnhance?: boolean,
 ): Promise<{ updated: boolean }> {
   try {
     if (!propertyId || (!(latitude != null && longitude != null) && !city)) {
@@ -1284,7 +1285,7 @@ async function generateAndStoreStreetView(
 
     await sb.from("properties").update({ street_view_url: streetViewUrl }).eq("id", propertyId);
 
-    try {
+    if (!skipEnhance) try {
       const ENHANCE_URL = `${Deno.env.get("SUPABASE_URL")}/functions/v1/enhance-image`;
       const enhancePath = `street-view/${propertyId}.png`;
       const enhanceRes = await fetch(ENHANCE_URL, {
@@ -1320,8 +1321,9 @@ async function generateAndStoreStreetView(
 
 async function handleBackfillStreetView(body: any) {
   const sb = supabaseAdmin();
-  const { property_id, limit } = body || {};
+  const { property_id, limit, skip_enhance } = body || {};
   const safeLimit = Math.min(Math.max(Number(limit) || 25, 1), 100);
+  const shouldSkipEnhance = skip_enhance === true;
 
   let query: any = sb
     .from("properties")
@@ -1350,6 +1352,8 @@ async function handleBackfillStreetView(body: any) {
       property.address,
       property.city,
       property.floor,
+      null,
+      shouldSkipEnhance,
     );
     if (result.updated) updated++;
     else skipped++;
