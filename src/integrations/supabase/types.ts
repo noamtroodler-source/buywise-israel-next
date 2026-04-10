@@ -3636,6 +3636,42 @@ export type Database = {
         }
         Relationships: []
       }
+      neighborhood_illustrations: {
+        Row: {
+          city_slug: string
+          created_at: string
+          id: string
+          image_url: string | null
+          neighborhood_name: string
+          prompt_used: string | null
+          status: string
+          storage_path: string | null
+          updated_at: string
+        }
+        Insert: {
+          city_slug: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          neighborhood_name: string
+          prompt_used?: string | null
+          status?: string
+          storage_path?: string | null
+          updated_at?: string
+        }
+        Update: {
+          city_slug?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          neighborhood_name?: string
+          prompt_used?: string | null
+          status?: string
+          storage_path?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       neighborhood_price_history: {
         Row: {
           avg_price_nis: number | null
