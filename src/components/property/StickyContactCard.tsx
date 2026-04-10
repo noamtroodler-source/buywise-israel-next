@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 
-import { MessageCircle, Mail, Share2, Heart, BookOpen, ChevronRight } from 'lucide-react';
+import { MessageCircle, Mail, Share2, Heart, BookOpen, ChevronRight, ShieldCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { trackInquiry } from '@/hooks/useInquiryTracking';
 import { useAuth } from '@/hooks/useAuth';
@@ -100,8 +100,8 @@ export function StickyContactCard({
         className={className}
       >
         <Card className="shadow-lg border-border overflow-hidden">
-          {/* Agent Header */}
-          {agent && (
+          {/* Agent or Agency Header */}
+          {agent ? (
             <>
               <div className="p-5 flex items-center gap-3 bg-muted/30">
                 <Avatar className="h-16 w-16 ring-2 ring-border">
@@ -115,7 +115,15 @@ export function StickyContactCard({
                   </AvatarFallback>
                 </Avatar>
                 <div className="min-w-0">
-                  <p className="text-xs font-medium text-muted-foreground mb-0.5">Agent</p>
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <p className="text-xs font-medium text-muted-foreground">Agent</p>
+                    {isPartner && (
+                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-semibold">
+                        <ShieldCheck className="h-2.5 w-2.5" />
+                        BuyWise Partner
+                      </span>
+                    )}
+                  </div>
                   {agent.id ? (
                     <Link 
                       to={`/agents/${agent.id}`} 
@@ -134,7 +142,27 @@ export function StickyContactCard({
               </div>
               <Separator />
             </>
-          )}
+          ) : isSourced && agencyName ? (
+            <>
+              <div className="p-5 flex items-center gap-3 bg-muted/30">
+                <Avatar className="h-14 w-14 ring-2 ring-border">
+                  {agencyLogoUrl ? (
+                    <AvatarImage src={agencyLogoUrl} alt={agencyName} className="object-cover" />
+                  ) : null}
+                  <AvatarFallback className="bg-gradient-to-br from-muted to-muted/80 text-muted-foreground font-semibold text-sm">
+                    {getInitials(agencyName)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-[10px] font-semibold mb-1">
+                    Sourced
+                  </span>
+                  <p className="font-semibold text-foreground truncate text-sm">{agencyName}</p>
+                </div>
+              </div>
+              <Separator />
+            </>
+          ) : null}
 
           {/* Contact Buttons */}
           <CardContent className="p-5 space-y-3">
