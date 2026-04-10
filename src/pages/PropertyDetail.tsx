@@ -187,29 +187,28 @@ export default function PropertyDetail() {
                 onShare={handleShare}
                 isSaved={isSaved}
               />
-              {/* Street View for unclaimed listings — show if we have a street_view_url OR no photos */}
-              {!(property as any).is_claimed && (property as any).street_view_url && (
+              {/* Street View for all unclaimed sourced listings — always show */}
+              {!(property as any).is_claimed && (property as any).import_source && (
                 <div className="mt-3 px-4 md:px-0">
-                  <div className="rounded-xl overflow-hidden">
-                    <img 
-                      src={(property as any).street_view_url}
-                      alt={`Street view of ${property.address || property.city}`}
-                      className="w-full h-[300px] md:h-[420px] object-cover"
-                      loading="lazy"
+                  {(property as any).street_view_url ? (
+                    <div className="rounded-xl overflow-hidden">
+                      <img 
+                        src={(property as any).street_view_url}
+                        alt={`Street view of ${property.address || property.city}`}
+                        className="w-full h-[300px] md:h-[420px] object-cover"
+                        loading="lazy"
+                      />
+                    </div>
+                  ) : (
+                    <StreetViewFallback
+                      address={property.address}
+                      city={property.city}
+                      latitude={property.latitude}
+                      longitude={property.longitude}
+                      neighborhood={property.neighborhood}
+                      className="w-full h-[300px] md:h-[420px] street-view-container"
                     />
-                  </div>
-                </div>
-              )}
-              {!(property as any).is_claimed && !(property as any).street_view_url && !property.images?.length && (
-                <div className="mt-3 px-4 md:px-0">
-                  <StreetViewFallback
-                    address={property.address}
-                    city={property.city}
-                    latitude={property.latitude}
-                    longitude={property.longitude}
-                    neighborhood={property.neighborhood}
-                    className="w-full h-[300px] md:h-[420px] street-view-container"
-                  />
+                  )}
                 </div>
               )}
               {/* Unclaimed banner — right under hero where buyers see it */}
