@@ -517,19 +517,19 @@ Deno.serve(async (req) => {
     );
   }
 
-  if (!dueItems?.length) {
-    console.log("[Yad2Queue] No due items");
+  if (!filteredItems.length) {
+    console.log("[Yad2Queue] No due items (or all in captcha cooloff)");
     return new Response(
-      JSON.stringify({ processed: 0, message: "No due items" }),
+      JSON.stringify({ processed: 0, message: "No due items", captcha_cooloff: exhaustedSourceIds.size }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
-  console.log(`[Yad2Queue] ${dueItems.length} item(s) due for processing`);
+  console.log(`[Yad2Queue] ${filteredItems.length} item(s) due for processing (${exhaustedSourceIds.size} in cooloff)`);
 
   // Return immediately, process in background (Yad2 discovery takes ~2–5 min)
   const backgroundWork = async () => {
-    for (const item of dueItems) {
+    for (const item of filteredItems) {
       try {
         await processQueueItem(sb, item);
       } catch (err) {
@@ -545,7 +545,7 @@ Deno.serve(async (req) => {
   EdgeRuntime.waitUntil(backgroundWork());
 
   return new Response(
-    JSON.stringify({ processing: dueItems.length, items: dueItems.map((i) => i.website_url) }),
+    JSON.stringify({ processing: filteredItems.length, items: filteredItems.map((i: any) => i.website_url), captcha_cooloff: exhaustedSourceIds.size }),
     { headers: { ...corsHeaders, "Content-Type": "application/json" } }
   );
 });
