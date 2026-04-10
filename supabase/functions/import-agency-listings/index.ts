@@ -2735,7 +2735,7 @@ async function processOneItem(
 
     // ── Generate & enhance street view image ──
     if (property?.id) {
-      await generateAndStoreStreetView(sb, property.id, latitude, longitude, listing.address, listing.city);
+      await generateAndStoreStreetView(sb, property.id, latitude, longitude, listing.address, listing.city, listing.floor, listing.apartment_number || null);
     }
 
     // Insert cross-source duplicate pair if detected
