@@ -3853,25 +3853,22 @@ async function runMadlanAgencyDiscoverJob(params: {
             if (res.ok) {
               const data = await res.json();
               firstPageHtml = data?.data?.html || data?.html || "";
+              // Detect Madlan bot/captcha block
+              if (firstPageHtml && (firstPageHtml.includes("משהו בדפדפן שלך גרם לנו לחשוב שאתה רובוט") || firstPageHtml.includes("ShieldSquare") || firstPageHtml.includes("distil_r_captcha"))) {
+                console.warn(`[Madlan] CAPTCHA/bot block detected on ${firstPageUrl}`);
+                firstPageHtml = ""; // treat as failure
+                // Update agency_sources with failure info
+                await sb.from("agency_sources").update({
+                  consecutive_failures: (await sb.from("agency_sources").select("consecutive_failures").eq("id", agencySourceId).single()).data?.consecutive_failures + 1 || 1,
+                  last_failure_reason: "Madlan bot/captcha block detected",
+                }).eq("id", agencySourceId);
+                break;
+              }
               break; // success
             } else if ([429, 502, 503].includes(res.status) && attempt === 0) {
-              const errText = await res.text();
-              console.warn(`[Madlan] Firecrawl ${res.status} on attempt 1, retrying in 2s: ${errText.slice(0, 100)}`);
-              await new Promise(r => setTimeout(r, 2000));
-            } else {
-              const errText = await res.text();
-              console.warn(`[Madlan] Firecrawl failed (${res.status}): ${errText.slice(0, 200)}`);
-              break;
-            }
-          } catch (e) {
-            console.warn(`[Madlan] Firecrawl error (attempt ${attempt + 1}):`, e);
-            if (attempt === 0) await new Promise(r => setTimeout(r, 2000));
-          }
-        }
-      }
-
+...
       if (!firstPageHtml) {
-        console.warn(`[Madlan] Could not fetch first page: ${firstPageUrl}`);
+        console.warn(`[Madlan] Could not fetch first page (bot block or empty): ${firstPageUrl}`);
         continue;
       }
 
