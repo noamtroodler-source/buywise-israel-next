@@ -14,6 +14,12 @@ function cityToSlug(city: string): string {
     .replace(/[^a-z0-9-]/g, '');
 }
 
+/** Detect generic Unsplash stock photos used as placeholders for sourced listings */
+function isGenericStockPhoto(url: string | null | undefined): boolean {
+  if (!url) return true;
+  return url.includes('images.unsplash.com/photo-');
+}
+
 interface PropertyThumbnailProps {
   src: string | null | undefined;
   alt: string;
