@@ -280,7 +280,7 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                       badges.push(<PromotedBadge key="promoted" compact />);
                     }
                     // BuyWise Partner badge for partner agency listings
-                    if ((property as any).is_partner) {
+                    if ((property as any).agent?.agency?.is_partner) {
                       badges.push(
                         <Badge key="partner" className="bg-primary/15 text-primary border-primary/30 text-xs font-medium">
                           <ShieldCheck className="h-3 w-3 mr-1" />
@@ -523,7 +523,7 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                       badges.push(<PromotedBadge key="promoted" compact />);
                     }
                     // BuyWise Partner badge for partner agency listings
-                    if ((property as any).is_partner) {
+                    if ((property as any).agent?.agency?.is_partner) {
                       badges.push(
                         <Badge key="partner" className="bg-primary/15 text-primary border-primary/30 text-xs font-medium">
                           <ShieldCheck className="h-3 w-3 mr-1" />
