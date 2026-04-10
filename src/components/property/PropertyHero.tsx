@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import useEmblaCarousel from 'embla-carousel-react';
 import { FullscreenGallery } from '@/components/shared/FullscreenGallery';
 import { useFormatPrice, useFormatArea } from '@/contexts/PreferencesContext';
+import { useNeighborhoodIllustration } from '@/hooks/useNeighborhoodIllustration';
 
 interface PropertyHeroProps {
   property: {
