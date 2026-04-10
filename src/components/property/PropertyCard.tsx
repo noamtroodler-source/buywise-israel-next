@@ -56,9 +56,14 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
     });
   }, [trackClick, property.id, property.city, property.price, property.listing_status]);
 
-  const isSourcedListing = !property.is_claimed && !!property.import_source;
-  const images = isSourcedListing && property.street_view_url
-    ? [property.street_view_url]
+  const sourcedListing = property as Property & {
+    is_claimed?: boolean | null;
+    import_source?: string | null;
+    street_view_url?: string | null;
+  };
+  const isSourcedListing = !sourcedListing.is_claimed && !!sourcedListing.import_source;
+  const images = isSourcedListing && sourcedListing.street_view_url
+    ? [sourcedListing.street_view_url]
     : property.images?.length
     ? property.images
     : [];
