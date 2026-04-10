@@ -56,7 +56,12 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
     });
   }, [trackClick, property.id, property.city, property.price, property.listing_status]);
 
-  const images = property.images?.length ? property.images : [];
+  const isSourcedListing = !property.is_claimed && !!property.import_source;
+  const images = isSourcedListing && property.street_view_url
+    ? [property.street_view_url]
+    : property.images?.length
+    ? property.images
+    : [];
   const hasMultipleImages = images.length > 1;
   const placeholderImage = 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&auto=format&fit=crop&q=60';
 
