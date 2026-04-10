@@ -1320,8 +1320,9 @@ async function generateAndStoreStreetView(
 
 async function handleBackfillStreetView(body: any) {
   const sb = supabaseAdmin();
-  const { property_id, limit } = body || {};
+  const { property_id, limit, skip_enhance } = body || {};
   const safeLimit = Math.min(Math.max(Number(limit) || 25, 1), 100);
+  const shouldSkipEnhance = skip_enhance === true;
 
   let query: any = sb
     .from("properties")
@@ -1350,6 +1351,8 @@ async function handleBackfillStreetView(body: any) {
       property.address,
       property.city,
       property.floor,
+      null,
+      shouldSkipEnhance,
     );
     if (result.updated) updated++;
     else skipped++;
