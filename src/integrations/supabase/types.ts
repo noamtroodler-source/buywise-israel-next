@@ -4597,6 +4597,7 @@ export type Database = {
           source_rooms_label: string | null
           source_status: string | null
           source_url: string | null
+          street_view_type: string | null
           street_view_url: string | null
           subletting_allowed: string | null
           submitted_at: string | null
@@ -4676,6 +4677,7 @@ export type Database = {
           source_rooms_label?: string | null
           source_status?: string | null
           source_url?: string | null
+          street_view_type?: string | null
           street_view_url?: string | null
           subletting_allowed?: string | null
           submitted_at?: string | null
@@ -4755,6 +4757,7 @@ export type Database = {
           source_rooms_label?: string | null
           source_status?: string | null
           source_url?: string | null
+          street_view_type?: string | null
           street_view_url?: string | null
           subletting_allowed?: string | null
           submitted_at?: string | null
