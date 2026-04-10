@@ -45,10 +45,13 @@ export function PropertyThumbnail({
   const defaultFallback = type === 'project' ? PROJECT_FALLBACK_IMAGE : FALLBACK_IMAGE;
   const cityImage = city ? cityHeroImages[cityToSlug(city)] : undefined;
   
-  // Priority: src -> neighborhood illustration -> city hero image -> fallbackSrc -> defaultFallback
-  const imageSrc = (!src || error) 
-    ? (illustrationUrl || cityImage || fallbackSrc || defaultFallback) 
-    : src;
+  // Treat generic Unsplash stock photos as "no image" so illustrations take priority
+  const hasRealImage = src && !error && !isGenericStockPhoto(src);
+  
+  // Priority: real src -> neighborhood illustration -> city hero image -> fallbackSrc -> original src -> defaultFallback
+  const imageSrc = hasRealImage
+    ? src
+    : (illustrationUrl || cityImage || fallbackSrc || src || defaultFallback);
   
   return (
     <img
