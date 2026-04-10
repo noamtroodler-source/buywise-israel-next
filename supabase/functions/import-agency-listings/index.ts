@@ -3885,6 +3885,8 @@ async function runMadlanAgencyDiscoverJob(params: {
           }
         }
       }
+
+      if (!firstPageHtml) {
         console.warn(`[Madlan] Could not fetch first page (bot block or empty): ${firstPageUrl}`);
         continue;
       }
