@@ -19,6 +19,7 @@ import { differenceInDays } from 'date-fns';
 import { useEventTracking } from '@/hooks/useEventTracking';
 import { useTouchSwipe } from '@/hooks/useTouchSwipe';
 import { useNeighborhoodIllustration } from '@/hooks/useNeighborhoodIllustration';
+import { cityHeroImages } from '@/lib/cityHeroImages';
 
 interface PropertyCardProps {
   property: Property;
@@ -36,6 +37,44 @@ interface PropertyCardProps {
   alwaysShowCompare?: boolean;
   /** Hide the property title on the card */
   hideTitle?: boolean;
+}
+
+const PLACEHOLDER_IMAGE = 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&auto=format&fit=crop&q=60';
+
+function cityToSlug(city: string): string {
+  return city
+    .toLowerCase()
+    .replace(/['']/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '');
+}
+
+function isGenericStockPhoto(url: string | null | undefined): boolean {
+  if (!url) return false;
+  return url.includes('images.unsplash.com/photo-');
+}
+
+function getCardImageSrc({
+  src,
+  city,
+  neighborhoodImage,
+  fallbackSrc,
+  error,
+  treatStockAsMissing,
+}: {
+  src: string | null | undefined;
+  city: string | null | undefined;
+  neighborhoodImage: string | undefined;
+  fallbackSrc?: string | null;
+  error: boolean;
+  treatStockAsMissing: boolean;
+}) {
+  const cityImage = city ? cityHeroImages[cityToSlug(city)] : undefined;
+  const hasRealImage = !!src && !error && !(treatStockAsMissing && isGenericStockPhoto(src));
+
+  return hasRealImage
+    ? src
+    : (neighborhoodImage || cityImage || fallbackSrc || src || PLACEHOLDER_IMAGE);
 }
 
 const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardProps>(function PropertyCard({ property, className, showCompareButton = false, showShareButton = true, showMonthlyEstimate = false, hideStatusBadge = false, compact = false, maxBadges = 2, showCategoryBadge = false, hideFeaturedBadge = false, compareCategory, alwaysShowCompare = false, hideTitle = false }, ref) {
@@ -63,12 +102,9 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
     street_view_url?: string | null;
   };
   const isSourcedListing = !sourcedListing.is_claimed && !!sourcedListing.import_source;
-  // For sourced listings: use property images if available, otherwise empty (fallback handled below)
-  const images = property.images?.length
-    ? property.images
-    : [];
+  const rawImages = property.images?.filter((image): image is string => Boolean(image)) ?? [];
+  const images = rawImages.filter((image) => !(isSourcedListing && isGenericStockPhoto(image)));
   const hasMultipleImages = images.length > 1;
-  const placeholderImage = 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&auto=format&fit=crop&q=60';
 
   // Freshness tier for "Days on Market" prominence
   type FreshnessTier = 'hot' | 'fresh' | 'standard' | 'stale';
@@ -144,7 +180,7 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
   });
 
   // NOTE: Avoid clearing imageError inside onLoad.
-  // If a listing image 404s, the placeholder loads successfully, and onLoad would
+  // If a listing image 404s, the fallback loads successfully, and onLoad would
   // flip imageError back to false -> causing an endless flicker loop.
   const handleImageLoad = () => {
     setImageLoaded(true);
@@ -185,8 +221,14 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
   };
 
   const illustrationUrl = useNeighborhoodIllustration(property.city, property.neighborhood);
-  const fallbackImage = illustrationUrl || placeholderImage;
-  const currentImage = imageError ? fallbackImage : (images[currentImageIndex] || fallbackImage);
+  const currentImage = getCardImageSrc({
+    src: images[currentImageIndex],
+    city: property.city,
+    neighborhoodImage: illustrationUrl,
+    fallbackSrc: rawImages[0],
+    error: imageError,
+    treatStockAsMissing: isSourcedListing,
+  });
 
   return (
     <>
