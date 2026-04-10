@@ -187,8 +187,20 @@ export default function PropertyDetail() {
                 onShare={handleShare}
                 isSaved={isSaved}
               />
-              {/* Street View fallback for unclaimed listings with no photos */}
-              {!(property as any).is_claimed && !property.images?.length && (
+              {/* Street View for unclaimed listings — show if we have a street_view_url OR no photos */}
+              {!(property as any).is_claimed && (property as any).street_view_url && (
+                <div className="mt-3 px-4 md:px-0">
+                  <div className="rounded-xl overflow-hidden">
+                    <img 
+                      src={(property as any).street_view_url}
+                      alt={`Street view of ${property.address || property.city}`}
+                      className="w-full h-[300px] md:h-[420px] object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                </div>
+              )}
+              {!(property as any).is_claimed && !(property as any).street_view_url && !property.images?.length && (
                 <div className="mt-3 px-4 md:px-0">
                   <StreetViewFallback
                     address={property.address}
@@ -432,16 +444,8 @@ export default function PropertyDetail() {
                 isSourced={!!(property as any).import_source && !(property as any).is_claimed}
                 propertyCity={property.city}
               />
-              {/* Sourced listing enrichment card in sidebar — price intel, costs, community */}
-              {(property as any).import_source && !(property as any).is_claimed && (
-                <SourcedListingEnrichment
-                  property={property as any}
-                  citySlug={citySlug}
-                />
-              )}
-
-              {/* Co-listing agents — shown when multiple agencies list same property */}
-              {(property as any).co_agents?.length > 0 && (
+              {/* Co-listing agents — shown only for claimed listings with multiple agencies */}
+              {(property as any).is_claimed && (property as any).co_agents?.length > 0 && (
                 <CoListingAgents coAgents={(property as any).co_agents} />
               )}
             </div>

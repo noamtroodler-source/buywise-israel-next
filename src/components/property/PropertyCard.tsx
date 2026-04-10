@@ -279,10 +279,17 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                     if ((property as any)._isBoosted) {
                       badges.push(<PromotedBadge key="promoted" compact />);
                     }
-                    // Sourced badge for unclaimed imported listings
-                    if ((property as any).import_source && !(property as any).is_claimed) {
+                    // BuyWise Partner badge for partner agency listings
+                    if ((property as any).is_partner) {
                       badges.push(
-                        <Badge key="sourced" className="bg-semantic-amber/15 text-foreground border-semantic-amber/30 text-xs font-medium">
+                        <Badge key="partner" className="bg-primary/15 text-primary border-primary/30 text-xs font-medium">
+                          <ShieldCheck className="h-3 w-3 mr-1" />
+                          BuyWise Partner
+                        </Badge>
+                      );
+                    } else if ((property as any).import_source && !(property as any).is_claimed) {
+                      badges.push(
+                        <Badge key="sourced" className="bg-muted text-muted-foreground border-border text-xs font-medium">
                           <Building2 className="h-3 w-3 mr-1" />
                           Sourced
                         </Badge>
@@ -515,10 +522,17 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                     if ((property as any)._isBoosted) {
                       badges.push(<PromotedBadge key="promoted" compact />);
                     }
-                    // Sourced badge for unclaimed imported listings
-                    if ((property as any).import_source && !(property as any).is_claimed) {
+                    // BuyWise Partner badge for partner agency listings
+                    if ((property as any).is_partner) {
                       badges.push(
-                        <Badge key="sourced" className="bg-semantic-amber/15 text-foreground border-semantic-amber/30 text-xs font-medium">
+                        <Badge key="partner" className="bg-primary/15 text-primary border-primary/30 text-xs font-medium">
+                          <ShieldCheck className="h-3 w-3 mr-1" />
+                          BuyWise Partner
+                        </Badge>
+                      );
+                    } else if ((property as any).import_source && !(property as any).is_claimed) {
+                      badges.push(
+                        <Badge key="sourced" className="bg-muted text-muted-foreground border-border text-xs font-medium">
                           <Building2 className="h-3 w-3 mr-1" />
                           Sourced
                         </Badge>
