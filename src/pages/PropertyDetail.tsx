@@ -181,36 +181,41 @@ export default function PropertyDetail() {
           <div className="lg:col-span-2 space-y-6">
             {/* Hero - Edge-to-edge on mobile */}
             <div id="section-photos" className="-mx-4 md:mx-0">
-              <PropertyHero
-                property={property}
-                onSave={handleSave}
-                onShare={handleShare}
-                isSaved={isSaved}
-              />
-              {/* Street View for all unclaimed sourced listings — always show */}
-              {!(property as any).is_claimed && (property as any).import_source && (
-                <div className="mt-3 px-4 md:px-0">
-                  {(property as any).street_view_url ? (
-                    <div className="rounded-xl overflow-hidden">
-                      <img 
-                        src={(property as any).street_view_url}
-                        alt={`Street view of ${property.address || property.city}`}
-                        className="w-full h-[300px] md:h-[420px] object-cover"
-                        loading="lazy"
-                      />
-                    </div>
-                  ) : (
-                    <StreetViewFallback
-                      address={property.address}
-                      city={property.city}
-                      latitude={property.latitude}
-                      longitude={property.longitude}
-                      neighborhood={property.neighborhood}
-                      className="w-full h-[300px] md:h-[420px] street-view-container"
+              {(() => {
+                const isSourced = !(property as any).is_claimed && (property as any).import_source;
+                const streetViewUrl = (property as any).street_view_url;
+                
+                // For sourced listings: only show street view image in hero
+                const heroProperty = isSourced && streetViewUrl
+                  ? { ...property, images: [streetViewUrl] }
+                  : isSourced
+                  ? { ...property, images: [] } // will trigger fallback placeholder
+                  : property;
+                
+                return (
+                  <>
+                    <PropertyHero
+                      property={heroProperty}
+                      onSave={handleSave}
+                      onShare={handleShare}
+                      isSaved={isSaved}
                     />
-                  )}
-                </div>
-              )}
+                    {/* Street View fallback when no street_view_url stored */}
+                    {isSourced && !streetViewUrl && (
+                      <div className="mt-3 px-4 md:px-0">
+                        <StreetViewFallback
+                          address={property.address}
+                          city={property.city}
+                          latitude={property.latitude}
+                          longitude={property.longitude}
+                          neighborhood={property.neighborhood}
+                          className="w-full h-[300px] md:h-[420px] street-view-container"
+                        />
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
               {/* Unclaimed banner — right under hero where buyers see it */}
               {!(property as any).is_claimed && (property as any).import_source && (
                 <div className="mt-3 px-4 md:px-0">
