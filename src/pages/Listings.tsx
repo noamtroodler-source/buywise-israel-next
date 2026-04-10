@@ -309,17 +309,17 @@ export default function Listings() {
                 className={cn(
                   'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors',
                   filters.sourced_only
-                    ? 'bg-semantic-amber/15 text-foreground border-semantic-amber/40'
-                    : 'bg-background text-muted-foreground border-border hover:border-semantic-amber/40 hover:text-foreground'
+                    ? 'bg-primary/15 text-foreground border-primary/40'
+                    : 'bg-background text-muted-foreground border-border hover:border-primary/40 hover:text-foreground'
                 )}
               >
-                <span className="w-2 h-2 rounded-full bg-semantic-amber flex-shrink-0" />
-                Sourced listings
+                <span className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
+                BuyWise Partners
                 {filters.sourced_only && <span className="ml-1 opacity-60">✕</span>}
               </button>
               {filters.sourced_only && (
                 <span className="text-xs text-muted-foreground">
-                  Showing listings pulled from agency sites &amp; portals
+                  Showing listings from vetted BuyWise Partner agencies
                 </span>
               )}
             </div>

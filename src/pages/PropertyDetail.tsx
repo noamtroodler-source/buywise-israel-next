@@ -28,7 +28,7 @@ import { SupportFooter } from '@/components/shared/SupportFooter';
 import { ListingDisclaimer } from '@/components/shared/ListingDisclaimer';
 import { UnclaimedListingBanner, StreetViewFallback, ClaimListingDialog } from '@/components/property/UnclaimedListingBanner';
 import { CoListingAgents } from '@/components/property/CoListingAgents';
-import { SourcedListingEnrichment } from '@/components/property/SourcedListingEnrichment';
+// SourcedListingEnrichment removed from sidebar — content is in left column sections
 import { MarketDataContext } from '@/components/shared/MarketDataContext';
 import { ListingFeedback } from '@/components/listings/ListingFeedback';
 import { ReportListingButton } from '@/components/property/ReportListingButton';
@@ -187,17 +187,28 @@ export default function PropertyDetail() {
                 onShare={handleShare}
                 isSaved={isSaved}
               />
-              {/* Street View fallback for unclaimed listings with no photos */}
-              {!(property as any).is_claimed && !property.images?.length && (
+              {/* Street View for all unclaimed sourced listings — always show */}
+              {!(property as any).is_claimed && (property as any).import_source && (
                 <div className="mt-3 px-4 md:px-0">
-                  <StreetViewFallback
-                    address={property.address}
-                    city={property.city}
-                    latitude={property.latitude}
-                    longitude={property.longitude}
-                    neighborhood={property.neighborhood}
-                    className="w-full h-[300px] md:h-[420px] street-view-container"
-                  />
+                  {(property as any).street_view_url ? (
+                    <div className="rounded-xl overflow-hidden">
+                      <img 
+                        src={(property as any).street_view_url}
+                        alt={`Street view of ${property.address || property.city}`}
+                        className="w-full h-[300px] md:h-[420px] object-cover"
+                        loading="lazy"
+                      />
+                    </div>
+                  ) : (
+                    <StreetViewFallback
+                      address={property.address}
+                      city={property.city}
+                      latitude={property.latitude}
+                      longitude={property.longitude}
+                      neighborhood={property.neighborhood}
+                      className="w-full h-[300px] md:h-[420px] street-view-container"
+                    />
+                  )}
                 </div>
               )}
               {/* Unclaimed banner — right under hero where buyers see it */}
@@ -430,18 +441,13 @@ export default function PropertyDetail() {
                 onSave={handleSave}
                 isSaved={isSaved}
                 isSourced={!!(property as any).import_source && !(property as any).is_claimed}
+                isPartner={!!(property as any).agent?.agency?.is_partner}
+                agencyName={(property as any).source_agency_name || (property as any).agent?.agency?.name || (property.agent?.agency_name ?? null)}
+                agencyLogoUrl={(property as any).agent?.agency?.logo_url || null}
                 propertyCity={property.city}
               />
-              {/* Sourced listing enrichment card in sidebar — price intel, costs, community */}
-              {(property as any).import_source && !(property as any).is_claimed && (
-                <SourcedListingEnrichment
-                  property={property as any}
-                  citySlug={citySlug}
-                />
-              )}
-
-              {/* Co-listing agents — shown when multiple agencies list same property */}
-              {(property as any).co_agents?.length > 0 && (
+              {/* Co-listing agents — shown only for claimed listings with multiple agencies */}
+              {(property as any).is_claimed && (property as any).co_agents?.length > 0 && (
                 <CoListingAgents coAgents={(property as any).co_agents} />
               )}
             </div>

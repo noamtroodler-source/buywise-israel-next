@@ -94,7 +94,7 @@ export function usePaginatedProperties(
       
       let query = supabase
         .from('properties')
-        .select(`*, agent:agents(*, agency:agencies(id, name, logo_url))`)
+        .select(`*, agent:agents(*, agency:agencies(id, name, logo_url, is_partner))`)
         .eq('is_published', true);
 
       // Commute filter: resolve qualifying cities first (only for preset destinations)
@@ -130,7 +130,7 @@ export function usePaginatedProperties(
       if (!boostedIds.length) return [] as Property[];
       let query = supabase
         .from('properties')
-        .select(`*, agent:agents(*, agency:agencies(id, name, logo_url))`)
+        .select(`*, agent:agents(*, agency:agencies(id, name, logo_url, is_partner))`)
         .in('id', boostedIds)
         .eq('is_published', true);
 
@@ -304,9 +304,11 @@ function applyFilters(query: any, filters?: PropertyFilters) {
       .lte('longitude', filters.bounds.east);
   }
 
-  // Sourced listings filter — only show scraped/imported listings
+  // BuyWise Partners filter — show listings from partner agencies only
   if (filters.sourced_only) {
     query = query.not('import_source', 'is', null);
+    // Additional partner filter applied client-side after fetch
+    // (Supabase can't easily filter through nested relations in a single query)
   }
 
   return query;

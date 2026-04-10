@@ -2606,6 +2606,49 @@ async function processOneItem(
       }
     }
 
+    // ── Generate & enhance street view image ──
+    if (property?.id && (latitude || longitude || listing.city)) {
+      try {
+        const GOOGLE_MAPS_KEY = Deno.env.get("GOOGLE_MAPS_API_KEY") || Deno.env.get("GOOGLE_GEOCODING_API_KEY");
+        if (GOOGLE_MAPS_KEY) {
+          const svLocation = latitude && longitude
+            ? `${latitude},${longitude}`
+            : encodeURIComponent(`${listing.address || ''} ${listing.city || ''}`.trim());
+          const streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=800x400&location=${svLocation}&fov=90&heading=0&pitch=10&key=${GOOGLE_MAPS_KEY}`;
+
+          // Store the raw street view URL immediately
+          await sb.from("properties").update({ street_view_url: streetViewUrl }).eq("id", property.id);
+
+          // Try AI enhancement of street view in background (non-blocking)
+          try {
+            const ENHANCE_URL = `${Deno.env.get("SUPABASE_URL")}/functions/v1/enhance-image`;
+            const enhancePath = `street-view/${property.id}.png`;
+            const enhanceRes = await fetch(ENHANCE_URL, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                image_url: streetViewUrl,
+                bucket: "property-images",
+                path: enhancePath,
+              }),
+            });
+            const enhanceData = await enhanceRes.json();
+            if (enhanceData.enhanced && enhanceData.image_url) {
+              await sb.from("properties").update({ street_view_url: enhanceData.image_url }).eq("id", property.id);
+              console.log(`Street view enhanced for ${property.id}`);
+            }
+          } catch (enhanceErr) {
+            console.warn(`Street view enhancement skipped for ${property.id}:`, enhanceErr);
+          }
+        }
+      } catch (svErr) {
+        console.warn(`Street view generation failed for ${property.id}:`, svErr);
+      }
+    }
+
     // Insert cross-source duplicate pair if detected
     if (listing.cross_source_match_id && property?.id) {
       const [pa, pb] = property.id < listing.cross_source_match_id
