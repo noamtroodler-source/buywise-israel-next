@@ -37,10 +37,11 @@ export function PropertyThumbnail({
   const illustrationUrl = useNeighborhoodIllustration(city, neighborhood);
   
   const defaultFallback = type === 'project' ? PROJECT_FALLBACK_IMAGE : FALLBACK_IMAGE;
+  const cityImage = city ? cityHeroImages[cityToSlug(city)] : undefined;
   
-  // Priority: src -> illustration -> fallbackSrc -> defaultFallback
+  // Priority: src -> neighborhood illustration -> city hero image -> fallbackSrc -> defaultFallback
   const imageSrc = (!src || error) 
-    ? (illustrationUrl || fallbackSrc || defaultFallback) 
+    ? (illustrationUrl || cityImage || fallbackSrc || defaultFallback) 
     : src;
   
   return (
