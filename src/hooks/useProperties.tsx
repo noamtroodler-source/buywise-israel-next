@@ -25,7 +25,7 @@ async function fetchFeaturedProperties(
 
   let query = supabase
     .from('properties')
-    .select(`*, agent:agents(*, agency:agencies(id, name, logo_url))`)
+    .select(`*, agent:agents(*, agency:agencies(id, name, logo_url, is_partner))`)
     .in('id', featuredIds)
     .eq('is_published', true);
 
@@ -169,7 +169,7 @@ export function useProperties(filters?: PropertyFilters) {
         .from('properties')
         .select(`
           *,
-          agent:agents(*, agency:agencies(id, name, logo_url))
+          agent:agents(*, agency:agencies(id, name, logo_url, is_partner))
         `)
         .eq('is_published', true)
         .order('created_at', { ascending: false });
@@ -323,7 +323,7 @@ export function useFeaturedProperties() {
         .from('properties')
         .select(`
           *,
-          agent:agents(*, agency:agencies(id, name, logo_url))
+          agent:agents(*, agency:agencies(id, name, logo_url, is_partner))
         `)
         .eq('is_published', true)
         .eq('is_featured', true)
@@ -344,7 +344,7 @@ export function useProperty(id: string) {
         .from('properties')
         .select(`
           *,
-          agent:agents(*, agency:agencies(id, name, logo_url))
+          agent:agents(*, agency:agencies(id, name, logo_url, is_partner))
         `)
         .eq('id', id)
         .maybeSingle();
@@ -382,7 +382,7 @@ export function useFeaturedSaleProperties(options?: FeaturedPropertiesOptions) {
         const propertyIds = slots.map(s => s.entity_id);
         const { data, error } = await supabase
           .from('properties')
-          .select(`*, agent:agents(*, agency:agencies(id, name, logo_url))`)
+          .select(`*, agent:agents(*, agency:agencies(id, name, logo_url, is_partner))`)
           .in('id', propertyIds)
           .eq('is_published', true);
 
@@ -396,7 +396,7 @@ export function useFeaturedSaleProperties(options?: FeaturedPropertiesOptions) {
         // Fallback to old is_featured system
         const { data, error } = await supabase
           .from('properties')
-          .select(`*, agent:agents(*, agency:agencies(id, name, logo_url))`)
+          .select(`*, agent:agents(*, agency:agencies(id, name, logo_url, is_partner))`)
           .eq('is_published', true)
           .eq('is_featured', true)
           .eq('listing_status', 'for_sale')
@@ -436,7 +436,7 @@ export function useFeaturedRentalProperties(options?: FeaturedPropertiesOptions)
         const propertyIds = slots.map(s => s.entity_id);
         const { data, error } = await supabase
           .from('properties')
-          .select(`*, agent:agents(*, agency:agencies(id, name, logo_url))`)
+          .select(`*, agent:agents(*, agency:agencies(id, name, logo_url, is_partner))`)
           .in('id', propertyIds)
           .eq('is_published', true);
 
@@ -448,7 +448,7 @@ export function useFeaturedRentalProperties(options?: FeaturedPropertiesOptions)
       } else {
         const { data, error } = await supabase
           .from('properties')
-          .select(`*, agent:agents(*, agency:agencies(id, name, logo_url))`)
+          .select(`*, agent:agents(*, agency:agencies(id, name, logo_url, is_partner))`)
           .eq('is_published', true)
           .eq('is_featured', true)
           .eq('listing_status', 'for_rent')
@@ -477,7 +477,7 @@ export function useRecommendedProperties() {
         .from('properties')
         .select(`
           *,
-          agent:agents(*, agency:agencies(id, name, logo_url))
+          agent:agents(*, agency:agencies(id, name, logo_url, is_partner))
         `)
         .eq('is_published', true)
         .order('views_count', { ascending: false })
@@ -506,7 +506,7 @@ export function useCityFeaturedProperties(cityName: string, limit: number = 8, l
       // Get featured properties for this city
       let query = supabase
         .from('properties')
-        .select(`*, agent:agents(*, agency:agencies(id, name, logo_url))`)
+        .select(`*, agent:agents(*, agency:agencies(id, name, logo_url, is_partner))`)
         .eq('is_published', true)
         .eq('listing_status', listingStatus)
         .ilike('city', `%${cityName}%`)
@@ -528,7 +528,7 @@ export function useCityFeaturedProperties(cityName: string, limit: number = 8, l
       const excludeIds = combined.map(p => p.id);
       let additionalQuery = supabase
         .from('properties')
-        .select(`*, agent:agents(*, agency:agencies(id, name, logo_url))`)
+        .select(`*, agent:agents(*, agency:agencies(id, name, logo_url, is_partner))`)
         .eq('is_published', true)
         .eq('listing_status', listingStatus)
         .ilike('city', `%${cityName}%`)
