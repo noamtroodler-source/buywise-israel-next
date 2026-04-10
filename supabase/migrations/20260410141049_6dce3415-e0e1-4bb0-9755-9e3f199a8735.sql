@@ -1,0 +1,1 @@
+UPDATE neighborhood_illustrations SET status = 'pending', updated_at = NOW() WHERE status IN ('processing', 'failed');
