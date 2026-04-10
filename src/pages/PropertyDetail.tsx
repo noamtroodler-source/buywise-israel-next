@@ -28,7 +28,7 @@ import { SupportFooter } from '@/components/shared/SupportFooter';
 import { ListingDisclaimer } from '@/components/shared/ListingDisclaimer';
 import { UnclaimedListingBanner, StreetViewFallback, ClaimListingDialog } from '@/components/property/UnclaimedListingBanner';
 import { CoListingAgents } from '@/components/property/CoListingAgents';
-import { SourcedListingEnrichment } from '@/components/property/SourcedListingEnrichment';
+// SourcedListingEnrichment removed from sidebar — content is in left column sections
 import { MarketDataContext } from '@/components/shared/MarketDataContext';
 import { ListingFeedback } from '@/components/listings/ListingFeedback';
 import { ReportListingButton } from '@/components/property/ReportListingButton';
