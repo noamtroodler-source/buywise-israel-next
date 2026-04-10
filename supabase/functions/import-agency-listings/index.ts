@@ -1376,7 +1376,7 @@ async function generateAndStoreStreetView(
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          image_url: imageUrl,
+          image_url: storedUrl,
           bucket: "property-images",
           path: enhancePath,
           style: imageType === "street_view" ? "architectural" : "photo_correct",
