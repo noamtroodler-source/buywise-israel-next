@@ -1310,7 +1310,8 @@ async function generateAndStoreStreetView(
       return { updated: false };
     }
 
-    const GOOGLE_MAPS_KEY = Deno.env.get("GOOGLE_MAPS_API_KEY") || Deno.env.get("GOOGLE_GEOCODING_API_KEY");
+    // Use unrestricted key for server-side image fetches (GOOGLE_MAPS_API_KEY has HTTP referrer restrictions)
+    const GOOGLE_MAPS_KEY = Deno.env.get("GOOGLE_GEOCODING_API_KEY") || Deno.env.get("GOOGLE_MAPS_API_KEY");
     if (!GOOGLE_MAPS_KEY) return { updated: false };
 
     const location = `${latitude},${longitude}`;
