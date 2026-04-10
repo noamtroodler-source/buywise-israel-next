@@ -56,7 +56,17 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
     });
   }, [trackClick, property.id, property.city, property.price, property.listing_status]);
 
-  const images = property.images?.length ? property.images : [];
+  const sourcedListing = property as Property & {
+    is_claimed?: boolean | null;
+    import_source?: string | null;
+    street_view_url?: string | null;
+  };
+  const isSourcedListing = !sourcedListing.is_claimed && !!sourcedListing.import_source;
+  const images = isSourcedListing && sourcedListing.street_view_url
+    ? [sourcedListing.street_view_url]
+    : property.images?.length
+    ? property.images
+    : [];
   const hasMultipleImages = images.length > 1;
   const placeholderImage = 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&auto=format&fit=crop&q=60';
 
