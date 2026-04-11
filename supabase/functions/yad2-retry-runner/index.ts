@@ -1,16 +1,14 @@
 /**
- * BuyWiseIsrael — Yad2 Retry Runner
+ * BuyWiseIsrael — Yad2 Retry Runner (Apify-First)
  *
  * Runs every 30 minutes via pg_cron.
- * Processes the yad2_scrape_queue: fires staggered Yad2 scrapes,
- * detects CAPTCHA blocks, and schedules smart retries.
+ * Processes the yad2_scrape_queue using Apify as the primary scraping engine.
+ * No scraping window restriction — Apify works 24/7.
  *
  * Strategy:
- *   - Runs during Israel's scraping window (8 PM – 8 AM)
- *   - Processes up to 8 queue items per invocation (parallel pairs)
- *   - CAPTCHA block → retry in 90–150 min (up to max_attempts)
- *   - Real error → retry in 30–60 min (up to max_attempts)
- *   - Never increments agency_source.consecutive_failures for CAPTCHA
+ *   - Uses Apify directly (no Firecrawl) — bypasses ShieldSquare/CAPTCHA
+ *   - Processes up to 16 queue items per invocation (parallel groups of 4)
+ *   - On failure → retry in 30–60 min (up to max_attempts)
  *   - On success: marks done, updates agency_source.last_synced_at
  */
 
@@ -34,25 +32,19 @@ const SERVICE_KEY = () => Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function getIsraelHour(): number {
-  const now = new Date();
-  const month = now.getUTCMonth() + 1;
-  const offset = month >= 4 && month <= 10 ? 3 : 2;
-  return (now.getUTCHours() + offset) % 24;
-}
-
-function isGoodScrapingWindow(): boolean {
-  const hour = getIsraelHour();
-  // Extended window: 8 PM (20) through 8 AM (8) Israel time
-  return hour >= 20 || hour <= 8;
-}
-
 function randomBetween(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 function minutesFromNow(minutes: number): string {
   return new Date(Date.now() + minutes * 60 * 1000).toISOString();
+}
+
+function getIsraelHour(): number {
+  const now = new Date();
+  const month = now.getUTCMonth() + 1;
+  const offset = month >= 4 && month <= 10 ? 3 : 2;
+  return (now.getUTCHours() + offset) % 24;
 }
 
 async function callImport(body: Record<string, unknown>) {
@@ -75,10 +67,10 @@ async function callImport(body: Record<string, unknown>) {
 async function pollJobUntilDone(
   sb: ReturnType<typeof supabaseAdmin>,
   jobId: string,
-  timeoutMs = 90_000
+  timeoutMs = 180_000 // 3 min — Apify runs take longer than Firecrawl
 ): Promise<{ status: string; failure_reason: string | null; total_urls: number }> {
   const deadline = Date.now() + timeoutMs;
-  const POLL_INTERVAL = 6_000;
+  const POLL_INTERVAL = 8_000;
 
   while (Date.now() < deadline) {
     await new Promise((r) => setTimeout(r, POLL_INTERVAL));
@@ -104,7 +96,7 @@ async function pollJobUntilDone(
 }
 
 // Run process_batch to completion
-async function processJobToCompletion(jobId: string, maxBatches = 20): Promise<number> {
+async function processJobToCompletion(jobId: string, maxBatches = 30): Promise<number> {
   let totalSucceeded = 0;
 
   for (let i = 0; i < maxBatches; i++) {
@@ -117,104 +109,7 @@ async function processJobToCompletion(jobId: string, maxBatches = 20): Promise<n
   return totalSucceeded;
 }
 
-// ── Apify fallback ────────────────────────────────────────────────────────────
-
-async function tryApifyFallback(
-  sb: ReturnType<typeof supabaseAdmin>,
-  item: {
-    id: string;
-    agency_source_id: string;
-    agency_id: string;
-    website_url: string;
-    import_type: string;
-  },
-  lastJobId: string | null
-) {
-  const log = (msg: string) => console.log(`[Yad2Queue/Apify] ${item.website_url}: ${msg}`);
-
-  await sb.from("yad2_scrape_queue").update({
-    apify_attempted: true,
-    updated_at: new Date().toISOString(),
-  }).eq("id", item.id);
-
-  try {
-    log("Firing Apify discover...");
-    const discoverResult = await callImport({
-      action: "discover",
-      source_type: "yad2_apify",
-      website_url: item.website_url,
-      agency_id: item.agency_id,
-      import_type: item.import_type,
-    });
-
-    if (discoverResult.error) throw new Error(discoverResult.error);
-
-    const apifyJobId = discoverResult.job_id ?? null;
-    if (!apifyJobId) {
-      log("Apify returned no job — agency may have no listings");
-      await sb.from("yad2_scrape_queue").update({
-        status: "done",
-        last_job_id: lastJobId,
-        last_result: "empty",
-        apify_result: "empty",
-        updated_at: new Date().toISOString(),
-      }).eq("id", item.id);
-      return;
-    }
-
-    log(`Apify job created: ${apifyJobId}, polling...`);
-    const jobResult = await pollJobUntilDone(sb, apifyJobId, 120_000);
-
-    if (jobResult.status === "failed" || jobResult.total_urls === 0) {
-      const reason = jobResult.status === "failed" ? jobResult.failure_reason || "unknown" : "empty";
-      log(`Apify ${reason === "empty" ? "returned 0 URLs" : `failed: ${reason}`}`);
-      await sb.from("yad2_scrape_queue").update({
-        status: "exhausted",
-        last_job_id: lastJobId,
-        last_result: "captcha",
-        last_error: `Firecrawl CAPTCHA exhausted, Apify also ${reason}`,
-        apify_result: `${reason === "empty" ? "empty" : `error: ${reason}`}`,
-        updated_at: new Date().toISOString(),
-      }).eq("id", item.id);
-      return;
-    }
-
-    log(`Apify discovery succeeded: ${jobResult.total_urls} URLs. Processing...`);
-    const imported = await processJobToCompletion(apifyJobId);
-    log(`Apify imported ${imported} listings`);
-
-    await sb.from("yad2_scrape_queue").update({
-      status: "done",
-      last_job_id: apifyJobId,
-      last_result: "success",
-      listings_found: imported,
-      apify_result: "success",
-      updated_at: new Date().toISOString(),
-    }).eq("id", item.id);
-
-    await sb.from("agency_sources").update({
-      last_synced_at: new Date().toISOString(),
-      last_sync_job_id: apifyJobId,
-      last_sync_listings_found: jobResult.total_urls,
-      consecutive_failures: 0,
-      last_failure_reason: null,
-    }).eq("id", item.agency_source_id);
-
-    log(`Done via Apify fallback! ${imported} listings imported`);
-  } catch (err) {
-    const errMsg = err instanceof Error ? err.message : String(err);
-    log(`Apify fallback threw: ${errMsg}`);
-    await sb.from("yad2_scrape_queue").update({
-      status: "exhausted",
-      last_result: "captcha",
-      last_error: `Firecrawl CAPTCHA exhausted, Apify error: ${errMsg.slice(0, 400)}`,
-      apify_result: `error: ${errMsg.slice(0, 200)}`,
-      updated_at: new Date().toISOString(),
-    }).eq("id", item.id);
-  }
-}
-
-// ── Core queue item processor ─────────────────────────────────────────────────
+// ── Core queue item processor (Apify-first) ───────────────────────────────────
 
 async function processQueueItem(
   sb: ReturnType<typeof supabaseAdmin>,
@@ -239,10 +134,11 @@ async function processQueueItem(
   let jobId: string | null = null;
 
   try {
-    log("Firing discover...");
+    // Go directly to Apify — no Firecrawl, no CAPTCHA dance
+    log("Firing Apify discover...");
     const discoverResult = await callImport({
       action: "discover",
-      source_type: "yad2",
+      source_type: "yad2_apify",
       website_url: item.website_url,
       agency_id: item.agency_id,
       import_type: item.import_type,
@@ -252,13 +148,19 @@ async function processQueueItem(
     jobId = discoverResult.job_id ?? null;
 
     if (!jobId) {
-      log("No job created — possibly no listings found");
+      log("No job created — no new listings found");
       await sb.from("yad2_scrape_queue").update({
         status: "done",
         last_result: "empty",
-        last_error: "No job created",
+        last_error: null,
         updated_at: new Date().toISOString(),
       }).eq("id", item.id);
+      await sb.from("agency_sources").update({
+        last_synced_at: new Date().toISOString(),
+        last_sync_listings_found: discoverResult.total_discovered || 0,
+        consecutive_failures: 0,
+        last_failure_reason: null,
+      }).eq("id", item.agency_source_id);
       return;
     }
 
@@ -266,33 +168,23 @@ async function processQueueItem(
     const jobResult = await pollJobUntilDone(sb, jobId);
     log(`Job result: status=${jobResult.status}, urls=${jobResult.total_urls}, reason=${jobResult.failure_reason}`);
 
-    // ── CAPTCHA block ──
-    if (jobResult.failure_reason === "captcha_blocked") {
-      log("CAPTCHA blocked by ShieldSquare");
-
-      if (item.attempt_number < item.max_attempts) {
-        const retryMinutes = randomBetween(90, 150);
-        await sb.from("yad2_scrape_queue").update({
-          status: "pending",
-          attempt_number: item.attempt_number + 1,
-          scheduled_for: minutesFromNow(retryMinutes),
-          last_job_id: jobId,
-          last_result: "captcha",
-          last_error: `CAPTCHA on attempt ${item.attempt_number}`,
-          updated_at: new Date().toISOString(),
-        }).eq("id", item.id);
-        log(`Retry scheduled in ${retryMinutes} min (attempt ${item.attempt_number + 1}/${item.max_attempts})`);
-      } else {
-        log(`All ${item.max_attempts} Firecrawl attempts CAPTCHA-blocked — trying Apify fallback`);
-        await tryApifyFallback(sb, item, jobId);
-      }
+    // ── Timeout ──
+    if (jobResult.status === "timeout") {
+      log("Job still running after 3min — will retry next cycle");
+      await sb.from("yad2_scrape_queue").update({
+        status: "pending",
+        scheduled_for: minutesFromNow(10),
+        last_job_id: jobId,
+        last_error: "Apify timeout - will retry",
+        updated_at: new Date().toISOString(),
+      }).eq("id", item.id);
       return;
     }
 
-    // ── Real error ──
+    // ── Failure ──
     if (jobResult.status === "failed") {
       const errMsg = jobResult.failure_reason || "Unknown error";
-      log(`Discover failed: ${errMsg}`);
+      log(`Apify discover failed: ${errMsg}`);
 
       if (item.attempt_number < item.max_attempts) {
         const retryMinutes = randomBetween(30, 60);
@@ -327,19 +219,8 @@ async function processQueueItem(
             is_active: newCount >= 5 ? false : src.is_active,
           }).eq("id", item.agency_source_id);
         }
-        log("Exhausted — real errors counted toward consecutive_failures");
+        log("Exhausted after all attempts");
       }
-      return;
-    }
-
-    // ── Timeout (still discovering) ──
-    if (jobResult.status === "timeout") {
-      log("Job still discovering after 90s — will retry next cycle");
-      await sb.from("yad2_scrape_queue").update({
-        status: "pending",
-        scheduled_for: minutesFromNow(5),
-        updated_at: new Date().toISOString(),
-      }).eq("id", item.id);
       return;
     }
 
@@ -415,6 +296,9 @@ async function processQueueItem(
 
 // ── Main handler ──────────────────────────────────────────────────────────────
 
+// @ts-ignore — EdgeRuntime available in Supabase edge functions
+declare const EdgeRuntime: { waitUntil(promise: Promise<any>): void };
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -434,12 +318,11 @@ Deno.serve(async (req) => {
 
   const sb = supabaseAdmin();
   const israelHour = getIsraelHour();
-  const inWindow = isGoodScrapingWindow();
 
   const url = new URL(req.url);
   const force = url.searchParams.get("force") === "true";
 
-  // ── Always run stuck-item cleanup regardless of time window ──
+  // ── Always clean up stuck items ──
   const stuckCutoff = new Date(Date.now() - 15 * 60 * 1000).toISOString();
   const { count: stuckCount } = await sb
     .from("yad2_scrape_queue")
@@ -452,43 +335,13 @@ Deno.serve(async (req) => {
     console.log(`[Yad2Queue] Reset ${stuckCount} stuck running items back to pending`);
   }
 
-  // ── Time window check (after cleanup) ────────────────────────────────────
-  if (!inWindow && !force) {
-    console.log(`[Yad2Queue] Outside scraping window (Israel hour: ${israelHour}) — skipping`);
-    return new Response(
-      JSON.stringify({ skipped: true, reason: "outside_scraping_window", israel_hour: israelHour, stuck_reset: stuckCount || 0 }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  }
+  // No scraping window restriction — Apify works 24/7
+  console.log(`[Yad2Queue] Running — Israel hour: ${israelHour}, Apify mode (no window restriction)`);
 
-  if (force && !inWindow) {
-    console.log(`[Yad2Queue] Force mode — bypassing time window (Israel hour: ${israelHour})`);
-  }
-
-  console.log(`[Yad2Queue] Running — Israel hour: ${israelHour}, in good window`);
-
-  // ── Fetch due queue items (skip sources with recent captcha exhaustion) ───
+  // ── Fetch due queue items ──
   const now = new Date().toISOString();
-  const captchaCooloffCutoff = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
 
-  const { data: recentlyExhausted } = await sb
-    .from("yad2_scrape_queue")
-    .select("agency_source_id")
-    .eq("status", "exhausted")
-    .eq("last_result", "captcha")
-    .gte("updated_at", captchaCooloffCutoff);
-
-  const exhaustedSourceIds = new Set((recentlyExhausted || []).map((r: any) => r.agency_source_id));
-
-  const { data: dueItems, error: queueErr } = await sb
-    .from("yad2_scrape_queue")
-    .select("*")
-    .eq("status", "pending")
-    .lte("scheduled_for", now)
-    .order("scheduled_for", { ascending: true })
-    .limit(20); // Fetch extra to filter
-
-  // Check recent import_jobs failure rates
+  // Check recent failure rates to skip consistently failing agencies
   const recentFailureCutoff = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
   const { data: recentJobs } = await sb
     .from("import_jobs")
@@ -512,17 +365,13 @@ Deno.serve(async (req) => {
     }
   }
 
-  // Filter and take up to 8 items per invocation
-  const filteredItems = (dueItems || []).filter((item: any) => {
-    if (exhaustedSourceIds.has(item.agency_source_id)) {
-      console.log(`[Yad2Queue] Skipping ${item.website_url} — captcha cooloff (48h)`);
-      return false;
-    }
-    if (highFailureAgencies.has(item.agency_id)) {
-      return false;
-    }
-    return true;
-  }).slice(0, 8); // Increased from 4 to 8
+  const { data: dueItems, error: queueErr } = await sb
+    .from("yad2_scrape_queue")
+    .select("*")
+    .eq("status", "pending")
+    .lte("scheduled_for", now)
+    .order("scheduled_for", { ascending: true })
+    .limit(30); // Fetch extra to filter
 
   if (queueErr) {
     console.error("[Yad2Queue] Failed to fetch queue:", queueErr.message);
@@ -532,24 +381,29 @@ Deno.serve(async (req) => {
     );
   }
 
+  // Filter and take up to 16 items per invocation
+  const filteredItems = (dueItems || []).filter((item: any) => {
+    if (highFailureAgencies.has(item.agency_id)) return false;
+    return true;
+  }).slice(0, 16);
+
   if (!filteredItems.length) {
-    console.log("[Yad2Queue] No due items (or all in captcha cooloff)");
+    console.log("[Yad2Queue] No due items");
     return new Response(
-      JSON.stringify({ processed: 0, message: "No due items", captcha_cooloff: exhaustedSourceIds.size }),
+      JSON.stringify({ processed: 0, message: "No due items" }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
-  console.log(`[Yad2Queue] ${filteredItems.length} item(s) due for processing (${exhaustedSourceIds.size} in cooloff)`);
+  console.log(`[Yad2Queue] ${filteredItems.length} item(s) due for processing`);
 
-  // Return immediately, process in background with parallel pairs
+  // Process in background with parallel groups of 4
   const backgroundWork = async () => {
-    // Process items in parallel pairs of 2 to double throughput
-    const PARALLEL = 2;
+    const PARALLEL = 4;
     for (let i = 0; i < filteredItems.length; i += PARALLEL) {
       const batch = filteredItems.slice(i, i + PARALLEL);
       console.log(`[Yad2Queue] Processing parallel batch ${Math.floor(i / PARALLEL) + 1}: ${batch.map((b: any) => b.website_url).join(", ")}`);
-      
+
       await Promise.allSettled(
         batch.map((item: any) =>
           processQueueItem(sb, item).catch((err: any) =>
@@ -557,20 +411,19 @@ Deno.serve(async (req) => {
           )
         )
       );
-      
-      // Small gap between parallel pairs
+
+      // Small gap between parallel groups
       if (i + PARALLEL < filteredItems.length) {
-        await new Promise((r) => setTimeout(r, 5_000));
+        await new Promise((r) => setTimeout(r, 3_000));
       }
     }
     console.log("[Yad2Queue] Background processing complete");
   };
 
-  // @ts-ignore — EdgeRuntime is available in Supabase edge functions
   EdgeRuntime.waitUntil(backgroundWork());
 
   return new Response(
-    JSON.stringify({ processing: filteredItems.length, items: filteredItems.map((i: any) => i.website_url), captcha_cooloff: exhaustedSourceIds.size }),
+    JSON.stringify({ processing: filteredItems.length, items: filteredItems.map((i: any) => i.website_url) }),
     { headers: { ...corsHeaders, "Content-Type": "application/json" } }
   );
 });
