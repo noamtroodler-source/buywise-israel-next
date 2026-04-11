@@ -751,8 +751,8 @@ function computeConfidenceScore(
     scores.propertyType = 1;
   }
 
-  // Photos
-  const photoCount = listing.image_urls?.length || 0;
+  // Photos (count only — we do NOT store external photo URLs)
+  const photoCount = listing._photo_count || 0;
   if (photoCount >= 3) scores.photos = 3;
   else if (photoCount >= 1) scores.photos = 2;
   else scores.photos = 1;
@@ -1963,7 +1963,7 @@ async function extractFromWordPress(url: string, _firecrawlKey: string): Promise
             if (imgUrl) images.push(imgUrl);
           }
         }
-        if (images.length > 0) { result.image_urls = images; fieldCount++; }
+        if (images.length > 0) { result._photo_count = images.length; fieldCount++; }
 
         if (fieldCount >= 3) {
           console.log(`WordPress adapter: extracted ${fieldCount} fields from REST API`);
@@ -2054,7 +2054,7 @@ function extractFromWixState(html: string): Record<string, any> | null {
           if (imgUrl) images.push(imgUrl.startsWith("//") ? `https:${imgUrl}` : imgUrl);
         }
       }
-      if (images.length > 0) { result.image_urls = images; fieldCount++; }
+      if (images.length > 0) { result._photo_count = images.length; fieldCount++; }
 
       if (fieldCount >= 3) {
         console.log(`Wix adapter: extracted ${fieldCount} fields from embedded state`);
@@ -2086,7 +2086,7 @@ ${yad2Hint}
 - address (street name + number)
 - property_type (one of: apartment, house, penthouse, duplex, garden_apartment, cottage, land)
 - listing_status (for_sale or for_rent)
-- image_urls (array of image URLs)
+- photo_count (number of photos on the page)
 - listing_category (property, project, or not_listing)
 
 URL: ${url}
@@ -2117,7 +2117,7 @@ ${truncatedContent}`;
                 neighborhood: { type: "string" },
                 property_type: { type: "string", enum: ["apartment", "garden_apartment", "penthouse", "duplex", "house", "cottage", "land"] },
                 listing_status: { type: "string", enum: ["for_sale", "for_rent"] },
-                image_urls: { type: "array", items: { type: "string" } },
+                photo_count: { type: "number" },
               },
               required: ["listing_category"],
               additionalProperties: false,
@@ -2367,7 +2367,7 @@ async function processOneItem(
                   year_built: { type: "number" },
                   condition: { type: "string", enum: ["new", "renovated", "good", "needs_renovation"] },
                   is_sold_or_rented: { type: "boolean" },
-                  image_urls: { type: "array", items: { type: "string" } },
+                  photo_count: { type: "number" },
                 },
                 required: ["listing_category"],
                 additionalProperties: false,
@@ -2437,8 +2437,8 @@ async function processOneItem(
           listing[key] = value;
         }
       }
-      if (structuredData.structured_images?.length && (!listing.image_urls || listing.image_urls.length === 0)) {
-        listing.image_urls = structuredData.structured_images;
+      if (structuredData.structured_images?.length && !listing._photo_count) {
+        listing._photo_count = structuredData.structured_images.length;
       }
       if (!listing.city && structuredData.city_hint) {
         listing.city = structuredData.city_hint;
@@ -2449,8 +2449,11 @@ async function processOneItem(
       listing._cms_extracted = cmsExtracted;
     }
 
-    // Store raw extraction
-    await sb.from("import_job_items").update({ extracted_data: listing }).eq("id", item.id);
+    // Store raw extraction (strip any photo URLs for legal compliance)
+    const sanitizedListing = { ...listing };
+    delete sanitizedListing.image_urls;
+    delete sanitizedListing.structured_images;
+    await sb.from("import_job_items").update({ extracted_data: sanitizedListing }).eq("id", item.id);
 
     const category = listing.listing_category || (listing.is_listing_page === false ? "not_listing" : "property");
 
@@ -3667,7 +3670,7 @@ function normalizeYad2Result(raw: any): Record<string, any> {
     features: raw.features || [],
     parking: raw.parking ? parseInt(raw.parking) : 0,
     condition: raw.condition || null,
-    image_urls: (raw.images || raw.imageUrls || raw.photos || []).filter((u: any) => typeof u === "string"),
+    _photo_count: (raw.images || raw.imageUrls || raw.photos || []).filter((u: any) => typeof u === "string").length,
     _source: "yad2",
     _has_structured_data: true,
     _yad2_latitude: hasCoords ? rawLat : null,
