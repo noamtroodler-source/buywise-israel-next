@@ -3700,10 +3700,16 @@ function mapYad2PropertyType(type: string): string {
 
 /**
  * Madlan URL patterns for agency listings:
- * - Agency/office page: https://www.madlan.co.il/for-sale/israel--office--{SLUG}
- * - Agent page: https://www.madlan.co.il/for-sale/israel--agent--{ID}
+ * - Office profile page: https://www.madlan.co.il/agentsOffice/re_office_{ID}
+ *   This is the canonical page that shows all listings for an office.
+ *   It renders via JS and contains listing links in the rendered DOM.
+ * - Agent page: https://www.madlan.co.il/agent/re_agent_{ID}
  * - Individual listing: https://www.madlan.co.il/nadlan/listing/{ID}
- * - Rental variant: /for-rent/ prefix instead of /for-sale/
+ *
+ * IMPORTANT: The /agentsOffice/ path is the correct listing-bearing route.
+ * Do NOT rewrite it to /for-sale/israel--office--{SLUG} — that produces
+ * a generic marketplace page with zero listing links.
+ * Sale/rent filtering is done via the ?dealType= query parameter.
  */
 
 function isMadlanAgencyUrl(url: string): boolean {
@@ -3715,25 +3721,39 @@ function isMadlanAgencyUrl(url: string): boolean {
   }
 }
 
+/**
+ * Normalize a raw Madlan source URL into discovery URLs.
+ * Accepts:
+ *   /agentsOffice/re_office_*
+ *   /for-sale/agentsOffice/re_office_*   (strips the /for-sale/ prefix)
+ *   /for-rent/agentsOffice/re_office_*   (strips the /for-rent/ prefix)
+ *   /agent/re_agent_*
+ * Returns the canonical office URL(s). For /agentsOffice/ pages, the page
+ * already shows all listings — no query params needed for discovery.
+ * We fetch the raw office URL first, then optionally add dealType filter.
+ */
 function getMadlanDiscoveryUrls(rawUrl: string, importType: string): string[] {
   const urls = new Set<string>();
   try {
     const parsed = new URL(rawUrl);
-    const pathBase = parsed.pathname
-      .replace(/\/(for-sale|for-rent)\/?/i, "")
+
+    // Strip any /for-sale/ or /for-rent/ prefix from path — the office page handles both
+    let cleanPath = parsed.pathname
+      .replace(/^\/(for-sale|for-rent)\//i, "/")
       .replace(/\/+$/, "");
-    const entity = pathBase.replace(/^\//, ""); // e.g. "israel--office--anglo-saxon"
 
+    // Primary: use the clean office page URL without query params (shows all listings)
+    const primary = new URL(rawUrl);
+    primary.pathname = cleanPath;
+    primary.search = "";
+    urls.add(primary.toString());
+
+    // If import type is restricted, also try with dealType filter as fallback
     const normalizedType = normalizeImportType(importType);
-    const modes = normalizedType === "both"
-      ? ["for-sale", "for-rent"]
-      : [normalizedType === "rental" ? "for-rent" : "for-sale"];
-
-    for (const mode of modes) {
-      const u = new URL(rawUrl);
-      u.pathname = `/${mode}/${entity}`;
-      u.search = "";
-      urls.add(u.toString());
+    if (normalizedType !== "both") {
+      const filtered = new URL(primary.toString());
+      filtered.searchParams.set("dealType", normalizedType === "rental" ? "rent" : "forsale");
+      urls.add(filtered.toString());
     }
   } catch {
     urls.add(rawUrl);
@@ -3762,6 +3782,8 @@ function extractMadlanListingUrls(html: string, pageUrl: string): string[] {
   const patterns = [
     /href=["']([^"']*\/nadlan\/listing\/[\w-]+)["']/gi,
     /href=["']([^"']*\/listing\/[\w-]+)["']/gi,
+    // Also match nadlan detail pages like /nadlan/for-sale/apartment-{id}
+    /href=["']([^"']*\/nadlan\/(?:for-sale|for-rent)\/[^"']+)["']/gi,
   ];
 
   for (const pattern of patterns) {
@@ -3769,8 +3791,8 @@ function extractMadlanListingUrls(html: string, pageUrl: string): string[] {
     while ((match = pattern.exec(html)) !== null) {
       try {
         const absolute = new URL(match[1], pageUrl).toString();
-        // Only keep madlan.co.il listing URLs
-        if (absolute.includes("madlan.co.il") && absolute.includes("/listing/")) {
+        // Only keep madlan.co.il listing or nadlan detail URLs
+        if (absolute.includes("madlan.co.il") && (absolute.includes("/listing/") || /\/nadlan\/(?:for-sale|for-rent)\//.test(absolute))) {
           urls.add(normalizeUrl(absolute));
         }
       } catch { /* ignore */ }
@@ -3779,19 +3801,66 @@ function extractMadlanListingUrls(html: string, pageUrl: string): string[] {
 
   // Also try JSON data embedded in __NEXT_DATA__ or window.__STATE__
   const jsonPatterns = [
-    /"url":"(https?:\/\/www\.madlan\.co\.il\/(?:nadlan\/)?listing\/[^"]+)"/g,
-    /"canonicalUrl":"(https?:\/\/www\.madlan\.co\.il\/(?:nadlan\/)?listing\/[^"]+)"/g,
+    /"url":"(https?:\/\/www\.madlan\.co\.il\/(?:nadlan\/)?(?:listing|for-sale|for-rent)\/[^"]+)"/g,
+    /"canonicalUrl":"(https?:\/\/www\.madlan\.co\.il\/(?:nadlan\/)?(?:listing|for-sale|for-rent)\/[^"]+)"/g,
+    // Match listing IDs in JSON objects (common in __NEXT_DATA__)
+    /"listingId":"(\w+)"/g,
   ];
   for (const pattern of jsonPatterns) {
     let match: RegExpExecArray | null;
     while ((match = pattern.exec(html)) !== null) {
       try {
-        urls.add(normalizeUrl(match[1]));
+        if (match[0].startsWith('"listingId"')) {
+          // Convert listingId to a full URL
+          urls.add(normalizeUrl(`https://www.madlan.co.il/nadlan/listing/${match[1]}`));
+        } else {
+          urls.add(normalizeUrl(match[1]));
+        }
       } catch { /* ignore */ }
     }
   }
 
   return Array.from(urls);
+}
+
+/**
+ * Detect whether a fetched Madlan page is a valid office/agent page with listings,
+ * or a generic shell / error page.
+ */
+function isMadlanValidOfficePage(html: string): { valid: boolean; reason: string } {
+  if (!html || html.length < 500) {
+    return { valid: false, reason: "Empty or too-short page response" };
+  }
+  // Bot/captcha block detection
+  if (html.includes("משהו בדפדפן שלך גרם לנו לחשוב שאתה רובוט") || 
+      html.includes("ShieldSquare") || 
+      html.includes("distil_r_captcha")) {
+    return { valid: false, reason: "Madlan bot/captcha block" };
+  }
+  // Check for signs this is a real office page:
+  // - Contains listing-related content (Hebrew property terms, listing links, price data)
+  const listingSignals = [
+    /\/listing\//i,
+    /\/nadlan\//i,
+    /listingId/i,
+    /totalCount/i,
+    /נכסים/u,        // "properties"
+    /דירות/u,        // "apartments"
+    /למכירה/u,       // "for sale"
+    /להשכרה/u,       // "for rent"
+    /חדרים/u,        // "rooms"
+    /"price"/i,
+    /₪/,
+  ];
+  const signalCount = listingSignals.filter(p => p.test(html)).length;
+  if (signalCount >= 2) {
+    return { valid: true, reason: `Office page with ${signalCount} listing signals` };
+  }
+  // If the page has the SPA shell but barely any content
+  if (html.includes('<div id="root"></div>') && html.length < 2000) {
+    return { valid: false, reason: "Empty SPA shell - JS did not render" };
+  }
+  return { valid: false, reason: `Insufficient listing signals (${signalCount}/11) — likely generic or error page` };
 }
 
 function extractMadlanTotalCount(html: string): number | null {
@@ -3845,30 +3914,38 @@ async function runMadlanAgencyDiscoverJob(params: {
               },
               body: JSON.stringify({
                 url: firstPageUrl,
-                formats: ["html"],
+                formats: ["html", "rawHtml"],
                 onlyMainContent: false,
-                waitFor: 4000,
+                waitFor: 10000,
               }),
             });
             if (res.ok) {
               const data = await res.json();
-              firstPageHtml = data?.data?.html || data?.html || "";
-              // Detect Madlan bot/captcha block
-              if (firstPageHtml && (firstPageHtml.includes("משהו בדפדפן שלך גרם לנו לחשוב שאתה רובוט") || firstPageHtml.includes("ShieldSquare") || firstPageHtml.includes("distil_r_captcha"))) {
-                console.warn(`[Madlan] CAPTCHA/bot block detected on ${firstPageUrl}`);
+              firstPageHtml = data?.data?.html || data?.data?.rawHtml || data?.html || "";
+              console.log(`[Madlan] Firecrawl response for ${firstPageUrl}: html=${firstPageHtml.length} chars, keys=${Object.keys(data?.data || data || {}).join(",")}, status=${data?.data?.metadata?.statusCode || "?"}`);
+              if (firstPageHtml.length < 500) {
+                // Log a snippet to diagnose what we got
+                console.log(`[Madlan] Short HTML snippet: ${firstPageHtml.substring(0, 300)}`);
+              }
+              // Validate the page using our comprehensive checker
+              const validation = isMadlanValidOfficePage(firstPageHtml);
+              if (!validation.valid) {
+                console.warn(`[Madlan] Invalid page on ${firstPageUrl}: ${validation.reason}`);
                 firstPageHtml = ""; // treat as failure
-                // Mark the job as captcha-blocked
                 await sb.from("import_jobs").update({
                   status: "failed",
                   last_heartbeat: new Date().toISOString(),
                 }).eq("id", jobId);
-                // Update matching agency_sources with failure reason
                 await sb.from("agency_sources")
-                  .update({ last_failure_reason: "Madlan bot/captcha block" })
+                  .update({ 
+                    last_failure_reason: validation.reason,
+                    consecutive_failures: sb.rpc ? undefined : 1,
+                  })
                   .eq("agency_id", agencyId)
                   .eq("source_type", "madlan");
                 break;
               }
+              console.log(`[Madlan] Page validated: ${validation.reason}`);
               break; // success
             } else if ([429, 502, 503].includes(res.status) && attempt === 0) {
               const errText = await res.text();
@@ -3887,7 +3964,7 @@ async function runMadlanAgencyDiscoverJob(params: {
       }
 
       if (!firstPageHtml) {
-        console.warn(`[Madlan] Could not fetch first page (bot block or empty): ${firstPageUrl}`);
+        console.warn(`[Madlan] Could not fetch first page: ${firstPageUrl}`);
         continue;
       }
 
@@ -3961,6 +4038,24 @@ async function runMadlanAgencyDiscoverJob(params: {
     const dedupedUrls = Array.from(discoveredUrls);
     console.log(`[Madlan] discovered ${dedupedUrls.length} unique listing URLs`);
 
+    // If zero listings discovered despite valid page fetch, mark as failed with clear reason
+    if (dedupedUrls.length === 0) {
+      const failReason = "0 listing URLs found — office page may have no active listings or extraction patterns missed";
+      console.warn(`[Madlan] ${failReason}`);
+      await sb.from("import_jobs").update({
+        status: "failed",
+        total_urls: 0,
+        discovered_urls: [],
+        processed_count: 0,
+        failed_count: 0,
+      }).eq("id", jobId);
+      await sb.from("agency_sources")
+        .update({ last_failure_reason: failReason })
+        .eq("agency_id", agencyId)
+        .eq("source_type", "madlan");
+      return;
+    }
+
     // Filter out already-imported URLs
     const { data: existingProps } = await sb
       .from("properties")
@@ -3998,10 +4093,22 @@ async function runMadlanAgencyDiscoverJob(params: {
       failed_count: 0,
     }).eq("id", jobId);
 
-    console.log(`[Madlan] discovery finished for job ${jobId}: ${newUrls.length} new URLs`);
+    // Clear failure reason on success
+    if (newUrls.length > 0) {
+      await sb.from("agency_sources")
+        .update({ last_failure_reason: null, last_sync_listings_found: dedupedUrls.length })
+        .eq("agency_id", agencyId)
+        .eq("source_type", "madlan");
+    }
+
+    console.log(`[Madlan] discovery finished for job ${jobId}: ${newUrls.length} new, ${dedupedUrls.length} total discovered`);
   } catch (err) {
     console.error(`[Madlan] discovery failed for job ${jobId}:`, err);
     await sb.from("import_jobs").update({ status: "failed" }).eq("id", jobId);
+    await sb.from("agency_sources")
+      .update({ last_failure_reason: `Discovery crash: ${err instanceof Error ? err.message : String(err)}` })
+      .eq("agency_id", agencyId)
+      .eq("source_type", "madlan");
   }
 }
 

@@ -209,7 +209,7 @@ export default function AdminAgencyImport() {
                 <Input
                   value={websiteUrl}
                   onChange={(e) => setWebsiteUrl(e.target.value)}
-                  placeholder={sourceType === 'yad2' ? 'https://www.yad2.co.il/realestate/agency/...' : sourceType === 'madlan' ? 'https://www.madlan.co.il/for-sale/israel--office--...' : 'https://agency-website.com'}
+                  placeholder={sourceType === 'yad2' ? 'https://www.yad2.co.il/realestate/agency/...' : sourceType === 'madlan' ? 'https://www.madlan.co.il/agentsOffice/re_office_...' : 'https://agency-website.com'}
                   className="rounded-xl flex-1"
                   required
                   disabled={isDiscovering}
@@ -225,8 +225,10 @@ export default function AdminAgencyImport() {
 
               {isDiscovering && (
                 <p className="text-sm text-muted-foreground mt-3 animate-pulse">
-                  {discoveringSourceType === 'yad2' || discoveringSourceType === 'madlan'
+                  {discoveringSourceType === 'yad2'
                     ? 'Scanning Yad2 agency page... This may take 2-5 minutes.'
+                    : discoveringSourceType === 'madlan'
+                    ? 'Scanning Madlan office page... This may take 2-5 minutes.'
                     : 'Scanning website for listing pages... This may take 2-5 minutes.'}
                 </p>
               )}
