@@ -64,8 +64,9 @@ async function enqueueYad2Sources(
   yad2Sources: any[],
 ): Promise<{ enqueued: number; skipped: number }> {
   const weekStart = getWeekStart(new Date());
-  const BASE_GAP_MINUTES = 15;
-  const JITTER_MINUTES = 10;
+  // Short gaps — Apify handles anti-bot, no stealth timing needed
+  const BASE_GAP_MINUTES = 5;
+  const JITTER_MINUTES = 5;
 
   let enqueued = 0;
   let skipped = 0;
