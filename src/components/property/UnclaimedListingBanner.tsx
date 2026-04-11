@@ -6,7 +6,8 @@
  * Branded for BuyWise Israel — transparency-first, trusted-friend voice.
  */
 
-import { ExternalLink, Building2, Camera, ShieldCheck, Clock, ImageIcon } from 'lucide-react';
+import { ExternalLink, Building2, Camera, ShieldCheck, Clock, ImageIcon, CheckCircle2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
