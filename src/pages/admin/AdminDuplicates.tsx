@@ -68,7 +68,7 @@ export default function AdminDuplicates() {
       return data;
     },
     onSuccess: (data) => {
-      toast.success(`Scan complete: ${data.inserted} new pairs found`);
+      toast.success(`Scan complete: ${data.inserted} new pairs found${data.auto_merged ? `, ${data.auto_merged} auto-merged` : ''}`);
       queryClient.invalidateQueries({ queryKey: ['duplicate-pairs'] });
     },
     onError: (err: any) => toast.error(err.message),
