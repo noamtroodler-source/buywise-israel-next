@@ -64,8 +64,8 @@ async function enqueueYad2Sources(
   yad2Sources: any[],
 ): Promise<{ enqueued: number; skipped: number }> {
   const weekStart = getWeekStart(new Date());
-  const BASE_GAP_MINUTES = 35;
-  const JITTER_MINUTES = 20;
+  const BASE_GAP_MINUTES = 15;
+  const JITTER_MINUTES = 10;
 
   let enqueued = 0;
   let skipped = 0;
@@ -329,8 +329,12 @@ Deno.serve(async (req) => {
     console.log(`  ${nonYad2Sources.length} non-Yad2 sources → firing as background tasks`);
 
     // ── Yad2: enqueue for retry-runner ──
+    // Only clear completed/exhausted/failed items from previous weeks, keep in-progress ones
     if (yad2Sources.length > 0) {
-      await sb.from("yad2_scrape_queue").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      await sb.from("yad2_scrape_queue")
+        .delete()
+        .in("status", ["done", "exhausted", "failed"])
+        .neq("id", "00000000-0000-0000-0000-000000000000");
 
       const queueResult = await enqueueYad2Sources(sb, yad2Sources);
       summary.yad2_enqueued = queueResult.enqueued;

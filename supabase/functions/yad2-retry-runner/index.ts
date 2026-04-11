@@ -6,8 +6,8 @@
  * detects CAPTCHA blocks, and schedules smart retries.
  *
  * Strategy:
- *   - Only runs during Israel's good scraping window (11 PM – 7 AM)
- *   - Processes up to 2 queue items per invocation (avoids edge fn timeout)
+ *   - Runs during Israel's scraping window (8 PM – 8 AM)
+ *   - Processes up to 8 queue items per invocation (parallel pairs)
  *   - CAPTCHA block → retry in 90–150 min (up to max_attempts)
  *   - Real error → retry in 30–60 min (up to max_attempts)
  *   - Never increments agency_source.consecutive_failures for CAPTCHA
@@ -36,16 +36,15 @@ const SERVICE_KEY = () => Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 function getIsraelHour(): number {
   const now = new Date();
-  const month = now.getUTCMonth() + 1; // 1–12
-  // Israel: UTC+3 in summer (Apr–Oct), UTC+2 in winter (Nov–Mar)
+  const month = now.getUTCMonth() + 1;
   const offset = month >= 4 && month <= 10 ? 3 : 2;
   return (now.getUTCHours() + offset) % 24;
 }
 
 function isGoodScrapingWindow(): boolean {
   const hour = getIsraelHour();
-  // Good window: 11 PM (23) through 7 AM (7) Israel time
-  return hour >= 23 || hour <= 7;
+  // Extended window: 8 PM (20) through 8 AM (8) Israel time
+  return hour >= 20 || hour <= 8;
 }
 
 function randomBetween(min: number, max: number): number {
@@ -79,7 +78,7 @@ async function pollJobUntilDone(
   timeoutMs = 90_000
 ): Promise<{ status: string; failure_reason: string | null; total_urls: number }> {
   const deadline = Date.now() + timeoutMs;
-  const POLL_INTERVAL = 6_000; // 6 seconds
+  const POLL_INTERVAL = 6_000;
 
   while (Date.now() < deadline) {
     await new Promise((r) => setTimeout(r, POLL_INTERVAL));
@@ -101,11 +100,10 @@ async function pollJobUntilDone(
     }
   }
 
-  // Still discovering after timeout
   return { status: "timeout", failure_reason: null, total_urls: 0 };
 }
 
-// Run process_batch to completion (mirrors nightly-scrape-scheduler logic)
+// Run process_batch to completion
 async function processJobToCompletion(jobId: string, maxBatches = 20): Promise<number> {
   let totalSucceeded = 0;
 
@@ -134,7 +132,6 @@ async function tryApifyFallback(
 ) {
   const log = (msg: string) => console.log(`[Yad2Queue/Apify] ${item.website_url}: ${msg}`);
 
-  // Mark Apify attempt so we don't retry again
   await sb.from("yad2_scrape_queue").update({
     apify_attempted: true,
     updated_at: new Date().toISOString(),
@@ -166,7 +163,7 @@ async function tryApifyFallback(
     }
 
     log(`Apify job created: ${apifyJobId}, polling...`);
-    const jobResult = await pollJobUntilDone(sb, apifyJobId, 120_000); // 2 min timeout for Apify
+    const jobResult = await pollJobUntilDone(sb, apifyJobId, 120_000);
 
     if (jobResult.status === "failed" || jobResult.total_urls === 0) {
       const reason = jobResult.status === "failed" ? jobResult.failure_reason || "unknown" : "empty";
@@ -182,7 +179,6 @@ async function tryApifyFallback(
       return;
     }
 
-    // Apify succeeded — process the listings
     log(`Apify discovery succeeded: ${jobResult.total_urls} URLs. Processing...`);
     const imported = await processJobToCompletion(apifyJobId);
     log(`Apify imported ${imported} listings`);
@@ -235,7 +231,6 @@ async function processQueueItem(
   const log = (msg: string) =>
     console.log(`[Yad2Queue] ${item.website_url} attempt=${item.attempt_number}: ${msg}`);
 
-  // Mark as running
   await sb
     .from("yad2_scrape_queue")
     .update({ status: "running", updated_at: new Date().toISOString() })
@@ -244,7 +239,6 @@ async function processQueueItem(
   let jobId: string | null = null;
 
   try {
-    // Fire the Yad2 discover
     log("Firing discover...");
     const discoverResult = await callImport({
       action: "discover",
@@ -258,7 +252,6 @@ async function processQueueItem(
     jobId = discoverResult.job_id ?? null;
 
     if (!jobId) {
-      // No job created — nothing to scrape (agency has no listings or URL issue)
       log("No job created — possibly no listings found");
       await sb.from("yad2_scrape_queue").update({
         status: "done",
@@ -270,8 +263,6 @@ async function processQueueItem(
     }
 
     log(`Job created: ${jobId}, polling for completion...`);
-
-    // Wait for background Yad2 discovery to finish (runs in EdgeRuntime.waitUntil)
     const jobResult = await pollJobUntilDone(sb, jobId);
     log(`Job result: status=${jobResult.status}, urls=${jobResult.total_urls}, reason=${jobResult.failure_reason}`);
 
@@ -280,7 +271,6 @@ async function processQueueItem(
       log("CAPTCHA blocked by ShieldSquare");
 
       if (item.attempt_number < item.max_attempts) {
-        // Schedule retry in 90–150 min (stay within good scraping window)
         const retryMinutes = randomBetween(90, 150);
         await sb.from("yad2_scrape_queue").update({
           status: "pending",
@@ -293,7 +283,6 @@ async function processQueueItem(
         }).eq("id", item.id);
         log(`Retry scheduled in ${retryMinutes} min (attempt ${item.attempt_number + 1}/${item.max_attempts})`);
       } else {
-        // All Firecrawl attempts exhausted via CAPTCHA — try Apify as fallback
         log(`All ${item.max_attempts} Firecrawl attempts CAPTCHA-blocked — trying Apify fallback`);
         await tryApifyFallback(sb, item, jobId);
       }
@@ -325,7 +314,6 @@ async function processQueueItem(
           last_error: errMsg,
           updated_at: new Date().toISOString(),
         }).eq("id", item.id);
-        // Count real errors toward consecutive_failures
         const { data: src } = await sb
           .from("agency_sources")
           .select("consecutive_failures, is_active")
@@ -346,8 +334,12 @@ async function processQueueItem(
 
     // ── Timeout (still discovering) ──
     if (jobResult.status === "timeout") {
-      log("Job still discovering after 90s — leaving as running, will clean up next cycle");
-      // Don't update status — leave as 'running', cleanup handles it
+      log("Job still discovering after 90s — will retry next cycle");
+      await sb.from("yad2_scrape_queue").update({
+        status: "pending",
+        scheduled_for: minutesFromNow(5),
+        updated_at: new Date().toISOString(),
+      }).eq("id", item.id);
       return;
     }
 
@@ -361,7 +353,6 @@ async function processQueueItem(
         listings_found: 0,
         updated_at: new Date().toISOString(),
       }).eq("id", item.id);
-      // Still update last_synced_at so we know it ran
       await sb.from("agency_sources").update({
         last_synced_at: new Date().toISOString(),
         last_sync_job_id: jobId,
@@ -399,7 +390,6 @@ async function processQueueItem(
     const errMsg = err instanceof Error ? err.message : String(err);
     console.error(`[Yad2Queue] Unexpected error for ${item.website_url}:`, errMsg);
 
-    // Reset to pending for retry if attempts remain, otherwise mark failed
     if (item.attempt_number < item.max_attempts) {
       const retryMinutes = randomBetween(20, 40);
       await sb.from("yad2_scrape_queue").update({
@@ -446,26 +436,10 @@ Deno.serve(async (req) => {
   const israelHour = getIsraelHour();
   const inWindow = isGoodScrapingWindow();
 
-  // Allow force=true to bypass time window check (for manual testing)
   const url = new URL(req.url);
   const force = url.searchParams.get("force") === "true";
 
-  // ── Time window check ────────────────────────────────────────────────────
-  if (!inWindow && !force) {
-    console.log(`[Yad2Queue] Outside scraping window (Israel hour: ${israelHour}) — skipping`);
-    return new Response(
-      JSON.stringify({ skipped: true, reason: "outside_scraping_window", israel_hour: israelHour }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  }
-
-  if (force && !inWindow) {
-    console.log(`[Yad2Queue] Force mode — bypassing time window (Israel hour: ${israelHour})`);
-  }
-
-  console.log(`[Yad2Queue] Running — Israel hour: ${israelHour}, in good window`);
-
-  // ── Cleanup: reset stuck 'running' items older than 15 minutes ──────────
+  // ── Always run stuck-item cleanup regardless of time window ──
   const stuckCutoff = new Date(Date.now() - 15 * 60 * 1000).toISOString();
   const { count: stuckCount } = await sb
     .from("yad2_scrape_queue")
@@ -478,11 +452,25 @@ Deno.serve(async (req) => {
     console.log(`[Yad2Queue] Reset ${stuckCount} stuck running items back to pending`);
   }
 
+  // ── Time window check (after cleanup) ────────────────────────────────────
+  if (!inWindow && !force) {
+    console.log(`[Yad2Queue] Outside scraping window (Israel hour: ${israelHour}) — skipping`);
+    return new Response(
+      JSON.stringify({ skipped: true, reason: "outside_scraping_window", israel_hour: israelHour, stuck_reset: stuckCount || 0 }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  if (force && !inWindow) {
+    console.log(`[Yad2Queue] Force mode — bypassing time window (Israel hour: ${israelHour})`);
+  }
+
+  console.log(`[Yad2Queue] Running — Israel hour: ${israelHour}, in good window`);
+
   // ── Fetch due queue items (skip sources with recent captcha exhaustion) ───
   const now = new Date().toISOString();
   const captchaCooloffCutoff = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
 
-  // First, get sources that were captcha-exhausted in the last 48h
   const { data: recentlyExhausted } = await sb
     .from("yad2_scrape_queue")
     .select("agency_source_id")
@@ -498,9 +486,9 @@ Deno.serve(async (req) => {
     .eq("status", "pending")
     .lte("scheduled_for", now)
     .order("scheduled_for", { ascending: true })
-    .limit(12); // Fetch extra to filter
+    .limit(20); // Fetch extra to filter
 
-  // Also check recent import_jobs failure rates to skip sources burning credits
+  // Check recent import_jobs failure rates
   const recentFailureCutoff = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
   const { data: recentJobs } = await sb
     .from("import_jobs")
@@ -508,7 +496,6 @@ Deno.serve(async (req) => {
     .gte("created_at", recentFailureCutoff)
     .eq("source_type", "yad2");
 
-  // Build a set of agency_ids with >80% failure rate across 3+ recent jobs
   const agencyJobStats = new Map<string, { total: number; failed: number; jobs: number }>();
   for (const j of (recentJobs || []) as any[]) {
     const stats = agencyJobStats.get(j.agency_id) || { total: 0, failed: 0, jobs: 0 };
@@ -525,7 +512,7 @@ Deno.serve(async (req) => {
     }
   }
 
-  // Filter out sources in captcha cooloff OR with high failure rates
+  // Filter and take up to 8 items per invocation
   const filteredItems = (dueItems || []).filter((item: any) => {
     if (exhaustedSourceIds.has(item.agency_source_id)) {
       console.log(`[Yad2Queue] Skipping ${item.website_url} — captcha cooloff (48h)`);
@@ -535,7 +522,7 @@ Deno.serve(async (req) => {
       return false;
     }
     return true;
-  }).slice(0, 4); // Increased: max 4 per invocation
+  }).slice(0, 8); // Increased from 4 to 8
 
   if (queueErr) {
     console.error("[Yad2Queue] Failed to fetch queue:", queueErr.message);
@@ -555,16 +542,26 @@ Deno.serve(async (req) => {
 
   console.log(`[Yad2Queue] ${filteredItems.length} item(s) due for processing (${exhaustedSourceIds.size} in cooloff)`);
 
-  // Return immediately, process in background (Yad2 discovery takes ~2–5 min)
+  // Return immediately, process in background with parallel pairs
   const backgroundWork = async () => {
-    for (const item of filteredItems) {
-      try {
-        await processQueueItem(sb, item);
-      } catch (err) {
-        console.error(`[Yad2Queue] processQueueItem threw for ${item.id}:`, err);
+    // Process items in parallel pairs of 2 to double throughput
+    const PARALLEL = 2;
+    for (let i = 0; i < filteredItems.length; i += PARALLEL) {
+      const batch = filteredItems.slice(i, i + PARALLEL);
+      console.log(`[Yad2Queue] Processing parallel batch ${Math.floor(i / PARALLEL) + 1}: ${batch.map((b: any) => b.website_url).join(", ")}`);
+      
+      await Promise.allSettled(
+        batch.map((item: any) =>
+          processQueueItem(sb, item).catch((err: any) =>
+            console.error(`[Yad2Queue] processQueueItem threw for ${item.id}:`, err)
+          )
+        )
+      );
+      
+      // Small gap between parallel pairs
+      if (i + PARALLEL < filteredItems.length) {
+        await new Promise((r) => setTimeout(r, 5_000));
       }
-      // Small gap between items
-      await new Promise((r) => setTimeout(r, 3_000));
     }
     console.log("[Yad2Queue] Background processing complete");
   };
