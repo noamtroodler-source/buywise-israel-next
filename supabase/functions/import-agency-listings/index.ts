@@ -3921,7 +3921,12 @@ async function runMadlanAgencyDiscoverJob(params: {
             });
             if (res.ok) {
               const data = await res.json();
-              firstPageHtml = data?.data?.html || data?.html || "";
+              firstPageHtml = data?.data?.html || data?.data?.rawHtml || data?.html || "";
+              console.log(`[Madlan] Firecrawl response for ${firstPageUrl}: html=${firstPageHtml.length} chars, keys=${Object.keys(data?.data || data || {}).join(",")}, status=${data?.data?.metadata?.statusCode || "?"}`);
+              if (firstPageHtml.length < 500) {
+                // Log a snippet to diagnose what we got
+                console.log(`[Madlan] Short HTML snippet: ${firstPageHtml.substring(0, 300)}`);
+              }
               // Validate the page using our comprehensive checker
               const validation = isMadlanValidOfficePage(firstPageHtml);
               if (!validation.valid) {
