@@ -48,7 +48,7 @@ export default function AdminDuplicates() {
 
       const { data: properties } = await supabase
         .from('properties')
-        .select('id, title, city, neighborhood, price, bedrooms, size_sqm, images, views_count, listing_status, created_at, agent_id')
+        .select('id, title, city, neighborhood, price, bedrooms, size_sqm, images, views_count, listing_status, created_at, agent_id, import_source, merged_source_urls, data_quality_score')
         .in('id', [...propIds]);
 
       const propMap = new Map(properties?.map((p: any) => [p.id, p]) || []);
@@ -68,7 +68,7 @@ export default function AdminDuplicates() {
       return data;
     },
     onSuccess: (data) => {
-      toast.success(`Scan complete: ${data.inserted} new pairs found`);
+      toast.success(`Scan complete: ${data.inserted} new pairs found${data.auto_merged ? `, ${data.auto_merged} auto-merged` : ''}`);
       queryClient.invalidateQueries({ queryKey: ['duplicate-pairs'] });
     },
     onError: (err: any) => toast.error(err.message),

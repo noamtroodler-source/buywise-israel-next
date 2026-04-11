@@ -6,6 +6,10 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+const PAGE_SIZE = 1000;
+const AUTO_MERGE_THRESHOLD = 90;
+const PRICE_TOLERANCE = 0.03;
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -18,13 +22,40 @@ Deno.serve(async (req) => {
     );
 
     let totalInserted = 0;
+    let autoMerged = 0;
 
-    // ─── PASS 1: Image pHash matching (existing) ─────────────────────────
+    // ─── Load existing pairs to skip ─────────────────────────────────
+    const existingPairs = new Set<string>();
+    {
+      let page = 0;
+      let hasMore = true;
+      while (hasMore) {
+        const { data } = await supabase
+          .from("duplicate_pairs")
+          .select("property_a, property_b")
+          .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+        if (data && data.length > 0) {
+          for (const p of data) {
+            const key = p.property_a < p.property_b
+              ? `${p.property_a}::${p.property_b}`
+              : `${p.property_b}::${p.property_a}`;
+            existingPairs.add(key);
+          }
+          hasMore = data.length === PAGE_SIZE;
+          page++;
+        } else {
+          hasMore = false;
+        }
+      }
+    }
+    console.log(`Loaded ${existingPairs.size} existing pairs to skip`);
+
+    // ─── PASS 1: Image pHash matching ────────────────────────────────
     const { data: hashes, error: hashErr } = await supabase
       .from("image_hashes")
       .select("id, property_id, phash")
       .order("created_at", { ascending: false })
-      .limit(2000);
+      .limit(5000);
 
     if (hashErr) throw hashErr;
 
@@ -42,6 +73,12 @@ Deno.serve(async (req) => {
 
       for (let i = 0; i < propertyIds.length; i++) {
         for (let j = i + 1; j < propertyIds.length; j++) {
+          const [pa, pb] = propertyIds[i] < propertyIds[j]
+            ? [propertyIds[i], propertyIds[j]]
+            : [propertyIds[j], propertyIds[i]];
+
+          if (existingPairs.has(`${pa}::${pb}`)) continue;
+
           const hashesA = byProperty.get(propertyIds[i])!;
           const hashesB = byProperty.get(propertyIds[j])!;
 
@@ -54,10 +91,6 @@ Deno.serve(async (req) => {
           }
 
           if (bestDistance <= 5) {
-            const [pa, pb] =
-              propertyIds[i] < propertyIds[j]
-                ? [propertyIds[i], propertyIds[j]]
-                : [propertyIds[j], propertyIds[i]];
             phashPairs.push({ property_a: pa, property_b: pb, similarity_score: bestDistance });
           }
         }
@@ -76,26 +109,42 @@ Deno.serve(async (req) => {
         );
         if (!error) totalInserted++;
       }
+      console.log(`pHash scan: ${phashPairs.length} new pairs from ${propertyIds.length} properties`);
     }
 
-    // ─── PASS 2: Cross-source address + size + price matching ────────────
-    // Fetch published properties with address data
-    const { data: properties, error: propErr } = await supabase
-      .from("properties")
-      .select("id, address, city, neighborhood, price, size_sqm, bedrooms, import_source, latitude, longitude")
-      .eq("is_published", true)
-      .not("city", "is", null)
-      .order("created_at", { ascending: false })
-      .limit(2000);
+    // ─── PASS 2: Cross-source address + coordinate + size + price ────
+    // Paginate through ALL published properties
+    const allProperties: any[] = [];
+    {
+      let page = 0;
+      let hasMore = true;
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from("properties")
+          .select("id, address, city, neighborhood, price, size_sqm, bedrooms, import_source, latitude, longitude, data_quality_score")
+          .eq("is_published", true)
+          .not("city", "is", null)
+          .order("id")
+          .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
-    if (propErr) throw propErr;
+        if (error) throw error;
+        if (data && data.length > 0) {
+          allProperties.push(...data);
+          hasMore = data.length === PAGE_SIZE;
+          page++;
+        } else {
+          hasMore = false;
+        }
+      }
+    }
+    console.log(`Loaded ${allProperties.length} published properties for cross-source scan`);
 
-    if (properties && properties.length > 1) {
-      const crossSourcePairs: { property_a: string; property_b: string; similarity_score: number }[] = [];
+    if (allProperties.length > 1) {
+      const crossSourcePairs: { property_a: string; property_b: string; similarity_score: number; bedrooms_match: boolean; price_within_3: boolean; same_city: boolean }[] = [];
 
       // Group by city + neighborhood for efficient comparison
-      const byLocation = new Map<string, typeof properties>();
-      for (const p of properties) {
+      const byLocation = new Map<string, typeof allProperties>();
+      for (const p of allProperties) {
         const key = `${(p.city || '').toLowerCase().trim()}::${(p.neighborhood || '').toLowerCase().trim()}`;
         const arr = byLocation.get(key) || [];
         arr.push(p);
@@ -110,36 +159,99 @@ Deno.serve(async (req) => {
             const a = group[i];
             const b = group[j];
 
-            // Skip if same import source (same scrape, not cross-source)
-            // but still check if addresses match closely
+            const [pa, pb] = a.id < b.id ? [a.id, b.id] : [b.id, a.id];
+            if (existingPairs.has(`${pa}::${pb}`)) continue;
+
             const score = calculateAddressMatchScore(a, b);
             if (score >= 70) {
-              const [pa, pb] = a.id < b.id ? [a.id, b.id] : [b.id, a.id];
-              crossSourcePairs.push({ property_a: pa, property_b: pb, similarity_score: score });
+              const bedroomsMatch = a.bedrooms != null && b.bedrooms != null && a.bedrooms === b.bedrooms;
+              const priceWithin3 = a.price && b.price && a.price > 0 && b.price > 0 &&
+                Math.abs(a.price - b.price) / Math.max(a.price, b.price) <= PRICE_TOLERANCE;
+              const sameCity = (a.city || '').toLowerCase() === (b.city || '').toLowerCase();
+
+              crossSourcePairs.push({
+                property_a: pa,
+                property_b: pb,
+                similarity_score: score,
+                bedrooms_match: bedroomsMatch,
+                price_within_3: !!priceWithin3,
+                same_city: sameCity,
+              });
             }
           }
         }
       }
 
+      // Process pairs: auto-merge high confidence, or insert for manual review
       for (const pair of crossSourcePairs) {
-        const { error } = await supabase.from("duplicate_pairs").upsert(
-          {
-            property_a: pair.property_a,
-            property_b: pair.property_b,
-            detection_method: "cross_source",
-            similarity_score: pair.similarity_score,
-            status: "pending",
-          },
-          { onConflict: "property_a,property_b", ignoreDuplicates: true }
-        );
-        if (!error) totalInserted++;
+        const shouldAutoMerge = pair.similarity_score >= AUTO_MERGE_THRESHOLD
+          && pair.bedrooms_match
+          && pair.price_within_3
+          && pair.same_city;
+
+        if (shouldAutoMerge) {
+          // Find winner by data_quality_score
+          const propA = allProperties.find(p => p.id === pair.property_a);
+          const propB = allProperties.find(p => p.id === pair.property_b);
+          const scoreA = propA?.data_quality_score ?? 0;
+          const scoreB = propB?.data_quality_score ?? 0;
+          const winnerId = scoreA >= scoreB ? pair.property_a : pair.property_b;
+          const loserId = winnerId === pair.property_a ? pair.property_b : pair.property_a;
+
+          // Insert pair first
+          const { data: insertedPair } = await supabase.from("duplicate_pairs").upsert(
+            {
+              property_a: pair.property_a,
+              property_b: pair.property_b,
+              detection_method: "cross_source",
+              similarity_score: pair.similarity_score,
+              status: "pending",
+            },
+            { onConflict: "property_a,property_b", ignoreDuplicates: true }
+          ).select("id").single();
+
+          if (insertedPair) {
+            // Auto-merge
+            const { error: mergeErr } = await supabase.rpc("merge_properties", {
+              p_winner_id: winnerId,
+              p_loser_id: loserId,
+              p_pair_id: insertedPair.id,
+              p_admin_id: null, // system auto-merge
+            });
+            if (!mergeErr) {
+              autoMerged++;
+            } else {
+              console.error(`Auto-merge failed for pair ${insertedPair.id}:`, mergeErr.message);
+            }
+            totalInserted++;
+          }
+        } else {
+          // Insert for manual review
+          const { error } = await supabase.from("duplicate_pairs").upsert(
+            {
+              property_a: pair.property_a,
+              property_b: pair.property_b,
+              detection_method: "cross_source",
+              similarity_score: pair.similarity_score,
+              status: "pending",
+            },
+            { onConflict: "property_a,property_b", ignoreDuplicates: true }
+          );
+          if (!error) totalInserted++;
+        }
       }
 
-      console.log(`Cross-source scan: checked ${properties.length} properties, found ${crossSourcePairs.length} potential duplicates`);
+      console.log(`Cross-source scan: checked ${allProperties.length} properties, found ${crossSourcePairs.length} potential duplicates, auto-merged ${autoMerged}`);
     }
 
     return new Response(
-      JSON.stringify({ inserted: totalInserted, phash_hashes: hashes?.length || 0, properties_checked: properties?.length || 0 }),
+      JSON.stringify({
+        inserted: totalInserted,
+        auto_merged: autoMerged,
+        phash_hashes: hashes?.length || 0,
+        properties_checked: allProperties.length,
+        existing_pairs_skipped: existingPairs.size,
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
@@ -151,10 +263,6 @@ Deno.serve(async (req) => {
   }
 });
 
-/**
- * Calculate match score (0-100) between two properties based on
- * address similarity, size proximity, and price proximity.
- */
 function calculateAddressMatchScore(
   a: { address?: string; price?: number; size_sqm?: number; bedrooms?: number; latitude?: number; longitude?: number },
   b: { address?: string; price?: number; size_sqm?: number; bedrooms?: number; latitude?: number; longitude?: number },
@@ -162,14 +270,13 @@ function calculateAddressMatchScore(
   let score = 0;
   let factors = 0;
 
-  // 1. Address similarity (normalized) — 40 points max
+  // 1. Address similarity — 40 points max
   if (a.address && b.address) {
     const addrA = normalizeAddress(a.address);
     const addrB = normalizeAddress(b.address);
     if (addrA === addrB && addrA.length > 3) {
       score += 40;
     } else if (addrA.length > 3 && addrB.length > 3) {
-      // Check if one contains the other (partial match)
       if (addrA.includes(addrB) || addrB.includes(addrA)) {
         score += 25;
       }
@@ -180,13 +287,13 @@ function calculateAddressMatchScore(
   // 2. Coordinate proximity — 30 points max
   if (a.latitude && a.longitude && b.latitude && b.longitude) {
     const distMeters = haversineDistance(a.latitude, a.longitude, b.latitude, b.longitude);
-    if (distMeters < 20) score += 30;      // Same building
-    else if (distMeters < 50) score += 20;  // Very close
-    else if (distMeters < 100) score += 10; // Nearby
+    if (distMeters < 20) score += 30;
+    else if (distMeters < 50) score += 20;
+    else if (distMeters < 100) score += 10;
     factors++;
   }
 
-  // 3. Size match — 15 points max (within ±5 sqm)
+  // 3. Size match — 15 points max
   if (a.size_sqm && b.size_sqm) {
     const sizeDiff = Math.abs(a.size_sqm - b.size_sqm);
     if (sizeDiff === 0) score += 15;
@@ -195,7 +302,7 @@ function calculateAddressMatchScore(
     factors++;
   }
 
-  // 4. Price match — 15 points max (within ±5%)
+  // 4. Price match — 15 points max
   if (a.price && b.price && a.price > 0 && b.price > 0) {
     const priceDiff = Math.abs(a.price - b.price) / Math.max(a.price, b.price);
     if (priceDiff === 0) score += 15;
@@ -205,14 +312,12 @@ function calculateAddressMatchScore(
     factors++;
   }
 
-  // 5. Bedroom match — bonus (if exact match with other signals)
+  // 5. Bedroom match — bonus
   if (a.bedrooms != null && b.bedrooms != null && a.bedrooms === b.bedrooms) {
     score += 5;
   }
 
-  // Require at least 2 matching factors for a meaningful score
   if (factors < 2) return 0;
-
   return Math.min(score, 100);
 }
 

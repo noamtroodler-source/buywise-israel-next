@@ -18,6 +18,9 @@ interface PropertySummary {
   listing_status: string | null;
   created_at: string | null;
   agent_id: string | null;
+  import_source?: string | null;
+  merged_source_urls?: string[] | null;
+  data_quality_score?: number | null;
 }
 
 interface DuplicateCompareCardProps {
@@ -83,13 +86,26 @@ function PropertyMiniCard({
           )}
         </div>
 
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+          {property.import_source && (
+            <Badge variant="secondary" className="text-xs">
+              {property.import_source}
+            </Badge>
+          )}
           {property.views_count != null && <span>{property.views_count} views</span>}
           {daysListed != null && <span>{daysListed}d listed</span>}
           {property.listing_status && (
             <Badge variant="outline" className="text-xs">
               {property.listing_status}
             </Badge>
+          )}
+          {(property.merged_source_urls?.length ?? 0) > 0 && (
+            <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+              {property.merged_source_urls!.length} sources
+            </Badge>
+          )}
+          {property.data_quality_score != null && (
+            <span className="text-muted-foreground">Q:{property.data_quality_score}</span>
           )}
         </div>
       </div>
