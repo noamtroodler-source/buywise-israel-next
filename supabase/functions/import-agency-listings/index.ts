@@ -3890,179 +3890,52 @@ async function runMadlanAgencyDiscoverJob(params: {
 }) {
   const { jobId, agencyId, websiteUrl, effectiveImportType } = params;
   const sb = supabaseAdmin();
-  const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
+  const APIFY_API_KEY = Deno.env.get("APIFY_API_KEY");
 
   try {
-    console.log(`[Madlan] background discovery started for job ${jobId}: ${websiteUrl}`);
+    console.log(`[Madlan/Apify] background discovery started for job ${jobId}: ${websiteUrl}`);
 
-    const discoveryUrls = getMadlanDiscoveryUrls(websiteUrl, effectiveImportType);
-    const discoveredUrls = new Set<string>();
-
-    for (const discoveryUrl of discoveryUrls) {
-      const firstPageUrl = buildMadlanPageUrl(discoveryUrl, 1);
-      let firstPageHtml = "";
-
-      // Use Firecrawl to render the JS-heavy Madlan page (with retry on transient errors)
-      if (FIRECRAWL_API_KEY) {
-        for (let attempt = 0; attempt < 2; attempt++) {
-          try {
-            const res = await fetch("https://api.firecrawl.dev/v1/scrape", {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${FIRECRAWL_API_KEY}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                url: firstPageUrl,
-                formats: ["html", "rawHtml"],
-                onlyMainContent: false,
-                waitFor: 10000,
-              }),
-            });
-            if (res.ok) {
-              const data = await res.json();
-              firstPageHtml = data?.data?.html || data?.data?.rawHtml || data?.html || "";
-              console.log(`[Madlan] Firecrawl response for ${firstPageUrl}: html=${firstPageHtml.length} chars, keys=${Object.keys(data?.data || data || {}).join(",")}, status=${data?.data?.metadata?.statusCode || "?"}`);
-              if (firstPageHtml.length < 500) {
-                // Log a snippet to diagnose what we got
-                console.log(`[Madlan] Short HTML snippet: ${firstPageHtml.substring(0, 300)}`);
-              }
-              // Validate the page using our comprehensive checker
-              const validation = isMadlanValidOfficePage(firstPageHtml);
-              if (!validation.valid) {
-                console.warn(`[Madlan] Invalid page on ${firstPageUrl}: ${validation.reason}`);
-                firstPageHtml = ""; // treat as failure
-                await sb.from("import_jobs").update({
-                  status: "failed",
-                  last_heartbeat: new Date().toISOString(),
-                }).eq("id", jobId);
-                await sb.from("agency_sources")
-                  .update({ 
-                    last_failure_reason: validation.reason,
-                    consecutive_failures: sb.rpc ? undefined : 1,
-                  })
-                  .eq("agency_id", agencyId)
-                  .eq("source_type", "madlan");
-                break;
-              }
-              console.log(`[Madlan] Page validated: ${validation.reason}`);
-              break; // success
-            } else if ([429, 502, 503].includes(res.status) && attempt === 0) {
-              const errText = await res.text();
-              console.warn(`[Madlan] Firecrawl ${res.status} on attempt 1, retrying in 2s: ${errText.slice(0, 100)}`);
-              await new Promise(r => setTimeout(r, 2000));
-            } else {
-              const errText = await res.text();
-              console.warn(`[Madlan] Firecrawl failed (${res.status}): ${errText.slice(0, 200)}`);
-              break;
-            }
-          } catch (e) {
-            console.warn(`[Madlan] Firecrawl error (attempt ${attempt + 1}):`, e);
-            if (attempt === 0) await new Promise(r => setTimeout(r, 2000));
-          }
-        }
-      }
-
-      if (!firstPageHtml) {
-        console.warn(`[Madlan] Could not fetch first page: ${firstPageUrl}`);
-        continue;
-      }
-
-      const firstPageItems = extractMadlanListingUrls(firstPageHtml, firstPageUrl);
-      const totalCount = extractMadlanTotalCount(firstPageHtml) ?? firstPageItems.length;
-      // Madlan shows ~20 per page
-      const pageSize = Math.max(firstPageItems.length, 20);
-      const totalPages = Math.min(Math.ceil(totalCount / pageSize), 50); // cap at 50 pages
-
-      firstPageItems.forEach((url) => discoveredUrls.add(url));
-      console.log(`[Madlan] page 1: ${firstPageItems.length} items, total: ${totalCount}, pages: ${totalPages}`);
-
-      // Crawl remaining pages
-      const PAGE_BATCH_SIZE = 2;
-      for (let startPage = 2; startPage <= totalPages; startPage += PAGE_BATCH_SIZE) {
-        const pageBatch = Array.from(
-          { length: Math.min(PAGE_BATCH_SIZE, totalPages - startPage + 1) },
-          (_, i) => startPage + i
-        );
-
-        const pageResults = await Promise.allSettled(
-          pageBatch.map(async (pageNum) => {
-            const pageUrl = buildMadlanPageUrl(discoveryUrl, pageNum);
-            if (!FIRECRAWL_API_KEY) return [];
-            for (let attempt = 0; attempt < 2; attempt++) {
-              try {
-                const res = await fetch("https://api.firecrawl.dev/v1/scrape", {
-                  method: "POST",
-                  headers: {
-                    Authorization: `Bearer ${FIRECRAWL_API_KEY}`,
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify({
-                    url: pageUrl,
-                    formats: ["html"],
-                    onlyMainContent: false,
-                    waitFor: 3000,
-                  }),
-                });
-                if (res.ok) {
-                  const data = await res.json();
-                  const html = data?.data?.html || data?.html || "";
-                  return extractMadlanListingUrls(html, pageUrl);
-                } else if ([429, 502, 503].includes(res.status) && attempt === 0) {
-                  await res.text(); // consume body
-                  await new Promise(r => setTimeout(r, 2000));
-                } else {
-                  await res.text(); // consume body
-                  return [];
-                }
-              } catch (e) {
-                if (attempt === 0) await new Promise(r => setTimeout(r, 2000));
-              }
-            }
-            return [];
-          })
-        );
-
-        pageResults.forEach((r, i) => {
-          if (r.status === "fulfilled") {
-            console.log(`[Madlan] page ${pageBatch[i]}: ${r.value.length} items`);
-            r.value.forEach((url) => discoveredUrls.add(url));
-          }
-        });
-
-        // Pace between batches
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-      }
-    }
-
-    const dedupedUrls = Array.from(discoveredUrls);
-    console.log(`[Madlan] discovered ${dedupedUrls.length} unique listing URLs`);
-
-    // If zero listings discovered despite valid page fetch, mark as failed with clear reason
-    if (dedupedUrls.length === 0) {
-      const failReason = "0 listing URLs found — office page may have no active listings or extraction patterns missed";
-      console.warn(`[Madlan] ${failReason}`);
-      await sb.from("import_jobs").update({
-        status: "failed",
-        total_urls: 0,
-        discovered_urls: [],
-        processed_count: 0,
-        failed_count: 0,
-      }).eq("id", jobId);
+    if (!APIFY_API_KEY) {
+      const failReason = "APIFY_API_KEY not configured — required for Madlan scraping";
+      console.error(`[Madlan/Apify] ${failReason}`);
+      await sb.from("import_jobs").update({ status: "failed" }).eq("id", jobId);
       await sb.from("agency_sources")
         .update({ last_failure_reason: failReason })
-        .eq("agency_id", agencyId)
-        .eq("source_type", "madlan");
+        .eq("agency_id", agencyId).eq("source_type", "madlan");
       return;
     }
 
-    // Filter out already-imported URLs
+    // Get the agency's cities to know what to scrape
+    const { data: agency } = await sb
+      .from("agencies")
+      .select("cities_covered, name")
+      .eq("id", agencyId)
+      .single();
+
+    const cities = agency?.cities_covered;
+    if (!cities || cities.length === 0) {
+      const failReason = "Agency has no cities_covered set — cannot determine which city to scrape on Madlan";
+      console.warn(`[Madlan/Apify] ${failReason}`);
+      await sb.from("import_jobs").update({ status: "failed" }).eq("id", jobId);
+      await sb.from("agency_sources")
+        .update({ last_failure_reason: failReason })
+        .eq("agency_id", agencyId).eq("source_type", "madlan");
+      return;
+    }
+
+    const cityStr = cities.join(", ");
+    const dealTypes = effectiveImportType === "both"
+      ? ["buy", "rent"]
+      : [effectiveImportType === "rental" ? "rent" : "buy"];
+
+    console.log(`[Madlan/Apify] Scraping cities: ${cityStr}, dealTypes: ${dealTypes.join(",")}`);
+
+    // Get existing source_urls for dedup
     const { data: existingProps } = await sb
       .from("properties")
       .select("source_url")
-      .eq("agency_id", agencyId)
-      .not("source_url", "is", null);
-
+      .not("source_url", "is", null)
+      .like("source_url", "%madlan.co.il%");
     const knownUrls = new Set<string>();
     if (existingProps) {
       for (const p of existingProps) {
@@ -4070,43 +3943,193 @@ async function runMadlanAgencyDiscoverJob(params: {
       }
     }
 
-    const newUrls = dedupedUrls.filter((url) => !knownUrls.has(normalizeUrl(url)));
-    console.log(`[Madlan] ${newUrls.length} new URLs after dedup`);
+    // Find or create a default agent for this agency
+    const { data: agents } = await sb
+      .from("agents")
+      .select("id")
+      .eq("agency_id", agencyId)
+      .limit(1);
+    const agentId = agents?.[0]?.id || null;
 
-    if (newUrls.length > 0) {
-      const BATCH = 200;
-      for (let i = 0; i < newUrls.length; i += BATCH) {
-        const items = newUrls.slice(i, i + BATCH).map((url) => ({
-          job_id: jobId,
-          url,
-          status: "pending",
-        }));
-        await sb.from("import_job_items").insert(items);
+    let totalDiscovered = 0;
+    let totalNew = 0;
+    let totalInserted = 0;
+    const allDiscoveredUrls: string[] = [];
+
+    for (const dealType of dealTypes) {
+      console.log(`[Madlan/Apify] Running actor for ${cityStr} / ${dealType}`);
+
+      // Call Apify actor synchronously (returns dataset items directly)
+      // Timeout: 120s for the sync call
+      const actorInput = {
+        city: cityStr,
+        dealType,
+        maxItems: 200,
+      };
+
+      let items: any[] = [];
+      try {
+        const res = await fetch(
+          `https://api.apify.com/v2/acts/swerve~madlan-scraper/run-sync-get-dataset-items?token=${APIFY_API_KEY}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(actorInput),
+            signal: AbortSignal.timeout(180_000), // 3 min timeout
+          }
+        );
+
+        if (!res.ok) {
+          const errText = await res.text();
+          console.error(`[Madlan/Apify] Actor failed (${res.status}): ${errText.slice(0, 300)}`);
+          continue;
+        }
+
+        items = await res.json();
+        console.log(`[Madlan/Apify] Actor returned ${items.length} items for ${cityStr}/${dealType}`);
+      } catch (e) {
+        console.error(`[Madlan/Apify] Actor call error:`, e);
+        continue;
       }
+
+      totalDiscovered += items.length;
+
+      // Process each item
+      for (const madlanItem of items) {
+        try {
+          const listingUrl = madlanItem.url || `https://www.madlan.co.il/listings/${madlanItem.id}`;
+          allDiscoveredUrls.push(listingUrl);
+
+          // Dedup check
+          if (knownUrls.has(normalizeUrl(listingUrl))) continue;
+          knownUrls.add(normalizeUrl(listingUrl));
+          totalNew++;
+
+          // Map Madlan fields to our property schema
+          const listingStatus = dealType === "rent" ? "for_rent" : "for_sale";
+          const rooms = madlanItem.rooms || null;
+          const bedrooms = rooms ? Math.max(0, Math.floor(rooms) - 1) : null;
+
+          // Build features array
+          const features: string[] = [];
+          if (madlanItem.hasElevator) features.push("elevator");
+          if (madlanItem.hasBalcony) features.push("balcony");
+          if (madlanItem.hasSecureRoom) features.push("safe_room");
+          if (madlanItem.parking && madlanItem.parking > 0) features.push("parking");
+
+          const city = madlanItem.city || cities[0];
+          const address = madlanItem.address || (madlanItem.streetName ? `${madlanItem.streetName} ${madlanItem.streetNumber || ""}`.trim() : "");
+
+          // Build listing object for title/description generation
+          const listing = {
+            property_type: "apartment",
+            listing_status: listingStatus,
+            price: madlanItem.price || 0,
+            city,
+            neighborhood: madlanItem.neighbourhood || null,
+            bedrooms,
+            source_rooms: rooms,
+            size_sqm: madlanItem.areaSqm || null,
+            address,
+            floor: madlanItem.floor || null,
+            condition: madlanItem.condition || null,
+            parking: madlanItem.parking || 0,
+          };
+
+          const title = generateListingTitle(listing);
+          const description = generateListingDescription(listing);
+
+          // Geocode the address
+          let latitude: number | null = null;
+          let longitude: number | null = null;
+          if (address && city) {
+            try {
+              const coords = await geocodeWithRateLimit(address, city, madlanItem.neighbourhood);
+              if (coords) { latitude = coords.lat; longitude = coords.lng; }
+            } catch { /* skip geocoding errors */ }
+          }
+
+          const confidenceScore = calculateConfidenceScore(listing);
+
+          const { error: propErr } = await sb
+            .from("properties")
+            .insert({
+              agent_id: agentId,
+              title,
+              description: description || null,
+              property_type: "apartment",
+              listing_status: listingStatus,
+              price: madlanItem.price || 0,
+              currency: "ILS",
+              address: address ? normalizeAddressForStorage(address) : "",
+              city,
+              neighborhood: madlanItem.neighbourhood || null,
+              latitude, longitude,
+              bedrooms,
+              source_rooms: rooms,
+              size_sqm: madlanItem.areaSqm || null,
+              floor: madlanItem.floor ? parseInt(madlanItem.floor) || null : null,
+              features,
+              parking: madlanItem.parking || 0,
+              condition: madlanItem.condition || null,
+              // Don't store external images — copyright
+              images: null,
+              is_published: confidenceScore >= 60,
+              is_featured: false,
+              views_count: 0,
+              verification_status: confidenceScore >= 60 ? "approved" : "draft",
+              import_source: "madlan",
+              source_url: listingUrl,
+              data_quality_score: confidenceScore,
+              location_confidence: address?.length > 3 ? "exact" : madlanItem.neighbourhood ? "neighborhood" : "city",
+              is_claimed: false,
+              source_status: "active",
+              source_last_checked_at: new Date().toISOString(),
+            });
+
+          if (propErr) {
+            console.warn(`[Madlan/Apify] Insert failed for ${listingUrl}: ${propErr.message}`);
+          } else {
+            totalInserted++;
+          }
+        } catch (itemErr) {
+          console.warn(`[Madlan/Apify] Error processing item:`, itemErr);
+        }
+      }
+
+      // Update heartbeat between deal types
+      await sb.from("import_jobs").update({
+        last_heartbeat: new Date().toISOString(),
+      }).eq("id", jobId);
     }
 
+    console.log(`[Madlan/Apify] Summary: ${totalDiscovered} discovered, ${totalNew} new, ${totalInserted} inserted`);
+
+    // Update job
     await sb.from("import_jobs").update({
-      status: newUrls.length > 0 ? "ready" : "completed",
-      total_urls: newUrls.length,
-      discovered_urls: dedupedUrls,
-      processed_count: 0,
-      failed_count: 0,
+      status: totalInserted > 0 ? "completed" : (totalDiscovered > 0 ? "completed" : "failed"),
+      total_urls: totalNew,
+      discovered_urls: allDiscoveredUrls.slice(0, 500), // cap stored URLs
+      processed_count: totalInserted,
+      failed_count: totalNew - totalInserted,
     }).eq("id", jobId);
 
-    // Clear failure reason on success
-    if (newUrls.length > 0) {
-      await sb.from("agency_sources")
-        .update({ last_failure_reason: null, last_sync_listings_found: dedupedUrls.length })
-        .eq("agency_id", agencyId)
-        .eq("source_type", "madlan");
-    }
+    // Update agency source
+    await sb.from("agency_sources")
+      .update({
+        last_failure_reason: totalDiscovered === 0 ? "Apify actor returned 0 results" : null,
+        last_sync_listings_found: totalDiscovered,
+        last_synced_at: new Date().toISOString(),
+      })
+      .eq("agency_id", agencyId)
+      .eq("source_type", "madlan");
 
-    console.log(`[Madlan] discovery finished for job ${jobId}: ${newUrls.length} new, ${dedupedUrls.length} total discovered`);
+    console.log(`[Madlan/Apify] discovery+import finished for job ${jobId}: ${totalInserted} properties created`);
   } catch (err) {
-    console.error(`[Madlan] discovery failed for job ${jobId}:`, err);
+    console.error(`[Madlan/Apify] discovery failed for job ${jobId}:`, err);
     await sb.from("import_jobs").update({ status: "failed" }).eq("id", jobId);
     await sb.from("agency_sources")
-      .update({ last_failure_reason: `Discovery crash: ${err instanceof Error ? err.message : String(err)}` })
+      .update({ last_failure_reason: `Apify discovery crash: ${err instanceof Error ? err.message : String(err)}` })
       .eq("agency_id", agencyId)
       .eq("source_type", "madlan");
   }
