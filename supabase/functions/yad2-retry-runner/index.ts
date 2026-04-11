@@ -7,7 +7,7 @@
  *
  * Strategy:
  *   - Uses Apify directly (no Firecrawl) — bypasses ShieldSquare/CAPTCHA
- *   - Processes up to 16 queue items per invocation (parallel groups of 4)
+ *   - Processes up to 32 queue items per invocation (parallel groups of 8)
  *   - On failure → retry in 30–60 min (up to max_attempts)
  *   - On success: marks done, updates agency_source.last_synced_at
  */
@@ -381,11 +381,11 @@ Deno.serve(async (req) => {
     );
   }
 
-  // Filter and take up to 16 items per invocation
-  const filteredItems = (dueItems || []).filter((item: any) => {
-    if (highFailureAgencies.has(item.agency_id)) return false;
-    return true;
-  }).slice(0, 16);
+   // Filter and take up to 32 items per invocation
+   const filteredItems = (dueItems || []).filter((item: any) => {
+     if (highFailureAgencies.has(item.agency_id)) return false;
+     return true;
+   }).slice(0, 32);
 
   if (!filteredItems.length) {
     console.log("[Yad2Queue] No due items");
@@ -397,9 +397,9 @@ Deno.serve(async (req) => {
 
   console.log(`[Yad2Queue] ${filteredItems.length} item(s) due for processing`);
 
-  // Process in background with parallel groups of 4
-  const backgroundWork = async () => {
-    const PARALLEL = 4;
+   // Process in background with parallel groups of 8 (32GB Apify plan)
+   const backgroundWork = async () => {
+     const PARALLEL = 8;
     for (let i = 0; i < filteredItems.length; i += PARALLEL) {
       const batch = filteredItems.slice(i, i + PARALLEL);
       console.log(`[Yad2Queue] Processing parallel batch ${Math.floor(i / PARALLEL) + 1}: ${batch.map((b: any) => b.website_url).join(", ")}`);
