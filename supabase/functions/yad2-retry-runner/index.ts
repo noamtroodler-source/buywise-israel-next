@@ -498,16 +498,44 @@ Deno.serve(async (req) => {
     .eq("status", "pending")
     .lte("scheduled_for", now)
     .order("scheduled_for", { ascending: true })
-    .limit(6); // Fetch a few extra to filter
+    .limit(12); // Fetch extra to filter
 
-  // Filter out sources in captcha cooloff
+  // Also check recent import_jobs failure rates to skip sources burning credits
+  const recentFailureCutoff = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
+  const { data: recentJobs } = await sb
+    .from("import_jobs")
+    .select("agency_id, total_urls, failed_count, processed_count")
+    .gte("created_at", recentFailureCutoff)
+    .eq("source_type", "yad2");
+
+  // Build a set of agency_ids with >80% failure rate across 3+ recent jobs
+  const agencyJobStats = new Map<string, { total: number; failed: number; jobs: number }>();
+  for (const j of (recentJobs || []) as any[]) {
+    const stats = agencyJobStats.get(j.agency_id) || { total: 0, failed: 0, jobs: 0 };
+    stats.total += j.total_urls || 0;
+    stats.failed += j.failed_count || 0;
+    stats.jobs += 1;
+    agencyJobStats.set(j.agency_id, stats);
+  }
+  const highFailureAgencies = new Set<string>();
+  for (const [agencyId, stats] of agencyJobStats) {
+    if (stats.jobs >= 3 && stats.total > 0 && (stats.failed / stats.total) > 0.8) {
+      highFailureAgencies.add(agencyId);
+      console.log(`[Yad2Queue] Skipping agency ${agencyId} — ${stats.failed}/${stats.total} failures across ${stats.jobs} recent jobs`);
+    }
+  }
+
+  // Filter out sources in captcha cooloff OR with high failure rates
   const filteredItems = (dueItems || []).filter((item: any) => {
     if (exhaustedSourceIds.has(item.agency_source_id)) {
       console.log(`[Yad2Queue] Skipping ${item.website_url} — captcha cooloff (48h)`);
       return false;
     }
+    if (highFailureAgencies.has(item.agency_id)) {
+      return false;
+    }
     return true;
-  }).slice(0, 2); // Max 2 per invocation
+  }).slice(0, 4); // Increased: max 4 per invocation
 
   if (queueErr) {
     console.error("[Yad2Queue] Failed to fetch queue:", queueErr.message);
