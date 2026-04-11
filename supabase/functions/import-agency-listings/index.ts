@@ -4033,6 +4033,24 @@ async function runMadlanAgencyDiscoverJob(params: {
     const dedupedUrls = Array.from(discoveredUrls);
     console.log(`[Madlan] discovered ${dedupedUrls.length} unique listing URLs`);
 
+    // If zero listings discovered despite valid page fetch, mark as failed with clear reason
+    if (dedupedUrls.length === 0) {
+      const failReason = "0 listing URLs found — office page may have no active listings or extraction patterns missed";
+      console.warn(`[Madlan] ${failReason}`);
+      await sb.from("import_jobs").update({
+        status: "failed",
+        total_urls: 0,
+        discovered_urls: [],
+        processed_count: 0,
+        failed_count: 0,
+      }).eq("id", jobId);
+      await sb.from("agency_sources")
+        .update({ last_failure_reason: failReason })
+        .eq("agency_id", agencyId)
+        .eq("source_type", "madlan");
+      return;
+    }
+
     // Filter out already-imported URLs
     const { data: existingProps } = await sb
       .from("properties")
@@ -4070,10 +4088,22 @@ async function runMadlanAgencyDiscoverJob(params: {
       failed_count: 0,
     }).eq("id", jobId);
 
-    console.log(`[Madlan] discovery finished for job ${jobId}: ${newUrls.length} new URLs`);
+    // Clear failure reason on success
+    if (newUrls.length > 0) {
+      await sb.from("agency_sources")
+        .update({ last_failure_reason: null, last_sync_listings_found: dedupedUrls.length })
+        .eq("agency_id", agencyId)
+        .eq("source_type", "madlan");
+    }
+
+    console.log(`[Madlan] discovery finished for job ${jobId}: ${newUrls.length} new, ${dedupedUrls.length} total discovered`);
   } catch (err) {
     console.error(`[Madlan] discovery failed for job ${jobId}:`, err);
     await sb.from("import_jobs").update({ status: "failed" }).eq("id", jobId);
+    await sb.from("agency_sources")
+      .update({ last_failure_reason: `Discovery crash: ${err instanceof Error ? err.message : String(err)}` })
+      .eq("agency_id", agencyId)
+      .eq("source_type", "madlan");
   }
 }
 
