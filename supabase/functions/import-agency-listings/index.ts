@@ -3916,7 +3916,7 @@ async function runMadlanAgencyDiscoverJob(params: {
                 url: firstPageUrl,
                 formats: ["html"],
                 onlyMainContent: false,
-                waitFor: 4000,
+                waitFor: 8000,
               }),
             });
             if (res.ok) {
