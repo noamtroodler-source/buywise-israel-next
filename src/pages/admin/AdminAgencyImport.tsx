@@ -225,8 +225,10 @@ export default function AdminAgencyImport() {
 
               {isDiscovering && (
                 <p className="text-sm text-muted-foreground mt-3 animate-pulse">
-                  {discoveringSourceType === 'yad2' || discoveringSourceType === 'madlan'
+                  {discoveringSourceType === 'yad2'
                     ? 'Scanning Yad2 agency page... This may take 2-5 minutes.'
+                    : discoveringSourceType === 'madlan'
+                    ? 'Scanning Madlan office page... This may take 2-5 minutes.'
                     : 'Scanning website for listing pages... This may take 2-5 minutes.'}
                 </p>
               )}
