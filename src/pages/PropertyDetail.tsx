@@ -226,6 +226,7 @@ export default function PropertyDetail() {
                         : (property as any).source_agency_name || 'an agency website'
                     }
                     lastCheckedAt={(property as any).source_last_checked_at}
+                    hasImages={!!property.images && property.images.length > 0}
                     onClaimClick={() => setShowClaimDialog(true)}
                   />
                 </div>
