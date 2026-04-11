@@ -4049,7 +4049,14 @@ async function runMadlanAgencyDiscoverJob(params: {
             } catch { /* skip geocoding errors */ }
           }
 
-          const confidenceScore = calculateConfidenceScore(listing);
+          // Simple confidence score for structured Apify data
+          const confidenceScore = Math.min(100, 50
+            + (madlanItem.price ? 15 : 0)
+            + (rooms ? 10 : 0)
+            + (madlanItem.areaSqm ? 10 : 0)
+            + (address ? 10 : 0)
+            + (madlanItem.neighbourhood ? 5 : 0)
+          );
 
           const { error: propErr } = await sb
             .from("properties")
