@@ -3728,7 +3728,9 @@ function isMadlanAgencyUrl(url: string): boolean {
  *   /for-sale/agentsOffice/re_office_*   (strips the /for-sale/ prefix)
  *   /for-rent/agentsOffice/re_office_*   (strips the /for-rent/ prefix)
  *   /agent/re_agent_*
- * Returns 1-2 URLs with ?dealType=forsale / ?dealType=rent as needed.
+ * Returns the canonical office URL(s). For /agentsOffice/ pages, the page
+ * already shows all listings — no query params needed for discovery.
+ * We fetch the raw office URL first, then optionally add dealType filter.
  */
 function getMadlanDiscoveryUrls(rawUrl: string, importType: string): string[] {
   const urls = new Set<string>();
@@ -3740,20 +3742,18 @@ function getMadlanDiscoveryUrls(rawUrl: string, importType: string): string[] {
       .replace(/^\/(for-sale|for-rent)\//i, "/")
       .replace(/\/+$/, "");
 
-    // If path doesn't start with /agentsOffice or /agent, check if it's an old
-    // mangled format like /for-sale/israel--office--SLUG — if so, we can't recover
-    // the real office ID from it so just use the cleaned path as-is.
-    const normalizedType = normalizeImportType(importType);
-    const dealTypes = normalizedType === "both"
-      ? ["forsale", "rent"]
-      : [normalizedType === "rental" ? "rent" : "forsale"];
+    // Primary: use the clean office page URL without query params (shows all listings)
+    const primary = new URL(rawUrl);
+    primary.pathname = cleanPath;
+    primary.search = "";
+    urls.add(primary.toString());
 
-    for (const dealType of dealTypes) {
-      const u = new URL(rawUrl);
-      u.pathname = cleanPath;
-      u.search = "";
-      u.searchParams.set("dealType", dealType);
-      urls.add(u.toString());
+    // If import type is restricted, also try with dealType filter as fallback
+    const normalizedType = normalizeImportType(importType);
+    if (normalizedType !== "both") {
+      const filtered = new URL(primary.toString());
+      filtered.searchParams.set("dealType", normalizedType === "rental" ? "rent" : "forsale");
+      urls.add(filtered.toString());
     }
   } catch {
     urls.add(rawUrl);
