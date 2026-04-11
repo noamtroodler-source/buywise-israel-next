@@ -3,17 +3,18 @@
  *
  * Shown on scraped listings that haven't been claimed by an agency.
  * Explains to buyers what they're looking at and invites agents to claim.
+ * Branded for BuyWise Israel — transparency-first, trusted-friend voice.
  */
 
-import { ExternalLink, Building2, Camera, CheckCircle2 } from 'lucide-react';
+import { ExternalLink, Building2, Camera, ShieldCheck, Clock, ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 interface UnclaimedListingBannerProps {
   sourceUrl?: string | null;
-  sourceName?: string; // "Yad2", "Madlan", or agency website name
+  sourceName?: string;
   lastCheckedAt?: string | null;
+  hasImages?: boolean;
   className?: string;
   onClaimClick?: () => void;
 }
@@ -22,6 +23,7 @@ export function UnclaimedListingBanner({
   sourceUrl,
   sourceName = 'an external portal',
   lastCheckedAt,
+  hasImages = false,
   className,
   onClaimClick,
 }: UnclaimedListingBannerProps) {
@@ -36,41 +38,43 @@ export function UnclaimedListingBanner({
   return (
     <div
       className={cn(
-        'rounded-xl border border-semantic-amber/25 bg-semantic-amber/5 px-5 py-4 space-y-3',
+        'rounded-xl border border-border bg-muted/40 px-5 py-4 space-y-3.5',
         className
       )}
     >
       {/* Header */}
       <div className="flex items-start gap-3">
-        <div className="mt-0.5 flex-shrink-0 w-8 h-8 rounded-full bg-semantic-amber/15 flex items-center justify-center">
-          <Building2 className="w-4 h-4 text-semantic-amber" />
+        <div className="mt-0.5 flex-shrink-0 w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+          <ShieldCheck className="w-4.5 h-4.5 text-primary" />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-foreground">
-            Sourced listing — not yet verified
+            BuyWise Sourced Listing
           </p>
           <p className="text-sm text-muted-foreground mt-0.5 leading-relaxed">
-            This listing was pulled from{' '}
-            <span className="font-medium">{sourceName}</span> to help
-            international buyers discover more options. Details may not
-            reflect current availability.
+            We found this listing on <span className="font-medium text-foreground">{sourceName}</span> and
+            translated it for international buyers. Pricing and details come directly from the
+            original source — we don't edit or embellish.
           </p>
         </div>
       </div>
 
-      {/* What this means */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+      {/* Trust signals */}
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 pt-0.5">
         {[
-          { icon: CheckCircle2, text: 'Factual data only — no fabrication' },
-          { icon: Camera, text: 'No listing photos yet' },
+          { icon: ShieldCheck, text: 'Original data — nothing fabricated', color: 'text-primary' },
           {
-            icon: ExternalLink,
-            text: lastChecked
-              ? `Last verified ${lastChecked}`
-              : 'Availability unconfirmed',
+            icon: hasImages ? ImageIcon : Camera,
+            text: hasImages ? 'Photos from original listing' : 'No listing photos available',
+            color: 'text-muted-foreground',
           },
-        ].map(({ icon: Icon, text }) => (
-          <div key={text} className="flex items-center gap-2 text-xs text-muted-foreground">
+          {
+            icon: Clock,
+            text: lastChecked ? `Last checked ${lastChecked}` : 'Availability unconfirmed',
+            color: 'text-muted-foreground',
+          },
+        ].map(({ icon: Icon, text, color }) => (
+          <div key={text} className={cn('flex items-center gap-1.5 text-xs', color)}>
             <Icon className="w-3.5 h-3.5 flex-shrink-0" />
             <span>{text}</span>
           </div>
@@ -78,16 +82,16 @@ export function UnclaimedListingBanner({
       </div>
 
       {/* CTAs */}
-      <div className="flex flex-wrap gap-2 pt-1">
+      <div className="flex flex-wrap items-center gap-3 pt-0.5">
         {sourceUrl && (
           <a
             href={sourceUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 underline underline-offset-2"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
           >
             <ExternalLink className="w-3.5 h-3.5" />
-            View original listing
+            View photos on original listing
           </a>
         )}
         {onClaimClick && (
@@ -95,12 +99,19 @@ export function UnclaimedListingBanner({
             variant="outline"
             size="sm"
             onClick={onClaimClick}
-            className="h-7 text-xs"
+            className="h-7 text-xs border-border"
           >
+            <Building2 className="w-3 h-3 mr-1" />
             Agent? Claim this listing
           </Button>
         )}
       </div>
+
+      {/* Legal disclaimer */}
+      <p className="text-[10px] text-muted-foreground/70 leading-relaxed pt-0.5">
+        This listing is sourced from publicly available data and is provided for informational purposes only.
+        BuyWise Israel does not guarantee accuracy or current availability. Contact the listing agent for the latest details.
+      </p>
     </div>
   );
 }
