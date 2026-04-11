@@ -3882,6 +3882,85 @@ function extractMadlanTotalCount(html: string): number | null {
   return null;
 }
 
+// Hebrew city name mapping for Madlan Apify actor
+const CITY_HEBREW_MAP: Record<string, string> = {
+  "Tel Aviv": "תל אביב",
+  "Jerusalem": "ירושלים",
+  "Haifa": "חיפה",
+  "Beer Sheva": "באר שבע",
+  "Be'er Sheva": "באר שבע",
+  "Netanya": "נתניה",
+  "Ashdod": "אשדוד",
+  "Ashkelon": "אשקלון",
+  "Petah Tikva": "פתח תקווה",
+  "Rishon LeZion": "ראשון לציון",
+  "Ramat Gan": "רמת גן",
+  "Herzliya": "הרצליה",
+  "Ra'anana": "רעננה",
+  "Raanana": "רעננה",
+  "Kfar Saba": "כפר סבא",
+  "Hod HaSharon": "הוד השרון",
+  "Modi'in": "מודיעין",
+  "Modiin": "מודיעין",
+  "Rehovot": "רחובות",
+  "Givatayim": "גבעתיים",
+  "Bat Yam": "בת ים",
+  "Holon": "חולון",
+  "Beit Shemesh": "בית שמש",
+  "Hadera": "חדרה",
+  "Nahariya": "נהריה",
+  "Acre": "עכו",
+  "Tiberias": "טבריה",
+  "Eilat": "אילת",
+  "Zichron Yaakov": "זכרון יעקב",
+  "Pardes Hanna": "פרדס חנה",
+  "Caesarea": "קיסריה",
+  "Givat Shmuel": "גבעת שמואל",
+  "Kiryat Ono": "קריית אונו",
+  "Efrat": "אפרת",
+  "Efrat Gush Etzion": "אפרת",
+  "Shoham": "שוהם",
+  "Yavne": "יבנה",
+  "Lod": "לוד",
+  "Ramla": "רמלה",
+  "Carmiel": "כרמיאל",
+  "Yokneam": "יקנעם",
+  "Afula": "עפולה",
+  "Karmiel": "כרמיאל",
+  "Nesher": "נשר",
+  "Tirat Carmel": "טירת כרמל",
+  "Or Yehuda": "אור יהודה",
+  "Rosh HaAyin": "ראש העין",
+  "Ariel": "אריאל",
+  "Dimona": "דימונה",
+  "Arad": "ערד",
+  "Sderot": "שדרות",
+  "Kiryat Gat": "קריית גת",
+  "Kiryat Motzkin": "קריית מוצקין",
+  "Kiryat Bialik": "קריית ביאליק",
+  "Kiryat Yam": "קריית ים",
+  "Kiryat Ata": "קריית אתא",
+  "Kiryat Shmona": "קריית שמונה",
+  "Nazareth Illit": "נצרת עילית",
+  "Nof HaGalil": "נוף הגליל",
+  "Ma'ale Adumim": "מעלה אדומים",
+  "Binyamina": "בנימינה",
+};
+
+function toHebrewCity(englishCity: string): string {
+  // Direct match
+  if (CITY_HEBREW_MAP[englishCity]) return CITY_HEBREW_MAP[englishCity];
+  // Case-insensitive match
+  const lower = englishCity.toLowerCase();
+  for (const [key, val] of Object.entries(CITY_HEBREW_MAP)) {
+    if (key.toLowerCase() === lower) return val;
+  }
+  // Already Hebrew? Return as-is
+  if (/[\u0590-\u05FF]/.test(englishCity)) return englishCity;
+  // No match — return original (Apify may still handle it)
+  return englishCity;
+}
+
 async function runMadlanAgencyDiscoverJob(params: {
   jobId: string;
   agencyId: string;
@@ -3923,12 +4002,14 @@ async function runMadlanAgencyDiscoverJob(params: {
       return;
     }
 
-    const cityStr = cities.join(", ");
+    // Translate city names to Hebrew for Madlan Apify actor
+    const hebrewCities = cities.map((c: string) => toHebrewCity(c));
+    const cityStr = hebrewCities.join(", ");
     const dealTypes = effectiveImportType === "both"
       ? ["buy", "rent"]
       : [effectiveImportType === "rental" ? "rent" : "buy"];
 
-    console.log(`[Madlan/Apify] Scraping cities: ${cityStr}, dealTypes: ${dealTypes.join(",")}`);
+    console.log(`[Madlan/Apify] Scraping cities: ${cityStr} (from: ${cities.join(", ")}), dealTypes: ${dealTypes.join(",")}`);
 
     // Get existing source_urls for dedup
     const { data: existingProps } = await sb
