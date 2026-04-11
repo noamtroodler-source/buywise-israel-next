@@ -1,0 +1,145 @@
+
+CREATE OR REPLACE FUNCTION public.merge_properties(p_winner_id uuid, p_loser_id uuid, p_pair_id uuid, p_admin_id uuid)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_winner RECORD;
+  v_loser RECORD;
+  v_source_rank_winner INT;
+  v_source_rank_loser INT;
+  v_merged_urls TEXT[];
+  v_merged_images TEXT[];
+  v_merged_features TEXT[];
+BEGIN
+  -- Fetch both properties
+  SELECT * INTO v_winner FROM public.properties WHERE id = p_winner_id;
+  SELECT * INTO v_loser FROM public.properties WHERE id = p_loser_id;
+
+  -- Source trust ranking: yad2=1, madlan=2, website_scrape=3, other=4
+  v_source_rank_winner := CASE v_winner.import_source
+    WHEN 'yad2' THEN 1 WHEN 'madlan' THEN 2 WHEN 'website_scrape' THEN 3 ELSE 4 END;
+  v_source_rank_loser := CASE v_loser.import_source
+    WHEN 'yad2' THEN 1 WHEN 'madlan' THEN 2 WHEN 'website_scrape' THEN 3 ELSE 4 END;
+
+  -- Merge source URLs
+  v_merged_urls := ARRAY(
+    SELECT DISTINCT unnest(
+      COALESCE(v_winner.merged_source_urls, ARRAY[]::TEXT[]) ||
+      COALESCE(v_loser.merged_source_urls, ARRAY[]::TEXT[]) ||
+      ARRAY[v_loser.source_url]
+    ) 
+  );
+  -- Remove nulls
+  v_merged_urls := ARRAY(SELECT unnest(v_merged_urls) WHERE unnest IS NOT NULL);
+
+  -- Merge images (winner first, then unique loser images)
+  v_merged_images := COALESCE(v_winner.images, ARRAY[]::TEXT[]);
+  IF v_loser.images IS NOT NULL THEN
+    v_merged_images := v_merged_images || ARRAY(
+      SELECT unnest(v_loser.images)
+      EXCEPT
+      SELECT unnest(COALESCE(v_winner.images, ARRAY[]::TEXT[]))
+    );
+  END IF;
+
+  -- Merge features (union)
+  v_merged_features := ARRAY(
+    SELECT DISTINCT unnest(
+      COALESCE(v_winner.features, ARRAY[]::TEXT[]) ||
+      COALESCE(v_loser.features, ARRAY[]::TEXT[])
+    )
+  );
+
+  -- Enrich winner with loser's data
+  UPDATE public.properties
+  SET
+    -- Text fields: longer/richer wins
+    description = CASE
+      WHEN COALESCE(length(v_winner.description), 0) >= COALESCE(length(v_loser.description), 0)
+      THEN COALESCE(v_winner.description, v_loser.description)
+      ELSE COALESCE(v_loser.description, v_winner.description)
+    END,
+    description_he = CASE
+      WHEN COALESCE(length(v_winner.description_he), 0) >= COALESCE(length(v_loser.description_he), 0)
+      THEN COALESCE(v_winner.description_he, v_loser.description_he)
+      ELSE COALESCE(v_loser.description_he, v_winner.description_he)
+    END,
+    -- Coordinates: prefer higher-trust source, else fill gaps
+    latitude = CASE
+      WHEN v_winner.latitude IS NOT NULL AND v_loser.latitude IS NOT NULL
+      THEN CASE WHEN v_source_rank_winner <= v_source_rank_loser THEN v_winner.latitude ELSE v_loser.latitude END
+      ELSE COALESCE(v_winner.latitude, v_loser.latitude)
+    END,
+    longitude = CASE
+      WHEN v_winner.longitude IS NOT NULL AND v_loser.longitude IS NOT NULL
+      THEN CASE WHEN v_source_rank_winner <= v_source_rank_loser THEN v_winner.longitude ELSE v_loser.longitude END
+      ELSE COALESCE(v_winner.longitude, v_loser.longitude)
+    END,
+    -- Address: prefer higher-trust source
+    address = CASE
+      WHEN v_winner.address IS NOT NULL AND v_loser.address IS NOT NULL
+      THEN CASE WHEN v_source_rank_winner <= v_source_rank_loser THEN v_winner.address ELSE v_loser.address END
+      ELSE COALESCE(v_winner.address, v_loser.address)
+    END,
+    -- Gap-fill simple fields
+    neighborhood = COALESCE(v_winner.neighborhood, v_loser.neighborhood),
+    floor_number = COALESCE(v_winner.floor_number, v_loser.floor_number),
+    year_built = COALESCE(v_winner.year_built, v_loser.year_built),
+    size_sqm = CASE
+      WHEN v_winner.size_sqm IS NOT NULL THEN v_winner.size_sqm
+      ELSE v_loser.size_sqm
+    END,
+    parking_spots = COALESCE(v_winner.parking_spots, v_loser.parking_spots),
+    -- Arrays: merged
+    images = v_merged_images,
+    features = v_merged_features,
+    merged_source_urls = v_merged_urls,
+    -- Bump quality score
+    data_quality_score = GREATEST(
+      COALESCE(v_winner.data_quality_score, 0),
+      COALESCE(v_loser.data_quality_score, 0)
+    ),
+    updated_at = now()
+  WHERE id = p_winner_id;
+
+  -- Transfer inquiries from loser to winner
+  UPDATE public.inquiries
+  SET property_id = p_winner_id
+  WHERE property_id = p_loser_id;
+
+  -- Transfer favorites (skip if user already has winner favorited)
+  INSERT INTO public.favorites (user_id, property_id, created_at)
+  SELECT f.user_id, p_winner_id, f.created_at
+  FROM public.favorites f
+  WHERE f.property_id = p_loser_id
+    AND NOT EXISTS (
+      SELECT 1 FROM public.favorites f2
+      WHERE f2.user_id = f.user_id AND f2.property_id = p_winner_id
+    )
+  ON CONFLICT DO NOTHING;
+
+  -- Delete loser's remaining favorites
+  DELETE FROM public.favorites WHERE property_id = p_loser_id;
+
+  -- Sum views_count
+  UPDATE public.properties
+  SET views_count = COALESCE(views_count, 0) + COALESCE(v_loser.views_count, 0)
+  WHERE id = p_winner_id;
+
+  -- Unpublish the loser
+  UPDATE public.properties
+  SET is_published = false, listing_status = 'unlisted'
+  WHERE id = p_loser_id;
+
+  -- Mark the pair as merged
+  UPDATE public.duplicate_pairs
+  SET status = 'merged',
+      merged_into = p_winner_id,
+      resolved_by = p_admin_id,
+      resolved_at = now()
+  WHERE id = p_pair_id;
+END;
+$function$;
