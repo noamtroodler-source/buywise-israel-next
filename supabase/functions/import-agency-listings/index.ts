@@ -3914,9 +3914,9 @@ async function runMadlanAgencyDiscoverJob(params: {
               },
               body: JSON.stringify({
                 url: firstPageUrl,
-                formats: ["html"],
+                formats: ["html", "rawHtml"],
                 onlyMainContent: false,
-                waitFor: 8000,
+                waitFor: 10000,
               }),
             });
             if (res.ok) {
