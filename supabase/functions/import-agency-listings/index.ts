@@ -3922,22 +3922,25 @@ async function runMadlanAgencyDiscoverJob(params: {
             if (res.ok) {
               const data = await res.json();
               firstPageHtml = data?.data?.html || data?.html || "";
-              // Detect Madlan bot/captcha block
-              if (firstPageHtml && (firstPageHtml.includes("משהו בדפדפן שלך גרם לנו לחשוב שאתה רובוט") || firstPageHtml.includes("ShieldSquare") || firstPageHtml.includes("distil_r_captcha"))) {
-                console.warn(`[Madlan] CAPTCHA/bot block detected on ${firstPageUrl}`);
+              // Validate the page using our comprehensive checker
+              const validation = isMadlanValidOfficePage(firstPageHtml);
+              if (!validation.valid) {
+                console.warn(`[Madlan] Invalid page on ${firstPageUrl}: ${validation.reason}`);
                 firstPageHtml = ""; // treat as failure
-                // Mark the job as captcha-blocked
                 await sb.from("import_jobs").update({
                   status: "failed",
                   last_heartbeat: new Date().toISOString(),
                 }).eq("id", jobId);
-                // Update matching agency_sources with failure reason
                 await sb.from("agency_sources")
-                  .update({ last_failure_reason: "Madlan bot/captcha block" })
+                  .update({ 
+                    last_failure_reason: validation.reason,
+                    consecutive_failures: sb.rpc ? undefined : 1,
+                  })
                   .eq("agency_id", agencyId)
                   .eq("source_type", "madlan");
                 break;
               }
+              console.log(`[Madlan] Page validated: ${validation.reason}`);
               break; // success
             } else if ([429, 502, 503].includes(res.status) && attempt === 0) {
               const errText = await res.text();
@@ -3956,7 +3959,7 @@ async function runMadlanAgencyDiscoverJob(params: {
       }
 
       if (!firstPageHtml) {
-        console.warn(`[Madlan] Could not fetch first page (bot block or empty): ${firstPageUrl}`);
+        console.warn(`[Madlan] Could not fetch first page: ${firstPageUrl}`);
         continue;
       }
 
