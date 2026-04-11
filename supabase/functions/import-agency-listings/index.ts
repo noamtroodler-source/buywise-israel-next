@@ -3700,10 +3700,16 @@ function mapYad2PropertyType(type: string): string {
 
 /**
  * Madlan URL patterns for agency listings:
- * - Agency/office page: https://www.madlan.co.il/for-sale/israel--office--{SLUG}
- * - Agent page: https://www.madlan.co.il/for-sale/israel--agent--{ID}
+ * - Office profile page: https://www.madlan.co.il/agentsOffice/re_office_{ID}
+ *   This is the canonical page that shows all listings for an office.
+ *   It renders via JS and contains listing links in the rendered DOM.
+ * - Agent page: https://www.madlan.co.il/agent/re_agent_{ID}
  * - Individual listing: https://www.madlan.co.il/nadlan/listing/{ID}
- * - Rental variant: /for-rent/ prefix instead of /for-sale/
+ *
+ * IMPORTANT: The /agentsOffice/ path is the correct listing-bearing route.
+ * Do NOT rewrite it to /for-sale/israel--office--{SLUG} — that produces
+ * a generic marketplace page with zero listing links.
+ * Sale/rent filtering is done via the ?dealType= query parameter.
  */
 
 function isMadlanAgencyUrl(url: string): boolean {
@@ -3715,24 +3721,38 @@ function isMadlanAgencyUrl(url: string): boolean {
   }
 }
 
+/**
+ * Normalize a raw Madlan source URL into discovery URLs.
+ * Accepts:
+ *   /agentsOffice/re_office_*
+ *   /for-sale/agentsOffice/re_office_*   (strips the /for-sale/ prefix)
+ *   /for-rent/agentsOffice/re_office_*   (strips the /for-rent/ prefix)
+ *   /agent/re_agent_*
+ * Returns 1-2 URLs with ?dealType=forsale / ?dealType=rent as needed.
+ */
 function getMadlanDiscoveryUrls(rawUrl: string, importType: string): string[] {
   const urls = new Set<string>();
   try {
     const parsed = new URL(rawUrl);
-    const pathBase = parsed.pathname
-      .replace(/\/(for-sale|for-rent)\/?/i, "")
+
+    // Strip any /for-sale/ or /for-rent/ prefix from path — the office page handles both
+    let cleanPath = parsed.pathname
+      .replace(/^\/(for-sale|for-rent)\//i, "/")
       .replace(/\/+$/, "");
-    const entity = pathBase.replace(/^\//, ""); // e.g. "israel--office--anglo-saxon"
 
+    // If path doesn't start with /agentsOffice or /agent, check if it's an old
+    // mangled format like /for-sale/israel--office--SLUG — if so, we can't recover
+    // the real office ID from it so just use the cleaned path as-is.
     const normalizedType = normalizeImportType(importType);
-    const modes = normalizedType === "both"
-      ? ["for-sale", "for-rent"]
-      : [normalizedType === "rental" ? "for-rent" : "for-sale"];
+    const dealTypes = normalizedType === "both"
+      ? ["forsale", "rent"]
+      : [normalizedType === "rental" ? "rent" : "forsale"];
 
-    for (const mode of modes) {
+    for (const dealType of dealTypes) {
       const u = new URL(rawUrl);
-      u.pathname = `/${mode}/${entity}`;
+      u.pathname = cleanPath;
       u.search = "";
+      u.searchParams.set("dealType", dealType);
       urls.add(u.toString());
     }
   } catch {
@@ -3762,6 +3782,8 @@ function extractMadlanListingUrls(html: string, pageUrl: string): string[] {
   const patterns = [
     /href=["']([^"']*\/nadlan\/listing\/[\w-]+)["']/gi,
     /href=["']([^"']*\/listing\/[\w-]+)["']/gi,
+    // Also match nadlan detail pages like /nadlan/for-sale/apartment-{id}
+    /href=["']([^"']*\/nadlan\/(?:for-sale|for-rent)\/[^"']+)["']/gi,
   ];
 
   for (const pattern of patterns) {
@@ -3769,8 +3791,8 @@ function extractMadlanListingUrls(html: string, pageUrl: string): string[] {
     while ((match = pattern.exec(html)) !== null) {
       try {
         const absolute = new URL(match[1], pageUrl).toString();
-        // Only keep madlan.co.il listing URLs
-        if (absolute.includes("madlan.co.il") && absolute.includes("/listing/")) {
+        // Only keep madlan.co.il listing or nadlan detail URLs
+        if (absolute.includes("madlan.co.il") && (absolute.includes("/listing/") || /\/nadlan\/(?:for-sale|for-rent)\//.test(absolute))) {
           urls.add(normalizeUrl(absolute));
         }
       } catch { /* ignore */ }
@@ -3779,19 +3801,66 @@ function extractMadlanListingUrls(html: string, pageUrl: string): string[] {
 
   // Also try JSON data embedded in __NEXT_DATA__ or window.__STATE__
   const jsonPatterns = [
-    /"url":"(https?:\/\/www\.madlan\.co\.il\/(?:nadlan\/)?listing\/[^"]+)"/g,
-    /"canonicalUrl":"(https?:\/\/www\.madlan\.co\.il\/(?:nadlan\/)?listing\/[^"]+)"/g,
+    /"url":"(https?:\/\/www\.madlan\.co\.il\/(?:nadlan\/)?(?:listing|for-sale|for-rent)\/[^"]+)"/g,
+    /"canonicalUrl":"(https?:\/\/www\.madlan\.co\.il\/(?:nadlan\/)?(?:listing|for-sale|for-rent)\/[^"]+)"/g,
+    // Match listing IDs in JSON objects (common in __NEXT_DATA__)
+    /"listingId":"(\w+)"/g,
   ];
   for (const pattern of jsonPatterns) {
     let match: RegExpExecArray | null;
     while ((match = pattern.exec(html)) !== null) {
       try {
-        urls.add(normalizeUrl(match[1]));
+        if (match[0].startsWith('"listingId"')) {
+          // Convert listingId to a full URL
+          urls.add(normalizeUrl(`https://www.madlan.co.il/nadlan/listing/${match[1]}`));
+        } else {
+          urls.add(normalizeUrl(match[1]));
+        }
       } catch { /* ignore */ }
     }
   }
 
   return Array.from(urls);
+}
+
+/**
+ * Detect whether a fetched Madlan page is a valid office/agent page with listings,
+ * or a generic shell / error page.
+ */
+function isMadlanValidOfficePage(html: string): { valid: boolean; reason: string } {
+  if (!html || html.length < 500) {
+    return { valid: false, reason: "Empty or too-short page response" };
+  }
+  // Bot/captcha block detection
+  if (html.includes("משהו בדפדפן שלך גרם לנו לחשוב שאתה רובוט") || 
+      html.includes("ShieldSquare") || 
+      html.includes("distil_r_captcha")) {
+    return { valid: false, reason: "Madlan bot/captcha block" };
+  }
+  // Check for signs this is a real office page:
+  // - Contains listing-related content (Hebrew property terms, listing links, price data)
+  const listingSignals = [
+    /\/listing\//i,
+    /\/nadlan\//i,
+    /listingId/i,
+    /totalCount/i,
+    /נכסים/u,        // "properties"
+    /דירות/u,        // "apartments"
+    /למכירה/u,       // "for sale"
+    /להשכרה/u,       // "for rent"
+    /חדרים/u,        // "rooms"
+    /"price"/i,
+    /₪/,
+  ];
+  const signalCount = listingSignals.filter(p => p.test(html)).length;
+  if (signalCount >= 2) {
+    return { valid: true, reason: `Office page with ${signalCount} listing signals` };
+  }
+  // If the page has the SPA shell but barely any content
+  if (html.includes('<div id="root"></div>') && html.length < 2000) {
+    return { valid: false, reason: "Empty SPA shell - JS did not render" };
+  }
+  return { valid: false, reason: `Insufficient listing signals (${signalCount}/11) — likely generic or error page` };
 }
 
 function extractMadlanTotalCount(html: string): number | null {
