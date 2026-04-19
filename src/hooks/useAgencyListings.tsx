@@ -56,6 +56,7 @@ export function useAgencyListingsManagement(agencyId: string | undefined) {
           images,
           agent_id,
           import_source,
+          merged_source_urls,
           created_at,
           updated_at
         `)
