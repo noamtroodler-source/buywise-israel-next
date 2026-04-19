@@ -2847,7 +2847,7 @@ async function processOneItem(
     // If this listing already exists from a DIFFERENT agency, do NOT insert.
     // Log the conflict + notify both agencies + skip the import.
     if (job.agency_id && listing.address && listing.city) {
-      const { data: crossAgencyMatch } = await sb.rpc("check_cross_agency_duplicate", {
+      const { data: crossAgencyMatch } = await sb.rpc("check_cross_agency_duplicate_v2", {
         p_attempted_agency_id: job.agency_id,
         p_address: listing.address,
         p_city: listing.city,
@@ -2857,12 +2857,12 @@ async function processOneItem(
         p_price: listing.price || null,
         p_latitude: latitude,
         p_longitude: longitude,
+        p_floor_number: listing.floor_number != null ? Math.floor(listing.floor_number) : null,
+        p_apartment_number: listing.apartment_number || null,
       });
 
       const match = crossAgencyMatch && crossAgencyMatch.length > 0 ? crossAgencyMatch[0] : null;
       if (match && match.similarity_score >= 70) {
-        // Log conflict — UNIQUE on (existing_property, attempted_agency, attempted_url) is informal,
-        // we just upsert by checking first to avoid duplicate conflict rows
         const { data: existingConflict } = await sb
           .from("cross_agency_conflicts")
           .select("id")
@@ -2872,6 +2872,7 @@ async function processOneItem(
           .limit(1);
 
         let conflictId = existingConflict?.[0]?.id;
+        let autoResolved = false;
 
         if (!conflictId) {
           const { data: inserted } = await sb
@@ -2891,6 +2892,8 @@ async function processOneItem(
                 size_sqm: listing.size_sqm,
                 bedrooms: listing.bedrooms,
                 price: listing.price,
+                floor_number: listing.floor_number,
+                apartment_number: listing.apartment_number,
               },
               status: "pending",
             })
@@ -2898,8 +2901,17 @@ async function processOneItem(
             .single();
           conflictId = inserted?.id;
 
-          // Notify both agencies (in-app)
+          // ── AUTO-RESOLUTION: try to resolve obvious cases (same Yad2/Madlan URL) ──
           if (conflictId) {
+            const { data: autoRes } = await sb.rpc("auto_resolve_obvious_conflict", {
+              p_conflict_id: conflictId,
+            });
+            autoResolved = !!(autoRes as any)?.auto_resolved;
+            console.log(`[Cross-Agency] Auto-resolution attempt for ${conflictId}: ${JSON.stringify(autoRes)}`);
+          }
+
+          // Notify both agencies (in-app) — only if NOT auto-resolved
+          if (conflictId && !autoResolved) {
             const notifications = [];
             if (match.existing_agency_id) {
               notifications.push({
@@ -2919,10 +2931,6 @@ async function processOneItem(
             });
             await sb.from("agency_notifications").insert(notifications);
 
-            // Trigger email notifications (fire-and-forget) — but ONLY for
-            // manual imports. Nightly auto-syncs (is_incremental=true) get
-            // a single batched digest email instead, sent by send-conflict-digest
-            // at the end of the run, to prevent inbox spam.
             if (!job.is_incremental) {
               EdgeRuntime.waitUntil(
                 fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/notify-cross-agency-conflict`, {
