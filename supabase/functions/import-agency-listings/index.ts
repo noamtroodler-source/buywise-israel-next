@@ -2884,6 +2884,14 @@ async function processOneItem(
         is_claimed: false,
         source_status: "active",
         source_last_checked_at: new Date().toISOString(),
+        field_source_map: (() => {
+          const src = job.source_type === "yad2" ? "yad2" : job.source_type === "madlan" ? "madlan" : "website_scrape";
+          const map: Record<string, string> = {};
+          for (const f of ["price", "size_sqm", "bedrooms", "floor", "year_built", "address", "neighborhood", "description", "features"]) {
+            if ((listing as any)[f] != null && (listing as any)[f] !== "") map[f] = src;
+          }
+          return map;
+        })(),
       })
       .select("id")
       .single();
