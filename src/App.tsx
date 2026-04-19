@@ -103,6 +103,7 @@ const AgencyFeatured = lazy(() => import("./pages/agency/AgencyFeatured"));
 const AgencyImport = lazy(() => import("./pages/agency/AgencyImport"));
 const AgencyImportReview = lazy(() => import("./pages/agency/AgencyImportReview"));
 const AgencyConflicts = lazy(() => import("./pages/agency/AgencyConflicts"));
+const AgencySources = lazy(() => import("./pages/agency/AgencySources"));
 const AgencyTeam = lazy(() => import("./pages/agency/AgencyTeam"));
 
 // Developer dashboard - lazy load
@@ -406,6 +407,11 @@ const App = () => (
                         <Route path="/agency/conflicts" element={
                           <ProtectedRoute requiredRole="agent">
                             <AgencyConflicts />
+                          </ProtectedRoute>
+                        } />
+                        <Route path="/agency/sources" element={
+                          <ProtectedRoute requiredRole="agent">
+                            <AgencySources />
                           </ProtectedRoute>
                         } />
                         <Route path="/agency/team" element={

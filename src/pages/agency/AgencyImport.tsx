@@ -192,8 +192,12 @@ export default function AgencyImport() {
                 for price and size. Conflicts &gt;10% appear in{' '}
                 <Link to="/agency/conflicts" className="text-primary font-medium hover:underline">
                   Source conflicts
-                </Link>{' '}
-                for your review.
+                </Link>
+                . Manage all sources on the{' '}
+                <Link to="/agency/sources" className="text-primary font-medium hover:underline">
+                  Sources page
+                </Link>
+                .
               </p>
             </div>
           </div>

@@ -1,3 +1,7 @@
+// sync-agency-listings — Multi-source nightly sync (Phase 3)
+// Iterates active rows in agency_sources by trust priority (Yad2 → Madlan → Website),
+// processes them sequentially per agency so the merge logic gets a clean trust ordering,
+// and tracks per-source health (consecutive_failures, last_failure_reason).
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -5,6 +9,19 @@ const corsHeaders = {
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
+
+const SOURCE_RANK: Record<string, number> = {
+  yad2: 1,
+  madlan: 2,
+  website: 3,
+};
+
+function detectSourceType(url: string): "yad2" | "madlan" | "website" {
+  const u = url.toLowerCase();
+  if (u.includes("yad2.co.il")) return "yad2";
+  if (u.includes("madlan.co.il")) return "madlan";
+  return "website";
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -17,62 +34,107 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Find agencies with auto-sync enabled
-    const { data: agencies, error: agencyErr } = await sb
-      .from("agencies")
-      .select("id, auto_sync_url, last_sync_at")
-      .eq("auto_sync_enabled", true)
-      .not("auto_sync_url", "is", null);
+    // Pull all active sources, ordered by agency then by trust priority
+    const { data: sources, error: srcErr } = await sb
+      .from("agency_sources")
+      .select("id, agency_id, source_type, source_url, priority, consecutive_failures")
+      .eq("is_active", true)
+      .order("agency_id", { ascending: true })
+      .order("priority", { ascending: true });
 
-    if (agencyErr) throw new Error(`Failed to fetch agencies: ${agencyErr.message}`);
-    if (!agencies || agencies.length === 0) {
-      return new Response(JSON.stringify({ synced: 0, message: "No agencies with auto-sync enabled" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    if (srcErr) throw new Error(`Failed to fetch agency_sources: ${srcErr.message}`);
+    if (!sources || sources.length === 0) {
+      return new Response(
+        JSON.stringify({ message: "No active sources found", sources_processed: 0 }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    console.log(`Auto-sync: ${agencies.length} agencies to check`);
-    let totalSynced = 0;
-    let totalPriceChanges = 0;
-    let totalRemoved = 0;
-    let totalChecked = 0;
+    // Group by agency so we process each agency's sources sequentially
+    const byAgency = new Map<string, typeof sources>();
+    for (const s of sources) {
+      if (!s.agency_id) continue;
+      const arr = byAgency.get(s.agency_id) || [];
+      arr.push(s);
+      byAgency.set(s.agency_id, arr);
+    }
 
-    for (const agency of agencies) {
-      try {
-        console.log(`Syncing agency ${agency.id}: ${agency.auto_sync_url}`);
+    // Sort each agency's sources by trust rank (yad2 → madlan → website)
+    for (const [aid, arr] of byAgency) {
+      arr.sort((a, b) => {
+        const rankA = SOURCE_RANK[a.source_type] ?? 99;
+        const rankB = SOURCE_RANK[b.source_type] ?? 99;
+        return rankA - rankB;
+      });
+      byAgency.set(aid, arr);
+    }
 
-        // ─── PASS 1: Discover new URLs ──────────────────────────────────
-        const discoverRes = await fetch(
-          `${Deno.env.get("SUPABASE_URL")}/functions/v1/import-agency-listings`,
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              action: "discover",
-              agency_id: agency.id,
-              website_url: agency.auto_sync_url,
-              import_type: "resale",
-            }),
+    console.log(`Auto-sync: ${byAgency.size} agencies, ${sources.length} total active sources`);
+
+    let totalNewListings = 0;
+    let sourcesProcessed = 0;
+    let sourcesFailed = 0;
+
+    for (const [agencyId, agencySources] of byAgency) {
+      // Sequential per agency — yad2 first, then madlan, then website
+      for (const source of agencySources) {
+        sourcesProcessed++;
+        try {
+          console.log(
+            `Syncing source ${source.id} (${source.source_type}) for agency ${agencyId}`
+          );
+
+          // ─── Discover ─────────────────────────────────────────────
+          const discoverRes = await fetch(
+            `${Deno.env.get("SUPABASE_URL")}/functions/v1/import-agency-listings`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                action: "discover",
+                agency_id: agencyId,
+                website_url: source.source_url,
+                source_type: source.source_type,
+                import_type: "resale",
+              }),
+            }
+          );
+
+          const discoverData = await discoverRes.json();
+
+          if (!discoverRes.ok || discoverData.error) {
+            const reason = discoverData.error || `HTTP ${discoverRes.status}`;
+            await sb
+              .from("agency_sources")
+              .update({
+                consecutive_failures: (source.consecutive_failures ?? 0) + 1,
+                last_failure_reason: String(reason).slice(0, 500),
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", source.id);
+            sourcesFailed++;
+            console.warn(`Discover failed for source ${source.id}: ${reason}`);
+            continue;
           }
-        );
 
-        const discoverData = await discoverRes.json();
-
-        if (!discoverRes.ok || discoverData.error) {
-          console.warn(`Sync discover failed for agency ${agency.id}: ${discoverData.error || discoverRes.status}`);
-        } else {
           const newUrls = discoverData.new_urls || 0;
-          console.log(`Agency ${agency.id}: ${newUrls} new URLs found`);
+          const jobId = discoverData.job_id;
 
-          // If new URLs found, process them
-          if (discoverData.job_id && newUrls > 0) {
-            await sb.from("import_jobs").update({ is_incremental: true }).eq("id", discoverData.job_id);
+          // ─── Process batch(es) ────────────────────────────────────
+          let succeededThisSource = 0;
+          if (jobId && newUrls > 0) {
+            await sb
+              .from("import_jobs")
+              .update({ is_incremental: true })
+              .eq("id", jobId);
 
             let remaining = newUrls;
-            while (remaining > 0) {
+            let safety = 0;
+            while (remaining > 0 && safety < 50) {
+              safety++;
               const processRes = await fetch(
                 `${Deno.env.get("SUPABASE_URL")}/functions/v1/import-agency-listings`,
                 {
@@ -81,109 +143,82 @@ Deno.serve(async (req) => {
                     Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
                     "Content-Type": "application/json",
                   },
-                  body: JSON.stringify({ action: "process_batch", job_id: discoverData.job_id }),
+                  body: JSON.stringify({ action: "process_batch", job_id: jobId }),
                 }
               );
 
               const processData = await processRes.json();
               if (!processRes.ok || processData.error) {
-                console.warn(`Sync process failed for agency ${agency.id}: ${processData.error || processRes.status}`);
+                console.warn(
+                  `Process batch failed for source ${source.id}: ${processData.error || processRes.status}`
+                );
                 break;
               }
-
+              succeededThisSource += processData.succeeded || 0;
               remaining = processData.remaining || 0;
-              totalSynced += processData.succeeded || 0;
-
               if (processData.status === "completed") break;
             }
           }
+
+          totalNewListings += succeededThisSource;
+
+          // ─── Mark source healthy ──────────────────────────────────
+          await sb
+            .from("agency_sources")
+            .update({
+              consecutive_failures: 0,
+              last_failure_reason: null,
+              last_synced_at: new Date().toISOString(),
+              last_sync_job_id: jobId || null,
+              last_sync_listings_found: succeededThisSource,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", source.id);
+        } catch (err) {
+          sourcesFailed++;
+          const reason = err instanceof Error ? err.message : String(err);
+          console.error(`Source ${source.id} error:`, reason);
+          await sb
+            .from("agency_sources")
+            .update({
+              consecutive_failures: (source.consecutive_failures ?? 0) + 1,
+              last_failure_reason: reason.slice(0, 500),
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", source.id);
         }
-
-        // ─── PASS 2: Check existing listings for price changes / removal ─
-        // Find this agency's agents
-        const { data: agents } = await sb
-          .from("agents")
-          .select("id")
-          .eq("agency_id", agency.id);
-
-        if (agents && agents.length > 0) {
-          const agentIds = agents.map((a: any) => a.id);
-
-          // Query published properties with source_url not checked in 7+ days
-          const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-          const { data: staleProps } = await sb
-            .from("properties")
-            .select("id, source_url, price")
-            .in("agent_id", agentIds)
-            .not("source_url", "is", null)
-            .eq("is_published", true)
-            .or(`last_sync_checked_at.is.null,last_sync_checked_at.lt.${sevenDaysAgo}`)
-            .limit(50);
-
-          if (staleProps && staleProps.length > 0) {
-            console.log(`Agency ${agency.id}: checking ${staleProps.length} existing listings`);
-
-            // Send in batches of 10
-            for (let i = 0; i < staleProps.length; i += 10) {
-              const batch = staleProps.slice(i, i + 10).map((p: any) => ({
-                property_id: p.id,
-                source_url: p.source_url,
-                current_price: p.price,
-              }));
-
-              try {
-                const checkRes = await fetch(
-                  `${Deno.env.get("SUPABASE_URL")}/functions/v1/import-agency-listings`,
-                  {
-                    method: "POST",
-                    headers: {
-                      Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-                      "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                      action: "check_existing",
-                      agency_id: agency.id,
-                      items: batch,
-                    }),
-                  }
-                );
-
-                const checkData = await checkRes.json();
-                if (checkRes.ok && !checkData.error) {
-                  totalChecked += checkData.checked || 0;
-                  totalPriceChanges += checkData.price_changes?.length || 0;
-                  totalRemoved += checkData.removed?.length || 0;
-
-                  if (checkData.price_changes?.length > 0) {
-                    console.log(`Agency ${agency.id}: ${checkData.price_changes.length} price changes detected`);
-                  }
-                  if (checkData.removed?.length > 0) {
-                    console.log(`Agency ${agency.id}: ${checkData.removed.length} listings removed from source`);
-                  }
-                } else {
-                  console.warn(`check_existing failed for agency ${agency.id}: ${checkData.error || checkRes.status}`);
-                }
-              } catch (batchErr) {
-                console.error(`check_existing batch error for agency ${agency.id}:`, batchErr);
-              }
-            }
-          }
-        }
-
-        // Update last_sync_at
-        await sb.from("agencies").update({ last_sync_at: new Date().toISOString() }).eq("id", agency.id);
-      } catch (err) {
-        console.error(`Sync error for agency ${agency.id}:`, err);
       }
+
+      // Update agency's overall last_sync timestamp
+      await sb
+        .from("agencies")
+        .update({ last_sync_at: new Date().toISOString() })
+        .eq("id", agencyId);
+    }
+
+    // ─── Notify on broken sources (3+ consecutive failures) ─────────
+    try {
+      await fetch(
+        `${Deno.env.get("SUPABASE_URL")}/functions/v1/notify-source-failure`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({}),
+        }
+      );
+    } catch (err) {
+      console.warn("notify-source-failure invocation failed:", err);
     }
 
     return new Response(
       JSON.stringify({
-        synced: totalSynced,
-        agencies_checked: agencies.length,
-        existing_checked: totalChecked,
-        price_changes: totalPriceChanges,
-        removed: totalRemoved,
+        agencies_processed: byAgency.size,
+        sources_processed: sourcesProcessed,
+        sources_failed: sourcesFailed,
+        total_new_listings: totalNewListings,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
