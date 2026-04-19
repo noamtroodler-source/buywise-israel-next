@@ -8,7 +8,7 @@
  */
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertTriangle, ExternalLink, ShieldCheck, Users, X, Loader2 } from 'lucide-react';
+import { AlertTriangle, ExternalLink, ShieldCheck, Sparkles, Undo2, Users, X, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -27,18 +27,23 @@ import {
   type CrossAgencyConflict,
   type ConflictResolution,
 } from '@/hooks/useCrossAgencyConflicts';
+import { useAppealConflict } from '@/hooks/useAppealConflict';
 import { formatDistanceToNow } from 'date-fns';
 
 interface Props {
   agencyId?: string; // If set, shows only conflicts involving this agency
   isAdmin?: boolean; // Admin sees all + can resolve any conflict
+  statusFilter?: 'pending' | 'all'; // Defaults to 'pending'
 }
 
-export function CrossAgencyConflictsList({ agencyId, isAdmin = false }: Props) {
-  const { data: conflicts, isLoading } = useCrossAgencyConflicts(agencyId, 'pending');
+export function CrossAgencyConflictsList({ agencyId, isAdmin = false, statusFilter = 'pending' }: Props) {
+  const { data: conflicts, isLoading } = useCrossAgencyConflicts(agencyId, statusFilter);
   const [active, setActive] = useState<{ conflict: CrossAgencyConflict; resolution: ConflictResolution } | null>(null);
+  const [appealing, setAppealing] = useState<CrossAgencyConflict | null>(null);
   const [notes, setNotes] = useState('');
+  const [appealReason, setAppealReason] = useState('');
   const resolve = useResolveCrossAgencyConflict();
+  const appeal = useAppealConflict();
 
   if (isLoading) {
     return (
