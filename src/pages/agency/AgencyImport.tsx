@@ -170,15 +170,6 @@ export default function AgencyImport() {
             </div>
           </div>
 
-          {(stats?.activeListings || 0) > 0 && (
-            <InfoBanner variant="tip">
-              You already have {stats?.activeListings} listing{(stats?.activeListings || 0) !== 1 ? 's' : ''}. This tool is designed for first-time bulk imports. For new individual listings, the{' '}
-              <Link to="/agency/listings/new" className="font-medium text-primary hover:underline">
-                Add Listing
-              </Link>{' '}
-              wizard gives you more control and better accuracy.
-            </InfoBanner>
-          )}
 
           <div className="flex items-start gap-3 p-4 rounded-xl bg-primary/5 border border-primary/10">
             <Info className="h-4 w-4 text-primary mt-0.5 shrink-0" />
