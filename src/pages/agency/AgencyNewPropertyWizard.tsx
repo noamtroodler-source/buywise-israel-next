@@ -23,6 +23,8 @@ import { useAgencyListingsManagement } from '@/hooks/useAgencyListings';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { SaveStatusIndicator } from '@/components/shared/SaveStatusIndicator';
 import { PropertySubmittedDialog } from '@/components/agent/PropertySubmittedDialog';
+import { useDuplicateCheck, type DuplicateMatch } from '@/hooks/useDuplicateCheck';
+import { DuplicateBlockDialog } from '@/components/agency/DuplicateBlockDialog';
 
 const AGENCY_WIZARD_STORAGE_KEY = 'agency-property-wizard-draft';
 
@@ -76,7 +78,9 @@ function AgencyWizardContent() {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [submittedTitle, setSubmittedTitle] = useState('');
   const [showRecoveryDialog, setShowRecoveryDialog] = useState(false);
+  const [duplicateMatch, setDuplicateMatch] = useState<DuplicateMatch | null>(null);
   const hasCheckedDraft = useRef(false);
+  const duplicateCheck = useDuplicateCheck();
 
   const autoSave = useAutoSave<PropertyWizardData, AgencyWizardMetadata>({
     data,
@@ -177,6 +181,25 @@ function AgencyWizardContent() {
     if (!assignedAgentId) return;
     setIsSubmitting(true);
     try {
+      if (agency?.id && data.address && data.city) {
+        const result = await duplicateCheck.mutateAsync({
+          agencyId: agency.id,
+          address: data.address,
+          city: data.city,
+          neighborhood: data.neighborhood,
+          size_sqm: data.size_sqm,
+          bedrooms: data.bedrooms,
+          price: data.price,
+          latitude: data.latitude,
+          longitude: data.longitude,
+          floor: data.floor,
+        });
+        if (result.blocking) {
+          setDuplicateMatch(result.blocking);
+          setIsSubmitting(false);
+          return;
+        }
+      }
       await createProperty.mutateAsync(buildPropertyPayload(true));
       autoSave.clearSavedData();
       setSubmittedTitle(data.title);
@@ -349,6 +372,17 @@ function AgencyWizardContent() {
           open={showSuccessDialog}
           onClose={() => navigate('/agency/listings')}
           propertyTitle={submittedTitle}
+        />
+
+        <DuplicateBlockDialog
+          open={!!duplicateMatch}
+          onOpenChange={(o) => !o && setDuplicateMatch(null)}
+          match={duplicateMatch}
+          requestingAgencyId={agency?.id || ''}
+          attemptedAddress={data.address || ''}
+          attemptedCity={data.city || null}
+          attemptedNeighborhood={data.neighborhood || null}
+          onMarkDifferentUnit={() => setCurrentStep(2)}
         />
       </div>
     </Layout>

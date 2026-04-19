@@ -1592,6 +1592,96 @@ export type Database = {
         }
         Relationships: []
       }
+      co_listing_requests: {
+        Row: {
+          attempted_address: string
+          attempted_city: string | null
+          attempted_neighborhood: string | null
+          created_at: string
+          existing_agency_id: string | null
+          existing_property_id: string
+          id: string
+          message: string | null
+          rejection_reason: string | null
+          requesting_agency_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          similarity_score: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attempted_address: string
+          attempted_city?: string | null
+          attempted_neighborhood?: string | null
+          created_at?: string
+          existing_agency_id?: string | null
+          existing_property_id: string
+          id?: string
+          message?: string | null
+          rejection_reason?: string | null
+          requesting_agency_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          similarity_score: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          attempted_address?: string
+          attempted_city?: string | null
+          attempted_neighborhood?: string | null
+          created_at?: string
+          existing_agency_id?: string | null
+          existing_property_id?: string
+          id?: string
+          message?: string | null
+          rejection_reason?: string | null
+          requesting_agency_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          similarity_score?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "co_listing_requests_existing_agency_id_fkey"
+            columns: ["existing_agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "co_listing_requests_existing_agency_id_fkey"
+            columns: ["existing_agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "co_listing_requests_existing_property_id_fkey"
+            columns: ["existing_property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "co_listing_requests_requesting_agency_id_fkey"
+            columns: ["requesting_agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "co_listing_requests_requesting_agency_id_fkey"
+            columns: ["requesting_agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contact_reveals: {
         Row: {
           created_at: string
@@ -4799,6 +4889,7 @@ export type Database = {
       properties: {
         Row: {
           ac_type: string | null
+          added_manually: boolean
           additional_rooms: number | null
           address: string
           admin_notes: string | null
@@ -4882,6 +4973,7 @@ export type Database = {
         }
         Insert: {
           ac_type?: string | null
+          added_manually?: boolean
           additional_rooms?: number | null
           address: string
           admin_notes?: string | null
@@ -4965,6 +5057,7 @@ export type Database = {
         }
         Update: {
           ac_type?: string | null
+          added_manually?: boolean
           additional_rooms?: number | null
           address?: string
           admin_notes?: string | null
@@ -6652,7 +6745,9 @@ export type Database = {
           p_size_sqm: number
         }
         Returns: {
+          existing_added_manually: boolean
           existing_agency_id: string
+          existing_import_source: string
           existing_source_url: string
           property_id: string
           same_building_different_unit: boolean

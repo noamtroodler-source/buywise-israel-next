@@ -23,6 +23,8 @@ import { SaveStatusIndicator } from '@/components/shared/SaveStatusIndicator';
 import { PropertySubmittedDialog } from '@/components/agent/PropertySubmittedDialog';
 import { useListingLimitCheck } from '@/hooks/useListingLimitCheck';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useDuplicateCheck, type DuplicateMatch } from '@/hooks/useDuplicateCheck';
+import { DuplicateBlockDialog } from '@/components/agency/DuplicateBlockDialog';
 
 const steps = [
   { title: 'Basics', description: 'Property type, price, location' },
@@ -64,10 +66,12 @@ function WizardContent() {
   const [submittedTitle, setSubmittedTitle] = useState('');
   const [overageAccepted, setOverageAccepted] = useState(true);
   const [showRecoveryDialog, setShowRecoveryDialog] = useState(false);
+  const [duplicateMatch, setDuplicateMatch] = useState<DuplicateMatch | null>(null);
   const hasCheckedDraft = useRef(false);
-  
+
   const isAgentVerified = agentProfile?.status === 'active';
   const { canCreate: canCreateListing, isOverLimit } = useListingLimitCheck('agency');
+  const duplicateCheck = useDuplicateCheck();
 
   const autoSave = useAutoSave<PropertyWizardData, WizardMetadata>({
     data,
@@ -146,9 +150,40 @@ function WizardContent() {
     }
   };
 
+  const runDuplicateCheck = async (): Promise<boolean> => {
+    if (!agentProfile?.agency_id) return true; // independent agent → no agency-level dedupe
+    try {
+      const result = await duplicateCheck.mutateAsync({
+        agencyId: agentProfile.agency_id,
+        address: data.address,
+        city: data.city,
+        neighborhood: data.neighborhood,
+        size_sqm: data.size_sqm,
+        bedrooms: data.bedrooms,
+        price: data.price,
+        latitude: data.latitude,
+        longitude: data.longitude,
+        floor: data.floor,
+      });
+      if (result.blocking) {
+        setDuplicateMatch(result.blocking);
+        return false;
+      }
+      return true;
+    } catch {
+      // Don't hard-block on check failure — let submission proceed
+      return true;
+    }
+  };
+
   const handleSubmitForReview = async () => {
     setIsSubmitting(true);
     try {
+      const allowed = await runDuplicateCheck();
+      if (!allowed) {
+        setIsSubmitting(false);
+        return;
+      }
       await createProperty.mutateAsync({
         title: data.title,
         description: data.description,
@@ -182,7 +217,7 @@ function WizardContent() {
         featured_highlight: data.featured_highlight || null,
         submitForReview: true,
       });
-      
+
       autoSave.clearSavedData();
       setSubmittedTitle(data.title);
       setShowSuccessDialog(true);
@@ -369,6 +404,17 @@ function WizardContent() {
           open={showSuccessDialog}
           onClose={() => setShowSuccessDialog(false)}
           propertyTitle={submittedTitle}
+        />
+
+        <DuplicateBlockDialog
+          open={!!duplicateMatch}
+          onOpenChange={(o) => !o && setDuplicateMatch(null)}
+          match={duplicateMatch}
+          requestingAgencyId={agentProfile?.agency_id || ''}
+          attemptedAddress={data.address || ''}
+          attemptedCity={data.city || null}
+          attemptedNeighborhood={data.neighborhood || null}
+          onMarkDifferentUnit={() => setCurrentStep(1)}
         />
       </div>
     </Layout>

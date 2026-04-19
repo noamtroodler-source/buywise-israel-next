@@ -133,6 +133,7 @@ export function useCreateProperty() {
           verification_status: verificationStatus,
           submitted_at: submittedAt,
           is_published: false, // Always start unpublished, admin will publish on approval
+          added_manually: true, // Wizard submissions are always manual → ownership trumps any future scrape match
         } as any)
         .select()
         .single();
@@ -249,6 +250,7 @@ export function useCreatePropertyForAgency() {
           verification_status: verificationStatus,
           submitted_at: submittedAt,
           is_published: false,
+          added_manually: true, // Agency wizard submissions are manual
         } as any)
         .select()
         .single();
