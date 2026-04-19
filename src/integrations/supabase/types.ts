@@ -6713,6 +6713,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      normalize_url: { Args: { p_url: string }; Returns: string }
       run_yad2_enqueue: { Args: never; Returns: Json }
       use_agency_invite_code: { Args: { invite_code: string }; Returns: string }
       validate_agency_invite_code: {
