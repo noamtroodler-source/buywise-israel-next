@@ -106,24 +106,7 @@ export function AgencySubmittedDialog({ open, onOpenChange, inviteCode }: Agency
             <div>
               <p className="font-medium text-sm">Review in Progress</p>
               <p className="text-sm text-muted-foreground">
-                Our team will review your agency application within 1-2 business days.
-              </p>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="flex items-start gap-3 p-3 bg-muted/50 rounded-xl border border-border/50"
-          >
-            <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-              <Mail className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <p className="font-medium text-sm">Email Notification</p>
-              <p className="text-sm text-muted-foreground">
-                You'll receive an email once your agency has been approved.
+                Our team will review your application within 1-2 business days. You'll get an email once your agency is approved.
               </p>
             </div>
           </motion.div>
