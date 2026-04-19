@@ -50,7 +50,7 @@ export function ImportWelcomeBanner({ activeListings }: ImportWelcomeBannerProps
                   <Button asChild className="rounded-xl">
                     <Link to="/agency/import">
                       <Download className="h-4 w-4 mr-2" />
-                      Import from Website / Yad2
+                      Import from Website / Yad2 / Madlan
                     </Link>
                   </Button>
                   <Button
