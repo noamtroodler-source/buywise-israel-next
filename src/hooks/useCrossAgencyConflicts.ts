@@ -110,12 +110,12 @@ export function useResolveCrossAgencyConflict() {
         .eq('id', conflictId);
       if (updateErr) throw updateErr;
 
-      // Apply blocklist based on resolution
+      // Apply blocklist based on resolution (URLs normalized to match SQL helper)
       if (resolution === 'existing_agency_confirmed') {
         // Block the attempted agency from re-importing this URL
         await supabase.from('agency_source_blocklist').insert({
           agency_id: conflict.attempted_agency_id,
-          blocked_url: conflict.attempted_source_url,
+          blocked_url: normalizeUrl(conflict.attempted_source_url) || conflict.attempted_source_url,
           reason: `Confirmed as belonging to existing agency`,
           conflict_id: conflictId,
         });
@@ -123,7 +123,7 @@ export function useResolveCrossAgencyConflict() {
         // Block the existing agency from re-importing the original URL
         await supabase.from('agency_source_blocklist').insert({
           agency_id: conflict.existing_agency_id,
-          blocked_url: conflict.existing_source_url,
+          blocked_url: normalizeUrl(conflict.existing_source_url) || conflict.existing_source_url,
           reason: `Listing confirmed as belonging to ${conflict.attempted_agency_id}`,
           conflict_id: conflictId,
         });
