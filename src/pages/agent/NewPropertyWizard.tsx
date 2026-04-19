@@ -66,10 +66,12 @@ function WizardContent() {
   const [submittedTitle, setSubmittedTitle] = useState('');
   const [overageAccepted, setOverageAccepted] = useState(true);
   const [showRecoveryDialog, setShowRecoveryDialog] = useState(false);
+  const [duplicateMatch, setDuplicateMatch] = useState<DuplicateMatch | null>(null);
   const hasCheckedDraft = useRef(false);
-  
+
   const isAgentVerified = agentProfile?.status === 'active';
   const { canCreate: canCreateListing, isOverLimit } = useListingLimitCheck('agency');
+  const duplicateCheck = useDuplicateCheck();
 
   const autoSave = useAutoSave<PropertyWizardData, WizardMetadata>({
     data,
