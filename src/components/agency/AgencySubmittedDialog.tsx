@@ -76,8 +76,8 @@ export function AgencySubmittedDialog({ open, onOpenChange, inviteCode }: Agency
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md rounded-2xl">
-        <DialogHeader className="text-center space-y-4">
+      <DialogContent className="sm:max-w-md max-w-[calc(100vw-2rem)] w-[calc(100vw-2rem)] sm:w-full max-h-[90vh] overflow-y-auto rounded-2xl">
+        <DialogHeader className="text-center space-y-4 items-center">
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
@@ -86,8 +86,8 @@ export function AgencySubmittedDialog({ open, onOpenChange, inviteCode }: Agency
           >
             <Building2 className="w-10 h-10 text-primary" />
           </motion.div>
-          <DialogTitle className="text-2xl">Agency Application Submitted!</DialogTitle>
-          <DialogDescription className="text-base">
+          <DialogTitle className="text-2xl text-center">Agency Application Submitted!</DialogTitle>
+          <DialogDescription className="text-base text-center">
             Thank you for registering your agency on our platform. We're excited to have you join our network of trusted real estate agencies.
           </DialogDescription>
         </DialogHeader>
