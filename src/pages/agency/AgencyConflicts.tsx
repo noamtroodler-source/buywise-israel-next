@@ -10,8 +10,10 @@ import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useMyAgency } from '@/hooks/useAgencyManagement';
 import { useImportConflicts, useResolveConflict, useDismissConflict, type ImportConflict } from '@/hooks/useImportConflicts';
+import { CrossAgencyConflictsList } from '@/components/agency/CrossAgencyConflictsList';
 import { formatDistanceToNow } from 'date-fns';
 
 const SOURCE_LABEL: Record<string, string> = {
@@ -152,6 +154,10 @@ function ConflictRow({ conflict }: { conflict: ImportConflict }) {
 export default function AgencyConflicts() {
   const { data: agency, isLoading: agencyLoading } = useMyAgency();
   const { data: conflicts = [], isLoading } = useImportConflicts(agency?.id, 'pending');
+  const [searchParams] = (() => {
+    try { return [new URLSearchParams(window.location.search)]; } catch { return [new URLSearchParams()]; }
+  })();
+  const initialTab = searchParams.get('tab') === 'cross-agency' ? 'cross-agency' : 'fields';
 
   return (
     <Layout>
@@ -164,55 +170,79 @@ export default function AgencyConflicts() {
         </Link>
 
         <div className="mb-6">
-          <h1 className="text-3xl font-bold mb-1">Source conflicts</h1>
+          <h1 className="text-3xl font-bold mb-1">Conflicts</h1>
           <p className="text-muted-foreground">
-            When Yad2, Madlan, and your website disagree on a field, we flag it here so you can pick the right value.
+            Review field disagreements across sources, and resolve cross-agency ownership disputes.
           </p>
         </div>
 
-        <Card className="mb-6 rounded-2xl border-primary/10 bg-primary/5">
-          <CardContent className="p-4 flex items-start gap-3">
-            <ShieldCheck className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-            <div className="text-sm">
-              <p className="font-medium mb-0.5">How automatic merging works</p>
-              <p className="text-muted-foreground">
-                We trust <strong>Yad2 → Madlan → Website</strong> in that order for structured fields like price and size.
-                A conflict only appears here when the difference is <strong>greater than 10%</strong> — small differences are auto-merged.
-              </p>
+        <Tabs defaultValue={initialTab} className="w-full">
+          <TabsList className="mb-4">
+            <TabsTrigger value="fields">Field conflicts</TabsTrigger>
+            <TabsTrigger value="cross-agency">Cross-agency disputes</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="fields">
+            <Card className="mb-6 rounded-2xl border-primary/10 bg-primary/5">
+              <CardContent className="p-4 flex items-start gap-3">
+                <ShieldCheck className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                <div className="text-sm">
+                  <p className="font-medium mb-0.5">How automatic merging works</p>
+                  <p className="text-muted-foreground">
+                    We trust <strong>Yad2 → Madlan → Website</strong> in that order for structured fields like price and size.
+                    A conflict only appears here when the difference is <strong>greater than 10%</strong> — small differences are auto-merged.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {(agencyLoading || isLoading) && (
+              <div className="flex items-center justify-center py-16">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            )}
+
+            {!isLoading && conflicts.length === 0 && (
+              <Card className="rounded-2xl">
+                <CardContent className="p-12 text-center">
+                  <CheckCircle2 className="h-12 w-12 text-emerald-500 mx-auto mb-3" />
+                  <h3 className="text-lg font-semibold mb-1">All clear</h3>
+                  <p className="text-muted-foreground text-sm">
+                    No source conflicts to review. Your listings are merging cleanly across Yad2, Madlan, and your website.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            {!isLoading && conflicts.length > 0 && (
+              <div className="mb-3 flex items-center gap-2 text-sm text-muted-foreground">
+                <AlertTriangle className="h-4 w-4 text-amber-500" />
+                {conflicts.length} pending conflict{conflicts.length === 1 ? '' : 's'}
+              </div>
+            )}
+
+            <div className="space-y-4">
+              {conflicts.map((c) => (
+                <ConflictRow key={c.id} conflict={c} />
+              ))}
             </div>
-          </CardContent>
-        </Card>
+          </TabsContent>
 
-        {(agencyLoading || isLoading) && (
-          <div className="flex items-center justify-center py-16">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </div>
-        )}
-
-        {!isLoading && conflicts.length === 0 && (
-          <Card className="rounded-2xl">
-            <CardContent className="p-12 text-center">
-              <CheckCircle2 className="h-12 w-12 text-emerald-500 mx-auto mb-3" />
-              <h3 className="text-lg font-semibold mb-1">All clear</h3>
-              <p className="text-muted-foreground text-sm">
-                No source conflicts to review. Your listings are merging cleanly across Yad2, Madlan, and your website.
-              </p>
-            </CardContent>
-          </Card>
-        )}
-
-        {!isLoading && conflicts.length > 0 && (
-          <div className="mb-3 flex items-center gap-2 text-sm text-muted-foreground">
-            <AlertTriangle className="h-4 w-4 text-amber-500" />
-            {conflicts.length} pending conflict{conflicts.length === 1 ? '' : 's'}
-          </div>
-        )}
-
-        <div className="space-y-4">
-          {conflicts.map((c) => (
-            <ConflictRow key={c.id} conflict={c} />
-          ))}
-        </div>
+          <TabsContent value="cross-agency">
+            <Card className="mb-6 rounded-2xl border-amber-500/20 bg-amber-500/5">
+              <CardContent className="p-4 flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                <div className="text-sm">
+                  <p className="font-medium mb-0.5">When two agencies try to import the same listing</p>
+                  <p className="text-muted-foreground">
+                    We block the duplicate import automatically and flag it here. Confirm who actually owns the listing — or mark it as a co-listing if you both legitimately represent it.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+            {agency?.id && <CrossAgencyConflictsList agencyId={agency.id} />}
+          </TabsContent>
+        </Tabs>
       </div>
     </Layout>
   );
