@@ -182,6 +182,22 @@ export default function AgencyImport() {
             </p>
           </div>
 
+          <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-500/5 border border-amber-500/20">
+            <ShieldAlert className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+            <div className="text-sm text-muted-foreground flex-1">
+              <p className="font-medium text-foreground mb-0.5">Multi-source merging</p>
+              <p>
+                Got the same listing on Yad2, Madlan and your website? Import all three —
+                we automatically merge them and trust <strong className="text-foreground">Yad2 → Madlan → Website</strong> in that order
+                for price and size. Conflicts &gt;10% appear in{' '}
+                <Link to="/agency/conflicts" className="text-primary font-medium hover:underline">
+                  Source conflicts
+                </Link>{' '}
+                for your review.
+              </p>
+            </div>
+          </div>
+
           <Card className="rounded-2xl border-primary/10">
             <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent rounded-t-2xl">
               <CardTitle className="flex items-center gap-2">
