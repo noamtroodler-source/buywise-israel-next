@@ -25,7 +25,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { SourceHealthBadge } from "@/components/agency/SourceHealthBadge";
 import { Pause, Play, Trash2, RefreshCw, Plus, Globe, Zap, Building2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { Helmet } from "react-helmet-async";
+import { useEffect } from "react";
 
 const SOURCE_ICONS: Record<string, typeof Globe> = {
   yad2: Zap,
