@@ -35,6 +35,10 @@ export interface CrossAgencyConflict {
   resolution_notes: string | null;
   resolved_by: string | null;
   resolved_at: string | null;
+  auto_resolved?: boolean;
+  auto_resolution_reason?: string | null;
+  appealable_until?: string | null;
+  appeal_status?: string | null;
   created_at: string;
   updated_at: string;
   // Joined data
