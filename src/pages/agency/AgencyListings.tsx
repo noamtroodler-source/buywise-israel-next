@@ -478,9 +478,10 @@ export default function AgencyListings() {
                                   {status.label}
                                 </Badge>
                                 {(listing as any).import_source && (
-                                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                                    Imported
-                                  </Badge>
+                                  <MergedSourcesBadges
+                                    primarySource={(listing as any).import_source}
+                                    mergedUrls={(listing as any).merged_source_urls}
+                                  />
                                 )}
                               </div>
                             </TableCell>
