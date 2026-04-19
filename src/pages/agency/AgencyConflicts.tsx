@@ -5,7 +5,7 @@
  * picks which source wins, or dismisses the conflict.
  */
 import { Link } from 'react-router-dom';
-import { ArrowLeft, AlertTriangle, CheckCircle2, X, Loader2, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, CheckCircle2, X, Loader2, ShieldCheck, ShieldOff } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useMyAgency } from '@/hooks/useAgencyManagement';
 import { useImportConflicts, useResolveConflict, useDismissConflict, type ImportConflict } from '@/hooks/useImportConflicts';
 import { CrossAgencyConflictsList } from '@/components/agency/CrossAgencyConflictsList';
+import { AgencyBlocklistPanel } from '@/components/agency/AgencyBlocklistPanel';
 import { formatDistanceToNow } from 'date-fns';
 
 const SOURCE_LABEL: Record<string, string> = {
@@ -157,7 +158,11 @@ export default function AgencyConflicts() {
   const [searchParams] = (() => {
     try { return [new URLSearchParams(window.location.search)]; } catch { return [new URLSearchParams()]; }
   })();
-  const initialTab = searchParams.get('tab') === 'cross-agency' ? 'cross-agency' : 'fields';
+  const tabParam = searchParams.get('tab');
+  const initialTab =
+    tabParam === 'cross-agency' ? 'cross-agency' :
+    tabParam === 'blocklist' ? 'blocklist' :
+    'fields';
 
   return (
     <Layout>
@@ -180,6 +185,7 @@ export default function AgencyConflicts() {
           <TabsList className="mb-4">
             <TabsTrigger value="fields">Field conflicts</TabsTrigger>
             <TabsTrigger value="cross-agency">Cross-agency disputes</TabsTrigger>
+            <TabsTrigger value="blocklist">Blocked URLs</TabsTrigger>
           </TabsList>
 
           <TabsContent value="fields">
@@ -241,6 +247,21 @@ export default function AgencyConflicts() {
               </CardContent>
             </Card>
             {agency?.id && <CrossAgencyConflictsList agencyId={agency.id} />}
+          </TabsContent>
+
+          <TabsContent value="blocklist">
+            <Card className="mb-6 rounded-2xl border-muted bg-muted/20">
+              <CardContent className="p-4 flex items-start gap-3">
+                <ShieldOff className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+                <div className="text-sm">
+                  <p className="font-medium mb-0.5">Why some imports get skipped</p>
+                  <p className="text-muted-foreground">
+                    When a cross-agency conflict is resolved against you, the disputed URL is added here so future syncs don't keep re-attempting it. Remove an entry if the situation has changed.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+            <AgencyBlocklistPanel agencyId={agency?.id} />
           </TabsContent>
         </Tabs>
       </div>
