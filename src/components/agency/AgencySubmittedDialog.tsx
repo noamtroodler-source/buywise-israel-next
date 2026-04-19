@@ -144,17 +144,18 @@ export function AgencySubmittedDialog({ open, onOpenChange, inviteCode }: Agency
                   Share this link with your agents so they can join your team — they can start signing up right away.
                 </p>
                 <div className="flex items-center gap-2">
-                  <code className="flex-1 min-w-0 text-xs bg-muted/80 rounded-lg px-3 py-2 truncate border border-border/50">
-                    {inviteLink}
-                  </code>
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={handleCopy}
-                    className="shrink-0 rounded-lg h-8 px-3"
+                    className="shrink-0 rounded-lg h-8 gap-1.5 px-2.5"
                   >
                     {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                    <span className="text-xs">{copied ? 'Copied' : 'Copy'}</span>
                   </Button>
+                  <code className="flex-1 min-w-0 text-xs bg-muted/80 rounded-lg px-3 py-2 truncate border border-border/50">
+                    {inviteCode}
+                  </code>
                 </div>
               </div>
             </motion.div>
