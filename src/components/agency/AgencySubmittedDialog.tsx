@@ -76,7 +76,8 @@ export function AgencySubmittedDialog({ open, onOpenChange, inviteCode }: Agency
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md max-w-[calc(100vw-2rem)] w-[calc(100vw-2rem)] sm:w-full max-h-[90vh] overflow-y-auto rounded-2xl">
+      <DialogContent className="sm:max-w-md max-w-[calc(100vw-2rem)] w-[calc(100vw-2rem)] sm:w-full max-h-[90vh] overflow-hidden rounded-2xl [&>*]:min-w-0">
+        <div className="overflow-y-auto max-h-[calc(90vh-3rem)] -mr-2 pr-2">
         <DialogHeader className="text-center space-y-4 items-center">
           <motion.div
             initial={{ scale: 0 }}
@@ -143,7 +144,7 @@ export function AgencySubmittedDialog({ open, onOpenChange, inviteCode }: Agency
                   Share this link with your agents so they can join your team — they can start signing up right away.
                 </p>
                 <div className="flex items-center gap-2">
-                  <code className="flex-1 text-xs bg-muted/80 rounded-lg px-3 py-2 truncate border border-border/50">
+                  <code className="flex-1 min-w-0 text-xs bg-muted/80 rounded-lg px-3 py-2 truncate border border-border/50">
                     {inviteLink}
                   </code>
                   <Button
@@ -186,6 +187,7 @@ export function AgencySubmittedDialog({ open, onOpenChange, inviteCode }: Agency
         <Button onClick={handleClose} className="w-full h-11 rounded-xl">
           Got it
         </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
