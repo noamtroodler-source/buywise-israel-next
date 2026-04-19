@@ -373,6 +373,17 @@ function AgencyWizardContent() {
           onClose={() => navigate('/agency/listings')}
           propertyTitle={submittedTitle}
         />
+
+        <DuplicateBlockDialog
+          open={!!duplicateMatch}
+          onOpenChange={(o) => !o && setDuplicateMatch(null)}
+          match={duplicateMatch}
+          requestingAgencyId={agency?.id || ''}
+          attemptedAddress={data.address || ''}
+          attemptedCity={data.city || null}
+          attemptedNeighborhood={data.neighborhood || null}
+          onMarkDifferentUnit={() => setCurrentStep(2)}
+        />
       </div>
     </Layout>
   );
