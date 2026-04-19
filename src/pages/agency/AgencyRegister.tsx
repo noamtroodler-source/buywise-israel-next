@@ -729,6 +729,12 @@ export default function AgencyRegister() {
                 <Lightbulb className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                 <p>Include your founding story, expertise, team culture, and what sets you apart.</p>
               </div>
+              <AIDescriptionChecker
+                text={formData.description}
+                contentType="agency"
+                minLength={50}
+                onApplyImproved={(improved) => updateField('description', improved.slice(0, 800))}
+              />
             </motion.div>
 
             {/* Agent Profile Opt-in */}
