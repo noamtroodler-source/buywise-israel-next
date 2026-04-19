@@ -82,20 +82,43 @@ export function CrossAgencyConflictsList({ agencyId, isAdmin = false, statusFilt
     setActive(null);
   };
 
+  const canAppeal = (c: CrossAgencyConflict) => {
+    if (!c.appealable_until || c.status === 'pending') return false;
+    if (new Date(c.appealable_until) < new Date()) return false;
+    // Admins can appeal anything; agencies can appeal if involved
+    if (isAdmin) return true;
+    return !!agencyId && (agencyId === c.existing_agency_id || agencyId === c.attempted_agency_id);
+  };
+
   return (
     <>
       <div className="space-y-3">
-        {conflicts.map((c) => (
-          <Card key={c.id} className="rounded-2xl border-amber-500/30">
+        {conflicts.map((c) => {
+          const isResolved = c.status !== 'pending';
+          return (
+          <Card key={c.id} className={`rounded-2xl ${isResolved ? 'border-border opacity-90' : 'border-amber-500/30'}`}>
             <CardContent className="p-5">
               <div className="flex items-start justify-between gap-4 mb-4">
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-                    <h3 className="font-semibold text-sm">Ownership conflict</h3>
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    <AlertTriangle className={`w-4 h-4 shrink-0 ${isResolved ? 'text-muted-foreground' : 'text-amber-600'}`} />
+                    <h3 className="font-semibold text-sm">
+                      {isResolved ? 'Resolved conflict' : 'Ownership conflict'}
+                    </h3>
                     <Badge variant="outline" className="bg-amber-500/10 text-amber-700 border-amber-500/30 text-[10px]">
                       {c.similarity_score}% match
                     </Badge>
+                    {c.auto_resolved && (
+                      <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 border-emerald-500/30 text-[10px]">
+                        <Sparkles className="w-2.5 h-2.5 mr-1" />
+                        Auto-resolved
+                      </Badge>
+                    )}
+                    {isResolved && c.appealable_until && new Date(c.appealable_until) > new Date() && (
+                      <Badge variant="outline" className="text-[10px]">
+                        Appeal window: {formatDistanceToNow(new Date(c.appealable_until))} left
+                      </Badge>
+                    )}
                   </div>
                   <Link
                     to={`/property/${c.existing_property_id}`}
@@ -107,6 +130,11 @@ export function CrossAgencyConflictsList({ agencyId, isAdmin = false, statusFilt
                     {c.property?.city || c.match_details?.city} · {c.match_details?.bedrooms ?? '?'}br · {c.match_details?.size_sqm ?? '?'} m²
                     {c.match_details?.price ? ` · ₪${Number(c.match_details.price).toLocaleString()}` : ''}
                   </p>
+                  {c.auto_resolution_reason && (
+                    <p className="text-[11px] text-muted-foreground mt-1 italic">
+                      Reason: {c.auto_resolution_reason.replace(/_/g, ' ')}
+                    </p>
+                  )}
                 </div>
                 <p className="text-xs text-muted-foreground shrink-0">
                   {formatDistanceToNow(new Date(c.created_at), { addSuffix: true })}
@@ -153,50 +181,61 @@ export function CrossAgencyConflictsList({ agencyId, isAdmin = false, statusFilt
                 </div>
               </div>
 
-              {/* Resolution buttons — only admins or involved agencies see them */}
+              {/* Action row */}
               <div className="flex flex-wrap gap-2 pt-3 border-t">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="text-xs"
-                  onClick={() => openDialog(c, 'co_listing_confirmed')}
-                >
-                  <Users className="w-3 h-3 mr-1.5" />
-                  Both legitimate (co-listing)
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="text-xs border-emerald-500/40 text-emerald-700 hover:bg-emerald-500/10"
-                  onClick={() => openDialog(c, 'existing_agency_confirmed')}
-                >
-                  <ShieldCheck className="w-3 h-3 mr-1.5" />
-                  {c.existing_agency?.name || 'Existing'} owns it
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="text-xs border-amber-500/40 text-amber-700 hover:bg-amber-500/10"
-                  onClick={() => openDialog(c, 'attempted_agency_confirmed')}
-                >
-                  <ShieldCheck className="w-3 h-3 mr-1.5" />
-                  {c.attempted_agency?.name || 'Attempted'} owns it
-                </Button>
-                {isAdmin && (
+                {!isResolved && (
+                  <>
+                    <Button size="sm" variant="outline" className="text-xs" onClick={() => openDialog(c, 'co_listing_confirmed')}>
+                      <Users className="w-3 h-3 mr-1.5" />
+                      Both legitimate (co-listing)
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-xs border-emerald-500/40 text-emerald-700 hover:bg-emerald-500/10"
+                      onClick={() => openDialog(c, 'existing_agency_confirmed')}
+                    >
+                      <ShieldCheck className="w-3 h-3 mr-1.5" />
+                      {c.existing_agency?.name || 'Existing'} owns it
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-xs border-amber-500/40 text-amber-700 hover:bg-amber-500/10"
+                      onClick={() => openDialog(c, 'attempted_agency_confirmed')}
+                    >
+                      <ShieldCheck className="w-3 h-3 mr-1.5" />
+                      {c.attempted_agency?.name || 'Attempted'} owns it
+                    </Button>
+                    {isAdmin && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-xs text-muted-foreground"
+                        onClick={() => openDialog(c, 'dismissed')}
+                      >
+                        <X className="w-3 h-3 mr-1.5" />
+                        Dismiss (false match)
+                      </Button>
+                    )}
+                  </>
+                )}
+                {canAppeal(c) && (
                   <Button
                     size="sm"
-                    variant="ghost"
-                    className="text-xs text-muted-foreground"
-                    onClick={() => openDialog(c, 'dismissed')}
+                    variant="outline"
+                    className="text-xs"
+                    onClick={() => { setAppealing(c); setAppealReason(''); }}
                   >
-                    <X className="w-3 h-3 mr-1.5" />
-                    Dismiss (false match)
+                    <Undo2 className="w-3 h-3 mr-1.5" />
+                    Appeal resolution
                   </Button>
                 )}
               </div>
             </CardContent>
           </Card>
-        ))}
+          );
+        })}
       </div>
 
       <Dialog open={!!active} onOpenChange={(open) => !open && setActive(null)}>
