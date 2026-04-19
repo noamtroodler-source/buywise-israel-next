@@ -25,7 +25,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { SourceHealthBadge } from "@/components/agency/SourceHealthBadge";
 import { Pause, Play, Trash2, RefreshCw, Plus, Globe, Zap, Building2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { useEffect } from "react";
+
+function DocTitle({ title }: { title: string }) {
+  if (typeof document !== "undefined") document.title = title;
+  return null;
+}
 
 const SOURCE_ICONS: Record<string, typeof Globe> = {
   yad2: Zap,
@@ -78,13 +82,7 @@ export default function AgencySources() {
 
   return (
     <>
-      <Helmet>
-        <title>Listing Sources — Agency Portal</title>
-        <meta
-          name="description"
-          content="Manage the Yad2, Madlan, and website sources that automatically sync your listings."
-        />
-      </Helmet>
+      <DocTitle title="Listing Sources — Agency Portal" />
 
       <div className="container mx-auto max-w-5xl space-y-6 px-4 py-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
