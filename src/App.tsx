@@ -158,6 +158,7 @@ const AdminDataGovernance = lazy(() => import("./pages/admin/AdminDataGovernance
 const AdminAgencyImport = lazy(() => import("./pages/admin/AdminAgencyImport"));
 const AdminScrapingSources = lazy(() => import("./pages/admin/AdminScrapingSources"));
 const AdminCrossAgencyConflicts = lazy(() => import("./pages/admin/AdminCrossAgencyConflicts"));
+const AdminConflictAnalytics = lazy(() => import("./pages/admin/AdminConflictAnalytics"));
 // Global query client config for optimal caching
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -526,6 +527,7 @@ const App = () => (
                           <Route path="agency-import" element={<AdminAgencyImport />} />
                           <Route path="scraping-sources" element={<AdminScrapingSources />} />
                           <Route path="cross-agency-conflicts" element={<AdminCrossAgencyConflicts />} />
+                          <Route path="cross-agency-conflicts/analytics" element={<AdminConflictAnalytics />} />
                         </Route>
                         
                         <Route path="*" element={<NotFound />} />

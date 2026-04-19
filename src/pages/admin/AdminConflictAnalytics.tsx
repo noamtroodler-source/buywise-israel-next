@@ -67,7 +67,7 @@ export default function AdminConflictAnalytics() {
               <Card className="rounded-2xl">
                 <CardContent className="p-4">
                   <p className="text-xs text-muted-foreground mb-1">Pending review</p>
-                  <p className="text-2xl font-bold text-amber-600">{data.pending}</p>
+                  <p className="text-2xl font-bold text-foreground">{data.pending}</p>
                 </CardContent>
               </Card>
               <Card className="rounded-2xl">
@@ -75,7 +75,7 @@ export default function AdminConflictAnalytics() {
                   <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
                     <ShieldCheck className="w-3 h-3" /> Auto-resolved
                   </p>
-                  <p className="text-2xl font-bold text-emerald-600">
+                  <p className="text-2xl font-bold text-foreground">
                     {data.autoResolved}
                     <span className="text-sm font-normal text-muted-foreground ml-1">
                       ({data.autoResolveRate.toFixed(0)}%)
