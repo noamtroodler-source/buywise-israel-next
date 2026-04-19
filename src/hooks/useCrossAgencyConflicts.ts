@@ -2,6 +2,25 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+/**
+ * Mirror of the SQL `normalize_url()` helper. Keeps blocklist inserts
+ * consistent with the DB-side comparison so resolved conflicts don't re-fire
+ * when the same listing comes back with a different URL formatting
+ * (www vs no-www, http vs https, ?utm_*, trailing slash, etc.).
+ */
+function normalizeUrl(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  try {
+    const u = new URL(raw.trim());
+    const host = u.host.toLowerCase().replace(/^www\./, '');
+    let path = u.pathname || '/';
+    if (path.length > 1 && path.endsWith('/')) path = path.slice(0, -1);
+    return `https://${host}${path}`;
+  } catch {
+    return raw.trim();
+  }
+}
+
 export interface CrossAgencyConflict {
   id: string;
   existing_property_id: string;
