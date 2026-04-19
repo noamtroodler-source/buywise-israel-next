@@ -4806,6 +4806,7 @@ export type Database = {
           agent_id: string | null
           ai_english_description: string | null
           allows_pets: string | null
+          apartment_number: string | null
           bank_guarantee_required: boolean | null
           bathrooms: number | null
           bedrooms: number | null
@@ -4824,6 +4825,7 @@ export type Database = {
           features: string[] | null
           field_source_map: Json | null
           floor: number | null
+          floor_number: number | null
           furnished_status: string | null
           furniture_items: string[] | null
           has_balcony: boolean | null
@@ -4887,6 +4889,7 @@ export type Database = {
           agent_id?: string | null
           ai_english_description?: string | null
           allows_pets?: string | null
+          apartment_number?: string | null
           bank_guarantee_required?: boolean | null
           bathrooms?: number | null
           bedrooms?: number | null
@@ -4905,6 +4908,7 @@ export type Database = {
           features?: string[] | null
           field_source_map?: Json | null
           floor?: number | null
+          floor_number?: number | null
           furnished_status?: string | null
           furniture_items?: string[] | null
           has_balcony?: boolean | null
@@ -4968,6 +4972,7 @@ export type Database = {
           agent_id?: string | null
           ai_english_description?: string | null
           allows_pets?: string | null
+          apartment_number?: string | null
           bank_guarantee_required?: boolean | null
           bathrooms?: number | null
           bedrooms?: number | null
@@ -4986,6 +4991,7 @@ export type Database = {
           features?: string[] | null
           field_source_map?: Json | null
           floor?: number | null
+          floor_number?: number | null
           furnished_status?: string | null
           furniture_items?: string[] | null
           has_balcony?: boolean | null
