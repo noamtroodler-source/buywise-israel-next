@@ -2155,6 +2155,27 @@ async function processOneItem(
   try {
     await sb.from("import_job_items").update({ status: "processing" }).eq("id", item.id);
 
+    // 0a-pre. Cross-agency URL blocklist check
+    // If this agency was previously confirmed NOT to own this URL, skip immediately.
+    if (job.agency_id && item.url) {
+      const { data: blocked } = await sb
+        .from("agency_source_blocklist")
+        .select("id, reason")
+        .eq("agency_id", job.agency_id)
+        .eq("blocked_url", item.url)
+        .limit(1);
+      if (blocked && blocked.length > 0) {
+        await sb.from("import_job_items")
+          .update({
+            status: "skipped",
+            error_message: `URL blocked: ${blocked[0].reason || "Resolved as belonging to another agency"}`,
+            error_type: "permanent",
+          })
+          .eq("id", item.id);
+        return { succeeded: false };
+      }
+    }
+
     // 0a. Source URL dedup
     const { data: existingByUrl } = await sb
       .from("properties").select("id").eq("source_url", item.url).limit(1);
