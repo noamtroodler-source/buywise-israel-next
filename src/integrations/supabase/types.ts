@@ -459,6 +459,55 @@ export type Database = {
           },
         ]
       }
+      agency_source_blocklist: {
+        Row: {
+          agency_id: string
+          blocked_url: string
+          conflict_id: string | null
+          created_at: string
+          id: string
+          reason: string | null
+        }
+        Insert: {
+          agency_id: string
+          blocked_url: string
+          conflict_id?: string | null
+          created_at?: string
+          id?: string
+          reason?: string | null
+        }
+        Update: {
+          agency_id?: string
+          blocked_url?: string
+          conflict_id?: string | null
+          created_at?: string
+          id?: string
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agency_source_blocklist_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agency_source_blocklist_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agency_source_blocklist_conflict_id_fkey"
+            columns: ["conflict_id"]
+            isOneToOne: false
+            referencedRelation: "cross_agency_conflicts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agency_sources: {
         Row: {
           agency_id: string | null
@@ -1680,6 +1729,96 @@ export type Database = {
           visit_count?: number
         }
         Relationships: []
+      }
+      cross_agency_conflicts: {
+        Row: {
+          attempted_agency_id: string
+          attempted_source_type: string | null
+          attempted_source_url: string
+          created_at: string
+          existing_agency_id: string | null
+          existing_property_id: string
+          existing_source_url: string | null
+          id: string
+          match_details: Json | null
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          similarity_score: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attempted_agency_id: string
+          attempted_source_type?: string | null
+          attempted_source_url: string
+          created_at?: string
+          existing_agency_id?: string | null
+          existing_property_id: string
+          existing_source_url?: string | null
+          id?: string
+          match_details?: Json | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          similarity_score: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          attempted_agency_id?: string
+          attempted_source_type?: string | null
+          attempted_source_url?: string
+          created_at?: string
+          existing_agency_id?: string | null
+          existing_property_id?: string
+          existing_source_url?: string | null
+          id?: string
+          match_details?: Json | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          similarity_score?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cross_agency_conflicts_attempted_agency_id_fkey"
+            columns: ["attempted_agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cross_agency_conflicts_attempted_agency_id_fkey"
+            columns: ["attempted_agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cross_agency_conflicts_existing_agency_id_fkey"
+            columns: ["existing_agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cross_agency_conflicts_existing_agency_id_fkey"
+            columns: ["existing_agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cross_agency_conflicts_existing_property_id_fkey"
+            columns: ["existing_property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       data_review_schedule: {
         Row: {
@@ -6446,6 +6585,25 @@ export type Database = {
         Args: { _agent_user_id: string; _profile_id: string }
         Returns: boolean
       }
+      check_cross_agency_duplicate: {
+        Args: {
+          p_address: string
+          p_attempted_agency_id: string
+          p_bedrooms: number
+          p_city: string
+          p_latitude: number
+          p_longitude: number
+          p_neighborhood: string
+          p_price: number
+          p_size_sqm: number
+        }
+        Returns: {
+          existing_agency_id: string
+          existing_source_url: string
+          property_id: string
+          similarity_score: number
+        }[]
+      }
       check_inquiry_dedupe: {
         Args: {
           p_inquiry_type: string
@@ -6541,6 +6699,10 @@ export type Database = {
       increment_promo_redemptions: {
         Args: { p_promo_id: string }
         Returns: undefined
+      }
+      is_url_blocklisted: {
+        Args: { p_agency_id: string; p_url: string }
+        Returns: boolean
       }
       merge_properties: {
         Args: {

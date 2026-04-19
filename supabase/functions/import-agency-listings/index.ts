@@ -2155,6 +2155,27 @@ async function processOneItem(
   try {
     await sb.from("import_job_items").update({ status: "processing" }).eq("id", item.id);
 
+    // 0a-pre. Cross-agency URL blocklist check
+    // If this agency was previously confirmed NOT to own this URL, skip immediately.
+    if (job.agency_id && item.url) {
+      const { data: blocked } = await sb
+        .from("agency_source_blocklist")
+        .select("id, reason")
+        .eq("agency_id", job.agency_id)
+        .eq("blocked_url", item.url)
+        .limit(1);
+      if (blocked && blocked.length > 0) {
+        await sb.from("import_job_items")
+          .update({
+            status: "skipped",
+            error_message: `URL blocked: ${blocked[0].reason || "Resolved as belonging to another agency"}`,
+            error_type: "permanent",
+          })
+          .eq("id", item.id);
+        return { succeeded: false };
+      }
+    }
+
     // 0a. Source URL dedup
     const { data: existingByUrl } = await sb
       .from("properties").select("id").eq("source_url", item.url).limit(1);
@@ -2817,6 +2838,108 @@ async function processOneItem(
     if (!latitude && !longitude && listing.address && listing.city) {
       const coords = await geocodeWithRateLimit(listing.address, listing.city, listing.neighborhood);
       if (coords) { latitude = coords.lat; longitude = coords.lng; }
+    }
+
+    // ── CROSS-AGENCY DUPLICATE CHECK (final gate before insert) ──
+    // If this listing already exists from a DIFFERENT agency, do NOT insert.
+    // Log the conflict + notify both agencies + skip the import.
+    if (job.agency_id && listing.address && listing.city) {
+      const { data: crossAgencyMatch } = await sb.rpc("check_cross_agency_duplicate", {
+        p_attempted_agency_id: job.agency_id,
+        p_address: listing.address,
+        p_city: listing.city,
+        p_neighborhood: listing.neighborhood || null,
+        p_size_sqm: listing.size_sqm || null,
+        p_bedrooms: listing.bedrooms != null ? Math.floor(listing.bedrooms) : null,
+        p_price: listing.price || null,
+        p_latitude: latitude,
+        p_longitude: longitude,
+      });
+
+      const match = crossAgencyMatch && crossAgencyMatch.length > 0 ? crossAgencyMatch[0] : null;
+      if (match && match.similarity_score >= 70) {
+        // Log conflict — UNIQUE on (existing_property, attempted_agency, attempted_url) is informal,
+        // we just upsert by checking first to avoid duplicate conflict rows
+        const { data: existingConflict } = await sb
+          .from("cross_agency_conflicts")
+          .select("id")
+          .eq("existing_property_id", match.property_id)
+          .eq("attempted_agency_id", job.agency_id)
+          .eq("attempted_source_url", item.url)
+          .limit(1);
+
+        let conflictId = existingConflict?.[0]?.id;
+
+        if (!conflictId) {
+          const { data: inserted } = await sb
+            .from("cross_agency_conflicts")
+            .insert({
+              existing_property_id: match.property_id,
+              existing_agency_id: match.existing_agency_id,
+              existing_source_url: match.existing_source_url,
+              attempted_agency_id: job.agency_id,
+              attempted_source_url: item.url,
+              attempted_source_type: job.source_type || "website",
+              similarity_score: match.similarity_score,
+              match_details: {
+                address: listing.address,
+                city: listing.city,
+                neighborhood: listing.neighborhood,
+                size_sqm: listing.size_sqm,
+                bedrooms: listing.bedrooms,
+                price: listing.price,
+              },
+              status: "pending",
+            })
+            .select("id")
+            .single();
+          conflictId = inserted?.id;
+
+          // Notify both agencies (in-app)
+          if (conflictId) {
+            const notifications = [];
+            if (match.existing_agency_id) {
+              notifications.push({
+                agency_id: match.existing_agency_id,
+                type: "cross_agency_conflict",
+                title: "Listing ownership conflict detected",
+                message: `Another agency is attempting to import a listing that matches one of yours. Please review.`,
+                action_url: `/agency/conflicts?tab=cross-agency`,
+              });
+            }
+            notifications.push({
+              agency_id: job.agency_id,
+              type: "cross_agency_conflict",
+              title: "Listing already on platform",
+              message: `A listing you tried to import (${listing.address}) is already published by another agency. Import skipped pending review.`,
+              action_url: `/agency/conflicts?tab=cross-agency`,
+            });
+            await sb.from("agency_notifications").insert(notifications);
+
+            // Trigger email notifications (fire-and-forget)
+            EdgeRuntime.waitUntil(
+              fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/notify-cross-agency-conflict`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+                },
+                body: JSON.stringify({ conflict_id: conflictId }),
+              }).catch((e) => console.error(`[Cross-Agency] Email notification failed:`, e))
+            );
+          }
+        }
+
+        // Skip the import
+        await sb.from("import_job_items").update({
+          status: "skipped",
+          error_message: `Cross-agency duplicate: matches property ${match.property_id} from another agency (score ${match.similarity_score}). Conflict logged for review.`,
+          error_type: "permanent",
+        }).eq("id", item.id);
+
+        console.log(`[Cross-Agency] Skipped import — conflict ${conflictId} (score ${match.similarity_score}) between agency ${job.agency_id} and property ${match.property_id}`);
+        return { succeeded: false };
+      }
     }
 
     // Insert property
