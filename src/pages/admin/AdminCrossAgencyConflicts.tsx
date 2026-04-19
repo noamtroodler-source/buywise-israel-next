@@ -5,7 +5,8 @@
  * Admins can resolve any conflict and apply blocklists.
  */
 import { Link } from 'react-router-dom';
-import { ArrowLeft, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, ShieldAlert, BarChart3 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CrossAgencyConflictsList } from '@/components/agency/CrossAgencyConflictsList';
@@ -21,14 +22,22 @@ export default function AdminCrossAgencyConflicts() {
           <ArrowLeft className="w-4 h-4" /> Back to admin
         </Link>
 
-        <header className="mb-6">
-          <div className="flex items-center gap-3 mb-2">
-            <ShieldAlert className="w-6 h-6 text-amber-600" />
-            <h1 className="text-3xl font-bold">Cross-Agency Conflicts</h1>
+        <header className="mb-6 flex items-start justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <ShieldAlert className="w-6 h-6 text-amber-600" />
+              <h1 className="text-3xl font-bold">Cross-Agency Conflicts</h1>
+            </div>
+            <p className="text-muted-foreground">
+              Listings two different agencies tried to import. Resolve ownership to keep the platform clean.
+            </p>
           </div>
-          <p className="text-muted-foreground">
-            Listings two different agencies tried to import. Resolve ownership to keep the platform clean.
-          </p>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/admin/cross-agency-conflicts/analytics">
+              <BarChart3 className="w-4 h-4 mr-1.5" />
+              Analytics
+            </Link>
+          </Button>
         </header>
 
         <Card className="rounded-2xl mb-6">

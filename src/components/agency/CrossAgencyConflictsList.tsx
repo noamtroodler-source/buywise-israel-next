@@ -275,6 +275,39 @@ export function CrossAgencyConflictsList({ agencyId, isAdmin = false, statusFilt
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!appealing} onOpenChange={(open) => !open && setAppealing(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Appeal this resolution</DialogTitle>
+            <DialogDescription>
+              Re-opens the conflict for review, reverses any property transfer, and removes blocklist entries created by the original resolution. Available within 7 days of resolution.
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            placeholder="Why are you appealing? (recommended)"
+            value={appealReason}
+            onChange={(e) => setAppealReason(e.target.value)}
+            rows={3}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAppealing(null)}>Cancel</Button>
+            <Button
+              onClick={async () => {
+                if (!appealing) return;
+                const aId = agencyId || appealing.existing_agency_id || appealing.attempted_agency_id;
+                if (!aId) return;
+                await appeal.mutateAsync({ conflictId: appealing.id, appealingAgencyId: aId, reason: appealReason.trim() || undefined });
+                setAppealing(null);
+              }}
+              disabled={appeal.isPending}
+            >
+              {appeal.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Submit appeal
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
