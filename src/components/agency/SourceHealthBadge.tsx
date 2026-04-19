@@ -54,10 +54,7 @@ export function SourceHealthBadge({
     return (
       <Badge
         variant="outline"
-        className={cn(
-          "gap-1 border-amber-500 bg-amber-500/10 text-amber-700 dark:text-amber-400",
-          className
-        )}
+        className={cn("gap-1 border-warning bg-warning/10 text-warning", className)}
       >
         <AlertTriangle className="h-3 w-3" />
         Warning
@@ -68,10 +65,7 @@ export function SourceHealthBadge({
   return (
     <Badge
       variant="outline"
-      className={cn(
-        "gap-1 border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
-        className
-      )}
+      className={cn("gap-1 border-success bg-success/10 text-success", className)}
     >
       <CheckCircle2 className="h-3 w-3" />
       Healthy
