@@ -231,6 +231,25 @@ Deno.serve(async (req) => {
       console.warn("notify-source-failure invocation failed:", err);
     }
 
+    // ─── Send ONE conflict digest per agency (replaces per-conflict spam) ─
+    try {
+      const digestRes = await fetch(
+        `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-conflict-digest`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({}),
+        }
+      );
+      const digestJson = await digestRes.json().catch(() => ({}));
+      console.log("Conflict digest result:", digestJson);
+    } catch (err) {
+      console.warn("send-conflict-digest invocation failed:", err);
+    }
+
     return new Response(
       JSON.stringify({
         agencies_processed: byAgency.size,
