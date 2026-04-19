@@ -7,6 +7,7 @@ import { useSavedLocations } from '@/hooks/useSavedLocations';
 import { shuffleFeatured } from '@/lib/utils/shuffleFeatured';
 
 const DEFAULT_PAGE_SIZE = 24;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 interface UsePaginatedPropertiesOptions {
   pageSize?: number;
@@ -106,9 +107,15 @@ export function usePaginatedProperties(
         query = query.in('city', cityNames);
       }
 
-      // Exclude boosted IDs from organic results (page 1 only to avoid dupes)
+      // Exclude boosted IDs from organic results (page 1 only to avoid dupes).
+      // PostgREST `not.in` requires a parenthesized string list, so validate
+      // that each ID is a UUID before interpolating to avoid breaking the query
+      // (or worse) on a malformed value.
       if (page === 1 && boostedIds.length > 0) {
-        query = query.not('id', 'in', `(${boostedIds.join(',')})`);
+        const safeIds = boostedIds.filter((id) => UUID_RE.test(id));
+        if (safeIds.length > 0) {
+          query = query.not('id', 'in', `(${safeIds.join(',')})`);
+        }
       }
 
       query = applyFilters(query, filters);

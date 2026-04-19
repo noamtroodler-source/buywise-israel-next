@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { setPageContextData } from '@/hooks/usePageContext';
 import { Layout } from '@/components/layout/Layout';
 import { useProperty } from '@/hooks/useProperties';
@@ -110,9 +110,11 @@ export default function PropertyDetail() {
 
   // Calculate derived values
   const pricePerSqm = property?.size_sqm ? property.price / property.size_sqm : undefined;
-  const createdDate = property ? new Date(property.created_at) : new Date();
-  const now = new Date();
-  const daysOnMarket = Math.floor((now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
+  const daysOnMarket = useMemo(() => {
+    if (!property?.created_at) return 0;
+    const created = new Date(property.created_at).getTime();
+    return Math.floor((Date.now() - created) / (1000 * 60 * 60 * 24));
+  }, [property?.created_at]);
 
   if (isLoading) {
     return (

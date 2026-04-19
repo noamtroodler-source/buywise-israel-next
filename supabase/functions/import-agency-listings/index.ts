@@ -15,6 +15,104 @@ function supabaseAdmin() {
   );
 }
 
+// Verbose logging gate. Set DEBUG_IMPORT=1 in env to enable.
+const DEBUG = Deno.env.get("DEBUG_IMPORT") === "1";
+const dlog = (...args: unknown[]) => { if (DEBUG) console.log(...args); };
+
+// ─── AUTH ────────────────────────────────────────────────────────────────────
+//
+// Calls come from two trust boundaries:
+//   1. Browser via supabase.functions.invoke — carries the user's JWT.
+//   2. Other edge functions (sync-agency-listings, yad2-retry-runner,
+//      nightly-scrape-scheduler, self-chained batches) — carry the service-role key.
+//
+// Service-role calls bypass per-agency checks. User calls must own the agency
+// (admin_user_id === user.id) or have the global "admin" role.
+
+function getBearerToken(req: Request): string | null {
+  const h = req.headers.get("Authorization") ?? req.headers.get("authorization");
+  if (!h?.startsWith("Bearer ")) return null;
+  return h.slice("Bearer ".length).trim();
+}
+
+function isServiceRoleToken(token: string): boolean {
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  return !!serviceKey && token === serviceKey;
+}
+
+async function getUserIdFromToken(token: string, authHeader: string): Promise<string> {
+  const userClient = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_ANON_KEY")!,
+    { global: { headers: { Authorization: authHeader } } }
+  );
+  const { data, error } = await userClient.auth.getClaims(token);
+  if (error || !data?.claims?.sub) throw new Error("Unauthorized: invalid token");
+  // Reject service_role JWTs sneaking in via this path — they should match the env key
+  if ((data.claims as any).role === "service_role") throw new Error("Unauthorized");
+  return data.claims.sub as string;
+}
+
+async function userCanManageAgency(
+  sb: ReturnType<typeof supabaseAdmin>,
+  userId: string,
+  agencyId: string
+): Promise<boolean> {
+  const { data: agency } = await sb
+    .from("agencies")
+    .select("admin_user_id")
+    .eq("id", agencyId)
+    .maybeSingle();
+  if (agency?.admin_user_id === userId) return true;
+  const { data: hasAdmin } = await sb.rpc("has_role", { _user_id: userId, _role: "admin" });
+  return !!hasAdmin;
+}
+
+// Resolve which agency a request acts on. Returns null for actions that don't
+// scope to a single agency (callers should require admin role in that case).
+async function resolveAgencyId(
+  sb: ReturnType<typeof supabaseAdmin>,
+  body: any
+): Promise<string | null> {
+  if (body.agency_id) return body.agency_id as string;
+  if (body.job_id) {
+    const { data } = await sb.from("import_jobs").select("agency_id").eq("id", body.job_id).maybeSingle();
+    return (data?.agency_id as string | undefined) ?? null;
+  }
+  if (body.item_id) {
+    const { data } = await sb
+      .from("import_job_items")
+      .select("import_jobs!inner(agency_id)")
+      .eq("id", body.item_id)
+      .maybeSingle();
+    return ((data as any)?.import_jobs?.agency_id as string | undefined) ?? null;
+  }
+  return null;
+}
+
+// Throws on failure. Returns when the caller is authorized.
+async function authorize(req: Request, sb: ReturnType<typeof supabaseAdmin>, body: any, action: string): Promise<void> {
+  const token = getBearerToken(req);
+  if (!token) throw new Error("Unauthorized: missing token");
+  if (isServiceRoleToken(token)) return;
+
+  const authHeader = req.headers.get("Authorization") ?? req.headers.get("authorization")!;
+  const userId = await getUserIdFromToken(token, authHeader);
+
+  // Maintenance/global actions: require global admin role
+  if (action === "backfill_street_view") {
+    const { data: hasAdmin } = await sb.rpc("has_role", { _user_id: userId, _role: "admin" });
+    if (!hasAdmin) throw new Error("Forbidden: admin role required");
+    return;
+  }
+
+  const agencyId = await resolveAgencyId(sb, body);
+  if (!agencyId) throw new Error("Forbidden: no agency context");
+  if (!(await userCanManageAgency(sb, userId, agencyId))) {
+    throw new Error("Forbidden: not authorized for this agency");
+  }
+}
+
 // ─── TITLE GENERATION HELPERS ───────────────────────────────────────────────
 
 function toTitleCase(str: string): string {
@@ -440,7 +538,7 @@ async function findSoldUrlsFromIndexPages(
   const indexPages = identifyIndexPages(allUrls, websiteUrl);
   if (indexPages.length === 0) return soldUrls;
 
-  console.log(`Index page pre-filter: scraping ${indexPages.length} pages`);
+  dlog(`Index page pre-filter: scraping ${indexPages.length} pages`);
   const knownUrlSet = new Set(allUrls.map(u => normalizeUrl(u)));
   const batchSize = 4;
 
@@ -930,7 +1028,7 @@ async function classifyUrlsInBatches(allUrls: string[], lovableKey: string, chun
   const chunks: string[][] = [];
   for (let i = 0; i < allUrls.length; i += chunkSize) chunks.push(allUrls.slice(i, i + chunkSize));
 
-  console.log(`Classifying ${allUrls.length} URLs in ${chunks.length} chunk(s)`);
+  dlog(`Classifying ${allUrls.length} URLs in ${chunks.length} chunk(s)`);
   const allResults = new Set<string>();
   let totalFailed = 0;
 
@@ -946,10 +1044,10 @@ async function classifyUrlsInBatches(allUrls: string[], lovableKey: string, chun
 
   const listingUrls = Array.from(allResults);
   if (listingUrls.length === 0) {
-    console.log("All AI classification chunks returned 0 results, using fallback (first 100 URLs)");
+    dlog("All AI classification chunks returned 0 results, using fallback (first 100 URLs)");
     return allUrls.slice(0, 100);
   }
-  console.log(`Batch classification complete: ${listingUrls.length} listing URLs (${totalFailed} empty chunks)`);
+  dlog(`Batch classification complete: ${listingUrls.length} listing URLs (${totalFailed} empty chunks)`);
   return listingUrls;
 }
 
@@ -1037,7 +1135,7 @@ async function handleDiscover(body: any) {
   if (!FIRECRAWL_API_KEY) throw new Error("FIRECRAWL_API_KEY not configured");
 
   const formattedUrl = normalizedUrl;
-  console.log("Mapping URL:", formattedUrl);
+  dlog("Mapping URL:", formattedUrl);
 
   const mapRes = await fetch("https://api.firecrawl.dev/v1/map", {
     method: "POST",
@@ -1052,7 +1150,7 @@ async function handleDiscover(body: any) {
 
   const rawUrls: string[] = mapData.links || mapData.data || [];
   if (rawUrls.length === 0) throw new Error("No URLs discovered on this website");
-  console.log(`Discovered ${rawUrls.length} total URLs`);
+  dlog(`Discovered ${rawUrls.length} total URLs`);
 
   // Track Firecrawl map cost (job_id not yet created, will track in batch)
 
@@ -1072,7 +1170,7 @@ async function handleDiscover(body: any) {
   });
 
   const urlFilteredOut = rawUrls.length - allUrls.length;
-  if (urlFilteredOut > 0) console.log(`URL keyword filter: removed ${urlFilteredOut} sold/rented URLs`);
+  if (urlFilteredOut > 0) dlog(`URL keyword filter: removed ${urlFilteredOut} sold/rented URLs`);
 
   // Index page sold-URL pre-filter
   try {
@@ -1082,7 +1180,7 @@ async function handleDiscover(body: any) {
       const filteredUrls = allUrls.filter(url => !soldUrlsFromIndex.has(normalizeUrl(url)));
       allUrls.length = 0;
       allUrls.push(...filteredUrls);
-      console.log(`Index page filter: removed ${beforeCount - allUrls.length} sold URLs`);
+      dlog(`Index page filter: removed ${beforeCount - allUrls.length} sold URLs`);
     }
   } catch (err) { console.warn(`Index page pre-filter failed: ${err}`); }
 
@@ -1091,7 +1189,7 @@ async function handleDiscover(body: any) {
   if (nonListingRemoved > 0 && listingCandidates.length > 0) {
     allUrls.length = 0;
     allUrls.push(...listingCandidates);
-    console.log(`Non-listing filter: removed ${nonListingRemoved}, ${allUrls.length} remaining`);
+    dlog(`Non-listing filter: removed ${nonListingRemoved}, ${allUrls.length} remaining`);
   }
 
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
@@ -1103,14 +1201,14 @@ async function handleDiscover(body: any) {
     : allUrls;
   const skippedExisting = allUrls.length - newUrls.length;
 
-  if (skippedExisting > 0) console.log(`Incremental dedup: ${skippedExisting} known, ${newUrls.length} new`);
+  if (skippedExisting > 0) dlog(`Incremental dedup: ${skippedExisting} known, ${newUrls.length} new`);
 
   if (newUrls.length === 0) {
     return { job_id: null, total_listings: 0, total_discovered: allUrls.length, new_urls: 0, skipped_existing: skippedExisting };
   }
 
   const listingUrls = await classifyUrlsInBatches(newUrls, LOVABLE_API_KEY);
-  console.log(`AI identified ${listingUrls.length} listing URLs`);
+  dlog(`AI identified ${listingUrls.length} listing URLs`);
 
   if (listingUrls.length === 0) {
     return { job_id: null, total_listings: 0, total_discovered: allUrls.length, new_urls: 0, skipped_existing: skippedExisting };
@@ -1326,11 +1424,11 @@ async function generateAndStoreStreetView(
     if (meta?.status === "OK" && meta.camLat != null && meta.camLng != null) {
       // Calculate bearing from camera to property for smart heading
       heading = Math.round(calculateBearing(meta.camLat, meta.camLng, latitude, longitude));
-      console.log(`Smart heading for ${propertyId}: ${heading}° (camera @ ${meta.camLat.toFixed(5)},${meta.camLng.toFixed(5)})`);
+      dlog(`Smart heading for ${propertyId}: ${heading}° (camera @ ${meta.camLat.toFixed(5)},${meta.camLng.toFixed(5)})`);
     } else if (meta?.status === "ZERO_RESULTS") {
       // No street view coverage — use satellite fallback
       imageType = "satellite";
-      console.log(`No street view coverage for ${propertyId}, using satellite fallback`);
+      dlog(`No street view coverage for ${propertyId}, using satellite fallback`);
     }
     // If metadata call failed entirely, proceed with street view + fallback heading
 
@@ -1388,7 +1486,7 @@ async function generateAndStoreStreetView(
         const enhanceData = await enhanceRes.json();
         if (enhanceData.enhanced && enhanceData.image_url) {
           await sb.from("properties").update({ street_view_url: enhanceData.image_url }).eq("id", propertyId);
-          console.log(`Street view enhanced (${imageType}) for ${propertyId}`);
+          dlog(`Street view enhanced (${imageType}) for ${propertyId}`);
         }
       }
     } catch (enhanceErr) {
@@ -1562,7 +1660,7 @@ async function parallelImageDownload(
         // Skip tiny images (< 5KB — likely placeholders)
         const contentLength = imgRes.headers.get("content-length");
         if (contentLength && parseInt(contentLength) < 5000) {
-          console.log(`Skipping tiny image (${contentLength} bytes): ${imgUrl.slice(0, 80)}`);
+          dlog(`Skipping tiny image (${contentLength} bytes): ${imgUrl.slice(0, 80)}`);
           return null;
         }
 
@@ -1576,7 +1674,7 @@ async function parallelImageDownload(
         // SHA-256 dedup: skip exact byte-match duplicates
         const hash = await computeSha256(imgBuffer);
         if (seenHashes.has(hash)) {
-          console.log(`Skipping duplicate image (SHA-256 match): ${imgUrl.slice(0, 80)}`);
+          dlog(`Skipping duplicate image (SHA-256 match): ${imgUrl.slice(0, 80)}`);
           return null;
         }
         seenHashes.add(hash);
@@ -1966,7 +2064,7 @@ async function extractFromWordPress(url: string, _firecrawlKey: string): Promise
         if (images.length > 0) { result._photo_count = images.length; fieldCount++; }
 
         if (fieldCount >= 3) {
-          console.log(`WordPress adapter: extracted ${fieldCount} fields from REST API`);
+          dlog(`WordPress adapter: extracted ${fieldCount} fields from REST API`);
           return result;
         }
       } catch { /* try next endpoint */ }
@@ -2057,7 +2155,7 @@ function extractFromWixState(html: string): Record<string, any> | null {
       if (images.length > 0) { result._photo_count = images.length; fieldCount++; }
 
       if (fieldCount >= 3) {
-        console.log(`Wix adapter: extracted ${fieldCount} fields from embedded state`);
+        dlog(`Wix adapter: extracted ${fieldCount} fields from embedded state`);
         return result;
       }
     }
@@ -2074,7 +2172,7 @@ function extractFromWixState(html: string): Record<string, any> | null {
 async function retryWithSimplifiedPrompt(
   url: string, markdown: string, lovableKey: string
 ): Promise<any | null> {
-  console.log(`Retrying with simplified prompt for ${url}`);
+  dlog(`Retrying with simplified prompt for ${url}`);
   const truncatedContent = markdown.slice(0, 4000);
   const yad2Hint = url.includes("yad2.co.il") ? `\n${inferYad2RegionHint(url)}\nLook for Hebrew city names like: תל אביב, ירושלים, פתח תקווה, רעננה, הרצליה, רמת גן, גבעת שמואל, כפר סבא, הוד השרון, נתניה, חיפה, באר שבע, אשדוד, אשקלון, מודיעין, חדרה, בית שמש.\n` : "";
   const simplifiedPrompt = `Extract ONLY these fields from this Israeli real estate listing page. Return values only if clearly present, otherwise omit.
@@ -2139,7 +2237,7 @@ ${truncatedContent}`;
 
     const parsed = JSON.parse(toolCall.function.arguments);
     parsed._simplified_retry = true;
-    console.log(`Simplified retry succeeded for ${url}`);
+    dlog(`Simplified retry succeeded for ${url}`);
     return parsed;
   } catch (err) {
     console.error(`Simplified retry error:`, err);
@@ -2214,7 +2312,7 @@ async function processOneItem(
 
     // 1. Scrape
     const isYad2Item = item.url.includes("yad2.co.il");
-    console.log(`Scraping: ${item.url}`);
+    dlog(`Scraping: ${item.url}`);
 
     // For Yad2, wrap the Firecrawl call in a 35s Promise.race timeout.
     // Stealth proxy requests occasionally hang indefinitely, blocking the whole batch.
@@ -2323,7 +2421,7 @@ async function processOneItem(
     // Pre-LLM: sold/rented/rental/new-dev check (enhanced)
     const preFilter = isNonResalePage(markdown, importType);
     if (preFilter.skip) {
-      console.log(`Pre-filter: ${preFilter.reason} for ${item.url}`);
+      dlog(`Pre-filter: ${preFilter.reason} for ${item.url}`);
       await sb.from("import_job_items").update({ status: "skipped", error_message: preFilter.reason, error_type: "permanent" }).eq("id", item.id);
       return { succeeded: false };
     }
@@ -2334,10 +2432,10 @@ async function processOneItem(
     let cmsExtracted: string | null = null;
 
     if (cmsType === "wordpress") {
-      console.log(`CMS detected: WordPress for ${item.url}`);
+      dlog(`CMS detected: WordPress for ${item.url}`);
       cmsData = await extractFromWordPress(item.url, firecrawlKey);
     } else if (cmsType === "wix") {
-      console.log(`CMS detected: Wix for ${item.url}`);
+      dlog(`CMS detected: Wix for ${item.url}`);
       cmsData = extractFromWixState(pageHtml);
     }
 
@@ -2350,7 +2448,7 @@ async function processOneItem(
     if (cmsData && cmsData.price && cmsData.city && cmsData.property_type) {
       listing = { ...cmsData, listing_category: "property" };
       cmsExtracted = cmsType;
-      console.log(`CMS adapter (${cmsType}) provided full extraction — skipping AI`);
+      dlog(`CMS adapter (${cmsType}) provided full extraction — skipping AI`);
     } else {
       // Normal AI extraction flow
       const extractionPrompt = buildExtractionPrompt(item.url, domain, markdown, pageLinks);
@@ -2447,14 +2545,14 @@ async function processOneItem(
             listing[key] = value;
           }
         }
-        console.log(`CMS adapter (${cmsType}) merged partial data into AI extraction`);
+        dlog(`CMS adapter (${cmsType}) merged partial data into AI extraction`);
       }
     }
 
     // Merge structured data from HTML (JSON-LD, OG tags) — fills remaining gaps
     const structuredData = extractStructuredData(pageHtml);
     if (structuredData) {
-      console.log(`Structured data found for ${item.url}: ${Object.keys(structuredData).join(", ")}`);
+      dlog(`Structured data found for ${item.url}: ${Object.keys(structuredData).join(", ")}`);
       for (const [key, value] of Object.entries(structuredData)) {
         if (key === "structured_images" || key === "og_title" || key === "og_description" || key === "city_hint") continue;
         if (value != null && (listing[key] == null || listing[key] === "" || listing[key] === 0)) {
@@ -2500,7 +2598,7 @@ async function processOneItem(
         if (hebrewCity) {
           listing.city = hebrewCity;
           cityMatchType = "fuzzy";
-          console.log(`Inferred city "${hebrewCity}" from Hebrew content for ${item.url}`);
+          dlog(`Inferred city "${hebrewCity}" from Hebrew content for ${item.url}`);
         }
       }
       // Fallback to domain city
@@ -2554,9 +2652,9 @@ async function processOneItem(
     if (usedSimplifiedPrompt) {
       confidenceScore = Math.max(0, confidenceScore - 10);
       validationWarnings.push("extracted_with_simplified_prompt");
-      console.log(`Confidence adjusted to ${confidenceScore} (simplified prompt penalty -10)`);
+      dlog(`Confidence adjusted to ${confidenceScore} (simplified prompt penalty -10)`);
     } else {
-      console.log(`Confidence score for ${item.url}: ${confidenceScore}`);
+      dlog(`Confidence score for ${item.url}: ${confidenceScore}`);
     }
 
     // Store confidence score + warnings
@@ -2802,7 +2900,7 @@ async function processOneItem(
           }));
           const { error: confErr } = await sb.from("import_conflicts").insert(conflictRows);
           if (confErr) console.warn(`[Merge] Failed to log conflicts: ${confErr.message}`);
-          else console.log(`[Merge] Logged ${conflictRows.length} conflict(s) for property ${crossSourceMatchId}`);
+          else dlog(`[Merge] Logged ${conflictRows.length} conflict(s) for property ${crossSourceMatchId}`);
         }
 
         // Record this as a co-listing agent (different agency, same property)
@@ -2823,7 +2921,7 @@ async function processOneItem(
           error_message: `Merged into existing property ${crossSourceMatchId} (cross-source enrichment, source=${incomingSource}, trust=${incomingRank})`,
         }).eq("id", item.id);
 
-        console.log(`[Merge] Enriched property ${crossSourceMatchId} from ${incomingSource} (trust=${incomingRank}, conflicts=${conflictsToLog.length})`);
+        dlog(`[Merge] Enriched property ${crossSourceMatchId} from ${incomingSource} (trust=${incomingRank}, conflicts=${conflictsToLog.length})`);
         return { succeeded: true };
       }
     }
@@ -2953,7 +3051,7 @@ async function processOneItem(
           error_type: "permanent",
         }).eq("id", item.id);
 
-        console.log(`[Cross-Agency] Skipped import — conflict ${conflictId} (score ${match.similarity_score}) between agency ${job.agency_id} and property ${match.property_id}`);
+        dlog(`[Cross-Agency] Skipped import — conflict ${conflictId} (score ${match.similarity_score}) between agency ${job.agency_id} and property ${match.property_id}`);
         return { succeeded: false };
       }
     }
@@ -3045,7 +3143,7 @@ async function processOneItem(
     if (imageUrls.length > 0 && property?.id) {
       const phashWarnings = await registerImageHashes(property.id, imageUrls, sb);
       if (phashWarnings.length > 0) {
-        console.log(`pHash warnings for ${property.id}:`, phashWarnings);
+        dlog(`pHash warnings for ${property.id}:`, phashWarnings);
       }
     }
 
@@ -3091,7 +3189,7 @@ async function handleProcessBatch(body: any) {
   if (jobErr || !job) throw new Error("Import job not found");
 
   const cachedDomainCity = inferCityFromDomain(job.website_url);
-  if (cachedDomainCity) console.log(`Domain city: ${cachedDomainCity}`);
+  if (cachedDomainCity) dlog(`Domain city: ${cachedDomainCity}`);
 
   const { data: initialCheck } = await sb
     .from("import_job_items").select("id").eq("job_id", job_id).eq("status", "pending").limit(1);
@@ -3138,7 +3236,7 @@ async function handleProcessBatch(body: any) {
     if (itemsErr || !pendingItems || pendingItems.length === 0) break;
 
     refillCycle++;
-    console.log(`Refill ${refillCycle}: ${pendingItems.length} items (concurrency: ${currentConcurrency})`);
+    dlog(`Refill ${refillCycle}: ${pendingItems.length} items (concurrency: ${currentConcurrency})`);
 
     for (let i = 0; i < pendingItems.length && totalProcessed < MAX_ITEMS; i += currentConcurrency) {
       if (Date.now() - batchStartTime > TIME_LIMIT_MS) break;
@@ -3168,7 +3266,7 @@ async function handleProcessBatch(body: any) {
       if (chunkHadTransientError) {
         if (currentConcurrency > MIN_CONCURRENCY) {
           currentConcurrency = MIN_CONCURRENCY;
-          console.log(`Concurrency reduced to ${currentConcurrency} due to failures`);
+          dlog(`Concurrency reduced to ${currentConcurrency} due to failures`);
         }
         consecutiveSuccessfulChunks = 0;
         // Add a small delay to back off
@@ -3178,7 +3276,7 @@ async function handleProcessBatch(body: any) {
         if (consecutiveSuccessfulChunks >= 3 && currentConcurrency < MAX_CONCURRENCY) {
           currentConcurrency = MAX_CONCURRENCY;
           consecutiveSuccessfulChunks = 0;
-          console.log(`Concurrency recovered to ${currentConcurrency}`);
+          dlog(`Concurrency recovered to ${currentConcurrency}`);
         }
       }
 
@@ -3187,7 +3285,7 @@ async function handleProcessBatch(body: any) {
     }
   }
 
-  console.log(`Batch: ${totalProcessed} processed (${totalSucceeded} ok, ${totalFailed} failed) in ${((Date.now() - batchStartTime) / 1000).toFixed(1)}s`);
+  dlog(`Batch: ${totalProcessed} processed (${totalSucceeded} ok, ${totalFailed} failed) in ${((Date.now() - batchStartTime) / 1000).toFixed(1)}s`);
 
   const { data: counts } = await sb.from("import_job_items").select("status").eq("job_id", job_id);
   const doneCount = counts?.filter((c) => c.status === "done").length || 0;
@@ -3199,7 +3297,7 @@ async function handleProcessBatch(body: any) {
 
   // ── Self-chain: if items remain, fire the next batch in the background ──
   if (remainingCount > 0) {
-    console.log(`Self-chaining: ${remainingCount} items remaining for job ${job_id}`);
+    dlog(`Self-chaining: ${remainingCount} items remaining for job ${job_id}`);
     const selfChainUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/import-agency-listings`;
     EdgeRuntime.waitUntil(
       (async () => {
@@ -3215,7 +3313,7 @@ async function handleProcessBatch(body: any) {
             body: JSON.stringify({ action: "process_batch", job_id }),
           });
           const data = await res.json();
-          console.log(`Self-chain batch for ${job_id}: ${data.succeeded || 0} ok, ${data.remaining || 0} remaining`);
+          dlog(`Self-chain batch for ${job_id}: ${data.succeeded || 0} ok, ${data.remaining || 0} remaining`);
         } catch (e) {
           console.error(`Self-chain failed for ${job_id}:`, e);
         }
@@ -3242,7 +3340,7 @@ async function handleProcessBatch(body: any) {
             }
           );
           const dupData = await dupRes.json().catch(() => ({}));
-          console.log(`Post-import duplicate scan for ${job_id}:`, dupData);
+          dlog(`Post-import duplicate scan for ${job_id}:`, dupData);
         } catch (e) {
           console.error(`Post-import duplicate scan failed for ${job_id}:`, e);
         }
@@ -3372,7 +3470,7 @@ async function handleApproveItem(body: any) {
   if (imageUrls.length > 0 && property?.id) {
     const phashWarnings = await registerImageHashes(property.id, imageUrls, sb);
     if (phashWarnings.length > 0) {
-      console.log(`pHash warnings for approved item ${property.id}:`, phashWarnings);
+      dlog(`pHash warnings for approved item ${property.id}:`, phashWarnings);
     }
   }
 
@@ -3491,7 +3589,7 @@ async function fetchYad2AgencyPageHtml(pageUrl: string): Promise<string> {
 
   if (FIRECRAWL_API_KEY) {
     try {
-      console.log(`[Yad2] Firecrawl scraping: ${pageUrl}`);
+      dlog(`[Yad2] Firecrawl scraping: ${pageUrl}`);
 
       // Use Promise.race for timeout — AbortController + setTimeout unreliable in Deno edge runtime
       const firecrawlPromise = fetch("https://api.firecrawl.dev/v1/scrape", {
@@ -3518,7 +3616,7 @@ async function fetchYad2AgencyPageHtml(pageUrl: string): Promise<string> {
         const html = data?.data?.html || data?.html || "";
         if (html.length > 500) {
           const itemCount = (html.match(/\/realestate\/item\//gi) || []).length;
-          console.log(`[Yad2] Firecrawl returned ${html.length} chars, ${itemCount} item links`);
+          dlog(`[Yad2] Firecrawl returned ${html.length} chars, ${itemCount} item links`);
           if (itemCount > 0) return html;
           console.warn(`[Yad2] Firecrawl HTML has no item links — ShieldSquare CAPTCHA page likely`);
         } else {
@@ -3567,7 +3665,7 @@ async function runYad2AgencyDiscoverJob(params: {
   const sb = supabaseAdmin();
 
   try {
-    console.log(`[Yad2] background discovery started for job ${jobId}: ${websiteUrl} (${effectiveImportType})`);
+    dlog(`[Yad2] background discovery started for job ${jobId}: ${websiteUrl} (${effectiveImportType})`);
 
     const discoveryUrls = getYad2AgencyDiscoveryUrls(websiteUrl, effectiveImportType);
     const discoveredUrls = new Set<string>();
@@ -3592,7 +3690,7 @@ async function runYad2AgencyDiscoverJob(params: {
       totalDiscovered += totalCount;
       firstPageItems.forEach((url) => discoveredUrls.add(url));
 
-      console.log(`Yad2 agency ${listingMode}: page 1=${firstPageItems.length}, total=${totalCount}, pages=${totalPages}`);
+      dlog(`Yad2 agency ${listingMode}: page 1=${firstPageItems.length}, total=${totalCount}, pages=${totalPages}`);
 
       const PAGE_BATCH_SIZE = 2;
       for (let startPage = 2; startPage <= totalPages; startPage += PAGE_BATCH_SIZE) {
@@ -3608,7 +3706,7 @@ async function runYad2AgencyDiscoverJob(params: {
         pageHtmlBatch.forEach((pageHtml, index) => {
           const pageUrl = buildYad2AgencyPageUrl(discoveryUrl, pageBatch[index]);
           const pageItems = extractYad2AgencyItemUrls(pageHtml, pageUrl);
-          console.log(`[Yad2] page ${pageBatch[index]}: ${pageItems.length} items`);
+          dlog(`[Yad2] page ${pageBatch[index]}: ${pageItems.length} items`);
           pageItems.forEach((url) => discoveredUrls.add(url));
         });
 
@@ -3619,7 +3717,7 @@ async function runYad2AgencyDiscoverJob(params: {
     }
 
     const dedupedUrls = Array.from(discoveredUrls);
-    console.log(`Yad2 agency HTML discovery found ${dedupedUrls.length} unique listings across ${discoveryUrls.length} page set(s)`);
+    dlog(`Yad2 agency HTML discovery found ${dedupedUrls.length} unique listings across ${discoveryUrls.length} page set(s)`);
 
     // If 0 URLs found, ShieldSquare likely blocked all pages — try Apify fallback
     if (dedupedUrls.length === 0) {
@@ -3638,7 +3736,7 @@ async function runYad2AgencyDiscoverJob(params: {
               status: "completed",
               failure_reason: "superseded_by_apify",
             }).eq("id", jobId);
-            console.log(`[Yad2] Apify fallback succeeded — job ${apifyResult.job_id} created with ${apifyResult.new_urls} new URLs`);
+            dlog(`[Yad2] Apify fallback succeeded — job ${apifyResult.job_id} created with ${apifyResult.new_urls} new URLs`);
             return;
           }
         } catch (apifyErr) {
@@ -3694,7 +3792,7 @@ async function runYad2AgencyDiscoverJob(params: {
 
     if (updateErr) throw new Error(`Failed to finalize import job: ${updateErr.message}`);
 
-    console.log(
+    dlog(
       `[Yad2] background discovery finished for job ${jobId}: ${newUrls.length} new URLs, ${dedupedUrls.length} discovered, ${dedupedUrls.length - newUrls.length} existing`
     );
   } catch (err) {
@@ -3770,7 +3868,7 @@ async function handleYad2Discover(body: any) {
   // Start Apify Yad2 scraper actor run
   // Using the amit123/yadscraper Apify actor for Yad2 listings
   const actorId = "gWicCzGByyQlba0Ql";
-  console.log(`Starting Apify actor ${actorId} for URL: ${website_url}`);
+  dlog(`Starting Apify actor ${actorId} for URL: ${website_url}`);
 
   const runRes = await fetch(`https://api.apify.com/v2/acts/${actorId}/runs?token=${APIFY_API_KEY}`, {
     method: "POST",
@@ -3822,7 +3920,7 @@ async function handleYad2Discover(body: any) {
     return { job_id: null, total_listings: 0, total_discovered: 0, new_urls: 0, skipped_existing: 0 };
   }
 
-  console.log(`Apify returned ${results.length} Yad2 listings`);
+  dlog(`Apify returned ${results.length} Yad2 listings`);
 
   // Gather known URLs for dedup
   const { data: existingProperties } = await sb
@@ -4214,7 +4312,7 @@ async function runMadlanAgencyDiscoverJob(params: {
   const APIFY_API_KEY = Deno.env.get("APIFY_API_KEY");
 
   try {
-    console.log(`[Madlan/Apify] background discovery started for job ${jobId}: ${websiteUrl}`);
+    dlog(`[Madlan/Apify] background discovery started for job ${jobId}: ${websiteUrl}`);
 
     if (!APIFY_API_KEY) {
       const failReason = "APIFY_API_KEY not configured — required for Madlan scraping";
@@ -4251,7 +4349,7 @@ async function runMadlanAgencyDiscoverJob(params: {
       ? ["buy", "rent"]
       : [effectiveImportType === "rental" ? "rent" : "buy"];
 
-    console.log(`[Madlan/Apify] Scraping cities: ${cityStr} (from: ${cities.join(", ")}), dealTypes: ${dealTypes.join(",")}`);
+    dlog(`[Madlan/Apify] Scraping cities: ${cityStr} (from: ${cities.join(", ")}), dealTypes: ${dealTypes.join(",")}`);
 
     // Get existing source_urls for dedup
     const { data: existingProps } = await sb
@@ -4280,7 +4378,7 @@ async function runMadlanAgencyDiscoverJob(params: {
     const allDiscoveredUrls: string[] = [];
 
     for (const dealType of dealTypes) {
-      console.log(`[Madlan/Apify] Running actor for ${cityStr} / ${dealType}`);
+      dlog(`[Madlan/Apify] Running actor for ${cityStr} / ${dealType}`);
 
       // Call Apify actor synchronously (returns dataset items directly)
       // Timeout: 120s for the sync call
@@ -4309,7 +4407,7 @@ async function runMadlanAgencyDiscoverJob(params: {
         }
 
         items = await res.json();
-        console.log(`[Madlan/Apify] Actor returned ${items.length} items for ${cityStr}/${dealType}`);
+        dlog(`[Madlan/Apify] Actor returned ${items.length} items for ${cityStr}/${dealType}`);
       } catch (e) {
         console.error(`[Madlan/Apify] Actor call error:`, e);
         continue;
@@ -4433,7 +4531,7 @@ async function runMadlanAgencyDiscoverJob(params: {
       }).eq("id", jobId);
     }
 
-    console.log(`[Madlan/Apify] Summary: ${totalDiscovered} discovered, ${totalNew} new, ${totalInserted} inserted`);
+    dlog(`[Madlan/Apify] Summary: ${totalDiscovered} discovered, ${totalNew} new, ${totalInserted} inserted`);
 
     // Update job
     await sb.from("import_jobs").update({
@@ -4454,7 +4552,7 @@ async function runMadlanAgencyDiscoverJob(params: {
       .eq("agency_id", agencyId)
       .eq("source_type", "madlan");
 
-    console.log(`[Madlan/Apify] discovery+import finished for job ${jobId}: ${totalInserted} properties created`);
+    dlog(`[Madlan/Apify] discovery+import finished for job ${jobId}: ${totalInserted} properties created`);
   } catch (err) {
     console.error(`[Madlan/Apify] discovery failed for job ${jobId}:`, err);
     await sb.from("import_jobs").update({ status: "failed" }).eq("id", jobId);
@@ -4707,6 +4805,18 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json();
     const { action } = body;
+
+    // AuthN/AuthZ — service-role bypasses; user calls must own the agency.
+    try {
+      await authorize(req, supabaseAdmin(), body, action);
+    } catch (authErr) {
+      const msg = authErr instanceof Error ? authErr.message : "Unauthorized";
+      const status = msg.startsWith("Forbidden") ? 403 : 401;
+      return new Response(
+        JSON.stringify({ error: msg }),
+        { status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     let result;
     if (action === "discover") {

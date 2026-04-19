@@ -28,7 +28,7 @@ export interface ImportJobItem {
   project_id: string | null;
   error_message: string | null;
   error_type: string | null;
-  extracted_data: any;
+  extracted_data: Record<string, unknown> | null;
   confidence_score: number | null;
   created_at: string;
 }
@@ -187,7 +187,7 @@ export function useApproveItem() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ itemId, extractedData }: { itemId: string; extractedData: any }) => {
+    mutationFn: async ({ itemId, extractedData }: { itemId: string; extractedData: Record<string, unknown> }) => {
       const { data, error } = await supabase.functions.invoke('import-agency-listings', {
         body: { action: 'approve_item', item_id: itemId, extracted_data: extractedData },
       });

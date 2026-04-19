@@ -4,7 +4,7 @@ import { getOrCreateGuestId } from '@/utils/guestId';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 import { Property } from '@/types/database';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useFavoritesContext } from '@/contexts/FavoritesContext';
 import { triggerHaptic } from './useHapticFeedback';
 import { useCompare } from '@/contexts/CompareContext';
@@ -66,8 +66,13 @@ export function useFavorites() {
     enabled: !!user,
   });
 
-  // Guest property IDs derived from context
-  const guestFavoriteIds = guestFavorites.map(f => f.property_id);
+  // Guest property IDs derived from context. Memoized so the array reference
+  // is stable across renders when contents are unchanged — otherwise every
+  // consumer of `favoriteIds` / `isFavorite` re-renders unnecessarily.
+  const guestFavoriteIds = useMemo(
+    () => guestFavorites.map(f => f.property_id),
+    [guestFavorites]
+  );
   
   // Fetch guest property details
   const { data: guestProperties = [] } = useQuery({
@@ -92,8 +97,11 @@ export function useFavorites() {
     enabled: !user && guestFavoriteIds.length > 0,
   });
 
-  // Combined favorite IDs
-  const favoriteIds = user ? dbFavoriteIds : guestFavoriteIds;
+  // Combined favorite IDs (stable reference — see note above)
+  const favoriteIds = useMemo(
+    () => (user ? dbFavoriteIds : guestFavoriteIds),
+    [user, dbFavoriteIds, guestFavoriteIds]
+  );
 
   const addFavorite = useMutation({
     mutationFn: async ({ propertyId, currentPrice }: { propertyId: string; currentPrice?: number }) => {
