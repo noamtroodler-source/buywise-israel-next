@@ -3084,6 +3084,33 @@ async function handleProcessBatch(body: any) {
     );
   }
 
+  // ─── Cross-agency duplicate scan (fire-and-forget when batch finishes) ───
+  // Runs immediately after each completed import so duplicates between agencies
+  // are caught right away — not just by the daily 6 AM cron.
+  if (newStatus === "completed" && totalSucceeded > 0) {
+    EdgeRuntime.waitUntil(
+      (async () => {
+        try {
+          const dupRes = await fetch(
+            `${Deno.env.get("SUPABASE_URL")}/functions/v1/detect-duplicates`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ trigger: "post_import", job_id }),
+            }
+          );
+          const dupData = await dupRes.json().catch(() => ({}));
+          console.log(`Post-import duplicate scan for ${job_id}:`, dupData);
+        } catch (e) {
+          console.error(`Post-import duplicate scan failed for ${job_id}:`, e);
+        }
+      })()
+    );
+  }
+
   return { processed: totalProcessed, succeeded: totalSucceeded, failed: totalFailed, remaining: remainingCount, status: newStatus };
 }
 
