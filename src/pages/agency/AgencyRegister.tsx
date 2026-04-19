@@ -37,6 +37,7 @@ import { AgencySubmittedDialog } from '@/components/agency/AgencySubmittedDialog
 import { getUserFriendlyError } from '@/utils/userFriendlyErrors';
 import { AgentProfileStep, type AgentProfileData } from '@/components/agency/AgentProfileStep';
 import { Switch } from '@/components/ui/switch';
+import { AIDescriptionChecker } from '@/components/shared/AIDescriptionChecker';
 
 const baseSteps = [
   { id: 'basics', title: 'Agency Basics', description: 'Your agency details', icon: Building2 },
