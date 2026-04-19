@@ -150,9 +150,40 @@ function WizardContent() {
     }
   };
 
+  const runDuplicateCheck = async (): Promise<boolean> => {
+    if (!agentProfile?.agency_id) return true; // independent agent → no agency-level dedupe
+    try {
+      const result = await duplicateCheck.mutateAsync({
+        agencyId: agentProfile.agency_id,
+        address: data.address,
+        city: data.city,
+        neighborhood: data.neighborhood,
+        size_sqm: data.size_sqm,
+        bedrooms: data.bedrooms,
+        price: data.price,
+        latitude: data.latitude,
+        longitude: data.longitude,
+        floor: data.floor,
+      });
+      if (result.blocking) {
+        setDuplicateMatch(result.blocking);
+        return false;
+      }
+      return true;
+    } catch {
+      // Don't hard-block on check failure — let submission proceed
+      return true;
+    }
+  };
+
   const handleSubmitForReview = async () => {
     setIsSubmitting(true);
     try {
+      const allowed = await runDuplicateCheck();
+      if (!allowed) {
+        setIsSubmitting(false);
+        return;
+      }
       await createProperty.mutateAsync({
         title: data.title,
         description: data.description,
@@ -186,7 +217,7 @@ function WizardContent() {
         featured_highlight: data.featured_highlight || null,
         submitForReview: true,
       });
-      
+
       autoSave.clearSavedData();
       setSubmittedTitle(data.title);
       setShowSuccessDialog(true);
