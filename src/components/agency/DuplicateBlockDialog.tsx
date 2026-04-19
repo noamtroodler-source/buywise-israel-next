@@ -70,8 +70,8 @@ export function DuplicateBlockDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30 mb-2">
-            <ShieldAlert className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 mb-2">
+            <ShieldAlert className="h-6 w-6 text-destructive" />
           </div>
           <DialogTitle className="text-center">This property is already listed</DialogTitle>
           <DialogDescription className="text-center">
