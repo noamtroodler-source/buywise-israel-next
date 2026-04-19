@@ -15,6 +15,8 @@ export interface AgencyListing {
   total_saves: number;
   images: string[] | null;
   agent_id: string | null;
+  import_source: string | null;
+  merged_source_urls: string[] | null;
   created_at: string;
   updated_at: string;
   inquiries_count: number;
@@ -56,6 +58,7 @@ export function useAgencyListingsManagement(agencyId: string | undefined) {
           images,
           agent_id,
           import_source,
+          merged_source_urls,
           created_at,
           updated_at
         `)

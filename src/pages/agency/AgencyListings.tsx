@@ -32,6 +32,7 @@ import { useMyAgency, useAgencyTeam } from '@/hooks/useAgencyManagement';
 import { useAgencyListingsManagement } from '@/hooks/useAgencyListings';
 import { useDeleteProperty, useSubmitForReview, useBulkDeleteProperties, useBulkSubmitForReview, useReassignProperty } from '@/hooks/useAgentProperties';
 import { AgentReassignPopover } from '@/components/agency/AgentReassignPopover';
+import { MergedSourcesBadges } from '@/components/agency/MergedSourcesBadges';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useUpdatePropertyStatus, useDuplicateProperty } from '@/hooks/useAgentProfile';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
@@ -478,9 +479,10 @@ export default function AgencyListings() {
                                   {status.label}
                                 </Badge>
                                 {(listing as any).import_source && (
-                                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                                    Imported
-                                  </Badge>
+                                  <MergedSourcesBadges
+                                    primarySource={(listing as any).import_source}
+                                    mergedUrls={(listing as any).merged_source_urls}
+                                  />
                                 )}
                               </div>
                             </TableCell>

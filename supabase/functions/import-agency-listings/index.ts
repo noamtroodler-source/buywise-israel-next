@@ -2642,72 +2642,119 @@ async function processOneItem(
 
     if (crossSourceMatchId) {
       // ── MERGE: enrich existing property with better data from this source ──
+      // Source trust ranking: yad2 (1) > madlan (2) > website_scrape (3). Lower number = more trusted.
+      const SOURCE_TRUST: Record<string, number> = { yad2: 1, madlan: 2, website_scrape: 3 };
+      const incomingSource =
+        job.source_type === "yad2" ? "yad2" :
+        job.source_type === "madlan" ? "madlan" : "website_scrape";
+      const incomingRank = SOURCE_TRUST[incomingSource] ?? 99;
+
       const { data: existing } = await sb
         .from("properties")
-        .select("id, price, size_sqm, bedrooms, images, description, address, floor, year_built, features, merged_source_urls, source_url, data_quality_score, neighborhood")
+        .select("id, price, size_sqm, bedrooms, images, description, address, floor, year_built, features, merged_source_urls, source_url, data_quality_score, neighborhood, import_source, field_source_map, agent_id")
         .eq("id", crossSourceMatchId)
         .single();
 
       if (existing) {
+        const fieldSourceMap: Record<string, string> = (existing.field_source_map as any) || {};
+        const conflictsToLog: Array<{
+          field: string;
+          existing_value: any;
+          existing_source: string | null;
+          incoming_value: any;
+          incoming_source: string;
+          diff_percent: number | null;
+        }> = [];
+
+        // Helper: decide if incoming should win for a structural field.
+        // Rule: incoming wins only if (a) existing is empty OR (b) incoming source is strictly more trusted.
+        const shouldOverride = (fieldName: string, existingVal: any): boolean => {
+          if (existingVal == null || existingVal === "" || existingVal === 0) return true;
+          const existingSrc = fieldSourceMap[fieldName] || existing.import_source || "website_scrape";
+          const existingRank = SOURCE_TRUST[existingSrc] ?? 99;
+          return incomingRank < existingRank; // strictly higher trust
+        };
+
+        // Helper: record conflict if values differ meaningfully on a numeric field
+        const maybeLogConflict = (fieldName: string, existingVal: any, incomingVal: any) => {
+          if (existingVal == null || incomingVal == null) return;
+          if (typeof existingVal === "number" && typeof incomingVal === "number" && existingVal > 0) {
+            const diffPct = Math.abs(existingVal - incomingVal) / existingVal;
+            if (diffPct > 0.10) {
+              conflictsToLog.push({
+                field: fieldName,
+                existing_value: existingVal,
+                existing_source: fieldSourceMap[fieldName] || existing.import_source || null,
+                incoming_value: incomingVal,
+                incoming_source: incomingSource,
+                diff_percent: Math.round(diffPct * 1000) / 10,
+              });
+            }
+          } else if (existingVal !== incomingVal && typeof existingVal === "string") {
+            conflictsToLog.push({
+              field: fieldName,
+              existing_value: existingVal,
+              existing_source: fieldSourceMap[fieldName] || existing.import_source || null,
+              incoming_value: incomingVal,
+              incoming_source: incomingSource,
+              diff_percent: null,
+            });
+          }
+        };
+
         const mergedUrls: string[] = Array.isArray(existing.merged_source_urls)
           ? [...existing.merged_source_urls]
           : (existing.source_url ? [existing.source_url] : []);
         if (item.url && !mergedUrls.includes(item.url)) mergedUrls.push(item.url);
 
-        // Build patch: only overwrite if new value is better (non-null, more complete)
         const patch: Record<string, any> = {
           merged_source_urls: mergedUrls,
           source_last_checked_at: new Date().toISOString(),
         };
 
-        // Structured data (Yad2 API via Apify) is authoritative for structural fields.
-        // It comes from the listing's own database record — more reliable than AI extraction
-        // from a scraped agency website page. Allow it to upgrade existing AI-extracted values.
-        const isStructuredSource = listing._has_structured_data === true;
+        // Structural fields — apply source-trust ranking
+        const structuralFields: Array<[string, any]> = [
+          ["price", listing.price > 0 ? listing.price : null],
+          ["size_sqm", listing.size_sqm && listing.size_sqm > 0 ? listing.size_sqm : null],
+          ["bedrooms", listing.bedrooms != null ? Math.floor(listing.bedrooms) : null],
+          ["floor", listing.floor ?? null],
+          ["year_built", listing.year_built ?? null],
+          ["parking", listing.parking ?? null],
+          ["condition", listing.condition ?? null],
+          ["address", listing.address ? normalizeAddressForStorage(listing.address) : null],
+          ["neighborhood", listing.neighborhood ?? null],
+        ];
 
-        if (isStructuredSource) {
-          // Structured source WINS on structural fields — overwrite AI-extracted values
-          if (listing.floor != null) patch.floor = listing.floor;
-          if (listing.size_sqm && listing.size_sqm > 0) patch.size_sqm = listing.size_sqm;
-          if (listing.bedrooms != null) patch.bedrooms = Math.floor(listing.bedrooms);
-          if (listing.price > 0) {
-            // Log significant price discrepancy before overwriting
-            if (existing.price && existing.price > 0) {
-              const priceDiff = Math.abs(existing.price - listing.price) / existing.price;
-              if (priceDiff > 0.15) {
-                console.log(`[Merge] Price discrepancy ${Math.round(priceDiff * 100)}%: existing=${existing.price} new(structured)=${listing.price} — ${item.url}`);
-              }
-            }
-            patch.price = listing.price;
+        for (const [field, incomingVal] of structuralFields) {
+          if (incomingVal == null) continue;
+          const existingVal = (existing as any)[field];
+          // Log conflict on price/size before deciding (independent of trust)
+          if (field === "price" || field === "size_sqm") {
+            maybeLogConflict(field, existingVal, incomingVal);
           }
-          if (listing.parking != null) patch.parking = listing.parking;
-          if (listing.condition) patch.condition = listing.condition;
-          if (listing.year_built) patch.year_built = listing.year_built;
-          if (!existing.neighborhood && listing.neighborhood) patch.neighborhood = listing.neighborhood;
-          if ((!existing.address || existing.address.trim() === "") && listing.address) patch.address = normalizeAddressForStorage(listing.address);
-        } else {
-          // Non-structured source (AI-extracted from agency website / Madlan): gap-fill only
-          if ((!existing.address || existing.address.trim() === "") && listing.address) patch.address = normalizeAddressForStorage(listing.address);
-          if (!existing.floor && listing.floor != null) patch.floor = listing.floor;
-          if (!existing.year_built && listing.year_built) patch.year_built = listing.year_built;
-          if (!existing.neighborhood && listing.neighborhood) patch.neighborhood = listing.neighborhood;
-          if ((!existing.size_sqm || existing.size_sqm === 0) && listing.size_sqm) patch.size_sqm = listing.size_sqm;
-          if ((!existing.bedrooms || existing.bedrooms === 0) && listing.bedrooms != null) patch.bedrooms = Math.floor(listing.bedrooms);
-          // Non-zero price: keep existing (first source wins for AI-extracted data)
-          if ((!existing.price || existing.price === 0) && listing.price > 0) patch.price = listing.price;
+          if (shouldOverride(field, existingVal)) {
+            patch[field] = incomingVal;
+            fieldSourceMap[field] = incomingSource;
+          }
         }
 
         // Description: longer wins regardless of source
         if (listing.description && (!existing.description || listing.description.length > existing.description.length)) {
           patch.description = listing.description;
+          fieldSourceMap["description"] = incomingSource;
         }
-        // Images: NOT merged from scraped sources (copyright — agency must upload via dashboard)
+
         // Features: union of both arrays
         if (listing.features?.length && existing.features) {
           patch.features = [...new Set([...(existing.features as string[]), ...listing.features])];
+          fieldSourceMap["features"] = incomingSource;
         } else if (listing.features?.length && !existing.features) {
           patch.features = listing.features;
+          fieldSourceMap["features"] = incomingSource;
         }
+
+        patch.field_source_map = fieldSourceMap;
+
         // Recalculate quality score as max of both
         if (confidenceScore > (existing.data_quality_score ?? 0)) {
           patch.data_quality_score = confidenceScore;
@@ -2715,6 +2762,24 @@ async function processOneItem(
         }
 
         await sb.from("properties").update(patch).eq("id", crossSourceMatchId);
+
+        // Log any conflicts detected
+        if (conflictsToLog.length > 0) {
+          const conflictRows = conflictsToLog.map((c) => ({
+            property_id: crossSourceMatchId,
+            agency_id: job.agency_id,
+            field_name: c.field,
+            existing_value: c.existing_value,
+            existing_source: c.existing_source,
+            incoming_value: c.incoming_value,
+            incoming_source: c.incoming_source,
+            diff_percent: c.diff_percent,
+            status: "pending",
+          }));
+          const { error: confErr } = await sb.from("import_conflicts").insert(conflictRows);
+          if (confErr) console.warn(`[Merge] Failed to log conflicts: ${confErr.message}`);
+          else console.log(`[Merge] Logged ${conflictRows.length} conflict(s) for property ${crossSourceMatchId}`);
+        }
 
         // Record this as a co-listing agent (different agency, same property)
         if (agentId) {
@@ -2731,10 +2796,10 @@ async function processOneItem(
         await sb.from("import_job_items").update({
           status: "done",
           property_id: crossSourceMatchId,
-          error_message: `Merged into existing property ${crossSourceMatchId} (cross-source enrichment)`,
+          error_message: `Merged into existing property ${crossSourceMatchId} (cross-source enrichment, source=${incomingSource}, trust=${incomingRank})`,
         }).eq("id", item.id);
 
-        console.log(`[Merge] Enriched property ${crossSourceMatchId} with data from ${item.url}`);
+        console.log(`[Merge] Enriched property ${crossSourceMatchId} from ${incomingSource} (trust=${incomingRank}, conflicts=${conflictsToLog.length})`);
         return { succeeded: true };
       }
     }
@@ -2819,6 +2884,14 @@ async function processOneItem(
         is_claimed: false,
         source_status: "active",
         source_last_checked_at: new Date().toISOString(),
+        field_source_map: (() => {
+          const src = job.source_type === "yad2" ? "yad2" : job.source_type === "madlan" ? "madlan" : "website_scrape";
+          const map: Record<string, string> = {};
+          for (const f of ["price", "size_sqm", "bedrooms", "floor", "year_built", "address", "neighborhood", "description", "features"]) {
+            if ((listing as any)[f] != null && (listing as any)[f] !== "") map[f] = src;
+          }
+          return map;
+        })(),
       })
       .select("id")
       .single();

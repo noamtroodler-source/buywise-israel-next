@@ -2565,6 +2565,82 @@ export type Database = {
           },
         ]
       }
+      import_conflicts: {
+        Row: {
+          agency_id: string | null
+          created_at: string
+          diff_percent: number | null
+          existing_source: string | null
+          existing_value: Json | null
+          field_name: string
+          id: string
+          incoming_source: string | null
+          incoming_value: Json | null
+          property_id: string
+          resolution: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          agency_id?: string | null
+          created_at?: string
+          diff_percent?: number | null
+          existing_source?: string | null
+          existing_value?: Json | null
+          field_name: string
+          id?: string
+          incoming_source?: string | null
+          incoming_value?: Json | null
+          property_id: string
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          agency_id?: string | null
+          created_at?: string
+          diff_percent?: number | null
+          existing_source?: string | null
+          existing_value?: Json | null
+          field_name?: string
+          id?: string
+          incoming_source?: string | null
+          incoming_value?: Json | null
+          property_id?: string
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_conflicts_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "import_conflicts_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "import_conflicts_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       import_job_costs: {
         Row: {
           created_at: string | null
@@ -4592,6 +4668,7 @@ export type Database = {
           entry_date: string | null
           featured_highlight: string | null
           features: string[] | null
+          field_source_map: Json | null
           floor: number | null
           furnished_status: string | null
           furniture_items: string[] | null
@@ -4672,6 +4749,7 @@ export type Database = {
           entry_date?: string | null
           featured_highlight?: string | null
           features?: string[] | null
+          field_source_map?: Json | null
           floor?: number | null
           furnished_status?: string | null
           furniture_items?: string[] | null
@@ -4752,6 +4830,7 @@ export type Database = {
           entry_date?: string | null
           featured_highlight?: string | null
           features?: string[] | null
+          field_source_map?: Json | null
           floor?: number | null
           furnished_status?: string | null
           furniture_items?: string[] | null
