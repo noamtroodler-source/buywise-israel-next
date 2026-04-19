@@ -2155,16 +2155,19 @@ async function processOneItem(
   try {
     await sb.from("import_job_items").update({ status: "processing" }).eq("id", item.id);
 
-    // 0a-pre. Cross-agency URL blocklist check
+    // 0a-pre. Cross-agency URL blocklist check (normalized comparison)
     // If this agency was previously confirmed NOT to own this URL, skip immediately.
     if (job.agency_id && item.url) {
-      const { data: blocked } = await sb
-        .from("agency_source_blocklist")
-        .select("id, reason")
-        .eq("agency_id", job.agency_id)
-        .eq("blocked_url", item.url)
-        .limit(1);
-      if (blocked && blocked.length > 0) {
+      const { data: isBlocked } = await sb.rpc("is_url_blocklisted", {
+        p_agency_id: job.agency_id,
+        p_url: item.url,
+      });
+      if (isBlocked === true) {
+        const { data: blocked } = await sb
+          .from("agency_source_blocklist")
+          .select("reason")
+          .eq("agency_id", job.agency_id)
+          .limit(1);
         await sb.from("import_job_items")
           .update({
             status: "skipped",
