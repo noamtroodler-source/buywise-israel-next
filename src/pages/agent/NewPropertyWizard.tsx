@@ -23,6 +23,8 @@ import { SaveStatusIndicator } from '@/components/shared/SaveStatusIndicator';
 import { PropertySubmittedDialog } from '@/components/agent/PropertySubmittedDialog';
 import { useListingLimitCheck } from '@/hooks/useListingLimitCheck';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useDuplicateCheck, type DuplicateMatch } from '@/hooks/useDuplicateCheck';
+import { DuplicateBlockDialog } from '@/components/agency/DuplicateBlockDialog';
 
 const steps = [
   { title: 'Basics', description: 'Property type, price, location' },
