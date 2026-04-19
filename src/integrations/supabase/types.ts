@@ -1735,9 +1735,13 @@ export type Database = {
       }
       cross_agency_conflicts: {
         Row: {
+          appeal_status: string | null
+          appealable_until: string | null
           attempted_agency_id: string
           attempted_source_type: string | null
           attempted_source_url: string
+          auto_resolution_reason: string | null
+          auto_resolved: boolean
           created_at: string
           existing_agency_id: string | null
           existing_property_id: string
@@ -1752,9 +1756,13 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          appeal_status?: string | null
+          appealable_until?: string | null
           attempted_agency_id: string
           attempted_source_type?: string | null
           attempted_source_url: string
+          auto_resolution_reason?: string | null
+          auto_resolved?: boolean
           created_at?: string
           existing_agency_id?: string | null
           existing_property_id: string
@@ -1769,9 +1777,13 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          appeal_status?: string | null
+          appealable_until?: string | null
           attempted_agency_id?: string
           attempted_source_type?: string | null
           attempted_source_url?: string
+          auto_resolution_reason?: string | null
+          auto_resolved?: boolean
           created_at?: string
           existing_agency_id?: string | null
           existing_property_id?: string
@@ -6583,6 +6595,18 @@ export type Database = {
       }
     }
     Functions: {
+      appeal_cross_agency_conflict: {
+        Args: {
+          p_appealing_agency_id: string
+          p_conflict_id: string
+          p_reason?: string
+        }
+        Returns: Json
+      }
+      auto_resolve_obvious_conflict: {
+        Args: { p_conflict_id: string }
+        Returns: Json
+      }
       calculate_journey_stage: { Args: { milestones: Json }; Returns: string }
       can_agent_view_profile: {
         Args: { _agent_user_id: string; _profile_id: string }
@@ -6604,6 +6628,28 @@ export type Database = {
           existing_agency_id: string
           existing_source_url: string
           property_id: string
+          similarity_score: number
+        }[]
+      }
+      check_cross_agency_duplicate_v2: {
+        Args: {
+          p_address: string
+          p_apartment_number?: string
+          p_attempted_agency_id: string
+          p_bedrooms: number
+          p_city: string
+          p_floor_number?: number
+          p_latitude: number
+          p_longitude: number
+          p_neighborhood: string
+          p_price: number
+          p_size_sqm: number
+        }
+        Returns: {
+          existing_agency_id: string
+          existing_source_url: string
+          property_id: string
+          same_building_different_unit: boolean
           similarity_score: number
         }[]
       }
