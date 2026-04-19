@@ -2919,17 +2919,22 @@ async function processOneItem(
             });
             await sb.from("agency_notifications").insert(notifications);
 
-            // Trigger email notifications (fire-and-forget)
-            EdgeRuntime.waitUntil(
-              fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/notify-cross-agency-conflict`, {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-                },
-                body: JSON.stringify({ conflict_id: conflictId }),
-              }).catch((e) => console.error(`[Cross-Agency] Email notification failed:`, e))
-            );
+            // Trigger email notifications (fire-and-forget) — but ONLY for
+            // manual imports. Nightly auto-syncs (is_incremental=true) get
+            // a single batched digest email instead, sent by send-conflict-digest
+            // at the end of the run, to prevent inbox spam.
+            if (!job.is_incremental) {
+              EdgeRuntime.waitUntil(
+                fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/notify-cross-agency-conflict`, {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+                  },
+                  body: JSON.stringify({ conflict_id: conflictId }),
+                }).catch((e) => console.error(`[Cross-Agency] Email notification failed:`, e))
+              );
+            }
           }
         }
 

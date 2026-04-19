@@ -91,7 +91,7 @@ export function useResolveCrossAgencyConflict() {
       resolution: ConflictResolution;
       notes?: string;
     }) => {
-      // Load conflict to determine blocklist actions
+      // Load conflict to determine blocklist + transfer actions
       const { data: conflict, error: cErr } = await supabase
         .from('cross_agency_conflicts')
         .select('*')
@@ -110,7 +110,7 @@ export function useResolveCrossAgencyConflict() {
         .eq('id', conflictId);
       if (updateErr) throw updateErr;
 
-      // Apply blocklist based on resolution (URLs normalized to match SQL helper)
+      // Apply blocklist + ownership transfer based on resolution
       if (resolution === 'existing_agency_confirmed') {
         // Block the attempted agency from re-importing this URL
         await supabase.from('agency_source_blocklist').insert({
@@ -119,20 +119,43 @@ export function useResolveCrossAgencyConflict() {
           reason: `Confirmed as belonging to existing agency`,
           conflict_id: conflictId,
         });
-      } else if (resolution === 'attempted_agency_confirmed' && conflict.existing_agency_id && conflict.existing_source_url) {
-        // Block the existing agency from re-importing the original URL
-        await supabase.from('agency_source_blocklist').insert({
-          agency_id: conflict.existing_agency_id,
-          blocked_url: normalizeUrl(conflict.existing_source_url) || conflict.existing_source_url,
-          reason: `Listing confirmed as belonging to ${conflict.attempted_agency_id}`,
-          conflict_id: conflictId,
-        });
+      } else if (resolution === 'attempted_agency_confirmed') {
+        // ONE-CLICK TRANSFER: reassign the property to the attempted agency
+        // so the listing now belongs to the agency the resolver picked.
+        const { error: transferErr } = await supabase
+          .from('properties')
+          .update({
+            claimed_by_agency_id: conflict.attempted_agency_id,
+            source_url: conflict.attempted_source_url,
+            source_last_checked_at: new Date().toISOString(),
+          })
+          .eq('id', conflict.existing_property_id);
+        if (transferErr) {
+          // Don't hard-fail the whole resolution if transfer fails — log and continue
+          console.error('Property transfer failed:', transferErr);
+        }
+        // Block the existing agency from re-importing the original URL (if known)
+        if (conflict.existing_agency_id && conflict.existing_source_url) {
+          await supabase.from('agency_source_blocklist').insert({
+            agency_id: conflict.existing_agency_id,
+            blocked_url: normalizeUrl(conflict.existing_source_url) || conflict.existing_source_url,
+            reason: `Listing transferred to ${conflict.attempted_agency_id}`,
+            conflict_id: conflictId,
+          });
+        }
       }
-      // co_listing_confirmed and dismissed: no blocklist
+      // co_listing_confirmed and dismissed: no blocklist, no transfer
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       qc.invalidateQueries({ queryKey: ['cross-agency-conflicts'] });
-      toast.success('Conflict resolved');
+      qc.invalidateQueries({ queryKey: ['agency-properties'] });
+      const msg =
+        variables.resolution === 'attempted_agency_confirmed'
+          ? 'Conflict resolved — listing transferred'
+          : variables.resolution === 'co_listing_confirmed'
+          ? 'Marked as co-listing'
+          : 'Conflict resolved';
+      toast.success(msg);
     },
     onError: (e: Error) => toast.error(`Failed to resolve: ${e.message}`),
   });

@@ -107,16 +107,28 @@ Deno.serve(async (req) => {
 
           if (!discoverRes.ok || discoverData.error) {
             const reason = discoverData.error || `HTTP ${discoverRes.status}`;
+            const newFailureCount = (source.consecutive_failures ?? 0) + 1;
+            // Auto-pause sources after 5+ consecutive failures so we stop wasting
+            // scrape cycles on dead URLs. Agency admin gets notified separately.
+            const shouldAutoPause = newFailureCount >= 5;
             await sb
               .from("agency_sources")
               .update({
-                consecutive_failures: (source.consecutive_failures ?? 0) + 1,
+                consecutive_failures: newFailureCount,
                 last_failure_reason: String(reason).slice(0, 500),
+                is_active: shouldAutoPause ? false : undefined,
+                notes: shouldAutoPause
+                  ? `Auto-paused after ${newFailureCount} consecutive failures on ${new Date().toISOString().slice(0, 10)}. Last error: ${String(reason).slice(0, 200)}`
+                  : undefined,
                 updated_at: new Date().toISOString(),
               })
               .eq("id", source.id);
             sourcesFailed++;
-            console.warn(`Discover failed for source ${source.id}: ${reason}`);
+            if (shouldAutoPause) {
+              console.warn(`Auto-paused source ${source.id} after ${newFailureCount} failures: ${reason}`);
+            } else {
+              console.warn(`Discover failed for source ${source.id} (${newFailureCount}/5): ${reason}`);
+            }
             continue;
           }
 
@@ -177,12 +189,18 @@ Deno.serve(async (req) => {
         } catch (err) {
           sourcesFailed++;
           const reason = err instanceof Error ? err.message : String(err);
-          console.error(`Source ${source.id} error:`, reason);
+          const newFailureCount = (source.consecutive_failures ?? 0) + 1;
+          const shouldAutoPause = newFailureCount >= 5;
+          console.error(`Source ${source.id} error (${newFailureCount}/5):`, reason);
           await sb
             .from("agency_sources")
             .update({
-              consecutive_failures: (source.consecutive_failures ?? 0) + 1,
+              consecutive_failures: newFailureCount,
               last_failure_reason: reason.slice(0, 500),
+              is_active: shouldAutoPause ? false : undefined,
+              notes: shouldAutoPause
+                ? `Auto-paused after ${newFailureCount} consecutive failures on ${new Date().toISOString().slice(0, 10)}. Last error: ${reason.slice(0, 200)}`
+                : undefined,
               updated_at: new Date().toISOString(),
             })
             .eq("id", source.id);
@@ -211,6 +229,25 @@ Deno.serve(async (req) => {
       );
     } catch (err) {
       console.warn("notify-source-failure invocation failed:", err);
+    }
+
+    // ─── Send ONE conflict digest per agency (replaces per-conflict spam) ─
+    try {
+      const digestRes = await fetch(
+        `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-conflict-digest`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({}),
+        }
+      );
+      const digestJson = await digestRes.json().catch(() => ({}));
+      console.log("Conflict digest result:", digestJson);
+    } catch (err) {
+      console.warn("send-conflict-digest invocation failed:", err);
     }
 
     return new Response(

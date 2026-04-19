@@ -209,7 +209,7 @@ export function CrossAgencyConflictsList({ agencyId, isAdmin = false }: Props) {
               {active?.resolution === 'existing_agency_confirmed' &&
                 'The attempted agency will be blocked from re-importing this URL in future syncs.'}
               {active?.resolution === 'attempted_agency_confirmed' &&
-                'The existing agency will be blocked from re-importing the original URL. The current property record stays — admin can transfer it manually if needed.'}
+                'The listing will be transferred to the attempted agency immediately, and the existing agency will be blocked from re-importing it.'}
               {active?.resolution === 'dismissed' &&
                 'The match was a false positive. No action will be taken.'}
             </DialogDescription>
