@@ -131,6 +131,30 @@ const getNotificationContent = (payload: NotificationPayload) => {
           </div>
         `,
       };
+    case 'colist_primary_gained':
+    case 'colist_primary_lost':
+    case 'colist_dispute_filed':
+    case 'colist_dispute_resolved':
+    case 'colist_boost_expiring': {
+      const subject = payload.title || 'Co-listing update';
+      const body = payload.message || 'There is an update on one of your co-listed properties.';
+      const cta = payload.actionUrl
+        ? `<a href="https://buywiseisrael.com${payload.actionUrl}" style="display: inline-block; background-color: #2563eb; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; margin-top: 16px;">View details</a>`
+        : `<a href="https://buywiseisrael.com/agency/dashboard" style="display: inline-block; background-color: #2563eb; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; margin-top: 16px;">Open dashboard</a>`;
+      return {
+        subject,
+        body,
+        html: `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+            ${brandHeader}
+            <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 16px;">${subject}</h1>
+            <p style="color: #333; font-size: 16px; line-height: 1.6;">${body}</p>
+            ${cta}
+            ${brandFooter}
+          </div>
+        `,
+      };
+    }
     default:
       return {
         subject: 'Notification from BuyWise Israel',
