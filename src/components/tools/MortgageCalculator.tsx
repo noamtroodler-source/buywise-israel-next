@@ -22,7 +22,8 @@ import { useSaveCalculatorResult } from '@/hooks/useSavedCalculatorResults';
 import { Link } from 'react-router-dom';
 import { ToolLayout, ToolDisclaimer, ToolFeedback, InsightCard, ResultRange, formatCurrencyRange, SourceAttribution, ExampleValuesHint, ToolPropertySuggestions, ToolGuidanceHint, SaveResultsPrompt } from './shared';
 import { useSavePromptTrigger } from '@/hooks/useSavePromptTrigger';
-import { useFormatPrice, useCurrencySymbol } from '@/contexts/PreferencesContext';
+import { useFormatPrice, useCurrencySymbol, usePreferences } from '@/contexts/PreferencesContext';
+import { useCurrencyInput } from '@/hooks/useCurrencyInput';
 import { toast } from 'sonner';
 import { MORTGAGE_RATE_RANGES } from '@/lib/utils/formatRange';
 
@@ -79,9 +80,11 @@ function InfoTooltip({ content }: { content: string }) {
 function MortgageCalculatorContent() {
   const formatCurrency = useFormatPrice();
   const userCurrencySymbol = useCurrencySymbol();
-  // Mortgage calculator always works in NIS — all bank calculations are in Shekels
-  const currencySymbol = '₪';
-  const formatNIS = (value: number) => `₪${value.toLocaleString('en-US')}`;
+  const { currency, exchangeRate } = usePreferences();
+  const { toILS, toDisplay } = useCurrencyInput();
+  // Display symbol respects user's preference; bank math always runs in NIS internally
+  const currencySymbol = userCurrencySymbol;
+  const formatNIS = (value: number) => formatCurrency(value, 'ILS');
   const { data: buyerProfile, isLoading: isProfileLoading } = useBuyerProfile();
   const { data: mortgageTracks, isLoading: isTracksLoading } = useMortgageTracks();
   const { toast: showToast } = useToast();
@@ -138,7 +141,7 @@ function MortgageCalculatorContent() {
       try {
         const data = JSON.parse(saved);
         setPropertyPrice(data.propertyPrice || DEFAULTS.propertyPrice);
-        setPropertyPriceInput(formatNumber(data.propertyPrice || DEFAULTS.propertyPrice));
+        setPropertyPriceInput(formatNumber(toDisplay(data.propertyPrice || DEFAULTS.propertyPrice)));
         setDownPaymentPercent(data.downPaymentPercent || DEFAULTS.downPaymentPercent);
         setDownPaymentInput((data.downPaymentPercent || DEFAULTS.downPaymentPercent).toString());
         setBuyerType(data.buyerType || DEFAULTS.buyerType);
@@ -238,19 +241,31 @@ function MortgageCalculatorContent() {
     }
   };
 
+  // Re-sync input strings when currency preference changes
+  useEffect(() => {
+    setPropertyPriceInput(formatNumber(toDisplay(propertyPrice)));
+    if (downPaymentMode === 'amount') {
+      setDownPaymentInput(formatNumber(toDisplay(Math.round((propertyPrice * effectiveDownPaymentPercent) / 100))));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currency]);
+
   const handlePropertyPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPropertyPriceInput(e.target.value);
-    const parsed = parseFormattedNumber(e.target.value);
-    if (!isNaN(parsed)) setPropertyPrice(Math.max(500000, Math.min(50000000, parsed)));
+    const parsedDisplay = parseFormattedNumber(e.target.value);
+    if (!isNaN(parsedDisplay)) {
+      const ils = toILS(parsedDisplay);
+      setPropertyPrice(Math.max(500000, Math.min(50000000, ils)));
+    }
   };
 
   const handlePropertyPriceBlur = () => {
-    let value = parseFormattedNumber(propertyPriceInput);
-    value = Math.max(500000, Math.min(50000000, value));
-    setPropertyPrice(value);
-    setPropertyPriceInput(formatNumber(value));
+    const parsedDisplay = parseFormattedNumber(propertyPriceInput);
+    const ils = Math.max(500000, Math.min(50000000, toILS(parsedDisplay)));
+    setPropertyPrice(ils);
+    setPropertyPriceInput(formatNumber(toDisplay(ils)));
     if (downPaymentMode === 'amount') {
-      setDownPaymentInput(formatNumber(Math.round((value * effectiveDownPaymentPercent) / 100)));
+      setDownPaymentInput(formatNumber(toDisplay(Math.round((ils * effectiveDownPaymentPercent) / 100))));
     }
   };
 
@@ -260,8 +275,11 @@ function MortgageCalculatorContent() {
       const parsed = parseFloat(e.target.value);
       if (!isNaN(parsed)) setDownPaymentPercent(Math.max(minDownPayment, Math.min(80, parsed)));
     } else {
-      const parsed = parseFormattedNumber(e.target.value);
-      if (!isNaN(parsed)) setDownPaymentPercent(Math.max(minDownPayment, Math.min(80, (parsed / propertyPrice) * 100)));
+      const parsedDisplay = parseFormattedNumber(e.target.value);
+      if (!isNaN(parsedDisplay)) {
+        const amountILS = toILS(parsedDisplay);
+        setDownPaymentPercent(Math.max(minDownPayment, Math.min(80, (amountILS / propertyPrice) * 100)));
+      }
     }
   };
 
@@ -272,19 +290,20 @@ function MortgageCalculatorContent() {
       setDownPaymentPercent(value);
       setDownPaymentInput(value.toString());
     } else {
-      let amount = parseFormattedNumber(downPaymentInput);
+      const parsedDisplay = parseFormattedNumber(downPaymentInput);
+      let amountILS = toILS(parsedDisplay);
       const minAmount = (propertyPrice * minDownPayment) / 100;
       const maxAmount = propertyPrice * 0.8;
-      amount = Math.max(minAmount, Math.min(maxAmount, amount));
-      setDownPaymentPercent((amount / propertyPrice) * 100);
-      setDownPaymentInput(formatNumber(Math.round(amount)));
+      amountILS = Math.max(minAmount, Math.min(maxAmount, amountILS));
+      setDownPaymentPercent((amountILS / propertyPrice) * 100);
+      setDownPaymentInput(formatNumber(toDisplay(Math.round(amountILS))));
     }
   };
 
   const toggleDownPaymentMode = () => {
     if (downPaymentMode === 'percent') {
       setDownPaymentMode('amount');
-      setDownPaymentInput(formatNumber(Math.round(downPaymentAmount)));
+      setDownPaymentInput(formatNumber(toDisplay(Math.round(downPaymentAmount))));
     } else {
       setDownPaymentMode('percent');
       setDownPaymentInput(effectiveDownPaymentPercent.toFixed(0));
@@ -306,7 +325,7 @@ function MortgageCalculatorContent() {
 
   const handleReset = () => {
     setPropertyPrice(DEFAULTS.propertyPrice);
-    setPropertyPriceInput(formatNumber(DEFAULTS.propertyPrice));
+    setPropertyPriceInput(formatNumber(toDisplay(DEFAULTS.propertyPrice)));
     setDownPaymentPercent(DEFAULTS.downPaymentPercent);
     setDownPaymentInput(DEFAULTS.downPaymentPercent.toString());
     setDownPaymentMode('percent');

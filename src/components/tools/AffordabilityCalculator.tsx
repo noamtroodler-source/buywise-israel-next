@@ -62,6 +62,7 @@ import { useSavePromptTrigger } from '@/hooks/useSavePromptTrigger';
 import { useBuyerProfile } from '@/hooks/useBuyerProfile';
 import { useSaveCalculatorResult } from '@/hooks/useSavedCalculatorResults';
 import { usePreferences } from '@/contexts/PreferencesContext';
+import { useCurrencyInput } from '@/hooks/useCurrencyInput';
 
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -73,16 +74,7 @@ import { CityRoomPriceBreakdown } from './affordability/CityRoomPriceBreakdown';
 
 const STORAGE_KEY = 'affordability-calculator-inputs';
 
-type DownPaymentCurrency = 'ILS' | 'USD' | 'EUR' | 'GBP';
-
-const CURRENCY_CONFIG: Record<DownPaymentCurrency, { symbol: string; label: string; toILS: number }> = {
-  ILS: { symbol: '₪', label: '₪ ILS', toILS: 1 },
-  USD: { symbol: '$', label: '$ USD', toILS: 3.6 },
-  EUR: { symbol: '€', label: '€ EUR', toILS: 3.95 },
-  GBP: { symbol: '£', label: '£ GBP', toILS: 4.60 },
-};
-
-
+// All defaults stored in ILS — converted to display currency at the input boundary
 const DEFAULTS = {
   monthlyIncome: 25000,
   spouseIncome: 0,
@@ -151,18 +143,17 @@ function AffordabilityCalculatorContent() {
   const saveToProfile = useSaveCalculatorResult();
 
   const { currency, exchangeRate } = usePreferences();
-  const currencySymbol = currency === 'USD' ? '$' : '₪';
+  const { toILS, toDisplay, symbol: currencySymbol } = useCurrencyInput();
   const formatPrice = useCallback((value: number) => {
     const display = currency === 'USD' ? value / exchangeRate : value;
     return `${currency === 'USD' ? '$' : '₪'}${formatNumber(Math.round(display))}`;
   }, [currency, exchangeRate]);
 
+  // All monetary state stored in ILS internally — display layer converts via toDisplay/toILS
   const [monthlyIncome, setMonthlyIncome] = useState(DEFAULTS.monthlyIncome);
   const [spouseIncome, setSpouseIncome] = useState(DEFAULTS.spouseIncome);
   const [monthlyDebts, setMonthlyDebts] = useState(DEFAULTS.monthlyDebts);
   const [downPayment, setDownPayment] = useState(DEFAULTS.downPayment);
-  const [downPaymentCurrency, setDownPaymentCurrency] = useState<DownPaymentCurrency>('USD');
-  const [downPaymentInput, setDownPaymentInput] = useState(DEFAULTS.downPayment); // raw input in selected currency
   const [interestRate, setInterestRate] = useState(DEFAULTS.interestRate);
   const [loanTermYears, setLoanTermYears] = useState(DEFAULTS.loanTermYears);
   const [employmentType, setEmploymentType] = useState<string>(DEFAULTS.employmentType);
@@ -181,20 +172,6 @@ function AffordabilityCalculatorContent() {
   const { data: availableCities = [] } = useAvailableCities();
   const { data: roomPrices = [] } = useCityRoomPrices(selectedCity || null);
 
-  // Convert down payment input to ILS whenever currency or amount changes
-  useEffect(() => {
-    const rate = CURRENCY_CONFIG[downPaymentCurrency].toILS;
-    setDownPayment(Math.round(downPaymentInput * rate));
-  }, [downPaymentInput, downPaymentCurrency]);
-
-  const handleDownPaymentCurrencyChange = (newCurrency: DownPaymentCurrency) => {
-    // Convert existing input value to new currency
-    const currentILS = downPaymentInput * CURRENCY_CONFIG[downPaymentCurrency].toILS;
-    const newRate = CURRENCY_CONFIG[newCurrency].toILS;
-    setDownPaymentInput(Math.round(currentILS / newRate));
-    setDownPaymentCurrency(newCurrency);
-  };
-
   // Track user interaction
   useEffect(() => {
     if (monthlyIncome !== DEFAULTS.monthlyIncome || downPayment !== DEFAULTS.downPayment) {
@@ -211,8 +188,7 @@ function AffordabilityCalculatorContent() {
         if (parsed.monthlyIncome) setMonthlyIncome(parsed.monthlyIncome);
         if (parsed.spouseIncome) setSpouseIncome(parsed.spouseIncome);
         if (parsed.monthlyDebts !== undefined) setMonthlyDebts(parsed.monthlyDebts);
-        if (parsed.downPaymentInput) setDownPaymentInput(parsed.downPaymentInput);
-        if (parsed.downPaymentCurrency) setDownPaymentCurrency(parsed.downPaymentCurrency);
+        if (parsed.downPayment) setDownPayment(parsed.downPayment);
         if (parsed.interestRate) setInterestRate(parsed.interestRate);
         if (parsed.loanTermYears) setLoanTermYears(parsed.loanTermYears);
         if (parsed.employmentType) setEmploymentType(parsed.employmentType);
@@ -226,11 +202,11 @@ function AffordabilityCalculatorContent() {
 
   useEffect(() => {
     const data = {
-      monthlyIncome, spouseIncome, monthlyDebts, downPaymentInput, downPaymentCurrency, interestRate,
+      monthlyIncome, spouseIncome, monthlyDebts, downPayment, interestRate,
       loanTermYears, employmentType, hasForeignIncome, foreignIncomePercent,
     };
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  }, [monthlyIncome, spouseIncome, monthlyDebts, downPaymentInput, downPaymentCurrency, interestRate, loanTermYears, employmentType, hasForeignIncome, foreignIncomePercent]);
+  }, [monthlyIncome, spouseIncome, monthlyDebts, downPayment, interestRate, loanTermYears, employmentType, hasForeignIncome, foreignIncomePercent]);
 
   useEffect(() => {
     if (buyerProfile) {
@@ -331,8 +307,7 @@ function AffordabilityCalculatorContent() {
 
   const handleReset = () => {
     setMonthlyIncome(DEFAULTS.monthlyIncome); setSpouseIncome(DEFAULTS.spouseIncome);
-    setMonthlyDebts(DEFAULTS.monthlyDebts); setDownPaymentInput(DEFAULTS.downPayment);
-    setDownPaymentCurrency('USD');
+    setMonthlyDebts(DEFAULTS.monthlyDebts); setDownPayment(DEFAULTS.downPayment);
     setInterestRate(DEFAULTS.interestRate); setLoanTermYears(DEFAULTS.loanTermYears);
     setEmploymentType(DEFAULTS.employmentType); setHasForeignIncome(DEFAULTS.hasForeignIncome);
     setForeignIncomePercent(DEFAULTS.foreignIncomePercent);
@@ -432,11 +407,14 @@ function AffordabilityCalculatorContent() {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-medium flex items-center">Your Monthly Gross Income<InfoTooltip content="Your salary before taxes and deductions. Israeli banks use gross income for debt-to-income (PTI) calculations." /></Label>
-                  <FormattedNumberInput value={monthlyIncome || undefined} onChange={(v) => setMonthlyIncome(v ?? 0)} prefix={currencySymbol} className="h-11" />
+                  <FormattedNumberInput value={monthlyIncome ? toDisplay(monthlyIncome) : undefined} onChange={(v) => setMonthlyIncome(toILS(v ?? 0))} prefix={currencySymbol} className="h-11" />
+                  {currency === 'USD' && monthlyIncome > 0 && (
+                    <p className="text-xs text-muted-foreground">≈ ₪{formatNumber(monthlyIncome)}/mo</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-medium flex items-center">Spouse/Partner Gross Income<InfoTooltip content="Banks evaluate each income separately — if one spouse is self-employed, only that portion gets discounted. Combined gross household income increases buying power." /></Label>
-                  <FormattedNumberInput value={spouseIncome || undefined} onChange={(v) => setSpouseIncome(v ?? 0)} prefix={currencySymbol} className="h-11" />
+                  <FormattedNumberInput value={spouseIncome ? toDisplay(spouseIncome) : undefined} onChange={(v) => setSpouseIncome(toILS(v ?? 0))} prefix={currencySymbol} className="h-11" />
                 </div>
                 <div className="space-y-3">
                    <Label className="text-sm font-medium flex items-center">Income Earned Abroad<InfoTooltip content="If part of your salary comes from a foreign employer or overseas work, Israeli banks discount it 30-40% because it's harder to verify. This reduces your borrowing power." /></Label>
@@ -445,35 +423,18 @@ function AffordabilityCalculatorContent() {
               </CardContent>
             </Card>
             <Card>
-              <CardHeader className="pb-4"><CardTitle className="text-base flex items-center gap-2"><Users className="h-4 w-4 text-primary" />Debts & Savings</CardTitle></CardHeader>
+              <CardHeader className="pb-4"><CardTitle className="text-base flex items-center gap-2"><PiggyBank className="h-4 w-4 text-primary" />Savings & Debts</CardTitle></CardHeader>
               <CardContent className="space-y-5">
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium flex items-center">Monthly Debt Payments<InfoTooltip content="Include car loans, credit cards, other loans. Banks count these against your borrowing capacity." /></Label>
-                  <FormattedNumberInput value={monthlyDebts || undefined} onChange={(v) => setMonthlyDebts(v ?? 0)} prefix={currencySymbol} className="h-11" />
+                  <Label className="text-sm font-medium flex items-center">Savings for Down Payment<InfoTooltip content={`Cash you have available for down payment. ${selectedBuyerType === 'first_time' || selectedBuyerType === 'oleh' ? 'First-time buyers/Olim need at least 25% down.' : selectedBuyerType === 'additional' || selectedBuyerType === 'upgrader' ? 'Upgraders need at least 30% down.' : 'Investors/foreign buyers need at least 50% down.'} Change currency in your global preferences (top right).`} /></Label>
+                  <FormattedNumberInput value={downPayment ? toDisplay(downPayment) : undefined} onChange={(v) => setDownPayment(toILS(v ?? 0))} prefix={currencySymbol} className="h-11" />
+                  {currency === 'USD' && downPayment > 0 && (
+                    <p className="text-xs text-muted-foreground">≈ ₪{formatNumber(downPayment)} at ${exchangeRate.toFixed(2)}/₪</p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium flex items-center">Down Payment Available<InfoTooltip content={`Cash you have for down payment. ${selectedBuyerType === 'first_time' || selectedBuyerType === 'oleh' ? 'First-time buyers/Olim need at least 25% down.' : selectedBuyerType === 'additional' || selectedBuyerType === 'upgrader' ? 'Upgraders need at least 30% down.' : 'Investors/foreign buyers need at least 50% down.'}`} /></Label>
-                  <div className="flex gap-2">
-                    <Select value={downPaymentCurrency} onValueChange={(v) => handleDownPaymentCurrencyChange(v as DownPaymentCurrency)}>
-                      <SelectTrigger className="h-11 w-[90px] shrink-0">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="ILS">₪ ILS</SelectItem>
-                        <SelectItem value="USD">$ USD</SelectItem>
-                        <SelectItem value="EUR">€ EUR</SelectItem>
-                        <SelectItem value="GBP">£ GBP</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <div className="flex-1">
-                      <FormattedNumberInput value={downPaymentInput || undefined} onChange={(v) => setDownPaymentInput(v ?? 0)} prefix={CURRENCY_CONFIG[downPaymentCurrency].symbol} className="h-11" />
-                    </div>
-                  </div>
-                  {downPaymentCurrency !== 'ILS' && (
-                    <p className="text-xs text-muted-foreground">
-                      ≈ ₪{formatNumber(downPayment)} at today's rate ({CURRENCY_CONFIG[downPaymentCurrency].symbol}1 = ₪{CURRENCY_CONFIG[downPaymentCurrency].toILS})
-                    </p>
-                  )}
+                  <Label className="text-sm font-medium flex items-center">Monthly Debt Payments<InfoTooltip content="Include car loans, credit cards, other loans. Banks count these against your borrowing capacity." /></Label>
+                  <FormattedNumberInput value={monthlyDebts ? toDisplay(monthlyDebts) : undefined} onChange={(v) => setMonthlyDebts(toILS(v ?? 0))} prefix={currencySymbol} className="h-11" />
                 </div>
               </CardContent>
             </Card>
