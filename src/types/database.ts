@@ -135,7 +135,7 @@ export interface CoAgent {
     agency_name: string | null;
     phone: string | null;
     avatar_url: string | null;
-    agency?: { id: string; name: string; logo_url: string | null } | null;
+    agency?: { id: string; name: string; slug: string | null; logo_url: string | null } | null;
   } | null;
 }
 
