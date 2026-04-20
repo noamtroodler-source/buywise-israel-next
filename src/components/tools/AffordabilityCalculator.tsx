@@ -307,8 +307,7 @@ function AffordabilityCalculatorContent() {
 
   const handleReset = () => {
     setMonthlyIncome(DEFAULTS.monthlyIncome); setSpouseIncome(DEFAULTS.spouseIncome);
-    setMonthlyDebts(DEFAULTS.monthlyDebts); setDownPaymentInput(DEFAULTS.downPayment);
-    setDownPaymentCurrency('USD');
+    setMonthlyDebts(DEFAULTS.monthlyDebts); setDownPayment(DEFAULTS.downPayment);
     setInterestRate(DEFAULTS.interestRate); setLoanTermYears(DEFAULTS.loanTermYears);
     setEmploymentType(DEFAULTS.employmentType); setHasForeignIncome(DEFAULTS.hasForeignIncome);
     setForeignIncomePercent(DEFAULTS.foreignIncomePercent);
