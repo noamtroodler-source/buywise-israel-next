@@ -156,7 +156,7 @@ export default function SetupPassword() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-amber-600" />
+              <AlertCircle className="h-5 w-5 text-warning" />
               <CardTitle>This link has already been used</CardTitle>
             </div>
             <CardDescription>
@@ -179,7 +179,7 @@ export default function SetupPassword() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+              <CheckCircle2 className="h-5 w-5 text-success" />
               <CardTitle>You're in</CardTitle>
             </div>
             <CardDescription>

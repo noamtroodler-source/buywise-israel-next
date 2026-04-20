@@ -200,6 +200,7 @@ const App = () => (
                         <Route path="/projects" element={<Projects />} />
                         <Route path="/projects/:slug" element={<ProjectDetail />} />
                         <Route path="/auth" element={<Auth />} />
+                        <Route path="/auth/setup-password" element={<SetupPassword />} />
                         
                         {/* Route aliases - redirect old/intuitive URLs to /listings */}
                         <Route path="/buy" element={<Navigate to="/listings?status=for_sale" replace />} />
