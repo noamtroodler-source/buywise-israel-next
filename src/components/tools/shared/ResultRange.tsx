@@ -72,7 +72,10 @@ export function ResultRange({
 }: ResultRangeProps) {
   const lowFormatted = formatValue(low, format, currencySymbol);
   const highFormatted = formatValue(high, format, currencySymbol);
-  const rangeText = `${lowFormatted} – ${highFormatted}`;
+  const isDegenerate =
+    lowFormatted === highFormatted ||
+    Math.abs(high - low) / Math.max(Math.abs(low), Math.abs(high), 1) < 0.02;
+  const rangeText = isDegenerate ? lowFormatted : `${lowFormatted} – ${highFormatted}`;
   
   const content = (
     <div className={cn(
@@ -172,12 +175,20 @@ export function formatCurrencyRange(
     return Math.round(value).toLocaleString();
   };
   
-  return `${currencySymbol}${formatCompact(low)} – ${currencySymbol}${formatCompact(high)}`;
+  const lowStr = `${currencySymbol}${formatCompact(low)}`;
+  const highStr = `${currencySymbol}${formatCompact(high)}`;
+  const isDegenerate =
+    lowStr === highStr ||
+    Math.abs(high - low) / Math.max(Math.abs(low), Math.abs(high), 1) < 0.02;
+  return isDegenerate ? lowStr : `${lowStr} – ${highStr}`;
 }
 
 /**
  * Helper to format a percentage range string
  */
 export function formatPercentageRange(low: number, high: number): string {
-  return `${low.toFixed(1)}% – ${high.toFixed(1)}%`;
+  const lowStr = `${low.toFixed(1)}%`;
+  const highStr = `${high.toFixed(1)}%`;
+  if (lowStr === highStr) return lowStr;
+  return `${lowStr} – ${highStr}`;
 }

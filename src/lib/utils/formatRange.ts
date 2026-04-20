@@ -30,7 +30,12 @@ export function formatPriceRange(
     return str.replace('.0M', 'M').replace('.0k', 'k');
   };
   
-  return `${symbol}${cleanFormat(formatCompact(low))}–${cleanFormat(formatCompact(high))}`;
+  const lowStr = `${symbol}${cleanFormat(formatCompact(low))}`;
+  const highStr = `${symbol}${cleanFormat(formatCompact(high))}`;
+  const isDegenerate =
+    lowStr === highStr ||
+    Math.abs(high - low) / Math.max(Math.abs(low), Math.abs(high), 1) < 0.02;
+  return isDegenerate ? lowStr : `${lowStr}–${highStr}`;
 }
 
 /**
@@ -47,10 +52,13 @@ export function formatMonthlyRange(
 
 /**
  * Format a percentage range
- * Example: "3.5%–4.2%"
+ * Example: "3.5%–4.2%" (collapses to single value when low ≈ high)
  */
 export function formatPercentRange(low: number, high: number): string {
-  return `${low.toFixed(1)}%–${high.toFixed(1)}%`;
+  const lowStr = `${low.toFixed(1)}%`;
+  const highStr = `${high.toFixed(1)}%`;
+  if (lowStr === highStr) return lowStr;
+  return `${lowStr}–${highStr}`;
 }
 
 /**
