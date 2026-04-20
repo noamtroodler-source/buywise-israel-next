@@ -10,6 +10,7 @@ import { useProvisioningAgencies, useProvisioningAgency, useCreateAgency } from 
 import { AgencyProvisioningSidebar } from '@/components/admin/agency-provisioning/AgencyProvisioningSidebar';
 import { AgencyProfileSection } from '@/components/admin/agency-provisioning/AgencyProfileSection';
 import { AgentRosterSection } from '@/components/admin/agency-provisioning/AgentRosterSection';
+import { ImportListingsSection } from '@/components/admin/agency-provisioning/ImportListingsSection';
 import { ListingsQualitySection } from '@/components/admin/agency-provisioning/ListingsQualitySection';
 import { HandoverSection } from '@/components/admin/agency-provisioning/HandoverSection';
 import { AuditLogSection } from '@/components/admin/agency-provisioning/AuditLogSection';
@@ -160,6 +161,7 @@ function SelectedAgencyWorkspace({ agency }: { agency: any }) {
     <>
       <AgencyProfileSection agency={agency} />
       <AgentRosterSection agencyId={agency.id} />
+      <ImportListingsSection agencyId={agency.id} agencyName={agency.name} />
       <ListingsQualitySection agencyId={agency.id} />
       <HandoverSection
         agency={agency}
