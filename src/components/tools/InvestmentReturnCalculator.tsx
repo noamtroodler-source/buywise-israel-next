@@ -35,6 +35,7 @@ import { cn } from '@/lib/utils';
 import { calculateTaxAmount } from '@/lib/calculations/purchaseTax';
 import { estimateAnnualExpenses } from '@/lib/calculations/rentalYield';
 import { useFormatPrice, useCurrencySymbol } from '@/contexts/PreferencesContext';
+import { useCurrencyInput } from '@/hooks/useCurrencyInput';
 import { useSavePromptTrigger } from '@/hooks/useSavePromptTrigger';
 
 const STOCK_MARKET_BENCHMARK = 0.07;
@@ -225,6 +226,7 @@ function generateInsights(v: FormValues, r: CalculationResults, formatCurrency: 
 export function InvestmentReturnCalculator() {
   const formatCurrency = useFormatPrice();
   const currencySymbol = useCurrencySymbol();
+  const { toILS, toDisplay } = useCurrencyInput();
   const { data: calcConstants } = useCalculatorConstants();
   const [showExpenseDetails, setShowExpenseDetails] = useState(false);
   const [showBreakdown, setShowBreakdown] = useState(false);
