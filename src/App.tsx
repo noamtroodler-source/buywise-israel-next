@@ -22,6 +22,7 @@ import PropertyDetail from "./pages/PropertyDetail";
 import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
 import Auth from "./pages/Auth";
+import SetupPassword from "./pages/auth/SetupPassword";
 import NotFound from "./pages/NotFound";
 
 // Lazy load everything else for smaller initial bundle
