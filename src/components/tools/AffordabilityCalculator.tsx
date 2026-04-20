@@ -622,7 +622,7 @@ function AffordabilityCalculatorContent() {
         show={showSavePrompt}
         calculatorName="affordability"
         onDismiss={dismissSavePrompt}
-        resultSummary={`Max budget: ${formatCurrencyRange(calculations.maxPropertyLow, calculations.maxPropertyHigh, currencySymbol)}`}
+        resultSummary={`Max budget: ${formatCurrencyRange(toDisplay(calculations.maxPropertyLow), toDisplay(calculations.maxPropertyHigh), currencySymbol)}`}
       />
     </>
   );
