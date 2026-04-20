@@ -175,6 +175,7 @@ export type Database = {
           notify_on_lead: boolean | null
           office_address: string | null
           office_hours: string | null
+          pending_items_dismissed_at: string | null
           phone: string | null
           provisioned_at: string | null
           provisioned_by: string | null
@@ -214,6 +215,7 @@ export type Database = {
           notify_on_lead?: boolean | null
           office_address?: string | null
           office_hours?: string | null
+          pending_items_dismissed_at?: string | null
           phone?: string | null
           provisioned_at?: string | null
           provisioned_by?: string | null
@@ -253,6 +255,7 @@ export type Database = {
           notify_on_lead?: boolean | null
           office_address?: string | null
           office_hours?: string | null
+          pending_items_dismissed_at?: string | null
           phone?: string | null
           provisioned_at?: string | null
           provisioned_by?: string | null
