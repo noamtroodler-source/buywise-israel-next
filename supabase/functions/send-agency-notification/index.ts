@@ -10,7 +10,13 @@ type NotificationType =
   | 'agent_joined'
   | 'agent_left'
   | 'new_lead'
-  | 'join_request';
+  | 'join_request'
+  // Co-listing v2 events
+  | 'colist_primary_gained'
+  | 'colist_primary_lost'
+  | 'colist_dispute_filed'
+  | 'colist_dispute_resolved'
+  | 'colist_boost_expiring';
 
 interface NotificationPayload {
   type: NotificationType;
@@ -21,6 +27,9 @@ interface NotificationPayload {
   leadEmail?: string;
   propertyTitle?: string;
   message?: string;
+  // Co-listing context
+  title?: string;
+  actionUrl?: string;
 }
 
 const brandHeader = `
