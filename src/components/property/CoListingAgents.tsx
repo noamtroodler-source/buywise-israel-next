@@ -159,7 +159,6 @@ export function CoListingAgents({ coAgents, propertyId, className }: CoListingAg
             'Agency';
           const agencyLogo = coAgent.agent?.agency?.logo_url;
           const agencySlug = coAgent.agent?.agency?.slug;
-          const sourceLabel = SOURCE_LABELS[coAgent.source_type] || coAgent.source_type;
           const agencyHref = agencySlug ? `/agencies/${agencySlug}` : null;
 
           const Identity = (
@@ -179,38 +178,21 @@ export function CoListingAgents({ coAgents, propertyId, className }: CoListingAg
             </div>
           );
 
-          return (
-            <div
+          const rowClass =
+            'flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/20 px-3 py-2 hover:bg-muted/40 transition-colors';
+
+          return agencyHref ? (
+            <a
               key={coAgent.id}
-              className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/20 px-3 py-2 hover:bg-muted/40 transition-colors"
+              href={agencyHref}
+              className={rowClass}
+              title={`View ${agencyName} on BuyWiseIsrael`}
             >
-              {agencyHref ? (
-                <a
-                  href={agencyHref}
-                  className="min-w-0 flex-1 group"
-                  title={`View ${agencyName}`}
-                >
-                  {Identity}
-                </a>
-              ) : (
-                Identity
-              )}
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <Badge variant="outline" className="text-xs h-5 px-1.5">
-                  {sourceLabel}
-                </Badge>
-                {coAgent.source_url && (
-                  <a
-                    href={coAgent.source_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-muted-foreground hover:text-primary transition-colors"
-                    title="View original listing on source site"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                )}
-              </div>
+              {Identity}
+            </a>
+          ) : (
+            <div key={coAgent.id} className={rowClass}>
+              {Identity}
             </div>
           );
         })}
