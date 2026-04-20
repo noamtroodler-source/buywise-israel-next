@@ -7572,6 +7572,16 @@ export type Database = {
           agency_name: string
         }[]
       }
+      validate_password_setup_token: {
+        Args: { p_token: string }
+        Returns: {
+          agency_id: string
+          is_valid: boolean
+          purpose: Database["public"]["Enums"]["password_setup_purpose"]
+          user_id: string
+          was_already_used: boolean
+        }[]
+      }
     }
     Enums: {
       agency_management_status:

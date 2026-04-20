@@ -22,6 +22,7 @@ import PropertyDetail from "./pages/PropertyDetail";
 import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
 import Auth from "./pages/Auth";
+import SetupPassword from "./pages/auth/SetupPassword";
 import NotFound from "./pages/NotFound";
 
 // Lazy load everything else for smaller initial bundle
@@ -200,6 +201,7 @@ const App = () => (
                         <Route path="/projects" element={<Projects />} />
                         <Route path="/projects/:slug" element={<ProjectDetail />} />
                         <Route path="/auth" element={<Auth />} />
+                        <Route path="/auth/setup-password" element={<SetupPassword />} />
                         
                         {/* Route aliases - redirect old/intuitive URLs to /listings */}
                         <Route path="/buy" element={<Navigate to="/listings?status=for_sale" replace />} />
