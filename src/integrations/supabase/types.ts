@@ -7049,6 +7049,7 @@ export type Database = {
         Returns: string
       }
       colisting_boost_expiry_sweep: { Args: never; Returns: Json }
+      colisting_boost_warning_sweep: { Args: never; Returns: Json }
       colisting_stale_sweep: {
         Args: { p_cooldown_days?: number; p_stale_days?: number }
         Returns: {
@@ -7056,6 +7057,16 @@ export type Database = {
           previous_agency_id: string
           property_id: string
         }[]
+      }
+      create_agency_notification: {
+        Args: {
+          p_action_url?: string
+          p_agency_id: string
+          p_message: string
+          p_title: string
+          p_type: string
+        }
+        Returns: undefined
       }
       end_primary_boost: { Args: { p_property_id: string }; Returns: Json }
       file_primary_dispute_with_colist: {
