@@ -11,6 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { CheckCircle2, KeyRound, Loader2, Copy, Send, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useCities } from '@/hooks/useCities';
+import { cn } from '@/lib/utils';
 import {
   ProvisioningAgency,
   useUpdateAgency,
@@ -27,6 +29,7 @@ interface Props {
 export function AgencyProfileSection({ agency }: Props) {
   const update = useUpdateAgency(agency.id);
   const provision = useProvisionAgencyAccount();
+  const { data: cities = [] } = useCities();
   const reveal = useRevealCredentials();
   const resend = useResendSetupLink();
   const [secureRevealOpen, setSecureRevealOpen] = useState(false);
@@ -39,7 +42,7 @@ export function AgencyProfileSection({ agency }: Props) {
     description: agency.description || '',
     website: agency.website || '',
     office_address: agency.office_address || '',
-    cities_covered: (agency.cities_covered || []).join(', '),
+    cities_covered: (agency.cities_covered || []) as string[],
     logo_url: agency.logo_url || '',
   });
   const [strategy, setStrategy] = useState(agency.agent_email_strategy);
@@ -100,7 +103,7 @@ export function AgencyProfileSection({ agency }: Props) {
       website: form.website,
       office_address: form.office_address,
       logo_url: form.logo_url,
-      cities_covered: form.cities_covered.split(',').map(s => s.trim()).filter(Boolean) as any,
+      cities_covered: form.cities_covered as any,
     });
   }
 
@@ -224,8 +227,40 @@ export function AgencyProfileSection({ agency }: Props) {
           <Input id="address" value={form.office_address} onChange={e => setForm({ ...form, office_address: e.target.value })} />
         </div>
         <div className="md:col-span-2">
-          <Label htmlFor="cities">Cities covered (comma-separated)</Label>
-          <Input id="cities" value={form.cities_covered} onChange={e => setForm({ ...form, cities_covered: e.target.value })} />
+          <Label>Cities covered</Label>
+          <p className="text-xs text-muted-foreground mt-1 mb-2">
+            Select every city this agency operates in
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {cities.map((city) => {
+              const active = form.cities_covered.includes(city.name);
+              return (
+                <button
+                  type="button"
+                  key={city.slug}
+                  onClick={() => setForm(prev => ({
+                    ...prev,
+                    cities_covered: active
+                      ? prev.cities_covered.filter(c => c !== city.name)
+                      : [...prev.cities_covered, city.name],
+                  }))}
+                  className={cn(
+                    "px-4 py-2 rounded-xl border text-sm font-medium transition-all",
+                    active
+                      ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                      : "bg-muted/50 text-muted-foreground border-border hover:bg-muted hover:border-primary/30"
+                  )}
+                >
+                  {city.name}
+                </button>
+              );
+            })}
+          </div>
+          {form.cities_covered.length > 0 && (
+            <p className="text-xs text-muted-foreground mt-2">
+              {form.cities_covered.length} selected
+            </p>
+          )}
         </div>
         <div className="md:col-span-2">
           <Label htmlFor="bio">Description / bio</Label>
