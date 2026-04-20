@@ -1682,6 +1682,51 @@ export type Database = {
           },
         ]
       }
+      colisting_reports: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          details: string | null
+          id: string
+          property_ids: string[]
+          reason: string
+          reporter_session_id: string | null
+          reporter_user_id: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          details?: string | null
+          id?: string
+          property_ids: string[]
+          reason: string
+          reporter_session_id?: string | null
+          reporter_user_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          details?: string | null
+          id?: string
+          property_ids?: string[]
+          reason?: string
+          reporter_session_id?: string | null
+          reporter_user_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       contact_reveals: {
         Row: {
           created_at: string
@@ -7069,6 +7114,15 @@ export type Database = {
         Returns: undefined
       }
       end_primary_boost: { Args: { p_property_id: string }; Returns: Json }
+      file_colisting_report: {
+        Args: {
+          p_details?: string
+          p_property_ids: string[]
+          p_reason: string
+          p_session_id?: string
+        }
+        Returns: string
+      }
       file_primary_dispute_with_colist: {
         Args: {
           p_disputing_agency_id: string
