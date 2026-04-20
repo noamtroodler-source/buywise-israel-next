@@ -187,23 +187,33 @@ export function PerplexityEnrichDialog({
           </TabsList>
 
           <TabsContent value="prompt" className="space-y-3 pt-3">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <Label>Agency name</Label>
-                <Input
-                  value={agencyName}
-                  onChange={(e) => setAgencyName(e.target.value)}
-                  placeholder="e.g. Jerusalem Real Estate"
-                />
-              </div>
-              <div>
-                <Label>Source URL (Yad2, Madlan, agency site)</Label>
-                <Input
-                  value={sourceUrl}
-                  onChange={(e) => setSourceUrl(e.target.value)}
-                  placeholder="https://www.yad2.co.il/realestate/agency/..."
-                />
-              </div>
+            <div>
+              <Label>Agency name</Label>
+              <Input
+                value={agencyName}
+                onChange={(e) => setAgencyName(e.target.value)}
+                placeholder="e.g. Jerusalem Real Estate"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                Source URLs — fill any combination (more = better cross-referenced data)
+              </Label>
+              <Input
+                value={websiteUrl}
+                onChange={(e) => setWebsiteUrl(e.target.value)}
+                placeholder="🌐 Agency website — https://www.agency-name.co.il"
+              />
+              <Input
+                value={yad2Url}
+                onChange={(e) => setYad2Url(e.target.value)}
+                placeholder="🏠 Yad2 page — https://www.yad2.co.il/realestate/agency/..."
+              />
+              <Input
+                value={madlanUrl}
+                onChange={(e) => setMadlanUrl(e.target.value)}
+                placeholder="🗺️ Madlan page — https://www.madlan.co.il/agencies/..."
+              />
             </div>
             <div>
               <Label className="text-xs uppercase tracking-wide text-muted-foreground">Prompt preview</Label>
