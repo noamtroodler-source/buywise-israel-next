@@ -3833,6 +3833,57 @@ export type Database = {
         }
         Relationships: []
       }
+      merge_events: {
+        Row: {
+          id: string
+          loser_property_id: string
+          loser_snapshot: Json
+          merged_at: string
+          merged_by: string | null
+          unmerge_deadline: string
+          unmerged_at: string | null
+          unmerged_by: string | null
+          winner_property_id: string
+        }
+        Insert: {
+          id?: string
+          loser_property_id: string
+          loser_snapshot: Json
+          merged_at?: string
+          merged_by?: string | null
+          unmerge_deadline?: string
+          unmerged_at?: string | null
+          unmerged_by?: string | null
+          winner_property_id: string
+        }
+        Update: {
+          id?: string
+          loser_property_id?: string
+          loser_snapshot?: Json
+          merged_at?: string
+          merged_by?: string | null
+          unmerge_deadline?: string
+          unmerged_at?: string | null
+          unmerged_by?: string | null
+          winner_property_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "merge_events_loser_property_id_fkey"
+            columns: ["loser_property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "merge_events_winner_property_id_fkey"
+            columns: ["winner_property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mortgage_tracks: {
         Row: {
           best_use_case: string | null
@@ -4328,6 +4379,153 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      primary_agency_history: {
+        Row: {
+          actor_user_id: string | null
+          created_at: string
+          id: string
+          new_agency_id: string
+          notes: string | null
+          previous_agency_id: string | null
+          property_id: string
+          reason: string
+        }
+        Insert: {
+          actor_user_id?: string | null
+          created_at?: string
+          id?: string
+          new_agency_id: string
+          notes?: string | null
+          previous_agency_id?: string | null
+          property_id: string
+          reason: string
+        }
+        Update: {
+          actor_user_id?: string | null
+          created_at?: string
+          id?: string
+          new_agency_id?: string
+          notes?: string | null
+          previous_agency_id?: string | null
+          property_id?: string
+          reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "primary_agency_history_new_agency_id_fkey"
+            columns: ["new_agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "primary_agency_history_new_agency_id_fkey"
+            columns: ["new_agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "primary_agency_history_previous_agency_id_fkey"
+            columns: ["previous_agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "primary_agency_history_previous_agency_id_fkey"
+            columns: ["previous_agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "primary_agency_history_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      primary_disputes: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          disputing_agency_id: string
+          evidence_url: string | null
+          id: string
+          property_id: string
+          reason: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+          target_agency_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          disputing_agency_id: string
+          evidence_url?: string | null
+          id?: string
+          property_id: string
+          reason?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          target_agency_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          disputing_agency_id?: string
+          evidence_url?: string | null
+          id?: string
+          property_id?: string
+          reason?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          target_agency_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "primary_disputes_disputing_agency_id_fkey"
+            columns: ["disputing_agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "primary_disputes_disputing_agency_id_fkey"
+            columns: ["disputing_agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "primary_disputes_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "primary_disputes_target_agency_id_fkey"
+            columns: ["target_agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "primary_disputes_target_agency_id_fkey"
+            columns: ["target_agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies_public"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       professional_fees: {
         Row: {
@@ -4901,6 +5099,8 @@ export type Database = {
           bank_guarantee_required: boolean | null
           bathrooms: number | null
           bedrooms: number | null
+          boost_active_until: string | null
+          boosted_by_agency_id: string | null
           checks_required: boolean | null
           city: string
           claimed_at: string | null
@@ -4930,6 +5130,7 @@ export type Database = {
           is_featured: boolean | null
           is_furnished: boolean | null
           is_published: boolean | null
+          last_primary_refresh: string | null
           last_renewed_at: string | null
           last_sync_checked_at: string | null
           latitude: number | null
@@ -4946,6 +5147,7 @@ export type Database = {
           price: number
           price_reduced_at: string | null
           price_vs_avg_pct: number | null
+          primary_agency_id: string | null
           property_type: Database["public"]["Enums"]["property_type"]
           rejection_reason: string | null
           reviewed_at: string | null
@@ -4985,6 +5187,8 @@ export type Database = {
           bank_guarantee_required?: boolean | null
           bathrooms?: number | null
           bedrooms?: number | null
+          boost_active_until?: string | null
+          boosted_by_agency_id?: string | null
           checks_required?: boolean | null
           city: string
           claimed_at?: string | null
@@ -5014,6 +5218,7 @@ export type Database = {
           is_featured?: boolean | null
           is_furnished?: boolean | null
           is_published?: boolean | null
+          last_primary_refresh?: string | null
           last_renewed_at?: string | null
           last_sync_checked_at?: string | null
           latitude?: number | null
@@ -5030,6 +5235,7 @@ export type Database = {
           price: number
           price_reduced_at?: string | null
           price_vs_avg_pct?: number | null
+          primary_agency_id?: string | null
           property_type?: Database["public"]["Enums"]["property_type"]
           rejection_reason?: string | null
           reviewed_at?: string | null
@@ -5069,6 +5275,8 @@ export type Database = {
           bank_guarantee_required?: boolean | null
           bathrooms?: number | null
           bedrooms?: number | null
+          boost_active_until?: string | null
+          boosted_by_agency_id?: string | null
           checks_required?: boolean | null
           city?: string
           claimed_at?: string | null
@@ -5098,6 +5306,7 @@ export type Database = {
           is_featured?: boolean | null
           is_furnished?: boolean | null
           is_published?: boolean | null
+          last_primary_refresh?: string | null
           last_renewed_at?: string | null
           last_sync_checked_at?: string | null
           latitude?: number | null
@@ -5114,6 +5323,7 @@ export type Database = {
           price?: number
           price_reduced_at?: string | null
           price_vs_avg_pct?: number | null
+          primary_agency_id?: string | null
           property_type?: Database["public"]["Enums"]["property_type"]
           rejection_reason?: string | null
           reviewed_at?: string | null
@@ -5148,6 +5358,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "properties_boosted_by_agency_id_fkey"
+            columns: ["boosted_by_agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "properties_boosted_by_agency_id_fkey"
+            columns: ["boosted_by_agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "properties_claimed_by_agency_id_fkey"
             columns: ["claimed_by_agency_id"]
             isOneToOne: false
@@ -5157,6 +5381,20 @@ export type Database = {
           {
             foreignKeyName: "properties_claimed_by_agency_id_fkey"
             columns: ["claimed_by_agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "properties_primary_agency_id_fkey"
+            columns: ["primary_agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "properties_primary_agency_id_fkey"
+            columns: ["primary_agency_id"]
             isOneToOne: false
             referencedRelation: "agencies_public"
             referencedColumns: ["id"]
@@ -6694,6 +6932,14 @@ export type Database = {
       }
     }
     Functions: {
+      admin_override_primary: {
+        Args: {
+          p_new_agency_id: string
+          p_property_id: string
+          p_reason_note?: string
+        }
+        Returns: string
+      }
       appeal_cross_agency_conflict: {
         Args: {
           p_appealing_agency_id: string
@@ -6763,6 +7009,24 @@ export type Database = {
         }
         Returns: boolean
       }
+      check_intra_agency_duplicate: {
+        Args: {
+          p_address: string
+          p_agency_id: string
+          p_apartment_number?: string
+          p_bedrooms?: number
+          p_city: string
+          p_floor_number?: number
+          p_size_sqm?: number
+        }
+        Returns: {
+          address: string
+          city: string
+          created_at: string
+          property_id: string
+          title: string
+        }[]
+      }
       check_project_inquiry_dedupe: {
         Args: {
           p_inquiry_type: string
@@ -6775,6 +7039,31 @@ export type Database = {
       claim_listing: {
         Args: { p_agency_id: string; p_property_id: string }
         Returns: boolean
+      }
+      colist_as_secondary: {
+        Args: {
+          p_existing_property_id: string
+          p_new_agency_id: string
+          p_new_agent_id: string
+        }
+        Returns: string
+      }
+      colisting_stale_sweep: {
+        Args: { p_cooldown_days?: number; p_stale_days?: number }
+        Returns: {
+          new_agency_id: string
+          previous_agency_id: string
+          property_id: string
+        }[]
+      }
+      file_primary_dispute_with_colist: {
+        Args: {
+          p_disputing_agency_id: string
+          p_disputing_agent_id: string
+          p_existing_property_id: string
+          p_reason?: string
+        }
+        Returns: string
       }
       find_similar_images: {
         Args: {
@@ -6854,6 +7143,15 @@ export type Database = {
         Args: { p_agency_id: string; p_url: string }
         Returns: boolean
       }
+      log_primary_transition: {
+        Args: {
+          p_new_agency_id: string
+          p_notes?: string
+          p_property_id: string
+          p_reason: string
+        }
+        Returns: string
+      }
       merge_properties: {
         Args: {
           p_admin_id: string
@@ -6864,7 +7162,23 @@ export type Database = {
         Returns: undefined
       }
       normalize_url: { Args: { p_url: string }; Returns: string }
+      resolve_primary_dispute: {
+        Args: {
+          p_admin_notes?: string
+          p_dispute_id: string
+          p_resolution: string
+        }
+        Returns: undefined
+      }
       run_yad2_enqueue: { Args: never; Returns: Json }
+      upgrade_primary_from_scrape: {
+        Args: {
+          p_existing_property_id: string
+          p_new_agency_id: string
+          p_new_agent_id: string
+        }
+        Returns: string
+      }
       use_agency_invite_code: { Args: { invite_code: string }; Returns: string }
       validate_agency_invite_code: {
         Args: { invite_code: string }
