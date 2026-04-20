@@ -141,7 +141,7 @@ function MortgageCalculatorContent() {
       try {
         const data = JSON.parse(saved);
         setPropertyPrice(data.propertyPrice || DEFAULTS.propertyPrice);
-        setPropertyPriceInput(formatNumber(data.propertyPrice || DEFAULTS.propertyPrice));
+        setPropertyPriceInput(formatNumber(toDisplay(data.propertyPrice || DEFAULTS.propertyPrice)));
         setDownPaymentPercent(data.downPaymentPercent || DEFAULTS.downPaymentPercent);
         setDownPaymentInput((data.downPaymentPercent || DEFAULTS.downPaymentPercent).toString());
         setBuyerType(data.buyerType || DEFAULTS.buyerType);
@@ -325,7 +325,7 @@ function MortgageCalculatorContent() {
 
   const handleReset = () => {
     setPropertyPrice(DEFAULTS.propertyPrice);
-    setPropertyPriceInput(formatNumber(DEFAULTS.propertyPrice));
+    setPropertyPriceInput(formatNumber(toDisplay(DEFAULTS.propertyPrice)));
     setDownPaymentPercent(DEFAULTS.downPaymentPercent);
     setDownPaymentInput(DEFAULTS.downPaymentPercent.toString());
     setDownPaymentMode('percent');
