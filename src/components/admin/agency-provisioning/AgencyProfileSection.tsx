@@ -1,14 +1,16 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { CheckCircle2, KeyRound, Loader2, Copy, Send } from 'lucide-react';
+import { CheckCircle2, KeyRound, Loader2, Copy, Send, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import {
   ProvisioningAgency,
   useUpdateAgency,
@@ -44,8 +46,49 @@ export function AgencyProfileSection({ agency }: Props) {
   const [ownerName, setOwnerName] = useState('');
   const [provisionOpen, setProvisionOpen] = useState(false);
   const [credModal, setCredModal] = useState<{ email: string; password: string } | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   const isProvisioned = !!agency.admin_user_id;
+
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const isValidImage = await new Promise<boolean>((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(true);
+      img.onerror = () => resolve(false);
+      img.src = URL.createObjectURL(file);
+    });
+    if (!isValidImage) {
+      toast.error('Invalid image file. Please select a PNG or JPG.');
+      return;
+    }
+
+    setUploadingLogo(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `agency-${agency.id}/logo-${Date.now()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage
+        .from('property-images')
+        .upload(fileName, file, { upsert: true });
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('property-images')
+        .getPublicUrl(fileName);
+
+      setForm(prev => ({ ...prev, logo_url: publicUrl }));
+      toast.success('Logo uploaded');
+    } catch (err) {
+      console.error('Logo upload error:', err);
+      toast.error('Failed to upload logo');
+    } finally {
+      setUploadingLogo(false);
+      if (logoInputRef.current) logoInputRef.current.value = '';
+    }
+  }
 
   async function handleSaveProfile() {
     await update.mutateAsync({
