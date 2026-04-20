@@ -254,6 +254,13 @@ export function AgentRosterSection({ agencyId }: Props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <RevealCredentialsModal
+        open={!!revealUser}
+        onOpenChange={(o) => { if (!o) setRevealUser(null); }}
+        userId={revealUser?.id ?? null}
+        subjectLabel={revealUser?.label}
+      />
     </Card>
   );
 }

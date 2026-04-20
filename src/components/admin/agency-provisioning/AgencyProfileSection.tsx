@@ -7,14 +7,16 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { CheckCircle2, KeyRound, Loader2, Copy } from 'lucide-react';
+import { CheckCircle2, KeyRound, Loader2, Copy, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   ProvisioningAgency,
   useUpdateAgency,
   useProvisionAgencyAccount,
   useRevealCredentials,
+  useResendSetupLink,
 } from '@/hooks/useAgencyProvisioning';
+import { RevealCredentialsModal } from './RevealCredentialsModal';
 
 interface Props {
   agency: ProvisioningAgency;
