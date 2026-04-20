@@ -12,6 +12,7 @@ import { AgencyProfileSection } from '@/components/admin/agency-provisioning/Age
 import { AgentRosterSection } from '@/components/admin/agency-provisioning/AgentRosterSection';
 import { ListingsQualitySection } from '@/components/admin/agency-provisioning/ListingsQualitySection';
 import { HandoverSection } from '@/components/admin/agency-provisioning/HandoverSection';
+import { AuditLogSection } from '@/components/admin/agency-provisioning/AuditLogSection';
 import { useAgencyAgents } from '@/hooks/useAgencyProvisioning';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -165,6 +166,7 @@ function SelectedAgencyWorkspace({ agency }: { agency: any }) {
         agentCount={agents.length}
         listingCount={listingCount}
       />
+      <AuditLogSection agencyId={agency.id} />
     </>
   );
 }
