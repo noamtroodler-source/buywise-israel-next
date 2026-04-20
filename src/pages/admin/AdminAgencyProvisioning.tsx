@@ -113,9 +113,6 @@ export default function AdminAgencyProvisioning() {
                 onChange={e => setNewAgency({ ...newAgency, name: e.target.value })}
                 placeholder="e.g. Jerusalem Real Estate"
               />
-              <p className="text-xs text-muted-foreground mt-1">
-                The public URL will be generated automatically from the name.
-              </p>
             </div>
             <div>
               <Label>Owner email (optional now)</Label>
