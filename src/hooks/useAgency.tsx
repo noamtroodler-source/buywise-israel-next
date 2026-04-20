@@ -178,9 +178,9 @@ export function useAgencyListings(
     queryFn: async () => {
       if (!agencyId) return [];
 
-      const statusFilter = category === 'buy'
-        ? (status === 'active' ? ['for_sale'] as const : ['sold'] as const)
-        : (status === 'active' ? ['for_rent'] as const : ['rented'] as const);
+      const statusFilter: ('for_sale' | 'for_rent' | 'sold' | 'rented')[] = category === 'buy'
+        ? (status === 'active' ? ['for_sale'] : ['sold'])
+        : (status === 'active' ? ['for_rent'] : ['rented']);
 
       const selectClause = `
         *,
@@ -192,12 +192,12 @@ export function useAgencyListings(
       `;
 
       // Primary: agency owns it outright
-      const primaryFetch = supabase
-        .from('properties')
+      const primaryFetch: any = (supabase
+        .from('properties') as any)
         .select(selectClause)
-        .eq('primary_agency_id' as any, agencyId)
+        .eq('primary_agency_id', agencyId)
         .eq('is_published', true)
-        .in('listing_status', statusFilter as unknown as string[])
+        .in('listing_status', statusFilter)
         .order('created_at', { ascending: false });
 
       // Co-listed: agency is secondary via property_co_agents
@@ -216,12 +216,12 @@ export function useAgencyListings(
 
       let coListed: any[] = [];
       if (coListedIds.length > 0) {
-        const { data, error } = await supabase
-          .from('properties')
+        const { data, error } = await (supabase
+          .from('properties') as any)
           .select(selectClause)
           .in('id', coListedIds)
           .eq('is_published', true)
-          .in('listing_status', statusFilter as unknown as string[])
+          .in('listing_status', statusFilter)
           .order('created_at', { ascending: false });
         if (error) throw error;
         coListed = data ?? [];
