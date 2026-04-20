@@ -187,7 +187,7 @@ export function useAgencyListings(
         agent:agents(*, agency:agencies(id, name, logo_url, is_partner)),
         co_agents:property_co_agents(
           id, source_url, source_type,
-          agent:agents(id, name, agency_name, phone, avatar_url, agency:agencies(id, name, logo_url))
+          agent:agents(id, name, agency_name, phone, avatar_url, agency:agencies(id, name, slug, logo_url))
         )
       `;
 

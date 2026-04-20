@@ -158,40 +158,58 @@ export function CoListingAgents({ coAgents, propertyId, className }: CoListingAg
             coAgent.agent?.agency_name ||
             'Agency';
           const agencyLogo = coAgent.agent?.agency?.logo_url;
+          const agencySlug = coAgent.agent?.agency?.slug;
           const sourceLabel = SOURCE_LABELS[coAgent.source_type] || coAgent.source_type;
+          const agencyHref = agencySlug ? `/agencies/${agencySlug}` : null;
+
+          const Identity = (
+            <div className="flex items-center gap-2 min-w-0">
+              <Avatar className="h-7 w-7 flex-shrink-0">
+                <AvatarImage src={agencyLogo || undefined} alt={agencyName} />
+                <AvatarFallback className="bg-muted text-xs">
+                  <Building2 className="w-3.5 h-3.5 text-muted-foreground" />
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0">
+                <p className="text-xs font-medium text-foreground truncate">{agencyName}</p>
+                {coAgent.agent?.name && (
+                  <p className="text-xs text-muted-foreground truncate">{coAgent.agent.name}</p>
+                )}
+              </div>
+            </div>
+          );
 
           return (
             <div
               key={coAgent.id}
               className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/20 px-3 py-2 hover:bg-muted/40 transition-colors"
             >
-              <div className="flex items-center gap-2 min-w-0">
-                <Avatar className="h-7 w-7 flex-shrink-0">
-                  <AvatarImage src={agencyLogo || undefined} alt={agencyName} />
-                  <AvatarFallback className="bg-muted text-xs">
-                    <Building2 className="w-3.5 h-3.5 text-muted-foreground" />
-                  </AvatarFallback>
-                </Avatar>
-                <div className="min-w-0">
-                  <p className="text-xs font-medium text-foreground truncate">{agencyName}</p>
-                  {coAgent.agent?.name && (
-                    <p className="text-xs text-muted-foreground truncate">{coAgent.agent.name}</p>
-                  )}
-                </div>
-              </div>
+              {agencyHref ? (
+                <a
+                  href={agencyHref}
+                  className="min-w-0 flex-1 group"
+                  title={`View ${agencyName}`}
+                >
+                  {Identity}
+                </a>
+              ) : (
+                Identity
+              )}
               <div className="flex items-center gap-2 flex-shrink-0">
                 <Badge variant="outline" className="text-xs h-5 px-1.5">
                   {sourceLabel}
                 </Badge>
-                <a
-                  href={coAgent.source_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-muted-foreground hover:text-primary transition-colors"
-                  title="View original listing"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </a>
+                {coAgent.source_url && (
+                  <a
+                    href={coAgent.source_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-muted-foreground hover:text-primary transition-colors"
+                    title="View original listing on source site"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                )}
               </div>
             </div>
           );
