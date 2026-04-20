@@ -170,6 +170,22 @@ export function StepDetails() {
                 />
               </div>
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="apartment_number" className="flex items-center gap-2">
+                Apartment # <span className="text-xs text-muted-foreground font-normal">(optional)</span>
+              </Label>
+              <Input
+                id="apartment_number"
+                value={data.apartment_number ?? ''}
+                onChange={(e) => updateData({ apartment_number: e.target.value || undefined })}
+                placeholder="e.g., 4B"
+                maxLength={16}
+                className="h-11 rounded-xl"
+              />
+              <p className="text-xs text-muted-foreground">
+                Helps us tell your listing apart from other apartments in the same building. Stays internal — not shown publicly.
+              </p>
+            </div>
           </div>
         )}
 

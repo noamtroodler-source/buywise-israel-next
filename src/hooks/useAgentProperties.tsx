@@ -33,6 +33,7 @@ export interface CreatePropertyData {
   lot_size_sqm?: number;
   floor?: number;
   total_floors?: number;
+  apartment_number?: string;
   year_built?: number;
   features?: string[];
   images?: string[];

@@ -23,6 +23,9 @@ export interface PropertyWizardData {
   lot_size_sqm: number | undefined;
   floor: number | undefined;
   total_floors: number | undefined;
+  /** Optional apartment / unit number. Stays internal unless the buyer needs
+   *  a unit-level discriminator (co-listing confirm flow, accurate dedup). */
+  apartment_number: string | undefined;
   year_built: number | undefined;
   parking: number;
   
@@ -110,6 +113,7 @@ export const defaultPropertyData: PropertyWizardData = {
   lot_size_sqm: undefined,
   floor: undefined,
   total_floors: undefined,
+  apartment_number: undefined,
   year_built: undefined,
   parking: 0,
   condition: 'good',

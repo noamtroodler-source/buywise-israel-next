@@ -23,8 +23,15 @@ import { useAgencyListingsManagement } from '@/hooks/useAgencyListings';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { SaveStatusIndicator } from '@/components/shared/SaveStatusIndicator';
 import { PropertySubmittedDialog } from '@/components/agent/PropertySubmittedDialog';
-import { useDuplicateCheck, type DuplicateMatch } from '@/hooks/useDuplicateCheck';
-import { DuplicateBlockDialog } from '@/components/agency/DuplicateBlockDialog';
+import {
+  useDuplicateCheck,
+  colistAsSecondary,
+  upgradePrimaryFromScrape,
+  filePrimaryDisputeWithColist,
+  type DuplicateCheckResult,
+} from '@/hooks/useDuplicateCheck';
+import { ConfirmDuplicateDialog } from '@/components/agency/ConfirmDuplicateDialog';
+import { toast } from 'sonner';
 
 const AGENCY_WIZARD_STORAGE_KEY = 'agency-property-wizard-draft';
 
@@ -78,7 +85,8 @@ function AgencyWizardContent() {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [submittedTitle, setSubmittedTitle] = useState('');
   const [showRecoveryDialog, setShowRecoveryDialog] = useState(false);
-  const [duplicateMatch, setDuplicateMatch] = useState<DuplicateMatch | null>(null);
+  const [duplicateResult, setDuplicateResult] = useState<DuplicateCheckResult | null>(null);
+  const [isActingOnDuplicate, setIsActingOnDuplicate] = useState(false);
   const hasCheckedDraft = useRef(false);
   const duplicateCheck = useDuplicateCheck();
 
@@ -145,6 +153,7 @@ function AgencyWizardContent() {
     lot_size_sqm: data.lot_size_sqm,
     floor: data.floor,
     total_floors: data.total_floors,
+    apartment_number: data.apartment_number,
     year_built: data.year_built,
     parking: data.parking,
     features: data.features,
@@ -177,6 +186,70 @@ function AgencyWizardContent() {
     }
   };
 
+  /**
+   * Choice handler for the ConfirmDuplicateDialog. See NewPropertyWizard for
+   * mirror implementation — agency version routes to /agency/listings on
+   * success.
+   */
+  const handleDuplicateChoice = async (
+    action: 'same_unit' | 'different_unit' | 'dispute' | 'cancel',
+    disputeReason?: string,
+  ) => {
+    if (!duplicateResult || duplicateResult.kind === 'clear') return;
+    if (!agency?.id || !assignedAgentId) {
+      toast.error('Missing agency / agent context');
+      return;
+    }
+    if (action === 'cancel') {
+      setDuplicateResult(null);
+      return;
+    }
+    if (action === 'different_unit') {
+      toast.info('Add the floor or apartment # to tell the units apart.');
+      setDuplicateResult(null);
+      setCurrentStep(2); // agency wizard: step 2 is Details (floor/apt)
+      return;
+    }
+
+    setIsActingOnDuplicate(true);
+    try {
+      if (duplicateResult.kind === 'intra_block') {
+        setDuplicateResult(null);
+        return;
+      }
+
+      const match = duplicateResult.match;
+      if (action === 'same_unit' && duplicateResult.kind === 'confirm_scrape') {
+        await upgradePrimaryFromScrape(match.property_id, agency.id, assignedAgentId);
+        toast.success('Your agency is now the primary on this listing. Edit it from your dashboard.');
+        autoSave.clearSavedData();
+        setDuplicateResult(null);
+        navigate('/agency/listings');
+      } else if (action === 'same_unit' && duplicateResult.kind === 'confirm_manual') {
+        await colistAsSecondary(match.property_id, agency.id, assignedAgentId);
+        toast.success('Added as a co-listing agency. You\'ll receive inquiries when buyers pick your agency.');
+        autoSave.clearSavedData();
+        setDuplicateResult(null);
+        navigate('/agency/listings');
+      } else if (action === 'dispute' && duplicateResult.kind === 'confirm_manual') {
+        await filePrimaryDisputeWithColist(
+          match.property_id,
+          agency.id,
+          assignedAgentId,
+          disputeReason ?? null,
+        );
+        toast.success('Dispute filed. Your listing is published as co-listed while our team reviews.');
+        autoSave.clearSavedData();
+        setDuplicateResult(null);
+        navigate('/agency/listings');
+      }
+    } catch (e) {
+      toast.error(`Action failed: ${(e as Error).message}`);
+    } finally {
+      setIsActingOnDuplicate(false);
+    }
+  };
+
   const handleSubmitForReview = async () => {
     if (!assignedAgentId) return;
     setIsSubmitting(true);
@@ -184,6 +257,7 @@ function AgencyWizardContent() {
       if (agency?.id && data.address && data.city) {
         const result = await duplicateCheck.mutateAsync({
           agencyId: agency.id,
+          agentId: assignedAgentId,
           address: data.address,
           city: data.city,
           neighborhood: data.neighborhood,
@@ -193,9 +267,10 @@ function AgencyWizardContent() {
           latitude: data.latitude,
           longitude: data.longitude,
           floor: data.floor,
+          apartment_number: data.apartment_number,
         });
-        if (result.blocking) {
-          setDuplicateMatch(result.blocking);
+        if (result.kind !== 'clear') {
+          setDuplicateResult(result);
           setIsSubmitting(false);
           return;
         }
@@ -374,15 +449,15 @@ function AgencyWizardContent() {
           propertyTitle={submittedTitle}
         />
 
-        <DuplicateBlockDialog
-          open={!!duplicateMatch}
-          onOpenChange={(o) => !o && setDuplicateMatch(null)}
-          match={duplicateMatch}
-          requestingAgencyId={agency?.id || ''}
+        <ConfirmDuplicateDialog
+          open={!!duplicateResult}
+          onOpenChange={(o) => !o && setDuplicateResult(null)}
+          result={duplicateResult}
           attemptedAddress={data.address || ''}
           attemptedCity={data.city || null}
-          attemptedNeighborhood={data.neighborhood || null}
-          onMarkDifferentUnit={() => setCurrentStep(2)}
+          onChoice={handleDuplicateChoice}
+          isActing={isActingOnDuplicate}
+          existingDraftHref="/agency/listings"
         />
       </div>
     </Layout>
