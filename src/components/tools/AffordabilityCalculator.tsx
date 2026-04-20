@@ -498,16 +498,25 @@ function AffordabilityCalculatorContent() {
               <div className="text-center py-4">
                 <p className="text-xs text-muted-foreground mb-2">Based on {MORTGAGE_RATE_RANGES.low}–{MORTGAGE_RATE_RANGES.high}% rates</p>
                 <motion.p key={calculations.maxPropertyPrice} initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-4xl md:text-5xl font-bold text-primary whitespace-nowrap">
-                  {formatCurrencyRange(calculations.maxPropertyLow, calculations.maxPropertyHigh, currencySymbol)}
+                  {formatCurrencyRange(toDisplay(calculations.maxPropertyLow), toDisplay(calculations.maxPropertyHigh), currencySymbol)}
                 </motion.p>
-                <p className="text-sm text-muted-foreground mt-2">Maximum property price range</p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  {isRangeDegenerate(calculations.maxPropertyLow, calculations.maxPropertyHigh) ? 'Maximum property price' : 'Maximum property price range'}
+                </p>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-3 rounded-lg bg-muted/60"><p className="text-xs text-muted-foreground">Maximum Loan</p><p className="text-lg font-semibold">{formatCurrencyRange(calculations.maxLoanLow, calculations.maxLoanHigh, currencySymbol)}</p></div>
                 <div className="p-3 rounded-lg bg-muted/60">
-                  <p className="text-xs text-muted-foreground">Monthly Payment</p>
+                  <p className="text-xs text-muted-foreground">
+                    {isRangeDegenerate(calculations.maxLoanLow, calculations.maxLoanHigh) ? 'Maximum Loan' : 'Maximum Loan Range'}
+                  </p>
+                  <p className="text-lg font-semibold">{formatCurrencyRange(toDisplay(calculations.maxLoanLow), toDisplay(calculations.maxLoanHigh), currencySymbol)}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/60">
+                  <p className="text-xs text-muted-foreground">
+                    {isRangeDegenerate(calculations.monthlyPaymentLow, calculations.monthlyPaymentHigh) ? 'Monthly Payment' : 'Monthly Payment Range'}
+                  </p>
                   <p className="text-lg font-semibold">
-                    {formatCurrencyRange(calculations.monthlyPaymentLow, calculations.monthlyPaymentHigh, currencySymbol)}
+                    {formatCurrencyRange(toDisplay(calculations.monthlyPaymentLow), toDisplay(calculations.monthlyPaymentHigh), currencySymbol)}
                   </p>
                 </div>
               </div>
@@ -530,7 +539,12 @@ function AffordabilityCalculatorContent() {
               </div>
               <div className="p-3 rounded-lg bg-muted/50 border border-border/50">
                 <p className="text-xs text-muted-foreground">
-                  <strong>Rate sensitivity:</strong> If rates rise 1%, your max budget drops by ~{formatPrice(Math.round(calculations.stressedReduction / 2))}
+                  <strong>Rate sensitivity:</strong>{' '}
+                  {calculations.limitingFactor === 'LTV'
+                    ? "your budget is capped by your down payment — rate changes won't move it."
+                    : calculations.stressedReduction1 < 10000
+                      ? `if rates rise 1%, your max budget changes by less than ${formatPrice(10000)}.`
+                      : `if rates rise 1%, your max budget drops by ~${formatPrice(calculations.stressedReduction1)}.`}
                 </p>
               </div>
               {calculations.limitingFactor === 'LTV' ? <div className="flex items-start gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20"><AlertTriangle className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" /><p className="text-xs text-primary">Your down payment limits your budget. With more cash down, you could afford a higher-priced property.</p></div> : <div className="flex items-start gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20"><BadgeCheck className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" /><p className="text-xs text-primary">Your income is the limiting factor. Paying off existing debts would increase your buying power.</p></div>}
