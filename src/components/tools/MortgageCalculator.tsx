@@ -794,7 +794,7 @@ function MortgageCalculatorContent() {
         show={showSavePrompt}
         calculatorName="mortgage"
         onDismiss={dismissSavePrompt}
-        resultSummary={`Monthly payment: ${formatCurrencyRange(paymentRange.low, paymentRange.high, currencySymbol)}`}
+        resultSummary={`Monthly payment: ${formatCurrencyRange(toDisplay(paymentRange.low), toDisplay(paymentRange.high), currencySymbol)}`}
       />
     </>
   );
