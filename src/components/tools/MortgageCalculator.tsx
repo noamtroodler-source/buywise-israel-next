@@ -241,19 +241,31 @@ function MortgageCalculatorContent() {
     }
   };
 
+  // Re-sync input strings when currency preference changes
+  useEffect(() => {
+    setPropertyPriceInput(formatNumber(toDisplay(propertyPrice)));
+    if (downPaymentMode === 'amount') {
+      setDownPaymentInput(formatNumber(toDisplay(Math.round((propertyPrice * effectiveDownPaymentPercent) / 100))));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currency]);
+
   const handlePropertyPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPropertyPriceInput(e.target.value);
-    const parsed = parseFormattedNumber(e.target.value);
-    if (!isNaN(parsed)) setPropertyPrice(Math.max(500000, Math.min(50000000, parsed)));
+    const parsedDisplay = parseFormattedNumber(e.target.value);
+    if (!isNaN(parsedDisplay)) {
+      const ils = toILS(parsedDisplay);
+      setPropertyPrice(Math.max(500000, Math.min(50000000, ils)));
+    }
   };
 
   const handlePropertyPriceBlur = () => {
-    let value = parseFormattedNumber(propertyPriceInput);
-    value = Math.max(500000, Math.min(50000000, value));
-    setPropertyPrice(value);
-    setPropertyPriceInput(formatNumber(value));
+    const parsedDisplay = parseFormattedNumber(propertyPriceInput);
+    const ils = Math.max(500000, Math.min(50000000, toILS(parsedDisplay)));
+    setPropertyPrice(ils);
+    setPropertyPriceInput(formatNumber(toDisplay(ils)));
     if (downPaymentMode === 'amount') {
-      setDownPaymentInput(formatNumber(Math.round((value * effectiveDownPaymentPercent) / 100)));
+      setDownPaymentInput(formatNumber(toDisplay(Math.round((ils * effectiveDownPaymentPercent) / 100))));
     }
   };
 
@@ -263,8 +275,11 @@ function MortgageCalculatorContent() {
       const parsed = parseFloat(e.target.value);
       if (!isNaN(parsed)) setDownPaymentPercent(Math.max(minDownPayment, Math.min(80, parsed)));
     } else {
-      const parsed = parseFormattedNumber(e.target.value);
-      if (!isNaN(parsed)) setDownPaymentPercent(Math.max(minDownPayment, Math.min(80, (parsed / propertyPrice) * 100)));
+      const parsedDisplay = parseFormattedNumber(e.target.value);
+      if (!isNaN(parsedDisplay)) {
+        const amountILS = toILS(parsedDisplay);
+        setDownPaymentPercent(Math.max(minDownPayment, Math.min(80, (amountILS / propertyPrice) * 100)));
+      }
     }
   };
 
@@ -275,19 +290,20 @@ function MortgageCalculatorContent() {
       setDownPaymentPercent(value);
       setDownPaymentInput(value.toString());
     } else {
-      let amount = parseFormattedNumber(downPaymentInput);
+      const parsedDisplay = parseFormattedNumber(downPaymentInput);
+      let amountILS = toILS(parsedDisplay);
       const minAmount = (propertyPrice * minDownPayment) / 100;
       const maxAmount = propertyPrice * 0.8;
-      amount = Math.max(minAmount, Math.min(maxAmount, amount));
-      setDownPaymentPercent((amount / propertyPrice) * 100);
-      setDownPaymentInput(formatNumber(Math.round(amount)));
+      amountILS = Math.max(minAmount, Math.min(maxAmount, amountILS));
+      setDownPaymentPercent((amountILS / propertyPrice) * 100);
+      setDownPaymentInput(formatNumber(toDisplay(Math.round(amountILS))));
     }
   };
 
   const toggleDownPaymentMode = () => {
     if (downPaymentMode === 'percent') {
       setDownPaymentMode('amount');
-      setDownPaymentInput(formatNumber(Math.round(downPaymentAmount)));
+      setDownPaymentInput(formatNumber(toDisplay(Math.round(downPaymentAmount))));
     } else {
       setDownPaymentMode('percent');
       setDownPaymentInput(effectiveDownPaymentPercent.toFixed(0));
