@@ -138,16 +138,6 @@ export function StickyContactCard({
                   {agent.agency_name && (
                     <p className="text-sm text-muted-foreground truncate">{agent.agency_name}</p>
                   )}
-                  {coAgentCount > 0 && (
-                    <button
-                      type="button"
-                      onClick={scrollToCoListing}
-                      className="mt-1 inline-flex items-center gap-1 text-xs text-primary hover:underline"
-                    >
-                      <Users className="h-3 w-3" />
-                      Also listed by {coAgentCount} {coAgentCount === 1 ? 'other' : 'others'}
-                    </button>
-                  )}
                 </div>
               </div>
               <Separator />
@@ -336,19 +326,6 @@ export function MobileContactBar({
             <div className="text-center">
               <span className="text-lg font-bold text-foreground">{formatCompactPrice(price)}</span>
             </div>
-          )}
-          {coAgentCount > 0 && (
-            <button
-              type="button"
-              onClick={() => {
-                const el = document.getElementById('co-listing-agents');
-                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              }}
-              className="w-full inline-flex items-center justify-center gap-1 text-xs text-primary hover:underline"
-            >
-              <Users className="h-3 w-3" />
-              Also listed by {coAgentCount} {coAgentCount === 1 ? 'other' : 'others'}
-            </button>
           )}
 
           <div className="flex items-center gap-2">
