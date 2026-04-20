@@ -110,16 +110,12 @@ export default function AdminAgencyProvisioning() {
               <Label>Agency name *</Label>
               <Input
                 value={newAgency.name}
-                onChange={e => {
-                  const name = e.target.value;
-                  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-                  setNewAgency({ ...newAgency, name, slug: newAgency.slug || slug });
-                }}
+                onChange={e => setNewAgency({ ...newAgency, name: e.target.value })}
+                placeholder="e.g. Jerusalem Real Estate"
               />
-            </div>
-            <div>
-              <Label>Slug *</Label>
-              <Input value={newAgency.slug} onChange={e => setNewAgency({ ...newAgency, slug: e.target.value })} />
+              <p className="text-xs text-muted-foreground mt-1">
+                The public URL will be generated automatically from the name.
+              </p>
             </div>
             <div>
               <Label>Owner email (optional now)</Label>
