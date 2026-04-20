@@ -248,6 +248,13 @@ export function AgencyProfileSection({ agency }: Props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <RevealCredentialsModal
+        open={secureRevealOpen}
+        onOpenChange={setSecureRevealOpen}
+        userId={agency.admin_user_id ?? null}
+        subjectLabel="Owner"
+      />
     </Card>
   );
 }
