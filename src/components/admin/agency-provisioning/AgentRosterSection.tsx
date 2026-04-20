@@ -7,14 +7,16 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Plus, KeyRound, Loader2, Copy, UserCheck } from 'lucide-react';
+import { Plus, KeyRound, Loader2, Copy, UserCheck, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   useAgencyAgents,
   useCreateAgent,
   useProvisionAgentAccount,
   useRevealCredentials,
+  useResendSetupLink,
 } from '@/hooks/useAgencyProvisioning';
+import { RevealCredentialsModal } from './RevealCredentialsModal';
 
 interface Props {
   agencyId: string;
@@ -30,10 +32,12 @@ export function AgentRosterSection({ agencyId }: Props) {
   const create = useCreateAgent(agencyId);
   const provision = useProvisionAgentAccount(agencyId);
   const reveal = useRevealCredentials();
+  const resend = useResendSetupLink();
 
   const [addOpen, setAddOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [credModal, setCredModal] = useState<{ email: string; password: string } | null>(null);
+  const [revealUser, setRevealUser] = useState<{ id: string; label: string } | null>(null);
 
   async function handleAdd() {
     if (!form.name || !form.email) {
@@ -62,9 +66,8 @@ export function AgentRosterSection({ agencyId }: Props) {
     }
   }
 
-  async function handleRevealAgent(userId: string, email: string) {
-    const cred = await reveal.mutateAsync({ userId });
-    setCredModal({ email: cred.email || email, password: cred.password });
+  function openSecureReveal(userId: string, label: string) {
+    setRevealUser({ id: userId, label });
   }
 
   function copyToClipboard(text: string, label: string) {
@@ -139,14 +142,23 @@ export function AgentRosterSection({ agencyId }: Props) {
                   </TableCell>
                   <TableCell className="text-right">
                     {a.user_id ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleRevealAgent(a.user_id!, a.email)}
-                        disabled={reveal.isPending}
-                      >
-                        <KeyRound className="h-3 w-3 mr-1" /> Reveal
-                      </Button>
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => resend.mutate({ userId: a.user_id!, purpose: 'agent_setup' })}
+                          disabled={resend.isPending}
+                        >
+                          <Send className="h-3 w-3 mr-1" /> Resend
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => openSecureReveal(a.user_id!, a.name)}
+                        >
+                          <KeyRound className="h-3 w-3 mr-1" /> Reveal
+                        </Button>
+                      </div>
                     ) : (
                       <Button
                         size="sm"
