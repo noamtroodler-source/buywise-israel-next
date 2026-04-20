@@ -240,6 +240,168 @@ export function useProvisionAgentAccount(agencyId: string | null) {
   });
 }
 
+// ============================================================================
+// Phase 5: Listings + Quality
+// ============================================================================
+
+export type ProvisioningListing = {
+  id: string;
+  address: string;
+  city: string;
+  price: number | null;
+  size_sqm: number | null;
+  bedrooms: number | null;
+  images: string[] | null;
+  agent_id: string | null;
+  primary_agency_id: string | null;
+  claimed_by_agency_id: string | null;
+  ai_english_description: string | null;
+  description: string | null;
+  ai_suggestions: Record<string, any> | null;
+  quality_audit_score: number | null;
+  provisioning_audit_status: 'pending' | 'flagged' | 'reviewed' | 'approved' | null;
+  last_audit_at: string | null;
+  source_url: string | null;
+  source_last_checked_at: string | null;
+  year_built: number | null;
+  condition: string | null;
+  parking: number | null;
+};
+
+export type ListingQualityFlag = {
+  id: string;
+  property_id: string;
+  flag_type: string;
+  severity: 'critical' | 'warning' | 'info';
+  message: string | null;
+  auto_resolvable: boolean;
+  resolved_at: string | null;
+  created_at: string;
+};
+
+export function useAgencyListings(agencyId: string | null) {
+  return useQuery({
+    queryKey: ['provisioning-agency-listings', agencyId],
+    enabled: !!agencyId,
+    queryFn: async () => {
+      // Get agent ids for this agency
+      const { data: agents } = await supabase
+        .from('agents')
+        .select('id')
+        .eq('agency_id', agencyId!);
+      const agentIds = (agents || []).map((a: any) => a.id);
+
+      const orParts = [
+        `primary_agency_id.eq.${agencyId}`,
+        `claimed_by_agency_id.eq.${agencyId}`,
+      ];
+      if (agentIds.length > 0) {
+        orParts.push(`agent_id.in.(${agentIds.join(',')})`);
+      }
+
+      const { data, error } = await supabase
+        .from('properties')
+        .select(
+          'id, address, city, price, size_sqm, bedrooms, images, agent_id, primary_agency_id, claimed_by_agency_id, ai_english_description, description, ai_suggestions, quality_audit_score, provisioning_audit_status, last_audit_at, source_url, source_last_checked_at, year_built, condition, parking'
+        )
+        .or(orParts.join(','))
+        .order('quality_audit_score', { ascending: true, nullsFirst: true })
+        .limit(500);
+      if (error) throw error;
+      return (data || []) as ProvisioningListing[];
+    },
+  });
+}
+
+export function useListingFlags(agencyId: string | null, propertyIds: string[]) {
+  return useQuery({
+    queryKey: ['provisioning-listing-flags', agencyId, propertyIds.length],
+    enabled: !!agencyId && propertyIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('listing_quality_flags')
+        .select('id, property_id, flag_type, severity, message, auto_resolvable, resolved_at, created_at')
+        .in('property_id', propertyIds)
+        .is('resolved_at', null);
+      if (error) throw error;
+      return (data || []) as ListingQualityFlag[];
+    },
+  });
+}
+
+export function useRunListingsAudit() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { agencyId: string; propertyIds?: string[]; limit?: number }) => {
+      const { data, error } = await supabase.functions.invoke('audit-and-enrich-listings', {
+        body: {
+          agency_id: input.agencyId,
+          property_ids: input.propertyIds,
+          limit: input.limit ?? 100,
+        },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_d, vars) => {
+      toast.success('Audit started — refreshing in 5s');
+      setTimeout(() => {
+        qc.invalidateQueries({ queryKey: ['provisioning-agency-listings', vars.agencyId] });
+        qc.invalidateQueries({ queryKey: ['provisioning-listing-flags', vars.agencyId] });
+      }, 5000);
+    },
+    onError: (e: any) => toast.error(e?.message || 'Failed to start audit'),
+  });
+}
+
+export function useUpdateListing(agencyId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, patch }: { id: string; patch: Partial<ProvisioningListing> }) => {
+      const { error } = await supabase.from('properties').update(patch as any).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['provisioning-agency-listings', agencyId] });
+    },
+    onError: (e: any) => toast.error(e?.message || 'Failed to update listing'),
+  });
+}
+
+export function useResolveFlag(agencyId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (flagId: string) => {
+      const { data: userData } = await supabase.auth.getUser();
+      const { error } = await supabase
+        .from('listing_quality_flags')
+        .update({ resolved_at: new Date().toISOString(), resolved_by: userData.user?.id || null })
+        .eq('id', flagId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['provisioning-listing-flags', agencyId] });
+      qc.invalidateQueries({ queryKey: ['provisioning-agency-listings', agencyId] });
+    },
+    onError: (e: any) => toast.error(e?.message || 'Failed to resolve flag'),
+  });
+}
+
+export function useBulkUpdateListings(agencyId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ ids, patch }: { ids: string[]; patch: Partial<ProvisioningListing> }) => {
+      const { error } = await supabase.from('properties').update(patch as any).in('id', ids);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['provisioning-agency-listings', agencyId] });
+      toast.success('Listings updated');
+    },
+    onError: (e: any) => toast.error(e?.message || 'Bulk update failed'),
+  });
+}
+
 export function useRevealCredentials() {
   return useMutation({
     mutationFn: async (input: { userId?: string; credentialId?: string }) => {
