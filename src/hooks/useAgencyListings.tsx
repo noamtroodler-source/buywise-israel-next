@@ -115,16 +115,16 @@ export function useAgencyListingsManagement(agencyId: string | undefined) {
 
       // Inquiry counts — total + this-agency-agents share
       const [{ data: totalInquiries }, { data: myInquiries }] = await Promise.all([
-        supabase
-          .from('property_inquiries')
+        (supabase
+          .from('property_inquiries') as any)
           .select('property_id')
           .in('property_id', propertyIds),
         agentIds.length > 0
-          ? supabase
-              .from('property_inquiries')
+          ? (supabase
+              .from('property_inquiries') as any)
               .select('property_id')
               .in('property_id', propertyIds)
-              .in('agent_id' as any, agentIds)
+              .in('agent_id', agentIds)
           : Promise.resolve({ data: [] as { property_id: string | null }[] }),
       ]);
 
