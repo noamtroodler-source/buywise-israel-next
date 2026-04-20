@@ -27,7 +27,7 @@ export default function AdminAgencyProvisioning() {
   const create = useCreateAgency();
 
   const [createOpen, setCreateOpen] = useState(false);
-  const [newAgency, setNewAgency] = useState({ name: '', slug: '', email: '' });
+  const [newAgency, setNewAgency] = useState({ name: '', email: '' });
 
   // Auto-select first agency if none chosen
   useEffect(() => {
@@ -41,18 +41,17 @@ export default function AdminAgencyProvisioning() {
   }
 
   async function handleCreate() {
-    if (!newAgency.name || !newAgency.slug) {
-      toast.error('Name and slug required');
+    if (!newAgency.name.trim()) {
+      toast.error('Agency name is required');
       return;
     }
     try {
       const id = await create.mutateAsync({
-        name: newAgency.name,
-        slug: newAgency.slug,
+        name: newAgency.name.trim(),
         email: newAgency.email || undefined,
       });
       toast.success('Agency draft created');
-      setNewAgency({ name: '', slug: '', email: '' });
+      setNewAgency({ name: '', email: '' });
       setCreateOpen(false);
       selectAgency(id);
     } catch (e: any) {
