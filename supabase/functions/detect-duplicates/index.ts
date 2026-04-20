@@ -7,7 +7,6 @@ const corsHeaders = {
 };
 
 const PAGE_SIZE = 1000;
-const AUTO_MERGE_THRESHOLD = 90;
 const PRICE_TOLERANCE = 0.03;
 
 Deno.serve(async (req) => {
@@ -22,7 +21,6 @@ Deno.serve(async (req) => {
     );
 
     let totalInserted = 0;
-    let autoMerged = 0;
 
     // ─── Load existing pairs to skip ─────────────────────────────────
     const existingPairs = new Set<string>();
@@ -182,72 +180,30 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Process pairs: auto-merge high confidence, or insert for manual review
+      // Flag pairs for manual review only. Auto-merge was removed — it was
+      // lossy in towers (same building, different units would auto-merge).
+      // Real cross-agency dedup now happens via property_co_agents co-listing.
       for (const pair of crossSourcePairs) {
-        const shouldAutoMerge = pair.similarity_score >= AUTO_MERGE_THRESHOLD
-          && pair.bedrooms_match
-          && pair.price_within_3
-          && pair.same_city;
-
-        if (shouldAutoMerge) {
-          // Find winner by data_quality_score
-          const propA = allProperties.find(p => p.id === pair.property_a);
-          const propB = allProperties.find(p => p.id === pair.property_b);
-          const scoreA = propA?.data_quality_score ?? 0;
-          const scoreB = propB?.data_quality_score ?? 0;
-          const winnerId = scoreA >= scoreB ? pair.property_a : pair.property_b;
-          const loserId = winnerId === pair.property_a ? pair.property_b : pair.property_a;
-
-          // Insert pair first
-          const { data: insertedPair } = await supabase.from("duplicate_pairs").upsert(
-            {
-              property_a: pair.property_a,
-              property_b: pair.property_b,
-              detection_method: "cross_source",
-              similarity_score: pair.similarity_score,
-              status: "pending",
-            },
-            { onConflict: "property_a,property_b", ignoreDuplicates: true }
-          ).select("id").single();
-
-          if (insertedPair) {
-            // Auto-merge
-            const { error: mergeErr } = await supabase.rpc("merge_properties", {
-              p_winner_id: winnerId,
-              p_loser_id: loserId,
-              p_pair_id: insertedPair.id,
-              p_admin_id: null, // system auto-merge
-            });
-            if (!mergeErr) {
-              autoMerged++;
-            } else {
-              console.error(`Auto-merge failed for pair ${insertedPair.id}:`, mergeErr.message);
-            }
-            totalInserted++;
-          }
-        } else {
-          // Insert for manual review
-          const { error } = await supabase.from("duplicate_pairs").upsert(
-            {
-              property_a: pair.property_a,
-              property_b: pair.property_b,
-              detection_method: "cross_source",
-              similarity_score: pair.similarity_score,
-              status: "pending",
-            },
-            { onConflict: "property_a,property_b", ignoreDuplicates: true }
-          );
-          if (!error) totalInserted++;
-        }
+        const { error } = await supabase.from("duplicate_pairs").upsert(
+          {
+            property_a: pair.property_a,
+            property_b: pair.property_b,
+            detection_method: "cross_source",
+            similarity_score: pair.similarity_score,
+            status: "pending",
+          },
+          { onConflict: "property_a,property_b", ignoreDuplicates: true }
+        );
+        if (!error) totalInserted++;
       }
 
-      console.log(`Cross-source scan: checked ${allProperties.length} properties, found ${crossSourcePairs.length} potential duplicates, auto-merged ${autoMerged}`);
+      console.log(`Cross-source scan: checked ${allProperties.length} properties, flagged ${crossSourcePairs.length} pairs for review`);
     }
 
     return new Response(
       JSON.stringify({
         inserted: totalInserted,
-        auto_merged: autoMerged,
+        auto_merged: 0,
         phash_hashes: hashes?.length || 0,
         properties_checked: allProperties.length,
         existing_pairs_skipped: existingPairs.size,

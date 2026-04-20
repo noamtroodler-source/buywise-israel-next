@@ -1,28 +1,22 @@
 /**
- * AdminScrapingSources — Admin page to manage agency scraping sources
- * and review listing claim requests.
- *
- * Two tabs:
- *   1. Sources — view/add/toggle/sync all agency_sources
- *   2. Claim Requests — review agent claims for scraped listings
+ * AdminScrapingSources — Admin page to manage agency scraping sources.
+ * View/add/toggle/sync all agency_sources.
  */
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Globe, RefreshCw, Plus, Trash2, ToggleLeft, ToggleRight,
-  CheckCircle2, XCircle, AlertTriangle, Clock, Building2,
-  ExternalLink, Play, Loader2, ChevronDown, ChevronRight,
-  Zap, Shield, ClipboardCheck, Search,
+  CheckCircle2, AlertTriangle, Clock, Building2,
+  ExternalLink, Play, Loader2,
+  Zap, Shield, Search,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from '@/components/ui/dialog';
@@ -39,12 +33,7 @@ import {
   useDeleteAgencySource,
   useTriggerSourceSync,
   useTriggerNightlySync,
-  useClaimRequests,
-  useClaimRequestStats,
-  useApproveClaimRequest,
-  useRejectClaimRequest,
   AgencySource,
-  ClaimRequest,
 } from '@/hooks/useAgencySources';
 
 // ─── Source type config ──────────────────────────────────────────────────────
@@ -300,134 +289,14 @@ function SourceRow({ source }: { source: AgencySource }) {
   );
 }
 
-// ─── Claim Request Row ───────────────────────────────────────────────────────
-
-function ClaimRow({ claim }: { claim: ClaimRequest }) {
-  const [showNotes, setShowNotes] = useState(false);
-  const [notes, setNotes] = useState('');
-  const approveRequest = useApproveClaimRequest();
-  const rejectRequest = useRejectClaimRequest();
-
-  const statusConfig = {
-    pending: { label: 'Pending', color: 'bg-semantic-amber/15 text-foreground' },
-    approved: { label: 'Approved', color: 'bg-semantic-green/15 text-semantic-green' },
-    rejected: { label: 'Rejected', color: 'bg-destructive/10 text-destructive' },
-    duplicate: { label: 'Duplicate', color: 'bg-muted text-muted-foreground' },
-  };
-
-  const cfg = statusConfig[claim.status];
-
-  return (
-    <div className="rounded-lg border bg-white p-4 space-y-3">
-      <div className="flex items-start gap-3">
-        <Badge className={cn('text-xs mt-0.5 flex-shrink-0', cfg.color)}>{cfg.label}</Badge>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-foreground">
-            {claim.claimant_name || 'Unknown'}
-          </p>
-          <p className="text-xs text-muted-foreground">{claim.claimant_email}</p>
-          {claim.claimant_phone && (
-            <p className="text-xs text-muted-foreground">{claim.claimant_phone}</p>
-          )}
-          {claim.agency_name && (
-            <p className="text-xs text-muted-foreground mt-0.5">Agency: {claim.agency_name}</p>
-          )}
-        </div>
-        <span className="text-xs text-muted-foreground flex-shrink-0">
-          {formatDistanceToNow(new Date(claim.created_at), { addSuffix: true })}
-        </span>
-      </div>
-
-      {claim.property && (
-        <div className="rounded-md bg-muted/40 px-3 py-2 space-y-0.5">
-          <p className="text-xs font-medium text-foreground">{claim.property.title}</p>
-          <p className="text-xs text-muted-foreground">
-            {claim.property.address}, {claim.property.city}
-          </p>
-          {claim.property.source_url && (
-            <a
-              href={claim.property.source_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-primary flex items-center gap-1 mt-1"
-            >
-              <ExternalLink className="w-3 h-3" />
-              Original listing
-            </a>
-          )}
-        </div>
-      )}
-
-      {claim.verification_note && (
-        <p className="text-xs text-muted-foreground italic border-l-2 border-border pl-2">
-          "{claim.verification_note}"
-        </p>
-      )}
-
-      {claim.status === 'pending' && (
-        <div className="space-y-2">
-          <div
-            className="flex items-center gap-1 text-xs text-muted-foreground cursor-pointer hover:text-foreground"
-            onClick={() => setShowNotes(!showNotes)}
-          >
-            {showNotes ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-            Add review note
-          </div>
-          {showNotes && (
-            <Textarea
-              placeholder="Internal note (optional)..."
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={2}
-              className="text-sm"
-            />
-          )}
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              className="flex-1 text-destructive border-destructive/20 hover:bg-destructive/5"
-              disabled={rejectRequest.isPending}
-              onClick={() => rejectRequest.mutate({ claimId: claim.id, notes })}
-            >
-              <XCircle className="w-3.5 h-3.5 mr-1.5" />
-              Reject
-            </Button>
-            <Button
-              size="sm"
-              className="flex-1"
-              disabled={approveRequest.isPending}
-              onClick={() =>
-                approveRequest.mutate({
-                  claimId: claim.id,
-                  propertyId: claim.property_id,
-                  agencyId: claim.agency_id || undefined,
-                  notes,
-                })
-              }
-            >
-              <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
-              Approve & Publish
-            </Button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ─── Main Page ───────────────────────────────────────────────────────────────
 
 export default function AdminScrapingSources() {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const [activeTab, setActiveTab] = useState<'sources' | 'claims'>('sources');
 
   const { data: sources = [], isLoading: sourcesLoading } = useAgencySources();
   const { data: stats } = useAgencySourceStats();
-  const { data: claimStats } = useClaimRequestStats();
-  const { data: pendingClaims = [], isLoading: claimsLoading } = useClaimRequests('pending');
-  const { data: allClaims = [], isLoading: allClaimsLoading } = useClaimRequests();
   const triggerNightly = useTriggerNightlySync();
 
   const filteredSources = search
@@ -480,12 +349,11 @@ export default function AdminScrapingSources() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
         {[
           { label: 'Total sources', value: stats?.total ?? '—', icon: Globe, variant: 'default' as const },
           { label: 'Active', value: stats?.active ?? '—', icon: CheckCircle2, variant: 'default' as const },
           { label: 'Failing', value: stats?.failing ?? '—', icon: AlertTriangle, variant: (stats?.failing || 0) > 0 ? 'danger' : 'default' as any },
-          { label: 'Pending claims', value: claimStats?.pending ?? '—', icon: ClipboardCheck, variant: (claimStats?.pending || 0) > 0 ? 'warn' : 'default' as any },
         ].map(({ label, value, icon: Icon, variant }) => (
           <Card key={label}>
             <CardContent className="pt-5 flex items-center gap-3">
@@ -499,100 +367,50 @@ export default function AdminScrapingSources() {
         ))}
       </div>
 
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={(v: any) => setActiveTab(v)}>
-        <TabsList>
-          <TabsTrigger value="sources">
-            Sources
-            {stats?.total ? <Badge variant="secondary" className="ml-2 text-xs">{stats.total}</Badge> : null}
-          </TabsTrigger>
-          <TabsTrigger value="claims">
-            Claim Requests
-            {(claimStats?.pending || 0) > 0 && (
-              <Badge className="ml-2 text-xs bg-semantic-amber text-semantic-amber-foreground">{claimStats?.pending}</Badge>
-            )}
-          </TabsTrigger>
-        </TabsList>
+      <div className="space-y-4 mt-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Search agencies or URLs..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
 
-        {/* Sources Tab */}
-        <TabsContent value="sources" className="space-y-4 mt-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Search agencies or URLs..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
-            />
+        {sourcesLoading ? (
+          <div className="space-y-2">
+            {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-lg" />)}
           </div>
-
-          {sourcesLoading ? (
-            <div className="space-y-2">
-              {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-lg" />)}
-            </div>
-          ) : Object.keys(byAgency).length === 0 ? (
-            <Card className="p-8 text-center">
-              <Globe className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
-              <p className="text-sm text-muted-foreground">No sources configured yet. Add one above.</p>
-            </Card>
-          ) : (
-            <div className="space-y-4">
-              {Object.entries(byAgency).map(([agencyName, agencySources]) => (
-                <Card key={agencyName}>
-                  <CardHeader className="py-3 px-4 border-b">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-sm font-semibold">{agencyName}</CardTitle>
-                      <div className="flex gap-1">
-                        {agencySources.map((s) => (
-                          <Badge key={s.id} className={cn('text-xs', SOURCE_LABELS[s.source_type]?.color)}>
-                            {SOURCE_LABELS[s.source_type]?.label}
-                          </Badge>
-                        ))}
-                      </div>
+        ) : Object.keys(byAgency).length === 0 ? (
+          <Card className="p-8 text-center">
+            <Globe className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
+            <p className="text-sm text-muted-foreground">No sources configured yet. Add one above.</p>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {Object.entries(byAgency).map(([agencyName, agencySources]) => (
+              <Card key={agencyName}>
+                <CardHeader className="py-3 px-4 border-b">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm font-semibold">{agencyName}</CardTitle>
+                    <div className="flex gap-1">
+                      {agencySources.map((s) => (
+                        <Badge key={s.id} className={cn('text-xs', SOURCE_LABELS[s.source_type]?.color)}>
+                          {SOURCE_LABELS[s.source_type]?.label}
+                        </Badge>
+                      ))}
                     </div>
-                  </CardHeader>
-                  <CardContent className="p-2 space-y-1">
-                    {agencySources.map((s) => <SourceRow key={s.id} source={s} />)}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-
-        {/* Claims Tab */}
-        <TabsContent value="claims" className="space-y-4 mt-4">
-          {claimsLoading ? (
-            <div className="space-y-3">
-              {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-32 w-full rounded-lg" />)}
-            </div>
-          ) : allClaims.length === 0 ? (
-            <Card className="p-8 text-center">
-              <ClipboardCheck className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
-              <p className="text-sm text-muted-foreground">No claim requests yet.</p>
-            </Card>
-          ) : (
-            <>
-              {pendingClaims.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-sm font-semibold text-semantic-amber">
-                    {pendingClaims.length} pending review
-                  </p>
-                  {pendingClaims.map((c) => <ClaimRow key={c.id} claim={c} />)}
-                </div>
-              )}
-              {allClaims.filter((c) => c.status !== 'pending').length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-sm font-semibold text-muted-foreground">Reviewed</p>
-                  {allClaims
-                    .filter((c) => c.status !== 'pending')
-                    .map((c) => <ClaimRow key={c.id} claim={c} />)}
-                </div>
-              )}
-            </>
-          )}
-        </TabsContent>
-      </Tabs>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-2 space-y-1">
+                  {agencySources.map((s) => <SourceRow key={s.id} source={s} />)}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
 
       <AddSourceDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} />
     </motion.div>

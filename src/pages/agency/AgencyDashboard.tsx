@@ -24,7 +24,6 @@ import { AgencyPerformanceInsights } from '@/components/agency/AgencyPerformance
 import { AgencyOnboardingProgress } from '@/components/agency/AgencyOnboardingProgress';
 import { NoPlanBanner } from '@/components/billing/NoPlanBanner';
 import { ImportWelcomeBanner } from '@/components/agency/ImportWelcomeBanner';
-import { ClaimableListingsBanner } from '@/components/agency/ClaimableListingsBanner';
 import { AgencyAnnouncements } from '@/components/agency/AgencyAnnouncements';
 import { AgencyTeamActivityFeed } from '@/components/agency/AgencyTeamActivityFeed';
 import { DashboardListingsPreview } from '@/components/agency/DashboardListingsPreview';
@@ -154,12 +153,6 @@ export default function AgencyDashboard() {
           {/* Priority Lane — only show the most urgent banner */}
           <ImportWelcomeBanner activeListings={stats?.activeListings || 0} />
           <NoPlanBanner />
-
-          {/* Claimable listings banner — shows when there are unclaimed sourced listings in agency cities */}
-          <ClaimableListingsBanner
-            agencyId={agency.id}
-            citiesCovered={agency.cities_covered}
-          />
 
           {/* Onboarding (conditionally shows) */}
           <AgencyOnboardingProgress agency={agency} teamCount={team.length} listingsCount={stats?.activeListings} />

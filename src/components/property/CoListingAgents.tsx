@@ -12,20 +12,7 @@ import { ExternalLink, Building2 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-
-interface CoAgent {
-  id: string;
-  source_url: string;
-  source_type: string;
-  agent?: {
-    id: string;
-    name: string;
-    agency_name: string | null;
-    phone: string | null;
-    avatar_url: string | null;
-    agency?: { id: string; name: string; logo_url: string | null } | null;
-  } | null;
-}
+import type { CoAgent } from '@/types/database';
 
 interface CoListingAgentsProps {
   coAgents: CoAgent[];

@@ -96,14 +96,8 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
     });
   }, [trackClick, property.id, property.city, property.price, property.listing_status]);
 
-  const sourcedListing = property as Property & {
-    is_claimed?: boolean | null;
-    import_source?: string | null;
-    street_view_url?: string | null;
-  };
-  const isSourcedListing = !sourcedListing.is_claimed && !!sourcedListing.import_source;
   const rawImages = property.images?.filter((image): image is string => Boolean(image)) ?? [];
-  const images = rawImages.filter((image) => !(isSourcedListing && isGenericStockPhoto(image)));
+  const images = rawImages;
   const hasMultipleImages = images.length > 1;
 
   // Freshness tier for "Days on Market" prominence
@@ -227,7 +221,7 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
     neighborhoodImage: illustrationUrl,
     fallbackSrc: rawImages[0],
     error: imageError,
-    treatStockAsMissing: isSourcedListing,
+    treatStockAsMissing: false,
   });
 
   return (
@@ -339,13 +333,6 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                         <Badge key="partner" className="bg-primary/15 text-primary border-primary/30 text-xs font-medium">
                           <ShieldCheck className="h-3 w-3 mr-1" />
                           BuyWise Partner
-                        </Badge>
-                      );
-                    } else if ((property as any).import_source && !(property as any).is_claimed) {
-                      badges.push(
-                        <Badge key="sourced" className="bg-muted text-muted-foreground border-border text-xs font-medium">
-                          <Building2 className="h-3 w-3 mr-1" />
-                          Sourced
                         </Badge>
                       );
                     }
@@ -582,13 +569,6 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                         <Badge key="partner" className="bg-primary/15 text-primary border-primary/30 text-xs font-medium">
                           <ShieldCheck className="h-3 w-3 mr-1" />
                           BuyWise Partner
-                        </Badge>
-                      );
-                    } else if ((property as any).import_source && !(property as any).is_claimed) {
-                      badges.push(
-                        <Badge key="sourced" className="bg-muted text-muted-foreground border-border text-xs font-medium">
-                          <Building2 className="h-3 w-3 mr-1" />
-                          Sourced
                         </Badge>
                       );
                     }

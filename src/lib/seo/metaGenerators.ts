@@ -37,10 +37,6 @@ interface PropertyMetaInput {
   is_furnished?: boolean | null;
   parking?: number | null;
   agent?: { name: string } | null;
-  // Sourced listing fields
-  import_source?: string | null;
-  is_claimed?: boolean;
-  source_agency_name?: string | null;
 }
 
 export function generatePropertyMeta(property: PropertyMetaInput): { title: string; description: string } {
@@ -94,14 +90,8 @@ export function generatePropertyMeta(property: PropertyMetaInput): { title: stri
     hook = property.features[0].charAt(0).toUpperCase() + property.features[0].slice(1) + '.';
   }
 
-  // Part 3: BuyWise value prop — sourced listings get different CTA
-  const isSourced = !!(property as any).import_source && !(property as any).is_claimed;
-  const sourceName = (property as any).source_agency_name ||
-    ((property as any).import_source === 'yad2' ? 'Yad2' :
-     (property as any).import_source === 'madlan' ? 'Madlan' : 'agency site');
-  const cta = isSourced
-    ? `Sourced from ${sourceName}. See market data & similar listings on BuyWise.`
-    : isRental
+  // Part 3: BuyWise value prop
+  const cta = isRental
     ? 'Compare vaad bayit costs & rental market data on BuyWise.'
     : 'See price trends, arnona rates & similar listings on BuyWise.';
 

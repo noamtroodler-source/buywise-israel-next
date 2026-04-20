@@ -139,39 +139,7 @@ export function useVerifyAgency() {
       queryClient.invalidateQueries({ queryKey: ['admin-agency-stats'] });
       queryClient.invalidateQueries({ queryKey: ['my-agency'] });
       queryClient.invalidateQueries({ queryKey: ['agency'] });
-      queryClient.invalidateQueries({ queryKey: ['claim-requests'] });
       toast.success('Agency verified successfully');
-
-      // Auto-approve any pending listing claims for this agency
-      // and publish those properties
-      supabase
-        .from('listing_claim_requests' as any)
-        .select('id, property_id')
-        .eq('agency_id', agencyId)
-        .eq('status', 'pending')
-        .then(({ data: claims }) => {
-          if (!claims?.length) return;
-          claims.forEach(async (claim: any) => {
-            // Approve the claim
-            await supabase
-              .from('listing_claim_requests' as any)
-              .update({ status: 'approved', reviewed_at: new Date().toISOString() })
-              .eq('id', claim.id);
-            // Publish and mark property as claimed
-            await supabase
-              .from('properties')
-              .update({
-                is_claimed: true,
-                claimed_at: new Date().toISOString(),
-                claimed_by_agency_id: agencyId,
-                is_published: true,
-                verification_status: 'approved' as any,
-                updated_at: new Date().toISOString(),
-              })
-              .eq('id', claim.property_id);
-          });
-          toast.success(`${claims.length} listing claim${claims.length > 1 ? 's' : ''} auto-approved`);
-        });
 
       // Send approval email (fire-and-forget)
       supabase.functions.invoke('send-agency-approval-email', {

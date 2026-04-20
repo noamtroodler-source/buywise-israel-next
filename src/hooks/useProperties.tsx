@@ -344,11 +344,15 @@ export function useProperty(id: string) {
         .from('properties')
         .select(`
           *,
-          agent:agents(*, agency:agencies(id, name, logo_url, is_partner))
+          agent:agents(*, agency:agencies(id, name, logo_url, is_partner)),
+          co_agents:property_co_agents(
+            id, source_url, source_type,
+            agent:agents(id, name, agency_name, phone, avatar_url, agency:agencies(id, name, logo_url))
+          )
         `)
         .eq('id', id)
         .maybeSingle();
-      
+
       if (!data) throw new Error('Property not found');
 
       if (error) throw error;

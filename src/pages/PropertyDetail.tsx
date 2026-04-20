@@ -26,7 +26,6 @@ import { SimilarProperties } from '@/components/property/SimilarProperties';
 // RecentNearbySales is now used inside MarketIntelligence
 import { SupportFooter } from '@/components/shared/SupportFooter';
 import { ListingDisclaimer } from '@/components/shared/ListingDisclaimer';
-import { UnclaimedListingBanner, StreetViewFallback, ClaimListingDialog } from '@/components/property/UnclaimedListingBanner';
 import { CoListingAgents } from '@/components/property/CoListingAgents';
 // SourcedListingEnrichment removed from sidebar — content is in left column sections
 import { MarketDataContext } from '@/components/shared/MarketDataContext';
@@ -89,7 +88,6 @@ export default function PropertyDetail() {
   const { data: cityData } = useCityDetails(citySlug);
 
   const isSaved = property ? isFavorite(property.id) : false;
-  const [showClaimDialog, setShowClaimDialog] = React.useState(false);
 
   const handleSave = async () => {
     if (!property) return;
@@ -183,56 +181,12 @@ export default function PropertyDetail() {
           <div className="lg:col-span-2 space-y-6">
             {/* Hero - Edge-to-edge on mobile */}
             <div id="section-photos" className="-mx-4 md:mx-0">
-              {(() => {
-                const isSourced = !(property as any).is_claimed && (property as any).import_source;
-                
-                // For sourced listings: pass empty images so PropertyHero uses neighborhood illustration fallback
-                const heroProperty = isSourced && !property.images?.length
-                  ? { ...property, images: [] }
-                  : property;
-                
-                return (
-                  <>
-                    <PropertyHero
-                      property={heroProperty}
-                      onSave={handleSave}
-                      onShare={handleShare}
-                      isSaved={isSaved}
-                    />
-                    {/* Street View section for sourced listings */}
-                    {isSourced && (
-                      <div className="mt-3 px-4 md:px-0">
-                        <StreetViewFallback
-                          address={property.address}
-                          city={property.city}
-                          latitude={property.latitude}
-                          longitude={property.longitude}
-                          neighborhood={property.neighborhood}
-                          className="w-full h-[300px] md:h-[420px] street-view-container"
-                        />
-                      </div>
-                    )}
-                  </>
-                );
-              })()}
-              {/* Unclaimed banner — right under hero where buyers see it */}
-              {!(property as any).is_claimed && (property as any).import_source && (
-                <div className="mt-3 px-4 md:px-0">
-                  <UnclaimedListingBanner
-                    sourceUrl={(property as any).source_url}
-                    sourceName={
-                      (property as any).import_source === 'yad2'
-                        ? 'Yad2'
-                        : (property as any).import_source === 'madlan'
-                        ? 'Madlan'
-                        : (property as any).source_agency_name || 'an agency website'
-                    }
-                    lastCheckedAt={(property as any).source_last_checked_at}
-                    hasImages={!!property.images && property.images.length > 0}
-                    onClaimClick={() => setShowClaimDialog(true)}
-                  />
-                </div>
-              )}
+              <PropertyHero
+                property={property}
+                onSave={handleSave}
+                onShare={handleShare}
+                isSaved={isSaved}
+              />
             </div>
 
             {/* Quick Summary - Price, Title, Stats */}
@@ -469,16 +423,6 @@ export default function PropertyDetail() {
         {/* Disclaimer */}
         <ListingDisclaimer variant="detail" className="py-6" />
       </div>
-
-      {/* Claim listing dialog (for unclaimed scraped listings) */}
-      {property && (
-        <ClaimListingDialog
-          open={showClaimDialog}
-          onOpenChange={setShowClaimDialog}
-          propertyId={property.id}
-          propertyTitle={property.title}
-        />
-      )}
 
       {/* Mobile Contact Bar */}
       <MobileContactBar 

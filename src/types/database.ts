@@ -110,6 +110,33 @@ export interface Property {
   agent?: Agent;
   /** Client-side flag: true when this property was returned via a paid boost */
   _isBoosted?: boolean;
+  /** Co-listing: secondary agencies that also represent this property */
+  co_agents?: CoAgent[];
+  /** Primary agency on the property. Duplicates agent?.agency_id for convenience
+   *  and decouples primary-slot logic from the agent assignment. */
+  primary_agency_id?: string | null;
+  /** When an agency has purchased a primary-slot boost, this is the expiry. */
+  boost_active_until?: string | null;
+  /** Agency that paid for the active boost (null when no active boost). */
+  boosted_by_agency_id?: string | null;
+}
+
+/**
+ * A secondary agency attached to a property via property_co_agents.
+ * Sourced from a scrape or manual confirm; appears in "Also listed by" UI.
+ */
+export interface CoAgent {
+  id: string;
+  source_url: string;
+  source_type: 'yad2' | 'madlan' | 'website' | string;
+  agent?: {
+    id: string;
+    name: string;
+    agency_name: string | null;
+    phone: string | null;
+    avatar_url: string | null;
+    agency?: { id: string; name: string; logo_url: string | null } | null;
+  } | null;
 }
 
 export interface Favorite {
