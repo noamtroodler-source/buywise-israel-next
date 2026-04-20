@@ -165,15 +165,19 @@ function MortgageCalculatorContent() {
     return calculateMortgagePayment(loanAmount, interestRate, loanTermYears);
   }, [loanAmount, interestRate, loanTermYears]);
 
-  // Payment range calculation using rate variance
-  const paymentRange = useMemo(() => {
-    return estimateMonthlyPaymentRange(propertyPrice, buyerType);
-  }, [propertyPrice, buyerType]);
+  // Payment range anchored on the USER'S rate (±0.75%) and their actual loanAmount,
+  // so the hero number reacts to their interest-rate input — not a hardcoded 4.5–6%.
+  const lowRate = Math.max(interestRate - 0.75, 2);
+  const highRate = Math.min(interestRate + 0.75, 12);
 
-  // Interest and total payment ranges based on rate variance
+  const paymentRange = useMemo(() => {
+    const lowPay = calculateMortgagePayment(loanAmount, lowRate, loanTermYears);
+    const highPay = calculateMortgagePayment(loanAmount, highRate, loanTermYears);
+    return { low: lowPay.monthlyPayment, high: highPay.monthlyPayment };
+  }, [loanAmount, lowRate, highRate, loanTermYears]);
+
+  // Interest and total payment ranges — same loan base & same rate window as hero
   const interestRange = useMemo(() => {
-    const lowRate = MORTGAGE_RATE_RANGES.low;
-    const highRate = MORTGAGE_RATE_RANGES.high;
     const lowResult = calculateMortgagePayment(loanAmount, lowRate, loanTermYears);
     const highResult = calculateMortgagePayment(loanAmount, highRate, loanTermYears);
     return {
@@ -182,7 +186,7 @@ function MortgageCalculatorContent() {
       totalLow: lowResult.totalPayment,
       totalHigh: highResult.totalPayment,
     };
-  }, [loanAmount, loanTermYears]);
+  }, [loanAmount, lowRate, highRate, loanTermYears]);
 
   // Stress test calculations
   const stressTest = useMemo(() => {
