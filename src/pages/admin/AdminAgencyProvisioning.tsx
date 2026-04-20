@@ -11,6 +11,10 @@ import { AgencyProvisioningSidebar } from '@/components/admin/agency-provisionin
 import { AgencyProfileSection } from '@/components/admin/agency-provisioning/AgencyProfileSection';
 import { AgentRosterSection } from '@/components/admin/agency-provisioning/AgentRosterSection';
 import { ListingsQualitySection } from '@/components/admin/agency-provisioning/ListingsQualitySection';
+import { HandoverSection } from '@/components/admin/agency-provisioning/HandoverSection';
+import { useAgencyAgents } from '@/hooks/useAgencyProvisioning';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function AdminAgencyProvisioning() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -90,11 +94,7 @@ export default function AdminAgencyProvisioning() {
               </div>
             </div>
           ) : (
-            <>
-              <AgencyProfileSection agency={selectedAgency} />
-              <AgentRosterSection agencyId={selectedAgency.id} />
-              <ListingsQualitySection agencyId={selectedAgency.id} />
-            </>
+            <SelectedAgencyWorkspace agency={selectedAgency} />
           )}
         </div>
       </div>
@@ -139,5 +139,32 @@ export default function AdminAgencyProvisioning() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+function SelectedAgencyWorkspace({ agency }: { agency: any }) {
+  const { data: agents = [] } = useAgencyAgents(agency.id);
+  const { data: listingCount = 0 } = useQuery({
+    queryKey: ['provisioning-agency-listing-count', agency.id],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from('properties')
+        .select('id', { count: 'exact', head: true })
+        .eq('agency_id', agency.id);
+      return count ?? 0;
+    },
+  });
+
+  return (
+    <>
+      <AgencyProfileSection agency={agency} />
+      <AgentRosterSection agencyId={agency.id} />
+      <ListingsQualitySection agencyId={agency.id} />
+      <HandoverSection
+        agency={agency}
+        agentCount={agents.length}
+        listingCount={listingCount}
+      />
+    </>
   );
 }
