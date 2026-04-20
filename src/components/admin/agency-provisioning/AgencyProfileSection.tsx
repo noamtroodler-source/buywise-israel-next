@@ -7,14 +7,16 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { CheckCircle2, KeyRound, Loader2, Copy } from 'lucide-react';
+import { CheckCircle2, KeyRound, Loader2, Copy, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   ProvisioningAgency,
   useUpdateAgency,
   useProvisionAgencyAccount,
   useRevealCredentials,
+  useResendSetupLink,
 } from '@/hooks/useAgencyProvisioning';
+import { RevealCredentialsModal } from './RevealCredentialsModal';
 
 interface Props {
   agency: ProvisioningAgency;
@@ -24,6 +26,8 @@ export function AgencyProfileSection({ agency }: Props) {
   const update = useUpdateAgency(agency.id);
   const provision = useProvisionAgencyAccount();
   const reveal = useRevealCredentials();
+  const resend = useResendSetupLink();
+  const [secureRevealOpen, setSecureRevealOpen] = useState(false);
 
   const [form, setForm] = useState({
     name: agency.name || '',
@@ -81,10 +85,9 @@ export function AgencyProfileSection({ agency }: Props) {
     }
   }
 
-  async function handleReveal() {
+  function openSecureReveal() {
     if (!agency.admin_user_id) return;
-    const cred = await reveal.mutateAsync({ userId: agency.admin_user_id });
-    setCredModal({ email: cred.email || form.email, password: cred.password });
+    setSecureRevealOpen(true);
   }
 
   function copyToClipboard(text: string, label: string) {
@@ -157,9 +160,18 @@ export function AgencyProfileSection({ agency }: Props) {
             <KeyRound className="h-4 w-4 mr-2" /> Provision owner account
           </Button>
         ) : (
-          <Button variant="outline" onClick={handleReveal} disabled={reveal.isPending}>
-            <KeyRound className="h-4 w-4 mr-2" /> Reveal credentials
-          </Button>
+          <>
+            <Button variant="outline" onClick={openSecureReveal}>
+              <KeyRound className="h-4 w-4 mr-2" /> Reveal credentials
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => resend.mutate({ userId: agency.admin_user_id!, purpose: 'owner_setup' })}
+              disabled={resend.isPending}
+            >
+              <Send className="h-4 w-4 mr-2" /> Resend setup link
+            </Button>
+          </>
         )}
       </div>
 
@@ -236,6 +248,13 @@ export function AgencyProfileSection({ agency }: Props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <RevealCredentialsModal
+        open={secureRevealOpen}
+        onOpenChange={setSecureRevealOpen}
+        userId={agency.admin_user_id ?? null}
+        subjectLabel="Owner"
+      />
     </Card>
   );
 }
