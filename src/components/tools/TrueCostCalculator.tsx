@@ -60,6 +60,7 @@ import { BuyerCategory as BannerBuyerCategory } from './shared/BuyerTypeInfoBann
 import { useCities } from '@/hooks/useCities';
 import { useCityDetails } from '@/hooks/useCityDetails';
 import { usePreferences, useFormatArea, useAreaUnitLabel } from '@/contexts/PreferencesContext';
+import { useCurrencyInput } from '@/hooks/useCurrencyInput';
 import { cn } from '@/lib/utils';
 
 // Map BuyerCategory to BuyerType for tax calculations
@@ -137,7 +138,7 @@ export function TrueCostCalculator() {
   const { data: calcConstants } = useCalculatorConstants();
   const { data: cities } = useCities();
   const { areaUnit, currency, exchangeRate } = usePreferences();
-  const currencySymbol = currency === 'USD' ? '$' : '₪';
+  const { toILS, toDisplay, symbol: currencySymbol } = useCurrencyInput();
   const formatPrice = useCallback((amount: number): string => {
     const display = currency === 'USD' ? amount / exchangeRate : amount;
     return `${currency === 'USD' ? '$' : '₪'}${display.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
@@ -529,12 +530,18 @@ export function TrueCostCalculator() {
               <Input
                 type="text"
                 inputMode="numeric"
-                value={formatNumber(parseFormattedNumber(propertyPrice))}
-                onChange={(e) => setPropertyPrice(e.target.value.replace(/[^\d]/g, ''))}
+                value={formatNumber(toDisplay(parseFormattedNumber(propertyPrice)))}
+                onChange={(e) => {
+                  const displayed = parseInt(e.target.value.replace(/[^\d]/g, ''), 10) || 0;
+                  setPropertyPrice(String(toILS(displayed)));
+                }}
                 className="pl-10 h-11 text-lg"
                 placeholder="2,500,000"
               />
             </div>
+            {currency === 'USD' && parseFormattedNumber(propertyPrice) > 0 && (
+              <p className="text-xs text-muted-foreground">≈ ₪{formatNumber(parseFormattedNumber(propertyPrice))}</p>
+            )}
             
           </div>
           
@@ -737,8 +744,11 @@ export function TrueCostCalculator() {
                           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">{currencySymbol}</span>
                           <Input
                             type="text"
-                            value={formatNumber(parseFormattedNumber(renovationAmount))}
-                            onChange={(e) => setRenovationAmount(e.target.value.replace(/[^\d]/g, ''))}
+                            value={formatNumber(toDisplay(parseFormattedNumber(renovationAmount)))}
+                            onChange={(e) => {
+                              const displayed = parseInt(e.target.value.replace(/[^\d]/g, ''), 10) || 0;
+                              setRenovationAmount(String(toILS(displayed)));
+                            }}
                             className="pl-10 h-11"
                           />
                         </div>
