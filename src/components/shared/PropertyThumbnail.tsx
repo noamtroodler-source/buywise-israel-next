@@ -2,9 +2,12 @@ import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useNeighborhoodIllustration } from '@/hooks/useNeighborhoodIllustration';
 import { cityHeroImages } from '@/lib/cityHeroImages';
+import propertyFallbackImg from '@/assets/cities/hero/tel-aviv.jpg';
+import projectFallbackImg from '@/assets/cities/hero/jerusalem.jpg';
 
-const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&auto=format&fit=crop&q=60';
-const PROJECT_FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400&auto=format&fit=crop&q=60';
+// Local asset fallbacks — no external 404 risk
+const FALLBACK_IMAGE = propertyFallbackImg;
+const PROJECT_FALLBACK_IMAGE = projectFallbackImg;
 
 function cityToSlug(city: string): string {
   return city
@@ -46,12 +49,15 @@ export function PropertyThumbnail({
   const cityImage = city ? cityHeroImages[cityToSlug(city)] : undefined;
   
   // Treat generic Unsplash stock photos as "no image" so illustrations take priority
-  const hasRealImage = src && !error && !isGenericStockPhoto(src);
-  
-  // Priority: real src -> neighborhood illustration -> city hero image -> fallbackSrc -> original src -> defaultFallback
+  const isStock = isGenericStockPhoto(src);
+  const hasRealImage = src && !error && !isStock;
+
+  // Priority: real src -> neighborhood illustration -> city hero image -> custom fallbackSrc -> defaultFallback.
+  // CRITICAL: never fall back to the original `src` if it's stock OR errored — that's how broken
+  // images silently leaked through before. The local defaultFallback is the guaranteed final stop.
   const imageSrc = hasRealImage
     ? src
-    : (illustrationUrl || cityImage || fallbackSrc || src || defaultFallback);
+    : (illustrationUrl || cityImage || fallbackSrc || defaultFallback);
   
   return (
     <img

@@ -130,6 +130,8 @@ export function ProjectsHighlight() {
                           src={project.images?.[0]}
                           alt={project.name}
                           type="project"
+                          city={project.city}
+                          neighborhood={project.neighborhood}
                           className="w-full h-full group-hover:scale-105 transition-transform duration-500"
                         />
                       </div>
@@ -201,6 +203,8 @@ export function ProjectsHighlight() {
                     src={mainProject.images?.[0]}
                     alt={mainProject.name}
                     type="project"
+                    city={mainProject.city}
+                    neighborhood={mainProject.neighborhood}
                     className="w-full h-full group-hover:scale-105 transition-transform duration-500"
                   />
                 </div>
@@ -254,6 +258,8 @@ export function ProjectsHighlight() {
                       src={project.images?.[0]}
                       alt={project.name}
                       type="project"
+                      city={project.city}
+                      neighborhood={project.neighborhood}
                       className="w-full h-full group-hover:scale-105 transition-transform duration-500"
                     />
                   </div>
