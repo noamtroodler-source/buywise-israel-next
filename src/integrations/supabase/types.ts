@@ -5342,6 +5342,7 @@ export type Database = {
           agent_fee_required: boolean | null
           agent_id: string | null
           ai_english_description: string | null
+          ai_suggestions: Json
           allows_pets: string | null
           apartment_number: string | null
           bank_guarantee_required: boolean | null
@@ -5378,6 +5379,7 @@ export type Database = {
           is_featured: boolean | null
           is_furnished: boolean | null
           is_published: boolean | null
+          last_audit_at: string | null
           last_primary_refresh: string | null
           last_renewed_at: string | null
           last_sync_checked_at: string | null
@@ -5435,6 +5437,7 @@ export type Database = {
           agent_fee_required?: boolean | null
           agent_id?: string | null
           ai_english_description?: string | null
+          ai_suggestions?: Json
           allows_pets?: string | null
           apartment_number?: string | null
           bank_guarantee_required?: boolean | null
@@ -5471,6 +5474,7 @@ export type Database = {
           is_featured?: boolean | null
           is_furnished?: boolean | null
           is_published?: boolean | null
+          last_audit_at?: string | null
           last_primary_refresh?: string | null
           last_renewed_at?: string | null
           last_sync_checked_at?: string | null
@@ -5528,6 +5532,7 @@ export type Database = {
           agent_fee_required?: boolean | null
           agent_id?: string | null
           ai_english_description?: string | null
+          ai_suggestions?: Json
           allows_pets?: string | null
           apartment_number?: string | null
           bank_guarantee_required?: boolean | null
@@ -5564,6 +5569,7 @@ export type Database = {
           is_featured?: boolean | null
           is_furnished?: boolean | null
           is_published?: boolean | null
+          last_audit_at?: string | null
           last_primary_refresh?: string | null
           last_renewed_at?: string | null
           last_sync_checked_at?: string | null
