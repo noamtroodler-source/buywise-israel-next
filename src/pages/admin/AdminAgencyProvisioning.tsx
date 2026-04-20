@@ -146,8 +146,8 @@ function SelectedAgencyWorkspace({ agency }: { agency: any }) {
   const { data: agents = [] } = useAgencyAgents(agency.id);
   const { data: listingCount = 0 } = useQuery({
     queryKey: ['provisioning-agency-listing-count', agency.id],
-    queryFn: async () => {
-      const { count } = await supabase
+    queryFn: async (): Promise<number> => {
+      const { count } = await (supabase as any)
         .from('properties')
         .select('id', { count: 'exact', head: true })
         .eq('agency_id', agency.id);
