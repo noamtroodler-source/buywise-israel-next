@@ -417,3 +417,118 @@ export function useRevealCredentials() {
     onError: (e: any) => toast.error(e?.message || 'Failed to reveal credentials'),
   });
 }
+
+// Phase 9 — admin lifecycle tools
+export type AgencyLifecycleRow = {
+  id: string;
+  name: string;
+  slug: string;
+  management_status: string;
+  agent_email_strategy: string;
+  provisioned_at: string | null;
+  handover_completed_at: string | null;
+  created_at: string | null;
+  agent_count: number;
+  listing_count: number;
+};
+
+export function useAllAgenciesLifecycle() {
+  return useQuery({
+    queryKey: ['agencies-lifecycle'],
+    queryFn: async (): Promise<AgencyLifecycleRow[]> => {
+      const { data: agencies, error } = await supabase
+        .from('agencies')
+        .select('id, name, slug, management_status, agent_email_strategy, provisioned_at, handover_completed_at, created_at')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+
+      const ids = (agencies || []).map((a: any) => a.id);
+      if (ids.length === 0) return [];
+
+      // Aggregate counts in two cheap queries
+      const [{ data: agentRows = [] }, { data: listingRows = [] }] = await Promise.all([
+        supabase.from('agents').select('agency_id').in('agency_id', ids),
+        (supabase as any).from('properties').select('agency_id').in('agency_id', ids),
+      ]);
+
+      const agentCounts = new Map<string, number>();
+      for (const r of agentRows as any[]) {
+        if (!r.agency_id) continue;
+        agentCounts.set(r.agency_id, (agentCounts.get(r.agency_id) ?? 0) + 1);
+      }
+      const listingCounts = new Map<string, number>();
+      for (const r of listingRows as any[]) {
+        if (!r.agency_id) continue;
+        listingCounts.set(r.agency_id, (listingCounts.get(r.agency_id) ?? 0) + 1);
+      }
+
+      return (agencies as any[]).map((a) => ({
+        ...a,
+        agent_count: agentCounts.get(a.id) ?? 0,
+        listing_count: listingCounts.get(a.id) ?? 0,
+      })) as AgencyLifecycleRow[];
+    },
+  });
+}
+
+export type AuditLogEntry = {
+  id: string;
+  action: string;
+  actor_user_id: string | null;
+  target_user_id: string | null;
+  target_property_id: string | null;
+  metadata: any;
+  created_at: string;
+};
+
+export function useAgencyAuditLog(agencyId: string | null) {
+  return useQuery({
+    queryKey: ['provisioning-audit-log', agencyId],
+    enabled: !!agencyId,
+    queryFn: async (): Promise<AuditLogEntry[]> => {
+      const { data, error } = await supabase
+        .from('agency_provisioning_audit')
+        .select('id, action, actor_user_id, target_user_id, target_property_id, metadata, created_at')
+        .eq('agency_id', agencyId!)
+        .order('created_at', { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return (data || []) as AuditLogEntry[];
+    },
+  });
+}
+
+export function useResendSetupLink() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { userId: string; purpose: 'owner_setup' | 'agent_setup' }) => {
+      const { data, error } = await supabase.functions.invoke('resend-setup-link', { body: input });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Failed');
+      return data as { token: string; agencyId: string };
+    },
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ['provisioning-audit-log', res.agencyId] });
+      toast.success('Fresh setup link issued');
+    },
+    onError: (e: any) => toast.error(e?.message || 'Failed to resend link'),
+  });
+}
+
+/**
+ * Re-verifies the current admin's password by attempting a fresh sign-in.
+ * Used as defense in depth before revealing credentials.
+ */
+export function useReauthAdmin() {
+  return useMutation({
+    mutationFn: async (password: string) => {
+      const { data: userData } = await supabase.auth.getUser();
+      const email = userData.user?.email;
+      if (!email) throw new Error('Not signed in');
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw new Error('Password did not match');
+      return true;
+    },
+  });
+}
+
