@@ -149,6 +149,7 @@ export type Database = {
       agencies: {
         Row: {
           admin_user_id: string | null
+          agent_email_strategy: Database["public"]["Enums"]["agent_email_strategy"]
           approved_at: string | null
           approved_by: string | null
           auto_sync_enabled: boolean
@@ -159,6 +160,7 @@ export type Database = {
           description: string | null
           email: string | null
           founded_year: number | null
+          handover_completed_at: string | null
           id: string
           is_accepting_agents: boolean | null
           is_partner: boolean
@@ -166,6 +168,7 @@ export type Database = {
           last_conflict_digest_at: string | null
           last_sync_at: string | null
           logo_url: string | null
+          management_status: Database["public"]["Enums"]["agency_management_status"]
           name: string
           notify_email: boolean | null
           notify_on_join_request: boolean | null
@@ -173,6 +176,8 @@ export type Database = {
           office_address: string | null
           office_hours: string | null
           phone: string | null
+          provisioned_at: string | null
+          provisioned_by: string | null
           slug: string
           social_links: Json | null
           specializations: string[] | null
@@ -183,6 +188,7 @@ export type Database = {
         }
         Insert: {
           admin_user_id?: string | null
+          agent_email_strategy?: Database["public"]["Enums"]["agent_email_strategy"]
           approved_at?: string | null
           approved_by?: string | null
           auto_sync_enabled?: boolean
@@ -193,6 +199,7 @@ export type Database = {
           description?: string | null
           email?: string | null
           founded_year?: number | null
+          handover_completed_at?: string | null
           id?: string
           is_accepting_agents?: boolean | null
           is_partner?: boolean
@@ -200,6 +207,7 @@ export type Database = {
           last_conflict_digest_at?: string | null
           last_sync_at?: string | null
           logo_url?: string | null
+          management_status?: Database["public"]["Enums"]["agency_management_status"]
           name: string
           notify_email?: boolean | null
           notify_on_join_request?: boolean | null
@@ -207,6 +215,8 @@ export type Database = {
           office_address?: string | null
           office_hours?: string | null
           phone?: string | null
+          provisioned_at?: string | null
+          provisioned_by?: string | null
           slug: string
           social_links?: Json | null
           specializations?: string[] | null
@@ -217,6 +227,7 @@ export type Database = {
         }
         Update: {
           admin_user_id?: string | null
+          agent_email_strategy?: Database["public"]["Enums"]["agent_email_strategy"]
           approved_at?: string | null
           approved_by?: string | null
           auto_sync_enabled?: boolean
@@ -227,6 +238,7 @@ export type Database = {
           description?: string | null
           email?: string | null
           founded_year?: number | null
+          handover_completed_at?: string | null
           id?: string
           is_accepting_agents?: boolean | null
           is_partner?: boolean
@@ -234,6 +246,7 @@ export type Database = {
           last_conflict_digest_at?: string | null
           last_sync_at?: string | null
           logo_url?: string | null
+          management_status?: Database["public"]["Enums"]["agency_management_status"]
           name?: string
           notify_email?: boolean | null
           notify_on_join_request?: boolean | null
@@ -241,6 +254,8 @@ export type Database = {
           office_address?: string | null
           office_hours?: string | null
           phone?: string | null
+          provisioned_at?: string | null
+          provisioned_by?: string | null
           slug?: string
           social_links?: Json | null
           specializations?: string[] | null
@@ -455,6 +470,93 @@ export type Database = {
           },
           {
             foreignKeyName: "agency_notifications_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agency_provisioning_audit: {
+        Row: {
+          action: string
+          actor_user_id: string | null
+          agency_id: string | null
+          created_at: string
+          id: string
+          metadata: Json
+          target_property_id: string | null
+          target_user_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_user_id?: string | null
+          agency_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json
+          target_property_id?: string | null
+          target_user_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_user_id?: string | null
+          agency_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json
+          target_property_id?: string | null
+          target_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agency_provisioning_audit_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agency_provisioning_audit_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agency_provisioning_notes: {
+        Row: {
+          agency_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          note: string
+        }
+        Insert: {
+          agency_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note: string
+        }
+        Update: {
+          agency_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agency_provisioning_notes_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agency_provisioning_notes_agency_id_fkey"
             columns: ["agency_id"]
             isOneToOne: false
             referencedRelation: "agencies_public"
@@ -689,12 +791,14 @@ export type Database = {
           approved_by: string | null
           avatar_url: string | null
           bio: string | null
+          completeness_score: number
           created_at: string
           email: string
           email_verified_at: string | null
           facebook_url: string | null
           id: string
           instagram_url: string | null
+          is_provisional: boolean
           is_verified: boolean | null
           joined_via: string | null
           languages: string[] | null
@@ -707,12 +811,14 @@ export type Database = {
           notify_on_approval: boolean | null
           notify_on_inquiry: boolean | null
           onboarding_completed_at: string | null
+          pending_fields: string[]
           phone: string | null
           response_time_hours: number | null
           specializations: string[] | null
           status: Database["public"]["Enums"]["agent_status"]
           updated_at: string
           user_id: string | null
+          welcome_email_sent_at: string | null
           years_experience: number | null
         }
         Insert: {
@@ -723,12 +829,14 @@ export type Database = {
           approved_by?: string | null
           avatar_url?: string | null
           bio?: string | null
+          completeness_score?: number
           created_at?: string
           email: string
           email_verified_at?: string | null
           facebook_url?: string | null
           id?: string
           instagram_url?: string | null
+          is_provisional?: boolean
           is_verified?: boolean | null
           joined_via?: string | null
           languages?: string[] | null
@@ -741,12 +849,14 @@ export type Database = {
           notify_on_approval?: boolean | null
           notify_on_inquiry?: boolean | null
           onboarding_completed_at?: string | null
+          pending_fields?: string[]
           phone?: string | null
           response_time_hours?: number | null
           specializations?: string[] | null
           status?: Database["public"]["Enums"]["agent_status"]
           updated_at?: string
           user_id?: string | null
+          welcome_email_sent_at?: string | null
           years_experience?: number | null
         }
         Update: {
@@ -757,12 +867,14 @@ export type Database = {
           approved_by?: string | null
           avatar_url?: string | null
           bio?: string | null
+          completeness_score?: number
           created_at?: string
           email?: string
           email_verified_at?: string | null
           facebook_url?: string | null
           id?: string
           instagram_url?: string | null
+          is_provisional?: boolean
           is_verified?: boolean | null
           joined_via?: string | null
           languages?: string[] | null
@@ -775,12 +887,14 @@ export type Database = {
           notify_on_approval?: boolean | null
           notify_on_inquiry?: boolean | null
           onboarding_completed_at?: string | null
+          pending_fields?: string[]
           phone?: string | null
           response_time_hours?: number | null
           specializations?: string[] | null
           status?: Database["public"]["Enums"]["agent_status"]
           updated_at?: string
           user_id?: string | null
+          welcome_email_sent_at?: string | null
           years_experience?: number | null
         }
         Relationships: [
@@ -3569,6 +3683,50 @@ export type Database = {
         }
         Relationships: []
       }
+      listing_quality_flags: {
+        Row: {
+          auto_resolvable: boolean
+          created_at: string
+          flag_type: Database["public"]["Enums"]["listing_flag_type"]
+          id: string
+          message: string | null
+          property_id: string
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: Database["public"]["Enums"]["listing_flag_severity"]
+        }
+        Insert: {
+          auto_resolvable?: boolean
+          created_at?: string
+          flag_type: Database["public"]["Enums"]["listing_flag_type"]
+          id?: string
+          message?: string | null
+          property_id: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity: Database["public"]["Enums"]["listing_flag_severity"]
+        }
+        Update: {
+          auto_resolvable?: boolean
+          created_at?: string
+          flag_type?: Database["public"]["Enums"]["listing_flag_type"]
+          id?: string
+          message?: string | null
+          property_id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: Database["public"]["Enums"]["listing_flag_severity"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listing_quality_flags_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       listing_question_cache: {
         Row: {
           cache_key: string
@@ -4340,6 +4498,51 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      password_setup_tokens: {
+        Row: {
+          agency_id: string | null
+          created_at: string
+          created_by: string | null
+          purpose: Database["public"]["Enums"]["password_setup_purpose"]
+          token: string
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          agency_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          purpose: Database["public"]["Enums"]["password_setup_purpose"]
+          token?: string
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          agency_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          purpose?: Database["public"]["Enums"]["password_setup_purpose"]
+          token?: string
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "password_setup_tokens_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "password_setup_tokens_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies_public"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       performance_metrics: {
         Row: {
@@ -5194,6 +5397,11 @@ export type Database = {
           price_vs_avg_pct: number | null
           primary_agency_id: string | null
           property_type: Database["public"]["Enums"]["property_type"]
+          provisioned_from_source: string | null
+          provisioning_audit_status:
+            | Database["public"]["Enums"]["provisioning_audit_status"]
+            | null
+          quality_audit_score: number | null
           rejection_reason: string | null
           reviewed_at: string | null
           reviewed_by: string | null
@@ -5282,6 +5490,11 @@ export type Database = {
           price_vs_avg_pct?: number | null
           primary_agency_id?: string | null
           property_type?: Database["public"]["Enums"]["property_type"]
+          provisioned_from_source?: string | null
+          provisioning_audit_status?:
+            | Database["public"]["Enums"]["provisioning_audit_status"]
+            | null
+          quality_audit_score?: number | null
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -5370,6 +5583,11 @@ export type Database = {
           price_vs_avg_pct?: number | null
           primary_agency_id?: string | null
           property_type?: Database["public"]["Enums"]["property_type"]
+          provisioned_from_source?: string | null
+          provisioning_audit_status?:
+            | Database["public"]["Enums"]["provisioning_audit_status"]
+            | null
+          quality_audit_score?: number | null
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -5674,6 +5892,60 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      provisional_credentials: {
+        Row: {
+          agency_id: string
+          created_at: string
+          created_by: string | null
+          delivered_at: string | null
+          encrypted_password: string
+          id: string
+          revealed_at: string | null
+          revealed_by: string | null
+          role: Database["public"]["Enums"]["provisional_credential_role"]
+          user_id: string
+        }
+        Insert: {
+          agency_id: string
+          created_at?: string
+          created_by?: string | null
+          delivered_at?: string | null
+          encrypted_password: string
+          id?: string
+          revealed_at?: string | null
+          revealed_by?: string | null
+          role: Database["public"]["Enums"]["provisional_credential_role"]
+          user_id: string
+        }
+        Update: {
+          agency_id?: string
+          created_at?: string
+          created_by?: string | null
+          delivered_at?: string | null
+          encrypted_password?: string
+          id?: string
+          revealed_at?: string | null
+          revealed_by?: string | null
+          role?: Database["public"]["Enums"]["provisional_credential_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provisional_credentials_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provisional_credentials_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies_public"
             referencedColumns: ["id"]
           },
         ]
@@ -7103,6 +7375,15 @@ export type Database = {
           property_id: string
         }[]
       }
+      consume_password_setup_token: {
+        Args: { p_token: string }
+        Returns: {
+          agency_id: string
+          purpose: Database["public"]["Enums"]["password_setup_purpose"]
+          user_id: string
+          was_already_used: boolean
+        }[]
+      }
       create_agency_notification: {
         Args: {
           p_action_url?: string
@@ -7224,6 +7505,16 @@ export type Database = {
         }
         Returns: string
       }
+      log_provisioning_action: {
+        Args: {
+          p_action: string
+          p_agency_id: string
+          p_metadata?: Json
+          p_target_property_id?: string
+          p_target_user_id?: string
+        }
+        Returns: string
+      }
       merge_properties: {
         Args: {
           p_admin_id: string
@@ -7277,9 +7568,27 @@ export type Database = {
       }
     }
     Enums: {
+      agency_management_status:
+        | "draft"
+        | "provisioning"
+        | "quality_review"
+        | "ready_for_handover"
+        | "handed_over"
+        | "claimed"
+      agent_email_strategy: "send_all_now" | "send_after_owner"
       agent_status: "pending" | "active" | "suspended"
       app_role: "admin" | "agent" | "user" | "developer"
+      listing_flag_severity: "critical" | "warning" | "info"
+      listing_flag_type:
+        | "missing_field"
+        | "low_photo_count"
+        | "suspicious_value"
+        | "hebrew_only_description"
+        | "agent_unassigned"
+        | "stale_source"
+        | "address_too_vague_for_geocode"
       listing_status: "for_sale" | "for_rent" | "sold" | "rented"
+      password_setup_purpose: "owner_setup" | "agent_setup"
       project_status:
         | "planning"
         | "pre_sale"
@@ -7295,6 +7604,8 @@ export type Database = {
         | "garden_apartment"
         | "mini_penthouse"
         | "duplex"
+      provisional_credential_role: "owner" | "agent"
+      provisioning_audit_status: "pending" | "flagged" | "reviewed" | "approved"
       verification_status:
         | "draft"
         | "pending_review"
@@ -7428,9 +7739,29 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      agency_management_status: [
+        "draft",
+        "provisioning",
+        "quality_review",
+        "ready_for_handover",
+        "handed_over",
+        "claimed",
+      ],
+      agent_email_strategy: ["send_all_now", "send_after_owner"],
       agent_status: ["pending", "active", "suspended"],
       app_role: ["admin", "agent", "user", "developer"],
+      listing_flag_severity: ["critical", "warning", "info"],
+      listing_flag_type: [
+        "missing_field",
+        "low_photo_count",
+        "suspicious_value",
+        "hebrew_only_description",
+        "agent_unassigned",
+        "stale_source",
+        "address_too_vague_for_geocode",
+      ],
       listing_status: ["for_sale", "for_rent", "sold", "rented"],
+      password_setup_purpose: ["owner_setup", "agent_setup"],
       project_status: [
         "planning",
         "pre_sale",
@@ -7448,6 +7779,8 @@ export const Constants = {
         "mini_penthouse",
         "duplex",
       ],
+      provisional_credential_role: ["owner", "agent"],
+      provisioning_audit_status: ["pending", "flagged", "reviewed", "approved"],
       verification_status: [
         "draft",
         "pending_review",
