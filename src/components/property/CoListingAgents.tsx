@@ -11,7 +11,7 @@
  */
 
 import { useState } from 'react';
-import { ExternalLink, Building2, Flag, Loader2 } from 'lucide-react';
+import { ChevronRight, Building2, Flag, Loader2 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -162,7 +162,7 @@ export function CoListingAgents({ coAgents, propertyId, className }: CoListingAg
           const agencyHref = agencySlug ? `/agencies/${agencySlug}` : null;
 
           const Identity = (
-            <div className="flex items-center gap-2 min-w-0">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
               <Avatar className="h-7 w-7 flex-shrink-0">
                 <AvatarImage src={agencyLogo || undefined} alt={agencyName} />
                 <AvatarFallback className="bg-muted text-xs">
@@ -170,7 +170,9 @@ export function CoListingAgents({ coAgents, propertyId, className }: CoListingAg
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0">
-                <p className="text-xs font-medium text-foreground truncate">{agencyName}</p>
+                <p className="text-xs font-medium text-foreground truncate group-hover:text-primary transition-colors">
+                  {agencyName}
+                </p>
                 {coAgent.agent?.name && (
                   <p className="text-xs text-muted-foreground truncate">{coAgent.agent.name}</p>
                 )}
@@ -179,7 +181,7 @@ export function CoListingAgents({ coAgents, propertyId, className }: CoListingAg
           );
 
           const rowClass =
-            'flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/20 px-3 py-2 hover:bg-muted/40 transition-colors';
+            'group flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/20 px-3 py-2 hover:bg-primary/5 hover:border-primary/40 transition-colors cursor-pointer';
 
           return agencyHref ? (
             <a
@@ -189,9 +191,13 @@ export function CoListingAgents({ coAgents, propertyId, className }: CoListingAg
               title={`View ${agencyName} on BuyWiseIsrael`}
             >
               {Identity}
+              <span className="flex items-center gap-1 text-xs text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0">
+                View agency
+                <ChevronRight className="w-3.5 h-3.5" />
+              </span>
             </a>
           ) : (
-            <div key={coAgent.id} className={rowClass}>
+            <div key={coAgent.id} className={rowClass.replace('cursor-pointer', '')}>
               {Identity}
             </div>
           );
