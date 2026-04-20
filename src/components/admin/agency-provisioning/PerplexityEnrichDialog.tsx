@@ -17,17 +17,32 @@ interface Props {
   existingAgencyId?: string;
   /** Initial seed for the prompt. */
   initialAgencyName?: string;
-  initialSourceUrl?: string;
+  initialWebsiteUrl?: string;
+  initialYad2Url?: string;
+  initialMadlanUrl?: string;
   onImported?: (agencyId: string) => void;
 }
 
-function buildPerplexityPrompt(agencyName: string, sourceUrl: string) {
-  const target = sourceUrl.trim()
-    ? `from this URL: ${sourceUrl.trim()}`
-    : `for the Israeli real estate agency named "${agencyName.trim() || '<AGENCY NAME>'}"`;
+function buildPerplexityPrompt(
+  agencyName: string,
+  websiteUrl: string,
+  yad2Url: string,
+  madlanUrl: string,
+) {
+  const sources: string[] = [];
+  if (websiteUrl.trim()) sources.push(`- Agency website: ${websiteUrl.trim()}`);
+  if (yad2Url.trim()) sources.push(`- Yad2 page: ${yad2Url.trim()}`);
+  if (madlanUrl.trim()) sources.push(`- Madlan page: ${madlanUrl.trim()}`);
 
-  return `You are a research agent. Extract structured public data ${target}.
-Search the agency's official website, Yad2 (yad2.co.il), Madlan (madlan.co.il), Facebook, and LinkedIn.
+  const sourceBlock = sources.length
+    ? `Cross-reference data from ALL of these sources (merge agents found across them, dedupe by name + phone/email):\n${sources.join('\n')}`
+    : `Search the web for the Israeli real estate agency named "${agencyName.trim() || '<AGENCY NAME>'}" — check their official website, Yad2 (yad2.co.il), and Madlan (madlan.co.il).`;
+
+  return `You are a research agent. Extract structured public data for an Israeli real estate agency.
+
+${sourceBlock}
+
+Also check Facebook and LinkedIn for any missing fields.
 
 Return ONLY a single JSON object (no prose, no markdown fences) matching EXACTLY this schema:
 
@@ -59,7 +74,7 @@ Return ONLY a single JSON object (no prose, no markdown fences) matching EXACTLY
 }
 
 Rules:
-- Include EVERY agent listed on the agency's team/about page.
+- Include EVERY agent found across ALL provided sources. Merge duplicates (same person on Yad2 + agency site = ONE entry, combine fields).
 - If a field is unknown, use null (not empty string, not "N/A").
 - Do NOT invent emails, phones, or license numbers.
 - Use lowercase English keys for specializations & languages exactly as listed above.
@@ -94,16 +109,23 @@ export function PerplexityEnrichDialog({
   onOpenChange,
   existingAgencyId,
   initialAgencyName = '',
-  initialSourceUrl = '',
+  initialWebsiteUrl = '',
+  initialYad2Url = '',
+  initialMadlanUrl = '',
   onImported,
 }: Props) {
   const [agencyName, setAgencyName] = useState(initialAgencyName);
-  const [sourceUrl, setSourceUrl] = useState(initialSourceUrl);
+  const [websiteUrl, setWebsiteUrl] = useState(initialWebsiteUrl);
+  const [yad2Url, setYad2Url] = useState(initialYad2Url);
+  const [madlanUrl, setMadlanUrl] = useState(initialMadlanUrl);
   const [pasted, setPasted] = useState('');
   const [tab, setTab] = useState<'prompt' | 'paste'>('prompt');
   const enrich = useEnrichAgencyFromPayload();
 
-  const prompt = useMemo(() => buildPerplexityPrompt(agencyName, sourceUrl), [agencyName, sourceUrl]);
+  const prompt = useMemo(
+    () => buildPerplexityPrompt(agencyName, websiteUrl, yad2Url, madlanUrl),
+    [agencyName, websiteUrl, yad2Url, madlanUrl],
+  );
   const parsed = useMemo(() => tryParsePayload(pasted), [pasted]);
   const preview = parsed.ok ? parsed.data : null;
 
@@ -133,7 +155,9 @@ export function PerplexityEnrichDialog({
       );
       setPasted('');
       setAgencyName('');
-      setSourceUrl('');
+      setWebsiteUrl('');
+      setYad2Url('');
+      setMadlanUrl('');
       setTab('prompt');
       onOpenChange(false);
       onImported?.(res.agencyId);
@@ -163,23 +187,33 @@ export function PerplexityEnrichDialog({
           </TabsList>
 
           <TabsContent value="prompt" className="space-y-3 pt-3">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <Label>Agency name</Label>
-                <Input
-                  value={agencyName}
-                  onChange={(e) => setAgencyName(e.target.value)}
-                  placeholder="e.g. Jerusalem Real Estate"
-                />
-              </div>
-              <div>
-                <Label>Source URL (Yad2, Madlan, agency site)</Label>
-                <Input
-                  value={sourceUrl}
-                  onChange={(e) => setSourceUrl(e.target.value)}
-                  placeholder="https://www.yad2.co.il/realestate/agency/..."
-                />
-              </div>
+            <div>
+              <Label>Agency name</Label>
+              <Input
+                value={agencyName}
+                onChange={(e) => setAgencyName(e.target.value)}
+                placeholder="e.g. Jerusalem Real Estate"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                Source URLs — fill any combination (more = better cross-referenced data)
+              </Label>
+              <Input
+                value={websiteUrl}
+                onChange={(e) => setWebsiteUrl(e.target.value)}
+                placeholder="🌐 Agency website — https://www.agency-name.co.il"
+              />
+              <Input
+                value={yad2Url}
+                onChange={(e) => setYad2Url(e.target.value)}
+                placeholder="🏠 Yad2 page — https://www.yad2.co.il/realestate/agency/..."
+              />
+              <Input
+                value={madlanUrl}
+                onChange={(e) => setMadlanUrl(e.target.value)}
+                placeholder="🗺️ Madlan page — https://www.madlan.co.il/agencies/..."
+              />
             </div>
             <div>
               <Label className="text-xs uppercase tracking-wide text-muted-foreground">Prompt preview</Label>
