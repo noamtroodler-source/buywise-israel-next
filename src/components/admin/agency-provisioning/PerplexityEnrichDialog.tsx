@@ -17,7 +17,9 @@ interface Props {
   existingAgencyId?: string;
   /** Initial seed for the prompt. */
   initialAgencyName?: string;
-  initialSourceUrl?: string;
+  initialWebsiteUrl?: string;
+  initialYad2Url?: string;
+  initialMadlanUrl?: string;
   onImported?: (agencyId: string) => void;
 }
 
