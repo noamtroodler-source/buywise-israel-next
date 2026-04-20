@@ -6932,6 +6932,14 @@ export type Database = {
       }
     }
     Functions: {
+      admin_override_primary: {
+        Args: {
+          p_new_agency_id: string
+          p_property_id: string
+          p_reason_note?: string
+        }
+        Returns: string
+      }
       appeal_cross_agency_conflict: {
         Args: {
           p_appealing_agency_id: string
@@ -7001,6 +7009,24 @@ export type Database = {
         }
         Returns: boolean
       }
+      check_intra_agency_duplicate: {
+        Args: {
+          p_address: string
+          p_agency_id: string
+          p_apartment_number?: string
+          p_bedrooms?: number
+          p_city: string
+          p_floor_number?: number
+          p_size_sqm?: number
+        }
+        Returns: {
+          address: string
+          city: string
+          created_at: string
+          property_id: string
+          title: string
+        }[]
+      }
       check_project_inquiry_dedupe: {
         Args: {
           p_inquiry_type: string
@@ -7014,6 +7040,14 @@ export type Database = {
         Args: { p_agency_id: string; p_property_id: string }
         Returns: boolean
       }
+      colist_as_secondary: {
+        Args: {
+          p_existing_property_id: string
+          p_new_agency_id: string
+          p_new_agent_id: string
+        }
+        Returns: string
+      }
       colisting_stale_sweep: {
         Args: { p_cooldown_days?: number; p_stale_days?: number }
         Returns: {
@@ -7021,6 +7055,15 @@ export type Database = {
           previous_agency_id: string
           property_id: string
         }[]
+      }
+      file_primary_dispute_with_colist: {
+        Args: {
+          p_disputing_agency_id: string
+          p_disputing_agent_id: string
+          p_existing_property_id: string
+          p_reason?: string
+        }
+        Returns: string
       }
       find_similar_images: {
         Args: {
@@ -7119,7 +7162,23 @@ export type Database = {
         Returns: undefined
       }
       normalize_url: { Args: { p_url: string }; Returns: string }
+      resolve_primary_dispute: {
+        Args: {
+          p_admin_notes?: string
+          p_dispute_id: string
+          p_resolution: string
+        }
+        Returns: undefined
+      }
       run_yad2_enqueue: { Args: never; Returns: Json }
+      upgrade_primary_from_scrape: {
+        Args: {
+          p_existing_property_id: string
+          p_new_agency_id: string
+          p_new_agent_id: string
+        }
+        Returns: string
+      }
       use_agency_invite_code: { Args: { invite_code: string }; Returns: string }
       validate_agency_invite_code: {
         Args: { invite_code: string }
