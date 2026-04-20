@@ -1301,6 +1301,48 @@ async function buildSystemPrompt(
   const parts = [SYSTEM_PROMPT_IDENTITY];
   const supabase = createClient(supabaseUrl, supabaseKey);
 
+  // ─── CURRENT_CONTEXT: Israel time + Hebrew calendar awareness ───────────
+  try {
+    const nowIsrael = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Jerusalem" }));
+    const dayName = nowIsrael.toLocaleDateString("en-US", { weekday: "long", timeZone: "Asia/Jerusalem" });
+    const dateStr = nowIsrael.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric", timeZone: "Asia/Jerusalem" });
+    const hour = nowIsrael.getHours();
+    const dow = nowIsrael.getDay(); // 0 Sun ... 6 Sat
+
+    // Hebrew date + holiday detection (free, no API key)
+    let hebrewDate = "";
+    let holidayNote = "";
+    try {
+      const hebcalUrl = `https://www.hebcal.com/converter?cfg=json&date=${nowIsrael.getFullYear()}-${String(nowIsrael.getMonth() + 1).padStart(2, "0")}-${String(nowIsrael.getDate()).padStart(2, "0")}&g2h=1`;
+      const hebRes = await fetch(hebcalUrl);
+      if (hebRes.ok) {
+        const hebData = await hebRes.json();
+        hebrewDate = hebData.hebrew || "";
+        if (hebData.events && hebData.events.length > 0) {
+          holidayNote = hebData.events.join(", ");
+        }
+      }
+    } catch (e) {
+      console.warn("Hebcal fetch failed:", e);
+    }
+
+    // Shabbat detection (Fri afternoon → Sat night, Israel time)
+    let shabbatStatus = "";
+    if (dow === 5 && hour >= 12) shabbatStatus = "Erev Shabbat (Friday afternoon — Shabbat Shalom is appropriate)";
+    else if (dow === 6) shabbatStatus = "Shabbat (Saturday)";
+    else if (dow === 0 && hour < 12) shabbatStatus = "Motzei Shabbat / Sunday morning (Shavua Tov is appropriate)";
+
+    parts.push(`\n## CURRENT_CONTEXT (use for time-aware greetings — do NOT fabricate)
+- Today (Israel time): ${dayName}, ${dateStr}
+- Hour (Israel, 24h): ${hour}
+${hebrewDate ? `- Hebrew date: ${hebrewDate}` : ""}
+${holidayNote ? `- Active Jewish holiday/observance today: ${holidayNote} → use the appropriate greeting (Chag Sameach / Shana Tova / Tzom kal / Chanukah Sameach / Purim Sameach)` : "- No major Jewish holiday today"}
+${shabbatStatus ? `- Shabbat status: ${shabbatStatus}` : ""}
+Use this for ONE greeting per conversation when natural. Do not greet on every message.`);
+  } catch (e) {
+    console.warn("CURRENT_CONTEXT build failed:", e);
+  }
+
   // ─── Context Injection (lightweight queries, compact output) ────────────
   try {
     // Parallel queries — minimal columns only
