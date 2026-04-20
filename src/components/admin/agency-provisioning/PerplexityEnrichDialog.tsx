@@ -155,7 +155,9 @@ export function PerplexityEnrichDialog({
       );
       setPasted('');
       setAgencyName('');
-      setSourceUrl('');
+      setWebsiteUrl('');
+      setYad2Url('');
+      setMadlanUrl('');
       setTab('prompt');
       onOpenChange(false);
       onImported?.(res.agencyId);
