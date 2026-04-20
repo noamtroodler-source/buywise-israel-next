@@ -95,7 +95,6 @@ export function AgencyProfileSection({ agency }: Props) {
   async function handleSaveProfile() {
     await update.mutateAsync({
       name: form.name,
-      slug: form.slug,
       email: form.email,
       phone: form.phone,
       description: form.description,
