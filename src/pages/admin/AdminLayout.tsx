@@ -124,6 +124,7 @@ export function AdminLayout() {
 
   const contentItems = [
     { href: '/admin/properties', label: 'Properties', icon: Home },
+    { href: '/admin/agency-provisioning', label: 'Agency Provisioning', icon: Building2 },
     { href: '/admin/agency-import', label: 'Agency Import', icon: Globe },
     { href: '/admin/scraping-sources', label: 'Scraping Sources', icon: Globe, badge: pendingClaimsCount },
     { href: '/admin/duplicates', label: 'Duplicates', icon: Building, badge: pendingDuplicateCount },

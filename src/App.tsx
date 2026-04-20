@@ -158,6 +158,7 @@ const AdminDataGovernance = lazy(() => import("./pages/admin/AdminDataGovernance
 const AdminAgencyImport = lazy(() => import("./pages/admin/AdminAgencyImport"));
 const AdminScrapingSources = lazy(() => import("./pages/admin/AdminScrapingSources"));
 const AdminCrossAgencyConflicts = lazy(() => import("./pages/admin/AdminCrossAgencyConflicts"));
+const AdminAgencyProvisioning = lazy(() => import("./pages/admin/AdminAgencyProvisioning"));
 const AdminConflictAnalytics = lazy(() => import("./pages/admin/AdminConflictAnalytics"));
 const AdminPrimaryHistory = lazy(() => import("./pages/admin/AdminPrimaryHistory"));
 const AdminPrimaryDisputes = lazy(() => import("./pages/admin/AdminPrimaryDisputes"));
@@ -530,6 +531,7 @@ const App = () => (
                           <Route path="import-neighborhood-profiles" element={<ImportNeighborhoodProfiles />} />
                           <Route path="data-governance" element={<AdminDataGovernance />} />
                           <Route path="agency-import" element={<AdminAgencyImport />} />
+                          <Route path="agency-provisioning" element={<AdminAgencyProvisioning />} />
                           <Route path="scraping-sources" element={<AdminScrapingSources />} />
                           <Route path="cross-agency-conflicts" element={<AdminCrossAgencyConflicts />} />
                           <Route path="cross-agency-conflicts/analytics" element={<AdminConflictAnalytics />} />

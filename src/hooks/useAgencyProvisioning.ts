@@ -39,7 +39,7 @@ export type ProvisioningAgent = {
   welcome_email_sent_at: string | null;
 };
 
-const IN_PROGRESS_STATUSES = ['draft', 'provisioning', 'quality_review', 'ready_for_handover'];
+const IN_PROGRESS_STATUSES = ['draft', 'provisioning', 'quality_review', 'ready_for_handover'] as const;
 
 export function useProvisioningAgencies() {
   return useQuery({
