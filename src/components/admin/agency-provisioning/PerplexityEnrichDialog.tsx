@@ -122,7 +122,7 @@ export function PerplexityEnrichDialog({
 
   async function handleImport() {
     if (!parsed.ok) {
-      toast.error(parsed.error);
+      toast.error((parsed as { ok: false; error: string }).error);
       return;
     }
     try {
@@ -212,7 +212,7 @@ export function PerplexityEnrichDialog({
                 <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
                 <div>
                   <div className="font-medium text-destructive">Could not parse JSON</div>
-                  <div className="text-xs text-muted-foreground mt-1">{parsed.error}</div>
+                  <div className="text-xs text-muted-foreground mt-1">{(parsed as { ok: false; error: string }).error}</div>
                 </div>
               </div>
             )}
@@ -220,7 +220,7 @@ export function PerplexityEnrichDialog({
             {preview && (
               <div className="space-y-3 border rounded-lg p-4 bg-muted/30">
                 <div className="flex items-center gap-2 text-sm font-medium">
-                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  <CheckCircle2 className="h-4 w-4 text-primary" />
                   Preview — ready to import
                 </div>
 

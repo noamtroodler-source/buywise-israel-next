@@ -27,6 +27,7 @@ export default function AdminAgencyProvisioning() {
   const create = useCreateAgency();
 
   const [createOpen, setCreateOpen] = useState(false);
+  const [enrichOpen, setEnrichOpen] = useState(false);
   const [newAgency, setNewAgency] = useState({ name: '', email: '' });
 
   // Auto-select first agency if none chosen
