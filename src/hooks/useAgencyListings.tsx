@@ -15,79 +15,153 @@ export interface AgencyListing {
   total_saves: number;
   images: string[] | null;
   agent_id: string | null;
+  primary_agency_id: string | null;
   import_source: string | null;
   merged_source_urls: string[] | null;
   created_at: string;
   updated_at: string;
+  /** Total inquiries across ALL agencies on this property. */
   inquiries_count: number;
+  /** Inquiries attributed to one of THIS agency's agents. */
+  my_inquiries_count: number;
+  /** Role of this agency on the property. */
+  role: 'primary' | 'co_listed';
+  /** Count of OTHER agencies co-listed (primary + secondary minus this agency). */
+  other_agencies_count: number;
 }
 
+/**
+ * Lists every property this agency participates in, both as primary and as
+ * a secondary co-listing agent. Each row carries:
+ *   - role:                 'primary' | 'co_listed'
+ *   - inquiries_count:       total across all agencies (property-level)
+ *   - my_inquiries_count:    inquiries routed to this agency's agents
+ *   - other_agencies_count:  number of OTHER agencies on the property
+ *
+ * Uses primary_agency_id (Phase 1) as the authoritative "owned by" marker,
+ * falls back to agent → agent.agency_id for rows that predate backfill.
+ */
 export function useAgencyListingsManagement(agencyId: string | undefined) {
   return useQuery({
     queryKey: ['agencyListingsManagement', agencyId],
     queryFn: async () => {
-      if (!agencyId) return [];
+      if (!agencyId) return [] as AgencyListing[];
 
-      // First get all agent IDs for this agency
+      // All agents belonging to the agency (for per-agency inquiry attribution)
       const { data: agents, error: agentsError } = await supabase
         .from('agents')
         .select('id')
         .eq('agency_id', agencyId);
-
       if (agentsError) throw agentsError;
+      const agentIds = (agents ?? []).map((a) => a.id);
 
-      const agentIds = agents?.map(a => a.id) || [];
-
-      if (agentIds.length === 0) return [];
-
-      // Then get all properties for these agents
-      const { data, error } = await supabase
+      // Primary properties: where this agency is the primary
+      const primaryFetch = supabase
         .from('properties')
         .select(`
-          id,
-          title,
-          address,
-          city,
-          price,
-          currency,
-          property_type,
-          listing_status,
-          verification_status,
-          views_count,
-          total_saves,
-          images,
-          agent_id,
-          import_source,
-          merged_source_urls,
-          created_at,
-          updated_at
+          id, title, address, city, price, currency,
+          property_type, listing_status, verification_status,
+          views_count, total_saves, images, agent_id,
+          primary_agency_id, import_source, merged_source_urls,
+          created_at, updated_at
         `)
-        .in('agent_id', agentIds)
+        .eq('primary_agency_id' as any, agencyId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      // Co-listed properties: where this agency appears in property_co_agents
+      const coListedIdsFetch = supabase
+        .from('property_co_agents' as any)
+        .select('property_id')
+        .eq('agency_id', agencyId);
 
-      const propertyIds = data?.map(p => p.id) || [];
+      const [{ data: primaryData, error: primaryErr }, { data: coRows }] =
+        await Promise.all([primaryFetch, coListedIdsFetch]);
+      if (primaryErr) throw primaryErr;
 
-      // Fetch inquiry counts per property
-      let inquiryCounts: Record<string, number> = {};
-      if (propertyIds.length > 0) {
-        const { data: inquiries } = await supabase
-          .from('property_inquiries')
-          .select('property_id')
-          .in('property_id', propertyIds);
+      const coListedIds = (coRows ?? [])
+        .map((r: any) => r.property_id)
+        .filter(Boolean) as string[];
 
-        (inquiries || []).forEach(i => {
-          if (i.property_id) {
-            inquiryCounts[i.property_id] = (inquiryCounts[i.property_id] || 0) + 1;
-          }
-        });
+      let coListedData: any[] = [];
+      if (coListedIds.length > 0) {
+        const { data, error } = await supabase
+          .from('properties')
+          .select(`
+            id, title, address, city, price, currency,
+            property_type, listing_status, verification_status,
+            views_count, total_saves, images, agent_id,
+            primary_agency_id, import_source, merged_source_urls,
+            created_at, updated_at
+          `)
+          .in('id', coListedIds)
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        coListedData = data ?? [];
       }
 
-      return (data || []).map(p => ({
-        ...p,
-        inquiries_count: inquiryCounts[p.id] || 0,
-      })) as AgencyListing[];
+      // Merge, dedupe by id, tag role based on primary_agency_id
+      const byId = new Map<string, any>();
+      for (const row of primaryData ?? []) byId.set(row.id, row);
+      for (const row of coListedData) if (!byId.has(row.id)) byId.set(row.id, row);
+      const rows = Array.from(byId.values());
+
+      const propertyIds = rows.map((r) => r.id);
+      if (propertyIds.length === 0) return [] as AgencyListing[];
+
+      // Inquiry counts — total + this-agency-agents share
+      const [{ data: totalInquiries }, { data: myInquiries }] = await Promise.all([
+        supabase
+          .from('property_inquiries')
+          .select('property_id')
+          .in('property_id', propertyIds),
+        agentIds.length > 0
+          ? supabase
+              .from('property_inquiries')
+              .select('property_id')
+              .in('property_id', propertyIds)
+              .in('agent_id' as any, agentIds)
+          : Promise.resolve({ data: [] as { property_id: string | null }[] }),
+      ]);
+
+      const totalMap: Record<string, number> = {};
+      (totalInquiries ?? []).forEach((i: any) => {
+        if (i.property_id) totalMap[i.property_id] = (totalMap[i.property_id] || 0) + 1;
+      });
+      const myMap: Record<string, number> = {};
+      (myInquiries ?? []).forEach((i: any) => {
+        if (i.property_id) myMap[i.property_id] = (myMap[i.property_id] || 0) + 1;
+      });
+
+      // Secondary-agent counts per property (excluding this agency)
+      const { data: allCoAgentRows } = await supabase
+        .from('property_co_agents' as any)
+        .select('property_id, agency_id')
+        .in('property_id', propertyIds);
+      const otherAgenciesMap: Record<string, Set<string>> = {};
+      (allCoAgentRows ?? []).forEach((r: any) => {
+        if (!r.property_id || !r.agency_id) return;
+        if (r.agency_id === agencyId) return;
+        if (!otherAgenciesMap[r.property_id]) otherAgenciesMap[r.property_id] = new Set();
+        otherAgenciesMap[r.property_id].add(r.agency_id);
+      });
+      // Include primary agencies that aren't this one
+      rows.forEach((r) => {
+        if (r.primary_agency_id && r.primary_agency_id !== agencyId) {
+          if (!otherAgenciesMap[r.id]) otherAgenciesMap[r.id] = new Set();
+          otherAgenciesMap[r.id].add(r.primary_agency_id);
+        }
+      });
+
+      return rows.map((p) => {
+        const isPrimary = p.primary_agency_id === agencyId;
+        return {
+          ...p,
+          inquiries_count: totalMap[p.id] || 0,
+          my_inquiries_count: myMap[p.id] || 0,
+          role: isPrimary ? 'primary' : 'co_listed',
+          other_agencies_count: otherAgenciesMap[p.id]?.size || 0,
+        };
+      }) as AgencyListing[];
     },
     enabled: !!agencyId,
   });

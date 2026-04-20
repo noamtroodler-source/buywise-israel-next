@@ -20,6 +20,17 @@ interface TrackInquiryParams {
 
 async function sendInquiryNotification(params: TrackInquiryParams) {
   try {
+    // Detect co-listing: any secondary agencies on this property means the
+    // buyer had a real choice, and the recipient should know that.
+    let isColisted = false;
+    if (params.propertyId) {
+      const { count } = await supabase
+        .from('property_co_agents' as any)
+        .select('id', { count: 'exact', head: true })
+        .eq('property_id', params.propertyId);
+      isColisted = (count ?? 0) > 0;
+    }
+
     await supabase.functions.invoke('send-notification', {
       body: {
         type: 'new_inquiry',
@@ -29,6 +40,7 @@ async function sendInquiryNotification(params: TrackInquiryParams) {
         inquiryType: params.inquiryType,
         inquirerName: params.name,
         inquirerEmail: params.email,
+        isColisted,
       },
     });
   } catch (error) {

@@ -32,6 +32,7 @@ export default function AgencyDetail() {
   const { slug } = useParams<{ slug: string }>();
   const { user } = useAuth();
   const [category, setCategory] = useState<'buy' | 'rent'>('buy');
+  const [listingRoleFilter, setListingRoleFilter] = useState<'all' | 'primary'>('all');
   const [logoError, setLogoError] = useState(false);
   
   const { data: agency, isLoading: agencyLoading, error } = useAgency(slug || '');
@@ -379,11 +380,45 @@ export default function AgencyDetail() {
                 ))}
               </div>
             ) : activeListings && activeListings.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {activeListings.map((property: any) => (
-                  <PropertyCard key={property.id} property={property} showCategoryBadge hideFeaturedBadge maxBadges={2} />
-                ))}
-              </div>
+              <>
+                {/* Primary / All toggle — only shows if there are co-listed entries */}
+                {activeListings.some((p: any) => p._role === 'co_listed') && (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => setListingRoleFilter('all')}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                        listingRoleFilter === 'all'
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-background border-border hover:bg-muted'
+                      }`}
+                    >
+                      All listings <span className="opacity-80">{activeListings.length}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setListingRoleFilter('primary')}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                        listingRoleFilter === 'primary'
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-background border-border hover:bg-muted'
+                      }`}
+                    >
+                      Primary only <span className="opacity-80">{activeListings.filter((p: any) => p._role === 'primary').length}</span>
+                    </button>
+                    <p className="text-xs text-muted-foreground ml-1">
+                      Co-listed means this agency also represents a property another agency primarily holds.
+                    </p>
+                  </div>
+                )}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {activeListings
+                    .filter((p: any) => listingRoleFilter === 'all' || p._role === 'primary')
+                    .map((property: any) => (
+                      <PropertyCard key={property.id} property={property} showCategoryBadge hideFeaturedBadge maxBadges={2} />
+                    ))}
+                </div>
+              </>
             ) : (
               <Card>
                 <CardContent className="py-12 text-center">
@@ -415,9 +450,11 @@ export default function AgencyDetail() {
               </div>
             ) : pastListings && pastListings.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {pastListings.map((property: any) => (
-                  <PropertyCard key={property.id} property={property} showCategoryBadge hideFeaturedBadge maxBadges={2} />
-                ))}
+                {pastListings
+                  .filter((p: any) => listingRoleFilter === 'all' || p._role === 'primary')
+                  .map((property: any) => (
+                    <PropertyCard key={property.id} property={property} showCategoryBadge hideFeaturedBadge maxBadges={2} />
+                  ))}
               </div>
             ) : (
               <Card>

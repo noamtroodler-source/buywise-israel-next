@@ -27,6 +27,9 @@ interface NotificationPayload {
   rejectionReason?: string;
   daysUntilExpiry?: number;
   agencyName?: string;
+  /** When true, adds a note to the new_inquiry email explaining the buyer
+   *  actively chose this agency on a multi-agency (co-listed) property. */
+  isColisted?: boolean;
 }
 
 const brandHeader = `
@@ -108,10 +111,21 @@ const getNotificationContent = (payload: NotificationPayload) => {
           </div>
         `,
       };
-    case 'new_inquiry':
+    case 'new_inquiry': {
+      const colistedNote = payload.isColisted
+        ? `\n\nThis inquiry is yours — the buyer actively chose your agency on a co-listed property.`
+        : '';
+      const colistedHtmlNote = payload.isColisted
+        ? `
+            <div style="margin-top: 16px; padding: 12px 16px; background-color: #f0fdf4; border-left: 3px solid #16a34a; border-radius: 6px;">
+              <p style="margin: 0; color: #166534; font-size: 14px;">
+                <strong>Co-listed property:</strong> the buyer actively chose your agency from the co-listed options. This lead is yours.
+              </p>
+            </div>`
+        : '';
       return {
         subject: `New inquiry for "${payload.propertyTitle}"`,
-        body: `You have received a new ${payload.inquiryType || 'inquiry'} for your property "${payload.propertyTitle}".\n\nFrom: ${payload.inquirerName || 'A potential buyer'}${payload.inquirerEmail ? `\nEmail: ${payload.inquirerEmail}` : ''}\n\nLog in to your dashboard to view and respond to this lead.`,
+        body: `You have received a new ${payload.inquiryType || 'inquiry'} for your property "${payload.propertyTitle}".\n\nFrom: ${payload.inquirerName || 'A potential buyer'}${payload.inquirerEmail ? `\nEmail: ${payload.inquirerEmail}` : ''}${colistedNote}\n\nLog in to your dashboard to view and respond to this lead.`,
         html: `
            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
             ${brandHeader}
@@ -121,7 +135,7 @@ const getNotificationContent = (payload: NotificationPayload) => {
               <p style="margin: 0; color: #333;"><strong>From:</strong> ${payload.inquirerName || 'A potential buyer'}</p>
               ${payload.inquirerEmail ? `<p style="margin: 8px 0 0 0; color: #333;"><strong>Email:</strong> ${payload.inquirerEmail}</p>` : ''}
               ${payload.inquiryType ? `<p style="margin: 8px 0 0 0; color: #333;"><strong>Type:</strong> ${payload.inquiryType}</p>` : ''}
-            </div>
+            </div>${colistedHtmlNote}
             <p style="margin-top: 24px; color: #666;">Log in to your dashboard to view and respond to this lead.</p>
             <a href="https://buywiseisrael.com/agent/leads" style="display: inline-block; background-color: #2563eb; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; margin-top: 16px;">
               View Lead
@@ -130,6 +144,7 @@ const getNotificationContent = (payload: NotificationPayload) => {
           </div>
         `,
       };
+    }
     case 'listing_expiring':
       return {
         subject: `Heads up: "${payload.propertyTitle}" expires in ${payload.daysUntilExpiry} days`,

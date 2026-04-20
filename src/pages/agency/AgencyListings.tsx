@@ -104,6 +104,7 @@ export default function AgencyListings() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [agentFilter, setAgentFilter] = useState<string>('all');
   const [cityFilter, setCityFilter] = useState<string>('all');
+  const [roleFilter, setRoleFilter] = useState<'all' | 'primary' | 'co_listed'>('all');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const formatPrice = useFormatPrice();
@@ -151,8 +152,12 @@ export default function AgencyListings() {
     if (statusFilter !== 'all' && listing.verification_status !== statusFilter) return false;
     if (agentFilter !== 'all' && listing.agent_id !== agentFilter) return false;
     if (cityFilter !== 'all' && listing.city !== cityFilter) return false;
+    if (roleFilter !== 'all' && listing.role !== roleFilter) return false;
     return true;
   });
+
+  const primaryCount = listings.filter(l => l.role === 'primary').length;
+  const coListedCount = listings.filter(l => l.role === 'co_listed').length;
 
   const stats = {
     total: listings.length,
@@ -327,6 +332,48 @@ export default function AgencyListings() {
             ))}
           </div>
 
+          {/* Role pills — click to filter by primary / co-listed */}
+          {(primaryCount > 0 || coListedCount > 0) && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setRoleFilter('all')}
+                className={cn(
+                  'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors',
+                  roleFilter === 'all'
+                    ? 'bg-primary text-primary-foreground border-primary'
+                    : 'bg-background border-border hover:bg-muted'
+                )}
+              >
+                All <span className="opacity-80">{listings.length}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setRoleFilter('primary')}
+                className={cn(
+                  'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors',
+                  roleFilter === 'primary'
+                    ? 'bg-primary text-primary-foreground border-primary'
+                    : 'bg-background border-border hover:bg-muted'
+                )}
+              >
+                Primary <span className="opacity-80">{primaryCount}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setRoleFilter('co_listed')}
+                className={cn(
+                  'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors',
+                  roleFilter === 'co_listed'
+                    ? 'bg-primary text-primary-foreground border-primary'
+                    : 'bg-background border-border hover:bg-muted'
+                )}
+              >
+                Co-listed <span className="opacity-80">{coListedCount}</span>
+              </button>
+            </div>
+          )}
+
           {/* Imported drafts guidance banner */}
           <ImportedDraftsGuidance listings={listings} />
 
@@ -461,8 +508,20 @@ export default function AgencyListings() {
                                   )}
                                 </div>
                                 <div className="min-w-0">
-                                  <p className="font-medium truncate max-w-[200px]">{listing.title}</p>
-                                  <p className="text-xs text-muted-foreground">{listing.city}</p>
+                                  <div className="flex items-center gap-1.5">
+                                    <p className="font-medium truncate max-w-[200px]">{listing.title}</p>
+                                    {listing.role === 'co_listed' && (
+                                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-muted/40 text-muted-foreground border-border">
+                                        Co-listed
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <p className="text-xs text-muted-foreground">
+                                    {listing.city}
+                                    {listing.other_agencies_count > 0 && (
+                                      <> · with {listing.other_agencies_count} other{listing.other_agencies_count === 1 ? '' : 's'}</>
+                                    )}
+                                  </p>
                                 </div>
                               </div>
                             </TableCell>
@@ -496,7 +555,26 @@ export default function AgencyListings() {
                               <span className="text-sm text-muted-foreground">{listing.total_saves || 0}</span>
                             </TableCell>
                             <TableCell className="text-center">
-                              <span className="text-sm text-muted-foreground">{listing.inquiries_count || 0}</span>
+                              {listing.other_agencies_count > 0 ? (
+                                <TooltipProvider delayDuration={200}>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className="text-sm text-muted-foreground cursor-help">
+                                        <span className="font-medium text-foreground">{listing.my_inquiries_count || 0}</span>
+                                        <span className="opacity-60"> / {listing.inquiries_count || 0}</span>
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top">
+                                      <p className="text-xs">
+                                        Your share: <strong>{listing.my_inquiries_count || 0}</strong><br />
+                                        Total across all agencies: {listing.inquiries_count || 0}
+                                      </p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              ) : (
+                                <span className="text-sm text-muted-foreground">{listing.inquiries_count || 0}</span>
+                              )}
                             </TableCell>
                             <TableCell className="text-center">
                               <span className="text-sm text-muted-foreground">{getDaysOnMarket(listing.created_at)}</span>

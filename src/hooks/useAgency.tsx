@@ -157,8 +157,19 @@ export function useAgencyAgents(
   });
 }
 
+/**
+ * Public-profile listings for an agency.
+ *
+ * Returns both:
+ *  - Primary properties (properties.primary_agency_id = agencyId)
+ *  - Co-listed properties (appears in property_co_agents for this agency)
+ *
+ * Each row carries _role: 'primary' | 'co_listed' so the public profile can
+ * split them into tabs. co_agents nested join is included so the card shows
+ * the full agency stack.
+ */
 export function useAgencyListings(
-  agencyId: string | undefined, 
+  agencyId: string | undefined,
   status: 'active' | 'past',
   category: 'buy' | 'rent' = 'buy'
 ) {
@@ -167,32 +178,62 @@ export function useAgencyListings(
     queryFn: async () => {
       if (!agencyId) return [];
 
-      // First get all agent IDs for this agency
-      const { data: agents, error: agentsError } = await supabase
-        .from('agents')
-        .select('id')
-        .eq('agency_id', agencyId);
-
-      if (agentsError) throw agentsError;
-      if (!agents || agents.length === 0) return [];
-
-      const agentIds = agents.map((a) => a.id);
-
-      // Map category + status to listing_status values
       const statusFilter = category === 'buy'
         ? (status === 'active' ? ['for_sale'] as const : ['sold'] as const)
         : (status === 'active' ? ['for_rent'] as const : ['rented'] as const);
 
-      const { data: properties, error } = await supabase
+      const selectClause = `
+        *,
+        agent:agents(*, agency:agencies(id, name, logo_url, is_partner)),
+        co_agents:property_co_agents(
+          id, source_url, source_type,
+          agent:agents(id, name, agency_name, phone, avatar_url, agency:agencies(id, name, logo_url))
+        )
+      `;
+
+      // Primary: agency owns it outright
+      const primaryFetch = supabase
         .from('properties')
-        .select('*, agent:agents(*)')
-        .in('agent_id', agentIds)
+        .select(selectClause)
+        .eq('primary_agency_id' as any, agencyId)
         .eq('is_published', true)
-        .in('listing_status', statusFilter)
+        .in('listing_status', statusFilter as unknown as string[])
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return properties || [];
+      // Co-listed: agency is secondary via property_co_agents
+      const coListedIdsFetch = supabase
+        .from('property_co_agents' as any)
+        .select('property_id')
+        .eq('agency_id', agencyId);
+
+      const [{ data: primary, error: primaryErr }, { data: coRows }] =
+        await Promise.all([primaryFetch, coListedIdsFetch]);
+      if (primaryErr) throw primaryErr;
+
+      const coListedIds = (coRows ?? [])
+        .map((r: any) => r.property_id)
+        .filter(Boolean) as string[];
+
+      let coListed: any[] = [];
+      if (coListedIds.length > 0) {
+        const { data, error } = await supabase
+          .from('properties')
+          .select(selectClause)
+          .in('id', coListedIds)
+          .eq('is_published', true)
+          .in('listing_status', statusFilter as unknown as string[])
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        coListed = data ?? [];
+      }
+
+      // Merge, de-dupe by id, tag role
+      const byId = new Map<string, any>();
+      for (const row of primary ?? []) byId.set(row.id, { ...row, _role: 'primary' });
+      for (const row of coListed) {
+        if (!byId.has(row.id)) byId.set(row.id, { ...row, _role: 'co_listed' });
+      }
+      return Array.from(byId.values());
     },
     enabled: !!agencyId,
   });
