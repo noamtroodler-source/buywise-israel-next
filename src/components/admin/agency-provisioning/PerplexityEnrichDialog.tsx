@@ -109,16 +109,23 @@ export function PerplexityEnrichDialog({
   onOpenChange,
   existingAgencyId,
   initialAgencyName = '',
-  initialSourceUrl = '',
+  initialWebsiteUrl = '',
+  initialYad2Url = '',
+  initialMadlanUrl = '',
   onImported,
 }: Props) {
   const [agencyName, setAgencyName] = useState(initialAgencyName);
-  const [sourceUrl, setSourceUrl] = useState(initialSourceUrl);
+  const [websiteUrl, setWebsiteUrl] = useState(initialWebsiteUrl);
+  const [yad2Url, setYad2Url] = useState(initialYad2Url);
+  const [madlanUrl, setMadlanUrl] = useState(initialMadlanUrl);
   const [pasted, setPasted] = useState('');
   const [tab, setTab] = useState<'prompt' | 'paste'>('prompt');
   const enrich = useEnrichAgencyFromPayload();
 
-  const prompt = useMemo(() => buildPerplexityPrompt(agencyName, sourceUrl), [agencyName, sourceUrl]);
+  const prompt = useMemo(
+    () => buildPerplexityPrompt(agencyName, websiteUrl, yad2Url, madlanUrl),
+    [agencyName, websiteUrl, yad2Url, madlanUrl],
+  );
   const parsed = useMemo(() => tryParsePayload(pasted), [pasted]);
   const preview = parsed.ok ? parsed.data : null;
 
