@@ -143,18 +143,17 @@ function AffordabilityCalculatorContent() {
   const saveToProfile = useSaveCalculatorResult();
 
   const { currency, exchangeRate } = usePreferences();
-  const currencySymbol = currency === 'USD' ? '$' : '₪';
+  const { toILS, toDisplay, symbol: currencySymbol } = useCurrencyInput();
   const formatPrice = useCallback((value: number) => {
     const display = currency === 'USD' ? value / exchangeRate : value;
     return `${currency === 'USD' ? '$' : '₪'}${formatNumber(Math.round(display))}`;
   }, [currency, exchangeRate]);
 
+  // All monetary state stored in ILS internally — display layer converts via toDisplay/toILS
   const [monthlyIncome, setMonthlyIncome] = useState(DEFAULTS.monthlyIncome);
   const [spouseIncome, setSpouseIncome] = useState(DEFAULTS.spouseIncome);
   const [monthlyDebts, setMonthlyDebts] = useState(DEFAULTS.monthlyDebts);
   const [downPayment, setDownPayment] = useState(DEFAULTS.downPayment);
-  const [downPaymentCurrency, setDownPaymentCurrency] = useState<DownPaymentCurrency>('USD');
-  const [downPaymentInput, setDownPaymentInput] = useState(DEFAULTS.downPayment); // raw input in selected currency
   const [interestRate, setInterestRate] = useState(DEFAULTS.interestRate);
   const [loanTermYears, setLoanTermYears] = useState(DEFAULTS.loanTermYears);
   const [employmentType, setEmploymentType] = useState<string>(DEFAULTS.employmentType);
@@ -173,20 +172,6 @@ function AffordabilityCalculatorContent() {
   const { data: availableCities = [] } = useAvailableCities();
   const { data: roomPrices = [] } = useCityRoomPrices(selectedCity || null);
 
-  // Convert down payment input to ILS whenever currency or amount changes
-  useEffect(() => {
-    const rate = CURRENCY_CONFIG[downPaymentCurrency].toILS;
-    setDownPayment(Math.round(downPaymentInput * rate));
-  }, [downPaymentInput, downPaymentCurrency]);
-
-  const handleDownPaymentCurrencyChange = (newCurrency: DownPaymentCurrency) => {
-    // Convert existing input value to new currency
-    const currentILS = downPaymentInput * CURRENCY_CONFIG[downPaymentCurrency].toILS;
-    const newRate = CURRENCY_CONFIG[newCurrency].toILS;
-    setDownPaymentInput(Math.round(currentILS / newRate));
-    setDownPaymentCurrency(newCurrency);
-  };
-
   // Track user interaction
   useEffect(() => {
     if (monthlyIncome !== DEFAULTS.monthlyIncome || downPayment !== DEFAULTS.downPayment) {
@@ -203,8 +188,7 @@ function AffordabilityCalculatorContent() {
         if (parsed.monthlyIncome) setMonthlyIncome(parsed.monthlyIncome);
         if (parsed.spouseIncome) setSpouseIncome(parsed.spouseIncome);
         if (parsed.monthlyDebts !== undefined) setMonthlyDebts(parsed.monthlyDebts);
-        if (parsed.downPaymentInput) setDownPaymentInput(parsed.downPaymentInput);
-        if (parsed.downPaymentCurrency) setDownPaymentCurrency(parsed.downPaymentCurrency);
+        if (parsed.downPayment) setDownPayment(parsed.downPayment);
         if (parsed.interestRate) setInterestRate(parsed.interestRate);
         if (parsed.loanTermYears) setLoanTermYears(parsed.loanTermYears);
         if (parsed.employmentType) setEmploymentType(parsed.employmentType);
@@ -218,11 +202,11 @@ function AffordabilityCalculatorContent() {
 
   useEffect(() => {
     const data = {
-      monthlyIncome, spouseIncome, monthlyDebts, downPaymentInput, downPaymentCurrency, interestRate,
+      monthlyIncome, spouseIncome, monthlyDebts, downPayment, interestRate,
       loanTermYears, employmentType, hasForeignIncome, foreignIncomePercent,
     };
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  }, [monthlyIncome, spouseIncome, monthlyDebts, downPaymentInput, downPaymentCurrency, interestRate, loanTermYears, employmentType, hasForeignIncome, foreignIncomePercent]);
+  }, [monthlyIncome, spouseIncome, monthlyDebts, downPayment, interestRate, loanTermYears, employmentType, hasForeignIncome, foreignIncomePercent]);
 
   useEffect(() => {
     if (buyerProfile) {
