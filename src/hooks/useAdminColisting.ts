@@ -257,6 +257,48 @@ export function useResolveColistingReport() {
   });
 }
 
+// ─── Telemetry (Phase 10) ──────────────────────────────────────────────────
+
+export interface ColistingTelemetry {
+  coverage: {
+    published_properties: number;
+    with_co_agents: number;
+    coverage_pct: number;
+  };
+  transitions_7d: Record<string, number>;
+  disputes: {
+    open_now: number;
+    filed_30d: number;
+    by_status_30d: Record<string, number>;
+  };
+  stale_demotions_30d: number;
+  boosts: {
+    active_now: number;
+    activations_30d: number;
+  };
+  reports: {
+    open_now: number;
+    filed_30d: number;
+  };
+  per_agency: {
+    avg_primary_listings: number;
+    avg_co_agent_rows: number;
+  };
+  generated_at: string;
+}
+
+export function useColistingTelemetry() {
+  return useQuery({
+    queryKey: ['admin', 'colisting-telemetry'],
+    queryFn: async () => {
+      const { data, error } = await (supabase.rpc as any)('get_colisting_telemetry');
+      if (error) throw error;
+      return data as ColistingTelemetry;
+    },
+    refetchInterval: 5 * 60 * 1000, // refresh every 5 minutes
+  });
+}
+
 // ─── Merge events (read-only list for now) ─────────────────────────────────
 
 export function useAdminMergeEvents() {

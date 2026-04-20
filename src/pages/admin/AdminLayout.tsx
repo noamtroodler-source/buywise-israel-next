@@ -5,7 +5,7 @@ import {
   FileText, MapPin, BarChart3, Settings, ClipboardCheck, Sliders,
   Mail, ToggleLeft, BookOpen, Megaphone, Star, Package, Globe,
   Wrench, ChevronRight, PenLine, Bug, Zap, TrendingUp, Flame, Shield,
-  History, Gavel, Combine, Flag
+  History, Gavel, Combine, Flag, Activity
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { cn } from '@/lib/utils';
@@ -132,6 +132,7 @@ export function AdminLayout() {
   ];
 
   const coListingItems = [
+    { href: '/admin/colisting-telemetry', label: 'Telemetry', icon: Activity },
     { href: '/admin/primary-disputes', label: 'Disputes', icon: Gavel, badge: pendingDisputesCount },
     { href: '/admin/colisting-reports', label: 'Cluster Reports', icon: Flag, badge: pendingColistingReportsCount },
     { href: '/admin/primary-history', label: 'Primary History', icon: History },
