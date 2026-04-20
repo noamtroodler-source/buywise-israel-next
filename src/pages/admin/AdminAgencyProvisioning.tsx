@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Building2, Loader2 } from 'lucide-react';
+import { Building2, Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,6 +14,7 @@ import { ImportListingsSection } from '@/components/admin/agency-provisioning/Im
 import { ListingsQualitySection } from '@/components/admin/agency-provisioning/ListingsQualitySection';
 import { HandoverSection } from '@/components/admin/agency-provisioning/HandoverSection';
 import { AuditLogSection } from '@/components/admin/agency-provisioning/AuditLogSection';
+import { PerplexityEnrichDialog } from '@/components/admin/agency-provisioning/PerplexityEnrichDialog';
 import { useAgencyAgents } from '@/hooks/useAgencyProvisioning';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -27,6 +28,7 @@ export default function AdminAgencyProvisioning() {
   const create = useCreateAgency();
 
   const [createOpen, setCreateOpen] = useState(false);
+  const [enrichOpen, setEnrichOpen] = useState(false);
   const [newAgency, setNewAgency] = useState({ name: '', email: '' });
 
   // Auto-select first agency if none chosen
@@ -90,8 +92,11 @@ export default function AdminAgencyProvisioning() {
             <div className="border rounded-lg p-12 text-center text-muted-foreground">
               <Building2 className="h-10 w-10 mx-auto mb-3 opacity-40" />
               Select an agency from the sidebar, or create a new draft.
-              <div className="mt-4">
+              <div className="mt-4 flex items-center justify-center gap-2">
                 <Button onClick={() => setCreateOpen(true)}>Create new agency</Button>
+                <Button variant="outline" onClick={() => setEnrichOpen(true)}>
+                  <Sparkles className="h-4 w-4 mr-2" /> Enrich with Perplexity
+                </Button>
               </div>
             </div>
           ) : (
@@ -105,6 +110,28 @@ export default function AdminAgencyProvisioning() {
           <DialogHeader>
             <DialogTitle>Create agency draft</DialogTitle>
           </DialogHeader>
+
+          <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 flex items-start justify-between gap-3">
+            <div className="text-sm">
+              <div className="font-medium flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5 text-primary" /> Auto-fill from Perplexity
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Skip manual entry — generate a research prompt, paste the JSON back, and import the full roster.
+              </p>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setCreateOpen(false);
+                setEnrichOpen(true);
+              }}
+            >
+              Use Perplexity
+            </Button>
+          </div>
+
           <div className="space-y-3">
             <div>
               <Label>Agency name *</Label>
@@ -132,6 +159,12 @@ export default function AdminAgencyProvisioning() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <PerplexityEnrichDialog
+        open={enrichOpen}
+        onOpenChange={setEnrichOpen}
+        onImported={(id) => selectAgency(id)}
+      />
     </div>
   );
 }

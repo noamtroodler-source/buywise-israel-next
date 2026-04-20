@@ -798,6 +798,7 @@ export type Database = {
           created_at: string
           email: string
           email_verified_at: string | null
+          enrichment_source: string | null
           facebook_url: string | null
           id: string
           instagram_url: string | null
@@ -809,6 +810,7 @@ export type Database = {
           license_number: string | null
           linkedin_url: string | null
           name: string
+          needs_review: boolean
           neighborhoods_covered: string[] | null
           notify_email: boolean | null
           notify_on_approval: boolean | null
@@ -836,6 +838,7 @@ export type Database = {
           created_at?: string
           email: string
           email_verified_at?: string | null
+          enrichment_source?: string | null
           facebook_url?: string | null
           id?: string
           instagram_url?: string | null
@@ -847,6 +850,7 @@ export type Database = {
           license_number?: string | null
           linkedin_url?: string | null
           name: string
+          needs_review?: boolean
           neighborhoods_covered?: string[] | null
           notify_email?: boolean | null
           notify_on_approval?: boolean | null
@@ -874,6 +878,7 @@ export type Database = {
           created_at?: string
           email?: string
           email_verified_at?: string | null
+          enrichment_source?: string | null
           facebook_url?: string | null
           id?: string
           instagram_url?: string | null
@@ -885,6 +890,7 @@ export type Database = {
           license_number?: string | null
           linkedin_url?: string | null
           name?: string
+          needs_review?: boolean
           neighborhoods_covered?: string[] | null
           notify_email?: boolean | null
           notify_on_approval?: boolean | null

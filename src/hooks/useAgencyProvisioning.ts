@@ -37,6 +37,8 @@ export type ProvisioningAgent = {
   completeness_score: number;
   pending_fields: string[];
   welcome_email_sent_at: string | null;
+  needs_review?: boolean | null;
+  enrichment_source?: string | null;
 };
 
 const IN_PROGRESS_STATUSES = ['draft', 'provisioning', 'quality_review', 'ready_for_handover'] as const;
@@ -77,9 +79,9 @@ export function useAgencyAgents(agencyId: string | null) {
     queryKey: ['provisioning-agency-agents', agencyId],
     enabled: !!agencyId,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('agents')
-        .select('id, agency_id, name, email, phone, avatar_url, bio, license_number, specializations, languages, user_id, is_provisional, completeness_score, pending_fields, welcome_email_sent_at')
+        .select('id, agency_id, name, email, phone, avatar_url, bio, license_number, specializations, languages, user_id, is_provisional, completeness_score, pending_fields, welcome_email_sent_at, needs_review, enrichment_source')
         .eq('agency_id', agencyId!)
         .order('created_at', { ascending: true });
       if (error) throw error;
@@ -530,6 +532,139 @@ export function useReauthAdmin() {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw new Error('Password did not match');
       return true;
+    },
+  });
+}
+
+// ============================================================================
+// Perplexity Enrichment — bulk-import agency + agents from pasted JSON
+// ============================================================================
+
+export type EnrichedAgencyPayload = {
+  agency: {
+    name?: string;
+    email?: string | null;
+    phone?: string | null;
+    website?: string | null;
+    description?: string | null;
+    office_address?: string | null;
+    cities_covered?: string[] | null;
+    logo_url?: string | null;
+    social_links?: Record<string, string> | null;
+  };
+  agents: Array<{
+    name: string;
+    email?: string | null;
+    phone?: string | null;
+    avatar_url?: string | null;
+    bio?: string | null;
+    license_number?: string | null;
+    role?: string | null;
+    specializations?: string[] | null;
+    languages?: string[] | null;
+  }>;
+};
+
+export function useEnrichAgencyFromPayload() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { payload: EnrichedAgencyPayload; existingAgencyId?: string }) => {
+      const { payload, existingAgencyId } = input;
+      let agencyId = existingAgencyId;
+
+      if (!agencyId) {
+        if (!payload.agency?.name) throw new Error('Agency name missing in payload');
+        const { generateUniqueAgencySlug } = await import('@/lib/agencySlug');
+        const slug = await generateUniqueAgencySlug(payload.agency.name);
+        const { data: newAgency, error: createErr } = await supabase
+          .from('agencies')
+          .insert({
+            name: payload.agency.name,
+            slug,
+            email: payload.agency.email || null,
+            phone: payload.agency.phone || null,
+            website: payload.agency.website || null,
+            description: payload.agency.description || null,
+            office_address: payload.agency.office_address || null,
+            cities_covered: payload.agency.cities_covered || null,
+            logo_url: payload.agency.logo_url || null,
+            social_links: payload.agency.social_links || null,
+            management_status: 'draft',
+          } as any)
+          .select('id')
+          .single();
+        if (createErr) throw createErr;
+        agencyId = newAgency.id as string;
+      } else {
+        const patch: Record<string, any> = {};
+        for (const [k, v] of Object.entries(payload.agency || {})) {
+          if (v !== undefined && v !== null && v !== '') patch[k] = v;
+        }
+        if (Object.keys(patch).length > 0) {
+          await supabase.from('agencies').update(patch as any).eq('id', agencyId);
+        }
+      }
+
+      const { data: existingAgents } = await (supabase as any)
+        .from('agents')
+        .select('email')
+        .eq('agency_id', agencyId);
+      const existingEmails = new Set(
+        (existingAgents || []).map((a: any) => (a.email || '').toLowerCase()).filter(Boolean)
+      );
+
+      let inserted = 0;
+      let skipped = 0;
+      for (const a of payload.agents || []) {
+        if (!a.name) { skipped++; continue; }
+        const emailLower = (a.email || '').toLowerCase();
+        if (emailLower && existingEmails.has(emailLower)) { skipped++; continue; }
+
+        const fields: Array<[string, boolean]> = [
+          ['name', !!a.name],
+          ['email', !!a.email],
+          ['phone', !!a.phone],
+          ['avatar_url', !!a.avatar_url],
+          ['bio', !!(a.bio && a.bio.length > 30)],
+          ['license_number', !!a.license_number],
+          ['specializations', !!(a.specializations && a.specializations.length)],
+          ['languages', !!(a.languages && a.languages.length)],
+        ];
+        const pending = fields.filter(([, ok]) => !ok).map(([k]) => k);
+        const score = Math.round(((fields.length - pending.length) / fields.length) * 100);
+
+        const { error: insErr } = await (supabase as any).from('agents').insert({
+          agency_id: agencyId,
+          name: a.name,
+          email: a.email || null,
+          phone: a.phone || null,
+          avatar_url: a.avatar_url || null,
+          bio: a.bio || null,
+          license_number: a.license_number || null,
+          specializations: a.specializations || null,
+          languages: a.languages || null,
+          completeness_score: score,
+          pending_fields: pending,
+          status: 'pending',
+          is_provisional: true,
+          needs_review: true,
+          enrichment_source: 'perplexity',
+        } as any);
+        if (insErr) {
+          console.error('Agent insert failed', insErr);
+          skipped++;
+        } else {
+          inserted++;
+          if (emailLower) existingEmails.add(emailLower);
+        }
+      }
+
+      return { agencyId: agencyId!, inserted, skipped };
+    },
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ['provisioning-agencies'] });
+      qc.invalidateQueries({ queryKey: ['provisioning-agency', res.agencyId] });
+      qc.invalidateQueries({ queryKey: ['provisioning-agency-agents', res.agencyId] });
     },
   });
 }
