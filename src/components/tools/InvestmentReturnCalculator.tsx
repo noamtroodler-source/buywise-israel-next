@@ -418,7 +418,7 @@ export function InvestmentReturnCalculator() {
                         </Tooltip>
                       </div>
                       <FormControl>
-                        <FormattedNumberInput prefix={currencySymbol} placeholder="2,000,000" value={field.value} onChange={(v) => handleFieldChange(field.onChange, v)} />
+                        <FormattedNumberInput prefix={currencySymbol} placeholder="2,000,000" value={field.value ? toDisplay(field.value) : undefined} onChange={(v) => handleFieldChange(field.onChange, v != null ? toILS(v) : v)} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -436,7 +436,7 @@ export function InvestmentReturnCalculator() {
                         </Tooltip>
                       </div>
                       <FormControl>
-                        <FormattedNumberInput prefix={currencySymbol} placeholder="6,500" value={field.value} onChange={(v) => handleFieldChange(field.onChange, v)} />
+                        <FormattedNumberInput prefix={currencySymbol} placeholder="6,500" value={field.value ? toDisplay(field.value) : undefined} onChange={(v) => handleFieldChange(field.onChange, v != null ? toILS(v) : v)} />
                       </FormControl>
                       <FormDescription>Expected monthly rental income (escalates 3%/year)</FormDescription>
                       <FormMessage />
@@ -564,7 +564,7 @@ export function InvestmentReturnCalculator() {
                       <FormItem>
                         <FormLabel>Total Annual Expenses ({currencySymbol}/yr)</FormLabel>
                         <FormControl>
-                          <FormattedNumberInput value={field.value} onChange={(v) => handleFieldChange(field.onChange, v ?? 0)} placeholder="11,500" />
+                          <FormattedNumberInput value={field.value ? toDisplay(field.value) : undefined} onChange={(v) => handleFieldChange(field.onChange, toILS(v ?? 0))} placeholder="11,500" />
                         </FormControl>
                         <FormDescription>Arnona, Vaad Bayit, insurance, maintenance combined. Escalates 2%/yr.</FormDescription>
                         <FormMessage />
@@ -576,7 +576,7 @@ export function InvestmentReturnCalculator() {
                         <FormItem>
                           <FormLabel>Arnona ({currencySymbol}/yr)</FormLabel>
                           <FormControl>
-                            <FormattedNumberInput value={field.value} onChange={(v) => handleFieldChange(field.onChange, v ?? 0)} placeholder="1,600" />
+                            <FormattedNumberInput value={field.value ? toDisplay(field.value) : undefined} onChange={(v) => handleFieldChange(field.onChange, toILS(v ?? 0))} placeholder="1,600" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -585,7 +585,7 @@ export function InvestmentReturnCalculator() {
                         <FormItem>
                           <FormLabel>Vaad Bayit ({currencySymbol}/yr)</FormLabel>
                           <FormControl>
-                            <FormattedNumberInput value={field.value} onChange={(v) => handleFieldChange(field.onChange, v ?? 0)} placeholder="4,200" />
+                            <FormattedNumberInput value={field.value ? toDisplay(field.value) : undefined} onChange={(v) => handleFieldChange(field.onChange, toILS(v ?? 0))} placeholder="4,200" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -594,7 +594,7 @@ export function InvestmentReturnCalculator() {
                         <FormItem>
                           <FormLabel>Insurance ({currencySymbol}/yr)</FormLabel>
                           <FormControl>
-                            <FormattedNumberInput value={field.value} onChange={(v) => handleFieldChange(field.onChange, v ?? 0)} placeholder="1,800" />
+                            <FormattedNumberInput value={field.value ? toDisplay(field.value) : undefined} onChange={(v) => handleFieldChange(field.onChange, toILS(v ?? 0))} placeholder="1,800" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -672,7 +672,7 @@ export function InvestmentReturnCalculator() {
                         <FormField control={form.control} name="renovationCosts" render={({ field }) => (
                           <FormItem>
                             <FormControl>
-                              <FormattedNumberInput prefix={currencySymbol} placeholder="100,000" value={field.value} onChange={(v) => handleFieldChange(field.onChange, v)} />
+                              <FormattedNumberInput prefix={currencySymbol} placeholder="100,000" value={field.value ? toDisplay(field.value) : undefined} onChange={(v) => handleFieldChange(field.onChange, v != null ? toILS(v) : v)} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
