@@ -37,6 +37,8 @@ export type ProvisioningAgent = {
   completeness_score: number;
   pending_fields: string[];
   welcome_email_sent_at: string | null;
+  needs_review?: boolean | null;
+  enrichment_source?: string | null;
 };
 
 const IN_PROGRESS_STATUSES = ['draft', 'provisioning', 'quality_review', 'ready_for_handover'] as const;
@@ -77,9 +79,9 @@ export function useAgencyAgents(agencyId: string | null) {
     queryKey: ['provisioning-agency-agents', agencyId],
     enabled: !!agencyId,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('agents')
-        .select('id, agency_id, name, email, phone, avatar_url, bio, license_number, specializations, languages, user_id, is_provisional, completeness_score, pending_fields, welcome_email_sent_at')
+        .select('id, agency_id, name, email, phone, avatar_url, bio, license_number, specializations, languages, user_id, is_provisional, completeness_score, pending_fields, welcome_email_sent_at, needs_review, enrichment_source')
         .eq('agency_id', agencyId!)
         .order('created_at', { ascending: true });
       if (error) throw error;
