@@ -26,6 +26,8 @@ export function AgencyProfileSection({ agency }: Props) {
   const update = useUpdateAgency(agency.id);
   const provision = useProvisionAgencyAccount();
   const reveal = useRevealCredentials();
+  const resend = useResendSetupLink();
+  const [secureRevealOpen, setSecureRevealOpen] = useState(false);
 
   const [form, setForm] = useState({
     name: agency.name || '',
