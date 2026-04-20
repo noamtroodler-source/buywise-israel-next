@@ -21,13 +21,26 @@ interface Props {
   onImported?: (agencyId: string) => void;
 }
 
-function buildPerplexityPrompt(agencyName: string, sourceUrl: string) {
-  const target = sourceUrl.trim()
-    ? `from this URL: ${sourceUrl.trim()}`
-    : `for the Israeli real estate agency named "${agencyName.trim() || '<AGENCY NAME>'}"`;
+function buildPerplexityPrompt(
+  agencyName: string,
+  websiteUrl: string,
+  yad2Url: string,
+  madlanUrl: string,
+) {
+  const sources: string[] = [];
+  if (websiteUrl.trim()) sources.push(`- Agency website: ${websiteUrl.trim()}`);
+  if (yad2Url.trim()) sources.push(`- Yad2 page: ${yad2Url.trim()}`);
+  if (madlanUrl.trim()) sources.push(`- Madlan page: ${madlanUrl.trim()}`);
 
-  return `You are a research agent. Extract structured public data ${target}.
-Search the agency's official website, Yad2 (yad2.co.il), Madlan (madlan.co.il), Facebook, and LinkedIn.
+  const sourceBlock = sources.length
+    ? `Cross-reference data from ALL of these sources (merge agents found across them, dedupe by name + phone/email):\n${sources.join('\n')}`
+    : `Search the web for the Israeli real estate agency named "${agencyName.trim() || '<AGENCY NAME>'}" — check their official website, Yad2 (yad2.co.il), and Madlan (madlan.co.il).`;
+
+  return `You are a research agent. Extract structured public data for an Israeli real estate agency.
+
+${sourceBlock}
+
+Also check Facebook and LinkedIn for any missing fields.
 
 Return ONLY a single JSON object (no prose, no markdown fences) matching EXACTLY this schema:
 
@@ -59,7 +72,7 @@ Return ONLY a single JSON object (no prose, no markdown fences) matching EXACTLY
 }
 
 Rules:
-- Include EVERY agent listed on the agency's team/about page.
+- Include EVERY agent found across ALL provided sources. Merge duplicates (same person on Yad2 + agency site = ONE entry, combine fields).
 - If a field is unknown, use null (not empty string, not "N/A").
 - Do NOT invent emails, phones, or license numbers.
 - Use lowercase English keys for specializations & languages exactly as listed above.
