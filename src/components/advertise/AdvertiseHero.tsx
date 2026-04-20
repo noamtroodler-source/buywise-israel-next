@@ -21,19 +21,19 @@ export function AdvertiseHero() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
               </span>
-              Now accepting new professionals
+              Now accepting founding agencies
             </Badge>
 
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight">
-              Grow Your Business with{" "}
+              Grow Your Agency with{" "}
               <span className="text-foreground">BuyWise</span>{" "}
               <span className="text-primary">Israel</span>
             </h1>
 
             <p className="text-lg text-muted-foreground max-w-xl">
-              Join the platform built specifically for English-speaking buyers. 
-              Whether you're an agent, agency, or developer—reach motivated Anglo 
-              buyers actively searching for Israeli real estate.
+              Register your agency on the platform built for English-speaking
+              buyers in Israel. Reach motivated international clients actively
+              searching for property — and invite your team to join under your brand.
             </p>
 
             <div className="flex flex-wrap gap-4">
@@ -66,8 +66,8 @@ export function AdvertiseHero() {
                   JD
                 </div>
                 <div>
-                  <h3 className="font-semibold text-foreground">Your Professional Profile</h3>
-                  <p className="text-sm text-muted-foreground">Agent • Agency • Developer</p>
+                  <h3 className="font-semibold text-foreground">Your Agency Profile</h3>
+                  <p className="text-sm text-muted-foreground">Branded · Team-enabled</p>
                 </div>
                 <Badge className="ml-auto">Verified</Badge>
               </div>
