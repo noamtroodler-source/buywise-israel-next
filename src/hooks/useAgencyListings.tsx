@@ -60,8 +60,8 @@ export function useAgencyListingsManagement(agencyId: string | undefined) {
       const agentIds = (agents ?? []).map((a) => a.id);
 
       // Primary properties: where this agency is the primary
-      const primaryFetch = supabase
-        .from('properties')
+      const primaryFetch: any = (supabase
+        .from('properties') as any)
         .select(`
           id, title, address, city, price, currency,
           property_type, listing_status, verification_status,
@@ -70,7 +70,7 @@ export function useAgencyListingsManagement(agencyId: string | undefined) {
           boost_active_until, boosted_by_agency_id,
           created_at, updated_at
         `)
-        .eq('primary_agency_id' as any, agencyId)
+        .eq('primary_agency_id', agencyId)
         .order('created_at', { ascending: false });
 
       // Co-listed properties: where this agency appears in property_co_agents
