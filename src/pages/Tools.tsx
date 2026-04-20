@@ -49,7 +49,7 @@ const allTools: Record<string, Tool> = {
   },
   totalcost: { 
     id: 'totalcost', 
-    label: 'Total Cost Calculator', 
+    label: 'True Cost Calculator', 
     description: 'See the true cost of buying in Israel — taxes, fees, closing costs, and surprises most buyers miss.', 
     icon: Receipt,
     guidanceHint: 'Avoid surprises later',
@@ -106,6 +106,7 @@ const BETA_TOOL_IDS = new Set(['renovation', 'documents', 'listing-decoder', 'in
 const toolComponents: Record<string, React.ComponentType> = {
   mortgage: MortgageCalculator,
   totalcost: TrueCostCalculator,
+  'total-cost': TrueCostCalculator,
   affordability: AffordabilityCalculator,
   investment: InvestmentReturnCalculator,
   rentvsbuy: RentVsBuyCalculator,
@@ -270,8 +271,11 @@ export default function Tools() {
 
   useEffect(() => {
     const toolParam = searchParams.get('tool');
-    if (toolParam && toolComponents[toolParam]) {
-      setActiveTool(toolParam);
+    // Normalize aliases (e.g., 'total-cost' → canonical 'totalcost') so activeTool
+    // always lines up with allTools/BETA_TOOL_IDS lookups.
+    const normalized = toolParam === 'total-cost' ? 'totalcost' : toolParam;
+    if (normalized && toolComponents[normalized]) {
+      setActiveTool(normalized);
        // Scroll to top when opening a tool
        window.scrollTo(0, 0);
     } else {

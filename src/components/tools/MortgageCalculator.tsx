@@ -165,15 +165,19 @@ function MortgageCalculatorContent() {
     return calculateMortgagePayment(loanAmount, interestRate, loanTermYears);
   }, [loanAmount, interestRate, loanTermYears]);
 
-  // Payment range calculation using rate variance
-  const paymentRange = useMemo(() => {
-    return estimateMonthlyPaymentRange(propertyPrice, buyerType);
-  }, [propertyPrice, buyerType]);
+  // Payment range anchored on the USER'S rate (±0.75%) and their actual loanAmount,
+  // so the hero number reacts to their interest-rate input — not a hardcoded 4.5–6%.
+  const lowRate = Math.max(interestRate - 0.75, 2);
+  const highRate = Math.min(interestRate + 0.75, 12);
 
-  // Interest and total payment ranges based on rate variance
+  const paymentRange = useMemo(() => {
+    const lowPay = calculateMortgagePayment(loanAmount, lowRate, loanTermYears);
+    const highPay = calculateMortgagePayment(loanAmount, highRate, loanTermYears);
+    return { low: lowPay.monthlyPayment, high: highPay.monthlyPayment };
+  }, [loanAmount, lowRate, highRate, loanTermYears]);
+
+  // Interest and total payment ranges — same loan base & same rate window as hero
   const interestRange = useMemo(() => {
-    const lowRate = MORTGAGE_RATE_RANGES.low;
-    const highRate = MORTGAGE_RATE_RANGES.high;
     const lowResult = calculateMortgagePayment(loanAmount, lowRate, loanTermYears);
     const highResult = calculateMortgagePayment(loanAmount, highRate, loanTermYears);
     return {
@@ -182,7 +186,7 @@ function MortgageCalculatorContent() {
       totalLow: lowResult.totalPayment,
       totalHigh: highResult.totalPayment,
     };
-  }, [loanAmount, loanTermYears]);
+  }, [loanAmount, lowRate, highRate, loanTermYears]);
 
   // Stress test calculations
   const stressTest = useMemo(() => {
@@ -409,7 +413,7 @@ function MortgageCalculatorContent() {
               <InfoTooltip content="Israeli property prices are typically listed in Shekels (₪). For luxury or investment properties, you may also see USD pricing." />
             </div>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">₪</span>
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">{currencySymbol}</span>
               <Input
                 type="text"
                 inputMode="numeric"
@@ -417,7 +421,7 @@ function MortgageCalculatorContent() {
                 onChange={handlePropertyPriceChange}
                 onBlur={handlePropertyPriceBlur}
                 className="pl-10 h-11 text-lg"
-                placeholder="3,000,000"
+                placeholder={currency === 'USD' ? '800,000' : '3,000,000'}
               />
             </div>
           </div>
@@ -544,15 +548,15 @@ function MortgageCalculatorContent() {
           animate={{ opacity: 1, scale: 1 }}
           className="text-4xl md:text-5xl font-bold text-primary tracking-tight"
         >
-          {formatCurrencyRange(paymentRange.low, paymentRange.high, '₪')}
+          {formatCurrencyRange(toDisplay(paymentRange.low), toDisplay(paymentRange.high), currencySymbol)}
         </motion.p>
         <p className="text-xs text-muted-foreground mt-2">
-          Based on {MORTGAGE_RATE_RANGES.low}–{MORTGAGE_RATE_RANGES.high}% rates, {loanTermYears}-year term
+          Based on ±0.75% around your {interestRate.toFixed(2)}% rate, {loanTermYears}-year term
         </p>
         {/* Stress test preview */}
         <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/50 text-xs text-muted-foreground">
           <TrendingUp className="h-3 w-3" />
-          <span>If rates rise 2%: up to {formatNIS(stressTest.plus2.stressedPayment)}/mo (+{stressTest.plus2.increasePercent.toFixed(0)}%)</span>
+          <span>If rates rise 2%: up to {currencySymbol}{formatNumber(toDisplay(stressTest.plus2.stressedPayment))}/mo (+{stressTest.plus2.increasePercent.toFixed(0)}%)</span>
         </div>
       </div>
 
@@ -560,7 +564,7 @@ function MortgageCalculatorContent() {
       <div className="grid grid-cols-2 divide-x divide-y divide-border">
         <div className="p-4">
           <p className="text-xs text-muted-foreground">You'll Borrow</p>
-          <p className="text-lg font-semibold mt-0.5">{formatNIS(loanAmount)}</p>
+          <p className="text-lg font-semibold mt-0.5">{currencySymbol}{formatNumber(toDisplay(loanAmount))}</p>
         </div>
         <div className="p-4">
           <div className="flex items-center gap-1">
@@ -572,16 +576,16 @@ function MortgageCalculatorContent() {
         <div className="p-4">
           <div className="flex items-center gap-1">
             <p className="text-xs text-muted-foreground">Interest Paid</p>
-            <InfoTooltip content={`Range based on ${MORTGAGE_RATE_RANGES.low}–${MORTGAGE_RATE_RANGES.high}% rates. Prepaying (especially on Prime tracks) can significantly reduce this.`} />
+            <InfoTooltip content={`Range based on ±0.75% around your ${interestRate.toFixed(2)}% rate. Prepaying (especially on Prime tracks) can significantly reduce this.`} />
           </div>
           <p className="text-lg font-semibold mt-0.5">
-            {formatCurrencyRange(interestRange.interestLow, interestRange.interestHigh, '₪')}
+            {formatCurrencyRange(toDisplay(interestRange.interestLow), toDisplay(interestRange.interestHigh), currencySymbol)}
           </p>
         </div>
         <div className="p-4">
           <p className="text-xs text-muted-foreground">Total You'll Pay</p>
           <p className="text-lg font-semibold mt-0.5">
-            {formatCurrencyRange(interestRange.totalLow, interestRange.totalHigh, '₪')}
+            {formatCurrencyRange(toDisplay(interestRange.totalLow), toDisplay(interestRange.totalHigh), currencySymbol)}
           </p>
         </div>
       </div>
@@ -602,8 +606,8 @@ function MortgageCalculatorContent() {
           <div className="bg-muted-foreground/30 h-full flex-1" />
         </div>
         <div className="flex items-center justify-between text-xs mt-1.5">
-          <span className="font-medium">{formatNIS(loanAmount)}</span>
-          <span className="font-medium">{formatCurrencyRange(interestRange.interestLow, interestRange.interestHigh, '₪')}</span>
+          <span className="font-medium">{currencySymbol}{formatNumber(toDisplay(loanAmount))}</span>
+          <span className="font-medium">{formatCurrencyRange(toDisplay(interestRange.interestLow), toDisplay(interestRange.interestHigh), currencySymbol)}</span>
         </div>
       </div>
     </Card>
@@ -790,7 +794,7 @@ function MortgageCalculatorContent() {
         show={showSavePrompt}
         calculatorName="mortgage"
         onDismiss={dismissSavePrompt}
-        resultSummary={`Monthly payment: ${formatCurrencyRange(paymentRange.low, paymentRange.high, currencySymbol)}`}
+        resultSummary={`Monthly payment: ${formatCurrencyRange(toDisplay(paymentRange.low), toDisplay(paymentRange.high), currencySymbol)}`}
       />
     </>
   );

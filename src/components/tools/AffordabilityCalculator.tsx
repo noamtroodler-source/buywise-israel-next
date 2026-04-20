@@ -54,7 +54,7 @@ import { ToolFeedback } from './shared/ToolFeedback';
 import { SaveResultsPrompt } from './shared/SaveResultsPrompt';
 import { ToolDisclaimer } from './shared/ToolDisclaimer';
 import { ToolPropertySuggestions } from './shared/ToolPropertySuggestions';
-import { formatCurrencyRange } from './shared/ResultRange';
+import { formatCurrencyRange, isRangeDegenerate } from './shared/ResultRange';
 import { SourceAttribution } from './shared/SourceAttribution';
 import { ExampleValuesHint } from './shared/ExampleValuesHint';
 import { useAuth } from '@/hooks/useAuth';
@@ -275,6 +275,16 @@ function AffordabilityCalculatorContent() {
     }
     const stressedMaxProperty = Math.min(maxPropertyFromLTV, stressedMaxLoan + downPayment);
     const stressedReduction = maxPropertyPrice - stressedMaxProperty;
+
+    // True +1% stress (don't divide +2% in half — rounds to 0 for small values)
+    const stressedRate1 = (interestRate + 1) / 100 / 12;
+    let stressedMaxLoan1 = 0;
+    if (stressedRate1 > 0 && availableForMortgage > 0) {
+      stressedMaxLoan1 = availableForMortgage * (1 - Math.pow(1 + stressedRate1, -numPayments)) / stressedRate1;
+    }
+    const stressedMaxProperty1 = Math.min(maxPropertyFromLTV, stressedMaxLoan1 + downPayment);
+    const stressedReduction1 = maxPropertyPrice - stressedMaxProperty1;
+
     const totalBurden = effectiveIncome > 0 ? (monthlyDebts + actualMonthlyPayment) / effectiveIncome : 0;
     let affordabilityScore = 100;
     if (totalBurden > 0.5) affordabilityScore = 20;
@@ -284,19 +294,28 @@ function AffordabilityCalculatorContent() {
     const mortgagePercent = effectiveIncome > 0 ? (actualMonthlyPayment / effectiveIncome) * 100 : 0;
     const debtsPercent = effectiveIncome > 0 ? (monthlyDebts / effectiveIncome) * 100 : 0;
     const remainingPercent = Math.max(0, 100 - mortgagePercent - debtsPercent);
+
+    // Clamp loan headroom against the actual selected max property minus the user's
+    // down payment — otherwise PTI-derived loan can exceed (price − down payment).
+    const maxPropertyLowClamped = Math.round(Math.min(maxPropertyAtHighRate, MAX_DISPLAY_PROPERTY_PRICE));
+    const maxPropertyHighClamped = Math.round(Math.min(maxPropertyAtLowRate, MAX_DISPLAY_PROPERTY_PRICE));
+
     return {
       effectiveIncome, maxPropertyPrice: Math.round(maxPropertyPrice), maxLoanAmount: Math.round(maxLoanAmount),
       availableForMortgage: Math.round(availableForMortgage), actualMonthlyPayment: Math.round(actualMonthlyPayment),
       maxLTV: maxLTV * 100, limitingFactor, stressedMaxProperty: Math.round(stressedMaxProperty),
-      stressedReduction: Math.round(stressedReduction), affordabilityScore, mortgagePercent, debtsPercent,
+      stressedReduction: Math.round(stressedReduction),
+      stressedReduction1: Math.round(stressedReduction1),
+      affordabilityScore, mortgagePercent, debtsPercent,
       remainingPercent, employmentMultiplier,
-      // New range fields
+      // Range fields
       monthlyPaymentLow: Math.round(lowRateMonthly),
       monthlyPaymentHigh: Math.round(highRateMonthly),
-      maxPropertyLow: Math.round(Math.min(maxPropertyAtHighRate, MAX_DISPLAY_PROPERTY_PRICE)),
-      maxPropertyHigh: Math.round(Math.min(maxPropertyAtLowRate, MAX_DISPLAY_PROPERTY_PRICE)),
-      maxLoanLow: Math.round(maxLoanAtHighRate),
-      maxLoanHigh: Math.round(maxLoanAtLowRate),
+      maxPropertyLow: maxPropertyLowClamped,
+      maxPropertyHigh: maxPropertyHighClamped,
+      // Loan headroom must never exceed (chosen property − down payment)
+      maxLoanLow: Math.max(0, maxPropertyLowClamped - downPayment),
+      maxLoanHigh: Math.max(0, maxPropertyHighClamped - downPayment),
     };
   }, [monthlyIncome, spouseIncome, monthlyDebts, downPayment, interestRate, loanTermYears, employmentType, hasForeignIncome, foreignIncomePercent, selectedBuyerType, olehIsFirstProperty]);
 
@@ -479,16 +498,25 @@ function AffordabilityCalculatorContent() {
               <div className="text-center py-4">
                 <p className="text-xs text-muted-foreground mb-2">Based on {MORTGAGE_RATE_RANGES.low}–{MORTGAGE_RATE_RANGES.high}% rates</p>
                 <motion.p key={calculations.maxPropertyPrice} initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-4xl md:text-5xl font-bold text-primary whitespace-nowrap">
-                  {formatCurrencyRange(calculations.maxPropertyLow, calculations.maxPropertyHigh, currencySymbol)}
+                  {formatCurrencyRange(toDisplay(calculations.maxPropertyLow), toDisplay(calculations.maxPropertyHigh), currencySymbol)}
                 </motion.p>
-                <p className="text-sm text-muted-foreground mt-2">Maximum property price range</p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  {isRangeDegenerate(calculations.maxPropertyLow, calculations.maxPropertyHigh) ? 'Maximum property price' : 'Maximum property price range'}
+                </p>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-3 rounded-lg bg-muted/60"><p className="text-xs text-muted-foreground">Maximum Loan</p><p className="text-lg font-semibold">{formatCurrencyRange(calculations.maxLoanLow, calculations.maxLoanHigh, currencySymbol)}</p></div>
                 <div className="p-3 rounded-lg bg-muted/60">
-                  <p className="text-xs text-muted-foreground">Monthly Payment</p>
+                  <p className="text-xs text-muted-foreground">
+                    {isRangeDegenerate(calculations.maxLoanLow, calculations.maxLoanHigh) ? 'Maximum Loan' : 'Maximum Loan Range'}
+                  </p>
+                  <p className="text-lg font-semibold">{formatCurrencyRange(toDisplay(calculations.maxLoanLow), toDisplay(calculations.maxLoanHigh), currencySymbol)}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/60">
+                  <p className="text-xs text-muted-foreground">
+                    {isRangeDegenerate(calculations.monthlyPaymentLow, calculations.monthlyPaymentHigh) ? 'Monthly Payment' : 'Monthly Payment Range'}
+                  </p>
                   <p className="text-lg font-semibold">
-                    {formatCurrencyRange(calculations.monthlyPaymentLow, calculations.monthlyPaymentHigh, currencySymbol)}
+                    {formatCurrencyRange(toDisplay(calculations.monthlyPaymentLow), toDisplay(calculations.monthlyPaymentHigh), currencySymbol)}
                   </p>
                 </div>
               </div>
@@ -511,7 +539,12 @@ function AffordabilityCalculatorContent() {
               </div>
               <div className="p-3 rounded-lg bg-muted/50 border border-border/50">
                 <p className="text-xs text-muted-foreground">
-                  <strong>Rate sensitivity:</strong> If rates rise 1%, your max budget drops by ~{formatPrice(Math.round(calculations.stressedReduction / 2))}
+                  <strong>Rate sensitivity:</strong>{' '}
+                  {calculations.limitingFactor === 'LTV'
+                    ? "your budget is capped by your down payment — rate changes won't move it."
+                    : calculations.stressedReduction1 < 10000
+                      ? `if rates rise 1%, your max budget changes by less than ${formatPrice(10000)}.`
+                      : `if rates rise 1%, your max budget drops by ~${formatPrice(calculations.stressedReduction1)}.`}
                 </p>
               </div>
               {calculations.limitingFactor === 'LTV' ? <div className="flex items-start gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20"><AlertTriangle className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" /><p className="text-xs text-primary">Your down payment limits your budget. With more cash down, you could afford a higher-priced property.</p></div> : <div className="flex items-start gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20"><BadgeCheck className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" /><p className="text-xs text-primary">Your income is the limiting factor. Paying off existing debts would increase your buying power.</p></div>}
@@ -589,7 +622,7 @@ function AffordabilityCalculatorContent() {
         show={showSavePrompt}
         calculatorName="affordability"
         onDismiss={dismissSavePrompt}
-        resultSummary={`Max budget: ${formatCurrencyRange(calculations.maxPropertyLow, calculations.maxPropertyHigh, currencySymbol)}`}
+        resultSummary={`Max budget: ${formatCurrencyRange(toDisplay(calculations.maxPropertyLow), toDisplay(calculations.maxPropertyHigh), currencySymbol)}`}
       />
     </>
   );

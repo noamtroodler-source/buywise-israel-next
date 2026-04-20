@@ -184,6 +184,17 @@ export function formatCurrencyRange(
 }
 
 /**
+ * Returns true when a low/high range collapses to effectively a single value
+ * (either equal, or within 2% of each other relative to magnitude). Use this
+ * to swap labels like "max budget range" → "max budget" when there is no range.
+ */
+export function isRangeDegenerate(low: number, high: number): boolean {
+  if (low === high) return true;
+  const denom = Math.max(Math.abs(low), Math.abs(high), 1);
+  return Math.abs(high - low) / denom < 0.02;
+}
+
+/**
  * Helper to format a percentage range string
  */
 export function formatPercentageRange(low: number, high: number): string {
