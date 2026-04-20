@@ -111,12 +111,14 @@ export function useUpdateAgency(agencyId: string | null) {
 export function useCreateAgency() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { name: string; slug: string; email?: string }) => {
+    mutationFn: async (input: { name: string; slug?: string; email?: string }) => {
+      const { generateUniqueAgencySlug } = await import('@/lib/agencySlug');
+      const slug = input.slug?.trim() || (await generateUniqueAgencySlug(input.name));
       const { data, error } = await supabase
         .from('agencies')
         .insert({
           name: input.name,
-          slug: input.slug,
+          slug,
           email: input.email || null,
           management_status: 'draft',
         } as any)

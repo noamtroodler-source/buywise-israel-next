@@ -36,7 +36,6 @@ export function AgencyProfileSection({ agency }: Props) {
 
   const [form, setForm] = useState({
     name: agency.name || '',
-    slug: agency.slug || '',
     email: agency.email || '',
     phone: agency.phone || '',
     description: agency.description || '',
@@ -96,7 +95,6 @@ export function AgencyProfileSection({ agency }: Props) {
   async function handleSaveProfile() {
     await update.mutateAsync({
       name: form.name,
-      slug: form.slug,
       email: form.email,
       phone: form.phone,
       description: form.description,
@@ -158,13 +156,14 @@ export function AgencyProfileSection({ agency }: Props) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
+        <div className="md:col-span-2">
           <Label htmlFor="name">Agency name</Label>
           <Input id="name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
-        </div>
-        <div>
-          <Label htmlFor="slug">Slug</Label>
-          <Input id="slug" value={form.slug} onChange={e => setForm({ ...form, slug: e.target.value })} />
+          {agency.slug && (
+            <p className="text-xs text-muted-foreground mt-1">
+              Public URL: <span className="font-mono">/agencies/{agency.slug}</span>
+            </p>
+          )}
         </div>
         <div>
           <Label htmlFor="email">Owner email</Label>
