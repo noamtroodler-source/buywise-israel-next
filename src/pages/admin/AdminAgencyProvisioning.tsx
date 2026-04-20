@@ -10,6 +10,7 @@ import { useProvisioningAgencies, useProvisioningAgency, useCreateAgency } from 
 import { AgencyProvisioningSidebar } from '@/components/admin/agency-provisioning/AgencyProvisioningSidebar';
 import { AgencyProfileSection } from '@/components/admin/agency-provisioning/AgencyProfileSection';
 import { AgentRosterSection } from '@/components/admin/agency-provisioning/AgentRosterSection';
+import { ListingsQualitySection } from '@/components/admin/agency-provisioning/ListingsQualitySection';
 
 export default function AdminAgencyProvisioning() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -92,6 +93,7 @@ export default function AdminAgencyProvisioning() {
             <>
               <AgencyProfileSection agency={selectedAgency} />
               <AgentRosterSection agencyId={selectedAgency.id} />
+              <ListingsQualitySection agencyId={selectedAgency.id} />
             </>
           )}
         </div>
