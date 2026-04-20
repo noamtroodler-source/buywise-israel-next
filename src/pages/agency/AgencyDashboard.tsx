@@ -24,6 +24,7 @@ import { AgencyPerformanceInsights } from '@/components/agency/AgencyPerformance
 import { AgencyOnboardingProgress } from '@/components/agency/AgencyOnboardingProgress';
 import { NoPlanBanner } from '@/components/billing/NoPlanBanner';
 import { ImportWelcomeBanner } from '@/components/agency/ImportWelcomeBanner';
+import { PendingItemsWidget } from '@/components/agency/PendingItemsWidget';
 import { AgencyAnnouncements } from '@/components/agency/AgencyAnnouncements';
 import { AgencyTeamActivityFeed } from '@/components/agency/AgencyTeamActivityFeed';
 import { DashboardListingsPreview } from '@/components/agency/DashboardListingsPreview';
@@ -151,6 +152,7 @@ export default function AgencyDashboard() {
           </motion.div>
 
           {/* Priority Lane — only show the most urgent banner */}
+          <PendingItemsWidget agencyId={agency.id} />
           <ImportWelcomeBanner activeListings={stats?.activeListings || 0} />
           <NoPlanBanner />
 
