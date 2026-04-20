@@ -11,6 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { CheckCircle2, KeyRound, Loader2, Copy, Send, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useCities } from '@/hooks/useCities';
+import { cn } from '@/lib/utils';
 import {
   ProvisioningAgency,
   useUpdateAgency,
@@ -27,6 +29,7 @@ interface Props {
 export function AgencyProfileSection({ agency }: Props) {
   const update = useUpdateAgency(agency.id);
   const provision = useProvisionAgencyAccount();
+  const { data: cities = [] } = useCities();
   const reveal = useRevealCredentials();
   const resend = useResendSetupLink();
   const [secureRevealOpen, setSecureRevealOpen] = useState(false);
@@ -39,7 +42,7 @@ export function AgencyProfileSection({ agency }: Props) {
     description: agency.description || '',
     website: agency.website || '',
     office_address: agency.office_address || '',
-    cities_covered: (agency.cities_covered || []).join(', '),
+    cities_covered: (agency.cities_covered || []) as string[],
     logo_url: agency.logo_url || '',
   });
   const [strategy, setStrategy] = useState(agency.agent_email_strategy);
