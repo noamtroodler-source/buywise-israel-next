@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Plus, KeyRound, Loader2, Copy, UserCheck, Send, Upload, X } from 'lucide-react';
+import { Plus, KeyRound, Loader2, Copy, UserCheck, Send, Upload, X, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
@@ -173,7 +173,18 @@ export function AgentRosterSection({ agencyId }: Props) {
               {agents.map(a => (
                 <TableRow key={a.id}>
                   <TableCell>
-                    <div className="font-medium">{a.name}</div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-medium">{a.name}</span>
+                      {a.needs_review && (
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-400 gap-1"
+                          title={`AI-imported from ${a.enrichment_source || 'external source'} — please verify details`}
+                        >
+                          <AlertTriangle className="h-2.5 w-2.5" /> Needs review
+                        </Badge>
+                      )}
+                    </div>
                     {a.license_number && (
                       <div className="text-xs text-muted-foreground">Lic. {a.license_number}</div>
                     )}
