@@ -222,7 +222,15 @@ export function Header() {
               </Button>
             )
           ) : (
-            <div className="hidden lg:flex items-center gap-2">
+            <div className="hidden lg:flex items-center gap-3">
+              <Link
+                to="/advertise"
+                className="group flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Building2 className="h-4 w-4" />
+                For Agencies
+              </Link>
+              <span className="h-5 w-px bg-border/60" aria-hidden="true" />
               <Button variant="ghost" asChild>
                 <Link to="/auth">Sign In</Link>
               </Button>

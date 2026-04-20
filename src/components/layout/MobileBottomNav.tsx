@@ -328,8 +328,8 @@ export function MobileBottomNav() {
               ))}
               
               {!user && (
-                <div className="mt-6 mx-4 p-4 bg-muted/50 rounded-xl">
-                  <p className="text-sm text-muted-foreground mb-3">
+                <div className="mt-6 mx-4 p-4 bg-muted/50 rounded-xl space-y-3">
+                  <p className="text-sm text-muted-foreground">
                     Create an account to save properties and get alerts
                   </p>
                   <SheetClose asChild>
@@ -337,6 +337,15 @@ export function MobileBottomNav() {
                       <Button className="w-full" size="lg">
                         Create Free Account
                       </Button>
+                    </Link>
+                  </SheetClose>
+                  <SheetClose asChild>
+                    <Link
+                      to="/advertise"
+                      className="flex items-center justify-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground pt-1"
+                    >
+                      <Building className="h-4 w-4" />
+                      For Agencies & Agents
                     </Link>
                   </SheetClose>
                 </div>
