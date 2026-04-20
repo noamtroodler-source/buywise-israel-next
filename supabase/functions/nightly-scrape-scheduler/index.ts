@@ -382,6 +382,23 @@ Deno.serve(async (req) => {
     // ── Freshness check: also background ──
     EdgeRuntime.waitUntil(runFreshnessCheckInBackground());
 
+    // ── Co-listing stale sweep: demote primaries that haven't refreshed ──
+    EdgeRuntime.waitUntil(
+      (async () => {
+        try {
+          const { data: swept, error: sweepErr } = await sb.rpc("colisting_stale_sweep");
+          if (sweepErr) {
+            console.error("colisting_stale_sweep failed:", sweepErr.message);
+          } else {
+            const count = Array.isArray(swept) ? swept.length : 0;
+            console.log(`colisting_stale_sweep: ${count} primary transitions applied`);
+          }
+        } catch (err) {
+          console.error("colisting_stale_sweep threw:", err);
+        }
+      })()
+    );
+
     console.log(`Nightly scrape: returning immediately. ${nonYad2Sources.length} background tasks fired.`);
 
     return new Response(JSON.stringify(summary), {

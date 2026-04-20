@@ -2673,56 +2673,14 @@ async function processOneItem(
       return { succeeded: false };
     }
 
-    // ── DEDUP: Tier 1 — Normalized address + city ──
-    if (listing.address && listing.city) {
-      const normalizedAddr = normalizeAddressForDedup(listing.address);
-      const addrPattern = buildAddressQueryPattern(normalizedAddr);
-      if (normalizedAddr.length > 0) {
-        const { data: dupes } = await sb
-          .from("properties").select("id")
-          .eq("agent_id", agentId)
-          .ilike("address", addrPattern)
-          .ilike("city", listing.city.trim())
-          .limit(1);
-
-        if (dupes && dupes.length > 0) {
-          await sb.from("import_job_items").update({
-            status: "skipped",
-            error_message: `Duplicate: matches property ${dupes[0].id} (same address + city)`,
-            error_type: "permanent",
-          }).eq("id", item.id);
-          return { succeeded: false };
-        }
-      }
-    }
-
-    // ── DEDUP: Tier 2 — Fuzzy match with tolerance bands ──
-    if (listing.city && listing.bedrooms != null && listing.size_sqm && listing.price && listing.price > 0) {
-      const priceLow = listing.price * 0.95;
-      const priceHigh = listing.price * 1.05;
-      const sizeLow = listing.size_sqm - 5;
-      const sizeHigh = listing.size_sqm + 5;
-
-      const { data: fuzzyDupes } = await sb
-        .from("properties").select("id")
-        .eq("agent_id", agentId)
-        .ilike("city", listing.city.trim())
-        .eq("bedrooms", Math.floor(listing.bedrooms))
-        .gte("size_sqm", sizeLow)
-        .lte("size_sqm", sizeHigh)
-        .gte("price", priceLow)
-        .lte("price", priceHigh)
-        .limit(1);
-
-      if (fuzzyDupes && fuzzyDupes.length > 0) {
-        await sb.from("import_job_items").update({
-          status: "skipped",
-          error_message: `Duplicate: matches property ${fuzzyDupes[0].id} (same city, rooms, ~size, ~price)`,
-          error_type: "permanent",
-        }).eq("id", item.id);
-        return { succeeded: false };
-      }
-    }
+    // ── Intra-agency dedup (Tier 2 / 2.5) — REMOVED in co-listing v2 ──
+    // Previous behavior silently dropped listings that matched the same
+    // agency's other listings on (address+city) or (city+rooms+size+price).
+    // That was net-destructive in towers: an agency uploading 40 units in one
+    // building would lose 35 of them with no error surface. Each unit now
+    // inserts independently. If a genuine intra-agency duplicate slips in
+    // (same apartment, two different URLs on one agency's site), it surfaces
+    // for admin review via detect-duplicates pair flagging — not here.
 
     // ── DEDUP: Tier 3 — Cross-source merge ──
     // If this listing already exists from another source, MERGE rather than duplicate.
@@ -2941,9 +2899,15 @@ async function processOneItem(
       if (coords) { latitude = coords.lat; longitude = coords.lng; }
     }
 
-    // ── CROSS-AGENCY DUPLICATE CHECK (final gate before insert) ──
-    // If this listing already exists from a DIFFERENT agency, do NOT insert.
-    // Log the conflict + notify both agencies + skip the import.
+    // ── CROSS-AGENCY MATCH → CO-LISTING (final gate before insert) ──
+    // If this listing already exists from a DIFFERENT agency, don't insert a
+    // duplicate row — attach the incoming agency as a SECONDARY co-listing
+    // agent on the existing property. The primary (the agency that got there
+    // first) keeps the primary slot. Buyer UI renders both.
+    //
+    // This replaces the old "block + log cross_agency_conflict" flow. Two
+    // agencies legitimately representing the same apartment is the Israeli
+    // market norm, not a conflict.
     if (job.agency_id && listing.address && listing.city) {
       const { data: crossAgencyMatch } = await sb.rpc("check_cross_agency_duplicate_v2", {
         p_attempted_agency_id: job.agency_id,
@@ -2960,98 +2924,36 @@ async function processOneItem(
       });
 
       const match = crossAgencyMatch && crossAgencyMatch.length > 0 ? crossAgencyMatch[0] : null;
-      if (match && match.similarity_score >= 70) {
-        const { data: existingConflict } = await sb
-          .from("cross_agency_conflicts")
-          .select("id")
-          .eq("existing_property_id", match.property_id)
-          .eq("attempted_agency_id", job.agency_id)
-          .eq("attempted_source_url", item.url)
-          .limit(1);
+      if (match && match.similarity_score >= 70 && !match.same_building_different_unit) {
+        // Co-list: upsert the incoming agency as a secondary on the existing property.
+        // UNIQUE(property_id, source_url) on property_co_agents de-dupes re-scrapes.
+        await sb.from("property_co_agents").upsert(
+          {
+            property_id: match.property_id,
+            agent_id: agentId,
+            agency_id: job.agency_id,
+            source_url: item.url,
+            source_type: job.source_type || "website",
+          },
+          { onConflict: "property_id,source_url", ignoreDuplicates: true }
+        );
 
-        let conflictId = existingConflict?.[0]?.id;
-        let autoResolved = false;
+        // Refresh existing primary's last_primary_refresh so stale-sweep
+        // doesn't penalise a property that's actively represented by
+        // multiple agencies.
+        await sb.from("properties")
+          .update({ last_primary_refresh: new Date().toISOString() })
+          .eq("id", match.property_id);
 
-        if (!conflictId) {
-          const { data: inserted } = await sb
-            .from("cross_agency_conflicts")
-            .insert({
-              existing_property_id: match.property_id,
-              existing_agency_id: match.existing_agency_id,
-              existing_source_url: match.existing_source_url,
-              attempted_agency_id: job.agency_id,
-              attempted_source_url: item.url,
-              attempted_source_type: job.source_type || "website",
-              similarity_score: match.similarity_score,
-              match_details: {
-                address: listing.address,
-                city: listing.city,
-                neighborhood: listing.neighborhood,
-                size_sqm: listing.size_sqm,
-                bedrooms: listing.bedrooms,
-                price: listing.price,
-                floor_number: listing.floor_number,
-                apartment_number: listing.apartment_number,
-              },
-              status: "pending",
-            })
-            .select("id")
-            .single();
-          conflictId = inserted?.id;
-
-          // ── AUTO-RESOLUTION: try to resolve obvious cases (same Yad2/Madlan URL) ──
-          if (conflictId) {
-            const { data: autoRes } = await sb.rpc("auto_resolve_obvious_conflict", {
-              p_conflict_id: conflictId,
-            });
-            autoResolved = !!(autoRes as any)?.auto_resolved;
-            console.log(`[Cross-Agency] Auto-resolution attempt for ${conflictId}: ${JSON.stringify(autoRes)}`);
-          }
-
-          // Notify both agencies (in-app) — only if NOT auto-resolved
-          if (conflictId && !autoResolved) {
-            const notifications = [];
-            if (match.existing_agency_id) {
-              notifications.push({
-                agency_id: match.existing_agency_id,
-                type: "cross_agency_conflict",
-                title: "Listing ownership conflict detected",
-                message: `Another agency is attempting to import a listing that matches one of yours. Please review.`,
-                action_url: `/agency/conflicts?tab=cross-agency`,
-              });
-            }
-            notifications.push({
-              agency_id: job.agency_id,
-              type: "cross_agency_conflict",
-              title: "Listing already on platform",
-              message: `A listing you tried to import (${listing.address}) is already published by another agency. Import skipped pending review.`,
-              action_url: `/agency/conflicts?tab=cross-agency`,
-            });
-            await sb.from("agency_notifications").insert(notifications);
-
-            if (!job.is_incremental) {
-              EdgeRuntime.waitUntil(
-                fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/notify-cross-agency-conflict`, {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-                  },
-                  body: JSON.stringify({ conflict_id: conflictId }),
-                }).catch((e) => console.error(`[Cross-Agency] Email notification failed:`, e))
-              );
-            }
-          }
-        }
-
-        // Skip the import
+        // Mark the import item as co_listed — distinct from skipped.
         await sb.from("import_job_items").update({
-          status: "skipped",
-          error_message: `Cross-agency duplicate: matches property ${match.property_id} from another agency (score ${match.similarity_score}). Conflict logged for review.`,
-          error_type: "permanent",
+          status: "co_listed",
+          error_message: `Co-listed under existing property ${match.property_id} (score ${match.similarity_score}).`,
+          error_type: null,
+          property_id: match.property_id,
         }).eq("id", item.id);
 
-        dlog(`[Cross-Agency] Skipped import — conflict ${conflictId} (score ${match.similarity_score}) between agency ${job.agency_id} and property ${match.property_id}`);
+        dlog(`[Co-Listing] Added agency ${job.agency_id} as secondary on property ${match.property_id} (score ${match.similarity_score})`);
         return { succeeded: false };
       }
     }

@@ -358,22 +358,17 @@ export default function PropertyDetail() {
                   ...(!property.floor && property.floor !== 0 ? ['floor'] : []),
                   ...(!property.year_built ? ['year_built'] : []),
                   ...(!property.bathrooms ? ['bathrooms'] : []),
-                  // For sourced listings, flag additional missing fields
-                  ...((property as any).import_source && !(property as any).is_claimed ? [
-                    ...(!property.address || property.address.trim().length < 3 ? ['address'] : []),
-                    ...(!(property as any).features?.length ? ['features'] : []),
-                  ] : []),
                 ],
               }}
             />
 
             {/* Next Steps CTAs */}
-            <PropertyNextSteps 
+            <PropertyNextSteps
               cityName={property.city}
               citySlug={citySlug}
               propertyPrice={property.price}
               listingStatus={property.listing_status}
-              isSourced={!!(property as any).import_source && !(property as any).is_claimed}
+              isSourced={false}
             />
 
             {/* Listing Feedback */}
@@ -393,21 +388,20 @@ export default function PropertyDetail() {
           {/* Sticky Sidebar - Desktop Only */}
           <div className="hidden lg:block">
             <div className="sticky top-20 space-y-4">
-              <StickyContactCard 
+              <StickyContactCard
                 agent={property.agent}
                 propertyId={property.id}
                 propertyTitle={property.title}
                 onSave={handleSave}
                 isSaved={isSaved}
-                isSourced={!!(property as any).import_source && !(property as any).is_claimed}
                 isPartner={!!(property as any).agent?.agency?.is_partner}
-                agencyName={(property as any).source_agency_name || (property as any).agent?.agency?.name || (property.agent?.agency_name ?? null)}
-                agencyLogoUrl={(property as any).agent?.agency?.logo_url || null}
-                propertyCity={property.city}
+                coAgentCount={property.co_agents?.length ?? 0}
               />
-              {/* Co-listing agents — shown only for claimed listings with multiple agencies */}
-              {(property as any).is_claimed && (property as any).co_agents?.length > 0 && (
-                <CoListingAgents coAgents={(property as any).co_agents} />
+              {/* Co-listing agents — visible whenever another agency represents the same property */}
+              {property.co_agents && property.co_agents.length > 0 && (
+                <div id="co-listing-agents">
+                  <CoListingAgents coAgents={property.co_agents} />
+                </div>
               )}
             </div>
           </div>
@@ -425,7 +419,7 @@ export default function PropertyDetail() {
       </div>
 
       {/* Mobile Contact Bar */}
-      <MobileContactBar 
+      <MobileContactBar
         agent={property.agent}
         propertyId={property.id}
         propertyTitle={property.title}
@@ -433,6 +427,7 @@ export default function PropertyDetail() {
         isSaved={isSaved}
         onSave={handleSave}
         onShare={handleShare}
+        coAgentCount={property.co_agents?.length ?? 0}
       />
     </Layout>
   );

@@ -23,12 +23,22 @@ interface PropertyJsonLdInput {
   listing_status?: string | null;
   images?: string[] | null;
   created_at?: string;
-  agent?: { 
+  agent?: {
     id: string;
-    name: string; 
+    name: string;
     phone?: string | null;
     email?: string;
+    agency_name?: string | null;
+    agency?: { id: string; name: string } | null;
   } | null;
+  co_agents?: Array<{
+    agent?: {
+      id: string;
+      name: string;
+      agency_name?: string | null;
+      agency?: { id: string; name: string } | null;
+    } | null;
+  }> | null;
 }
 
 export function generatePropertyJsonLd(property: PropertyJsonLdInput): object[] {
@@ -92,9 +102,9 @@ export function generatePropertyJsonLd(property: PropertyJsonLdInput): object[] 
   
   const schemas: object[] = [listing];
   
-  // Add agent schema if available
+  // Add agent schema if available (primary agent)
   if (property.agent) {
-    const agentSchema = {
+    const agentSchema: Record<string, unknown> = {
       '@context': createContext(),
       '@type': 'RealEstateAgent',
       '@id': `${SITE_CONFIG.siteUrl}/agents/${property.agent.id}`,
@@ -103,6 +113,42 @@ export function generatePropertyJsonLd(property: PropertyJsonLdInput): object[] 
       email: property.agent.email || undefined,
     };
     schemas.push(agentSchema);
+  }
+
+  // Co-listing agencies: emit a RealEstateAgent entity per secondary so search
+  // engines understand the property is represented by multiple agencies.
+  // Primary is already represented via property.agent above; here we only
+  // emit the co-agents' agencies.
+  const primaryAgencyName =
+    property.agent?.agency?.name || property.agent?.agency_name || null;
+  const primaryAgencyId = property.agent?.agency?.id || null;
+  const providers: Array<Record<string, unknown>> = [];
+  if (primaryAgencyName) {
+    providers.push({
+      '@type': 'RealEstateAgent',
+      '@id': primaryAgencyId
+        ? `${SITE_CONFIG.siteUrl}/agencies/${primaryAgencyId}`
+        : undefined,
+      name: primaryAgencyName,
+      // Custom extension — not standard Schema.org, but defensive for
+      // future crawlers that may interpret ordering.
+      additionalProperty: { '@type': 'PropertyValue', name: 'role', value: 'primary' },
+    });
+  }
+  for (const ca of property.co_agents ?? []) {
+    const name = ca.agent?.agency?.name || ca.agent?.agency_name;
+    if (!name) continue;
+    const agencyId = ca.agent?.agency?.id;
+    providers.push({
+      '@type': 'RealEstateAgent',
+      '@id': agencyId ? `${SITE_CONFIG.siteUrl}/agencies/${agencyId}` : undefined,
+      name,
+      additionalProperty: { '@type': 'PropertyValue', name: 'role', value: 'secondary' },
+    });
+  }
+  if (providers.length > 1) {
+    // Only attach the provider array when there's actual co-listing signal.
+    (listing as Record<string, unknown>).provider = providers;
   }
   
   // Add breadcrumb

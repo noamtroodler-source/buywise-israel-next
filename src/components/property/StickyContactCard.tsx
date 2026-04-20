@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 
-import { MessageCircle, Mail, Share2, Heart, BookOpen, ChevronRight, ShieldCheck } from 'lucide-react';
+import { MessageCircle, Mail, Share2, Heart, BookOpen, ChevronRight, ShieldCheck, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { trackInquiry } from '@/hooks/useInquiryTracking';
 import { useAuth } from '@/hooks/useAuth';
@@ -30,32 +30,32 @@ interface StickyContactCardProps {
   onContactClick?: () => void;
   onSave?: () => void;
   isSaved?: boolean;
-  isSourced?: boolean; // unclaimed scraped listing — show 'find agent' CTA
   isPartner?: boolean; // BuyWise Partner agency
-  agencyName?: string | null;
-  agencyLogoUrl?: string | null;
-  propertyCity?: string;
+  /** Number of secondary co-listing agencies on the property (excludes primary). */
+  coAgentCount?: number;
 }
 
-export function StickyContactCard({ 
-  agent, 
+export function StickyContactCard({
+  agent,
   propertyId,
-  propertyTitle, 
-  className = '', 
+  propertyTitle,
+  className = '',
   onContactClick,
   onSave,
   isSaved,
-  isSourced,
   isPartner,
-  agencyName,
-  agencyLogoUrl,
-  propertyCity,
+  coAgentCount = 0,
 }: StickyContactCardProps) {
   const { user } = useAuth();
   const [inquiryChannel, setInquiryChannel] = useState<InquiryChannel | null>(null);
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
+  const scrollToCoListing = () => {
+    const el = document.getElementById('co-listing-agents');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   const handleInquirySubmit = (data: InquiryFormData) => {
@@ -105,8 +105,8 @@ export function StickyContactCard({
             <>
               <div className="p-5 flex items-center gap-3 bg-muted/30">
                 <Avatar className="h-16 w-16 ring-2 ring-border">
-                  <AvatarImage 
-                    src={agent.avatar_url || undefined} 
+                  <AvatarImage
+                    src={agent.avatar_url || undefined}
                     alt={agent.name}
                     className="object-cover"
                   />
@@ -125,8 +125,8 @@ export function StickyContactCard({
                     )}
                   </div>
                   {agent.id ? (
-                    <Link 
-                      to={`/agents/${agent.id}`} 
+                    <Link
+                      to={`/agents/${agent.id}`}
                       className="font-semibold text-foreground truncate hover:text-primary hover:underline transition-colors inline-flex items-center gap-1"
                     >
                       {agent.name}
@@ -138,26 +138,16 @@ export function StickyContactCard({
                   {agent.agency_name && (
                     <p className="text-sm text-muted-foreground truncate">{agent.agency_name}</p>
                   )}
-                </div>
-              </div>
-              <Separator />
-            </>
-          ) : isSourced && agencyName ? (
-            <>
-              <div className="p-5 flex items-center gap-3 bg-muted/30">
-                <Avatar className="h-14 w-14 ring-2 ring-border">
-                  {agencyLogoUrl ? (
-                    <AvatarImage src={agencyLogoUrl} alt={agencyName} className="object-cover" />
-                  ) : null}
-                  <AvatarFallback className="bg-gradient-to-br from-muted to-muted/80 text-muted-foreground font-semibold text-sm">
-                    {getInitials(agencyName)}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="min-w-0">
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-[10px] font-semibold mb-1">
-                    Sourced
-                  </span>
-                  <p className="font-semibold text-foreground truncate text-sm">{agencyName}</p>
+                  {coAgentCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={scrollToCoListing}
+                      className="mt-1 inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                    >
+                      <Users className="h-3 w-3" />
+                      Also listed by {coAgentCount} {coAgentCount === 1 ? 'other' : 'others'}
+                    </button>
+                  )}
                 </div>
               </div>
               <Separator />
@@ -188,21 +178,9 @@ export function StickyContactCard({
               </Button>
             )}
 
-            {!agent && isSourced && (
-              <div className="space-y-2">
-                <Link to={`/agencies${propertyCity ? `?city=${encodeURIComponent(propertyCity)}` : ''}`}>
-                  <Button className="w-full" size="lg">
-                    Find a Vetted Agent
-                  </Button>
-                </Link>
-                <p className="text-xs text-center text-muted-foreground">
-                  BuyWise-verified agencies specialising in international buyers
-                </p>
-              </div>
-            )}
-            {!agent && !isSourced && (
-              <Button 
-                className="w-full" 
+            {!agent && (
+              <Button
+                className="w-full"
                 size="lg"
                 onClick={onContactClick}
               >
@@ -268,16 +246,19 @@ interface MobileContactBarProps {
   isSaved?: boolean;
   onSave?: () => void;
   onShare?: () => void;
+  /** Number of secondary co-listing agencies on the property. */
+  coAgentCount?: number;
 }
 
-export function MobileContactBar({ 
-  agent, 
-  propertyId, 
+export function MobileContactBar({
+  agent,
+  propertyId,
   propertyTitle,
   price,
   isSaved,
   onSave,
   onShare,
+  coAgentCount = 0,
 }: MobileContactBarProps) {
   const { user } = useAuth();
   const [isVisible, setIsVisible] = useState(false);
@@ -356,7 +337,20 @@ export function MobileContactBar({
               <span className="text-lg font-bold text-foreground">{formatCompactPrice(price)}</span>
             </div>
           )}
-          
+          {coAgentCount > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                const el = document.getElementById('co-listing-agents');
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
+              className="w-full inline-flex items-center justify-center gap-1 text-xs text-primary hover:underline"
+            >
+              <Users className="h-3 w-3" />
+              Also listed by {coAgentCount} {coAgentCount === 1 ? 'other' : 'others'}
+            </button>
+          )}
+
           <div className="flex items-center gap-2">
             {onShare && (
               <Button 

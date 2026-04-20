@@ -95,7 +95,14 @@ export function usePaginatedProperties(
       
       let query = supabase
         .from('properties')
-        .select(`*, agent:agents(*, agency:agencies(id, name, logo_url, is_partner))`)
+        .select(`
+          *,
+          agent:agents(*, agency:agencies(id, name, logo_url, is_partner)),
+          co_agents:property_co_agents(
+            id, source_url, source_type,
+            agent:agents(id, name, agency_name, phone, avatar_url, agency:agencies(id, name, logo_url))
+          )
+        `)
         .eq('is_published', true);
 
       // Commute filter: resolve qualifying cities first (only for preset destinations)
@@ -137,7 +144,14 @@ export function usePaginatedProperties(
       if (!boostedIds.length) return [] as Property[];
       let query = supabase
         .from('properties')
-        .select(`*, agent:agents(*, agency:agencies(id, name, logo_url, is_partner))`)
+        .select(`
+          *,
+          agent:agents(*, agency:agencies(id, name, logo_url, is_partner)),
+          co_agents:property_co_agents(
+            id, source_url, source_type,
+            agent:agents(id, name, agency_name, phone, avatar_url, agency:agencies(id, name, logo_url))
+          )
+        `)
         .in('id', boostedIds)
         .eq('is_published', true);
 

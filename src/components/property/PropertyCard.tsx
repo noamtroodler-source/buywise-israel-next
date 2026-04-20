@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Bed, Bath, Maximize, MapPin, ChevronLeft, ChevronRight, Wallet, Sparkles, Clock, TrendingDown, TrendingUp, Flame, Zap, Building2, ShieldCheck } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Property } from '@/types/database';
+import { Property, CoAgent } from '@/types/database';
 import { cn } from '@/lib/utils';
 import { FavoriteButton } from './FavoriteButton';
 import { PromotedBadge } from '@/components/shared/PromotedBadge';
@@ -40,6 +40,94 @@ interface PropertyCardProps {
 }
 
 const PLACEHOLDER_IMAGE = 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&auto=format&fit=crop&q=60';
+
+/**
+ * Agency avatar stack: primary logo in front, up to 2 co-agent avatars
+ * overlapping behind, and a "+N" pill when more. Tooltip lists every
+ * agency name. Matches the existing 7×7 border+shadow treatment.
+ */
+function AgencyLogoStack({
+  primaryName,
+  primaryLogoUrl,
+  coAgents,
+  onPrimaryClick,
+}: {
+  primaryName: string;
+  primaryLogoUrl: string;
+  coAgents: CoAgent[];
+  onPrimaryClick: () => void;
+}) {
+  const visibleCoAgents = coAgents.slice(0, 2);
+  const remaining = Math.max(0, coAgents.length - visibleCoAgents.length);
+  const allNames = [
+    primaryName,
+    ...coAgents.map((ca) => ca.agent?.agency?.name || ca.agent?.agency_name).filter(Boolean) as string[],
+  ];
+
+  return (
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onPrimaryClick();
+            }}
+            className="flex-shrink-0 flex items-center"
+          >
+            <Avatar className="h-7 w-7 border border-border/50 shadow-sm relative z-20">
+              <AvatarImage src={primaryLogoUrl} alt={primaryName} />
+              <AvatarFallback className="bg-muted">
+                <Building2 className="h-3 w-3 text-muted-foreground" />
+              </AvatarFallback>
+            </Avatar>
+            {visibleCoAgents.map((ca, idx) => {
+              const name = ca.agent?.agency?.name || ca.agent?.agency_name || 'Co-listed agency';
+              const logo = ca.agent?.agency?.logo_url;
+              return (
+                <Avatar
+                  key={ca.id}
+                  className={cn(
+                    'h-7 w-7 border border-border/50 shadow-sm -ml-2 ring-2 ring-background',
+                    idx === 0 ? 'z-10' : 'z-0'
+                  )}
+                >
+                  {logo && <AvatarImage src={logo} alt={name} />}
+                  <AvatarFallback className="bg-muted">
+                    <Building2 className="h-3 w-3 text-muted-foreground" />
+                  </AvatarFallback>
+                </Avatar>
+              );
+            })}
+            {remaining > 0 && (
+              <span className="-ml-2 inline-flex items-center justify-center h-7 min-w-7 px-1.5 rounded-full bg-muted text-muted-foreground text-[10px] font-semibold border border-border/50 shadow-sm ring-2 ring-background">
+                +{remaining}
+              </span>
+            )}
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="text-xs max-w-[220px]">
+          {allNames.length > 1 ? (
+            <div>
+              <div className="font-semibold mb-1">Listed by</div>
+              <ul className="space-y-0.5">
+                {allNames.map((n, i) => (
+                  <li key={i} className={i === 0 ? 'font-medium' : 'text-muted-foreground'}>
+                    {i === 0 ? `${n} · primary` : n}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            primaryName
+          )}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
 
 function cityToSlug(city: string): string {
   return city
@@ -422,28 +510,16 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                     )}
                   </div>
                   {property.agent?.agency?.logo_url && (
-                    <TooltipProvider delayDuration={200}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              if (property.agent?.agency) {
-                                navigate(`/agencies/${property.agent.agency.name.toLowerCase().replace(/\s+/g, '-')}`);
-                              }
-                            }}
-                            className="flex-shrink-0"
-                          >
-                            <Avatar className="h-7 w-7 border border-border/50 shadow-sm">
-                              <AvatarImage src={property.agent.agency.logo_url} alt={property.agent.agency.name} />
-                              <AvatarFallback className="bg-muted"><Building2 className="h-3 w-3 text-muted-foreground" /></AvatarFallback>
-                            </Avatar>
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent side="top" className="text-xs">{property.agent.agency.name}</TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                    <AgencyLogoStack
+                      primaryName={property.agent.agency.name}
+                      primaryLogoUrl={property.agent.agency.logo_url}
+                      coAgents={property.co_agents ?? []}
+                      onPrimaryClick={() => {
+                        if (property.agent?.agency) {
+                          navigate(`/agencies/${property.agent.agency.name.toLowerCase().replace(/\s+/g, '-')}`);
+                        }
+                      }}
+                    />
                   )}
                 </div>
                 {!hideTitle && property.title && (
@@ -659,28 +735,18 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                     <MonthlyEstimate price={property.price} />
                   )}
                   {property.agent?.agency?.logo_url && (
-                    <TooltipProvider delayDuration={200}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              if (property.agent?.agency) {
-                                navigate(`/agencies/${property.agent.agency.name.toLowerCase().replace(/\s+/g, '-')}`);
-                              }
-                            }}
-                            className="flex-shrink-0 ml-auto"
-                          >
-                            <Avatar className="h-7 w-7 border border-border/50 shadow-sm">
-                              <AvatarImage src={property.agent.agency.logo_url} alt={property.agent.agency.name} />
-                              <AvatarFallback className="bg-muted"><Building2 className="h-3 w-3 text-muted-foreground" /></AvatarFallback>
-                            </Avatar>
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent side="top" className="text-xs">{property.agent.agency.name}</TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                    <div className="ml-auto">
+                      <AgencyLogoStack
+                        primaryName={property.agent.agency.name}
+                        primaryLogoUrl={property.agent.agency.logo_url}
+                        coAgents={property.co_agents ?? []}
+                        onPrimaryClick={() => {
+                          if (property.agent?.agency) {
+                            navigate(`/agencies/${property.agent.agency.name.toLowerCase().replace(/\s+/g, '-')}`);
+                          }
+                        }}
+                      />
+                    </div>
                   )}
                 </div>
 
