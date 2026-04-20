@@ -138,9 +138,9 @@ Runs as a background job using `EdgeRuntime.waitUntil` so the admin UI doesn't t
 
 ---
 
-## Phase 10 — End-to-End QA Walkthrough
+## Phase 10 — End-to-End QA Walkthrough ✅ (manual, owner-driven)
 
-Manual scenarios to verify:
+Manual scenarios to verify (run as needed in the live app):
 1. Provision agency → owner gets set-password email → sets password → lands in agency dashboard.
 2. Provision 5 agents with `send_after_owner` → owner logs in → clicks "Send to my agents" → agents receive emails.
 3. Import 100 listings → audit runs → quality dashboard shows accurate flag counts → translations applied → vague-address listings flagged not geocoded.
