@@ -175,9 +175,49 @@ export function AgencyProfileSection({ agency }: Props) {
           <Label htmlFor="website">Website</Label>
           <Input id="website" value={form.website} onChange={e => setForm({ ...form, website: e.target.value })} />
         </div>
-        <div>
-          <Label htmlFor="logo">Logo URL</Label>
-          <Input id="logo" value={form.logo_url} onChange={e => setForm({ ...form, logo_url: e.target.value })} />
+        <div className="md:col-span-2">
+          <Label>Logo</Label>
+          <div className="flex items-center gap-3 mt-1.5">
+            <Avatar className="h-14 w-14 rounded-lg border">
+              <AvatarImage src={form.logo_url || undefined} alt="Agency logo" className="object-contain" />
+              <AvatarFallback className="rounded-lg text-xs text-muted-foreground">
+                {form.name ? form.name.substring(0, 2).toUpperCase() : 'AG'}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => logoInputRef.current?.click()}
+                disabled={uploadingLogo}
+              >
+                {uploadingLogo ? (
+                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                ) : (
+                  <Upload className="h-3.5 w-3.5 mr-1.5" />
+                )}
+                {form.logo_url ? 'Replace' : 'Upload'}
+              </Button>
+              {form.logo_url && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setForm({ ...form, logo_url: '' })}
+                >
+                  <X className="h-3.5 w-3.5 mr-1.5" /> Remove
+                </Button>
+              )}
+            </div>
+            <input
+              ref={logoInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleLogoUpload}
+            />
+          </div>
         </div>
         <div className="md:col-span-2">
           <Label htmlFor="address">Office address</Label>
