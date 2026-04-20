@@ -1682,6 +1682,51 @@ export type Database = {
           },
         ]
       }
+      colisting_reports: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          details: string | null
+          id: string
+          property_ids: string[]
+          reason: string
+          reporter_session_id: string | null
+          reporter_user_id: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          details?: string | null
+          id?: string
+          property_ids: string[]
+          reason: string
+          reporter_session_id?: string | null
+          reporter_user_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          details?: string | null
+          id?: string
+          property_ids?: string[]
+          reason?: string
+          reporter_session_id?: string | null
+          reporter_user_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       contact_reveals: {
         Row: {
           created_at: string
@@ -7048,6 +7093,8 @@ export type Database = {
         }
         Returns: string
       }
+      colisting_boost_expiry_sweep: { Args: never; Returns: Json }
+      colisting_boost_warning_sweep: { Args: never; Returns: Json }
       colisting_stale_sweep: {
         Args: { p_cooldown_days?: number; p_stale_days?: number }
         Returns: {
@@ -7055,6 +7102,26 @@ export type Database = {
           previous_agency_id: string
           property_id: string
         }[]
+      }
+      create_agency_notification: {
+        Args: {
+          p_action_url?: string
+          p_agency_id: string
+          p_message: string
+          p_title: string
+          p_type: string
+        }
+        Returns: undefined
+      }
+      end_primary_boost: { Args: { p_property_id: string }; Returns: Json }
+      file_colisting_report: {
+        Args: {
+          p_details?: string
+          p_property_ids: string[]
+          p_reason: string
+          p_session_id?: string
+        }
+        Returns: string
       }
       file_primary_dispute_with_colist: {
         Args: {
@@ -7080,6 +7147,10 @@ export type Database = {
           property_id: string
         }[]
       }
+      get_agency_primary_listing_count: {
+        Args: { p_agency_id: string }
+        Returns: number
+      }
       get_city_price_tiers: {
         Args: { p_city: string; p_months_back?: number; p_rooms?: number }
         Returns: {
@@ -7101,6 +7172,7 @@ export type Database = {
           count: number
         }[]
       }
+      get_colisting_telemetry: { Args: never; Returns: Json }
       get_nearby_sold_comps: {
         Args: {
           p_city: string
@@ -7171,6 +7243,15 @@ export type Database = {
         Returns: undefined
       }
       run_yad2_enqueue: { Args: never; Returns: Json }
+      start_primary_boost: {
+        Args: {
+          p_boosting_agency_id: string
+          p_boosting_agent_id: string
+          p_duration_days?: number
+          p_property_id: string
+        }
+        Returns: Json
+      }
       upgrade_primary_from_scrape: {
         Args: {
           p_existing_property_id: string
