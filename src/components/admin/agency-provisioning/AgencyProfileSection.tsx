@@ -160,9 +160,18 @@ export function AgencyProfileSection({ agency }: Props) {
             <KeyRound className="h-4 w-4 mr-2" /> Provision owner account
           </Button>
         ) : (
-          <Button variant="outline" onClick={handleReveal} disabled={reveal.isPending}>
-            <KeyRound className="h-4 w-4 mr-2" /> Reveal credentials
-          </Button>
+          <>
+            <Button variant="outline" onClick={openSecureReveal}>
+              <KeyRound className="h-4 w-4 mr-2" /> Reveal credentials
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => resend.mutate({ userId: agency.admin_user_id!, purpose: 'owner_setup' })}
+              disabled={resend.isPending}
+            >
+              <Send className="h-4 w-4 mr-2" /> Resend setup link
+            </Button>
+          </>
         )}
       </div>
 
