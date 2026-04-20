@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Plus, KeyRound, Loader2, Copy, UserCheck, Send, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { cn } from '@/lib/utils';
 import {
   useAgencyAgents,
   useCreateAgent,
@@ -24,9 +25,29 @@ interface Props {
   agencyId: string;
 }
 
+const LANGUAGE_OPTIONS = [
+  { id: 'english', label: 'English' },
+  { id: 'hebrew', label: 'Hebrew' },
+  { id: 'french', label: 'French' },
+  { id: 'russian', label: 'Russian' },
+  { id: 'spanish', label: 'Spanish' },
+  { id: 'arabic', label: 'Arabic' },
+];
+
+const SPECIALIZATION_OPTIONS = [
+  { id: 'residential', label: 'Residential' },
+  { id: 'commercial', label: 'Commercial' },
+  { id: 'luxury', label: 'Luxury' },
+  { id: 'new_construction', label: 'New Projects' },
+  { id: 'investment', label: 'Investment Properties' },
+  { id: 'rentals', label: 'Rentals' },
+];
+
 const emptyForm = {
   name: '', email: '', phone: '', avatar_url: '', bio: '',
-  license_number: '', specializations: '', languages: '',
+  license_number: '',
+  specializations: [] as string[],
+  languages: [] as string[],
 };
 
 export function AgentRosterSection({ agencyId }: Props) {
@@ -94,8 +115,8 @@ export function AgentRosterSection({ agencyId }: Props) {
       avatar_url: form.avatar_url || undefined,
       bio: form.bio || undefined,
       license_number: form.license_number || undefined,
-      specializations: form.specializations ? form.specializations.split(',').map(s => s.trim()).filter(Boolean) : undefined,
-      languages: form.languages ? form.languages.split(',').map(s => s.trim()).filter(Boolean) : undefined,
+      specializations: form.specializations.length > 0 ? form.specializations : undefined,
+      languages: form.languages.length > 0 ? form.languages : undefined,
     });
     setForm(emptyForm);
     setAddOpen(false);
@@ -285,13 +306,61 @@ export function AgentRosterSection({ agencyId }: Props) {
                 />
               </div>
             </div>
-            <div>
-              <Label>Languages (comma-separated)</Label>
-              <Input value={form.languages} onChange={e => setForm({ ...form, languages: e.target.value })} placeholder="English, Hebrew" />
+            <div className="md:col-span-2">
+              <Label>Languages</Label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-1.5">
+                {LANGUAGE_OPTIONS.map((lang) => {
+                  const active = form.languages.includes(lang.id);
+                  return (
+                    <button
+                      key={lang.id}
+                      type="button"
+                      onClick={() => setForm(prev => ({
+                        ...prev,
+                        languages: active
+                          ? prev.languages.filter(l => l !== lang.id)
+                          : [...prev.languages, lang.id],
+                      }))}
+                      className={cn(
+                        "flex items-center justify-center p-2.5 rounded-lg border text-sm font-medium transition-all",
+                        active
+                          ? "bg-primary/10 border-primary text-primary"
+                          : "border-border hover:border-primary/50 hover:bg-muted/50"
+                      )}
+                    >
+                      {lang.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
             <div className="md:col-span-2">
-              <Label>Specializations (comma-separated)</Label>
-              <Input value={form.specializations} onChange={e => setForm({ ...form, specializations: e.target.value })} placeholder="Luxury, Investment" />
+              <Label>Specializations</Label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-1.5">
+                {SPECIALIZATION_OPTIONS.map((spec) => {
+                  const active = form.specializations.includes(spec.id);
+                  return (
+                    <button
+                      key={spec.id}
+                      type="button"
+                      onClick={() => setForm(prev => ({
+                        ...prev,
+                        specializations: active
+                          ? prev.specializations.filter(s => s !== spec.id)
+                          : [...prev.specializations, spec.id],
+                      }))}
+                      className={cn(
+                        "flex items-center justify-center p-2.5 rounded-lg border text-sm font-medium transition-all text-center",
+                        active
+                          ? "bg-primary/10 border-primary text-primary"
+                          : "border-border hover:border-primary/50 hover:bg-muted/50"
+                      )}
+                    >
+                      {spec.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
             <div className="md:col-span-2">
               <Label>Bio</Label>
