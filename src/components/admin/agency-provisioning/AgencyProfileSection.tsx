@@ -36,7 +36,6 @@ export function AgencyProfileSection({ agency }: Props) {
 
   const [form, setForm] = useState({
     name: agency.name || '',
-    slug: agency.slug || '',
     email: agency.email || '',
     phone: agency.phone || '',
     description: agency.description || '',
