@@ -416,6 +416,22 @@ Deno.serve(async (req) => {
       })()
     );
 
+    // ── Co-listing boost warning sweep: 24h heads-up notifications ──
+    EdgeRuntime.waitUntil(
+      (async () => {
+        try {
+          const { data: warned, error: warnErr } = await sb.rpc("colisting_boost_warning_sweep");
+          if (warnErr) {
+            console.error("colisting_boost_warning_sweep failed:", warnErr.message);
+          } else {
+            console.log(`colisting_boost_warning_sweep: ${warned ?? 0} warnings sent`);
+          }
+        } catch (err) {
+          console.error("colisting_boost_warning_sweep threw:", err);
+        }
+      })()
+    );
+
     console.log(`Nightly scrape: returning immediately. ${nonYad2Sources.length} background tasks fired.`);
 
     return new Response(JSON.stringify(summary), {
