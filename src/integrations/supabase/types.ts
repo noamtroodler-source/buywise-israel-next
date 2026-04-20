@@ -7048,6 +7048,7 @@ export type Database = {
         }
         Returns: string
       }
+      colisting_boost_expiry_sweep: { Args: never; Returns: Json }
       colisting_stale_sweep: {
         Args: { p_cooldown_days?: number; p_stale_days?: number }
         Returns: {
@@ -7056,6 +7057,7 @@ export type Database = {
           property_id: string
         }[]
       }
+      end_primary_boost: { Args: { p_property_id: string }; Returns: Json }
       file_primary_dispute_with_colist: {
         Args: {
           p_disputing_agency_id: string
@@ -7079,6 +7081,10 @@ export type Database = {
           phash: string
           property_id: string
         }[]
+      }
+      get_agency_primary_listing_count: {
+        Args: { p_agency_id: string }
+        Returns: number
       }
       get_city_price_tiers: {
         Args: { p_city: string; p_months_back?: number; p_rooms?: number }
@@ -7171,6 +7177,15 @@ export type Database = {
         Returns: undefined
       }
       run_yad2_enqueue: { Args: never; Returns: Json }
+      start_primary_boost: {
+        Args: {
+          p_boosting_agency_id: string
+          p_boosting_agent_id: string
+          p_duration_days?: number
+          p_property_id: string
+        }
+        Returns: Json
+      }
       upgrade_primary_from_scrape: {
         Args: {
           p_existing_property_id: string
