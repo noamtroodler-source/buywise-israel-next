@@ -62,6 +62,7 @@ import { useSavePromptTrigger } from '@/hooks/useSavePromptTrigger';
 import { useBuyerProfile } from '@/hooks/useBuyerProfile';
 import { useSaveCalculatorResult } from '@/hooks/useSavedCalculatorResults';
 import { usePreferences } from '@/contexts/PreferencesContext';
+import { useCurrencyInput } from '@/hooks/useCurrencyInput';
 
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -73,16 +74,7 @@ import { CityRoomPriceBreakdown } from './affordability/CityRoomPriceBreakdown';
 
 const STORAGE_KEY = 'affordability-calculator-inputs';
 
-type DownPaymentCurrency = 'ILS' | 'USD' | 'EUR' | 'GBP';
-
-const CURRENCY_CONFIG: Record<DownPaymentCurrency, { symbol: string; label: string; toILS: number }> = {
-  ILS: { symbol: '₪', label: '₪ ILS', toILS: 1 },
-  USD: { symbol: '$', label: '$ USD', toILS: 3.6 },
-  EUR: { symbol: '€', label: '€ EUR', toILS: 3.95 },
-  GBP: { symbol: '£', label: '£ GBP', toILS: 4.60 },
-};
-
-
+// All defaults stored in ILS — converted to display currency at the input boundary
 const DEFAULTS = {
   monthlyIncome: 25000,
   spouseIncome: 0,
