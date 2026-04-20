@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 
-import { MessageCircle, Mail, Share2, Heart, BookOpen, ChevronRight, ShieldCheck, Users } from 'lucide-react';
+import { MessageCircle, Mail, Share2, Heart, BookOpen, ChevronRight, ShieldCheck, Users, Building2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { trackInquiry } from '@/hooks/useInquiryTracking';
 import { useAuth } from '@/hooks/useAuth';
@@ -20,6 +20,12 @@ interface Agent {
   phone?: string | null;
   email?: string;
   avatar_url?: string | null;
+  agency?: {
+    id?: string;
+    name?: string | null;
+    slug?: string | null;
+    logo_url?: string | null;
+  } | null;
 }
 
 interface StickyContactCardProps {
@@ -138,6 +144,34 @@ export function StickyContactCard({
                   {agent.agency_name && (
                     <p className="text-sm text-muted-foreground truncate">{agent.agency_name}</p>
                   )}
+                  {(() => {
+                    const agencyName = agent.agency?.name || agent.agency_name;
+                    if (!agencyName) return null;
+                    const agencySlug = agent.agency?.slug;
+                    const agencyLogo = agent.agency?.logo_url;
+                    const inner = (
+                      <span className="inline-flex items-center gap-1.5 min-w-0">
+                        <Avatar className="h-4 w-4 flex-shrink-0">
+                          <AvatarImage src={agencyLogo || undefined} alt={agencyName} />
+                          <AvatarFallback className="bg-muted">
+                            <Building2 className="h-2.5 w-2.5 text-muted-foreground" />
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="truncate">{agencyName}</span>
+                      </span>
+                    );
+                    return agencySlug ? (
+                      <Link
+                        to={`/agencies/${agencySlug}`}
+                        className="mt-0.5 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary hover:underline transition-colors max-w-full"
+                      >
+                        {inner}
+                        <ChevronRight className="h-3 w-3 flex-shrink-0" />
+                      </Link>
+                    ) : (
+                      <p className="mt-0.5 text-sm text-muted-foreground truncate">{inner}</p>
+                    );
+                  })()}
                 </div>
               </div>
               <Separator />
