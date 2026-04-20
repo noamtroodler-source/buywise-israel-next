@@ -271,8 +271,11 @@ export default function Tools() {
 
   useEffect(() => {
     const toolParam = searchParams.get('tool');
-    if (toolParam && toolComponents[toolParam]) {
-      setActiveTool(toolParam);
+    // Normalize aliases (e.g., 'total-cost' → canonical 'totalcost') so activeTool
+    // always lines up with allTools/BETA_TOOL_IDS lookups.
+    const normalized = toolParam === 'total-cost' ? 'totalcost' : toolParam;
+    if (normalized && toolComponents[normalized]) {
+      setActiveTool(normalized);
        // Scroll to top when opening a tool
        window.scrollTo(0, 0);
     } else {
