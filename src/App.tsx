@@ -162,6 +162,7 @@ const AdminConflictAnalytics = lazy(() => import("./pages/admin/AdminConflictAna
 const AdminPrimaryHistory = lazy(() => import("./pages/admin/AdminPrimaryHistory"));
 const AdminPrimaryDisputes = lazy(() => import("./pages/admin/AdminPrimaryDisputes"));
 const AdminMergeReversals = lazy(() => import("./pages/admin/AdminMergeReversals"));
+const AdminColistingReports = lazy(() => import("./pages/admin/AdminColistingReports"));
 // Global query client config for optimal caching
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -534,6 +535,7 @@ const App = () => (
                           <Route path="primary-history" element={<AdminPrimaryHistory />} />
                           <Route path="primary-disputes" element={<AdminPrimaryDisputes />} />
                           <Route path="merge-reversals" element={<AdminMergeReversals />} />
+                          <Route path="colisting-reports" element={<AdminColistingReports />} />
                         </Route>
                         
                         <Route path="*" element={<NotFound />} />

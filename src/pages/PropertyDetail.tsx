@@ -400,7 +400,7 @@ export default function PropertyDetail() {
               {/* Co-listing agents — visible whenever another agency represents the same property */}
               {property.co_agents && property.co_agents.length > 0 && (
                 <div id="co-listing-agents">
-                  <CoListingAgents coAgents={property.co_agents} />
+                  <CoListingAgents coAgents={property.co_agents} propertyId={property.id} />
                 </div>
               )}
             </div>

@@ -55,7 +55,14 @@ export function CompareProvider({ children }: { children: ReactNode }) {
     }
 
     setCompareIds(prev => {
-      if (prev.includes(id)) return prev;
+      if (prev.includes(id)) {
+        // Defensive: under co-listing, one apartment = one property id, but
+        // if the buyer somehow lands on two cards that both point to the
+        // same property (e.g. an agency badge + a card), let them know
+        // rather than silently no-op.
+        toast.info('This property is already in your comparison.');
+        return prev;
+      }
       if (prev.length >= MAX_COMPARE_ITEMS) {
         toast.error(`You can compare up to ${MAX_COMPARE_ITEMS} items`);
         return prev;

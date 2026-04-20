@@ -70,6 +70,22 @@ export interface MergeEventRow {
   unmerged_by: string | null;
 }
 
+export interface ColistingReportRow {
+  id: string;
+  property_id: string;
+  reported_co_agent_id: string | null;
+  reason: string | null;
+  reporter_user_id: string | null;
+  reporter_email: string | null;
+  status: 'pending' | 'accepted' | 'dismissed';
+  resolved_by: string | null;
+  resolved_at: string | null;
+  admin_notes: string | null;
+  created_at: string;
+  // Joined
+  property?: { id: string; title: string | null; city: string | null; address: string | null };
+}
+
 // ─── Primary history ───────────────────────────────────────────────────────
 
 export interface HistoryFilters {
@@ -187,6 +203,57 @@ export function useAdminOverridePrimary() {
       toast.success('Primary agency reassigned');
     },
     onError: (err) => toast.error(`Override failed: ${(err as Error).message}`),
+  });
+}
+
+// ─── Colisting reports (buyer "not the same apartment" queue) ──────────────
+
+export function useAdminColistingReports(status: ColistingReportRow['status'] | 'all' = 'pending') {
+  return useQuery({
+    queryKey: ['admin', 'colisting-reports', status],
+    queryFn: async () => {
+      let q = (supabase as any)
+        .from('colisting_reports')
+        .select(`
+          id, property_id, reported_co_agent_id, reason,
+          reporter_user_id, reporter_email, status, resolved_by,
+          resolved_at, admin_notes, created_at,
+          property:properties(id, title, city, address)
+        `)
+        .order('created_at', { ascending: false });
+      if (status !== 'all') q = q.eq('status', status);
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data ?? []) as unknown as ColistingReportRow[];
+    },
+  });
+}
+
+export function useResolveColistingReport() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: {
+      reportId: string;
+      status: 'accepted' | 'dismissed';
+      notes?: string;
+    }) => {
+      const { error } = await (supabase as any)
+        .from('colisting_reports')
+        .update({
+          status: params.status,
+          resolved_at: new Date().toISOString(),
+          admin_notes: params.notes ?? null,
+        })
+        .eq('id', params.reportId);
+      if (error) throw error;
+    },
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ['admin', 'colisting-reports'] });
+      toast.success(
+        vars.status === 'accepted' ? 'Report accepted' : 'Report dismissed',
+      );
+    },
+    onError: (err) => toast.error(`Failed to update report: ${(err as Error).message}`),
   });
 }
 

@@ -5,7 +5,7 @@ import {
   FileText, MapPin, BarChart3, Settings, ClipboardCheck, Sliders,
   Mail, ToggleLeft, BookOpen, Megaphone, Star, Package, Globe,
   Wrench, ChevronRight, PenLine, Bug, Zap, TrendingUp, Flame, Shield,
-  History, Gavel, Combine
+  History, Gavel, Combine, Flag
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { cn } from '@/lib/utils';
@@ -109,6 +109,19 @@ export function AdminLayout() {
     refetchInterval: 60_000,
   });
 
+  const { data: pendingColistingReportsCount = 0 } = useQuery({
+    queryKey: ['colisting-reports-pending-count'],
+    queryFn: async () => {
+      const { count, error } = await (supabase as any)
+        .from('colisting_reports')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending');
+      if (error) return 0;
+      return count ?? 0;
+    },
+    refetchInterval: 60_000,
+  });
+
   const contentItems = [
     { href: '/admin/properties', label: 'Properties', icon: Home },
     { href: '/admin/agency-import', label: 'Agency Import', icon: Globe },
@@ -120,6 +133,7 @@ export function AdminLayout() {
 
   const coListingItems = [
     { href: '/admin/primary-disputes', label: 'Disputes', icon: Gavel, badge: pendingDisputesCount },
+    { href: '/admin/colisting-reports', label: 'Cluster Reports', icon: Flag, badge: pendingColistingReportsCount },
     { href: '/admin/primary-history', label: 'Primary History', icon: History },
     { href: '/admin/merge-reversals', label: 'Merge Reversals', icon: Combine },
   ];
@@ -203,7 +217,7 @@ export function AdminLayout() {
                       title="Co-Listing"
                       icon={Building2}
                       items={coListingItems}
-                      totalBadge={pendingDisputesCount}
+                      totalBadge={pendingDisputesCount + pendingColistingReportsCount}
                     />
 
                     {/* Market Data Section */}
