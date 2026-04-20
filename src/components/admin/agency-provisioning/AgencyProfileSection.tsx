@@ -85,10 +85,9 @@ export function AgencyProfileSection({ agency }: Props) {
     }
   }
 
-  async function handleReveal() {
+  function openSecureReveal() {
     if (!agency.admin_user_id) return;
-    const cred = await reveal.mutateAsync({ userId: agency.admin_user_id });
-    setCredModal({ email: cred.email || form.email, password: cred.password });
+    setSecureRevealOpen(true);
   }
 
   function copyToClipboard(text: string, label: string) {
