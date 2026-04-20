@@ -160,6 +160,8 @@ const AdminAgencyImport = lazy(() => import("./pages/admin/AdminAgencyImport"));
 const AdminScrapingSources = lazy(() => import("./pages/admin/AdminScrapingSources"));
 const AdminCrossAgencyConflicts = lazy(() => import("./pages/admin/AdminCrossAgencyConflicts"));
 const AdminAgencyProvisioning = lazy(() => import("./pages/admin/AdminAgencyProvisioning"));
+const AdminAgencyLifecycleIndex = lazy(() => import("./pages/admin/AdminAgencyLifecycleIndex"));
+const AdminAgencyLifecycleDetail = lazy(() => import("./pages/admin/AdminAgencyLifecycleDetail"));
 const AdminConflictAnalytics = lazy(() => import("./pages/admin/AdminConflictAnalytics"));
 const AdminPrimaryHistory = lazy(() => import("./pages/admin/AdminPrimaryHistory"));
 const AdminPrimaryDisputes = lazy(() => import("./pages/admin/AdminPrimaryDisputes"));
@@ -534,6 +536,8 @@ const App = () => (
                           <Route path="data-governance" element={<AdminDataGovernance />} />
                           <Route path="agency-import" element={<AdminAgencyImport />} />
                           <Route path="agency-provisioning" element={<AdminAgencyProvisioning />} />
+                          <Route path="agencies" element={<AdminAgencyLifecycleIndex />} />
+                          <Route path="agency-provisioning/:agencyId" element={<AdminAgencyLifecycleDetail />} />
                           <Route path="scraping-sources" element={<AdminScrapingSources />} />
                           <Route path="cross-agency-conflicts" element={<AdminCrossAgencyConflicts />} />
                           <Route path="cross-agency-conflicts/analytics" element={<AdminConflictAnalytics />} />
