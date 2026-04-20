@@ -7172,6 +7172,7 @@ export type Database = {
           count: number
         }[]
       }
+      get_colisting_telemetry: { Args: never; Returns: Json }
       get_nearby_sold_comps: {
         Args: {
           p_city: string
