@@ -1,14 +1,16 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Plus, KeyRound, Loader2, Copy, UserCheck, Send } from 'lucide-react';
+import { Plus, KeyRound, Loader2, Copy, UserCheck, Send, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import {
   useAgencyAgents,
   useCreateAgent,
@@ -38,6 +40,47 @@ export function AgentRosterSection({ agencyId }: Props) {
   const [form, setForm] = useState(emptyForm);
   const [credModal, setCredModal] = useState<{ email: string; password: string } | null>(null);
   const [revealUser, setRevealUser] = useState<{ id: string; label: string } | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const isValidImage = await new Promise<boolean>((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(true);
+      img.onerror = () => resolve(false);
+      img.src = URL.createObjectURL(file);
+    });
+    if (!isValidImage) {
+      toast.error('Invalid image file. Please select a PNG or JPG.');
+      return;
+    }
+
+    setUploadingAvatar(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `agency-${agencyId}/agent-avatar-${Date.now()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage
+        .from('property-images')
+        .upload(fileName, file, { upsert: true });
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('property-images')
+        .getPublicUrl(fileName);
+
+      setForm(prev => ({ ...prev, avatar_url: publicUrl }));
+      toast.success('Avatar uploaded');
+    } catch (err) {
+      console.error('Avatar upload error:', err);
+      toast.error('Failed to upload avatar');
+    } finally {
+      setUploadingAvatar(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  }
 
   async function handleAdd() {
     if (!form.name || !form.email) {
@@ -199,8 +242,48 @@ export function AgentRosterSection({ agencyId }: Props) {
               <Input value={form.license_number} onChange={e => setForm({ ...form, license_number: e.target.value })} />
             </div>
             <div>
-              <Label>Avatar URL</Label>
-              <Input value={form.avatar_url} onChange={e => setForm({ ...form, avatar_url: e.target.value })} />
+              <Label>Profile picture</Label>
+              <div className="flex items-center gap-3 mt-1.5">
+                <Avatar className="h-14 w-14 border">
+                  <AvatarImage src={form.avatar_url || undefined} alt="Agent avatar" />
+                  <AvatarFallback className="text-xs text-muted-foreground">
+                    {form.name ? form.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() : 'A'}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingAvatar}
+                  >
+                    {uploadingAvatar ? (
+                      <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                    ) : (
+                      <Upload className="h-3.5 w-3.5 mr-1.5" />
+                    )}
+                    {form.avatar_url ? 'Replace' : 'Upload'}
+                  </Button>
+                  {form.avatar_url && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setForm({ ...form, avatar_url: '' })}
+                    >
+                      <X className="h-3.5 w-3.5 mr-1.5" /> Remove
+                    </Button>
+                  )}
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAvatarUpload}
+                />
+              </div>
             </div>
             <div>
               <Label>Languages (comma-separated)</Label>
