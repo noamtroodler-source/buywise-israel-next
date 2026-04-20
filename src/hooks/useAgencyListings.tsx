@@ -18,6 +18,8 @@ export interface AgencyListing {
   primary_agency_id: string | null;
   import_source: string | null;
   merged_source_urls: string[] | null;
+  boost_active_until: string | null;
+  boosted_by_agency_id: string | null;
   created_at: string;
   updated_at: string;
   /** Total inquiries across ALL agencies on this property. */
@@ -28,6 +30,8 @@ export interface AgencyListing {
   role: 'primary' | 'co_listed';
   /** Count of OTHER agencies co-listed (primary + secondary minus this agency). */
   other_agencies_count: number;
+  /** True when THIS agency currently holds a primary-slot boost. */
+  has_active_boost: boolean;
 }
 
 /**
@@ -63,6 +67,7 @@ export function useAgencyListingsManagement(agencyId: string | undefined) {
           property_type, listing_status, verification_status,
           views_count, total_saves, images, agent_id,
           primary_agency_id, import_source, merged_source_urls,
+          boost_active_until, boosted_by_agency_id,
           created_at, updated_at
         `)
         .eq('primary_agency_id' as any, agencyId)
@@ -152,14 +157,19 @@ export function useAgencyListingsManagement(agencyId: string | undefined) {
         }
       });
 
+      const now = Date.now();
       return rows.map((p) => {
         const isPrimary = p.primary_agency_id === agencyId;
+        const boostUntil = p.boost_active_until ? new Date(p.boost_active_until).getTime() : null;
+        const hasActiveBoost =
+          p.boosted_by_agency_id === agencyId && boostUntil !== null && boostUntil > now;
         return {
           ...p,
           inquiries_count: totalMap[p.id] || 0,
           my_inquiries_count: myMap[p.id] || 0,
           role: isPrimary ? 'primary' : 'co_listed',
           other_agencies_count: otherAgenciesMap[p.id]?.size || 0,
+          has_active_boost: hasActiveBoost,
         };
       }) as AgencyListing[];
     },

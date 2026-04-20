@@ -515,6 +515,11 @@ export default function AgencyListings() {
                                         Co-listed
                                       </Badge>
                                     )}
+                                    {listing.has_active_boost && (
+                                      <Badge className="text-[10px] px-1.5 py-0 bg-primary/10 text-primary border-primary/30 border">
+                                        Boost → primary
+                                      </Badge>
+                                    )}
                                   </div>
                                   <p className="text-xs text-muted-foreground">
                                     {listing.city}

@@ -125,6 +125,21 @@ export function useToggleFeaturedListing() {
 
           if (creditError) throw creditError;
         }
+
+        // Activate primary-slot boost on the property. If this agency is
+        // already primary, this is a no-op that just stamps the boost
+        // window. If they're secondary, it promotes them to primary for
+        // the duration — the old primary drops to "also listed by".
+        const { error: boostError } = await (supabase.rpc as any)('start_primary_boost', {
+          p_property_id: propertyId,
+          p_agency_id: agencyId,
+          p_duration_days: 30,
+        });
+        if (boostError) {
+          // Don't fail the whole activation — featured treatment still
+          // applies, the co-listing primary swap is a nice-to-have.
+          console.error('start_primary_boost failed:', boostError.message);
+        }
       } else {
         // Deactivate: set is_active = false and cancelled_at
         const { error } = await supabase
@@ -138,6 +153,16 @@ export function useToggleFeaturedListing() {
           .eq('is_active', true);
 
         if (error) throw error;
+
+        // If the deactivating agency is currently boost-holding primary,
+        // revert primary to the prior holder.
+        const { error: endError } = await (supabase.rpc as any)('end_primary_boost', {
+          p_property_id: propertyId,
+          p_agency_id: agencyId,
+        });
+        if (endError) {
+          console.error('end_primary_boost failed:', endError.message);
+        }
       }
     },
     onSuccess: (_, variables) => {

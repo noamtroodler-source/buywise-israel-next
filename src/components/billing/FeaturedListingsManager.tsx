@@ -203,8 +203,20 @@ export function FeaturedListingsManager({ agencyId }: FeaturedListingsManagerPro
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{listing.title}</p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="font-medium text-sm truncate">{listing.title}</p>
+                        {listing.role === 'co_listed' && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-muted/40 text-muted-foreground border-border">
+                            Co-listed
+                          </Badge>
+                        )}
+                      </div>
                       <p className="text-xs text-muted-foreground truncate">{listing.city}</p>
+                      {!isFeatured && listing.role === 'co_listed' && (
+                        <p className="text-xs text-primary/80 mt-0.5">
+                          Boosting will make you primary for 30 days
+                        </p>
+                      )}
                       {isFeatured && featured && (
                         <p className="text-xs text-primary mt-0.5">
                           Featured since {format(new Date(featured.started_at), 'MMM d, yyyy')}
@@ -251,18 +263,28 @@ export function FeaturedListingsManager({ agencyId }: FeaturedListingsManagerPro
             </AlertDialogTitle>
             <AlertDialogDescription>
               {confirmDialog.action === 'activate' ? (
-                confirmDialog.useFreeCredit ? (
-                  <>
-                    This will use one of your founding partner free credits to feature{' '}
-                    <strong>{confirmDialog.listing?.title}</strong>. No charge this month.
-                  </>
-                ) : (
-                  <>
-                    Featuring <strong>{confirmDialog.listing?.title}</strong> costs{' '}
-                    <strong>₪{FEATURED_PRICE_ILS}/month</strong>. The listing will appear with a "Featured" badge
-                    across the platform and receive priority placement in search results.
-                  </>
-                )
+                <>
+                  {confirmDialog.useFreeCredit ? (
+                    <>
+                      This will use one of your founding partner free credits to feature{' '}
+                      <strong>{confirmDialog.listing?.title}</strong>. No charge this month.
+                    </>
+                  ) : (
+                    <>
+                      Featuring <strong>{confirmDialog.listing?.title}</strong> costs{' '}
+                      <strong>₪{FEATURED_PRICE_ILS}/month</strong>. The listing will appear with a "Featured" badge
+                      across the platform and receive priority placement in search results.
+                    </>
+                  )}
+                  {confirmDialog.listing?.role === 'co_listed' && (
+                    <>
+                      <br /><br />
+                      <strong>Co-listing note:</strong> you'll become the primary agency on this listing for the
+                      next 30 days. The current primary will show as "also listed by" during the boost, and
+                      contact buttons will route leads to you.
+                    </>
+                  )}
+                </>
               ) : (
                 <>
                   <strong>{confirmDialog.listing?.title}</strong> will immediately lose its "Featured" badge and

@@ -399,6 +399,23 @@ Deno.serve(async (req) => {
       })()
     );
 
+    // ── Co-listing boost expiry sweep: revert primaries for expired boosts ──
+    EdgeRuntime.waitUntil(
+      (async () => {
+        try {
+          const { data: expired, error: boostErr } = await sb.rpc("colisting_boost_expiry_sweep");
+          if (boostErr) {
+            console.error("colisting_boost_expiry_sweep failed:", boostErr.message);
+          } else {
+            const count = Array.isArray(expired) ? expired.length : 0;
+            console.log(`colisting_boost_expiry_sweep: ${count} boosts expired`);
+          }
+        } catch (err) {
+          console.error("colisting_boost_expiry_sweep threw:", err);
+        }
+      })()
+    );
+
     console.log(`Nightly scrape: returning immediately. ${nonYad2Sources.length} background tasks fired.`);
 
     return new Response(JSON.stringify(summary), {
