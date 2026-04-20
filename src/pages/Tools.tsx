@@ -49,7 +49,7 @@ const allTools: Record<string, Tool> = {
   },
   totalcost: { 
     id: 'totalcost', 
-    label: 'Total Cost Calculator', 
+    label: 'True Cost Calculator', 
     description: 'See the true cost of buying in Israel — taxes, fees, closing costs, and surprises most buyers miss.', 
     icon: Receipt,
     guidanceHint: 'Avoid surprises later',
@@ -106,6 +106,7 @@ const BETA_TOOL_IDS = new Set(['renovation', 'documents', 'listing-decoder', 'in
 const toolComponents: Record<string, React.ComponentType> = {
   mortgage: MortgageCalculator,
   totalcost: TrueCostCalculator,
+  'total-cost': TrueCostCalculator,
   affordability: AffordabilityCalculator,
   investment: InvestmentReturnCalculator,
   rentvsbuy: RentVsBuyCalculator,
