@@ -275,6 +275,16 @@ function AffordabilityCalculatorContent() {
     }
     const stressedMaxProperty = Math.min(maxPropertyFromLTV, stressedMaxLoan + downPayment);
     const stressedReduction = maxPropertyPrice - stressedMaxProperty;
+
+    // True +1% stress (don't divide +2% in half — rounds to 0 for small values)
+    const stressedRate1 = (interestRate + 1) / 100 / 12;
+    let stressedMaxLoan1 = 0;
+    if (stressedRate1 > 0 && availableForMortgage > 0) {
+      stressedMaxLoan1 = availableForMortgage * (1 - Math.pow(1 + stressedRate1, -numPayments)) / stressedRate1;
+    }
+    const stressedMaxProperty1 = Math.min(maxPropertyFromLTV, stressedMaxLoan1 + downPayment);
+    const stressedReduction1 = maxPropertyPrice - stressedMaxProperty1;
+
     const totalBurden = effectiveIncome > 0 ? (monthlyDebts + actualMonthlyPayment) / effectiveIncome : 0;
     let affordabilityScore = 100;
     if (totalBurden > 0.5) affordabilityScore = 20;
@@ -284,19 +294,28 @@ function AffordabilityCalculatorContent() {
     const mortgagePercent = effectiveIncome > 0 ? (actualMonthlyPayment / effectiveIncome) * 100 : 0;
     const debtsPercent = effectiveIncome > 0 ? (monthlyDebts / effectiveIncome) * 100 : 0;
     const remainingPercent = Math.max(0, 100 - mortgagePercent - debtsPercent);
+
+    // Clamp loan headroom against the actual selected max property minus the user's
+    // down payment — otherwise PTI-derived loan can exceed (price − down payment).
+    const maxPropertyLowClamped = Math.round(Math.min(maxPropertyAtHighRate, MAX_DISPLAY_PROPERTY_PRICE));
+    const maxPropertyHighClamped = Math.round(Math.min(maxPropertyAtLowRate, MAX_DISPLAY_PROPERTY_PRICE));
+
     return {
       effectiveIncome, maxPropertyPrice: Math.round(maxPropertyPrice), maxLoanAmount: Math.round(maxLoanAmount),
       availableForMortgage: Math.round(availableForMortgage), actualMonthlyPayment: Math.round(actualMonthlyPayment),
       maxLTV: maxLTV * 100, limitingFactor, stressedMaxProperty: Math.round(stressedMaxProperty),
-      stressedReduction: Math.round(stressedReduction), affordabilityScore, mortgagePercent, debtsPercent,
+      stressedReduction: Math.round(stressedReduction),
+      stressedReduction1: Math.round(stressedReduction1),
+      affordabilityScore, mortgagePercent, debtsPercent,
       remainingPercent, employmentMultiplier,
-      // New range fields
+      // Range fields
       monthlyPaymentLow: Math.round(lowRateMonthly),
       monthlyPaymentHigh: Math.round(highRateMonthly),
-      maxPropertyLow: Math.round(Math.min(maxPropertyAtHighRate, MAX_DISPLAY_PROPERTY_PRICE)),
-      maxPropertyHigh: Math.round(Math.min(maxPropertyAtLowRate, MAX_DISPLAY_PROPERTY_PRICE)),
-      maxLoanLow: Math.round(maxLoanAtHighRate),
-      maxLoanHigh: Math.round(maxLoanAtLowRate),
+      maxPropertyLow: maxPropertyLowClamped,
+      maxPropertyHigh: maxPropertyHighClamped,
+      // Loan headroom must never exceed (chosen property − down payment)
+      maxLoanLow: Math.max(0, maxPropertyLowClamped - downPayment),
+      maxLoanHigh: Math.max(0, maxPropertyHighClamped - downPayment),
     };
   }, [monthlyIncome, spouseIncome, monthlyDebts, downPayment, interestRate, loanTermYears, employmentType, hasForeignIncome, foreignIncomePercent, selectedBuyerType, olehIsFirstProperty]);
 
