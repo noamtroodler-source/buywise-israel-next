@@ -80,9 +80,11 @@ function InfoTooltip({ content }: { content: string }) {
 function MortgageCalculatorContent() {
   const formatCurrency = useFormatPrice();
   const userCurrencySymbol = useCurrencySymbol();
-  // Mortgage calculator always works in NIS — all bank calculations are in Shekels
-  const currencySymbol = '₪';
-  const formatNIS = (value: number) => `₪${value.toLocaleString('en-US')}`;
+  const { currency, exchangeRate } = usePreferences();
+  const { toILS, toDisplay } = useCurrencyInput();
+  // Display symbol respects user's preference; bank math always runs in NIS internally
+  const currencySymbol = userCurrencySymbol;
+  const formatNIS = (value: number) => formatCurrency(value, 'ILS');
   const { data: buyerProfile, isLoading: isProfileLoading } = useBuyerProfile();
   const { data: mortgageTracks, isLoading: isTracksLoading } = useMortgageTracks();
   const { toast: showToast } = useToast();
