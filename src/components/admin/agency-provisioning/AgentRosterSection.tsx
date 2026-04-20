@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Plus, KeyRound, Loader2, Copy, UserCheck, Send, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { cn } from '@/lib/utils';
 import {
   useAgencyAgents,
   useCreateAgent,
@@ -24,9 +25,29 @@ interface Props {
   agencyId: string;
 }
 
+const LANGUAGE_OPTIONS = [
+  { id: 'english', label: 'English' },
+  { id: 'hebrew', label: 'Hebrew' },
+  { id: 'french', label: 'French' },
+  { id: 'russian', label: 'Russian' },
+  { id: 'spanish', label: 'Spanish' },
+  { id: 'arabic', label: 'Arabic' },
+];
+
+const SPECIALIZATION_OPTIONS = [
+  { id: 'residential', label: 'Residential' },
+  { id: 'commercial', label: 'Commercial' },
+  { id: 'luxury', label: 'Luxury' },
+  { id: 'new_construction', label: 'New Projects' },
+  { id: 'investment', label: 'Investment Properties' },
+  { id: 'rentals', label: 'Rentals' },
+];
+
 const emptyForm = {
   name: '', email: '', phone: '', avatar_url: '', bio: '',
-  license_number: '', specializations: '', languages: '',
+  license_number: '',
+  specializations: [] as string[],
+  languages: [] as string[],
 };
 
 export function AgentRosterSection({ agencyId }: Props) {
@@ -94,8 +115,8 @@ export function AgentRosterSection({ agencyId }: Props) {
       avatar_url: form.avatar_url || undefined,
       bio: form.bio || undefined,
       license_number: form.license_number || undefined,
-      specializations: form.specializations ? form.specializations.split(',').map(s => s.trim()).filter(Boolean) : undefined,
-      languages: form.languages ? form.languages.split(',').map(s => s.trim()).filter(Boolean) : undefined,
+      specializations: form.specializations.length > 0 ? form.specializations : undefined,
+      languages: form.languages.length > 0 ? form.languages : undefined,
     });
     setForm(emptyForm);
     setAddOpen(false);
