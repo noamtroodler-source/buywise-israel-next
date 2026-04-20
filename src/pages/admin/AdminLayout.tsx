@@ -1,10 +1,11 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
-  LayoutDashboard, Users, Home, Building, Building2, 
+  LayoutDashboard, Users, Home, Building, Building2,
   FileText, MapPin, BarChart3, Settings, ClipboardCheck, Sliders,
   Mail, ToggleLeft, BookOpen, Megaphone, Star, Package, Globe,
-  Wrench, ChevronRight, PenLine, Bug, Zap, TrendingUp, Flame, Shield
+  Wrench, ChevronRight, PenLine, Bug, Zap, TrendingUp, Flame, Shield,
+  History, Gavel, Combine
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { cn } from '@/lib/utils';
@@ -95,6 +96,19 @@ export function AdminLayout() {
     refetchInterval: 60_000,
   });
 
+  const { data: pendingDisputesCount = 0 } = useQuery({
+    queryKey: ['primary-disputes-pending-count'],
+    queryFn: async () => {
+      const { count, error } = await (supabase as any)
+        .from('primary_disputes')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending');
+      if (error) return 0;
+      return count ?? 0;
+    },
+    refetchInterval: 60_000,
+  });
+
   const contentItems = [
     { href: '/admin/properties', label: 'Properties', icon: Home },
     { href: '/admin/agency-import', label: 'Agency Import', icon: Globe },
@@ -102,6 +116,12 @@ export function AdminLayout() {
     { href: '/admin/duplicates', label: 'Duplicates', icon: Building, badge: pendingDuplicateCount },
     { href: '/admin/blog', label: 'Blog Posts', icon: FileText },
     { href: '/admin/glossary', label: 'Glossary', icon: BookOpen },
+  ];
+
+  const coListingItems = [
+    { href: '/admin/primary-disputes', label: 'Disputes', icon: Gavel, badge: pendingDisputesCount },
+    { href: '/admin/primary-history', label: 'Primary History', icon: History },
+    { href: '/admin/merge-reversals', label: 'Merge Reversals', icon: Combine },
   ];
 
   const marketItems = [
@@ -176,6 +196,14 @@ export function AdminLayout() {
                       title="Content"
                       icon={Package}
                       items={contentItems}
+                    />
+
+                    {/* Co-Listing Section */}
+                    <AdminNavSection
+                      title="Co-Listing"
+                      icon={Building2}
+                      items={coListingItems}
+                      totalBadge={pendingDisputesCount}
                     />
 
                     {/* Market Data Section */}
