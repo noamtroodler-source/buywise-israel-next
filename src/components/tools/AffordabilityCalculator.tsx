@@ -54,7 +54,7 @@ import { ToolFeedback } from './shared/ToolFeedback';
 import { SaveResultsPrompt } from './shared/SaveResultsPrompt';
 import { ToolDisclaimer } from './shared/ToolDisclaimer';
 import { ToolPropertySuggestions } from './shared/ToolPropertySuggestions';
-import { formatCurrencyRange } from './shared/ResultRange';
+import { formatCurrencyRange, isRangeDegenerate } from './shared/ResultRange';
 import { SourceAttribution } from './shared/SourceAttribution';
 import { ExampleValuesHint } from './shared/ExampleValuesHint';
 import { useAuth } from '@/hooks/useAuth';
