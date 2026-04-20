@@ -22,7 +22,8 @@ import { useSaveCalculatorResult } from '@/hooks/useSavedCalculatorResults';
 import { Link } from 'react-router-dom';
 import { ToolLayout, ToolDisclaimer, ToolFeedback, InsightCard, ResultRange, formatCurrencyRange, SourceAttribution, ExampleValuesHint, ToolPropertySuggestions, ToolGuidanceHint, SaveResultsPrompt } from './shared';
 import { useSavePromptTrigger } from '@/hooks/useSavePromptTrigger';
-import { useFormatPrice, useCurrencySymbol } from '@/contexts/PreferencesContext';
+import { useFormatPrice, useCurrencySymbol, usePreferences } from '@/contexts/PreferencesContext';
+import { useCurrencyInput } from '@/hooks/useCurrencyInput';
 import { toast } from 'sonner';
 import { MORTGAGE_RATE_RANGES } from '@/lib/utils/formatRange';
 
