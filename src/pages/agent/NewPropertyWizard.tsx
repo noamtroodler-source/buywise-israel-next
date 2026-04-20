@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { toast } from 'sonner';
 import { WizardProgress } from '@/components/agent/wizard/WizardProgress';
 import { PropertyWizardProvider, usePropertyWizard, PROPERTY_WIZARD_STORAGE_KEY, PropertyWizardData } from '@/components/agent/wizard/PropertyWizardContext';
 import { 

@@ -69,7 +69,7 @@ export async function checkDuplicateForSubmission(
 
   // 1. Intra-agency: has this agency already listed this property?
   //    If yes, hard-block — the agent just forgot.
-  const { data: intraData } = await supabase.rpc('check_intra_agency_duplicate', {
+  const { data: intraData } = await (supabase.rpc as any)('check_intra_agency_duplicate', {
     p_agency_id: input.agencyId,
     p_address: input.address,
     p_city: input.city,
@@ -79,7 +79,7 @@ export async function checkDuplicateForSubmission(
     p_apartment_number: input.apartment_number ?? null,
   });
   if (intraData && intraData.length > 0) {
-    return { kind: 'intra_block', match: intraData[0] as IntraAgencyMatch };
+    return { kind: 'intra_block', match: intraData[0] as unknown as IntraAgencyMatch };
   }
 
   // 2. Cross-agency: existing property by someone else matching this draft?
@@ -130,7 +130,7 @@ export async function colistAsSecondary(
   newAgencyId: string,
   newAgentId: string,
 ): Promise<void> {
-  const { error } = await supabase.rpc('colist_as_secondary', {
+  const { error } = await (supabase.rpc as any)('colist_as_secondary', {
     p_existing_property_id: existingPropertyId,
     p_new_agency_id: newAgencyId,
     p_new_agent_id: newAgentId,
@@ -143,7 +143,7 @@ export async function upgradePrimaryFromScrape(
   newAgencyId: string,
   newAgentId: string,
 ): Promise<void> {
-  const { error } = await supabase.rpc('upgrade_primary_from_scrape', {
+  const { error } = await (supabase.rpc as any)('upgrade_primary_from_scrape', {
     p_existing_property_id: existingPropertyId,
     p_new_agency_id: newAgencyId,
     p_new_agent_id: newAgentId,
@@ -157,7 +157,7 @@ export async function filePrimaryDisputeWithColist(
   disputingAgentId: string,
   reason: string | null,
 ): Promise<string> {
-  const { data, error } = await supabase.rpc('file_primary_dispute_with_colist', {
+  const { data, error } = await (supabase.rpc as any)('file_primary_dispute_with_colist', {
     p_existing_property_id: existingPropertyId,
     p_disputing_agency_id: disputingAgencyId,
     p_disputing_agent_id: disputingAgentId,

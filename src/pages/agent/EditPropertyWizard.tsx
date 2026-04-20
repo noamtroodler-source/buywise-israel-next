@@ -134,6 +134,7 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
         city: property.city || '',
         neighborhood: property.neighborhood || '',
         address: property.address || '',
+        apartment_number: (property as any).apartment_number || undefined,
         latitude: property.latitude || null,
         longitude: property.longitude || null,
         place_id: '',
