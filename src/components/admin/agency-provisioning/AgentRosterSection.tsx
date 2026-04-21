@@ -323,48 +323,38 @@ export function AgentRosterSection({ agencyId }: Props) {
               <Label>License number</Label>
               <Input value={form.license_number} onChange={e => setForm({ ...form, license_number: e.target.value })} />
             </div>
-            <div>
+            <div className="md:col-span-2">
               <Label>Profile picture</Label>
-              <div className="flex items-center gap-3 mt-1.5">
-                <Avatar className="h-14 w-14 border">
-                  <AvatarImage src={form.avatar_url || undefined} alt="Agent avatar" />
-                  <AvatarFallback className="text-xs text-muted-foreground">
-                    {form.name ? form.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() : 'A'}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={uploadingAvatar}
-                  >
-                    {uploadingAvatar ? (
-                      <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                    ) : (
-                      <Upload className="h-3.5 w-3.5 mr-1.5" />
-                    )}
-                    {form.avatar_url ? 'Replace' : 'Upload'}
-                  </Button>
-                  {form.avatar_url && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setForm({ ...form, avatar_url: '' })}
-                    >
-                      <X className="h-3.5 w-3.5 mr-1.5" /> Remove
-                    </Button>
+              <div className="flex items-start gap-4 mt-1.5">
+                <div className="shrink-0 h-24 w-24 rounded-full overflow-hidden border-2 border-border bg-muted flex items-center justify-center">
+                  {form.avatar_url ? (
+                    <img src={form.avatar_url} alt="Agent avatar" className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="text-lg font-semibold text-muted-foreground">
+                      {form.name ? form.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() : 'A'}
+                    </span>
                   )}
                 </div>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleAvatarUpload}
-                />
+                <div className="flex-1 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={uploadingAvatar}>
+                      {uploadingAvatar ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Upload className="h-3.5 w-3.5 mr-1.5" />}
+                      {form.avatar_url ? 'Replace' : 'Upload'}
+                    </Button>
+                    {form.avatar_url && (
+                      <Button type="button" variant="ghost" size="sm" onClick={() => setForm({ ...form, avatar_url: '' })}>
+                        <X className="h-3.5 w-3.5 mr-1.5" /> Remove
+                      </Button>
+                    )}
+                  </div>
+                  <Input
+                    placeholder="Or paste image URL..."
+                    value={form.avatar_url}
+                    onChange={e => setForm({ ...form, avatar_url: e.target.value })}
+                    className="text-xs"
+                  />
+                </div>
+                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
               </div>
             </div>
             <div className="md:col-span-2">
@@ -460,25 +450,36 @@ export function AgentRosterSection({ agencyId }: Props) {
               <Label>License number</Label>
               <Input value={form.license_number} onChange={e => setForm({ ...form, license_number: e.target.value })} />
             </div>
-            <div>
+            <div className="md:col-span-2">
               <Label>Profile picture</Label>
-              <div className="flex items-center gap-3 mt-1.5">
-                <Avatar className="h-14 w-14 border">
-                  <AvatarImage src={form.avatar_url || undefined} alt="Agent avatar" />
-                  <AvatarFallback className="text-xs text-muted-foreground">
-                    {form.name ? form.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() : 'A'}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex items-center gap-2">
-                  <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={uploadingAvatar}>
-                    {uploadingAvatar ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Upload className="h-3.5 w-3.5 mr-1.5" />}
-                    {form.avatar_url ? 'Replace' : 'Upload'}
-                  </Button>
-                  {form.avatar_url && (
-                    <Button type="button" variant="ghost" size="sm" onClick={() => setForm({ ...form, avatar_url: '' })}>
-                      <X className="h-3.5 w-3.5 mr-1.5" /> Remove
-                    </Button>
+              <div className="flex items-start gap-4 mt-1.5">
+                <div className="shrink-0 h-24 w-24 rounded-full overflow-hidden border-2 border-border bg-muted flex items-center justify-center">
+                  {form.avatar_url ? (
+                    <img src={form.avatar_url} alt="Agent avatar" className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="text-lg font-semibold text-muted-foreground">
+                      {form.name ? form.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() : 'A'}
+                    </span>
                   )}
+                </div>
+                <div className="flex-1 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={uploadingAvatar}>
+                      {uploadingAvatar ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Upload className="h-3.5 w-3.5 mr-1.5" />}
+                      {form.avatar_url ? 'Replace' : 'Upload'}
+                    </Button>
+                    {form.avatar_url && (
+                      <Button type="button" variant="ghost" size="sm" onClick={() => setForm({ ...form, avatar_url: '' })}>
+                        <X className="h-3.5 w-3.5 mr-1.5" /> Remove
+                      </Button>
+                    )}
+                  </div>
+                  <Input
+                    placeholder="Or paste image URL..."
+                    value={form.avatar_url}
+                    onChange={e => setForm({ ...form, avatar_url: e.target.value })}
+                    className="text-xs"
+                  />
                 </div>
                 <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
               </div>
