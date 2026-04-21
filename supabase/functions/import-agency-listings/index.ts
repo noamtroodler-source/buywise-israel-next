@@ -1154,6 +1154,84 @@ async function discoverDirectPageLinks(pageUrl: string, firecrawlKey: string): P
   }
 }
 
+// ─── Pagination discovery ────────────────────────────────────────────────────
+// Given initial links from a page, detect pagination patterns and scrape
+// subsequent pages to collect all listing links across paginated views.
+const PAGINATION_PATTERNS = [
+  /\/page\/(\d+)/i,
+  /[?&]paged=(\d+)/i,
+  /[?&]page=(\d+)/i,
+  /[?&]pg=(\d+)/i,
+];
+
+function detectPaginationUrls(links: string[], baseUrl: string): string[] {
+  const pageNums = new Map<string, number>(); // template → max page seen
+  const templates = new Map<string, string>(); // template → example URL
+
+  for (const link of links) {
+    if (!isSameSiteUrl(link, baseUrl)) continue;
+    for (const pattern of PAGINATION_PATTERNS) {
+      const match = link.match(pattern);
+      if (match) {
+        const pageNum = parseInt(match[1], 10);
+        // Create a template by replacing the page number with a placeholder
+        const template = link.replace(match[0], match[0].replace(match[1], "__PAGE__"));
+        const current = pageNums.get(template) || 0;
+        if (pageNum > current) {
+          pageNums.set(template, pageNum);
+          templates.set(template, link);
+        }
+      }
+    }
+  }
+
+  // Generate URLs for all pages up to the max detected
+  const paginationUrls: string[] = [];
+  for (const [template, maxPage] of pageNums) {
+    for (let i = 2; i <= Math.min(maxPage + 2, 30); i++) {
+      const url = template.replace("__PAGE__", String(i));
+      paginationUrls.push(url);
+    }
+  }
+  return [...new Set(paginationUrls)];
+}
+
+async function discoverPaginatedLinks(
+  initialLinks: string[],
+  entryUrl: string,
+  firecrawlKey: string
+): Promise<string[]> {
+  const paginationUrls = detectPaginationUrls(initialLinks, entryUrl);
+  if (paginationUrls.length === 0) return [];
+
+  console.log(`Pagination: found ${paginationUrls.length} paginated URLs to scrape`);
+  const allLinks: string[] = [];
+
+  // Scrape pagination pages in batches of 3
+  for (let i = 0; i < paginationUrls.length; i += 3) {
+    const batch = paginationUrls.slice(i, i + 3);
+    const results = await Promise.allSettled(
+      batch.map(url => discoverDirectPageLinks(url, firecrawlKey))
+    );
+    for (const r of results) {
+      if (r.status === "fulfilled") allLinks.push(...r.value);
+    }
+  }
+
+  console.log(`Pagination: discovered ${allLinks.length} additional links from ${paginationUrls.length} pages`);
+  return allLinks;
+}
+
+// ─── Extract site root from any URL ──────────────────────────────────────────
+function getSiteRoot(url: string): string {
+  try {
+    const parsed = new URL(normalizeUrl(url));
+    return `${parsed.protocol}//${parsed.hostname}`;
+  } catch {
+    return url;
+  }
+}
+
 async function handleDiscover(body: any) {
   const { agency_id, website_url, import_type = "resale" } = body;
   if (!agency_id || !website_url) throw new Error("agency_id and website_url required");
@@ -1191,12 +1269,17 @@ async function handleDiscover(body: any) {
   if (!FIRECRAWL_API_KEY) throw new Error("FIRECRAWL_API_KEY not configured");
 
   const formattedUrl = normalizedUrl;
-  dlog("Mapping URL:", formattedUrl);
+  const siteRoot = getSiteRoot(formattedUrl);
+  const enteredUrlIsDifferentFromRoot = normalizeUrl(siteRoot) !== normalizeUrl(formattedUrl);
+
+  // STRATEGY: Always map from site root for maximum coverage, then also
+  // scrape the specific entered URL for direct links + pagination.
+  console.log(`Discover: mapping from site root: ${siteRoot} (entered: ${formattedUrl})`);
 
   const mapRes = await fetch("https://api.firecrawl.dev/v1/map", {
     method: "POST",
     headers: { Authorization: `Bearer ${FIRECRAWL_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ url: formattedUrl, limit: 500, includeSubdomains: false }),
+    body: JSON.stringify({ url: siteRoot, limit: 500, includeSubdomains: false }),
   });
   if (!mapRes.ok) {
     const errText = await mapRes.text();
@@ -1205,22 +1288,45 @@ async function handleDiscover(body: any) {
   const mapData = await mapRes.json();
 
   const rawUrls: string[] = mapData.links || mapData.data || [];
-  if (rawUrls.length === 0) throw new Error("No URLs discovered on this website");
-  dlog(`Discovered ${rawUrls.length} total URLs`);
+  console.log(`Root map discovered ${rawUrls.length} URLs`);
 
-  // Some agency category pages expose listings directly in rendered HTML, while
-  // Firecrawl MAP can return only the category URL. Scrape the entry page when
-  // the map result is sparse so listing links like /property/... are not missed.
-  if (rawUrls.length < 25) {
-    const directLinks = await discoverDirectPageLinks(formattedUrl, FIRECRAWL_API_KEY);
-    if (directLinks.length > 0) {
+  // Always scrape the entered URL for direct links (catches listings the map misses)
+  const directLinks = await discoverDirectPageLinks(formattedUrl, FIRECRAWL_API_KEY);
+  if (directLinks.length > 0) {
+    const merged = new Set(rawUrls.map(url => normalizeUrl(url)));
+    for (const link of directLinks) merged.add(link);
+    rawUrls.length = 0;
+    rawUrls.push(...Array.from(merged));
+    console.log(`Direct scrape of entered URL: +${directLinks.length} links, ${rawUrls.length} total after merge`);
+  }
+
+  // If entered URL differs from root, also scrape the root for links
+  if (enteredUrlIsDifferentFromRoot) {
+    const rootLinks = await discoverDirectPageLinks(siteRoot, FIRECRAWL_API_KEY);
+    if (rootLinks.length > 0) {
       const merged = new Set(rawUrls.map(url => normalizeUrl(url)));
-      for (const link of directLinks) merged.add(link);
+      for (const link of rootLinks) merged.add(link);
       rawUrls.length = 0;
       rawUrls.push(...Array.from(merged));
-      dlog(`Direct page link expansion: ${directLinks.length} links, ${rawUrls.length} merged URLs`);
+      dlog(`Root page scrape: +${rootLinks.length} links, ${rawUrls.length} total`);
     }
   }
+
+  // Pagination: detect paginated listing pages and follow them
+  try {
+    const paginatedLinks = await discoverPaginatedLinks(rawUrls, formattedUrl, FIRECRAWL_API_KEY);
+    if (paginatedLinks.length > 0) {
+      const merged = new Set(rawUrls.map(url => normalizeUrl(url)));
+      for (const link of paginatedLinks) merged.add(link);
+      rawUrls.length = 0;
+      rawUrls.push(...Array.from(merged));
+      console.log(`Pagination expansion: +${paginatedLinks.length} links, ${rawUrls.length} total`);
+    }
+  } catch (err) {
+    console.warn(`Pagination discovery failed: ${err}`);
+  }
+
+  if (rawUrls.length === 0) throw new Error("No URLs discovered on this website");
 
   // Track Firecrawl map cost (job_id not yet created, will track in batch)
 
