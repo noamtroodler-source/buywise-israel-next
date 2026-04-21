@@ -562,6 +562,15 @@ export function AgentRosterSection({ agencyId }: Props) {
         userId={revealUser?.id ?? null}
         subjectLabel={revealUser?.label}
       />
+
+      {/* Avatar lightbox */}
+      <Dialog open={!!previewUrl} onOpenChange={(o) => { if (!o) setPreviewUrl(null); }}>
+        <DialogContent className="max-w-lg p-2">
+          {previewUrl && (
+            <img src={previewUrl} alt="Avatar preview" className="w-full h-auto rounded-lg" />
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
