@@ -1098,6 +1098,62 @@ function normalizeUrl(raw: string): string {
   }
 }
 
+function isSameSiteUrl(candidate: string, sourceUrl: string): boolean {
+  try {
+    const candidateHost = new URL(candidate).hostname.toLowerCase().replace(/^www\./, "");
+    const sourceHost = new URL(sourceUrl).hostname.toLowerCase().replace(/^www\./, "");
+    return candidateHost === sourceHost;
+  } catch {
+    return false;
+  }
+}
+
+function extractLinksFromHtml(html: string, pageUrl: string): string[] {
+  const links = new Set<string>();
+  const linkRegex = /<a\s[^>]*href\s*=\s*["']([^"'#]+)["'][^>]*>/gi;
+  let match: RegExpExecArray | null;
+
+  while ((match = linkRegex.exec(html)) !== null) {
+    try {
+      const absoluteUrl = new URL(match[1], pageUrl).toString();
+      if (isSameSiteUrl(absoluteUrl, pageUrl)) links.add(normalizeUrl(absoluteUrl));
+    } catch { /* ignore malformed hrefs */ }
+  }
+
+  return Array.from(links);
+}
+
+async function discoverDirectPageLinks(pageUrl: string, firecrawlKey: string): Promise<string[]> {
+  try {
+    const scrapeRes = await fetch("https://api.firecrawl.dev/v1/scrape", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${firecrawlKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ url: pageUrl, formats: ["links", "html"], onlyMainContent: false, waitFor: 3000 }),
+    });
+    if (!scrapeRes.ok) {
+      console.warn(`Direct link scrape failed (${scrapeRes.status}) for ${pageUrl}`);
+      return [];
+    }
+
+    const scrapeData = await scrapeRes.json();
+    const data = scrapeData.data || scrapeData;
+    const scrapedLinks = Array.isArray(data.links) ? data.links : [];
+    const htmlLinks = typeof data.html === "string" ? extractLinksFromHtml(data.html, pageUrl) : [];
+
+    const links = new Set<string>();
+    for (const link of [...scrapedLinks, ...htmlLinks]) {
+      try {
+        const absoluteUrl = new URL(link, pageUrl).toString();
+        if (isSameSiteUrl(absoluteUrl, pageUrl)) links.add(normalizeUrl(absoluteUrl));
+      } catch { /* ignore malformed links */ }
+    }
+    return Array.from(links);
+  } catch (err) {
+    console.warn(`Direct link discovery failed for ${pageUrl}: ${err}`);
+    return [];
+  }
+}
+
 async function handleDiscover(body: any) {
   const { agency_id, website_url, import_type = "resale" } = body;
   if (!agency_id || !website_url) throw new Error("agency_id and website_url required");
@@ -1151,6 +1207,20 @@ async function handleDiscover(body: any) {
   const rawUrls: string[] = mapData.links || mapData.data || [];
   if (rawUrls.length === 0) throw new Error("No URLs discovered on this website");
   dlog(`Discovered ${rawUrls.length} total URLs`);
+
+  // Some agency category pages expose listings directly in rendered HTML, while
+  // Firecrawl MAP can return only the category URL. Scrape the entry page when
+  // the map result is sparse so listing links like /property/... are not missed.
+  if (rawUrls.length < 25) {
+    const directLinks = await discoverDirectPageLinks(formattedUrl, FIRECRAWL_API_KEY);
+    if (directLinks.length > 0) {
+      const merged = new Set(rawUrls.map(url => normalizeUrl(url)));
+      for (const link of directLinks) merged.add(link);
+      rawUrls.length = 0;
+      rawUrls.push(...Array.from(merged));
+      dlog(`Direct page link expansion: ${directLinks.length} links, ${rawUrls.length} merged URLs`);
+    }
+  }
 
   // Track Firecrawl map cost (job_id not yet created, will track in batch)
 
