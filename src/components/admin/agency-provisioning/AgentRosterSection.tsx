@@ -65,6 +65,7 @@ export function AgentRosterSection({ agencyId }: Props) {
   const [credModal, setCredModal] = useState<{ email: string; password: string } | null>(null);
   const [revealUser, setRevealUser] = useState<{ id: string; label: string } | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -326,7 +327,7 @@ export function AgentRosterSection({ agencyId }: Props) {
             <div className="md:col-span-2">
               <Label>Profile picture</Label>
               <div className="flex items-start gap-4 mt-1.5">
-                <div className="shrink-0 h-24 w-24 rounded-full overflow-hidden border-2 border-border bg-muted flex items-center justify-center">
+                <div className={cn("shrink-0 h-24 w-24 rounded-full overflow-hidden border-2 border-border bg-muted flex items-center justify-center", form.avatar_url && "cursor-pointer hover:ring-2 hover:ring-primary transition-all")} onClick={() => form.avatar_url && setPreviewUrl(form.avatar_url)}>
                   {form.avatar_url ? (
                     <img src={form.avatar_url} alt="Agent avatar" className="h-full w-full object-cover" />
                   ) : (
@@ -453,7 +454,7 @@ export function AgentRosterSection({ agencyId }: Props) {
             <div className="md:col-span-2">
               <Label>Profile picture</Label>
               <div className="flex items-start gap-4 mt-1.5">
-                <div className="shrink-0 h-24 w-24 rounded-full overflow-hidden border-2 border-border bg-muted flex items-center justify-center">
+                <div className={cn("shrink-0 h-24 w-24 rounded-full overflow-hidden border-2 border-border bg-muted flex items-center justify-center", form.avatar_url && "cursor-pointer hover:ring-2 hover:ring-primary transition-all")} onClick={() => form.avatar_url && setPreviewUrl(form.avatar_url)}>
                   {form.avatar_url ? (
                     <img src={form.avatar_url} alt="Agent avatar" className="h-full w-full object-cover" />
                   ) : (
@@ -561,6 +562,15 @@ export function AgentRosterSection({ agencyId }: Props) {
         userId={revealUser?.id ?? null}
         subjectLabel={revealUser?.label}
       />
+
+      {/* Avatar lightbox */}
+      <Dialog open={!!previewUrl} onOpenChange={(o) => { if (!o) setPreviewUrl(null); }}>
+        <DialogContent className="max-w-lg p-2">
+          {previewUrl && (
+            <img src={previewUrl} alt="Avatar preview" className="w-full h-auto rounded-lg" />
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
