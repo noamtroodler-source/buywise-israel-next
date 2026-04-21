@@ -8,13 +8,14 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Plus, KeyRound, Loader2, Copy, UserCheck, Send, Upload, X, AlertTriangle } from 'lucide-react';
+import { Plus, KeyRound, Loader2, Copy, UserCheck, Send, Upload, X, AlertTriangle, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import {
   useAgencyAgents,
   useCreateAgent,
+  useUpdateAgent,
   useProvisionAgentAccount,
   useRevealCredentials,
   useResendSetupLink,
@@ -53,11 +54,13 @@ const emptyForm = {
 export function AgentRosterSection({ agencyId }: Props) {
   const { data: agents = [], isLoading } = useAgencyAgents(agencyId);
   const create = useCreateAgent(agencyId);
+  const update = useUpdateAgent(agencyId);
   const provision = useProvisionAgentAccount(agencyId);
   const reveal = useRevealCredentials();
   const resend = useResendSetupLink();
 
   const [addOpen, setAddOpen] = useState(false);
+  const [editAgent, setEditAgent] = useState<any | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [credModal, setCredModal] = useState<{ email: string; password: string } | null>(null);
   const [revealUser, setRevealUser] = useState<{ id: string; label: string } | null>(null);
@@ -120,6 +123,43 @@ export function AgentRosterSection({ agencyId }: Props) {
     });
     setForm(emptyForm);
     setAddOpen(false);
+  }
+
+  function openEdit(agent: any) {
+    setEditAgent(agent);
+    setForm({
+      name: agent.name || '',
+      email: agent.email || '',
+      phone: agent.phone || '',
+      avatar_url: agent.avatar_url || '',
+      bio: agent.bio || '',
+      license_number: agent.license_number || '',
+      specializations: agent.specializations || [],
+      languages: agent.languages || [],
+    });
+  }
+
+  async function handleUpdate() {
+    if (!editAgent) return;
+    if (!form.name || !form.email) {
+      toast.error('Name and email required');
+      return;
+    }
+    await update.mutateAsync({
+      id: editAgent.id,
+      patch: {
+        name: form.name,
+        email: form.email,
+        phone: form.phone || null,
+        avatar_url: form.avatar_url || null,
+        bio: form.bio || null,
+        license_number: form.license_number || null,
+        specializations: form.specializations.length > 0 ? form.specializations : null,
+        languages: form.languages.length > 0 ? form.languages : null,
+      },
+    });
+    setEditAgent(null);
+    setForm(emptyForm);
   }
 
   async function handleProvisionAgent(agentId: string, email: string) {
@@ -216,33 +256,43 @@ export function AgentRosterSection({ agencyId }: Props) {
                     )}
                   </TableCell>
                   <TableCell className="text-right">
-                    {a.user_id ? (
-                      <div className="flex items-center justify-end gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => resend.mutate({ userId: a.user_id!, purpose: 'agent_setup' })}
-                          disabled={resend.isPending}
-                        >
-                          <Send className="h-3 w-3 mr-1" /> Resend
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => openSecureReveal(a.user_id!, a.name)}
-                        >
-                          <KeyRound className="h-3 w-3 mr-1" /> Reveal
-                        </Button>
-                      </div>
-                    ) : (
+                    <div className="flex items-center justify-end gap-2">
                       <Button
                         size="sm"
-                        onClick={() => handleProvisionAgent(a.id, a.email)}
-                        disabled={provision.isPending}
+                        variant="ghost"
+                        onClick={() => openEdit(a)}
+                        title="Edit agent"
                       >
-                        {provision.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Provision'}
+                        <Pencil className="h-3 w-3" />
                       </Button>
-                    )}
+                      {a.user_id ? (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => resend.mutate({ userId: a.user_id!, purpose: 'agent_setup' })}
+                            disabled={resend.isPending}
+                          >
+                            <Send className="h-3 w-3 mr-1" /> Resend
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => openSecureReveal(a.user_id!, a.name)}
+                          >
+                            <KeyRound className="h-3 w-3 mr-1" /> Reveal
+                          </Button>
+                        </>
+                      ) : (
+                        <Button
+                          size="sm"
+                          onClick={() => handleProvisionAgent(a.id, a.email)}
+                          disabled={provision.isPending}
+                        >
+                          {provision.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Provision'}
+                        </Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -383,6 +433,92 @@ export function AgentRosterSection({ agencyId }: Props) {
             <Button onClick={handleAdd} disabled={create.isPending}>
               {create.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Add agent
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!editAgent} onOpenChange={(o) => { if (!o) { setEditAgent(null); setForm(emptyForm); } }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit agent — {editAgent?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <Label>Full name *</Label>
+              <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
+            </div>
+            <div>
+              <Label>Email *</Label>
+              <Input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
+            </div>
+            <div>
+              <Label>Phone</Label>
+              <Input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
+            </div>
+            <div>
+              <Label>License number</Label>
+              <Input value={form.license_number} onChange={e => setForm({ ...form, license_number: e.target.value })} />
+            </div>
+            <div>
+              <Label>Profile picture</Label>
+              <div className="flex items-center gap-3 mt-1.5">
+                <Avatar className="h-14 w-14 border">
+                  <AvatarImage src={form.avatar_url || undefined} alt="Agent avatar" />
+                  <AvatarFallback className="text-xs text-muted-foreground">
+                    {form.name ? form.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() : 'A'}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex items-center gap-2">
+                  <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={uploadingAvatar}>
+                    {uploadingAvatar ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Upload className="h-3.5 w-3.5 mr-1.5" />}
+                    {form.avatar_url ? 'Replace' : 'Upload'}
+                  </Button>
+                  {form.avatar_url && (
+                    <Button type="button" variant="ghost" size="sm" onClick={() => setForm({ ...form, avatar_url: '' })}>
+                      <X className="h-3.5 w-3.5 mr-1.5" /> Remove
+                    </Button>
+                  )}
+                </div>
+                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+              </div>
+            </div>
+            <div className="md:col-span-2">
+              <Label>Languages</Label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-1.5">
+                {LANGUAGE_OPTIONS.map((lang) => {
+                  const active = form.languages.includes(lang.id);
+                  return (
+                    <button key={lang.id} type="button" onClick={() => setForm(prev => ({ ...prev, languages: active ? prev.languages.filter(l => l !== lang.id) : [...prev.languages, lang.id] }))} className={cn("flex items-center justify-center p-2.5 rounded-lg border text-sm font-medium transition-all", active ? "bg-primary/10 border-primary text-primary" : "border-border hover:border-primary/50 hover:bg-muted/50")}>
+                      {lang.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="md:col-span-2">
+              <Label>Specializations</Label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-1.5">
+                {SPECIALIZATION_OPTIONS.map((spec) => {
+                  const active = form.specializations.includes(spec.id);
+                  return (
+                    <button key={spec.id} type="button" onClick={() => setForm(prev => ({ ...prev, specializations: active ? prev.specializations.filter(s => s !== spec.id) : [...prev.specializations, spec.id] }))} className={cn("flex items-center justify-center p-2.5 rounded-lg border text-sm font-medium transition-all text-center", active ? "bg-primary/10 border-primary text-primary" : "border-border hover:border-primary/50 hover:bg-muted/50")}>
+                      {spec.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="md:col-span-2">
+              <Label>Bio</Label>
+              <Textarea rows={3} value={form.bio} onChange={e => setForm({ ...form, bio: e.target.value })} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setEditAgent(null); setForm(emptyForm); }}>Cancel</Button>
+            <Button onClick={handleUpdate} disabled={update.isPending}>
+              {update.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Save changes
             </Button>
           </DialogFooter>
         </DialogContent>
