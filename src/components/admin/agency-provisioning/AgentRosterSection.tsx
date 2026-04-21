@@ -438,6 +438,92 @@ export function AgentRosterSection({ agencyId }: Props) {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={!!editAgent} onOpenChange={(o) => { if (!o) { setEditAgent(null); setForm(emptyForm); } }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit agent — {editAgent?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <Label>Full name *</Label>
+              <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
+            </div>
+            <div>
+              <Label>Email *</Label>
+              <Input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
+            </div>
+            <div>
+              <Label>Phone</Label>
+              <Input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
+            </div>
+            <div>
+              <Label>License number</Label>
+              <Input value={form.license_number} onChange={e => setForm({ ...form, license_number: e.target.value })} />
+            </div>
+            <div>
+              <Label>Profile picture</Label>
+              <div className="flex items-center gap-3 mt-1.5">
+                <Avatar className="h-14 w-14 border">
+                  <AvatarImage src={form.avatar_url || undefined} alt="Agent avatar" />
+                  <AvatarFallback className="text-xs text-muted-foreground">
+                    {form.name ? form.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() : 'A'}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex items-center gap-2">
+                  <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={uploadingAvatar}>
+                    {uploadingAvatar ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Upload className="h-3.5 w-3.5 mr-1.5" />}
+                    {form.avatar_url ? 'Replace' : 'Upload'}
+                  </Button>
+                  {form.avatar_url && (
+                    <Button type="button" variant="ghost" size="sm" onClick={() => setForm({ ...form, avatar_url: '' })}>
+                      <X className="h-3.5 w-3.5 mr-1.5" /> Remove
+                    </Button>
+                  )}
+                </div>
+                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+              </div>
+            </div>
+            <div className="md:col-span-2">
+              <Label>Languages</Label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-1.5">
+                {LANGUAGE_OPTIONS.map((lang) => {
+                  const active = form.languages.includes(lang.id);
+                  return (
+                    <button key={lang.id} type="button" onClick={() => setForm(prev => ({ ...prev, languages: active ? prev.languages.filter(l => l !== lang.id) : [...prev.languages, lang.id] }))} className={cn("flex items-center justify-center p-2.5 rounded-lg border text-sm font-medium transition-all", active ? "bg-primary/10 border-primary text-primary" : "border-border hover:border-primary/50 hover:bg-muted/50")}>
+                      {lang.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="md:col-span-2">
+              <Label>Specializations</Label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-1.5">
+                {SPECIALIZATION_OPTIONS.map((spec) => {
+                  const active = form.specializations.includes(spec.id);
+                  return (
+                    <button key={spec.id} type="button" onClick={() => setForm(prev => ({ ...prev, specializations: active ? prev.specializations.filter(s => s !== spec.id) : [...prev.specializations, spec.id] }))} className={cn("flex items-center justify-center p-2.5 rounded-lg border text-sm font-medium transition-all text-center", active ? "bg-primary/10 border-primary text-primary" : "border-border hover:border-primary/50 hover:bg-muted/50")}>
+                      {spec.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="md:col-span-2">
+              <Label>Bio</Label>
+              <Textarea rows={3} value={form.bio} onChange={e => setForm({ ...form, bio: e.target.value })} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setEditAgent(null); setForm(emptyForm); }}>Cancel</Button>
+            <Button onClick={handleUpdate} disabled={update.isPending}>
+              {update.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Save changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={!!credModal} onOpenChange={(o) => !o && setCredModal(null)}>
         <DialogContent>
           <DialogHeader>
