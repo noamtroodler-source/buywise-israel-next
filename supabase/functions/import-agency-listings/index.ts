@@ -3535,7 +3535,7 @@ async function handleApproveItem(body: any) {
       bank_guarantee_required: listing.bank_guarantee_required ?? null,
       checks_required: listing.checks_required ?? null,
       is_published: false, is_featured: false, views_count: 0,
-      verification_status: "draft",
+      verification_status: "pending_review",
       import_source: "website_scrape",
       source_url: item.url,
     })
