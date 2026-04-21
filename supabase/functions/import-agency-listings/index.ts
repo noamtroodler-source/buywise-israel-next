@@ -1269,12 +1269,17 @@ async function handleDiscover(body: any) {
   if (!FIRECRAWL_API_KEY) throw new Error("FIRECRAWL_API_KEY not configured");
 
   const formattedUrl = normalizedUrl;
-  dlog("Mapping URL:", formattedUrl);
+  const siteRoot = getSiteRoot(formattedUrl);
+  const enteredUrlIsDifferentFromRoot = normalizeUrl(siteRoot) !== normalizeUrl(formattedUrl);
+
+  // STRATEGY: Always map from site root for maximum coverage, then also
+  // scrape the specific entered URL for direct links + pagination.
+  console.log(`Discover: mapping from site root: ${siteRoot} (entered: ${formattedUrl})`);
 
   const mapRes = await fetch("https://api.firecrawl.dev/v1/map", {
     method: "POST",
     headers: { Authorization: `Bearer ${FIRECRAWL_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ url: formattedUrl, limit: 500, includeSubdomains: false }),
+    body: JSON.stringify({ url: siteRoot, limit: 500, includeSubdomains: false }),
   });
   if (!mapRes.ok) {
     const errText = await mapRes.text();
@@ -1283,22 +1288,45 @@ async function handleDiscover(body: any) {
   const mapData = await mapRes.json();
 
   const rawUrls: string[] = mapData.links || mapData.data || [];
-  if (rawUrls.length === 0) throw new Error("No URLs discovered on this website");
-  dlog(`Discovered ${rawUrls.length} total URLs`);
+  console.log(`Root map discovered ${rawUrls.length} URLs`);
 
-  // Some agency category pages expose listings directly in rendered HTML, while
-  // Firecrawl MAP can return only the category URL. Scrape the entry page when
-  // the map result is sparse so listing links like /property/... are not missed.
-  if (rawUrls.length < 25) {
-    const directLinks = await discoverDirectPageLinks(formattedUrl, FIRECRAWL_API_KEY);
-    if (directLinks.length > 0) {
+  // Always scrape the entered URL for direct links (catches listings the map misses)
+  const directLinks = await discoverDirectPageLinks(formattedUrl, FIRECRAWL_API_KEY);
+  if (directLinks.length > 0) {
+    const merged = new Set(rawUrls.map(url => normalizeUrl(url)));
+    for (const link of directLinks) merged.add(link);
+    rawUrls.length = 0;
+    rawUrls.push(...Array.from(merged));
+    console.log(`Direct scrape of entered URL: +${directLinks.length} links, ${rawUrls.length} total after merge`);
+  }
+
+  // If entered URL differs from root, also scrape the root for links
+  if (enteredUrlIsDifferentFromRoot) {
+    const rootLinks = await discoverDirectPageLinks(siteRoot, FIRECRAWL_API_KEY);
+    if (rootLinks.length > 0) {
       const merged = new Set(rawUrls.map(url => normalizeUrl(url)));
-      for (const link of directLinks) merged.add(link);
+      for (const link of rootLinks) merged.add(link);
       rawUrls.length = 0;
       rawUrls.push(...Array.from(merged));
-      dlog(`Direct page link expansion: ${directLinks.length} links, ${rawUrls.length} merged URLs`);
+      dlog(`Root page scrape: +${rootLinks.length} links, ${rawUrls.length} total`);
     }
   }
+
+  // Pagination: detect paginated listing pages and follow them
+  try {
+    const paginatedLinks = await discoverPaginatedLinks(rawUrls, formattedUrl, FIRECRAWL_API_KEY);
+    if (paginatedLinks.length > 0) {
+      const merged = new Set(rawUrls.map(url => normalizeUrl(url)));
+      for (const link of paginatedLinks) merged.add(link);
+      rawUrls.length = 0;
+      rawUrls.push(...Array.from(merged));
+      console.log(`Pagination expansion: +${paginatedLinks.length} links, ${rawUrls.length} total`);
+    }
+  } catch (err) {
+    console.warn(`Pagination discovery failed: ${err}`);
+  }
+
+  if (rawUrls.length === 0) throw new Error("No URLs discovered on this website");
 
   // Track Firecrawl map cost (job_id not yet created, will track in batch)
 
