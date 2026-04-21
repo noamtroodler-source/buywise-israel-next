@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import {
   useAgencyAgents,
   useCreateAgent,
+  useUpdateAgent,
   useProvisionAgentAccount,
   useRevealCredentials,
   useResendSetupLink,
