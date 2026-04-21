@@ -65,6 +65,7 @@ export function AgentRosterSection({ agencyId }: Props) {
   const [credModal, setCredModal] = useState<{ email: string; password: string } | null>(null);
   const [revealUser, setRevealUser] = useState<{ id: string; label: string } | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
