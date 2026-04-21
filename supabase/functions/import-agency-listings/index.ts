@@ -4587,6 +4587,8 @@ async function runMadlanAgencyDiscoverJob(params: {
               is_featured: false,
               views_count: 0,
               verification_status: "pending_review",
+              primary_agency_id: agencyId,
+              claimed_by_agency_id: agencyId,
               import_source: "madlan",
               source_url: listingUrl,
               data_quality_score: confidenceScore,
