@@ -1044,8 +1044,8 @@ async function classifyUrlsInBatches(allUrls: string[], lovableKey: string, chun
 
   const listingUrls = Array.from(allResults);
   if (listingUrls.length === 0) {
-    dlog("All AI classification chunks returned 0 results, using fallback (first 100 URLs)");
-    return allUrls.slice(0, 100);
+    console.warn("AI classification found 0 listing URLs — returning empty (no fallback)");
+    return [];
   }
   dlog(`Batch classification complete: ${listingUrls.length} listing URLs (${totalFailed} empty chunks)`);
   return listingUrls;
@@ -1413,7 +1413,7 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 // ─── NON-LISTING URL PATTERN FILTER ─────────────────────────────────────────
 
 const NON_LISTING_SEGMENTS = new Set([
-  "about", "contact", "team", "careers", "jobs", "privacy", "terms", "legal",
+  "about", "contact", "team", "our-team", "careers", "jobs", "privacy", "terms", "legal",
   "disclaimer", "login", "signin", "signup", "register", "auth", "account",
   "dashboard", "admin", "panel", "blog", "news", "press", "media", "faq",
   "help", "support", "sitemap", "accessibility", "cookie", "cookies", "cart",
@@ -1422,7 +1422,14 @@ const NON_LISTING_SEGMENTS = new Set([
   "tag", "tags", "author", "feed", "wp-admin", "wp-login", "wp-content",
   "project", "projects", "development", "developments", "new-construction",
   "new-building", "new-homes", "new-development",
+  "neighborhoods", "neighborhood", "neighborhoods-in-jerusalem", "jerusalem-neighborhoods",
+  "agents", "agent", "webinar", "webinars", "events", "event",
+  "sell-jerusalem-real-estate", "sell", "calculator", "purchase-tax-calculator",
+  "investment-opportunities", "advanced-search", "luxury-homes",
+  "real-estate-in-jerusalem", "listings", "listings-in-jerusalem",
+  "exclusive-projects",
   "פרויקט", "פרויקטים", "בנייה-חדשה", "דירות-חדשות", "מתחם", "מתחמים",
+  "שכונות", "סוכנים",
 ]);
 
 const NON_LISTING_EXTENSIONS = new Set([
