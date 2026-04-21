@@ -1243,19 +1243,10 @@ async function handleDiscover(body: any) {
     .from("agencies").select("id, admin_user_id").eq("id", agency_id).single();
   if (agencyErr || !agency) throw new Error("Agency not found");
 
-  // Gather previously-known URLs
-  const { data: previousJobIds } = await sb
-    .from("import_jobs").select("id").eq("agency_id", agency_id).eq("website_url", normalizedUrl);
-
-  let knownUrlSet = new Set<string>();
-  if (previousJobIds && previousJobIds.length > 0) {
-    const jobIds = previousJobIds.map((j: any) => j.id);
-    for (let i = 0; i < jobIds.length; i += 50) {
-      const batch = jobIds.slice(i, i + 50);
-      const { data: prevItems } = await sb.from("import_job_items").select("url").in("job_id", batch);
-      if (prevItems) for (const item of prevItems) knownUrlSet.add(normalizeUrl(item.url));
-    }
-  }
+  // Only actual imported properties should suppress rediscovery. Previous job
+  // history can include aborted/skipped runs, and using it here prevents admins
+  // from restarting a corrected import.
+  const knownUrlSet = new Set<string>();
 
   const { data: existingProperties } = await sb
     .from("properties").select("source_url").eq("agency_id", agency_id).not("source_url", "is", null);
@@ -3199,6 +3190,8 @@ async function processOneItem(
         is_published: false,
         is_featured: false, views_count: 0,
         verification_status: "pending_review",
+        primary_agency_id: job.agency_id,
+        claimed_by_agency_id: job.agency_id,
         import_source: job.source_type === "yad2" ? "yad2" : job.source_type === "madlan" ? "madlan" : "website_scrape",
         source_url: item.url,
         data_quality_score: confidenceScore,
@@ -3543,6 +3536,8 @@ async function handleApproveItem(body: any) {
       checks_required: listing.checks_required ?? null,
       is_published: false, is_featured: false, views_count: 0,
       verification_status: "pending_review",
+      primary_agency_id: agencyId,
+      claimed_by_agency_id: agencyId,
       import_source: "website_scrape",
       source_url: item.url,
     })
@@ -4592,6 +4587,8 @@ async function runMadlanAgencyDiscoverJob(params: {
               is_featured: false,
               views_count: 0,
               verification_status: "pending_review",
+              primary_agency_id: agencyId,
+              claimed_by_agency_id: agencyId,
               import_source: "madlan",
               source_url: listingUrl,
               data_quality_score: confidenceScore,
