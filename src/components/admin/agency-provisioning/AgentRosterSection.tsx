@@ -327,7 +327,7 @@ export function AgentRosterSection({ agencyId }: Props) {
             <div className="md:col-span-2">
               <Label>Profile picture</Label>
               <div className="flex items-start gap-4 mt-1.5">
-                <div className="shrink-0 h-24 w-24 rounded-full overflow-hidden border-2 border-border bg-muted flex items-center justify-center">
+                <div className={cn("shrink-0 h-24 w-24 rounded-full overflow-hidden border-2 border-border bg-muted flex items-center justify-center", form.avatar_url && "cursor-pointer hover:ring-2 hover:ring-primary transition-all")} onClick={() => form.avatar_url && setPreviewUrl(form.avatar_url)}>
                   {form.avatar_url ? (
                     <img src={form.avatar_url} alt="Agent avatar" className="h-full w-full object-cover" />
                   ) : (
@@ -454,7 +454,7 @@ export function AgentRosterSection({ agencyId }: Props) {
             <div className="md:col-span-2">
               <Label>Profile picture</Label>
               <div className="flex items-start gap-4 mt-1.5">
-                <div className="shrink-0 h-24 w-24 rounded-full overflow-hidden border-2 border-border bg-muted flex items-center justify-center">
+                <div className={cn("shrink-0 h-24 w-24 rounded-full overflow-hidden border-2 border-border bg-muted flex items-center justify-center", form.avatar_url && "cursor-pointer hover:ring-2 hover:ring-primary transition-all")} onClick={() => form.avatar_url && setPreviewUrl(form.avatar_url)}>
                   {form.avatar_url ? (
                     <img src={form.avatar_url} alt="Agent avatar" className="h-full w-full object-cover" />
                   ) : (
