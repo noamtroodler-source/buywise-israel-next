@@ -125,6 +125,43 @@ export function AgentRosterSection({ agencyId }: Props) {
     setAddOpen(false);
   }
 
+  function openEdit(agent: any) {
+    setEditAgent(agent);
+    setForm({
+      name: agent.name || '',
+      email: agent.email || '',
+      phone: agent.phone || '',
+      avatar_url: agent.avatar_url || '',
+      bio: agent.bio || '',
+      license_number: agent.license_number || '',
+      specializations: agent.specializations || [],
+      languages: agent.languages || [],
+    });
+  }
+
+  async function handleUpdate() {
+    if (!editAgent) return;
+    if (!form.name || !form.email) {
+      toast.error('Name and email required');
+      return;
+    }
+    await update.mutateAsync({
+      id: editAgent.id,
+      patch: {
+        name: form.name,
+        email: form.email,
+        phone: form.phone || null,
+        avatar_url: form.avatar_url || null,
+        bio: form.bio || null,
+        license_number: form.license_number || null,
+        specializations: form.specializations.length > 0 ? form.specializations : null,
+        languages: form.languages.length > 0 ? form.languages : null,
+      },
+    });
+    setEditAgent(null);
+    setForm(emptyForm);
+  }
+
   async function handleProvisionAgent(agentId: string, email: string) {
     const res = await provision.mutateAsync({ agentId });
     if (res?.userId) {
