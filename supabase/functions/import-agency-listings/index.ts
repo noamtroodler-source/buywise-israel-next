@@ -1243,19 +1243,10 @@ async function handleDiscover(body: any) {
     .from("agencies").select("id, admin_user_id").eq("id", agency_id).single();
   if (agencyErr || !agency) throw new Error("Agency not found");
 
-  // Gather previously-known URLs
-  const { data: previousJobIds } = await sb
-    .from("import_jobs").select("id").eq("agency_id", agency_id).eq("website_url", normalizedUrl);
-
-  let knownUrlSet = new Set<string>();
-  if (previousJobIds && previousJobIds.length > 0) {
-    const jobIds = previousJobIds.map((j: any) => j.id);
-    for (let i = 0; i < jobIds.length; i += 50) {
-      const batch = jobIds.slice(i, i + 50);
-      const { data: prevItems } = await sb.from("import_job_items").select("url").in("job_id", batch);
-      if (prevItems) for (const item of prevItems) knownUrlSet.add(normalizeUrl(item.url));
-    }
-  }
+  // Only actual imported properties should suppress rediscovery. Previous job
+  // history can include aborted/skipped runs, and using it here prevents admins
+  // from restarting a corrected import.
+  const knownUrlSet = new Set<string>();
 
   const { data: existingProperties } = await sb
     .from("properties").select("source_url").eq("agency_id", agency_id).not("source_url", "is", null);
