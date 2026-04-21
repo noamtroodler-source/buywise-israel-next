@@ -54,11 +54,13 @@ const emptyForm = {
 export function AgentRosterSection({ agencyId }: Props) {
   const { data: agents = [], isLoading } = useAgencyAgents(agencyId);
   const create = useCreateAgent(agencyId);
+  const update = useUpdateAgent(agencyId);
   const provision = useProvisionAgentAccount(agencyId);
   const reveal = useRevealCredentials();
   const resend = useResendSetupLink();
 
   const [addOpen, setAddOpen] = useState(false);
+  const [editAgent, setEditAgent] = useState<any | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [credModal, setCredModal] = useState<{ email: string; password: string } | null>(null);
   const [revealUser, setRevealUser] = useState<{ id: string; label: string } | null>(null);
