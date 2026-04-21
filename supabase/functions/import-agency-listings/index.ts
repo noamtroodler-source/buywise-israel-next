@@ -1154,6 +1154,84 @@ async function discoverDirectPageLinks(pageUrl: string, firecrawlKey: string): P
   }
 }
 
+// ─── Pagination discovery ────────────────────────────────────────────────────
+// Given initial links from a page, detect pagination patterns and scrape
+// subsequent pages to collect all listing links across paginated views.
+const PAGINATION_PATTERNS = [
+  /\/page\/(\d+)/i,
+  /[?&]paged=(\d+)/i,
+  /[?&]page=(\d+)/i,
+  /[?&]pg=(\d+)/i,
+];
+
+function detectPaginationUrls(links: string[], baseUrl: string): string[] {
+  const pageNums = new Map<string, number>(); // template → max page seen
+  const templates = new Map<string, string>(); // template → example URL
+
+  for (const link of links) {
+    if (!isSameSiteUrl(link, baseUrl)) continue;
+    for (const pattern of PAGINATION_PATTERNS) {
+      const match = link.match(pattern);
+      if (match) {
+        const pageNum = parseInt(match[1], 10);
+        // Create a template by replacing the page number with a placeholder
+        const template = link.replace(match[0], match[0].replace(match[1], "__PAGE__"));
+        const current = pageNums.get(template) || 0;
+        if (pageNum > current) {
+          pageNums.set(template, pageNum);
+          templates.set(template, link);
+        }
+      }
+    }
+  }
+
+  // Generate URLs for all pages up to the max detected
+  const paginationUrls: string[] = [];
+  for (const [template, maxPage] of pageNums) {
+    for (let i = 2; i <= Math.min(maxPage + 2, 30); i++) {
+      const url = template.replace("__PAGE__", String(i));
+      paginationUrls.push(url);
+    }
+  }
+  return [...new Set(paginationUrls)];
+}
+
+async function discoverPaginatedLinks(
+  initialLinks: string[],
+  entryUrl: string,
+  firecrawlKey: string
+): Promise<string[]> {
+  const paginationUrls = detectPaginationUrls(initialLinks, entryUrl);
+  if (paginationUrls.length === 0) return [];
+
+  console.log(`Pagination: found ${paginationUrls.length} paginated URLs to scrape`);
+  const allLinks: string[] = [];
+
+  // Scrape pagination pages in batches of 3
+  for (let i = 0; i < paginationUrls.length; i += 3) {
+    const batch = paginationUrls.slice(i, i + 3);
+    const results = await Promise.allSettled(
+      batch.map(url => discoverDirectPageLinks(url, firecrawlKey))
+    );
+    for (const r of results) {
+      if (r.status === "fulfilled") allLinks.push(...r.value);
+    }
+  }
+
+  console.log(`Pagination: discovered ${allLinks.length} additional links from ${paginationUrls.length} pages`);
+  return allLinks;
+}
+
+// ─── Extract site root from any URL ──────────────────────────────────────────
+function getSiteRoot(url: string): string {
+  try {
+    const parsed = new URL(normalizeUrl(url));
+    return `${parsed.protocol}//${parsed.hostname}`;
+  } catch {
+    return url;
+  }
+}
+
 async function handleDiscover(body: any) {
   const { agency_id, website_url, import_type = "resale" } = body;
   if (!agency_id || !website_url) throw new Error("agency_id and website_url required");
