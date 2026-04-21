@@ -3190,6 +3190,8 @@ async function processOneItem(
         is_published: false,
         is_featured: false, views_count: 0,
         verification_status: "pending_review",
+        primary_agency_id: job.agency_id,
+        claimed_by_agency_id: job.agency_id,
         import_source: job.source_type === "yad2" ? "yad2" : job.source_type === "madlan" ? "madlan" : "website_scrape",
         source_url: item.url,
         data_quality_score: confidenceScore,
@@ -3534,6 +3536,8 @@ async function handleApproveItem(body: any) {
       checks_required: listing.checks_required ?? null,
       is_published: false, is_featured: false, views_count: 0,
       verification_status: "pending_review",
+      primary_agency_id: agencyId,
+      claimed_by_agency_id: agencyId,
       import_source: "website_scrape",
       source_url: item.url,
     })
