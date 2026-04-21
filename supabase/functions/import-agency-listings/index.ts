@@ -3014,7 +3014,7 @@ async function processOneItem(
         // Recalculate quality score as max of both
         if (confidenceScore > (existing.data_quality_score ?? 0)) {
           patch.data_quality_score = confidenceScore;
-          if (confidenceScore >= 60) patch.is_published = true;
+          // Don't auto-publish on merge — keep existing publish state
         }
 
         await sb.from("properties").update(patch).eq("id", crossSourceMatchId);
@@ -3188,10 +3188,10 @@ async function processOneItem(
         agent_fee_required: listing.agent_fee_required ?? null,
         bank_guarantee_required: listing.bank_guarantee_required ?? null,
         checks_required: listing.checks_required ?? null,
-        // Auto-publish if quality score >= 60, else keep as draft
-        is_published: confidenceScore >= 60,
+        // Always import as draft — agency owner must review before going live
+        is_published: false,
         is_featured: false, views_count: 0,
-        verification_status: confidenceScore >= 60 ? "approved" : "draft",
+        verification_status: "pending_review",
         import_source: job.source_type === "yad2" ? "yad2" : job.source_type === "madlan" ? "madlan" : "website_scrape",
         source_url: item.url,
         data_quality_score: confidenceScore,
@@ -4580,10 +4580,11 @@ async function runMadlanAgencyDiscoverJob(params: {
               condition: madlanItem.condition || null,
               // Don't store external images — copyright
               images: null,
-              is_published: confidenceScore >= 60,
+              // Always import as draft — agency owner must review before going live
+              is_published: false,
               is_featured: false,
               views_count: 0,
-              verification_status: confidenceScore >= 60 ? "approved" : "draft",
+              verification_status: "pending_review",
               import_source: "madlan",
               source_url: listingUrl,
               data_quality_score: confidenceScore,
