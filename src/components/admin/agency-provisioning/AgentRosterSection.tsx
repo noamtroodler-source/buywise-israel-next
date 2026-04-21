@@ -256,33 +256,43 @@ export function AgentRosterSection({ agencyId }: Props) {
                     )}
                   </TableCell>
                   <TableCell className="text-right">
-                    {a.user_id ? (
-                      <div className="flex items-center justify-end gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => resend.mutate({ userId: a.user_id!, purpose: 'agent_setup' })}
-                          disabled={resend.isPending}
-                        >
-                          <Send className="h-3 w-3 mr-1" /> Resend
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => openSecureReveal(a.user_id!, a.name)}
-                        >
-                          <KeyRound className="h-3 w-3 mr-1" /> Reveal
-                        </Button>
-                      </div>
-                    ) : (
+                    <div className="flex items-center justify-end gap-2">
                       <Button
                         size="sm"
-                        onClick={() => handleProvisionAgent(a.id, a.email)}
-                        disabled={provision.isPending}
+                        variant="ghost"
+                        onClick={() => openEdit(a)}
+                        title="Edit agent"
                       >
-                        {provision.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Provision'}
+                        <Pencil className="h-3 w-3" />
                       </Button>
-                    )}
+                      {a.user_id ? (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => resend.mutate({ userId: a.user_id!, purpose: 'agent_setup' })}
+                            disabled={resend.isPending}
+                          >
+                            <Send className="h-3 w-3 mr-1" /> Resend
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => openSecureReveal(a.user_id!, a.name)}
+                          >
+                            <KeyRound className="h-3 w-3 mr-1" /> Reveal
+                          </Button>
+                        </>
+                      ) : (
+                        <Button
+                          size="sm"
+                          onClick={() => handleProvisionAgent(a.id, a.email)}
+                          disabled={provision.isPending}
+                        >
+                          {provision.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Provision'}
+                        </Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
