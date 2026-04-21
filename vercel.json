@@ -8,10 +8,14 @@
       "maxDuration": 10
     }
   },
-  "routes": [
+  "rewrites": [
     {
-      "src": "/(.*)",
-      "dest": "/api/index"
+      "source": "/~oauth/:path*",
+      "destination": "https://buywise-israel-next.lovable.app/~oauth/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/api/index"
     }
   ]
 }
