@@ -31,6 +31,7 @@ import type { CoAgent } from '@/types/database';
 interface CoListingAgentsProps {
   coAgents: CoAgent[];
   propertyId?: string;
+  primaryAgencyId?: string | null;
   className?: string;
 }
 
