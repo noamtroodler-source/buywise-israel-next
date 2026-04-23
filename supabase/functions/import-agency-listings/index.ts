@@ -2664,6 +2664,7 @@ async function processOneItem(
                   condition: { type: "string", enum: ["new", "renovated", "good", "needs_renovation"] },
                   is_sold_or_rented: { type: "boolean" },
                   photo_count: { type: "number" },
+                  image_urls: { type: "array", items: { type: "string" }, description: "All property photo URLs found on the page (full absolute URLs). Include gallery images, slider images, thumbnail src. Exclude logos, icons, agent photos, map screenshots." },
                 },
                 required: ["listing_category"],
                 additionalProperties: false,
