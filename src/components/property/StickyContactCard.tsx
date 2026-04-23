@@ -123,12 +123,6 @@ export function StickyContactCard({
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5 mb-0.5">
                     <p className="text-xs font-medium text-muted-foreground">Agent</p>
-                    {isPartner && (
-                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-semibold">
-                        <ShieldCheck className="h-2.5 w-2.5" />
-                        BuyWise Partner
-                      </span>
-                    )}
                   </div>
                   {agent.id ? (
                     <Link
