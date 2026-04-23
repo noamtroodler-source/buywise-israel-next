@@ -174,10 +174,10 @@ function SelectedAgencyWorkspace({ agency }: { agency: any }) {
   const { data: listingCount = 0 } = useQuery({
     queryKey: ['provisioning-agency-listing-count', agency.id],
     queryFn: async (): Promise<number> => {
-      const { count } = await (supabase as any)
+      const { count } = await supabase
         .from('properties')
         .select('id', { count: 'exact', head: true })
-        .eq('agency_id', agency.id);
+        .or(`primary_agency_id.eq.${agency.id},claimed_by_agency_id.eq.${agency.id}`);
       return count ?? 0;
     },
   });
