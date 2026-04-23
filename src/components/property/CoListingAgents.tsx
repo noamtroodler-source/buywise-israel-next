@@ -164,7 +164,7 @@ export function CoListingAgents({ coAgents, propertyId, primaryAgencyId, classNa
         </p>
       </div>
       <div className="space-y-2">
-        {coAgents.map((coAgent) => {
+        {filtered.map((coAgent) => {
           const agencyName =
             coAgent.agent?.agency?.name ||
             coAgent.agent?.agency_name ||
