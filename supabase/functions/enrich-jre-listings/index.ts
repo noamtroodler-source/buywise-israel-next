@@ -172,26 +172,13 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const AGENCY_ID = "0eb2a33b-a768-4204-ba75-29de29d6da2a";
+    const AGENCY_ID = "0058c3aa-2331-4a34-9c0e-c11aa984deff";
 
-    // Get all agents for this agency
-    const { data: agents } = await sb
-      .from("agents")
-      .select("id")
-      .eq("agency_id", AGENCY_ID);
-
-    const agentIds = agents?.map((a: any) => a.id) || [];
-    if (agentIds.length === 0) {
-      return new Response(JSON.stringify({ error: "No agents found" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Get all properties for this agency
+    // Get all properties for this agency (by primary_agency_id)
     const { data: properties, error: propErr } = await sb
       .from("properties")
       .select("*")
-      .in("agent_id", agentIds);
+      .eq("primary_agency_id", AGENCY_ID);
 
     if (propErr) throw propErr;
     if (!properties || properties.length === 0) {
