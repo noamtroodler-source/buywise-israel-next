@@ -63,6 +63,7 @@ export function useAgencies() {
       const { data: agencies, error } = await supabase
         .from('agencies')
         .select('*')
+        .eq('status', 'active')
         .order('name');
 
       if (error) throw error;
@@ -74,7 +75,8 @@ export function useAgencies() {
       const { data: agents } = await supabase
         .from('agents')
         .select('id, agency_id')
-        .in('agency_id', agencyIds);
+        .in('agency_id', agencyIds)
+        .eq('status', 'active');
 
       // Fetch published listing counts per agent
       const agentIds = (agents || []).map((a) => a.id);
@@ -128,7 +130,8 @@ export function useAgencyAgents(
       const { data: agents, error } = await supabase
         .from('agents')
         .select('id, name, avatar_url, years_experience, languages, is_verified')
-        .eq('agency_id', agencyId);
+        .eq('agency_id', agencyId)
+        .eq('status', 'active');
 
       if (error) throw error;
 
