@@ -2165,6 +2165,18 @@ FOR PROPERTIES — extract these fields:
 - For floor: use the Hebrew ordinal map above
 - For rental listings: extract lease_term, furnished_status, pets_policy, subletting_allowed, agent_fee_required, bank_guarantee_required, checks_required if mentioned
 
+ADDITIONAL FIELDS — extract whenever present on ANY agency site:
+- original_price: If a price drop or previous price is shown, extract the original/higher price
+- lot_size_sqm: Total land/plot area for houses, cottages, land (different from built sqm)
+- ac_type: "split" (wall units), "central" (מיזוג מרכזי), "mini_central" (מיני מרכזי), or "none"
+- vaad_bayit_monthly: Building maintenance fee (ועד בית) in NIS
+- is_furnished: true if property comes with furniture
+- is_accessible: true if wheelchair accessible / נגיש
+- additional_rooms: Count extra half-rooms (storage room, laundry, service balcony, walk-in closet, office/study)
+- featured_highlight: THE single most impressive selling point in 3-6 words (e.g. "Panoramic Sea View", "Private Rooftop Terrace", "Fully Renovated with Garden", "Quiet Dead-End Street")
+- features: Use STANDARDIZED keys: elevator, balcony, sun_balcony, sukkah_balcony, mamad, parking, storage, garden, pool, gym, doorman, security, air_conditioning, central_ac, solar_heater, furnished, accessible, shutters, window_bars, security_doors, roof_access, sea_view, city_view, quiet_street, renovated_kitchen, renovated_bathrooms, smart_home, underfloor_heating, jacuzzi, sauna, wine_cellar, private_entrance.
+  IMPORTANT: Parse the free-text description for features not in structured data tables. Many agencies list features only in prose.
+
 Page URL: ${url}
 Page content:
 ${markdown.substring(0, 8000)}
@@ -2698,16 +2710,18 @@ async function processOneItem(
               description: "Extract structured data from a real estate listing page",
               parameters: {
                 type: "object",
-                properties: {
+              properties: {
                   listing_category: { type: "string", enum: ["property", "project", "not_listing"] },
                   title: { type: "string" },
                   description: { type: "string" },
                   price: { type: "number", description: "Price (0 if Price on Request)" },
+                  original_price: { type: "number", description: "Previous/original price if a price reduction is shown" },
                   currency: { type: "string", enum: ["ILS", "USD"] },
                   bedrooms: { type: "number", description: "Sleeping bedrooms only (Israeli rooms minus 1 living room). E.g. '4 rooms' in Hebrew = 3 bedrooms." },
                   source_rooms: { type: "number", description: "Original Israeli room count as shown on the source site (חדרים). E.g. '4 חדרים' = 4. Store this EXACTLY as shown — do not subtract." },
                   bathrooms: { type: "number", description: "Number of bathrooms. If not mentioned, omit — do not default to 1." },
                   size_sqm: { type: "number" },
+                  lot_size_sqm: { type: "number", description: "Total land/plot size for houses, cottages, land listings" },
                   address: { type: "string" },
                   city: { type: "string", description: "Must be one of the supported cities" },
                   neighborhood: { type: "string" },
@@ -2715,11 +2729,25 @@ async function processOneItem(
                   listing_status: { type: "string", enum: ["for_sale", "for_rent"] },
                   floor: { type: "number" },
                   total_floors: { type: "number" },
-                  features: { type: "array", items: { type: "string" } },
+                  features: { type: "array", items: { type: "string" }, description: "Standardized feature keys: elevator, balcony, sun_balcony, sukkah_balcony, mamad, parking, storage, garden, pool, gym, doorman, security, air_conditioning, central_ac, solar_heater, furnished, accessible, shutters, window_bars, security_doors, roof_access, sea_view, city_view, quiet_street, renovated_kitchen, renovated_bathrooms, smart_home, underfloor_heating, jacuzzi, sauna, wine_cellar, private_entrance" },
                   parking: { type: "number" },
-                  entry_date: { type: "string" },
+                  entry_date: { type: "string", description: "Move-in date: 'immediate', 'flexible', or ISO date (YYYY-MM-DD)" },
                   year_built: { type: "number" },
                   condition: { type: "string", enum: ["new", "renovated", "good", "needs_renovation"] },
+                  ac_type: { type: "string", enum: ["none", "split", "central", "mini_central"], description: "Air conditioning type" },
+                  vaad_bayit_monthly: { type: "number", description: "Monthly building maintenance fee (ועד בית) in NIS" },
+                  is_furnished: { type: "boolean", description: "Whether the property comes furnished" },
+                  is_accessible: { type: "boolean", description: "Whether the property is wheelchair accessible" },
+                  additional_rooms: { type: "number", description: "Extra half-rooms: storage room, laundry, service balcony, walk-in closet" },
+                  featured_highlight: { type: "string", description: "The single most standout feature of this property in 3-6 words (e.g. 'Panoramic Sea View', 'Private Rooftop Terrace', 'Fully Renovated with Garden')" },
+                  // Rental-specific fields
+                  lease_term: { type: "string", enum: ["6_months", "12_months", "24_months", "flexible", "other"] },
+                  furnished_status: { type: "string", enum: ["fully", "semi", "unfurnished"] },
+                  pets_policy: { type: "string", enum: ["allowed", "case_by_case", "not_allowed"] },
+                  subletting_allowed: { type: "string", enum: ["allowed", "case_by_case", "not_allowed"] },
+                  agent_fee_required: { type: "boolean" },
+                  bank_guarantee_required: { type: "boolean" },
+                  checks_required: { type: "boolean" },
                   is_sold_or_rented: { type: "boolean" },
                   photo_count: { type: "number" },
                   image_urls: { type: "array", items: { type: "string" }, description: "All property photo URLs found on the page (full absolute URLs). Include gallery images, slider images, thumbnail src. Exclude logos, icons, agent photos, map screenshots." },
@@ -3275,6 +3303,13 @@ async function processOneItem(
         condition: listing.condition || null,
         ac_type: listing.ac_type || null,
         entry_date: entryDate,
+        original_price: listing.original_price ?? null,
+        lot_size_sqm: listing.lot_size_sqm ?? null,
+        vaad_bayit_monthly: listing.vaad_bayit_monthly ?? null,
+        is_furnished: listing.is_furnished ?? false,
+        is_accessible: listing.is_accessible ?? false,
+        additional_rooms: listing.additional_rooms ?? null,
+        featured_highlight: listing.featured_highlight || null,
         lease_term: listing.lease_term || null,
         furnished_status: listing.furnished_status || null,
         pets_policy: listing.pets_policy || null,
@@ -3623,6 +3658,13 @@ async function handleApproveItem(body: any) {
       condition: listing.condition || null,
       ac_type: listing.ac_type || null,
       entry_date: entryDate,
+      original_price: listing.original_price ?? null,
+      lot_size_sqm: listing.lot_size_sqm ?? null,
+      vaad_bayit_monthly: listing.vaad_bayit_monthly ?? null,
+      is_furnished: listing.is_furnished ?? false,
+      is_accessible: listing.is_accessible ?? false,
+      additional_rooms: listing.additional_rooms ?? null,
+      featured_highlight: listing.featured_highlight || null,
       lease_term: listing.lease_term || null,
       furnished_status: listing.furnished_status || null,
       pets_policy: listing.pets_policy || null,
