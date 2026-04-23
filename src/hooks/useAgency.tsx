@@ -63,6 +63,7 @@ export function useAgencies() {
       const { data: agencies, error } = await supabase
         .from('agencies')
         .select('*')
+        .eq('status', 'active')
         .order('name');
 
       if (error) throw error;
