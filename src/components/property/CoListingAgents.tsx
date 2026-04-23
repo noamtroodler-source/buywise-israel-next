@@ -31,6 +31,7 @@ import type { CoAgent } from '@/types/database';
 interface CoListingAgentsProps {
   coAgents: CoAgent[];
   propertyId?: string;
+  primaryAgencyId?: string | null;
   className?: string;
 }
 
@@ -139,10 +140,21 @@ function ReportDialog({
   );
 }
 
-export function CoListingAgents({ coAgents, propertyId, className }: CoListingAgentsProps) {
+export function CoListingAgents({ coAgents, propertyId, primaryAgencyId, className }: CoListingAgentsProps) {
   const [reportOpen, setReportOpen] = useState(false);
 
-  if (!coAgents || coAgents.length === 0) return null;
+  // Deduplicate: skip co-agents from the same agency as the primary listing agent
+  const seenAgencies = new Set<string>();
+  if (primaryAgencyId) seenAgencies.add(primaryAgencyId);
+  const filtered = (coAgents || []).filter((ca) => {
+    const agencyId = ca.agent?.agency?.id;
+    if (!agencyId) return true; // keep if we can't determine agency
+    if (seenAgencies.has(agencyId)) return false;
+    seenAgencies.add(agencyId);
+    return true;
+  });
+
+  if (filtered.length === 0) return null;
 
   return (
     <div className={cn('space-y-2', className)}>
@@ -152,7 +164,7 @@ export function CoListingAgents({ coAgents, propertyId, className }: CoListingAg
         </p>
       </div>
       <div className="space-y-2">
-        {coAgents.map((coAgent) => {
+        {filtered.map((coAgent) => {
           const agencyName =
             coAgent.agent?.agency?.name ||
             coAgent.agent?.agency_name ||
