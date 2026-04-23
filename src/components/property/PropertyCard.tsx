@@ -415,15 +415,6 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                     if ((property as any)._isBoosted) {
                       badges.push(<PromotedBadge key="promoted" compact />);
                     }
-                    // BuyWise Partner badge for partner agency listings
-                    if ((property as any).agent?.agency?.is_partner) {
-                      badges.push(
-                        <Badge key="partner" className="bg-primary/15 text-primary border-primary/30 text-xs font-medium">
-                          <ShieldCheck className="h-3 w-3 mr-1" />
-                          BuyWise Partner
-                        </Badge>
-                      );
-                    }
                     if (showCategoryBadge && !hideStatusBadge) {
                       badges.push(
                         <Badge key="category" className={cn("text-xs font-medium", getStatusColor(property.listing_status))}>
@@ -638,15 +629,6 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                     // Promoted badge for boosted listings
                     if ((property as any)._isBoosted) {
                       badges.push(<PromotedBadge key="promoted" compact />);
-                    }
-                    // BuyWise Partner badge for partner agency listings
-                    if ((property as any).agent?.agency?.is_partner) {
-                      badges.push(
-                        <Badge key="partner" className="bg-primary/15 text-primary border-primary/30 text-xs font-medium">
-                          <ShieldCheck className="h-3 w-3 mr-1" />
-                          BuyWise Partner
-                        </Badge>
-                      );
                     }
                     if (showCategoryBadge && !hideStatusBadge) {
                       badges.push(
