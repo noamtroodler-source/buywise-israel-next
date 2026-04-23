@@ -1927,6 +1927,64 @@ async function preCheckUrl(url: string): Promise<{ ok: boolean; skipReason: stri
   }
 }
 
+// ─── HTML IMAGE EXTRACTION ──────────────────────────────────────────────────
+
+function extractImagesFromHtml(html: string, pageUrl: string): string[] {
+  const images: string[] = [];
+  const seen = new Set<string>();
+
+  // Match <img> tags with src attributes
+  const imgRegex = /<img\s[^>]*src\s*=\s*["']([^"']+)["'][^>]*>/gi;
+  let match: RegExpExecArray | null;
+  while ((match = imgRegex.exec(html)) !== null) {
+    const src = match[0];
+    const url = match[1];
+    // Skip tiny icons, logos, tracking pixels, agent photos
+    if (!url || url.length < 10) continue;
+    const lower = url.toLowerCase();
+    if (lower.includes("logo") || lower.includes("icon") || lower.includes("avatar") ||
+        lower.includes("agent") || lower.includes("team") || lower.includes("favicon") ||
+        lower.includes("pixel") || lower.includes("tracking") || lower.includes("badge") ||
+        lower.includes("flag") || lower.includes("social") || lower.includes("map") ||
+        lower.includes("googlemap") || lower.includes("maps.googleapis")) continue;
+    // Check for width/height attributes suggesting small images
+    const widthMatch = src.match(/width\s*=\s*["']?(\d+)/i);
+    if (widthMatch && parseInt(widthMatch[1]) < 80) continue;
+    // Resolve relative URLs
+    let absolute = url;
+    try {
+      if (url.startsWith("//")) absolute = `https:${url}`;
+      else if (url.startsWith("/")) absolute = new URL(url, pageUrl).toString();
+      else if (!url.startsWith("http")) absolute = new URL(url, pageUrl).toString();
+    } catch { continue; }
+    if (!seen.has(absolute)) {
+      seen.add(absolute);
+      images.push(absolute);
+    }
+  }
+
+  // Also check data-src, data-lazy-src (lazy loaded images)
+  const lazySrcRegex = /data-(?:src|lazy-src|original|srcset)\s*=\s*["']([^"'\s]+)["']/gi;
+  while ((match = lazySrcRegex.exec(html)) !== null) {
+    const url = match[1];
+    if (!url || url.length < 10) continue;
+    const lower = url.toLowerCase();
+    if (lower.includes("logo") || lower.includes("icon") || lower.includes("avatar") || lower.includes("agent")) continue;
+    let absolute = url;
+    try {
+      if (url.startsWith("//")) absolute = `https:${url}`;
+      else if (url.startsWith("/")) absolute = new URL(url, pageUrl).toString();
+      else if (!url.startsWith("http")) absolute = new URL(url, pageUrl).toString();
+    } catch { continue; }
+    if (!seen.has(absolute)) {
+      seen.add(absolute);
+      images.push(absolute);
+    }
+  }
+
+  return images.slice(0, 30); // Cap at 30 candidates
+}
+
 // ─── STRUCTURED DATA EXTRACTION (JSON-LD, Open Graph) ───────────────────────
 
 function extractStructuredData(html: string): Record<string, any> | null {
