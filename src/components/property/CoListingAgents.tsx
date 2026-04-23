@@ -147,7 +147,7 @@ export function CoListingAgents({ coAgents, propertyId, primaryAgencyId, classNa
   const seenAgencies = new Set<string>();
   if (primaryAgencyId) seenAgencies.add(primaryAgencyId);
   const filtered = (coAgents || []).filter((ca) => {
-    const agencyId = ca.agent?.agency?.id || ca.agency_id;
+    const agencyId = ca.agent?.agency?.id;
     if (!agencyId) return true; // keep if we can't determine agency
     if (seenAgencies.has(agencyId)) return false;
     seenAgencies.add(agencyId);
