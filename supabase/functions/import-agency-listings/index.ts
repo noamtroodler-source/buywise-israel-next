@@ -2165,6 +2165,18 @@ FOR PROPERTIES — extract these fields:
 - For floor: use the Hebrew ordinal map above
 - For rental listings: extract lease_term, furnished_status, pets_policy, subletting_allowed, agent_fee_required, bank_guarantee_required, checks_required if mentioned
 
+ADDITIONAL FIELDS — extract whenever present on ANY agency site:
+- original_price: If a price drop or previous price is shown, extract the original/higher price
+- lot_size_sqm: Total land/plot area for houses, cottages, land (different from built sqm)
+- ac_type: "split" (wall units), "central" (מיזוג מרכזי), "mini_central" (מיני מרכזי), or "none"
+- vaad_bayit_monthly: Building maintenance fee (ועד בית) in NIS
+- is_furnished: true if property comes with furniture
+- is_accessible: true if wheelchair accessible / נגיש
+- additional_rooms: Count extra half-rooms (storage room, laundry, service balcony, walk-in closet, office/study)
+- featured_highlight: THE single most impressive selling point in 3-6 words (e.g. "Panoramic Sea View", "Private Rooftop Terrace", "Fully Renovated with Garden", "Quiet Dead-End Street")
+- features: Use STANDARDIZED keys: elevator, balcony, sun_balcony, sukkah_balcony, mamad, parking, storage, garden, pool, gym, doorman, security, air_conditioning, central_ac, solar_heater, furnished, accessible, shutters, window_bars, security_doors, roof_access, sea_view, city_view, quiet_street, renovated_kitchen, renovated_bathrooms, smart_home, underfloor_heating, jacuzzi, sauna, wine_cellar, private_entrance.
+  IMPORTANT: Parse the free-text description for features not in structured data tables. Many agencies list features only in prose.
+
 Page URL: ${url}
 Page content:
 ${markdown.substring(0, 8000)}
