@@ -23,7 +23,7 @@ export function AdvertiseCTA() {
               Ready to Expand Your Agency's Reach?
             </h2>
             <p className="text-lg text-white/80 max-w-2xl mx-auto mb-8">
-              Join BuyWise Israel today and start connecting with motivated international buyers actively searching for Israeli real estate.
+              Join BuyWise Israel today and get 3 months free as one of the first 30 founding agencies on the platform.
             </p>
 
             <div className="flex flex-wrap justify-center gap-4 mb-8">
@@ -41,7 +41,7 @@ export function AdvertiseCTA() {
             </div>
 
             <p className="text-sm text-white/60">
-              No credit card required · Start in minutes · Limited spots available
+              No credit card required · Start in minutes · First 30 agencies only
             </p>
           </div>
         </motion.div>
