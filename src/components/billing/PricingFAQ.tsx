@@ -20,7 +20,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'What\'s the Founding Program?',
-    a: 'Our Founding Program rewards early adopters with a 60-day free trial and 3 free featured listings per month during the trial. Limited to 15 agencies — use code FOUNDING2026 at checkout to activate it.',
+    a: 'Our Founding Program rewards early adopters with a 3-month free trial and 3 free featured listings per month during the trial. Limited to the first 30 founding agencies — use code FOUNDING2026 at checkout to activate it.',
   },
   {
     q: 'Can I switch plans later?',

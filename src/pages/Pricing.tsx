@@ -153,7 +153,7 @@ export default function Pricing() {
               {isFoundingCode && (
                 <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-4 py-2">
                   <span className="text-sm font-medium text-primary">
-                    🎉 Founding Partner code active — select a plan to start your 60-day free trial
+                    🎉 Founding Partner code active — select a plan to start your 3-month free trial
                   </span>
                 </div>
               )}

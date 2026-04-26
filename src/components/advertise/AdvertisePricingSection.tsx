@@ -190,15 +190,15 @@ function FoundingProgramCallout() {
               <Star className="h-5 w-5 text-amber-600 fill-amber-500" />
               <h3 className="font-bold text-foreground">Founding Partner Program</h3>
               <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700 text-[10px]">
-                {remaining} of 15 spots left
+                {remaining} of 30 spots left
               </Badge>
             </div>
             <p className="text-sm text-muted-foreground mb-3">
-              Be one of our first 15 launch partners and get exclusive benefits.
+              Be one of our first 30 founding agencies and get exclusive benefits.
             </p>
             <div className="flex flex-wrap gap-2">
               <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-200 dark:border-amber-700">
-                <Clock className="h-3 w-3" /> 60-day free trial
+                <Clock className="h-3 w-3" /> 3-month free trial
               </span>
               <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-200 dark:border-amber-700">
                 <Home className="h-3 w-3" /> 3 free featured listings/mo

@@ -6,10 +6,10 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const FOUNDING_CAP = 15;
-const TRIAL_DAYS = 60;
+const FOUNDING_CAP = 30;
+const TRIAL_DAYS = 90;
 const FREE_CREDITS_PER_MONTH = 3;
-const FREE_CREDITS_DURATION_MONTHS = 2;
+const FREE_CREDITS_DURATION_MONTHS = 3;
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {

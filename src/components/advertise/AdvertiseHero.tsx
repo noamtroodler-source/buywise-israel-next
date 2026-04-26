@@ -21,7 +21,7 @@ export function AdvertiseHero() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
               </span>
-              Now accepting founding agencies
+              3 months free for founding agencies
             </Badge>
 
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight">
@@ -47,7 +47,7 @@ export function AdvertiseHero() {
 
             {/* Trust indicator */}
             <p className="text-sm text-muted-foreground pt-4">
-              No credit card required · Free for 60 days · Limited spots available
+              No credit card required · 3 months free · First 30 founding agencies only
             </p>
           </motion.div>
 
