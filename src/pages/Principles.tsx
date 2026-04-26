@@ -22,7 +22,7 @@ const weAreItems = [
   'A neutral, English-first entry point to Israeli real estate',
   'A clarity layer — market data, pricing context, tax transparency, and process guidance in one place',
   'Pro-agent and pro-professional — we prepare buyers, not replace experts',
-  'Independent and unbiased — we don\'t profit from transactions',
+  'Independent and unbiased',
 ];
 
 const weAreNotItems = [
