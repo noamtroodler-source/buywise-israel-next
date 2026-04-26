@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
-const FOUNDING_CAP = 15;
+const FOUNDING_CAP = 30;
 
 export function useFoundingSpots() {
   return useQuery({
