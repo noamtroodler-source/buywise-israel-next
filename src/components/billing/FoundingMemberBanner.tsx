@@ -67,7 +67,7 @@ export function FoundingMemberBanner() {
 
       <div className="flex flex-wrap gap-2">
         <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-200 dark:border-amber-700">
-          <Clock className="h-3 w-3" /> 60-day free trial
+          <Clock className="h-3 w-3" /> 3-month free trial
         </span>
         <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-200 dark:border-amber-700">
           <Home className="h-3 w-3" /> 3 free featured listings/mo

@@ -43,7 +43,7 @@ export default function CheckoutSuccess() {
               Welcome, Founding Partner!
             </h1>
             <p className="text-muted-foreground mb-6">
-              Your 60-day free trial is now active. You're one of our first partner agencies — thank you for believing in us early.
+              Your 3-month free trial is now active. You're one of our first 30 founding agencies — thank you for believing in us early.
             </p>
 
             <div className="space-y-3 mb-6">
