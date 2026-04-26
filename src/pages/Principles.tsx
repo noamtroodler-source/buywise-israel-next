@@ -27,7 +27,7 @@ const weAreItems = [
 
 const weAreNotItems = [
   'A brokerage or agency',
-  'Commission-based or transaction-driven',
+  'Commission-based',
   'A replacement for lawyers, mortgage brokers, or agents',
   'A listings portal competing with agencies for supply',
 ];
