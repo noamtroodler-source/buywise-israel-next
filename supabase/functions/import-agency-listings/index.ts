@@ -3801,6 +3801,8 @@ async function processOneItem(
           ? [...existing.merged_source_urls]
           : (existing.source_url ? [existing.source_url] : []);
         if (item.url && !mergedUrls.includes(item.url)) mergedUrls.push(item.url);
+        const normalizedMergeUrl = normalizeUrl(item.url);
+        if (normalizedMergeUrl && !mergedUrls.includes(normalizedMergeUrl)) mergedUrls.push(normalizedMergeUrl);
 
         const patch: Record<string, any> = {
           merged_source_urls: mergedUrls,
