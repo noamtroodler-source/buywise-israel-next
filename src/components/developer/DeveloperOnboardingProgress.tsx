@@ -34,7 +34,7 @@ export function DeveloperOnboardingProgress() {
       description: 'Add company details, description, and contact info',
       icon: User,
       isComplete: !!(developer?.name && developer?.email && developer?.description),
-      action: () => navigate('/developer/settings'),
+      action: () => navigate('/developer/settings#developer-profile'),
       actionLabel: 'Edit Profile',
     },
     {
@@ -43,7 +43,7 @@ export function DeveloperOnboardingProgress() {
       description: 'Add your brand logo to build trust',
       icon: Image,
       isComplete: !!developer?.logo_url,
-      action: () => navigate('/developer/settings'),
+      action: () => navigate('/developer/settings#developer-logo'),
       actionLabel: 'Add Logo',
     },
     {
@@ -52,7 +52,7 @@ export function DeveloperOnboardingProgress() {
       description: 'Connect LinkedIn, Instagram, or Facebook',
       icon: Share2,
       isComplete: !!(developer?.linkedin_url || developer?.instagram_url || developer?.facebook_url),
-      action: () => navigate('/developer/settings'),
+      action: () => navigate('/developer/settings#developer-social-links'),
       actionLabel: 'Add Socials',
     },
     {
