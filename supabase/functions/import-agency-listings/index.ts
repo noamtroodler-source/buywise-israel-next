@@ -2121,6 +2121,27 @@ function extractImagesFromHtml(html: string, pageUrl: string): string[] {
   const images: string[] = [];
   const seen = new Set<string>();
 
+  const addCandidate = (rawUrl: string | null | undefined) => {
+    if (!rawUrl || rawUrl.length < 10) return;
+    const firstUrl = rawUrl.split(",")[0]?.trim().split(/\s+/)[0] || rawUrl.trim();
+    const lower = firstUrl.toLowerCase();
+    if (lower.includes("logo") || lower.includes("icon") || lower.includes("avatar") ||
+        lower.includes("agent") || lower.includes("team") || lower.includes("favicon") ||
+        lower.includes("pixel") || lower.includes("tracking") || lower.includes("badge") ||
+        lower.includes("flag") || lower.includes("social") || lower.includes("map") ||
+        lower.includes("googlemap") || lower.includes("maps.googleapis")) return;
+    let absolute = firstUrl;
+    try {
+      if (firstUrl.startsWith("//")) absolute = `https:${firstUrl}`;
+      else if (firstUrl.startsWith("/")) absolute = new URL(firstUrl, pageUrl).toString();
+      else if (!firstUrl.startsWith("http")) absolute = new URL(firstUrl, pageUrl).toString();
+    } catch { return; }
+    if (!seen.has(absolute)) {
+      seen.add(absolute);
+      images.push(absolute);
+    }
+  };
+
   // Match <img> tags with src attributes
   const imgRegex = /<img\s[^>]*src\s*=\s*["']([^"']+)["'][^>]*>/gi;
   let match: RegExpExecArray | null;
@@ -2138,36 +2159,15 @@ function extractImagesFromHtml(html: string, pageUrl: string): string[] {
     // Check for width/height attributes suggesting small images
     const widthMatch = src.match(/width\s*=\s*["']?(\d+)/i);
     if (widthMatch && parseInt(widthMatch[1]) < 80) continue;
-    // Resolve relative URLs
-    let absolute = url;
-    try {
-      if (url.startsWith("//")) absolute = `https:${url}`;
-      else if (url.startsWith("/")) absolute = new URL(url, pageUrl).toString();
-      else if (!url.startsWith("http")) absolute = new URL(url, pageUrl).toString();
-    } catch { continue; }
-    if (!seen.has(absolute)) {
-      seen.add(absolute);
-      images.push(absolute);
-    }
+    addCandidate(url);
+    const srcsetMatch = src.match(/srcset\s*=\s*["']([^"']+)["']/i);
+    if (srcsetMatch) addCandidate(srcsetMatch[1]);
   }
 
-  // Also check data-src, data-lazy-src (lazy loaded images)
-  const lazySrcRegex = /data-(?:src|lazy-src|original|srcset)\s*=\s*["']([^"'\s]+)["']/gi;
+  // Also check lazy-loaded and gallery attributes used by WordPress themes
+  const lazySrcRegex = /(?:data-(?:src|lazy-src|original|srcset|large_image|full|thumb)|href)\s*=\s*["']([^"']+)["']/gi;
   while ((match = lazySrcRegex.exec(html)) !== null) {
-    const url = match[1];
-    if (!url || url.length < 10) continue;
-    const lower = url.toLowerCase();
-    if (lower.includes("logo") || lower.includes("icon") || lower.includes("avatar") || lower.includes("agent")) continue;
-    let absolute = url;
-    try {
-      if (url.startsWith("//")) absolute = `https:${url}`;
-      else if (url.startsWith("/")) absolute = new URL(url, pageUrl).toString();
-      else if (!url.startsWith("http")) absolute = new URL(url, pageUrl).toString();
-    } catch { continue; }
-    if (!seen.has(absolute)) {
-      seen.add(absolute);
-      images.push(absolute);
-    }
+    addCandidate(match[1]);
   }
 
   return images.slice(0, 30); // Cap at 30 candidates
