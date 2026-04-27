@@ -300,7 +300,7 @@ export default function AgencySettings() {
 
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Logo Upload Card */}
-              <motion.div id="agency-logo" variants={itemVariants}>
+              <motion.div id="agency-logo" variants={itemVariants} className="scroll-mt-24">
                 <Card className="rounded-2xl border-border hover:shadow-lg hover:border-primary/30 transition-all scroll-mt-24">
                   <CardContent className="p-6">
                     <div className="flex items-center gap-6 p-6 rounded-2xl bg-gradient-to-br from-primary/5 to-muted/50 border border-border">
@@ -535,7 +535,7 @@ export default function AgencySettings() {
               </motion.div>
 
               {/* Service Areas Card */}
-              <motion.div id="service-areas" variants={itemVariants}>
+              <motion.div id="service-areas" variants={itemVariants} className="scroll-mt-24">
                 <Card className="rounded-2xl border-border hover:shadow-lg hover:border-primary/30 transition-all scroll-mt-24">
                   <CardHeader className="pb-4">
                     <div className="flex items-center gap-3">
@@ -595,7 +595,7 @@ export default function AgencySettings() {
               </motion.div>
 
               {/* Specializations Card */}
-              <motion.div id="agency-specializations" variants={itemVariants}>
+              <motion.div id="agency-specializations" variants={itemVariants} className="scroll-mt-24">
                 <Card className="rounded-2xl border-border hover:shadow-lg hover:border-primary/30 transition-all scroll-mt-24">
                   <CardHeader className="pb-4">
                     <div className="flex items-center gap-3">
