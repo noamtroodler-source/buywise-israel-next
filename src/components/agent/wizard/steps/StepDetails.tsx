@@ -2,8 +2,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { FormattedNumberInput } from '@/components/ui/formatted-number-input';
 import { usePropertyWizard } from '../PropertyWizardContext';
-import { Bed, Bath, Ruler, Building, Calendar, Car, LandPlot, Info } from 'lucide-react';
+import { Bed, Bath, Ruler, Building, Calendar, Car, LandPlot, Info, AlertCircle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+
+function ReviewHint({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-start gap-2 rounded-lg bg-primary/5 border border-primary/20 px-3 py-2">
+      <AlertCircle className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
+      <p className="text-xs text-primary">{children}</p>
+    </div>
+  );
+}
 
 export function StepDetails() {
   const { data, updateData } = usePropertyWizard();
@@ -11,6 +21,10 @@ export function StepDetails() {
   // Determine which fields to show based on property type
   const isLand = data.property_type === 'land';
   const isStandalone = ['house', 'land'].includes(data.property_type);
+  const isImported = !!data.import_source;
+  const shouldReviewOtherRooms = isImported && (data.additional_rooms ?? 0) === 0 && (data.bedrooms ?? 0) >= 2;
+  const shouldReviewApartmentNumber = isImported && !isStandalone && !data.apartment_number;
+  const shouldReviewParking = isImported && (data.parking ?? 0) === 0;
 
   return (
     <div className="space-y-8">
@@ -82,13 +96,17 @@ export function StepDetails() {
                   onChange={(e) => updateData({ additional_rooms: Number(e.target.value) || 0 })}
                   onFocus={(e) => e.target.select()}
                   placeholder="0"
-                  className="h-11 rounded-xl"
+                  className={cn('h-11 rounded-xl', shouldReviewOtherRooms && 'border-primary/40 bg-primary/5')}
                 />
-                <p className="text-xs text-muted-foreground">
-                  {data.additional_rooms === 0 && (data.bedrooms ?? 0) >= 3
-                    ? 'Living room, mamad, office — most 3+ bed apartments have at least 1'
-                    : 'Mamad, living room, office — helps buyers understand your listing'}
-                </p>
+                {shouldReviewOtherRooms ? (
+                  <ReviewHint>Imported listing needs review: add living room, mamad, office, or keep 0 if none.</ReviewHint>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    {data.additional_rooms === 0 && (data.bedrooms ?? 0) >= 3
+                      ? 'Living room, mamad, office — most 3+ bed apartments have at least 1'
+                      : 'Mamad, living room, office — helps buyers understand your listing'}
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="bathrooms">Bathrooms *</Label>
@@ -180,11 +198,15 @@ export function StepDetails() {
                 onChange={(e) => updateData({ apartment_number: e.target.value || undefined })}
                 placeholder="e.g., 4B"
                 maxLength={16}
-                className="h-11 rounded-xl"
+                className={cn('h-11 rounded-xl', shouldReviewApartmentNumber && 'border-primary/40 bg-primary/5')}
               />
-              <p className="text-xs text-muted-foreground">
-                Helps us tell your listing apart from other apartments in the same building. Stays internal — not shown publicly.
-              </p>
+              {shouldReviewApartmentNumber ? (
+                <ReviewHint>Recommended for imported listings. Add the apartment number if you know it; it stays internal.</ReviewHint>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Helps us tell your listing apart from other apartments in the same building. Stays internal — not shown publicly.
+                </p>
+              )}
             </div>
           </div>
         )}
@@ -237,8 +259,11 @@ export function StepDetails() {
               onChange={(e) => updateData({ parking: Number(e.target.value) || 0 })}
               onFocus={(e) => e.target.select()}
               placeholder="0"
-              className="h-11 rounded-xl"
+              className={cn('h-11 rounded-xl', shouldReviewParking && 'border-primary/40 bg-primary/5')}
             />
+            {shouldReviewParking && (
+              <ReviewHint>Imported listing needs review: enter parking spots, or keep 0 if there is no parking.</ReviewHint>
+            )}
           </div>
         </div>
       </div>
