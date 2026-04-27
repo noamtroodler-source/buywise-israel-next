@@ -2297,7 +2297,7 @@ function extractAgencyHtmlFallback(html: string, markdown: string, url: string):
 
 async function collectAgencyOwnedImages(listing: any, structuredData: any, pageHtml: string, itemUrl: string, sb: any, jobId: string): Promise<string[]> {
   const candidateImages: string[] = [];
-  if (listing.image_urls && Array.isArray(listing.image_urls)) candidateImages.push(...listing.image_urls);
+  if (listing.image_urls && Array.isArray(listing.image_urls)) candidateImages.push(...flattenImageCandidates(listing.image_urls));
   if (structuredData?.structured_images?.length) candidateImages.push(...structuredData.structured_images);
   if (candidateImages.length < 3 && pageHtml) candidateImages.push(...extractImagesFromHtml(pageHtml, itemUrl));
   const uniqueImages = [...new Set(candidateImages.map(img => {
@@ -2315,6 +2315,20 @@ async function collectAgencyOwnedImages(listing: any, structuredData: any, pageH
   return Array.from(new Set(downloaded.urls || []));
 }
 
+function flattenImageCandidates(input: any, depth = 0): string[] {
+  if (depth > 4 || input == null) return [];
+  if (typeof input === "string") return [input];
+  if (Array.isArray(input)) return input.flatMap((item) => flattenImageCandidates(item, depth + 1));
+  if (typeof input === "object") {
+    const directKeys = ["url", "src", "source_url", "large", "full", "original", "thumbnail", "imageUrl", "image_url", "srcset"];
+    const direct = directKeys.flatMap((key) => flattenImageCandidates(input[key], depth + 1));
+    const nested = [input.images, input.photos, input.media, input.gallery, input.items]
+      .flatMap((value) => flattenImageCandidates(value, depth + 1));
+    return [...direct, ...nested];
+  }
+  return [];
+}
+
 async function collectAllowedSourceImages(
   sourceType: string | null | undefined,
   listing: any,
@@ -2328,11 +2342,7 @@ async function collectAllowedSourceImages(
   const normalized = String(sourceType || "website").toLowerCase();
   if (listing.image_urls && !Array.isArray(listing.image_urls)) listing.image_urls = [listing.image_urls];
   if (Array.isArray(listing.image_urls)) {
-    listing.image_urls = listing.image_urls.flatMap((img: any) => {
-      if (typeof img === "string") return [img];
-      if (img && typeof img === "object") return [img.url, img.src, img.source_url, img.large, img.full].filter(Boolean);
-      return [];
-    });
+    listing.image_urls = flattenImageCandidates(listing.image_urls);
   }
   if (normalized.includes("yad2")) return [];
   if (isAgencyOwnWebsiteSource(sourceType)) {
