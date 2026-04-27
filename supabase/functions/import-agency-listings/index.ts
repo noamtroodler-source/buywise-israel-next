@@ -2457,16 +2457,20 @@ function extractAgencyVisibleFacts(html: string, markdown: string): Record<strin
 function enrichListingFromVisibleFacts(listing: Record<string, any>, html: string, markdown: string): Record<string, any> {
   const facts = extractAgencyVisibleFacts(html, markdown);
   const merged = { ...listing };
+  const appliedFields = new Set<string>(Array.isArray(merged._visible_fact_fields) ? merged._visible_fact_fields : []);
   for (const [key, value] of Object.entries(facts)) {
     if (value == null) continue;
     if (key === "features") {
       merged.features = Array.from(new Set([...(Array.isArray(merged.features) ? merged.features : []), ...(value as string[])]));
+      appliedFields.add("features");
     } else if (merged[key] == null || merged[key] === "" || merged[key] === 0 || (Array.isArray(merged[key]) && merged[key].length === 0)) {
       merged[key] = value;
+      appliedFields.add(key);
     }
   }
-  if (merged.storage_count && !merged.additional_rooms) merged.additional_rooms = Number(merged.storage_count);
+  if (merged.storage_count && !merged.additional_rooms) { merged.additional_rooms = Number(merged.storage_count); appliedFields.add("additional_rooms"); }
   if (Array.isArray(merged.features)) merged.features = Array.from(new Set(merged.features.map((f: string) => normalizeFeatureKey(f) || f).filter(Boolean)));
+  if (appliedFields.size > 0) merged._visible_fact_fields = Array.from(appliedFields);
   return merged;
 }
 
