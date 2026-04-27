@@ -770,7 +770,7 @@ export default function AgencyListings() {
                                 {listing.has_critical_flags ? (
                                   <p className="text-[11px] text-destructive">Critical issue needs review</p>
                                 ) : listing.missing_quick_fields.length > 0 ? (
-                                  <p className="text-[11px] text-muted-foreground truncate max-w-[180px]">
+                                  <p className="text-[11px] text-primary font-medium truncate max-w-[240px]" title={listing.missing_quick_fields.join(', ')}>
                                     Missing: {listing.missing_quick_fields.slice(0, 2).join(', ')}{listing.missing_quick_fields.length > 2 ? '…' : ''}
                                   </p>
                                 ) : (
