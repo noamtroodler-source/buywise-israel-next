@@ -269,7 +269,7 @@ function GoogleAddressAutocomplete({
           className={cn(
             'h-11 rounded-xl pr-10',
             hasCompleteAddressSelection && 'border-primary/50 bg-primary/5',
-            hasValidSelection && !hasRequiredStreetNumber && 'border-primary bg-primary/10',
+            hasValidSelection && !hasRequiredStreetNumber && 'border-destructive bg-destructive/10',
             className
           )}
         />
@@ -279,7 +279,7 @@ function GoogleAddressAutocomplete({
           ) : hasCompleteAddressSelection ? (
             <Check className="h-4 w-4 text-primary" />
           ) : hasValidSelection && !hasRequiredStreetNumber ? (
-            <AlertCircle className="h-4 w-4 text-primary" />
+            <AlertCircle className="h-4 w-4 text-destructive" />
           ) : (
             <MapPin className="h-4 w-4 text-muted-foreground" />
           )}
@@ -310,7 +310,7 @@ function GoogleAddressAutocomplete({
       )}
 
       {unsupportedCityError && (
-        <div className="mt-1.5 flex items-start gap-2 text-xs text-primary bg-primary/10 rounded-lg p-2.5">
+        <div className="mt-1.5 flex items-start gap-2 text-xs text-destructive bg-destructive/10 rounded-lg p-2.5">
           <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
           <span>
             BuyWise Israel currently operates in 25 cities. "{unsupportedCityError}" is not yet supported. Please select an address in a supported city (e.g., Tel Aviv, Jerusalem, Herzliya, Ra'anana).
@@ -319,7 +319,7 @@ function GoogleAddressAutocomplete({
       )}
 
       {cityMismatchError && (
-        <div className="mt-1.5 flex items-start gap-2 text-xs text-primary bg-primary/10 rounded-lg p-2.5">
+        <div className="mt-1.5 flex items-start gap-2 text-xs text-destructive bg-destructive/10 rounded-lg p-2.5">
           <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
           <span>
             This address is in {cityMismatchError.extracted}, but you selected {cityMismatchError.selected} above. 
@@ -329,7 +329,7 @@ function GoogleAddressAutocomplete({
       )}
 
       {!unsupportedCityError && !cityMismatchError && hasValidSelection && !hasRequiredStreetNumber && (
-        <div className="mt-1.5 flex items-start gap-2 text-xs text-primary bg-primary/10 rounded-lg p-2.5">
+        <div className="mt-1.5 flex items-start gap-2 text-xs text-destructive bg-destructive/10 rounded-lg p-2.5">
           <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
           <span>Street number is required before this listing can be confirmed.</span>
         </div>
@@ -509,7 +509,7 @@ function NominatimAddressAutocomplete({
           className={cn(
             'h-11 rounded-xl pr-10',
             hasCompleteAddressSelection && 'border-primary/50 bg-primary/5',
-            hasValidSelection && !hasRequiredStreetNumber && 'border-primary bg-primary/10',
+            hasValidSelection && !hasRequiredStreetNumber && 'border-destructive bg-destructive/10',
             className
           )}
         />
@@ -519,7 +519,7 @@ function NominatimAddressAutocomplete({
           ) : hasCompleteAddressSelection ? (
             <Check className="h-4 w-4 text-primary" />
           ) : hasValidSelection && !hasRequiredStreetNumber ? (
-            <AlertCircle className="h-4 w-4 text-primary" />
+            <AlertCircle className="h-4 w-4 text-destructive" />
           ) : (
             <MapPin className="h-4 w-4 text-muted-foreground" />
           )}
@@ -550,7 +550,7 @@ function NominatimAddressAutocomplete({
       )}
 
       {unsupportedCityError && (
-        <div className="mt-1.5 flex items-start gap-2 text-xs text-primary bg-primary/10 rounded-lg p-2.5">
+        <div className="mt-1.5 flex items-start gap-2 text-xs text-destructive bg-destructive/10 rounded-lg p-2.5">
           <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
           <span>
             "{unsupportedCityError}" is not a supported city. Please choose an address in one of our 25 focus cities.
@@ -559,7 +559,7 @@ function NominatimAddressAutocomplete({
       )}
 
       {cityMismatchError && (
-        <div className="mt-1.5 flex items-start gap-2 text-xs text-primary bg-primary/10 rounded-lg p-2.5">
+        <div className="mt-1.5 flex items-start gap-2 text-xs text-destructive bg-destructive/10 rounded-lg p-2.5">
           <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
           <span>
             This address is in {cityMismatchError.extracted}, but you selected {cityMismatchError.selected} above. 
@@ -569,7 +569,7 @@ function NominatimAddressAutocomplete({
       )}
 
       {!unsupportedCityError && !cityMismatchError && hasValidSelection && !hasRequiredStreetNumber && (
-        <div className="mt-1.5 flex items-start gap-2 text-xs text-primary bg-primary/10 rounded-lg p-2.5">
+        <div className="mt-1.5 flex items-start gap-2 text-xs text-destructive bg-destructive/10 rounded-lg p-2.5">
           <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
           <span>Street number is required before this listing can be confirmed.</span>
         </div>
