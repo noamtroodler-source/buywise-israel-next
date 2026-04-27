@@ -146,6 +146,9 @@ export default function Auth() {
     if (redirectParam) return redirectParam;
     // Second priority: professional signup flow
     if (isProfessionalSignup) {
+      if (activeTab === 'signin' && roleParam === 'agency' && !inviteCode) {
+        return '/agency';
+      }
       return inviteCode 
         ? `${config.redirectTo}?code=${encodeURIComponent(inviteCode)}`
         : config.redirectTo;
@@ -157,7 +160,7 @@ export default function Auth() {
       return stored;
     }
     return null;
-  }, [redirectParam, isProfessionalSignup, inviteCode, config.redirectTo]);
+  }, [redirectParam, isProfessionalSignup, activeTab, roleParam, inviteCode, config.redirectTo]);
 
   // Store intended redirect for email confirmation flows
   const storeRedirectForLater = useCallback(() => {
