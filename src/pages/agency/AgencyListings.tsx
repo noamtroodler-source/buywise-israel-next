@@ -5,7 +5,7 @@ import {
   ArrowLeft, Loader2, Home, Plus, Search, Download, FileSpreadsheet,
   Eye, Clock, CheckCircle2, Building2, Heart, MessageSquare,
   Edit, Trash2, Send, MoreHorizontal, Copy, Key, ArrowLeftRight, X,
-  ArrowUpDown, ArrowUp, ArrowDown,
+  ArrowUpDown, ArrowUp, ArrowDown, AlertTriangle, Archive, CheckCheck,
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,7 +30,16 @@ import {
   Popover, PopoverContent, PopoverTrigger,
 } from '@/components/ui/popover';
 import { useMyAgency, useAgencyTeam } from '@/hooks/useAgencyManagement';
-import { useAgencyListingsManagement } from '@/hooks/useAgencyListings';
+import {
+  AgencyListing,
+  AgencyReviewStatus,
+  useAgencyListingsManagement,
+  useApproveAgencyListing,
+  useArchiveAgencyListing,
+  useBulkApproveAgencyListings,
+  useMarkAgencyListingNeedsEdit,
+  useSkipAgencyListingReview,
+} from '@/hooks/useAgencyListings';
 import { useDeleteProperty, useSubmitForReview, useBulkDeleteProperties, useBulkSubmitForReview, useReassignProperty } from '@/hooks/useAgentProperties';
 import { AgentReassignPopover } from '@/components/agency/AgentReassignPopover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -86,6 +95,19 @@ const statusConfig = {
   changes_requested: { label: 'Changes', color: 'bg-orange-500/10 text-orange-600' },
   rejected: { label: 'Rejected', color: 'bg-red-500/10 text-red-600' },
 };
+
+const reviewConfig: Record<AgencyReviewStatus, { label: string; color: string; icon: typeof Clock }> = {
+  needs_review: { label: 'Confirm', color: 'bg-yellow-500/10 text-yellow-700 border-yellow-500/20', icon: Clock },
+  approved_live: { label: 'Confirmed', color: 'bg-green-500/10 text-green-700 border-green-500/20', icon: CheckCircle2 },
+  needs_edit: { label: 'Quick edit', color: 'bg-orange-500/10 text-orange-700 border-orange-500/20', icon: AlertTriangle },
+  archived_stale: { label: 'Archived', color: 'bg-muted text-muted-foreground border-border', icon: Archive },
+};
+
+function getReviewBucket(listing: AgencyListing) {
+  if (listing.agency_review_status === 'needs_review' && listing.safe_to_batch_approve) return 'ready';
+  if (listing.agency_review_status === 'needs_review' || listing.agency_review_status === 'needs_edit') return 'fix';
+  return listing.agency_review_status;
+}
 
 type SortKey = 'price' | 'views' | 'saves' | 'inquiries' | 'days';
 type SortDirection = 'asc' | 'desc';
@@ -150,12 +172,18 @@ export default function AgencyListings() {
   const bulkDelete = useBulkDeleteProperties();
   const bulkSubmit = useBulkSubmitForReview();
   const reassignProperty = useReassignProperty();
+  const approveListing = useApproveAgencyListing();
+  const needsEditListing = useMarkAgencyListingNeedsEdit();
+  const archiveListing = useArchiveAgencyListing();
+  const skipListing = useSkipAgencyListingReview();
+  const bulkApproveListings = useBulkApproveAgencyListings();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [agentFilter, setAgentFilter] = useState<string>('all');
   const [cityFilter, setCityFilter] = useState<string>('all');
   const [roleFilter, setRoleFilter] = useState<'all' | 'primary' | 'co_listed'>('all');
+  const [reviewFilter, setReviewFilter] = useState<'all' | 'ready' | 'fix' | AgencyReviewStatus>('all');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [sort, setSort] = useState<{ key: SortKey; direction: SortDirection } | null>(null);
@@ -205,6 +233,7 @@ export default function AgencyListings() {
     if (agentFilter !== 'all' && listing.agent_id !== agentFilter) return false;
     if (cityFilter !== 'all' && listing.city !== cityFilter) return false;
     if (roleFilter !== 'all' && listing.role !== roleFilter) return false;
+    if (reviewFilter !== 'all' && getReviewBucket(listing) !== reviewFilter && listing.agency_review_status !== reviewFilter) return false;
     return true;
   });
 
@@ -224,6 +253,10 @@ export default function AgencyListings() {
     total: listings.length,
     active: listings.filter(l => l.verification_status === 'approved').length,
     pending: listings.filter(l => l.verification_status === 'pending_review').length,
+    needsReview: listings.filter(l => l.agency_review_status === 'needs_review').length,
+    ready: listings.filter(l => l.agency_review_status === 'needs_review' && l.safe_to_batch_approve).length,
+    quickFix: listings.filter(l => (l.agency_review_status === 'needs_review' && !l.safe_to_batch_approve) || l.agency_review_status === 'needs_edit').length,
+    archived: listings.filter(l => l.agency_review_status === 'archived_stale').length,
     totalViews: listings.reduce((sum, l) => sum + (l.views_count || 0), 0),
   };
 
@@ -283,6 +316,14 @@ export default function AgencyListings() {
     });
   };
 
+  const safeSelectedIds = [...selectedIds].filter((id) => listings.find((l) => l.id === id)?.safe_to_batch_approve);
+
+  const handleBulkApproveSafe = () => {
+    bulkApproveListings.mutate({ propertyIds: safeSelectedIds, agencyId: agency.id }, {
+      onSuccess: () => setSelectedIds(new Set()),
+    });
+  };
+
   const handleBulkReassign = (targetAgentId: string) => {
     const ids = [...selectedIds];
     let completed = 0;
@@ -316,7 +357,7 @@ export default function AgencyListings() {
               </Button>
               <div>
                 <h1 className="text-2xl font-bold">Agency Listings</h1>
-                <p className="text-muted-foreground">Manage all properties across your team</p>
+                <p className="text-muted-foreground">Internal confirmation queue for agency-owned listings</p>
               </div>
             </div>
             <div className="flex gap-2">
@@ -372,7 +413,7 @@ export default function AgencyListings() {
             {[
               { label: 'Total Listings', value: stats.total, icon: Home },
               { label: 'Active', value: stats.active, icon: CheckCircle2 },
-              { label: 'Pending Review', value: stats.pending, icon: Clock, highlight: stats.pending > 0 },
+              { label: 'Need Confirmation', value: stats.needsReview, icon: Clock, highlight: stats.needsReview > 0 },
               { label: 'Total Views', value: stats.totalViews, icon: Eye },
             ].map((stat, index) => (
               <motion.div key={stat.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
@@ -392,6 +433,41 @@ export default function AgencyListings() {
               </motion.div>
             ))}
           </div>
+
+          {/* Role pills — click to filter by primary / co-listed */}
+          <Card className="rounded-2xl border-primary/10 bg-primary/5">
+            <CardContent className="p-4">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Private launch review</p>
+                  <p className="text-sm text-muted-foreground">Confirm availability and accuracy before listings go live. These labels stay inside the agency portal.</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { key: 'all', label: 'All', value: listings.length },
+                    { key: 'ready', label: 'Safe to approve', value: stats.ready },
+                    { key: 'fix', label: 'Quick fixes', value: stats.quickFix },
+                    { key: 'approved_live', label: 'Confirmed', value: listings.filter(l => l.agency_review_status === 'approved_live').length },
+                    { key: 'archived_stale', label: 'Archived', value: stats.archived },
+                  ].map((item) => (
+                    <button
+                      key={item.key}
+                      type="button"
+                      onClick={() => setReviewFilter(item.key as any)}
+                      className={cn(
+                        'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors',
+                        reviewFilter === item.key
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-background border-border hover:bg-muted'
+                      )}
+                    >
+                      {item.label} <span className="opacity-80">{item.value}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Role pills — click to filter by primary / co-listed */}
           {(primaryCount > 0 || coListedCount > 0) && (
@@ -459,6 +535,16 @@ export default function AgencyListings() {
                     <SelectItem value="pending_review">Pending</SelectItem>
                     <SelectItem value="draft">Draft</SelectItem>
                     <SelectItem value="changes_requested">Changes</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={reviewFilter} onValueChange={(value) => setReviewFilter(value as any)}>
+                  <SelectTrigger className="w-[170px] rounded-xl"><SelectValue placeholder="Review" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Reviews</SelectItem>
+                    <SelectItem value="ready">Safe to approve</SelectItem>
+                    <SelectItem value="fix">Quick fixes</SelectItem>
+                    <SelectItem value="approved_live">Confirmed</SelectItem>
+                    <SelectItem value="archived_stale">Archived</SelectItem>
                   </SelectContent>
                 </Select>
                 <Select value={agentFilter} onValueChange={setAgentFilter}>
@@ -533,6 +619,7 @@ export default function AgencyListings() {
                           </TooltipProvider>
                         </TableHead>
                         <TableHead>Status</TableHead>
+                        <TableHead>Review</TableHead>
                         <TableHead className="text-right"><SortableHeader label="Price" sortKey="price" activeSort={sort} onSort={handleSort} align="right" /></TableHead>
                         <TableHead className="text-center"><SortableHeader label="Views" sortKey="views" activeSort={sort} onSort={handleSort} /></TableHead>
                         <TableHead className="text-center"><SortableHeader label="Saves" sortKey="saves" activeSort={sort} onSort={handleSort} /></TableHead>
@@ -544,6 +631,8 @@ export default function AgencyListings() {
                     <TableBody>
                       {sortedListings.map((listing) => {
                         const status = statusConfig[listing.verification_status as keyof typeof statusConfig] || statusConfig.draft;
+                        const review = reviewConfig[listing.agency_review_status];
+                        const ReviewIcon = review.icon;
                         const isDraft = listing.verification_status === 'draft';
                         const isApproved = listing.verification_status === 'approved';
                         const isSelected = selectedIds.has(listing.id);
@@ -610,6 +699,23 @@ export default function AgencyListings() {
                                 )}
                               </div>
                             </TableCell>
+                            <TableCell>
+                              <div className="space-y-1.5 min-w-[160px]">
+                                <Badge variant="outline" className={cn('text-xs gap-1', review.color)}>
+                                  <ReviewIcon className="h-3 w-3" />
+                                  {review.label}
+                                </Badge>
+                                {listing.has_critical_flags ? (
+                                  <p className="text-[11px] text-destructive">Critical issue needs review</p>
+                                ) : listing.missing_quick_fields.length > 0 ? (
+                                  <p className="text-[11px] text-muted-foreground truncate max-w-[180px]">
+                                    Missing: {listing.missing_quick_fields.slice(0, 2).join(', ')}{listing.missing_quick_fields.length > 2 ? '…' : ''}
+                                  </p>
+                                ) : (
+                                  <p className="text-[11px] text-muted-foreground">Core fields look ready</p>
+                                )}
+                              </div>
+                            </TableCell>
                             <TableCell className="text-right font-medium">
                               {formatPrice(listing.price, listing.currency)}
                             </TableCell>
@@ -646,6 +752,18 @@ export default function AgencyListings() {
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center justify-end gap-1">
+                                {listing.agency_review_status !== 'approved_live' && listing.agency_review_status !== 'archived_stale' && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="rounded-lg text-green-700 hover:text-green-700 hover:bg-green-500/10"
+                                    onClick={() => approveListing.mutate({ propertyId: listing.id, agencyId: agency.id })}
+                                    disabled={approveListing.isPending}
+                                    title="Approve and publish"
+                                  >
+                                    <CheckCheck className="h-4 w-4" />
+                                  </Button>
+                                )}
                                 <Button variant="ghost" size="sm" asChild className="rounded-lg">
                                   <Link to={`/agency/properties/${listing.id}/edit`}>
                                     <Edit className="h-4 w-4" />
@@ -680,6 +798,23 @@ export default function AgencyListings() {
                                     </Button>
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => approveListing.mutate({ propertyId: listing.id, agencyId: agency.id })}>
+                                      <CheckCheck className="h-4 w-4 mr-2" />
+                                      Approve & publish
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => needsEditListing.mutate({ propertyId: listing.id, agencyId: agency.id })}>
+                                      <AlertTriangle className="h-4 w-4 mr-2" />
+                                      Needs quick edit
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => skipListing.mutate({ propertyId: listing.id, agencyId: agency.id })}>
+                                      <Clock className="h-4 w-4 mr-2" />
+                                      Skip for later
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => archiveListing.mutate({ propertyId: listing.id, agencyId: agency.id })}>
+                                      <Archive className="h-4 w-4 mr-2" />
+                                      Not available / archive
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
                                     <DropdownMenuItem onClick={() => handleDuplicate(listing.id)}>
                                       <Copy className="h-4 w-4 mr-2" />
                                       Duplicate
@@ -764,6 +899,19 @@ export default function AgencyListings() {
                       >
                         <Send className="h-3.5 w-3.5 mr-1.5" />
                         Submit for Review
+                      </Button>
+                    )}
+
+                    {safeSelectedIds.length > 0 && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="rounded-xl text-green-700 border-green-500/30 hover:bg-green-500/10"
+                        onClick={handleBulkApproveSafe}
+                        disabled={bulkApproveListings.isPending}
+                      >
+                        <CheckCheck className="h-3.5 w-3.5 mr-1.5" />
+                        Approve safe ({safeSelectedIds.length})
                       </Button>
                     )}
 

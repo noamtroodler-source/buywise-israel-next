@@ -3454,6 +3454,64 @@ export type Database = {
         }
         Relationships: []
       }
+      listing_agency_reviews: {
+        Row: {
+          agency_id: string
+          created_at: string
+          property_id: string
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          skipped_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          agency_id: string
+          created_at?: string
+          property_id: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          skipped_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          agency_id?: string
+          created_at?: string
+          property_id?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          skipped_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listing_agency_reviews_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "listing_agency_reviews_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "listing_agency_reviews_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: true
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       listing_claim_requests: {
         Row: {
           agency_id: string | null
@@ -7391,13 +7449,29 @@ export type Database = {
         }
         Returns: Json
       }
+      approve_agency_listing: {
+        Args: { p_notes?: string; p_property_id: string }
+        Returns: boolean
+      }
+      archive_agency_listing: {
+        Args: { p_notes?: string; p_property_id: string }
+        Returns: boolean
+      }
       auto_resolve_obvious_conflict: {
         Args: { p_conflict_id: string }
+        Returns: Json
+      }
+      bulk_approve_agency_listings: {
+        Args: { p_property_ids: string[] }
         Returns: Json
       }
       calculate_journey_stage: { Args: { milestones: Json }; Returns: string }
       can_agent_view_profile: {
         Args: { _agent_user_id: string; _profile_id: string }
+        Returns: boolean
+      }
+      can_manage_listing_agency_review: {
+        Args: { p_property_id: string }
         Returns: boolean
       }
       check_cross_agency_duplicate: {
@@ -7658,6 +7732,10 @@ export type Database = {
         }
         Returns: string
       }
+      mark_agency_listing_needs_edit: {
+        Args: { p_notes?: string; p_property_id: string }
+        Returns: boolean
+      }
       merge_properties: {
         Args: {
           p_admin_id: string
@@ -7694,6 +7772,10 @@ export type Database = {
         Returns: undefined
       }
       run_yad2_enqueue: { Args: never; Returns: Json }
+      skip_agency_listing_review: {
+        Args: { p_property_id: string }
+        Returns: boolean
+      }
       start_primary_boost: {
         Args: {
           p_boosting_agency_id: string
