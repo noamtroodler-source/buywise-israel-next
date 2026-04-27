@@ -72,8 +72,8 @@ export function useListingLimitCheck(entityType: 'agency' | 'developer'): Listin
 
 
   const isLoading = subLoading || countLoading;
-  const maxListings = sub?.maxListings ?? null;
-  const needsSubscription = !sub || sub.status === 'none';
+  const maxListings = sub?.isFoundingAgency ? null : sub?.maxListings ?? null;
+  const needsSubscription = !sub || (!sub.isFoundingAgency && sub.status === 'none');
   const isFree = sub?.tier === 'free';
   const tier = sub?.tier || '';
   const nextTierName = NEXT_TIER[tier] || null;
