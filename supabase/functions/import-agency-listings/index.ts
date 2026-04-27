@@ -5277,16 +5277,41 @@ async function runMadlanAgencyDiscoverJob(params: {
           }
 
           if (existingMatch) {
+            const fieldSourceMap: Record<string, string> = (existingMatch.field_source_map as any) || {};
             const mergedUrls: string[] = Array.isArray(existingMatch.merged_source_urls)
               ? [...existingMatch.merged_source_urls]
               : (existingMatch.source_url ? [existingMatch.source_url] : []);
             if (!mergedUrls.includes(listingUrl)) mergedUrls.push(listingUrl);
             const patch: Record<string, any> = { merged_source_urls: mergedUrls, source_last_checked_at: new Date().toISOString() };
+            const madlanFillFields: Array<[string, any]> = [
+              ["price", listing.price || null], ["size_sqm", listing.size_sqm || null], ["bedrooms", bedrooms],
+              ["bathrooms", listing.bathrooms != null ? Math.floor(listing.bathrooms) : null], ["source_rooms", rooms],
+              ["floor", listing.floor ?? null], ["total_floors", listing.total_floors ?? null], ["parking", listing.parking ?? null],
+              ["condition", listing.condition || null], ["ac_type", listing.ac_type || null], ["entry_date", sanitizeEntryDate(listing.entry_date)],
+              ["vaad_bayit_monthly", listing.vaad_bayit_monthly ?? null], ["is_furnished", listing.is_furnished === true ? true : null],
+              ["is_accessible", listing.is_accessible === true ? true : null], ["neighborhood", listing.neighborhood || null],
+            ];
+            for (const [field, incomingVal] of madlanFillFields) {
+              const existingVal = existingMatch[field];
+              if (incomingVal != null && (existingVal == null || existingVal === "" || existingVal === 0 || existingVal === false)) {
+                patch[field] = incomingVal;
+                fieldSourceMap[field] = "madlan";
+              }
+            }
+            if (description && (!existingMatch.description || description.length > existingMatch.description.length)) {
+              patch.description = description;
+              fieldSourceMap.description = "madlan";
+            }
+            if (features.length) {
+              patch.features = [...new Set([...(Array.isArray(existingMatch.features) ? existingMatch.features : []), ...features])];
+              fieldSourceMap.features = "madlan";
+            }
             const existingImages = Array.isArray(existingMatch.images) ? existingMatch.images : [];
             if (existingImages.length === 0 && madlanImages.length > 0) {
               patch.images = madlanImages;
-              patch.field_source_map = { ...((existingMatch.field_source_map as any) || {}), images: "madlan_fallback" };
+              fieldSourceMap.images = "madlan_fallback";
             }
+            patch.field_source_map = fieldSourceMap;
             await sb.from("properties").update(patch).eq("id", existingMatch.id);
             totalMerged++;
             continue;
