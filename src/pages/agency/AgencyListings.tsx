@@ -381,7 +381,7 @@ export default function AgencyListings() {
     active: listings.filter(l => l.verification_status === 'approved').length,
     pending: listings.filter(l => l.verification_status === 'pending_review').length,
     needsReview: listings.filter(l => l.agency_review_status === 'needs_review').length,
-    ready: listings.filter(l => l.agency_review_status === 'needs_review' && l.safe_to_batch_approve).length,
+    ready: listings.filter(l => getReviewBucket(l) === 'ready').length,
     quickFix: listings.filter(l => getReviewBucket(l) === 'fix').length,
     incomplete: listings.filter(l => getReviewBucket(l) === 'incomplete').length,
     archived: listings.filter(l => l.agency_review_status === 'archived_stale').length,
