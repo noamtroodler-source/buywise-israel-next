@@ -2801,6 +2801,8 @@ async function processOneItem(
 
     // 1. Scrape
     const isYad2Item = item.url.includes("yad2.co.il");
+    const isAgencyOwnWebsite = isAgencyOwnWebsiteSource(job.source_type);
+    const isStrongAgencyListing = isAgencyOwnWebsite && isStrongAgencyListingUrl(item.url, job.website_url || item.url);
     dlog(`Scraping: ${item.url}`);
 
     // For Yad2, wrap the Firecrawl call in a 35s Promise.race timeout.
@@ -2902,7 +2904,7 @@ async function processOneItem(
       }
     }
 
-    if (!markdown || markdown.length < 50) {
+    if ((!markdown || markdown.length < 50) && !(isStrongAgencyListing && pageHtml && pageHtml.length > 500)) {
       await sb.from("import_job_items").update({ status: "skipped", error_message: "Page content too short", error_type: "permanent" }).eq("id", item.id);
       return { succeeded: false };
     }
@@ -2914,6 +2916,8 @@ async function processOneItem(
       await sb.from("import_job_items").update({ status: "skipped", error_message: preFilter.reason, error_type: "permanent" }).eq("id", item.id);
       return { succeeded: false };
     }
+
+    const agencyHtmlFallback = isStrongAgencyListing ? extractAgencyHtmlFallback(pageHtml, markdown, item.url) : null;
 
     // 1b. CMS detection + adapter extraction
     const cmsType = detectCmsType(pageHtml, item.url);
