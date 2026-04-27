@@ -4939,6 +4939,27 @@ async function runMadlanAgencyDiscoverJob(params: {
   try {
     dlog(`[Madlan/Apify] background discovery started for job ${jobId}: ${websiteUrl}`);
 
+    const activeGate = await inspectMadlanActiveOfficePage(websiteUrl);
+    const expectedActive = effectiveImportType === "rental"
+      ? activeGate.rentCount
+      : effectiveImportType === "resale"
+        ? activeGate.saleCount
+        : activeGate.activeCount;
+    if (expectedActive > 0) {
+      await sb.from("import_jobs").update({
+        failure_reason: JSON.stringify({
+          source: "madlan",
+          gate: "active_count_detected",
+          expected_active: expectedActive,
+          public_active_count: activeGate.activeCount,
+          public_sale_count: activeGate.saleCount,
+          public_rent_count: activeGate.rentCount,
+          public_card_urls: activeGate.cardUrls.length,
+          public_card_images: activeGate.cardImages.length,
+        }),
+      }).eq("id", jobId);
+    }
+
     if (!APIFY_API_KEY) {
       const failReason = "APIFY_API_KEY not configured — required for Madlan scraping";
       console.error(`[Madlan/Apify] ${failReason}`);
@@ -5001,6 +5022,8 @@ async function runMadlanAgencyDiscoverJob(params: {
     let totalNew = 0;
     let totalInserted = 0;
     let totalMerged = 0;
+    let totalRejectedInactive = 0;
+    let totalImageFailures = 0;
     const allDiscoveredUrls: string[] = [];
 
     for (const dealType of dealTypes) {
@@ -5008,10 +5031,13 @@ async function runMadlanAgencyDiscoverJob(params: {
 
       // Call Apify actor synchronously (returns dataset items directly)
       // Timeout: 120s for the sync call
-      const actorInput = {
+          const dealExpected = dealType === "rent" ? activeGate.rentCount : activeGate.saleCount;
+          const actorInput = {
         city: cityStr,
         dealType,
-        maxItems: 200,
+            officeUrl: websiteUrl,
+            agentOfficeUrl: websiteUrl,
+            maxItems: dealExpected > 0 ? Math.min(Math.max(dealExpected + 5, 10), 60) : 60,
       };
 
       let items: any[] = [];
@@ -5041,11 +5067,22 @@ async function runMadlanAgencyDiscoverJob(params: {
 
       totalDiscovered += items.length;
 
+      if (dealExpected > 0 && items.length > Math.max(dealExpected + 10, Math.ceil(dealExpected * 1.5))) {
+        totalRejectedInactive += items.length;
+        console.warn(`[Madlan/ActiveGate] Blocked ${dealType}: public active=${dealExpected}, actor returned=${items.length}`);
+        continue;
+      }
+
       // Process each item
       for (const madlanItem of items) {
         try {
           const listingUrl = madlanItem.url || `https://www.madlan.co.il/listings/${madlanItem.id}`;
           allDiscoveredUrls.push(listingUrl);
+
+          if (!isMadlanItemLiveAndAgencyScoped(madlanItem, agency?.name, websiteUrl)) {
+            totalRejectedInactive++;
+            continue;
+          }
 
           // Dedup check
           if (knownUrls.has(normalizeUrl(listingUrl))) continue;
@@ -5106,7 +5143,12 @@ async function runMadlanAgencyDiscoverJob(params: {
             + (madlanItem.neighbourhood ? 5 : 0)
           );
 
-          const madlanImages = await collectAllowedSourceImages("madlan", listing, null, "", listingUrl, sb, jobId, 12);
+          let detailHtml = "";
+          if (!flattenImageCandidates(listing.image_urls).length) {
+            detailHtml = await fetchMadlanDetailHtml(listingUrl);
+          }
+          const madlanImages = await collectAllowedSourceImages("madlan", listing, null, detailHtml, listingUrl, sb, jobId, 12);
+          if (madlanImages.length === 0) totalImageFailures++;
 
           let existingMatch: any = null;
           if (address && city) {
@@ -5209,7 +5251,14 @@ async function runMadlanAgencyDiscoverJob(params: {
       }).eq("id", jobId);
     }
 
-    dlog(`[Madlan/Apify] Summary: ${totalDiscovered} discovered, ${totalNew} new, ${totalInserted} inserted, ${totalMerged} merged`);
+    if (expectedActive > 0 && totalNew > Math.max(expectedActive + 10, Math.ceil(expectedActive * 1.5))) {
+      const reason = { source: "madlan", blocked: true, reason: "active_count_mismatch", expected_active: expectedActive, discovered: totalDiscovered, new: totalNew, rejected_inactive: totalRejectedInactive };
+      await sb.from("import_jobs").update({ status: "failed", total_urls: 0, discovered_urls: allDiscoveredUrls.slice(0, 500), processed_count: 0, failed_count: totalNew, failure_reason: JSON.stringify(reason) }).eq("id", jobId);
+      await sb.from("agency_sources").update({ last_failure_reason: `Blocked: Madlan reports ${expectedActive} active listings but ${totalNew} candidates were discovered`, last_sync_listings_found: expectedActive, last_synced_at: new Date().toISOString() }).eq("agency_id", agencyId).eq("source_type", "madlan");
+      return;
+    }
+
+    dlog(`[Madlan/Apify] Summary: ${totalDiscovered} discovered, ${totalNew} new, ${totalInserted} inserted, ${totalMerged} merged, ${totalRejectedInactive} rejected`);
 
     // Update job
     await sb.from("import_jobs").update({
@@ -5218,7 +5267,7 @@ async function runMadlanAgencyDiscoverJob(params: {
       discovered_urls: allDiscoveredUrls.slice(0, 500), // cap stored URLs
       processed_count: totalInserted + totalMerged,
       failed_count: totalNew - totalInserted - totalMerged,
-      failure_reason: JSON.stringify({ source: "madlan", discovered: totalDiscovered, new: totalNew, inserted: totalInserted, merged: totalMerged }),
+      failure_reason: JSON.stringify({ source: "madlan", expected_active: expectedActive || null, public_active_count: activeGate.activeCount || null, public_sale_count: activeGate.saleCount || null, public_rent_count: activeGate.rentCount || null, discovered: totalDiscovered, new: totalNew, inserted: totalInserted, merged: totalMerged, rejected_inactive: totalRejectedInactive, image_failures: totalImageFailures }),
     }).eq("id", jobId);
 
     // Update agency source
