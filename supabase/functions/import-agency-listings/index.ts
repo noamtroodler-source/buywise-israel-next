@@ -2318,12 +2318,16 @@ async function parallelImageDownload(
   const imageHashes: string[] = [];
   const seenHashes = new Set<string>();
   const seenCanonicalUrls = new Set<string>();
+  const seenContentFingerprints = new Set<string>();
   // Filter out placeholder images first
   const validImages = sourceImages.filter(url => {
     if (!url || isPlaceholderImage(url)) return false;
     const canonical = canonicalImageKey(url);
     if (seenCanonicalUrls.has(canonical)) return false;
     seenCanonicalUrls.add(canonical);
+    const fingerprint = imageContentFingerprint(url);
+    if (fingerprint && seenContentFingerprints.has(fingerprint)) return false;
+    if (fingerprint) seenContentFingerprints.add(fingerprint);
     return true;
   });
   const BATCH_SIZE = 5;
@@ -2511,6 +2515,32 @@ function canonicalImageKey(rawUrl: string): string {
     return `${url.hostname.toLowerCase()}${path}`;
   } catch {
     return rawUrl.split("?")[0].toLowerCase();
+  }
+}
+
+function imageContentFingerprint(rawUrl: string): string {
+  try {
+    const url = new URL(rawUrl.startsWith("//") ? `https:${rawUrl}` : rawUrl);
+    const params = url.searchParams;
+    const explicitSource = ["url", "src", "image", "img", "original", "file"]
+      .map((key) => params.get(key))
+      .find((value) => value && /\.(?:jpe?g|png|webp)(?:$|[?#])/i.test(value));
+    if (explicitSource) return imageContentFingerprint(explicitSource);
+
+    const segments = decodeURIComponent(url.pathname).split("/").filter(Boolean);
+    const file = (segments[segments.length - 1] || url.pathname)
+      .toLowerCase()
+      .split("?")[0]
+      .replace(/\.(?:jpe?g|png|webp)$/i, "")
+      .replace(/[-_](?:\d{2,5}x\d{2,5}|scaled|cropped|webp|jpg|jpeg|png)$/gi, "")
+      .replace(/[-_](?:copy|duplicate|thumb|thumbnail|medium|large|full|original)$/gi, "")
+      .replace(/[^a-z0-9\u0590-\u05ff]+/gi, "-")
+      .replace(/^-+|-+$/g, "");
+
+    if (!file || file.length < 6) return "";
+    return file;
+  } catch {
+    return "";
   }
 }
 
