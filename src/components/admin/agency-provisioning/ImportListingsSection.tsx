@@ -335,8 +335,8 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
                 <p className="truncate">Source URL: <span className="text-foreground font-medium">{currentJob.website_url}</span></p>
                 <p className="text-xs">These controls import this source job only, not every saved source at once.</p>
                 <div className="flex flex-wrap gap-2 pt-1 text-xs">
-                  <Badge variant="secondary">Imported {doneCount}</Badge>
-                  {mergedCount > 0 && <Badge variant="outline">Merged {mergedCount}</Badge>}
+                  <Badge variant="secondary">Created {importedNewCount}</Badge>
+                  {mergedCount > 0 && <Badge variant="outline">Enriched existing {mergedCount}</Badge>}
                   {flaggedCount > 0 && <Badge variant="outline">Flagged {flaggedCount}</Badge>}
                   {currentJobDiagnostics?.discovered_raw != null && <Badge variant="outline">Raw {String(currentJobDiagnostics.discovered_raw)}</Badge>}
                   {currentJobDiagnostics?.canonical != null && <Badge variant="outline">Canonical {String(currentJobDiagnostics.canonical)}</Badge>}
@@ -492,7 +492,7 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
                   <Button variant="outline" asChild className="rounded-xl">
                     <Link to="/admin/properties">
                       <FileText className="h-4 w-4 mr-2" />
-                      View imported ({doneCount})
+                      View results ({doneCount})
                     </Link>
                   </Button>
                   <div className="flex items-start gap-2 p-3 rounded-xl bg-primary/5 border border-primary/15 text-xs text-muted-foreground">
