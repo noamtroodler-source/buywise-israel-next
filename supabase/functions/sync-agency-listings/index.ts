@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Pull all active sources, ordered by agency then by trust priority
+    // Pull all active sources, ordered by agency then source priority
     const { data: sources, error: srcErr } = await sb
       .from("agency_sources")
       .select("id, agency_id, source_type, source_url, priority, consecutive_failures")
