@@ -81,7 +81,8 @@ Deno.serve(async (req: Request) => {
         granted++;
         console.log(`Granted ${partner.free_credits_per_month} credits to partner ${partner.id} (month ${(count ?? 0) + 1})`);
       } catch (err) {
-        errors.push(`Partner ${partner.id}: ${err.message}`);
+        const message = err instanceof Error ? err.message : String(err);
+        errors.push(`Partner ${partner.id}: ${message}`);
         console.error(`Error for partner ${partner.id}:`, err);
       }
     }
@@ -94,8 +95,9 @@ Deno.serve(async (req: Request) => {
     );
   } catch (error) {
     console.error("Grant credits failed:", error);
+    const message = error instanceof Error ? error.message : String(error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
