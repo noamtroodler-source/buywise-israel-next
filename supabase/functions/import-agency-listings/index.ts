@@ -4499,13 +4499,18 @@ async function handleApproveItem(body: any) {
   }
 
   const entryDate = listing.entry_date === "immediate" ? new Date().toISOString().split("T")[0] : listing.entry_date || null;
+  const copy = await generateBuyWiseTitleAndDescription(listing, `${listing.title || ""}\n${listing.description || ""}`, Deno.env.get("LOVABLE_API_KEY") || "", undefined, sb);
+  listing.ai_title = copy.title;
+  listing.ai_english_description = copy.description;
+  listing.description = copy.description;
 
   const { data: property, error: propErr } = await sb
     .from("properties")
     .insert({
       agent_id: agentId,
-      title: generateListingTitle(listing, item.import_jobs?.website_url),
-      description: listing.description || null,
+      title: listing.ai_title || generateListingTitle(listing, item.import_jobs?.website_url),
+      description: listing.description,
+      ai_english_description: listing.ai_english_description,
       property_type: listing.property_type || "apartment",
       listing_status: listing.listing_status || "for_sale",
       price: listing.price || 0,
