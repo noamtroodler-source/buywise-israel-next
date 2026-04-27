@@ -1395,6 +1395,9 @@ async function handleDiscover(body: any) {
   // scrape the specific entered URL for direct links + pagination.
   console.log(`Discover: mapping from site root: ${siteRoot} (entered: ${formattedUrl})`);
 
+  const sitemapUrls = await discoverSitemapListingUrls(siteRoot);
+  if (sitemapUrls.length > 0) console.log(`Sitemap discovery found ${sitemapUrls.length} canonical listing URLs`);
+
   const mapRes = await fetch("https://api.firecrawl.dev/v1/map", {
     method: "POST",
     headers: { Authorization: `Bearer ${FIRECRAWL_API_KEY}`, "Content-Type": "application/json" },
@@ -1406,7 +1409,7 @@ async function handleDiscover(body: any) {
   }
   const mapData = await mapRes.json();
 
-  const rawUrls: string[] = mapData.links || mapData.data || [];
+  const rawUrls: string[] = [...sitemapUrls, ...(mapData.links || mapData.data || [])];
   console.log(`Root map discovered ${rawUrls.length} URLs`);
 
   // Always scrape the entered URL for direct links (catches listings the map misses)
@@ -1482,7 +1485,12 @@ async function handleDiscover(body: any) {
     '%D7%A0%D7%9E%D7%9B%D7%A8', '%D7%94%D7%95%D7%A9%D7%9B%D7%A8',
   ];
 
-  const allUrls = rawUrls.filter(url => {
+  const canonical = canonicalizeDiscoveredUrls(rawUrls, formattedUrl);
+  if (canonical.rejected > 0 || canonical.repaired > 0) {
+    console.log(`URL sanitation: ${canonical.repaired} repaired, ${canonical.rejected} rejected, ${canonical.urls.length} canonical`);
+  }
+
+  const allUrls = canonical.urls.filter(url => {
     try {
       const decoded = decodeURIComponent(url).toLowerCase();
       return !SOLD_URL_KEYWORDS.some(kw => decoded.includes(kw));
