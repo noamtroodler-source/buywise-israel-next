@@ -282,7 +282,7 @@ export default function AgencyListings() {
   const [agentFilter, setAgentFilter] = useState<string>('all');
   const [cityFilter, setCityFilter] = useState<string>('all');
   const [roleFilter, setRoleFilter] = useState<'all' | 'primary' | 'co_listed'>('all');
-  const [reviewFilter, setReviewFilter] = useState<'all' | 'ready' | 'fix' | AgencyReviewStatus>('all');
+  const [reviewFilter, setReviewFilter] = useState<'all' | ReviewWorkBucket | AgencyReviewStatus>('all');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [sort, setSort] = useState<{ key: SortKey; direction: SortDirection } | null>({ key: 'review', direction: 'desc' });
@@ -353,8 +353,8 @@ export default function AgencyListings() {
     active: listings.filter(l => l.verification_status === 'approved').length,
     pending: listings.filter(l => l.verification_status === 'pending_review').length,
     needsReview: listings.filter(l => l.agency_review_status === 'needs_review').length,
-    ready: listings.filter(l => getReviewBucket(l) === 'ready').length,
-    quickFix: listings.filter(l => getReviewBucket(l) === 'fix').length,
+    ready: listings.filter(l => getReviewBucket(l) === 'almost_ready').length,
+    quickFix: listings.filter(l => getReviewBucket(l) === 'needs_work').length,
     archived: listings.filter(l => l.agency_review_status === 'archived_stale').length,
     totalViews: listings.reduce((sum, l) => sum + (l.views_count || 0), 0),
   };
