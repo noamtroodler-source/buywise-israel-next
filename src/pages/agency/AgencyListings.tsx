@@ -767,18 +767,6 @@ export default function AgencyListings() {
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center justify-end gap-1">
-                                {listing.agency_review_status !== 'approved_live' && listing.agency_review_status !== 'archived_stale' && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="rounded-lg text-green-700 hover:text-green-700 hover:bg-green-500/10"
-                                    onClick={() => approveListing.mutate({ propertyId: listing.id, agencyId: agency.id })}
-                                    disabled={approveListing.isPending}
-                                    title="Approve and publish"
-                                  >
-                                    <CheckCheck className="h-4 w-4" />
-                                  </Button>
-                                )}
                                 <Button variant="ghost" size="sm" asChild className="rounded-lg">
                                   <Link to={`/agency/properties/${listing.id}/edit`}>
                                     <Edit className="h-4 w-4" />
