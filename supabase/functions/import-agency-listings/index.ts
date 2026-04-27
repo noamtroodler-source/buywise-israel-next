@@ -5199,15 +5199,16 @@ async function runMadlanAgencyDiscoverJob(params: {
       }).eq("id", jobId);
     }
 
-    dlog(`[Madlan/Apify] Summary: ${totalDiscovered} discovered, ${totalNew} new, ${totalInserted} inserted`);
+    dlog(`[Madlan/Apify] Summary: ${totalDiscovered} discovered, ${totalNew} new, ${totalInserted} inserted, ${totalMerged} merged`);
 
     // Update job
     await sb.from("import_jobs").update({
       status: totalInserted > 0 ? "completed" : (totalDiscovered > 0 ? "completed" : "failed"),
       total_urls: totalNew,
       discovered_urls: allDiscoveredUrls.slice(0, 500), // cap stored URLs
-      processed_count: totalInserted,
-      failed_count: totalNew - totalInserted,
+      processed_count: totalInserted + totalMerged,
+      failed_count: totalNew - totalInserted - totalMerged,
+      failure_reason: JSON.stringify({ source: "madlan", discovered: totalDiscovered, new: totalNew, inserted: totalInserted, merged: totalMerged }),
     }).eq("id", jobId);
 
     // Update agency source
@@ -5220,7 +5221,7 @@ async function runMadlanAgencyDiscoverJob(params: {
       .eq("agency_id", agencyId)
       .eq("source_type", "madlan");
 
-    dlog(`[Madlan/Apify] discovery+import finished for job ${jobId}: ${totalInserted} properties created`);
+    dlog(`[Madlan/Apify] discovery+import finished for job ${jobId}: ${totalInserted} properties created, ${totalMerged} merged`);
   } catch (err) {
     console.error(`[Madlan/Apify] discovery failed for job ${jobId}:`, err);
     await sb.from("import_jobs").update({ status: "failed" }).eq("id", jobId);
