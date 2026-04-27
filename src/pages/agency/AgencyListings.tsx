@@ -562,40 +562,7 @@ export default function AgencyListings() {
             ))}
           </div>
 
-          {/* Role pills — click to filter by primary / co-listed */}
-          <Card className="rounded-2xl border-primary/10 bg-primary/5">
-            <CardContent className="p-4">
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                <div>
-                  <p className="text-sm font-semibold text-foreground">Private launch review</p>
-                  <p className="text-sm text-muted-foreground">Confirm availability and accuracy before listings go live. These labels stay inside the agency portal.</p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    { key: 'all', label: 'All', value: listings.length },
-                    { key: 'ready', label: 'Safe to approve', value: stats.ready },
-                    { key: 'fix', label: 'Quick fixes', value: stats.quickFix },
-                    { key: 'approved_live', label: 'Confirmed', value: listings.filter(l => l.agency_review_status === 'approved_live').length },
-                    { key: 'archived_stale', label: 'Archived', value: stats.archived },
-                  ].map((item) => (
-                    <button
-                      key={item.key}
-                      type="button"
-                      onClick={() => setReviewFilter(item.key as any)}
-                      className={cn(
-                        'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors',
-                        reviewFilter === item.key
-                          ? 'bg-primary text-primary-foreground border-primary'
-                          : 'bg-background border-border hover:bg-muted'
-                      )}
-                    >
-                      {item.label} <span className="opacity-80">{item.value}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <LaunchReviewGuidance listings={listings} reviewFilter={reviewFilter} setReviewFilter={setReviewFilter} />
 
           {/* Role pills — click to filter by primary / co-listed */}
           {(primaryCount > 0 || coListedCount > 0) && (
