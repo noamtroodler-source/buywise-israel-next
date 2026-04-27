@@ -61,6 +61,11 @@ export interface AgencyListing {
   has_active_boost: boolean;
 }
 
+function hasStreetNumber(address?: string | null) {
+  if (!address?.trim()) return false;
+  return /\d/.test(address);
+}
+
 /**
  * Lists every property this agency participates in, both as primary and as
  * a secondary co-listing agent. Each row carries:
@@ -224,6 +229,12 @@ export function useAgencyListingsManagement(agencyId: string | undefined) {
         const review = reviewMap.get(p.id);
         const qualityFlags = flagsByProperty[p.id] ?? [];
         const missingQuickFields = [
+          !p.title?.trim() ? 'Title' : null,
+          !p.address?.trim() ? 'Street address' : null,
+          p.address?.trim() && !hasStreetNumber(p.address) ? 'Street number' : null,
+          !p.city?.trim() ? 'City' : null,
+          !p.price ? 'Price' : null,
+          !p.property_type ? 'Property type' : null,
           !p.neighborhood ? 'Neighborhood' : null,
           !Array.isArray(p.images) || p.images.length < 3 ? 'More photos' : null,
           !p.size_sqm ? 'Size' : null,
