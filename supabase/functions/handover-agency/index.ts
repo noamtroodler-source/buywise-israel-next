@@ -78,6 +78,13 @@ Deno.serve(async (req) => {
       .select("id, name, email, user_id, is_provisional, welcome_email_sent_at, pending_fields")
       .eq("agency_id", agencyId);
     const agentRows = agents ?? [];
+    const ownerEmailKey = normalizeEmail(agency.email);
+    const ownerAgentRows = (agentRows as any[]).filter((agent) => {
+      const sameEmail = ownerEmailKey && normalizeEmail(agent.email) === ownerEmailKey;
+      const sameUser = agency.admin_user_id && agent.user_id === agency.admin_user_id;
+      return sameEmail || sameUser;
+    });
+    const ownerIsAlsoAgent = ownerAgentRows.length > 0;
 
     // ---- Load listings count + flag summary for owner email ----
     const { count: listingCount = 0 } = await admin
@@ -116,6 +123,8 @@ Deno.serve(async (req) => {
             agentCount: agentRows.length,
             listingCount: listingCount ?? 0,
             pendingItems,
+            isAlsoAgent: ownerIsAlsoAgent,
+            agentProfileName: ownerAgentRows[0]?.name ?? null,
           },
         },
       }
@@ -131,6 +140,16 @@ Deno.serve(async (req) => {
     if (strategy === "send_all_now") {
       for (const agent of agentRows as any[]) {
         if (!agent.email || agent.welcome_email_sent_at) continue;
+        const isOwnerAgent =
+          (ownerEmailKey && normalizeEmail(agent.email) === ownerEmailKey) ||
+          (agency.admin_user_id && agent.user_id === agency.admin_user_id);
+        if (isOwnerAgent) {
+          await admin
+            .from("agents")
+            .update({ welcome_email_sent_at: new Date().toISOString() })
+            .eq("id", agent.id);
+          continue;
+        }
 
         let setupUrl = `${APP_URL}/agent`;
         if (agent.user_id) {
@@ -213,6 +232,10 @@ function json(data: Record<string, unknown>, status = 200) {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
+}
+
+function normalizeEmail(email?: string | null): string {
+  return (email ?? "").trim().toLowerCase();
 }
 
 function summarizeFlags(flags: any[], agents: any[]): string[] {
