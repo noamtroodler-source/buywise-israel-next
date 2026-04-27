@@ -20,6 +20,7 @@ import {
   useRetryRecoverableSkipped,
   useProcessAll,
   useResumeJob,
+  useQuarantineMadlanBatch,
 } from '@/hooks/useImportListings';
 import { useAgencySources, useTriggerAgencySourcesSync, useTriggerSourceSync, useUpsertAgencySources } from '@/hooks/useAgencySources';
 import { cn } from '@/lib/utils';
@@ -67,6 +68,7 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
   const retryFailedMutation = useRetryFailed();
   const retryRecoverableSkippedMutation = useRetryRecoverableSkipped();
   const resumeJobMutation = useResumeJob();
+  const quarantineMadlanMutation = useQuarantineMadlanBatch();
   const { startProcessAll, stopProcessAll, isProcessingAll, processingStartTime, processedSoFar } = useProcessAll();
 
   useEffect(() => {
@@ -175,6 +177,7 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
   const isReady = (currentJob?.status === 'ready' && pendingCount > 0) || isStalled;
   const isCompleted = currentJob?.status === 'completed';
   const discoveringSourceType = isBackgroundDiscovering ? currentJob?.source_type : undefined;
+  const madlanGateBlocked = currentJob?.source_type === 'madlan' && Boolean(currentJobDiagnostics?.blocked);
 
   return (
     <Card className="p-6 space-y-4">
@@ -334,6 +337,10 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
                   {flaggedCount > 0 && <Badge variant="outline">Flagged {flaggedCount}</Badge>}
                   {currentJobDiagnostics?.discovered_raw != null && <Badge variant="outline">Raw {String(currentJobDiagnostics.discovered_raw)}</Badge>}
                   {currentJobDiagnostics?.canonical != null && <Badge variant="outline">Canonical {String(currentJobDiagnostics.canonical)}</Badge>}
+                  {currentJobDiagnostics?.expected_active != null && <Badge variant="outline">Madlan active {String(currentJobDiagnostics.expected_active)}</Badge>}
+                  {currentJobDiagnostics?.discovered != null && <Badge variant="outline">Discovered {String(currentJobDiagnostics.discovered)}</Badge>}
+                  {currentJobDiagnostics?.rejected_inactive != null && <Badge variant="outline">Rejected {String(currentJobDiagnostics.rejected_inactive)}</Badge>}
+                  {currentJobDiagnostics?.image_failures != null && <Badge variant="outline">Image issues {String(currentJobDiagnostics.image_failures)}</Badge>}
                   {currentJobDiagnostics?.inserted != null && <Badge variant="outline">Inserted {String(currentJobDiagnostics.inserted)}</Badge>}
                 </div>
               </div>
@@ -364,6 +371,26 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
                 >
                   {resumeJobMutation.isPending ? <Loader2 className="h-3 w-3 mr-1.5 animate-spin" /> : <RefreshCw className="h-3 w-3 mr-1.5" />}
                   Resume
+                </Button>
+              </div>
+            )}
+
+            {madlanGateBlocked && (
+              <div className="flex flex-col gap-3 rounded-xl border border-[hsl(var(--destructive))]/20 bg-[hsl(var(--destructive))]/10 p-3 text-sm sm:flex-row sm:items-center">
+                <AlertCircle className="h-4 w-4 shrink-0 text-destructive" />
+                <p className="flex-1 font-medium text-destructive">
+                  Madlan import blocked: public active count does not match discovered candidates.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={quarantineMadlanMutation.isPending}
+                  onClick={() => quarantineMadlanMutation.mutate(agencyId)}
+                  className="shrink-0 rounded-lg"
+                >
+                  {quarantineMadlanMutation.isPending ? <Loader2 className="h-3 w-3 mr-1.5 animate-spin" /> : <XCircle className="h-3 w-3 mr-1.5" />}
+                  Quarantine Madlan rows
                 </Button>
               </div>
             )}
