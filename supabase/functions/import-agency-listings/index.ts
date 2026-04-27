@@ -2732,11 +2732,11 @@ async function processOneItem(
     // Stealth proxy requests occasionally hang indefinitely, blocking the whole batch.
     let scrapeRes: Response;
     if (isYad2Item) {
-      const scrapePromise = fetch("https://api.firecrawl.dev/v1/scrape", {
+      const scrapePromise = fetchWithTimeout("https://api.firecrawl.dev/v1/scrape", {
         method: "POST",
         headers: { Authorization: `Bearer ${firecrawlKey}`, "Content-Type": "application/json" },
         body: JSON.stringify({ url: item.url, formats: ["markdown", "links", "html"], onlyMainContent: true, proxy: "stealth", waitFor: 5000 }),
-      });
+      }, 35_000);
       const timeoutPromise = new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error("Yad2 stealth scrape timeout after 35s")), 35_000)
       );
@@ -2752,11 +2752,11 @@ async function processOneItem(
         return { succeeded: false };
       }
     } else {
-      scrapeRes = await fetch("https://api.firecrawl.dev/v1/scrape", {
+      scrapeRes = await fetchWithTimeout("https://api.firecrawl.dev/v1/scrape", {
         method: "POST",
         headers: { Authorization: `Bearer ${firecrawlKey}`, "Content-Type": "application/json" },
         body: JSON.stringify({ url: item.url, formats: ["markdown", "links", "html"], onlyMainContent: true }),
-      });
+      }, 30_000);
     }
 
     // Retry logic for transient errors (401/500/502/503)
@@ -2779,11 +2779,11 @@ async function processOneItem(
           return { succeeded: false };
         }
       } else {
-        scrapeRes = await fetch("https://api.firecrawl.dev/v1/scrape", {
+        scrapeRes = await fetchWithTimeout("https://api.firecrawl.dev/v1/scrape", {
           method: "POST",
           headers: { Authorization: `Bearer ${firecrawlKey}`, "Content-Type": "application/json" },
           body: JSON.stringify({ url: item.url, formats: ["markdown", "links", "html"], onlyMainContent: true }),
-        });
+        }, 30_000);
       }
     }
 
