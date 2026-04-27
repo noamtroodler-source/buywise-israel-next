@@ -3575,12 +3575,12 @@ async function handleProcessBatch(body: any) {
   _geoQueue = Promise.resolve();
   _batchImageUrlCounts.clear();
 
-  let currentConcurrency = 3;
-  const MAX_CONCURRENCY = 3;
-  const MIN_CONCURRENCY = 2;
-  const REFILL_SIZE = 10;
-  const MAX_ITEMS = 25;
-  const TIME_LIMIT_MS = 120_000;
+  let currentConcurrency = 2;
+  const MAX_CONCURRENCY = 2;
+  const MIN_CONCURRENCY = 1;
+  const REFILL_SIZE = 6;
+  const MAX_ITEMS = 12;
+  const TIME_LIMIT_MS = 75_000;
   const batchStartTime = Date.now();
 
   let totalProcessed = 0;
