@@ -3014,11 +3014,17 @@ async function processOneItem(
         if (!extractToolCall?.function?.arguments) {
           const retryResult = await retryWithSimplifiedPrompt(item.url, markdown, lovableKey);
           if (!retryResult) {
+            if (agencyHtmlFallback) {
+              listing = agencyHtmlFallback;
+              cmsExtracted = "agency_html_fallback";
+            } else {
             await sb.from("import_job_items").update({ status: "failed", error_message: "AI returned no extraction data", error_type: "permanent" }).eq("id", item.id);
             return { succeeded: false };
+            }
+          } else {
+            listing = retryResult;
+            usedSimplifiedPrompt = true;
           }
-          listing = retryResult;
-          usedSimplifiedPrompt = true;
         } else {
         listing = JSON.parse(extractToolCall.function.arguments);
 
