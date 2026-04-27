@@ -59,7 +59,6 @@ export default function AgencyImport() {
   const { startProcessAll, stopProcessAll, isProcessingAll, processingStartTime, processedSoFar } = useProcessAll();
   const [websiteUrl, setWebsiteUrl] = useState('');
   const [importType, setImportType] = useState<'resale' | 'rental' | 'all'>('all');
-  const [sourceType, setSourceType] = useState<'website' | 'yad2' | 'madlan'>('website');
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
 
   // Use the most recent active job or the one selected
@@ -80,7 +79,7 @@ export default function AgencyImport() {
       agencyId: agency.id,
       websiteUrl: websiteUrl.trim(),
       importType,
-      sourceType,
+      sourceType: 'website',
     });
 
     // Only switch to job if one was created (new_urls > 0)
@@ -154,8 +153,6 @@ export default function AgencyImport() {
   const isProcessing = processBatchMutation.isPending || (currentJob?.status === 'processing' && !isStalled) || isProcessingAll;
   const isReady = (currentJob?.status === 'ready' && pendingCount > 0) || isStalled;
   const isCompleted = currentJob?.status === 'completed';
-  const discoveringSourceType = isBackgroundDiscovering ? currentJob?.source_type : sourceType;
-
   return (
     <Layout>
       <div className="container py-8 max-w-4xl">
@@ -166,7 +163,7 @@ export default function AgencyImport() {
             </Button>
             <div>
               <h1 className="text-2xl font-bold">Import Listings</h1>
-              <p className="text-muted-foreground">Import active sale and rental listings from your website, Yad2, or Madlan</p>
+              <p className="text-muted-foreground">Import active sale and rental listings from your agency website</p>
             </div>
           </div>
 
@@ -180,26 +177,6 @@ export default function AgencyImport() {
               </Link>{' '}
               for best results.
             </p>
-          </div>
-
-          <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-500/5 border border-amber-500/20">
-            <ShieldAlert className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
-            <div className="text-sm text-muted-foreground flex-1">
-              <p className="font-medium text-foreground mb-0.5">Multi-source merging</p>
-              <p>
-                Got the same listing on Yad2, Madlan and your website? Import all three —
-                we automatically merge them with the <strong className="text-foreground">agency website first</strong> for owned photos/content,
-                while Madlan and Yad2 enrich missing details. Conflicts &gt;10% appear in{' '}
-                <Link to="/agency/conflicts" className="text-primary font-medium hover:underline">
-                  Source conflicts
-                </Link>
-                . Manage all sources on the{' '}
-                <Link to="/agency/sources" className="text-primary font-medium hover:underline">
-                  Sources page
-                </Link>
-                .
-              </p>
-            </div>
           </div>
 
           <Card className="rounded-2xl border-primary/10">
