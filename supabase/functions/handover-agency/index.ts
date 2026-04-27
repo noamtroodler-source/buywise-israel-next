@@ -234,6 +234,10 @@ function json(data: Record<string, unknown>, status = 200) {
   });
 }
 
+function normalizeEmail(email?: string | null): string {
+  return (email ?? "").trim().toLowerCase();
+}
+
 function summarizeFlags(flags: any[], agents: any[]): string[] {
   const items: string[] = [];
   const byType = new Map<string, number>();
