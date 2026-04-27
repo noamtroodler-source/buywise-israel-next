@@ -2339,7 +2339,7 @@ async function collectAgencyOwnedImages(listing: any, structuredData: any, pageH
     return first;
   }).filter(u => u && u.startsWith("http")))];
   if (uniqueImages.length === 0) return [];
-  const downloaded = await parallelImageDownload(uniqueImages, sb, "property-images", jobId, MAX_STORED_LISTING_IMAGES);
+  const downloaded = await parallelImageDownload(uniqueImages, sb, "property-images", jobId);
   listing.image_hashes = Array.from(new Set(downloaded.hashes || []));
   return Array.from(new Set(downloaded.urls || []));
 }
@@ -2366,7 +2366,7 @@ async function collectAllowedSourceImages(
   itemUrl: string,
   sb: any,
   jobId: string,
-  maxImages = MAX_STORED_LISTING_IMAGES,
+  maxImages: number | null = null,
 ): Promise<string[]> {
   const normalized = String(sourceType || "website").toLowerCase();
   if (listing.image_urls && !Array.isArray(listing.image_urls)) listing.image_urls = [listing.image_urls];
@@ -2382,7 +2382,7 @@ async function collectAllowedSourceImages(
   if (normalized.includes("madlan")) {
     const urls = await collectAgencyOwnedImages(listing, structuredData, pageHtml, itemUrl, sb, jobId);
     if (urls.length > 0) listing._image_source_policy = "madlan_fallback";
-    return urls.slice(0, maxImages);
+    return maxImages == null ? urls : urls.slice(0, maxImages);
   }
   return [];
 }
