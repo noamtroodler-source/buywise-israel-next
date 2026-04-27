@@ -195,8 +195,8 @@ export default function AgencyConflicts() {
                 <div className="text-sm">
                   <p className="font-medium mb-0.5">How automatic merging works</p>
                   <p className="text-muted-foreground">
-                    We trust <strong>Yad2 → Madlan → Website</strong> in that order for structured fields like price and size.
-                    A conflict only appears here when the difference is <strong>greater than 10%</strong> — small differences are auto-merged.
+                    Your agency website is preferred for owned content and photos, while Madlan and Yad2 enrich missing structured fields.
+                    A conflict appears here when price or size differs by <strong>more than 10%</strong>.
                   </p>
                 </div>
               </CardContent>

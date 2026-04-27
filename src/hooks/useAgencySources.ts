@@ -97,6 +97,75 @@ export function useCreateAgencySource() {
   });
 }
 
+export function useUpsertAgencySources() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      agency_id: string;
+      sources: Array<{
+        source_type: 'yad2' | 'madlan' | 'website';
+        source_url: string;
+        priority?: 1 | 2 | 3;
+        notes?: string;
+      }>;
+    }) => {
+      const cleanSources = input.sources.filter((source) => source.source_url.trim().length > 0);
+      if (cleanSources.length === 0) throw new Error('Add at least one source URL');
+
+      const saved: AgencySource[] = [];
+      for (const source of cleanSources) {
+        const { data: existing, error: existingError } = await (supabase as any)
+          .from('agency_sources')
+          .select('*')
+          .eq('agency_id', input.agency_id)
+          .eq('source_type', source.source_type)
+          .maybeSingle();
+
+        if (existingError) throw existingError;
+
+        if (existing?.id) {
+          const { data, error } = await (supabase as any)
+            .from('agency_sources')
+            .update({
+              source_url: source.source_url.trim(),
+              priority: source.priority,
+              notes: source.notes,
+              is_active: true,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', existing.id)
+            .select()
+            .single();
+          if (error) throw error;
+          saved.push(data as AgencySource);
+        } else {
+          const { data, error } = await (supabase as any)
+            .from('agency_sources')
+            .insert({
+              agency_id: input.agency_id,
+              source_type: source.source_type,
+              source_url: source.source_url.trim(),
+              priority: source.priority,
+              notes: source.notes,
+              is_active: true,
+            })
+            .select()
+            .single();
+          if (error) throw error;
+          saved.push(data as AgencySource);
+        }
+      }
+      return saved;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['agency-sources'] });
+      qc.invalidateQueries({ queryKey: ['agency-source-stats'] });
+      toast.success('Sources saved');
+    },
+    onError: (err: any) => toast.error(`Failed to save sources: ${err.message}`),
+  });
+}
+
 export function useUpdateAgencySource() {
   const qc = useQueryClient();
   return useMutation({
@@ -176,6 +245,43 @@ export function useTriggerSourceSync() {
       }
     },
     onError: (err: any) => toast.error(`Sync failed: ${err.message}`),
+  });
+}
+
+export function useTriggerAgencySourcesSync() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (sources: AgencySource[]) => {
+      const sourceRank: Record<AgencySource['source_type'], number> = { website: 1, madlan: 2, yad2: 3 };
+      const activeSources = sources
+        .filter((source) => source.is_active && source.source_url)
+        .sort((a, b) => sourceRank[a.source_type] - sourceRank[b.source_type]);
+
+      if (activeSources.length === 0) throw new Error('No active sources to sync');
+
+      const results = [];
+      for (const source of activeSources) {
+        const { data, error } = await supabase.functions.invoke('import-agency-listings', {
+          body: {
+            action: 'discover',
+            agency_id: source.agency_id,
+            website_url: source.source_url,
+            source_type: source.source_type,
+            import_type: 'resale',
+          },
+        });
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+        results.push({ source, data });
+      }
+      return results;
+    },
+    onSuccess: (results) => {
+      qc.invalidateQueries({ queryKey: ['agency-sources'] });
+      qc.invalidateQueries({ queryKey: ['importJobs'] });
+      toast.success(`Discovery started for ${results.length} source${results.length === 1 ? '' : 's'}`);
+    },
+    onError: (err: any) => toast.error(`Source sync failed: ${err.message}`),
   });
 }
 

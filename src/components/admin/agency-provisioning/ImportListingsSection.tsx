@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -10,19 +10,26 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
 import {
   useImportJobs,
   useImportJobItems,
-  useDiscoverListings,
   useProcessBatch,
   useDeleteImportJob,
   useRetryFailed,
   useProcessAll,
   useResumeJob,
 } from '@/hooks/useImportListings';
+import { useAgencySources, useTriggerAgencySourcesSync, useTriggerSourceSync, useUpsertAgencySources } from '@/hooks/useAgencySources';
 import { cn } from '@/lib/utils';
 import { useRealtimeImportProgress } from '@/hooks/useRealtimeImportProgress';
 import { ImportProgressBar } from '@/components/agency/ImportProgressBar';
+
+const SOURCE_META = {
+  website: { label: 'Agency website', placeholder: 'https://agency-website.com/listings', priority: 1 as const },
+  madlan: { label: 'Madlan', placeholder: 'https://www.madlan.co.il/agentsOffice/re_office_...', priority: 2 as const },
+  yad2: { label: 'Yad2', placeholder: 'https://www.yad2.co.il/realestate/agency/...', priority: 3 as const },
+};
 
 /**
  * Embedded admin import tool — scoped to a single agency. Used inside the
@@ -30,17 +37,36 @@ import { ImportProgressBar } from '@/components/agency/ImportProgressBar';
  * agency currently being set up.
  */
 export function ImportListingsSection({ agencyId, agencyName }: { agencyId: string; agencyName?: string }) {
-  const [websiteUrl, setWebsiteUrl] = useState('');
-  const [sourceType, setSourceType] = useState<'website' | 'yad2' | 'madlan'>('website');
+  const [sourceUrls, setSourceUrls] = useState<Record<'website' | 'yad2' | 'madlan', string>>({
+    website: '',
+    yad2: '',
+    madlan: '',
+  });
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
 
   const { data: jobs = [] } = useImportJobs(agencyId);
-  const discoverMutation = useDiscoverListings();
+  const { data: sources = [] } = useAgencySources(agencyId);
+  const upsertSourcesMutation = useUpsertAgencySources();
+  const syncAllSourcesMutation = useTriggerAgencySourcesSync();
+  const syncOneSourceMutation = useTriggerSourceSync();
   const processBatchMutation = useProcessBatch();
   const deleteJobMutation = useDeleteImportJob();
   const retryFailedMutation = useRetryFailed();
   const resumeJobMutation = useResumeJob();
   const { startProcessAll, stopProcessAll, isProcessingAll, processingStartTime, processedSoFar } = useProcessAll();
+
+  useEffect(() => {
+    setSourceUrls({
+      website: sources.find((source) => source.source_type === 'website')?.source_url || '',
+      yad2: sources.find((source) => source.source_type === 'yad2')?.source_url || '',
+      madlan: sources.find((source) => source.source_type === 'madlan')?.source_url || '',
+    });
+  }, [sources]);
+
+  const activeSources = useMemo(
+    () => sources.filter((source) => source.is_active && source.source_url),
+    [sources]
+  );
 
   const currentJob = jobs.length === 0
     ? undefined
@@ -51,21 +77,23 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
   const { data: jobItems = [] } = useImportJobItems(currentJob?.id);
   useRealtimeImportProgress(currentJob?.id);
 
-  const handleDiscover = async (e: React.FormEvent) => {
+  const handleSaveAndDiscover = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!websiteUrl.trim()) return;
+    const entries = (['website', 'madlan', 'yad2'] as const)
+      .map((sourceType) => ({ source_type: sourceType, source_url: sourceUrls[sourceType].trim(), priority: SOURCE_META[sourceType].priority }))
+      .filter((source) => source.source_url.length > 0);
+    if (entries.length === 0) return;
 
-    const result = await discoverMutation.mutateAsync({
-      agencyId,
-      websiteUrl: websiteUrl.trim(),
-      importType: 'all',
-      sourceType,
+    const savedSources = await upsertSourcesMutation.mutateAsync({
+      agency_id: agencyId,
+      sources: entries,
     });
 
-    if (result.job_id) {
-      setActiveJobId(result.job_id);
+    const results = await syncAllSourcesMutation.mutateAsync(savedSources);
+    const firstJobId = results.find((result) => result.data?.job_id)?.data?.job_id;
+    if (firstJobId) {
+      setActiveJobId(firstJobId);
     }
-    setWebsiteUrl('');
   };
 
   const handleProcessBatch = () => {
@@ -90,11 +118,11 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
   })();
 
   const isBackgroundDiscovering = currentJob?.status === 'discovering';
-  const isDiscovering = discoverMutation.isPending || isBackgroundDiscovering;
+  const isDiscovering = upsertSourcesMutation.isPending || syncAllSourcesMutation.isPending || syncOneSourceMutation.isPending || isBackgroundDiscovering;
   const isProcessing = processBatchMutation.isPending || (currentJob?.status === 'processing' && !isStalled) || isProcessingAll;
   const isReady = (currentJob?.status === 'ready' && pendingCount > 0) || isStalled;
   const isCompleted = currentJob?.status === 'completed';
-  const discoveringSourceType = isBackgroundDiscovering ? currentJob?.source_type : sourceType;
+  const discoveringSourceType = isBackgroundDiscovering ? currentJob?.source_type : undefined;
 
   return (
     <Card className="p-6 space-y-4">
@@ -117,48 +145,89 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
         <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent rounded-t-2xl">
           <CardTitle className="flex items-center gap-2 text-base">
             <Globe className="h-5 w-5 text-primary" />
-            Step 1: Discover listings
+            Step 1: Add listing sources
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-4 space-y-4">
-          <div className="flex flex-wrap gap-2">
-            {(['website', 'yad2', 'madlan'] as const).map((type) => (
-              <Button
-                key={type}
-                type="button"
-                variant={sourceType === type ? 'default' : 'outline'}
-                size="sm"
-                className="rounded-lg"
-                onClick={() => setSourceType(type)}
-              >
-                {type === 'website' ? 'Agency Website' : type === 'yad2' ? 'Yad2' : 'Madlan'}
-              </Button>
-            ))}
+          <div className="rounded-xl border border-primary/15 bg-primary/5 p-3 text-xs text-muted-foreground">
+            <strong className="text-foreground">Priority:</strong> Agency website is preferred for owned photos and listing content. Madlan and Yad2 enrich missing details, matching, and conflict checks.
           </div>
 
-          <form onSubmit={handleDiscover} className="flex flex-col sm:flex-row gap-3">
-            <Input
-              value={websiteUrl}
-              onChange={(e) => setWebsiteUrl(e.target.value)}
-              placeholder={
-                sourceType === 'yad2'
-                  ? 'https://www.yad2.co.il/realestate/agency/...'
-                  : sourceType === 'madlan'
-                  ? 'https://www.madlan.co.il/agentsOffice/re_office_...'
-                  : 'https://agency-website.com'
-              }
-              className="rounded-xl flex-1"
-              required
-              disabled={isDiscovering}
-            />
-            <Button type="submit" disabled={isDiscovering || !websiteUrl.trim()} className="rounded-xl">
+          <form onSubmit={handleSaveAndDiscover} className="space-y-3">
+            {(['website', 'madlan', 'yad2'] as const).map((type) => (
+              <div key={type} className="grid gap-1.5 md:grid-cols-[160px_1fr] md:items-center">
+                <Label className="text-sm">{SOURCE_META[type].label}</Label>
+                <Input
+                  value={sourceUrls[type]}
+                  onChange={(e) => setSourceUrls((prev) => ({ ...prev, [type]: e.target.value }))}
+                  placeholder={SOURCE_META[type].placeholder}
+                  className="rounded-xl"
+                  disabled={isDiscovering}
+                />
+              </div>
+            ))}
+
+            <div className="flex flex-wrap gap-2 pt-1">
+              <Button
+                type="submit"
+                disabled={isDiscovering || !Object.values(sourceUrls).some((url) => url.trim())}
+                className="rounded-xl"
+              >
               {isDiscovering ? (
-                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Scanning...</>
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Saving and scanning...</>
               ) : (
-                <><Globe className="h-4 w-4 mr-2" />Discover</>
+                <><Globe className="h-4 w-4 mr-2" />Save sources + discover listings</>
               )}
-            </Button>
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                disabled={isDiscovering || activeSources.length === 0}
+                onClick={async () => {
+                  const results = await syncAllSourcesMutation.mutateAsync(activeSources);
+                  const firstJobId = results.find((result) => result.data?.job_id)?.data?.job_id;
+                  if (firstJobId) setActiveJobId(firstJobId);
+                }}
+                className="rounded-xl"
+              >
+                <RefreshCw className={cn('h-4 w-4 mr-2', syncAllSourcesMutation.isPending && 'animate-spin')} />
+                Discover from all active sources
+              </Button>
+            </div>
           </form>
+
+          {sources.length > 0 && (
+            <div className="space-y-2 border-t pt-3">
+              <p className="text-xs font-medium text-muted-foreground">Saved sources</p>
+              {sources.map((source) => (
+                <div key={source.id} className="flex flex-col gap-2 rounded-xl border p-3 text-xs sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary">{SOURCE_META[source.source_type].label}</Badge>
+                      <Badge variant={source.is_active ? 'outline' : 'secondary'}>{source.is_active ? 'Active' : 'Paused'}</Badge>
+                    </div>
+                    <p className="truncate text-muted-foreground">{source.source_url}</p>
+                    <p className="text-muted-foreground">
+                      Last synced: {source.last_synced_at ? new Date(source.last_synced_at).toLocaleString() : 'Never'}
+                      {source.last_failure_reason ? ` · ${source.last_failure_reason}` : ''}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={isDiscovering}
+                    onClick={() => syncOneSourceMutation.mutate(source)}
+                    className="rounded-lg sm:shrink-0"
+                  >
+                    <RefreshCw className={cn('h-3.5 w-3.5 mr-1.5', syncOneSourceMutation.isPending && 'animate-spin')} />
+                    Sync
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
 
           {isDiscovering && (
             <p className="text-sm text-muted-foreground mt-3 animate-pulse">

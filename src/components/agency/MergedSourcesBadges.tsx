@@ -61,7 +61,7 @@ export function MergedSourcesBadges({ primarySource, mergedUrls, className }: Pr
       <TooltipContent>
         <p className="text-xs">
           Listing data merged from {sources.size} source{sources.size > 1 ? 's' : ''}.
-          Trust order: Yad2 → Madlan → Website.
+          Website content is preferred; portals enrich missing details.
         </p>
       </TooltipContent>
     </Tooltip>

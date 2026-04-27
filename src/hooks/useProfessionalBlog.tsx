@@ -184,7 +184,7 @@ export function useUpdateBlogPost() {
       
       const { data: post, error } = await supabase
         .from('blog_posts')
-        .update(updates)
+        .update(updates as any)
         .eq('id', postId)
         .eq('author_id', user.id)
         .select()

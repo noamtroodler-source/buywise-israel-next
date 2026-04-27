@@ -143,7 +143,7 @@ export function useUpdateBuyerProfile() {
 
       const { data, error } = await supabase
         .from('buyer_profiles')
-        .update(profileData as Record<string, unknown>)
+        .update(profileData as any)
         .eq('user_id', user.id)
         .select()
         .single();

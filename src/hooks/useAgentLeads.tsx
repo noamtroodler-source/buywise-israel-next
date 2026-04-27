@@ -104,7 +104,7 @@ export function useUpdateLeadStatus() {
 
       const { error } = await supabase
         .from('property_inquiries')
-        .update(updateData)
+        .update(updateData as any)
         .eq('id', leadId);
 
       if (error) throw error;
