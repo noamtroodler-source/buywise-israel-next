@@ -2387,6 +2387,18 @@ async function collectAllowedSourceImages(
   return [];
 }
 
+function sanitizeEntryDate(raw: any): string | null {
+  if (!raw || typeof raw !== "string") return null;
+  const trimmed = raw.trim().toLowerCase();
+  if (trimmed === "immediate" || trimmed === "מיידי" || trimmed === "מיידית") {
+    return new Date().toISOString().split("T")[0];
+  }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+  const match = trimmed.match(/^(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})$/);
+  if (match) return `${match[3]}-${match[2].padStart(2, "0")}-${match[1].padStart(2, "0")}`;
+  return null;
+}
+
 // ─── STRUCTURED DATA EXTRACTION (JSON-LD, Open Graph) ───────────────────────
 
 function extractStructuredData(html: string): Record<string, any> | null {
