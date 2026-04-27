@@ -264,7 +264,7 @@ export function FeaturedListingsManager({ agencyId }: FeaturedListingsManagerPro
                 <>
                   {confirmDialog.useFreeCredit ? (
                     <>
-                      This will use one of your founding partner free credits to feature{' '}
+                      This will use one of your 3 free monthly featured listing slots for{' '}
                       <strong>{confirmDialog.listing?.title}</strong>. No charge this month.
                     </>
                   ) : (
