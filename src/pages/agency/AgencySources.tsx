@@ -89,7 +89,7 @@ export default function AgencySources() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Listing Sources</h1>
             <p className="text-muted-foreground">
-              Connect Yad2, Madlan, and your agency website. We auto-sync nightly and merge duplicates by trust priority.
+              Connect your agency website, Madlan, and Yad2. We auto-sync nightly and merge duplicates with your website as the owned-content source.
             </p>
           </div>
           <div className="flex gap-2">
@@ -120,13 +120,13 @@ export default function AgencySources() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="yad2">Yad2 (highest trust)</SelectItem>
+                        <SelectItem value="yad2">Yad2</SelectItem>
                         <SelectItem value="madlan">Madlan</SelectItem>
                         <SelectItem value="website">Agency website</SelectItem>
                       </SelectContent>
                     </Select>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      Trust priority: Yad2 → Madlan → Website. Higher-trust prices/sizes win on conflict.
+                      Priority: Website → Madlan → Yad2. Portals enrich missing fields and flag conflicts.
                     </p>
                   </div>
                   <div>
@@ -201,7 +201,7 @@ export default function AgencySources() {
             )}
             {!isLoading && mySources.length === 0 && (
               <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-                No sources yet. Add Yad2 first (highest trust), then Madlan, then your website — we'll merge automatically.
+                No sources yet. Add your agency website first for photos and owned content, then Madlan/Yad2 for enrichment.
               </div>
             )}
             {mySources.map((src) => (
