@@ -665,6 +665,7 @@ export default function AgentProperties() {
                           const isDraft = verificationStatus === 'draft';
                           const isChangesRequested = verificationStatus === 'changes_requested';
                           const isApproved = verificationStatus === 'approved';
+                          const isPublished = (listing as any).is_published === true;
                           const canSubmit = isDraft || isChangesRequested;
                           const stale = isPropertyStale(listing);
 
@@ -755,9 +756,9 @@ export default function AgentProperties() {
                                       <Send className="h-4 w-4" />
                                     </Button>
                                   )}
-                                  {isApproved && (
+                                  {isPublished && (
                                     <Button variant="ghost" size="sm" asChild className="rounded-lg">
-                                      <Link to={`/properties/${listing.id}`} target="_blank">
+                                      <Link to={`/property/${listing.id}`} target="_blank">
                                         <Eye className="h-4 w-4" />
                                       </Link>
                                     </Button>
@@ -769,43 +770,90 @@ export default function AgentProperties() {
                                       </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
-                                      <DropdownMenuItem onSelect={() => {
-                                        const draft = propertyToWizardDraft(listing);
-                                        localStorage.setItem(PROPERTY_WIZARD_STORAGE_KEY, JSON.stringify(draft));
-                                        navigate('/agent/properties/new');
-                                      }}>
-                                        <Copy className="h-4 w-4 mr-2" />
-                                        Duplicate
+                                      <DropdownMenuItem asChild>
+                                        <Link to={`/agent/properties/${listing.id}/edit`}>
+                                          <Edit className="h-4 w-4 mr-2" />
+                                          Edit listing
+                                        </Link>
                                       </DropdownMenuItem>
-                                      <DropdownMenuSeparator />
-                                      <AlertDialog>
-                                        <AlertDialogTrigger asChild>
-                                          <DropdownMenuItem
-                                            className="text-destructive focus:text-destructive"
-                                            onSelect={(e) => e.preventDefault()}
-                                          >
-                                            <Trash2 className="h-4 w-4 mr-2" />
-                                            Delete
+                                      {isPublished ? (
+                                        <>
+                                          <DropdownMenuItem asChild>
+                                            <Link to={`/property/${listing.id}`} target="_blank">
+                                              <Eye className="h-4 w-4 mr-2" />
+                                              View live listing
+                                            </Link>
                                           </DropdownMenuItem>
-                                        </AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                          <AlertDialogHeader>
-                                            <AlertDialogTitle>Delete Listing</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                              Are you sure you want to delete "{listing.title}"? This cannot be undone.
-                                            </AlertDialogDescription>
-                                          </AlertDialogHeader>
-                                          <AlertDialogFooter>
-                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                            <AlertDialogAction
-                                              onClick={() => deleteProperty.mutate(listing.id)}
-                                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                            >
-                                              Delete
-                                            </AlertDialogAction>
-                                          </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                      </AlertDialog>
+                                          <DropdownMenuItem onClick={() => unpublishListing.mutate({ propertyId: listing.id, agencyId: (listing as any).primary_agency_id })}>
+                                            <Clock className="h-4 w-4 mr-2" />
+                                            Unpublish
+                                          </DropdownMenuItem>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <DropdownMenuItem onClick={() => approveListing.mutate({ propertyId: listing.id, agencyId: (listing as any).primary_agency_id })}>
+                                            <CheckCheck className="h-4 w-4 mr-2" />
+                                            Publish
+                                          </DropdownMenuItem>
+                                          <DropdownMenuItem onSelect={() => {
+                                            const draft = propertyToWizardDraft(listing);
+                                            localStorage.setItem(PROPERTY_WIZARD_STORAGE_KEY, JSON.stringify(draft));
+                                            navigate('/agent/properties/new');
+                                          }}>
+                                            <Copy className="h-4 w-4 mr-2" />
+                                            Duplicate
+                                          </DropdownMenuItem>
+                                        </>
+                                      )}
+                                      {listing.listing_status === 'for_sale' && (
+                                        <DropdownMenuItem onClick={() => updateStatus.mutate({ id: listing.id, listing_status: 'sold' })}>
+                                          <Home className="h-4 w-4 mr-2" />
+                                          Mark as Sold
+                                        </DropdownMenuItem>
+                                      )}
+                                      {listing.listing_status === 'for_rent' && (
+                                        <DropdownMenuItem onClick={() => updateStatus.mutate({ id: listing.id, listing_status: 'rented' })}>
+                                          <Key className="h-4 w-4 mr-2" />
+                                          Mark as Rented
+                                        </DropdownMenuItem>
+                                      )}
+                                      <DropdownMenuItem onClick={() => archiveListing.mutate({ propertyId: listing.id, agencyId: (listing as any).primary_agency_id })}>
+                                        <Archive className="h-4 w-4 mr-2" />
+                                        Archive
+                                      </DropdownMenuItem>
+                                      {isPublished && (
+                                        <>
+                                          <DropdownMenuSeparator />
+                                          <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                              <DropdownMenuItem
+                                                className="text-destructive focus:text-destructive"
+                                                onSelect={(e) => e.preventDefault()}
+                                              >
+                                                <Trash2 className="h-4 w-4 mr-2" />
+                                                Delete
+                                              </DropdownMenuItem>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                              <AlertDialogHeader>
+                                                <AlertDialogTitle>Delete Listing</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                  Are you sure you want to delete "{listing.title}"? This cannot be undone.
+                                                </AlertDialogDescription>
+                                              </AlertDialogHeader>
+                                              <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction
+                                                  onClick={() => deleteProperty.mutate(listing.id)}
+                                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                                >
+                                                  Delete
+                                                </AlertDialogAction>
+                                              </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                          </AlertDialog>
+                                        </>
+                                      )}
                                     </DropdownMenuContent>
                                   </DropdownMenu>
                                 </div>
