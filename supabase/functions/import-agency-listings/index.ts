@@ -3357,6 +3357,7 @@ async function processOneItem(
                   neighborhood: { type: "string" },
                   property_type: { type: "string", enum: ["apartment", "garden_apartment", "penthouse", "duplex", "house", "cottage", "land"] },
                   listing_status: { type: "string", enum: ["for_sale", "for_rent"] },
+                  short_term_rental: { type: "boolean" },
                   floor: { type: "number" },
                   total_floors: { type: "number" },
                   year_built: { type: "number", description: "Year built / construction year if shown" },
