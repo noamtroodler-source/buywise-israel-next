@@ -294,6 +294,7 @@ export type ProvisioningListing = {
   ai_english_description: string | null;
   description: string | null;
   ai_suggestions: Record<string, any> | null;
+  data_quality_score: number | null;
   quality_audit_score: number | null;
   provisioning_audit_status: 'pending' | 'flagged' | 'reviewed' | 'approved' | null;
   last_audit_at: string | null;
@@ -350,7 +351,7 @@ export function useAgencyListings(agencyId: string | null) {
       const { data, error } = await supabase
         .from('properties')
         .select(
-          'id, title, property_type, listing_status, address, city, neighborhood, latitude, longitude, price, size_sqm, lot_size_sqm, bedrooms, additional_rooms, bathrooms, floor, total_floors, images, agent_id, primary_agency_id, claimed_by_agency_id, ai_english_description, description, ai_suggestions, quality_audit_score, provisioning_audit_status, last_audit_at, source_url, import_source, source_last_checked_at, year_built, condition, ac_type, entry_date, vaad_bayit_monthly, features, lease_term, subletting_allowed, furnished_status, pets_policy, agent_fee_required, furniture_items, featured_highlight, parking'
+          'id, title, property_type, listing_status, address, city, neighborhood, latitude, longitude, price, size_sqm, lot_size_sqm, bedrooms, additional_rooms, bathrooms, floor, total_floors, images, agent_id, primary_agency_id, claimed_by_agency_id, ai_english_description, description, ai_suggestions, data_quality_score, quality_audit_score, provisioning_audit_status, last_audit_at, source_url, import_source, source_last_checked_at, year_built, condition, ac_type, entry_date, vaad_bayit_monthly, features, lease_term, subletting_allowed, furnished_status, pets_policy, agent_fee_required, furniture_items, featured_highlight, parking'
         )
         .or(orParts.join(','))
         .order('quality_audit_score', { ascending: true, nullsFirst: true })
