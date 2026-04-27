@@ -3220,6 +3220,14 @@ async function processOneItem(
       return { succeeded: false };
     }
 
+    // Download agency-owned website photos before merge so website images can enrich Madlan/Yad2 rows.
+    let imageUrls: string[] = [];
+    listing.image_hashes = [];
+    if (isAgencyOwnWebsite) {
+      imageUrls = await collectAgencyOwnedImages(listing, structuredData, pageHtml, item.url, sb, jobId);
+      if (imageUrls.length > 0) dlog(`Downloaded ${imageUrls.length} agency-owned images for ${item.url}`);
+    }
+
     // ── Intra-agency dedup (Tier 2 / 2.5) — REMOVED in co-listing v2 ──
     // Previous behavior silently dropped listings that matched the same
     // agency's other listings on (address+city) or (city+rooms+size+price).
