@@ -2697,8 +2697,10 @@ async function processOneItem(
       cmsExtracted = cmsType;
       dlog(`CMS adapter (${cmsType}) provided full extraction — skipping AI`);
     } else {
-      // Normal AI extraction flow
-      const extractionPrompt = buildExtractionPrompt(item.url, domain, markdown, pageLinks);
+      // Normal AI extraction flow. For Yad2/Madlan, do not ask AI for image URLs.
+      const sourceType = String(job.source_type || "").toLowerCase();
+      const includeImagesInExtraction = !(isYad2Item || sourceType.includes("yad2") || sourceType.includes("madlan"));
+      const extractionPrompt = buildExtractionPrompt(item.url, domain, markdown, pageLinks, includeImagesInExtraction);
 
       const extractRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
@@ -2753,7 +2755,7 @@ async function processOneItem(
                   checks_required: { type: "boolean" },
                   is_sold_or_rented: { type: "boolean" },
                   photo_count: { type: "number" },
-                  image_urls: { type: "array", items: { type: "string" }, description: "All property photo URLs found on the page (full absolute URLs). Include gallery images, slider images, thumbnail src. Exclude logos, icons, agent photos, map screenshots." },
+                  image_urls: { type: "array", items: { type: "string" }, description: includeImagesInExtraction ? "All property photo URLs found on the page (full absolute URLs). Include gallery images, slider images, thumbnail src. Exclude logos, icons, agent photos, map screenshots." : "Leave empty for this source." },
                 },
                 required: ["listing_category"],
                 additionalProperties: false,
