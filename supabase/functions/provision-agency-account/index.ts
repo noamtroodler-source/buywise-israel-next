@@ -33,7 +33,7 @@ async function findUserByEmail(admin: any, email: string) {
     const { data, error } = await admin.auth.admin.listUsers({ page, perPage });
     if (error) throw error;
 
-    const user = data.users.find((u) => u.email?.trim().toLowerCase() === target);
+    const user = data.users.find((u: any) => u.email?.trim().toLowerCase() === target);
     if (user) return user;
     if (data.users.length < perPage) return null;
     page += 1;
