@@ -90,6 +90,11 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
 
   const currentJobSourceLabel = getJobSourceLabel(currentJob?.source_type);
   const currentJobImportTypeLabel = getImportTypeLabel(currentJob?.import_type);
+  const currentJobDiagnostics = useMemo(() => {
+    if (!currentJob?.failure_reason) return null;
+    try { return JSON.parse(currentJob.failure_reason) as Record<string, unknown>; }
+    catch { return null; }
+  }, [currentJob?.failure_reason]);
 
   const { data: jobItems = [] } = useImportJobItems(currentJob?.id);
   useRealtimeImportProgress(currentJob?.id);
@@ -126,6 +131,8 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
   const pendingCount = jobItems.filter(i => i.status === 'pending').length;
   const processingCount = jobItems.filter(i => i.status === 'processing').length;
   const totalItems = jobItems.length;
+  const mergedCount = jobItems.filter(i => i.status === 'done' && /merged/i.test(i.error_message || '')).length;
+  const flaggedCount = jobItems.filter(i => (i.extracted_data as any)?.provisioning_audit_status === 'flagged').length;
   const reasonBuckets = useMemo(() => {
     const classify = (message?: string | null) => {
       const text = (message || '').toLowerCase();
