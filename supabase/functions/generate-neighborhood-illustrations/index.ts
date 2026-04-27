@@ -103,7 +103,7 @@ function buildPrompt(citySlug: string, neighborhood: string): string {
 }
 
 async function processItem(
-  sb: ReturnType<typeof createClient>,
+  sb: any,
   lovableKey: string,
   item: { id: string; city_slug: string; neighborhood_name: string }
 ) {

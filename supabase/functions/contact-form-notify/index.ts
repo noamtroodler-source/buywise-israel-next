@@ -79,7 +79,7 @@ Deno.serve(async (req) => {
       resend.emails.send({
         from: "BuyWise Israel <hello@buywiseisrael.com>",
         to: [adminEmail],
-        replyTo: email,
+        reply_to: email,
         subject: `New contact form: ${categoryLabel} from ${name}`,
         html: adminHtml,
       }),

@@ -62,7 +62,7 @@ async function geocodeAddress(address: string, city: string, neighborhood?: stri
 // Process a batch of transactions concurrently (limited concurrency)
 async function processBatch(
   transactions: Array<{ id: string; address: string; city: string; neighborhood: string | null }>,
-  serviceClient: ReturnType<typeof createClient>,
+  serviceClient: any,
   concurrency: number = 5
 ) {
   let geocoded = 0;
