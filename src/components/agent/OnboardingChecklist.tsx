@@ -70,6 +70,13 @@ export function OnboardingChecklist({
     agentProfile?.social_links?.instagram ||
     agentProfile?.social_links?.facebook
   );
+  const profileLink = !agentProfile?.avatar_url
+    ? '/agent/settings#agent-photo'
+    : !(agentProfile?.bio && agentProfile.bio.length > 10)
+      ? '/agent/settings#agent-bio'
+      : !((agentProfile?.languages?.length || 0) > 0)
+        ? '/agent/settings#agent-languages'
+        : '/agent/settings#agent-specializations';
 
   const checklistItems: ChecklistItem[] = [
     {
@@ -77,7 +84,7 @@ export function OnboardingChecklist({
       label: 'Enhance your profile',
       description: 'Add a photo, bio, and expertise',
       isComplete: hasEnhancedProfile,
-      link: '/agent/settings',
+      link: profileLink,
       icon: User,
     },
     {
@@ -85,7 +92,7 @@ export function OnboardingChecklist({
       label: 'Add your social links',
       description: 'Connect LinkedIn, Instagram, or Facebook',
       isComplete: hasSocialLinks,
-      link: '/agent/settings',
+      link: '/agent/settings#agent-social-links',
       icon: Share2,
     },
     {
