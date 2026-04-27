@@ -646,6 +646,10 @@ function validatePropertyData(listing: Record<string, any>, importType: string =
   const errors: string[] = [];
   const warnings: string[] = [];
   const currentYear = new Date().getFullYear();
+  const effectiveImportType = normalizeImportType(importType);
+  const listingStatus = listing.listing_status === "for_rent" ? "for_rent" : "for_sale";
+  const validateAsRental = effectiveImportType === "rental" || (effectiveImportType === "both" && listingStatus === "for_rent");
+  const validateAsResale = effectiveImportType === "resale" || (effectiveImportType === "both" && listingStatus === "for_sale");
 
   // Price validation
   if (listing.price != null && listing.price < 0) {
@@ -653,20 +657,22 @@ function validatePropertyData(listing: Record<string, any>, importType: string =
   } else if (listing.price === 1) {
     errors.push("price=1 is a sold placeholder — skip");
   } else if (listing.price != null && listing.price > 0 && listing.price < 20_000) {
-    if (importType === "resale") {
+    if (validateAsResale) {
       errors.push(`price ${listing.price} NIS appears to be rent, not sale price`);
     } else {
       warnings.push(`price ${listing.price} NIS — verify this is correct for a rental listing`);
     }
   } else if (listing.price != null && listing.price > 0 && listing.price < 100_000) {
-    if (importType === "resale") {
+    if (validateAsResale) {
       warnings.push(`price ${listing.price} seems unusually low for a property`);
     }
   }
 
-  // Skip rentals only in resale mode
-  if (listing.listing_status === "for_rent" && importType === "resale") {
+  if (listing.listing_status === "for_rent" && effectiveImportType === "resale") {
     errors.push("rental listing — resale import only");
+  }
+  if (listing.listing_status === "for_sale" && effectiveImportType === "rental") {
+    errors.push("sale listing — rental import only");
   }
 
   // Skip non-resale property types
@@ -704,7 +710,7 @@ function validatePropertyData(listing: Record<string, any>, importType: string =
 
   // ── City-specific price range validation ──
   if (listing.city && listing.price && listing.price > 0) {
-    if (importType === "resale") {
+    if (validateAsResale) {
       const cityRange = CITY_PRICE_RANGES[listing.city];
       if (cityRange) {
         if (listing.price < cityRange.min * 0.5) {
@@ -721,7 +727,7 @@ function validatePropertyData(listing: Record<string, any>, importType: string =
           }
         }
       }
-    } else if (importType === "rental") {
+    } else if (validateAsRental) {
       // Rental price validation
       if (listing.price > 30_000) {
         errors.push(`rental price ${listing.price} NIS/mo is suspiciously high — likely a sale price`);
@@ -738,7 +744,7 @@ function validatePropertyData(listing: Record<string, any>, importType: string =
   }
 
   // ── Rental-specific field warnings ──
-  if (importType === "rental" || listing.listing_status === "for_rent") {
+  if (validateAsRental || listing.listing_status === "for_rent") {
     if (!listing.furnished_status) {
       warnings.push("rental listing missing furnished_status");
     }
@@ -1222,6 +1228,64 @@ async function discoverPaginatedLinks(
   return allLinks;
 }
 
+async function getKnownSourceUrlsForAgency(sb: any, agencyId: string): Promise<Set<string>> {
+  const knownUrlSet = new Set<string>();
+
+  const addRows = (rows: Array<{ source_url?: string | null }> | null | undefined) => {
+    for (const row of rows || []) {
+      if (row.source_url) knownUrlSet.add(normalizeUrl(row.source_url));
+    }
+  };
+
+  const { data: directRows, error: directErr } = await sb
+    .from("properties")
+    .select("source_url")
+    .or(`primary_agency_id.eq.${agencyId},claimed_by_agency_id.eq.${agencyId}`)
+    .not("source_url", "is", null);
+  if (directErr) console.warn(`[Known URLs] direct agency lookup failed: ${directErr.message}`);
+  addRows(directRows);
+
+  const { data: agentRows, error: agentErr } = await sb
+    .from("agents")
+    .select("id")
+    .eq("agency_id", agencyId);
+  if (agentErr) console.warn(`[Known URLs] agent lookup failed: ${agentErr.message}`);
+
+  const agentIds = (agentRows || []).map((row: any) => row.id).filter(Boolean);
+  if (agentIds.length > 0) {
+    const { data: agentPropertyRows, error: propErr } = await sb
+      .from("properties")
+      .select("source_url")
+      .in("agent_id", agentIds)
+      .not("source_url", "is", null);
+    if (propErr) console.warn(`[Known URLs] agent property lookup failed: ${propErr.message}`);
+    addRows(agentPropertyRows);
+  }
+
+  return knownUrlSet;
+}
+
+function selectModeIndexUrls(urls: string[], importType: string): string[] {
+  const normalizedType = normalizeImportType(importType);
+  if (normalizedType !== "both") return [];
+
+  const salePatterns = [/למכירה/i, /מכירה/i, /for[-_]?sale/i, /forsale/i, /sale/i];
+  const rentPatterns = [/להשכרה/i, /השכרה/i, /לטווח/i, /for[-_]?rent/i, /forrent/i, /rent/i];
+  const selected: string[] = [];
+
+  for (const url of urls) {
+    let decoded = url.toLowerCase();
+    try { decoded = decodeURIComponent(url).toLowerCase(); } catch { /* keep raw */ }
+    const isModeIndex = salePatterns.some((p) => p.test(decoded)) || rentPatterns.some((p) => p.test(decoded));
+    if (!isModeIndex) continue;
+    if (!/(property_action_category|property_category|properties|listings|for-|forsale|rent|למכירה|להשכרה|השכרה|מכירה)/i.test(decoded)) continue;
+    selected.push(url);
+  }
+
+  return Array.from(new Set(selected.map((url) => normalizeUrl(url)))).slice(0, 10);
+}
+
+
 // ─── Extract site root from any URL ──────────────────────────────────────────
 function getSiteRoot(url: string): string {
   try {
@@ -1246,15 +1310,7 @@ async function handleDiscover(body: any) {
   // Only actual imported properties should suppress rediscovery. Previous job
   // history can include aborted/skipped runs, and using it here prevents admins
   // from restarting a corrected import.
-  const knownUrlSet = new Set<string>();
-
-  const { data: existingProperties } = await sb
-    .from("properties").select("source_url").eq("agency_id", agency_id).not("source_url", "is", null);
-  if (existingProperties) {
-    for (const prop of existingProperties) {
-      if (prop.source_url) knownUrlSet.add(normalizeUrl(prop.source_url));
-    }
-  }
+  const knownUrlSet = await getKnownSourceUrlsForAgency(sb, agency_id);
 
   const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
   if (!FIRECRAWL_API_KEY) throw new Error("FIRECRAWL_API_KEY not configured");
@@ -1301,6 +1357,31 @@ async function handleDiscover(body: any) {
       rawUrls.push(...Array.from(merged));
       dlog(`Root page scrape: +${rootLinks.length} links, ${rawUrls.length} total`);
     }
+  }
+
+  // In both-mode, explicitly scrape sale/rent index/category pages discovered by the map.
+  // Some agency sites keep rental listings behind Hebrew taxonomy pages that the root page does not link directly.
+  const modeIndexUrls = selectModeIndexUrls(rawUrls, import_type);
+  if (modeIndexUrls.length > 0) {
+    console.log(`Both-mode category discovery: scraping ${modeIndexUrls.length} sale/rent index pages`);
+    const categoryResults = await Promise.allSettled(
+      modeIndexUrls.map((url) => discoverDirectPageLinks(url, FIRECRAWL_API_KEY))
+    );
+    const merged = new Set(rawUrls.map(url => normalizeUrl(url)));
+    let addedFromCategories = 0;
+    for (const result of categoryResults) {
+      if (result.status !== "fulfilled") continue;
+      for (const link of result.value) {
+        const normalizedLink = normalizeUrl(link);
+        if (!merged.has(normalizedLink)) {
+          merged.add(normalizedLink);
+          addedFromCategories++;
+        }
+      }
+    }
+    rawUrls.length = 0;
+    rawUrls.push(...Array.from(merged));
+    console.log(`Both-mode category discovery: +${addedFromCategories} links, ${rawUrls.length} total after merge`);
   }
 
   // Pagination: detect paginated listing pages and follow them
@@ -4051,18 +4132,7 @@ async function runYad2AgencyDiscoverJob(params: {
       return;
     }
 
-    const { data: existingProperties } = await sb
-      .from("properties")
-      .select("source_url")
-      .eq("agency_id", agencyId)
-      .not("source_url", "is", null);
-
-    const knownUrls = new Set<string>();
-    if (existingProperties) {
-      for (const prop of existingProperties) {
-        if (prop.source_url) knownUrls.add(normalizeUrl(prop.source_url));
-      }
-    }
+    const knownUrls = await getKnownSourceUrlsForAgency(sb, agencyId);
 
     const newUrls = dedupedUrls.filter((url) => !knownUrls.has(normalizeUrl(url)));
 
@@ -4223,14 +4293,7 @@ async function handleYad2Discover(body: any) {
   dlog(`Apify returned ${results.length} Yad2 listings`);
 
   // Gather known URLs for dedup
-  const { data: existingProperties } = await sb
-    .from("properties").select("source_url").eq("agency_id", agency_id).not("source_url", "is", null);
-  const knownUrls = new Set<string>();
-  if (existingProperties) {
-    for (const prop of existingProperties) {
-      if (prop.source_url) knownUrls.add(normalizeUrl(prop.source_url));
-    }
-  }
+  const knownUrls = await getKnownSourceUrlsForAgency(sb, agency_id);
 
   // Filter out known URLs
   const newResults = results.filter(r => {

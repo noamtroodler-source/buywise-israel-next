@@ -31,6 +31,18 @@ const SOURCE_META = {
   yad2: { label: 'Yad2', placeholder: 'https://www.yad2.co.il/realestate/agency/...', priority: 3 as const },
 };
 
+const getJobSourceLabel = (sourceType?: string | null) => {
+  if (sourceType === 'madlan') return 'Madlan';
+  if (sourceType === 'yad2') return 'Yad2';
+  return 'Agency website';
+};
+
+const getImportTypeLabel = (importType?: string | null) => {
+  if (importType === 'both' || importType === 'all') return 'Sale + rental';
+  if (importType === 'rental') return 'Rental only';
+  return 'Sale only';
+};
+
 /**
  * Embedded admin import tool — scoped to a single agency. Used inside the
  * Agency Provisioning workspace so admins can pull listings on behalf of the
@@ -73,6 +85,9 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
     : activeJobId
       ? jobs.find(j => j.id === activeJobId)
       : jobs.find(j => ['discovering', 'ready', 'processing'].includes(j.status)) || jobs[0];
+
+  const currentJobSourceLabel = getJobSourceLabel(currentJob?.source_type);
+  const currentJobImportTypeLabel = getImportTypeLabel(currentJob?.import_type);
 
   const { data: jobItems = [] } = useImportJobItems(currentJob?.id);
   useRealtimeImportProgress(currentJob?.id);
@@ -267,10 +282,16 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
             </div>
           </CardHeader>
           <CardContent className="pt-4 space-y-4">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">
-                Source: <span className="text-foreground font-medium">{currentJob.website_url}</span>
-              </span>
+            <div className="flex flex-col gap-2 text-sm sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0 space-y-1 text-muted-foreground">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="secondary">{currentJobSourceLabel}</Badge>
+                  <Badge variant="outline">{currentJobImportTypeLabel}</Badge>
+                  <span className="text-foreground font-medium">{currentJob.total_urls || totalItems} queued</span>
+                </div>
+                <p className="truncate">Source URL: <span className="text-foreground font-medium">{currentJob.website_url}</span></p>
+                <p className="text-xs">These controls import this source job only, not every saved source at once.</p>
+              </div>
               <Badge variant="outline" className={cn(
                 isCompleted && 'bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]',
                 isStalled && 'bg-[hsl(var(--warning))]/10 text-[hsl(var(--warning-foreground))]',
@@ -401,10 +422,13 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
                     <button
                       key={j.id}
                       onClick={() => setActiveJobId(j.id)}
-                      className="w-full flex items-center justify-between text-xs px-3 py-2 rounded-lg hover:bg-muted/50 transition-colors"
+                      className="w-full flex items-center justify-between gap-3 text-xs px-3 py-2 rounded-lg hover:bg-muted/50 transition-colors"
                     >
-                      <span className="truncate">{j.website_url}</span>
-                      <Badge variant="outline" className="text-[10px] ml-2">{j.status}</Badge>
+                      <span className="min-w-0 flex-1 truncate text-left">
+                        <span className="font-medium text-foreground">{getJobSourceLabel(j.source_type)}</span>
+                        <span className="text-muted-foreground"> · {getImportTypeLabel(j.import_type)} · {j.total_urls || 0} queued · {j.website_url}</span>
+                      </span>
+                      <Badge variant="outline" className="text-[10px] ml-2 shrink-0">{j.status}</Badge>
                     </button>
                   ))}
                 </div>
