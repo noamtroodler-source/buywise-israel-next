@@ -247,7 +247,7 @@ export default function AgentSettings() {
 
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Avatar Upload Section */}
-              <motion.div id="agent-photo" variants={itemVariants}>
+              <motion.div id="agent-photo" variants={itemVariants} className="scroll-mt-24">
                 <Card className="rounded-2xl border-border overflow-hidden scroll-mt-24">
                   <CardContent className="p-0">
                     <div className="flex items-center gap-6 p-6 bg-gradient-to-br from-primary/5 to-muted/50">
@@ -373,7 +373,7 @@ export default function AgentSettings() {
               </motion.div>
 
               {/* Bio */}
-              <motion.div id="agent-bio" variants={itemVariants}>
+              <motion.div id="agent-bio" variants={itemVariants} className="scroll-mt-24">
                 <Card className="rounded-2xl border-border hover:shadow-lg hover:border-primary/30 transition-all scroll-mt-24">
                   <CardContent className="p-6 space-y-6">
                     <div className="flex items-center gap-3">
@@ -402,7 +402,7 @@ export default function AgentSettings() {
               </motion.div>
 
               {/* Languages */}
-              <motion.div id="agent-languages" variants={itemVariants}>
+              <motion.div id="agent-languages" variants={itemVariants} className="scroll-mt-24">
                 <Card className="rounded-2xl border-border hover:shadow-lg hover:border-primary/30 transition-all scroll-mt-24">
                   <CardContent className="p-6 space-y-6">
                     <div className="flex items-center gap-3">
@@ -434,7 +434,7 @@ export default function AgentSettings() {
               </motion.div>
 
               {/* Specializations */}
-              <motion.div id="agent-specializations" variants={itemVariants}>
+              <motion.div id="agent-specializations" variants={itemVariants} className="scroll-mt-24">
                 <Card className="rounded-2xl border-border hover:shadow-lg hover:border-primary/30 transition-all scroll-mt-24">
                   <CardContent className="p-6 space-y-6">
                     <div className="flex items-center gap-3">
@@ -466,7 +466,7 @@ export default function AgentSettings() {
               </motion.div>
 
               {/* Social Links */}
-              <motion.div id="agent-social-links" variants={itemVariants}>
+              <motion.div id="agent-social-links" variants={itemVariants} className="scroll-mt-24">
                 <Card className="rounded-2xl border-border hover:shadow-lg hover:border-primary/30 transition-all scroll-mt-24">
                   <CardContent className="p-6 space-y-6">
                     <div className="flex items-center gap-3">
