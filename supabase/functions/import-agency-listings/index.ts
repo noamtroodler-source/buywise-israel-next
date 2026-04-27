@@ -5184,8 +5184,11 @@ async function runMadlanAgencyDiscoverJob(params: {
           const features: string[] = [];
           if (madlanItem.hasElevator) features.push("elevator");
           if (madlanItem.hasBalcony) features.push("balcony");
-          if (madlanItem.hasSecureRoom) features.push("safe_room");
+          if (madlanItem.hasSecureRoom) features.push("mamad");
           if (madlanItem.parking && madlanItem.parking > 0) features.push("parking");
+          if (madlanItem.hasStorage) features.push("storage");
+          if (madlanItem.hasAirConditioner || madlanItem.hasAirConditioning) features.push("air_conditioning");
+          if (madlanItem.isFurnished) features.push("furnished");
 
           const city = madlanItem.city || cities[0];
           const address = madlanItem.address || (madlanItem.streetName ? `${madlanItem.streetName} ${madlanItem.streetNumber || ""}`.trim() : "");
@@ -5202,8 +5205,15 @@ async function runMadlanAgencyDiscoverJob(params: {
             size_sqm: madlanItem.areaSqm || null,
             address,
             floor: madlanItem.floor || null,
+            total_floors: madlanItem.totalFloors || madlanItem.total_floors || null,
+            bathrooms: madlanItem.bathrooms || madlanItem.bathroomCount || null,
             condition: madlanItem.condition || null,
             parking: madlanItem.parking || 0,
+            ac_type: madlanItem.hasCentralAir || madlanItem.centralAir ? "central" : (madlanItem.hasAirConditioner || madlanItem.hasAirConditioning ? "split" : null),
+            is_furnished: madlanItem.isFurnished === true,
+            is_accessible: madlanItem.isAccessible === true,
+            entry_date: madlanItem.entryDate || madlanItem.entry_date || null,
+            vaad_bayit_monthly: madlanItem.vaadBayit || madlanItem.houseCommittee || null,
             image_urls: madlanItem.images || madlanItem.photos || madlanItem.imageUrls || madlanItem.media || [],
           };
 
@@ -5233,7 +5243,7 @@ async function runMadlanAgencyDiscoverJob(params: {
           if (!flattenImageCandidates(listing.image_urls).length) {
             detailHtml = await fetchMadlanDetailHtml(listingUrl);
           }
-          const madlanImages = await collectAllowedSourceImages("madlan", listing, null, detailHtml, listingUrl, sb, jobId, DEFAULT_MADLAN_IMAGE_LIMIT);
+          const madlanImages = await collectAllowedSourceImages("madlan", listing, null, detailHtml, listingUrl, sb, jobId);
           if (madlanImages.length === 0) totalImageFailures++;
 
           let existingMatch: any = null;
