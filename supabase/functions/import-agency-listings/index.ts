@@ -2222,6 +2222,12 @@ let _geoQueue: Promise<any> = Promise.resolve();
 
 // Track image URLs across a batch to detect repeated placeholder images
 const _batchImageUrlCounts = new Map<string, number>();
+const _batchImageHashCounts = new Map<string, number>();
+const KNOWN_NON_PROPERTY_IMAGE_HASHES = new Set([
+  // Erez Real Estate logo / beige placeholders that appeared as gallery images.
+  "123a895be2332f29404e4f0fff352722c261d88ca47fe6283c8440610b39173a",
+  "4c6e75317442af56a0fb11e8a3c715eb8a2edfcb6ea5da6203da2ffa4ce84e2b",
+]);
 
 function isPlaceholderImage(url: string): boolean {
   // Count how many times this URL has been seen across the batch
@@ -2233,6 +2239,15 @@ function isPlaceholderImage(url: string): boolean {
   const lcUrl = url.toLowerCase();
   if (lcUrl.includes("placeholder") || lcUrl.includes("no-image") || lcUrl.includes("default")) return true;
   return false;
+}
+
+function isRepeatedOrBlockedImageHash(hash: string): boolean {
+  if (KNOWN_NON_PROPERTY_IMAGE_HASHES.has(hash)) return true;
+  const count = (_batchImageHashCounts.get(hash) || 0) + 1;
+  _batchImageHashCounts.set(hash, count);
+  // Same exact image reused on multiple separate listings is almost always a
+  // logo, placeholder, or site chrome — not a unique property photo.
+  return count >= 2;
 }
 
 async function computeSha256(buffer: ArrayBuffer): Promise<string> {
@@ -2339,6 +2354,10 @@ async function parallelImageDownload(
 
         // SHA-256 dedup: skip exact byte-match duplicates
         const hash = await computeSha256(imgBuffer);
+        if (isRepeatedOrBlockedImageHash(hash)) {
+          dlog(`Skipping repeated/blocked non-property image hash: ${imgUrl.slice(0, 80)}`);
+          return null;
+        }
         if (seenHashes.has(hash)) {
           dlog(`Skipping duplicate image (SHA-256 match): ${imgUrl.slice(0, 80)}`);
           return null;
