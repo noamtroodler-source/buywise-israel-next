@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -94,6 +95,7 @@ export default function AgencySettings() {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [logoError, setLogoError] = useState(false);
+  const [showLogoPreview, setShowLogoPreview] = useState(false);
 
   useEffect(() => {
     if (agency) {
@@ -305,10 +307,17 @@ export default function AgencySettings() {
                   <CardContent className="p-6">
                     <div className="flex items-center gap-6 p-6 rounded-2xl bg-gradient-to-br from-primary/5 to-muted/50 border border-border">
                       <div className="relative group">
-                        <div className={cn(
-                          "h-24 w-24 rounded-2xl bg-card flex items-center justify-center overflow-hidden",
-                          "border-2 border-dashed border-border group-hover:border-primary/50 transition-colors"
-                        )}>
+                        <button
+                          type="button"
+                          onClick={() => logoUrl && !logoError && setShowLogoPreview(true)}
+                          disabled={!logoUrl || logoError}
+                          className={cn(
+                            "h-24 w-24 rounded-2xl bg-card flex items-center justify-center overflow-hidden",
+                            "border-2 border-dashed border-border group-hover:border-primary/50 transition-colors",
+                            logoUrl && !logoError ? "cursor-zoom-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" : "cursor-default"
+                          )}
+                          aria-label="Preview agency logo"
+                        >
                           {logoUrl && !logoError ? (
                             <img 
                               src={logoUrl} 
@@ -319,7 +328,7 @@ export default function AgencySettings() {
                           ) : (
                             <Building2 className="h-12 w-12 text-muted-foreground" />
                           )}
-                        </div>
+                        </button>
                       </div>
                       <div className="space-y-2">
                         <Label className="text-base font-semibold">Agency Logo</Label>
@@ -820,6 +829,18 @@ export default function AgencySettings() {
             </form>
           </motion.div>
         </div>
+        <Dialog open={showLogoPreview} onOpenChange={setShowLogoPreview}>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Agency logo preview</DialogTitle>
+            </DialogHeader>
+            {logoUrl && (
+              <div className="rounded-2xl border border-border bg-muted/30 p-6 flex items-center justify-center">
+                <img src={logoUrl} alt="Agency logo preview" className="max-h-[60vh] w-auto max-w-full rounded-xl object-contain" />
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
       </Layout>
     </GoogleMapsProvider>
