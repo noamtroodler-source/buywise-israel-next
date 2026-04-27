@@ -27,7 +27,8 @@ async function fetchFeaturedProperties(
     .from('properties')
     .select(`*, agent:agents(*, agency:agencies(id, name, logo_url, is_partner))`)
     .in('id', featuredIds)
-    .eq('is_published', true);
+    .eq('is_published', true)
+    .eq('verification_status', 'approved');
 
   if (listingStatus) {
     query = query.eq('listing_status', listingStatus);
@@ -50,7 +51,8 @@ export function usePropertyCount(filters?: PropertyFilters) {
       let query = supabase
         .from('properties')
         .select('id', { count: 'exact', head: true })
-        .eq('is_published', true);
+        .eq('is_published', true)
+    .eq('verification_status', 'approved');
 
       if (filters?.commute_destination && filters?.max_commute_minutes && !isSavedLocationDest(filters.commute_destination)) {
         // Commute filter: fetch qualifying cities first
@@ -172,6 +174,7 @@ export function useProperties(filters?: PropertyFilters) {
           agent:agents(*, agency:agencies(id, name, logo_url, is_partner))
         `)
         .eq('is_published', true)
+    .eq('verification_status', 'approved')
         .order('created_at', { ascending: false });
 
       if (filters?.commute_destination && filters?.max_commute_minutes && !isSavedLocationDest(filters.commute_destination)) {
@@ -326,6 +329,7 @@ export function useFeaturedProperties() {
           agent:agents(*, agency:agencies(id, name, logo_url, is_partner))
         `)
         .eq('is_published', true)
+    .eq('verification_status', 'approved')
         .eq('is_featured', true)
         .order('created_at', { ascending: false })
         .limit(6);
@@ -388,7 +392,8 @@ export function useFeaturedSaleProperties(options?: FeaturedPropertiesOptions) {
           .from('properties')
           .select(`*, agent:agents(*, agency:agencies(id, name, logo_url, is_partner))`)
           .in('id', propertyIds)
-          .eq('is_published', true);
+          .eq('is_published', true)
+    .eq('verification_status', 'approved');
 
         if (error) throw error;
         
@@ -402,6 +407,7 @@ export function useFeaturedSaleProperties(options?: FeaturedPropertiesOptions) {
           .from('properties')
           .select(`*, agent:agents(*, agency:agencies(id, name, logo_url, is_partner))`)
           .eq('is_published', true)
+    .eq('verification_status', 'approved')
           .eq('is_featured', true)
           .eq('listing_status', 'for_sale')
           .order('created_at', { ascending: false })
@@ -442,7 +448,8 @@ export function useFeaturedRentalProperties(options?: FeaturedPropertiesOptions)
           .from('properties')
           .select(`*, agent:agents(*, agency:agencies(id, name, logo_url, is_partner))`)
           .in('id', propertyIds)
-          .eq('is_published', true);
+          .eq('is_published', true)
+    .eq('verification_status', 'approved');
 
         if (error) throw error;
         adminProperties = propertyIds
@@ -454,6 +461,7 @@ export function useFeaturedRentalProperties(options?: FeaturedPropertiesOptions)
           .from('properties')
           .select(`*, agent:agents(*, agency:agencies(id, name, logo_url, is_partner))`)
           .eq('is_published', true)
+    .eq('verification_status', 'approved')
           .eq('is_featured', true)
           .eq('listing_status', 'for_rent')
           .order('created_at', { ascending: false })
@@ -484,6 +492,7 @@ export function useRecommendedProperties() {
           agent:agents(*, agency:agencies(id, name, logo_url, is_partner))
         `)
         .eq('is_published', true)
+    .eq('verification_status', 'approved')
         .order('views_count', { ascending: false })
         .limit(8);
 
@@ -512,6 +521,7 @@ export function useCityFeaturedProperties(cityName: string, limit: number = 8, l
         .from('properties')
         .select(`*, agent:agents(*, agency:agencies(id, name, logo_url, is_partner))`)
         .eq('is_published', true)
+    .eq('verification_status', 'approved')
         .eq('listing_status', listingStatus)
         .ilike('city', `%${cityName}%`)
         .eq('is_featured', true)
@@ -534,6 +544,7 @@ export function useCityFeaturedProperties(cityName: string, limit: number = 8, l
         .from('properties')
         .select(`*, agent:agents(*, agency:agencies(id, name, logo_url, is_partner))`)
         .eq('is_published', true)
+    .eq('verification_status', 'approved')
         .eq('listing_status', listingStatus)
         .ilike('city', `%${cityName}%`)
         .order('views_count', { ascending: false })
