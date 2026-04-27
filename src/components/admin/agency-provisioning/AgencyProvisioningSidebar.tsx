@@ -1,7 +1,18 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Plus, Building2 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Plus, Building2, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ProvisioningAgency } from '@/hooks/useAgencyProvisioning';
 
@@ -10,6 +21,8 @@ interface Props {
   selectedId: string | null;
   onSelect: (id: string) => void;
   onCreate: () => void;
+  onDelete: (id: string) => void;
+  deletingId?: string | null;
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -28,7 +41,7 @@ const STATUS_VARIANT: Record<string, 'outline' | 'secondary' | 'default'> = {
   ready_for_handover: 'default',
 };
 
-export function AgencyProvisioningSidebar({ agencies, selectedId, onSelect, onCreate }: Props) {
+export function AgencyProvisioningSidebar({ agencies, selectedId, onSelect, onCreate, onDelete, deletingId }: Props) {
   return (
     <div className="border rounded-lg bg-card">
       <div className="p-3 border-b flex items-center justify-between">
@@ -49,29 +62,61 @@ export function AgencyProvisioningSidebar({ agencies, selectedId, onSelect, onCr
             </div>
           )}
           {agencies.map(a => (
-            <button
+            <div
               key={a.id}
-              onClick={() => onSelect(a.id)}
               className={cn(
-                'w-full text-left p-2 rounded-md transition-colors',
+                'group flex items-start gap-1 rounded-md p-2 transition-colors',
                 selectedId === a.id ? 'bg-primary/10 text-primary' : 'hover:bg-muted'
               )}
             >
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-medium text-sm truncate">{a.name}</span>
-                <Badge
-                  variant={STATUS_VARIANT[a.management_status] || 'outline'}
-                  className="text-[10px] flex-shrink-0"
-                >
-                  {STATUS_LABEL[a.management_status] || a.management_status}
-                </Badge>
-              </div>
-              {a.cities_covered && a.cities_covered.length > 0 && (
-                <div className="text-xs text-muted-foreground mt-1 truncate">
-                  {a.cities_covered.slice(0, 2).join(' · ')}
+              <button onClick={() => onSelect(a.id)} className="min-w-0 flex-1 text-left">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-medium text-sm truncate">{a.name}</span>
+                  <Badge
+                    variant={STATUS_VARIANT[a.management_status] || 'outline'}
+                    className="text-[10px] flex-shrink-0"
+                  >
+                    {STATUS_LABEL[a.management_status] || a.management_status}
+                  </Badge>
                 </div>
-              )}
-            </button>
+                {a.cities_covered && a.cities_covered.length > 0 && (
+                  <div className="text-xs text-muted-foreground mt-1 truncate">
+                    {a.cities_covered.slice(0, 2).join(' · ')}
+                  </div>
+                )}
+              </button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    disabled={deletingId === a.id}
+                    className="h-7 w-7 shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100 focus-visible:opacity-100"
+                    aria-label={`Delete ${a.name}`}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete {a.name}?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This removes the agency, agents, listings, import history, and provisioning records connected to it. This cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => onDelete(a.id)}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
           ))}
         </div>
       </ScrollArea>
