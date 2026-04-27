@@ -2883,7 +2883,8 @@ async function collectAgencyOwnedImages(listing: any, structuredData: any, pageH
   if (uniqueImages.length === 0) return [];
   const downloaded = await parallelImageDownload(uniqueImages, sb, "property-images", jobId);
   listing.image_hashes = Array.from(new Set(downloaded.hashes || []));
-  return Array.from(new Set(downloaded.urls || []));
+  const downloadedUrls = Array.from(new Set(downloaded.urls || []));
+  return await rankImportedCoverPhotos(downloadedUrls, listing);
 }
 
 function flattenImageCandidates(input: any, depth = 0): string[] {
