@@ -210,6 +210,67 @@ export function ListingDetailDrawer({ agencyId, listing, onClose }: Props) {
             </a>
           )}
 
+          <div className="space-y-4">
+            {sections.map(section => {
+              const Icon = section.icon;
+              const missingRequired = section.fields.filter(field => field.required && !hasValue(field.value)).length;
+              return (
+                <Card key={section.title} className="overflow-hidden rounded-2xl border-border/70">
+                  <CardContent className="p-4">
+                    <div className="mb-4 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+                          <Icon className="h-4 w-4 text-primary" />
+                        </div>
+                        <h3 className="font-semibold">{section.title}</h3>
+                      </div>
+                      {missingRequired > 0 ? (
+                        <Badge variant="outline" className="rounded-lg border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-400">
+                          {missingRequired} missing
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="rounded-lg border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
+                          Complete
+                        </Badge>
+                      )}
+                    </div>
+
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {section.fields.map(field => {
+                        const present = hasValue(field.value);
+                        return (
+                          <div
+                            key={field.label}
+                            className={cn(
+                              'rounded-xl border p-3 text-sm',
+                              present ? 'border-border bg-background' : field.required ? 'border-amber-500/20 bg-amber-500/10' : 'border-border bg-muted/30',
+                            )}
+                          >
+                            <div className="mb-1 flex items-center justify-between gap-2">
+                              <span className="text-xs font-medium text-muted-foreground">{field.label}{field.required ? ' *' : ''}</span>
+                              {present ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" /> : <XCircle className="h-3.5 w-3.5 text-muted-foreground" />}
+                            </div>
+                            <div className={cn('break-words font-medium capitalize', !present && 'text-muted-foreground')}>
+                              {displayValue(field)}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {section.title === 'Photos' && listing.images && listing.images.length > 0 && (
+                      <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
+                        {listing.images.map((img, i) => (
+                          <img key={`${img}-${i}`} src={img} alt={`Listing photo ${i + 1}`} className="h-16 w-16 flex-shrink-0 rounded-xl object-cover" loading="lazy" />
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
           <Separator />
 
           {/* Agent assignment */}
