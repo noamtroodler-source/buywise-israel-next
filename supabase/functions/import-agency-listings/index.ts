@@ -4926,6 +4926,43 @@ function toHebrewCity(englishCity: string): string {
   return englishCity;
 }
 
+async function fetchMadlanDetailHtml(url: string): Promise<string> {
+  try {
+    const res = await fetchWithTimeout(url, { headers: { Accept: "text/html,*/*", "User-Agent": "Mozilla/5.0" } }, 15_000);
+    return res.ok ? await res.text() : "";
+  } catch { return ""; }
+}
+
+async function inspectMadlanActiveOfficePage(url: string): Promise<{ activeCount: number; saleCount: number; rentCount: number; cardUrls: string[]; cardImages: string[] }> {
+  const html = await fetchMadlanDetailHtml(url);
+  const text = textFromHtmlFragment(html);
+  const numberBefore = (labels: RegExp[]) => {
+    for (const label of labels) {
+      const m = text.match(new RegExp(`(\\d{1,4})\\s*[·•-]?\\s*${label.source}`, "i"));
+      if (m) return parseInt(m[1], 10) || 0;
+    }
+    return 0;
+  };
+  const activeMatch = text.match(/(\d{1,4})\s*(?:Active properties|נכסים פעילים)/i);
+  const saleCount = numberBefore([/Residences? for sale/i, /דירות למכירה/i, /נכסים למכירה/i]);
+  const rentCount = numberBefore([/Residences? for rent/i, /דירות להשכרה/i, /נכסים להשכרה/i]);
+  const cardUrls = Array.from(new Set((html.match(/https?:\/\/(?:www\.)?madlan\.co\.il\/(?:listings|properties|forsale|rent)[^"'\s<>]*/gi) || []).map(normalizeUrl)));
+  const cardImages = extractImagesFromHtml(html, url).filter((img) => /madlan|img|image|cloud|cdn/i.test(img)).slice(0, 200);
+  return { activeCount: activeMatch ? parseInt(activeMatch[1], 10) || saleCount + rentCount : saleCount + rentCount, saleCount, rentCount, cardUrls, cardImages };
+}
+
+function isMadlanItemLiveAndAgencyScoped(item: any, agencyName?: string | null, officeUrl?: string): boolean {
+  const statusText = String(item.status || item.listingStatus || item.state || item.availability || item.transactionStatus || "").toLowerCase();
+  if (/sold|rented|inactive|archived|expired|history|transaction|נמכר|הושכר/.test(statusText)) return false;
+  const url = String(item.url || "");
+  if (url && !/madlan\.co\.il/i.test(url)) return false;
+  const ownerText = `${item.agencyName || ""} ${item.officeName || ""} ${item.agentName || ""} ${item.brokerName || ""}`.toLowerCase();
+  const expected = String(agencyName || "").toLowerCase().replace(/[^a-z0-9א-ת]+/g, " ").trim();
+  const hasOfficeRef = officeUrl && JSON.stringify(item).includes(String(officeUrl).split("?")[0]);
+  if (expected && ownerText && !ownerText.includes(expected.split(" ")[0]) && !hasOfficeRef) return false;
+  return true;
+}
+
 async function runMadlanAgencyDiscoverJob(params: {
   jobId: string;
   agencyId: string;
