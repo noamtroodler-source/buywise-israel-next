@@ -1,6 +1,6 @@
 // sync-agency-listings — Multi-source nightly sync (Phase 3)
-// Iterates active rows in agency_sources by trust priority (Yad2 → Madlan → Website),
-// processes them sequentially per agency so the merge logic gets a clean trust ordering,
+// Iterates active rows in agency_sources by content priority (Website → Madlan → Yad2),
+// processes them sequentially per agency so agency-owned content becomes the base record,
 // and tracks per-source health (consecutive_failures, last_failure_reason).
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -11,9 +11,9 @@ const corsHeaders = {
 };
 
 const SOURCE_RANK: Record<string, number> = {
-  yad2: 1,
+  website: 1,
   madlan: 2,
-  website: 3,
+  yad2: 3,
 };
 
 function detectSourceType(url: string): "yad2" | "madlan" | "website" {
@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
       byAgency.set(s.agency_id, arr);
     }
 
-    // Sort each agency's sources by trust rank (yad2 → madlan → website)
+    // Sort each agency's sources by content priority (website → madlan → yad2)
     for (const [aid, arr] of byAgency) {
       arr.sort((a, b) => {
         const rankA = SOURCE_RANK[a.source_type] ?? 99;
@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
     let sourcesFailed = 0;
 
     for (const [agencyId, agencySources] of byAgency) {
-      // Sequential per agency — yad2 first, then madlan, then website
+      // Sequential per agency — website first, then Madlan/Yad2 enrichment
       for (const source of agencySources) {
         sourcesProcessed++;
         try {
