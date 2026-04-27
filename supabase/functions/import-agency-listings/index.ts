@@ -4005,7 +4005,12 @@ async function processOneItem(
           }
         }
 
-        // Description: longer wins regardless of source
+        // Description: longer wins regardless of source, but AI English copy is
+        // required even when the older imported row already has a description.
+        if (listing.ai_english_description && !existing.ai_english_description) {
+          patch.ai_english_description = listing.ai_english_description;
+          fieldSourceMap["ai_english_description"] = incomingFieldSource("description");
+        }
         if (listing.description && (!existing.description || existing.description === existing.ai_english_description || listing.description.length > existing.description.length)) {
           patch.description = listing.description;
           patch.ai_english_description = listing.ai_english_description || listing.description;
