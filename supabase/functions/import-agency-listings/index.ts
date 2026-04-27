@@ -3169,6 +3169,16 @@ async function processOneItem(
       return { succeeded: false };
     }
 
+    // Guard against Hebrew agency pages being mislabeled as rentals because
+    // generic words like "לטווח" appear in text while the price is clearly a sale price.
+    if (listing.listing_status === "for_rent" && listing.price && listing.price > 100_000) {
+      const rentSignals = /לחודש|חודשי|שכירות חודשית|per month|monthly/i.test(`${markdown}\n${pageHtml}`);
+      if (!rentSignals || /למכירה|מכירה|for sale/i.test(`${decodeURIComponent(item.url)}\n${markdown}`)) {
+        listing.listing_status = "for_sale";
+        validationWarnings.push("corrected_rent_status_to_sale_due_high_price");
+      }
+    }
+
     // ── VALIDATION (enhanced with city-specific outlier detection) ──
     const { errors: propertyErrors, warnings: validationWarnings } = validatePropertyData(listing, importType);
     if (propertyErrors.length > 0) {
