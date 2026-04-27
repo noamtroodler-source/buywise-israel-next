@@ -357,7 +357,7 @@ export default function AgencyListings() {
               </Button>
               <div>
                 <h1 className="text-2xl font-bold">Agency Listings</h1>
-                <p className="text-muted-foreground">Manage all properties across your team</p>
+                <p className="text-muted-foreground">Internal confirmation queue for agency-owned listings</p>
               </div>
             </div>
             <div className="flex gap-2">
@@ -413,7 +413,7 @@ export default function AgencyListings() {
             {[
               { label: 'Total Listings', value: stats.total, icon: Home },
               { label: 'Active', value: stats.active, icon: CheckCircle2 },
-              { label: 'Pending Review', value: stats.pending, icon: Clock, highlight: stats.pending > 0 },
+              { label: 'Need Confirmation', value: stats.needsReview, icon: Clock, highlight: stats.needsReview > 0 },
               { label: 'Total Views', value: stats.totalViews, icon: Eye },
             ].map((stat, index) => (
               <motion.div key={stat.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
@@ -433,6 +433,41 @@ export default function AgencyListings() {
               </motion.div>
             ))}
           </div>
+
+          {/* Role pills — click to filter by primary / co-listed */}
+          <Card className="rounded-2xl border-primary/10 bg-primary/5">
+            <CardContent className="p-4">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Private launch review</p>
+                  <p className="text-sm text-muted-foreground">Confirm availability and accuracy before listings go live. These labels stay inside the agency portal.</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { key: 'all', label: 'All', value: listings.length },
+                    { key: 'ready', label: 'Safe to approve', value: stats.ready },
+                    { key: 'fix', label: 'Quick fixes', value: stats.quickFix },
+                    { key: 'approved_live', label: 'Confirmed', value: listings.filter(l => l.agency_review_status === 'approved_live').length },
+                    { key: 'archived_stale', label: 'Archived', value: stats.archived },
+                  ].map((item) => (
+                    <button
+                      key={item.key}
+                      type="button"
+                      onClick={() => setReviewFilter(item.key as any)}
+                      className={cn(
+                        'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors',
+                        reviewFilter === item.key
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-background border-border hover:bg-muted'
+                      )}
+                    >
+                      {item.label} <span className="opacity-80">{item.value}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Role pills — click to filter by primary / co-listed */}
           {(primaryCount > 0 || coListedCount > 0) && (
@@ -500,6 +535,16 @@ export default function AgencyListings() {
                     <SelectItem value="pending_review">Pending</SelectItem>
                     <SelectItem value="draft">Draft</SelectItem>
                     <SelectItem value="changes_requested">Changes</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={reviewFilter} onValueChange={(value) => setReviewFilter(value as any)}>
+                  <SelectTrigger className="w-[170px] rounded-xl"><SelectValue placeholder="Review" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Reviews</SelectItem>
+                    <SelectItem value="ready">Safe to approve</SelectItem>
+                    <SelectItem value="fix">Quick fixes</SelectItem>
+                    <SelectItem value="approved_live">Confirmed</SelectItem>
+                    <SelectItem value="archived_stale">Archived</SelectItem>
                   </SelectContent>
                 </Select>
                 <Select value={agentFilter} onValueChange={setAgentFilter}>
