@@ -300,8 +300,8 @@ export default function AgencySettings() {
 
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Logo Upload Card */}
-              <motion.div variants={itemVariants}>
-                <Card className="rounded-2xl border-border hover:shadow-lg hover:border-primary/30 transition-all">
+              <motion.div id="agency-logo" variants={itemVariants}>
+                <Card className="rounded-2xl border-border hover:shadow-lg hover:border-primary/30 transition-all scroll-mt-24">
                   <CardContent className="p-6">
                     <div className="flex items-center gap-6 p-6 rounded-2xl bg-gradient-to-br from-primary/5 to-muted/50 border border-border">
                       <div className="relative group">
@@ -379,7 +379,7 @@ export default function AgencySettings() {
                     <div className="space-y-2">
                       <Label htmlFor="description">Description</Label>
                       <Textarea
-                        id="description"
+                        id="agency-description"
                         value={formData.description}
                         onChange={(e) => updateField('description', e.target.value)}
                         placeholder="Tell clients about your agency..."
@@ -423,7 +423,7 @@ export default function AgencySettings() {
                           Phone
                         </Label>
                         <PhoneInput
-                          id="phone"
+                          id="agency-phone"
                           value={formData.phone}
                           onChange={(value) => updateField('phone', value)}
                         />
@@ -450,7 +450,7 @@ export default function AgencySettings() {
                         Website
                       </Label>
                       <Input
-                        id="website"
+                        id="agency-website"
                         type="url"
                         value={formData.website}
                         onChange={(e) => updateField('website', e.target.value)}
@@ -535,8 +535,8 @@ export default function AgencySettings() {
               </motion.div>
 
               {/* Service Areas Card */}
-              <motion.div variants={itemVariants}>
-                <Card className="rounded-2xl border-border hover:shadow-lg hover:border-primary/30 transition-all">
+              <motion.div id="service-areas" variants={itemVariants}>
+                <Card className="rounded-2xl border-border hover:shadow-lg hover:border-primary/30 transition-all scroll-mt-24">
                   <CardHeader className="pb-4">
                     <div className="flex items-center gap-3">
                       <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -595,8 +595,8 @@ export default function AgencySettings() {
               </motion.div>
 
               {/* Specializations Card */}
-              <motion.div variants={itemVariants}>
-                <Card className="rounded-2xl border-border hover:shadow-lg hover:border-primary/30 transition-all">
+              <motion.div id="agency-specializations" variants={itemVariants}>
+                <Card className="rounded-2xl border-border hover:shadow-lg hover:border-primary/30 transition-all scroll-mt-24">
                   <CardHeader className="pb-4">
                     <div className="flex items-center gap-3">
                       <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
