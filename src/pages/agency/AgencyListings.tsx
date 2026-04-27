@@ -172,12 +172,18 @@ export default function AgencyListings() {
   const bulkDelete = useBulkDeleteProperties();
   const bulkSubmit = useBulkSubmitForReview();
   const reassignProperty = useReassignProperty();
+  const approveListing = useApproveAgencyListing();
+  const needsEditListing = useMarkAgencyListingNeedsEdit();
+  const archiveListing = useArchiveAgencyListing();
+  const skipListing = useSkipAgencyListingReview();
+  const bulkApproveListings = useBulkApproveAgencyListings();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [agentFilter, setAgentFilter] = useState<string>('all');
   const [cityFilter, setCityFilter] = useState<string>('all');
   const [roleFilter, setRoleFilter] = useState<'all' | 'primary' | 'co_listed'>('all');
+  const [reviewFilter, setReviewFilter] = useState<'all' | 'ready' | 'fix' | AgencyReviewStatus>('all');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [sort, setSort] = useState<{ key: SortKey; direction: SortDirection } | null>(null);
@@ -227,6 +233,7 @@ export default function AgencyListings() {
     if (agentFilter !== 'all' && listing.agent_id !== agentFilter) return false;
     if (cityFilter !== 'all' && listing.city !== cityFilter) return false;
     if (roleFilter !== 'all' && listing.role !== roleFilter) return false;
+    if (reviewFilter !== 'all' && getReviewBucket(listing) !== reviewFilter && listing.agency_review_status !== reviewFilter) return false;
     return true;
   });
 
@@ -246,6 +253,10 @@ export default function AgencyListings() {
     total: listings.length,
     active: listings.filter(l => l.verification_status === 'approved').length,
     pending: listings.filter(l => l.verification_status === 'pending_review').length,
+    needsReview: listings.filter(l => l.agency_review_status === 'needs_review').length,
+    ready: listings.filter(l => l.agency_review_status === 'needs_review' && l.safe_to_batch_approve).length,
+    quickFix: listings.filter(l => l.agency_review_status === 'needs_review' && !l.safe_to_batch_approve || l.agency_review_status === 'needs_edit').length,
+    archived: listings.filter(l => l.agency_review_status === 'archived_stale').length,
     totalViews: listings.reduce((sum, l) => sum + (l.views_count || 0), 0),
   };
 
@@ -301,6 +312,14 @@ export default function AgencyListings() {
 
   const handleBulkSubmit = () => {
     bulkSubmit.mutate([...selectedIds], {
+      onSuccess: () => setSelectedIds(new Set()),
+    });
+  };
+
+  const safeSelectedIds = [...selectedIds].filter((id) => listings.find((l) => l.id === id)?.safe_to_batch_approve);
+
+  const handleBulkApproveSafe = () => {
+    bulkApproveListings.mutate({ propertyIds: safeSelectedIds, agencyId: agency.id }, {
       onSuccess: () => setSelectedIds(new Set()),
     });
   };
