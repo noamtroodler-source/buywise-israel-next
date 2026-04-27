@@ -76,6 +76,77 @@ export function ListingDetailDrawer({ agencyId, listing, onClose }: Props) {
     k => k !== 'confidence' && k !== 'suggested_at' && (suggestions as any)[k] != null,
   );
 
+  const sections: ReviewSection[] = [
+    {
+      title: 'Property Basics',
+      icon: Home,
+      fields: [
+        { label: 'Listing title', value: listing.title, required: true },
+        { label: 'Property type', value: listing.property_type, required: true },
+        { label: 'Listing type', value: listing.listing_status, required: true },
+        { label: 'Price', value: listing.price, required: true, formatter: formatPrice },
+        { label: 'City', value: listing.city, required: true },
+        { label: 'Neighborhood', value: listing.neighborhood, required: true },
+        { label: 'Address', value: listing.address, required: true },
+        { label: 'Map pin', value: listing.latitude && listing.longitude ? `${listing.latitude}, ${listing.longitude}` : null, required: true },
+        { label: 'Source', value: listing.import_source },
+      ],
+    },
+    {
+      title: 'Property Details',
+      icon: Ruler,
+      fields: [
+        { label: 'Bedrooms', value: listing.bedrooms, required: true },
+        { label: 'Other rooms', value: listing.additional_rooms },
+        { label: 'Bathrooms', value: listing.bathrooms, required: true },
+        { label: 'Living area', value: listing.size_sqm, required: true, formatter: formatSqm },
+        { label: 'Lot size', value: listing.lot_size_sqm, formatter: formatSqm },
+        { label: 'Floor', value: listing.floor, required: true },
+        { label: 'Total floors', value: listing.total_floors, required: true },
+        { label: 'Year built', value: listing.year_built },
+        { label: 'Parking', value: listing.parking },
+      ],
+    },
+    {
+      title: 'Features & Amenities',
+      icon: Sparkles,
+      fields: [
+        { label: 'Condition', value: listing.condition },
+        { label: 'Air conditioning', value: listing.ac_type },
+        { label: 'Entry date', value: listing.entry_date, formatter: formatDate },
+        { label: 'Vaad bayit', value: listing.vaad_bayit_monthly, formatter: formatPrice },
+        { label: 'Features', value: listing.features, formatter: formatList },
+        { label: 'Featured highlight', value: listing.featured_highlight },
+        { label: 'Furnished status', value: listing.furnished_status },
+        { label: 'Furniture items', value: listing.furniture_items, formatter: formatList },
+        { label: 'Pets policy', value: listing.pets_policy },
+        { label: 'Lease term', value: listing.lease_term },
+        { label: 'Subletting', value: listing.subletting_allowed },
+        { label: 'Agent fee required', value: listing.agent_fee_required, formatter: formatBoolean },
+      ],
+    },
+    {
+      title: 'Photos',
+      icon: ImageIcon,
+      fields: [
+        { label: 'Photo count', value: listing.images?.length || null, required: true },
+      ],
+    },
+    {
+      title: 'Description',
+      icon: FileText,
+      fields: [
+        { label: 'Original description', value: listing.description, required: true },
+        { label: 'AI English description', value: listing.ai_english_description },
+      ],
+    },
+  ];
+
+  const flatFields = sections.flatMap(section => section.fields);
+  const presentCount = flatFields.filter(field => hasValue(field.value)).length;
+  const requiredMissing = flatFields.filter(field => field.required && !hasValue(field.value));
+  const completeness = Math.round((presentCount / flatFields.length) * 100);
+
   function applySuggestion(field: string) {
     const value = (suggestions as any)[field];
     const patch: any = { [field]: value };
