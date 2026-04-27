@@ -798,6 +798,23 @@ export default function AgencyListings() {
                                     </Button>
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => approveListing.mutate({ propertyId: listing.id, agencyId: agency.id })}>
+                                      <CheckCheck className="h-4 w-4 mr-2" />
+                                      Approve & publish
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => needsEditListing.mutate({ propertyId: listing.id, agencyId: agency.id })}>
+                                      <AlertTriangle className="h-4 w-4 mr-2" />
+                                      Needs quick edit
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => skipListing.mutate({ propertyId: listing.id, agencyId: agency.id })}>
+                                      <Clock className="h-4 w-4 mr-2" />
+                                      Skip for later
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => archiveListing.mutate({ propertyId: listing.id, agencyId: agency.id })}>
+                                      <Archive className="h-4 w-4 mr-2" />
+                                      Not available / archive
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
                                     <DropdownMenuItem onClick={() => handleDuplicate(listing.id)}>
                                       <Copy className="h-4 w-4 mr-2" />
                                       Duplicate
@@ -882,6 +899,19 @@ export default function AgencyListings() {
                       >
                         <Send className="h-3.5 w-3.5 mr-1.5" />
                         Submit for Review
+                      </Button>
+                    )}
+
+                    {safeSelectedIds.length > 0 && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="rounded-xl text-green-700 border-green-500/30 hover:bg-green-500/10"
+                        onClick={handleBulkApproveSafe}
+                        disabled={bulkApproveListings.isPending}
+                      >
+                        <CheckCheck className="h-3.5 w-3.5 mr-1.5" />
+                        Approve safe ({safeSelectedIds.length})
                       </Button>
                     )}
 
