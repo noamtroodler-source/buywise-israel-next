@@ -185,10 +185,6 @@ function isGoodEnglishDescription(desc: string | undefined): boolean {
 }
 
 function generateListingDescription(listing: any): string | null {
-  // If already good English, keep it
-  if (isGoodEnglishDescription(listing.description)) {
-    return listing.description;
-  }
   // Build a basic English description from extracted fields
   const type = formatPropertyType(listing.property_type).toLowerCase();
   const parts: string[] = [];
@@ -244,6 +240,89 @@ function generateListingDescription(listing: any): string | null {
   }
 
   return parts.length > 1 ? (parts.join(", ") + ".").replace(/^./, c => c.toUpperCase()) : null;
+}
+
+async function generateBuyWiseTitleAndDescription(listing: any, sourceText: string, lovableKey: string, jobId?: string, sb?: any): Promise<{ title: string; description: string; aiGenerated: boolean }> {
+  const fallbackTitle = generateListingTitle(listing);
+  const fallbackDescription = generateListingDescription(listing) || `${formatPropertyType(listing.property_type)} in ${listing.neighborhood || listing.city || "Israel"}.`;
+  if (!lovableKey) return { title: fallbackTitle, description: fallbackDescription, aiGenerated: false };
+
+  const facts = {
+    property_type: listing.property_type,
+    listing_status: listing.listing_status,
+    city: listing.city,
+    neighborhood: listing.neighborhood,
+    address: listing.address,
+    price: listing.price,
+    currency: listing.currency || "ILS",
+    bedrooms: listing.bedrooms,
+    source_rooms: listing.source_rooms,
+    bathrooms: listing.bathrooms,
+    size_sqm: listing.size_sqm,
+    floor: listing.floor,
+    total_floors: listing.total_floors,
+    condition: listing.condition,
+    features: Array.isArray(listing.features) ? listing.features.slice(0, 12) : [],
+    parking: listing.parking,
+    lease_term: listing.lease_term,
+    furnished_status: listing.furnished_status,
+    pets_policy: listing.pets_policy,
+    entry_date: listing.entry_date,
+  };
+
+  try {
+    const res = await fetchWithTimeout("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "google/gemini-3-flash-preview",
+        messages: [
+          {
+            role: "system",
+            content: "You write BuyWise-quality English listing titles and descriptions for international buyers in Israel. Use only supplied facts/source text. Do not invent amenities, views, renovations, exact locations, agent names, phone numbers, or urgency. No Hebrew. Description should be concise, factual, polished, 45-110 words.",
+          },
+          {
+            role: "user",
+            content: JSON.stringify({ facts, source_text: (sourceText || "").slice(0, 4000), fallback_title: fallbackTitle, fallback_description: fallbackDescription }),
+          },
+        ],
+        tools: [{
+          type: "function",
+          function: {
+            name: "write_listing_copy",
+            description: "Return a fresh English title and BuyWise-quality description grounded only in the provided listing facts.",
+            parameters: {
+              type: "object",
+              properties: {
+                title: { type: "string", description: "Clear English title, 35-80 characters." },
+                description: { type: "string", description: "Polished English listing description, 45-110 words, no unsupported claims." },
+              },
+              required: ["title", "description"],
+              additionalProperties: false,
+            },
+          },
+        }],
+        tool_choice: { type: "function", function: { name: "write_listing_copy" } },
+      }),
+    }, 20_000);
+
+    if (!res.ok) {
+      console.warn(`BuyWise copy generation failed (${res.status})`);
+      return { title: fallbackTitle, description: fallbackDescription, aiGenerated: false };
+    }
+
+    const data = await res.json();
+    const args = data.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+    if (!args) return { title: fallbackTitle, description: fallbackDescription, aiGenerated: false };
+    if (sb && jobId) await trackCost(sb, jobId, "ai_tokens", Math.ceil((JSON.stringify(facts).length + sourceText.length + args.length) / 4), "tokens");
+    const parsed = JSON.parse(args);
+    const title = isGoodEnglishTitle(parsed.title) ? toTitleCase(parsed.title) : fallbackTitle;
+    const description = isGoodEnglishDescription(parsed.description) ? parsed.description.trim() : fallbackDescription;
+    return { title, description, aiGenerated: true };
+  } catch (err) {
+    console.warn("BuyWise copy generation error:", err);
+    return { title: fallbackTitle, description: fallbackDescription, aiGenerated: false };
+  }
 }
 
 
