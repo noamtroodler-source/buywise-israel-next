@@ -5616,8 +5616,16 @@ async function runMadlanAgencyDiscoverJob(params: {
             image_urls: madlanItem.images || madlanItem.photos || madlanItem.imageUrls || madlanItem.media || [],
           };
 
-          const title = generateListingTitle(listing);
-          const description = generateListingDescription(listing);
+          const copy = await generateBuyWiseTitleAndDescription(
+            listing,
+            `${madlanItem.title || ""}\n${madlanItem.description || madlanItem.shortDescription || madlanItem.descriptionText || ""}`,
+            LOVABLE_API_KEY,
+            jobId,
+            sb,
+          );
+          const title = copy.title;
+          const description = copy.description;
+          listing.ai_english_description = copy.description;
 
           // Geocode the address
           let latitude: number | null = null;
@@ -5652,7 +5660,7 @@ async function runMadlanAgencyDiscoverJob(params: {
             if (normalizedAddr.length > 0) {
               const { data: byAddress } = await sb
                 .from("properties")
-                .select("id, price, size_sqm, bedrooms, bathrooms, source_rooms, images, description, address, floor, total_floors, features, merged_source_urls, source_url, data_quality_score, neighborhood, import_source, field_source_map, parking, condition, ac_type, entry_date, vaad_bayit_monthly, is_furnished, is_accessible")
+                .select("id, price, size_sqm, bedrooms, bathrooms, source_rooms, images, description, ai_english_description, address, floor, total_floors, features, merged_source_urls, source_url, data_quality_score, neighborhood, import_source, field_source_map, parking, condition, ac_type, entry_date, vaad_bayit_monthly, is_furnished, is_accessible")
                 .ilike("address", addrPattern)
                 .ilike("city", String(city).trim())
                 .not("import_source", "is", null)
@@ -5663,7 +5671,7 @@ async function runMadlanAgencyDiscoverJob(params: {
           if (!existingMatch && city && bedrooms != null && madlanItem.areaSqm && madlanItem.price) {
             const { data: byFacts } = await sb
               .from("properties")
-              .select("id, price, size_sqm, bedrooms, bathrooms, source_rooms, images, description, address, floor, total_floors, features, merged_source_urls, source_url, data_quality_score, neighborhood, import_source, field_source_map, parking, condition, ac_type, entry_date, vaad_bayit_monthly, is_furnished, is_accessible")
+              .select("id, price, size_sqm, bedrooms, bathrooms, source_rooms, images, description, ai_english_description, address, floor, total_floors, features, merged_source_urls, source_url, data_quality_score, neighborhood, import_source, field_source_map, parking, condition, ac_type, entry_date, vaad_bayit_monthly, is_furnished, is_accessible")
               .ilike("city", String(city).trim())
               .eq("bedrooms", Math.floor(bedrooms))
               .gte("size_sqm", Number(madlanItem.areaSqm) - 5)
