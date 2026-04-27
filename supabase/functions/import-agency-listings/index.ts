@@ -995,6 +995,36 @@ function normalizeAddressForDedup(address: string): string {
   return norm;
 }
 
+function normalizeTextKey(value: string | null | undefined): string {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[\u0590-\u05FF]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\b(apartment|apt|property|listing|for|rent|sale|new|renovated|luxury|spacious)\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function isStrictSameUnitDuplicate(existing: Record<string, any>, listing: Record<string, any>): boolean {
+  if ((existing.listing_status || "for_sale") !== (listing.listing_status || "for_sale")) return false;
+  if (existing.city && listing.city && normalizeCityStr(existing.city) !== normalizeCityStr(listing.city)) return false;
+
+  const existingAddress = normalizeAddressForDedup(existing.address || "");
+  const incomingAddress = normalizeAddressForDedup(listing.address || "");
+  const hasSameAddress = existingAddress.length > 4 && incomingAddress.length > 4 && existingAddress === incomingAddress;
+
+  const sameBeds = existing.bedrooms == null || listing.bedrooms == null || Math.floor(existing.bedrooms) === Math.floor(listing.bedrooms);
+  const sameBaths = existing.bathrooms == null || listing.bathrooms == null || Math.floor(existing.bathrooms) === Math.floor(listing.bathrooms);
+  const sameFloor = existing.floor == null || listing.floor == null || Math.floor(existing.floor) === Math.floor(listing.floor);
+  const sizeClose = existing.size_sqm && listing.size_sqm ? Math.abs(existing.size_sqm - listing.size_sqm) <= 3 : false;
+  const priceClose = existing.price && listing.price ? Math.abs(existing.price - listing.price) / Math.max(existing.price, listing.price) <= 0.03 : false;
+  const titleOverlap = normalizeTextKey(existing.title) && normalizeTextKey(existing.title) === normalizeTextKey(listing.title);
+
+  if (hasSameAddress && sameBeds && sameBaths && sameFloor && (sizeClose || priceClose)) return true;
+  if (!hasSameAddress && sameBeds && sameBaths && sameFloor && sizeClose && priceClose && titleOverlap) return true;
+  return false;
+}
+
 /** Clean address for storage — strips apartment/floor info and street prefixes for consistency */
 function normalizeAddressForStorage(address: string): string {
   let norm = address.trim();
@@ -3148,8 +3178,9 @@ async function processOneItem(
     }
 
     // 0a. Source URL dedup
+    const normalizedItemUrl = normalizeUrl(item.url);
     const { data: existingByUrl } = await sb
-      .from("properties").select("id").eq("source_url", item.url).limit(1);
+      .from("properties").select("id, source_url").in("source_url", [item.url, normalizedItemUrl]).limit(1);
     if (existingByUrl && existingByUrl.length > 0) {
       await sb.from("import_job_items")
         .update({ status: "skipped", error_message: `Duplicate: URL already imported as property ${existingByUrl[0].id}`, error_type: "permanent" })
@@ -3160,7 +3191,7 @@ async function processOneItem(
     // 0b. In-job URL dedup
     const { data: existingJobItem } = await sb
       .from("import_job_items").select("id, property_id")
-      .eq("job_id", jobId).eq("url", item.url).eq("status", "done").neq("id", item.id).limit(1);
+      .eq("job_id", jobId).in("url", [item.url, normalizedItemUrl]).eq("status", "done").neq("id", item.id).limit(1);
     if (existingJobItem && existingJobItem.length > 0) {
       await sb.from("import_job_items")
         .update({ status: "skipped", error_message: "Duplicate: same URL already processed in this job", error_type: "permanent" })
@@ -3635,14 +3666,35 @@ async function processOneItem(
     imageUrls = await collectAllowedSourceImages(job.source_type, listing, structuredData, pageHtml, item.url, sb, jobId);
     if (imageUrls.length > 0) dlog(`Downloaded ${imageUrls.length} allowed ${job.source_type || "website"} images for ${item.url}`);
 
-    // ── Intra-agency dedup (Tier 2 / 2.5) — REMOVED in co-listing v2 ──
-    // Previous behavior silently dropped listings that matched the same
-    // agency's other listings on (address+city) or (city+rooms+size+price).
-    // That was net-destructive in towers: an agency uploading 40 units in one
-    // building would lose 35 of them with no error surface. Each unit now
-    // inserts independently. If a genuine intra-agency duplicate slips in
-    // (same apartment, two different URLs on one agency's site), it surfaces
-    // for admin review via detect-duplicates pair flagging — not here.
+    // ── Intra-agency strict dedup ──
+    // Keep same-building/multi-unit inventory, but block exact same-unit repeats
+    // that arrive through alternate URLs, portal mirrors, or URL encoding variants.
+    if (job.agency_id && listing.city && (listing.address || (listing.size_sqm && listing.price && listing.bedrooms != null))) {
+      const query = sb
+        .from("properties")
+        .select("id, title, address, city, listing_status, price, size_sqm, bedrooms, bathrooms, floor, source_url")
+        .or(`primary_agency_id.eq.${job.agency_id},claimed_by_agency_id.eq.${job.agency_id}`)
+        .eq("listing_status", listing.listing_status || "for_sale")
+        .ilike("city", listing.city.trim())
+        .limit(50);
+
+      if (listing.bedrooms != null) query.eq("bedrooms", Math.floor(listing.bedrooms));
+      if (listing.size_sqm) query.gte("size_sqm", listing.size_sqm - 3).lte("size_sqm", listing.size_sqm + 3);
+      if (listing.price) query.gte("price", listing.price * 0.97).lte("price", listing.price * 1.03);
+
+      const { data: sameAgencyCandidates } = await query;
+      const sameUnit = (sameAgencyCandidates || []).find((candidate: any) => isStrictSameUnitDuplicate(candidate, listing));
+      if (sameUnit) {
+        await sb.from("import_job_items").update({
+          status: "skipped",
+          error_message: `Duplicate: same agency same unit already imported as property ${sameUnit.id}`,
+          error_type: "permanent",
+          property_id: sameUnit.id,
+          extracted_data: { ...listing, duplicate_of: sameUnit.id },
+        }).eq("id", item.id);
+        return { succeeded: false };
+      }
+    }
 
     // ── DEDUP: Tier 3 — Cross-source merge ──
     // If this listing already exists from another source, MERGE rather than duplicate.
@@ -3749,6 +3801,8 @@ async function processOneItem(
           ? [...existing.merged_source_urls]
           : (existing.source_url ? [existing.source_url] : []);
         if (item.url && !mergedUrls.includes(item.url)) mergedUrls.push(item.url);
+        const normalizedMergeUrl = normalizeUrl(item.url);
+        if (normalizedMergeUrl && !mergedUrls.includes(normalizedMergeUrl)) mergedUrls.push(normalizedMergeUrl);
 
         const patch: Record<string, any> = {
           merged_source_urls: mergedUrls,
