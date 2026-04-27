@@ -2218,8 +2218,9 @@ function extractImagesFromHtml(html: string, pageUrl: string): string[] {
       else if (firstUrl.startsWith("/")) absolute = new URL(firstUrl, pageUrl).toString();
       else if (!firstUrl.startsWith("http")) absolute = new URL(firstUrl, pageUrl).toString();
     } catch { return; }
-    if (!seen.has(absolute)) {
-      seen.add(absolute);
+    const canonical = canonicalImageKey(absolute);
+    if (!seen.has(canonical)) {
+      seen.add(canonical);
       images.push(absolute);
     }
   };
@@ -2252,7 +2253,21 @@ function extractImagesFromHtml(html: string, pageUrl: string): string[] {
     addCandidate(match[1]);
   }
 
-  return images.slice(0, MAX_STORED_LISTING_IMAGES * 2); // Candidate pool; downloader applies final cap.
+  return images;
+}
+
+function canonicalImageKey(rawUrl: string): string {
+  try {
+    const url = new URL(rawUrl.startsWith("//") ? `https:${rawUrl}` : rawUrl);
+    const path = url.pathname
+      .toLowerCase()
+      .replace(/-\d+x\d+(?=\.(?:jpe?g|png|webp)$)/i, "")
+      .replace(/_\d+x\d+(?=\.(?:jpe?g|png|webp)$)/i, "")
+      .replace(/-(?:scaled|cropped)(?=\.(?:jpe?g|png|webp)$)/i, "");
+    return `${url.hostname.toLowerCase()}${path}`;
+  } catch {
+    return rawUrl.split("?")[0].toLowerCase();
+  }
 }
 
 function decodeHtmlEntities(input: string): string {
