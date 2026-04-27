@@ -5196,7 +5196,18 @@ Deno.serve(async (req) => {
         result = await handleWebsiteDiscoverAsync(body);
       }
     }
-    else if (action === "process_batch") result = await handleProcessBatch(body);
+    else if (action === "process_batch") {
+      if (body.background === true) {
+        const jobId = body.job_id;
+        if (!jobId) throw new Error("job_id required");
+        EdgeRuntime.waitUntil(handleProcessBatch(body).catch((err) => {
+          console.error(`Background process_batch failed for ${jobId}:`, err);
+        }));
+        result = { job_id: jobId, started_async: true, status: "processing" };
+      } else {
+        result = await handleProcessBatch(body);
+      }
+    }
     else if (action === "retry_failed") result = await handleRetryFailed(body);
     else if (action === "approve_item") result = await handleApproveItem(body);
     else if (action === "resume_job") result = await handleResumeJob(body);
