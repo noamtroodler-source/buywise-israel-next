@@ -45,8 +45,8 @@ export function useSeatLimitCheck(): SeatLimitResult {
 
 
   const isLoading = subLoading || countLoading;
-  const maxSeats = sub?.maxSeats ?? null;
-  const needsSubscription = !sub || sub.status === 'none';
+  const maxSeats = sub?.isFoundingAgency ? null : sub?.maxSeats ?? null;
+  const needsSubscription = !sub || (!sub.isFoundingAgency && sub.status === 'none');
   const usagePercent = maxSeats ? Math.min(100, Math.round((currentSeats / maxSeats) * 100)) : 0;
 
   // Over limit = has a subscription, has a finite limit, and is at or beyond it
