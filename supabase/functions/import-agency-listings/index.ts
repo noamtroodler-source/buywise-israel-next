@@ -3510,9 +3510,12 @@ async function processOneItem(
       }
     }
 
-    // ── Generate & enhance street view image ──
+    // ── Generate & enhance street view image after the item is imported.
+    // Keep this out of the critical import path so slow image work cannot idle-timeout the batch request.
     if (property?.id) {
-      await generateAndStoreStreetView(sb, property.id, latitude, longitude, listing.address, listing.city, listing.floor, listing.apartment_number || null);
+      EdgeRuntime.waitUntil(
+        generateAndStoreStreetView(sb, property.id, latitude, longitude, listing.address, listing.city, listing.floor, listing.apartment_number || null)
+      );
     }
 
     // Insert cross-source duplicate pair if detected
