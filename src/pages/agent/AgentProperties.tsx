@@ -42,6 +42,23 @@ const statusConfig = {
   rejected: { label: 'Rejected', color: 'bg-red-500/10 text-red-600' },
 };
 
+function getListingOrigin(listing: any) {
+  const wasImported = Boolean(listing.import_source || listing.source_url || listing.provisioned_from_source);
+  if (wasImported && !listing.added_manually) {
+    return {
+      label: 'Imported',
+      description: 'Added through the agency import flow',
+      className: 'bg-primary/10 text-primary border-primary/20',
+    };
+  }
+
+  return {
+    label: 'Manual',
+    description: 'Created manually by your team',
+    className: 'bg-muted text-muted-foreground border-border',
+  };
+}
+
 function exportListingsToCSV(listings: any[], formatPrice: (price: number, currency: string) => string) {
   const headers = ['Title', 'City', 'Address', 'Status', 'Price', 'Currency', 'Views', 'Days on Market', 'Created At'];
   const rows = listings.map(l => [
@@ -369,6 +386,7 @@ export default function AgentProperties() {
                     {filteredListings.map((listing) => {
                       const verificationStatus = (listing as any).verification_status as keyof typeof statusConfig;
                       const status = statusConfig[verificationStatus] || statusConfig.draft;
+                      const origin = getListingOrigin(listing);
                       const isDraft = verificationStatus === 'draft';
                       const isChangesRequested = verificationStatus === 'changes_requested';
                       const isApproved = verificationStatus === 'approved';
@@ -399,6 +417,16 @@ export default function AgentProperties() {
                                 <Badge variant="outline" className={cn('text-xs', status.color)}>
                                   {status.label}
                                 </Badge>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Badge variant="outline" className={cn('text-xs', origin.className)}>
+                                      {origin.label}
+                                    </Badge>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>{origin.description}</p>
+                                  </TooltipContent>
+                                </Tooltip>
                                 {stale && isApproved && (
                                   <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200 gap-1">
                                     <AlertTriangle className="h-3 w-3" />
@@ -517,6 +545,7 @@ export default function AgentProperties() {
                         {filteredListings.map((listing) => {
                           const verificationStatus = (listing as any).verification_status as keyof typeof statusConfig;
                           const status = statusConfig[verificationStatus] || statusConfig.draft;
+                          const origin = getListingOrigin(listing);
                           const isDraft = verificationStatus === 'draft';
                           const isChangesRequested = verificationStatus === 'changes_requested';
                           const isApproved = verificationStatus === 'approved';
@@ -558,6 +587,16 @@ export default function AgentProperties() {
                                   <Badge variant="outline" className={cn('text-xs w-fit', status.color)}>
                                     {status.label}
                                   </Badge>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Badge variant="outline" className={cn('text-xs w-fit', origin.className)}>
+                                        {origin.label}
+                                      </Badge>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>{origin.description}</p>
+                                    </TooltipContent>
+                                  </Tooltip>
                                   {stale && isApproved && (
                                     <Badge variant="outline" className="text-xs w-fit bg-amber-50 text-amber-700 border-amber-200 gap-1">
                                       <AlertTriangle className="h-3 w-3" />
