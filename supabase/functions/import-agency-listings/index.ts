@@ -1746,6 +1746,8 @@ async function geocodeWithRateLimit(address: string, city: string, neighborhood?
 
 // ─── IMAGE HANDLING (with placeholder detection) ────────────────────────────
 
+const MAX_STORED_LISTING_IMAGES = 12;
+
 async function enhanceImage(imagePublicUrl: string, sb: any, bucketName: string, jobId: string): Promise<string> {
   try {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
@@ -2070,7 +2072,7 @@ async function registerImageHashes(propertyId: string, imageUrls: string[], sb: 
 }
 
 async function parallelImageDownload(
-  sourceImages: string[], sb: any, bucketName: string, jobId: string, maxImages = 15
+  sourceImages: string[], sb: any, bucketName: string, jobId: string, maxImages = MAX_STORED_LISTING_IMAGES
 ): Promise<{ urls: string[]; hashes: string[] }> {
   const imageUrls: string[] = [];
   const imageHashes: string[] = [];
@@ -2135,7 +2137,7 @@ async function parallelImageDownload(
       }
     }
   }
-  return { urls: imageUrls, hashes: imageHashes };
+  return { urls: imageUrls.slice(0, maxImages), hashes: imageHashes.slice(0, maxImages) };
 }
 
 // ─── PRE-CHECK ──────────────────────────────────────────────────────────────
@@ -2238,7 +2240,7 @@ function extractImagesFromHtml(html: string, pageUrl: string): string[] {
     addCandidate(match[1]);
   }
 
-  return images.slice(0, 30); // Cap at 30 candidates
+  return images.slice(0, MAX_STORED_LISTING_IMAGES * 2); // Candidate pool; downloader applies final cap.
 }
 
 function decodeHtmlEntities(input: string): string {
