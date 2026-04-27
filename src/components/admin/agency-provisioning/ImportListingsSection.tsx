@@ -427,6 +427,21 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
                 </div>
               )}
 
+              {recoverableSkippedCount > 0 && (
+                <Button
+                  variant="outline"
+                  onClick={() => retryRecoverableSkippedMutation.mutate(currentJob!.id)}
+                  disabled={retryRecoverableSkippedMutation.isPending}
+                  className="rounded-xl"
+                >
+                  {retryRecoverableSkippedMutation.isPending ? (
+                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Resetting...</>
+                  ) : (
+                    <><RefreshCw className="h-4 w-4 mr-2" />Retry recoverable skipped ({recoverableSkippedCount})</>
+                  )}
+                </Button>
+              )}
+
               {doneCount > 0 && (
                 <div className="space-y-2">
                   <Button variant="outline" asChild className="rounded-xl">
@@ -442,6 +457,24 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
                 </div>
               )}
             </div>
+
+            {Object.keys(reasonBuckets).length > 0 && (
+              <div className="grid gap-2 border-t pt-4 sm:grid-cols-2 lg:grid-cols-3">
+                {Object.entries(reasonBuckets).map(([reason, bucket]) => (
+                  <div key={reason} className="rounded-xl border bg-muted/20 p-3 text-xs">
+                    <div className="mb-1 flex items-center justify-between gap-2">
+                      <span className="font-medium text-foreground">{reason}</span>
+                      <Badge variant="secondary">{bucket.count}</Badge>
+                    </div>
+                    <div className="space-y-1 text-muted-foreground">
+                      {bucket.samples.map((url) => (
+                        <p key={url} className="truncate">{url}</p>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* Job history */}
             {jobs.length > 1 && (
