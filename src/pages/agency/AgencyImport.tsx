@@ -59,6 +59,7 @@ export default function AgencyImport() {
   const { startProcessAll, stopProcessAll, isProcessingAll, processingStartTime, processedSoFar } = useProcessAll();
   const [websiteUrl, setWebsiteUrl] = useState('');
   const [importType, setImportType] = useState<'resale' | 'rental' | 'all'>('all');
+  const sourceType = 'website' as const;
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
 
   // Use the most recent active job or the one selected
@@ -79,7 +80,7 @@ export default function AgencyImport() {
       agencyId: agency.id,
       websiteUrl: websiteUrl.trim(),
       importType,
-      sourceType: 'website',
+      sourceType,
     });
 
     // Only switch to job if one was created (new_urls > 0)
@@ -282,7 +283,7 @@ export default function AgencyImport() {
                 {/* Job info */}
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">
-                    Source: <span className="text-foreground font-medium">{currentJob.website_url}</span>
+                    Website: <span className="text-foreground font-medium">{currentJob.website_url}</span>
                   </span>
                   <Badge variant="outline" className={cn(
                     isCompleted && 'bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]',

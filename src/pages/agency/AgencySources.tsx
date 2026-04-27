@@ -30,14 +30,6 @@ function DocTitle({ title }: { title: string }) {
   return null;
 }
 
-const SOURCE_ICONS: Record<string, typeof Globe> = {
-  website: Globe,
-};
-
-const SOURCE_LABELS: Record<string, string> = {
-  website: "Agency Website",
-};
-
 export default function AgencySources() {
   const { user } = useAuth();
 
@@ -67,7 +59,7 @@ export default function AgencySources() {
   const syncAll = useTriggerNightlySync();
 
   const [addOpen, setAddOpen] = useState(false);
-  const [newType] = useState<"website">("website");
+  const newType = "website" as const;
   const [newUrl, setNewUrl] = useState("");
   const [newNotes, setNewNotes] = useState("");
 
@@ -112,7 +104,7 @@ export default function AgencySources() {
                     <Label>Source type</Label>
                     <Input value="Agency website" disabled />
                     <p className="mt-1 text-xs text-muted-foreground">
-                      Active sale and rental listings are pulled from your agency website. Projects should be added in the Project Wizard.
+                      Active sale and rental listings are pulled from your agency website.
                     </p>
                   </div>
                   <div>
@@ -187,7 +179,7 @@ export default function AgencySources() {
             )}
             {!isLoading && mySources.length === 0 && (
               <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-                No sources yet. Add your agency website to sync listings from your own site.
+                No sources yet. Add your agency website to keep listings synced.
               </div>
             )}
             {mySources.map((src) => (
@@ -251,13 +243,12 @@ function SourceRow({
   onDelete: () => void;
   isSyncing: boolean;
 }) {
-  const Icon = SOURCE_ICONS[source.source_type] || Globe;
   return (
     <div className="flex flex-wrap items-center gap-3 rounded-lg border p-3">
-      <Icon className="h-5 w-5 text-muted-foreground" />
+      <Globe className="h-5 w-5 text-muted-foreground" />
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="secondary">{SOURCE_LABELS[source.source_type] || source.source_type}</Badge>
+          <Badge variant="secondary">Agency website</Badge>
           <SourceHealthBadge
             consecutiveFailures={source.consecutive_failures}
             lastSyncedAt={source.last_synced_at}

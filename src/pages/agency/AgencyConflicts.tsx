@@ -1,8 +1,7 @@
 /**
  * AgencyConflicts — /agency/conflicts
- * Lets agency admins review fields where multiple imports reported different
- * values during a merge. The agency
- * picks which source wins, or dismisses the conflict.
+ * Lets agency admins review imported fields where saved and incoming values
+ * disagree. The agency picks which value wins, or dismisses the conflict.
  */
 import { Link } from 'react-router-dom';
 import { ArrowLeft, AlertTriangle, CheckCircle2, X, Loader2, ShieldCheck, ShieldOff } from 'lucide-react';
@@ -18,8 +17,8 @@ import { AgencyBlocklistPanel } from '@/components/agency/AgencyBlocklistPanel';
 import { formatDistanceToNow } from 'date-fns';
 
 const SOURCE_LABEL: Record<string, string> = {
-  yad2: 'External source',
-  madlan: 'External source',
+  yad2: 'Imported value',
+  madlan: 'Imported value',
   website_scrape: 'Website',
   website: 'Website',
 };
@@ -177,7 +176,7 @@ export default function AgencyConflicts() {
         <div className="mb-6">
           <h1 className="text-3xl font-bold mb-1">Conflicts</h1>
           <p className="text-muted-foreground">
-            Review field disagreements across sources, and resolve cross-agency ownership disputes.
+            Review imported field disagreements and resolve cross-agency ownership disputes.
           </p>
         </div>
 
@@ -195,7 +194,8 @@ export default function AgencyConflicts() {
                 <div className="text-sm">
                   <p className="font-medium mb-0.5">How automatic merging works</p>
                   <p className="text-muted-foreground">
-                    Your agency website is preferred for owned content and photos. A conflict appears here when imported listing details differ by <strong>more than 10%</strong>.
+                    Your agency website is preferred for owned content and photos, while imported data can fill missing structured fields.
+                    A conflict appears here when price or size differs by <strong>more than 10%</strong>.
                   </p>
                 </div>
               </CardContent>
@@ -213,7 +213,7 @@ export default function AgencyConflicts() {
                   <CheckCircle2 className="h-12 w-12 text-emerald-500 mx-auto mb-3" />
                   <h3 className="text-lg font-semibold mb-1">All clear</h3>
                   <p className="text-muted-foreground text-sm">
-                    No import conflicts to review. Your website listings are importing cleanly.
+                    No import conflicts to review. Your listings are merging cleanly.
                   </p>
                 </CardContent>
               </Card>
