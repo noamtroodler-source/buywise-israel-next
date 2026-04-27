@@ -1121,17 +1121,19 @@ function sanitizeDiscoveredUrl(raw: string, baseUrl?: string): { url: string | n
   }
 }
 
-function canonicalizeDiscoveredUrls(urls: string[], baseUrl: string): { urls: string[]; rejected: number; repaired: number } {
+function canonicalizeDiscoveredUrls(urls: string[], baseUrl: string): { urls: string[]; rejected: number; repaired: number; diagnostics: Record<string, number> } {
   const seen = new Set<string>();
   let rejected = 0;
   let repaired = 0;
+  const diagnostics: Record<string, number> = {};
   for (const raw of urls) {
     const sanitized = sanitizeDiscoveredUrl(raw, baseUrl);
+    if (sanitized.reason) diagnostics[sanitized.reason] = (diagnostics[sanitized.reason] || 0) + 1;
     if (!sanitized.url) { rejected++; continue; }
     if (sanitized.reason?.startsWith("repaired")) repaired++;
     seen.add(sanitized.url);
   }
-  return { urls: Array.from(seen), rejected, repaired };
+  return { urls: Array.from(seen), rejected, repaired, diagnostics };
 }
 
 async function discoverSitemapListingUrls(siteRoot: string): Promise<string[]> {
