@@ -27,6 +27,8 @@ export interface AgencySource {
   agency?: { id: string; name: string; logo_url: string | null };
 }
 
+export type AgencySourceImportType = 'resale' | 'rental' | 'both' | 'all';
+
 // ─── Agency Sources hooks ────────────────────────────────────────────────────
 
 export function useAgencySources(agencyId?: string) {
@@ -216,7 +218,9 @@ export function useDeleteAgencySource() {
 export function useTriggerSourceSync() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (source: AgencySource) => {
+    mutationFn: async (input: AgencySource | { source: AgencySource; importType?: AgencySourceImportType }) => {
+      const source = 'source' in input ? input.source : input;
+      const importType = 'source' in input ? input.importType ?? 'both' : 'both';
       // Call the import-agency-listings function directly
       const sourceType = source.source_type;
       const body = {
@@ -224,7 +228,7 @@ export function useTriggerSourceSync() {
         agency_id: source.agency_id,
         website_url: source.source_url,
         source_type: sourceType,
-        import_type: 'resale',
+        import_type: importType,
       };
 
       const { data: fnData, error: fnError } = await supabase.functions.invoke(
@@ -251,7 +255,9 @@ export function useTriggerSourceSync() {
 export function useTriggerAgencySourcesSync() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (sources: AgencySource[]) => {
+    mutationFn: async (input: AgencySource[] | { sources: AgencySource[]; importType?: AgencySourceImportType }) => {
+      const sources = Array.isArray(input) ? input : input.sources;
+      const importType = Array.isArray(input) ? 'both' : input.importType ?? 'both';
       const sourceRank: Record<AgencySource['source_type'], number> = { website: 1, madlan: 2, yad2: 3 };
       const activeSources = sources
         .filter((source) => source.is_active && source.source_url)
@@ -267,7 +273,7 @@ export function useTriggerAgencySourcesSync() {
             agency_id: source.agency_id,
             website_url: source.source_url,
             source_type: source.source_type,
-            import_type: 'resale',
+            import_type: importType,
           },
         });
         if (error) throw error;
