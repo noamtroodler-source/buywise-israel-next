@@ -1746,7 +1746,7 @@ async function geocodeWithRateLimit(address: string, city: string, neighborhood?
 
 // ─── IMAGE HANDLING (with placeholder detection) ────────────────────────────
 
-const MAX_STORED_LISTING_IMAGES = 12;
+const DEFAULT_MADLAN_IMAGE_LIMIT = 12;
 
 async function enhanceImage(imagePublicUrl: string, sb: any, bucketName: string, jobId: string): Promise<string> {
   try {
@@ -2072,16 +2072,24 @@ async function registerImageHashes(propertyId: string, imageUrls: string[], sb: 
 }
 
 async function parallelImageDownload(
-  sourceImages: string[], sb: any, bucketName: string, jobId: string, maxImages = MAX_STORED_LISTING_IMAGES
+  sourceImages: string[], sb: any, bucketName: string, jobId: string, maxImages: number | null = null
 ): Promise<{ urls: string[]; hashes: string[] }> {
   const imageUrls: string[] = [];
   const imageHashes: string[] = [];
   const seenHashes = new Set<string>();
+  const seenCanonicalUrls = new Set<string>();
   // Filter out placeholder images first
-  const validImages = sourceImages.filter(url => !isPlaceholderImage(url)).slice(0, maxImages);
+  const validImages = sourceImages.filter(url => {
+    if (!url || isPlaceholderImage(url)) return false;
+    const canonical = canonicalImageKey(url);
+    if (seenCanonicalUrls.has(canonical)) return false;
+    seenCanonicalUrls.add(canonical);
+    return true;
+  });
   const BATCH_SIZE = 5;
 
   for (let i = 0; i < validImages.length; i += BATCH_SIZE) {
+    if (maxImages != null && imageUrls.length >= maxImages) break;
     const batch = validImages.slice(i, i + BATCH_SIZE);
     const results = await Promise.allSettled(
       batch.map(async (imgUrl, batchIdx) => {
@@ -2097,6 +2105,7 @@ async function parallelImageDownload(
         }
 
         const contentType = imgRes.headers.get("content-type") || "image/jpeg";
+        if (!contentType.toLowerCase().startsWith("image/")) return null;
         const ext = contentType.includes("png") ? "png" : contentType.includes("webp") ? "webp" : "jpg";
         const imgBuffer = await imgRes.arrayBuffer();
 
@@ -2137,7 +2146,10 @@ async function parallelImageDownload(
       }
     }
   }
-  return { urls: imageUrls.slice(0, maxImages), hashes: imageHashes.slice(0, maxImages) };
+  return {
+    urls: maxImages == null ? imageUrls : imageUrls.slice(0, maxImages),
+    hashes: maxImages == null ? imageHashes : imageHashes.slice(0, maxImages),
+  };
 }
 
 // ─── PRE-CHECK ──────────────────────────────────────────────────────────────
