@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Loader2, ExternalLink, Check, X, Sparkles } from 'lucide-react';
+import { Loader2, ExternalLink, Check, X, Sparkles, Home, MapPin, DollarSign, Bed, Bath, Ruler, Building, Calendar, Car, Thermometer, Image as ImageIcon, FileText, AlertCircle, CheckCircle2, XCircle } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,6 +7,8 @@ import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Card, CardContent } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 import {
   ProvisioningListing,
   useAgencyAgents,
@@ -26,6 +28,38 @@ const SEVERITY_COLOR: Record<string, string> = {
   warning: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20',
   info: 'bg-muted text-muted-foreground border-border',
 };
+
+type ReviewField = {
+  label: string;
+  value: unknown;
+  required?: boolean;
+  formatter?: (value: any) => string;
+};
+
+type ReviewSection = {
+  title: string;
+  icon: any;
+  fields: ReviewField[];
+};
+
+const formatPrice = (value: any) => value ? `₪${Number(value).toLocaleString()}` : '';
+const formatSqm = (value: any) => value ? `${Number(value).toLocaleString()} m²` : '';
+const formatDate = (value: any) => value ? new Date(value).toLocaleDateString() : '';
+const formatBoolean = (value: any) => value === true ? 'Yes' : value === false ? 'No' : '';
+const formatList = (value: any) => Array.isArray(value) && value.length ? value.join(', ') : '';
+
+function hasValue(value: unknown) {
+  if (value === null || value === undefined) return false;
+  if (typeof value === 'string') return value.trim().length > 0;
+  if (Array.isArray(value)) return value.length > 0;
+  return true;
+}
+
+function displayValue(field: ReviewField) {
+  if (!hasValue(field.value)) return 'Missing';
+  if (field.formatter) return field.formatter(field.value);
+  return String(field.value).replace(/_/g, ' ');
+}
 
 export function ListingDetailDrawer({ agencyId, listing, onClose }: Props) {
   const open = !!listing;
