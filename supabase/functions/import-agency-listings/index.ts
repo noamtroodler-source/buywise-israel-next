@@ -5136,7 +5136,7 @@ Deno.serve(async (req) => {
       } else if (body.source_type === "madlan" || isMadlanAgencyUrl(body.website_url)) {
         result = await handleMadlanAgencyDiscover(body);
       } else {
-        result = await handleDiscover(body);
+        result = await handleWebsiteDiscoverAsync(body);
       }
     }
     else if (action === "process_batch") result = await handleProcessBatch(body);
