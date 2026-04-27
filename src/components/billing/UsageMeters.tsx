@@ -51,7 +51,7 @@ export function UsageMeters({ entityType, authorType, profileId }: UsageMetersPr
   const blog = useBlogQuotaCheck(authorType, profileId);
   const { data: sub } = useSubscription();
 
-  if (!sub || sub.status === 'none') return null;
+  if (!sub || sub.status === 'none' || sub.isFoundingAgency) return null;
 
   const showSeats = entityType === 'agency' && seat.maxSeats !== null;
 

@@ -24,11 +24,11 @@ async function fetchEntityForUser(userId: string) {
   // Check if user is agency admin
   const { data: agency } = await supabase
     .from('agencies')
-    .select('id')
+    .select('id, is_partner')
     .eq('admin_user_id', userId)
     .maybeSingle();
 
-  if (agency) return { entityType: 'agency' as const, entityId: agency.id };
+  if (agency) return { entityType: 'agency' as const, entityId: agency.id, isPartner: !!(agency as any).is_partner };
 
   // Check if user is developer
   const { data: developer } = await supabase
@@ -53,9 +53,10 @@ export function useSubscription() {
       const entity = await fetchEntityForUser(user.id);
       if (!entity) return null;
 
-      const { data: isFoundingAgency } = entity.entityType === 'agency'
+      const { data: isFoundingAgencyFromRpc } = entity.entityType === 'agency'
         ? await (supabase.rpc as any)('is_founding_agency', { p_agency_id: entity.entityId })
         : { data: false };
+      const isFoundingAgency = entity.entityType === 'agency' && (entity.isPartner || !!isFoundingAgencyFromRpc);
 
       // Fetch subscription with plan details
       const { data: sub } = await supabase
