@@ -3957,6 +3957,44 @@ async function handleRetryFailed(body: any) {
   return { reset_count: resetCount, transient_count: resetCount, permanent_count: permanentCount || 0 };
 }
 
+async function handleRetryRecoverableSkipped(body: any) {
+  const { job_id } = body;
+  if (!job_id) throw new Error("job_id required");
+
+  const sb = supabaseAdmin();
+  const recoverablePatterns = [
+    "Low confidence",
+    "Page content too short",
+    "AI returned no extraction data",
+    "Not a listing page",
+    "Pre-check timed out",
+    "Pre-check network error",
+    "malformed",
+  ];
+  const { data: items, error } = await sb
+    .from("import_job_items")
+    .select("id, error_message")
+    .eq("job_id", job_id)
+    .eq("status", "skipped")
+    .eq("error_type", "permanent");
+  if (error) throw new Error(`Failed to load skipped items: ${error.message}`);
+
+  const ids = (items || [])
+    .filter((item: any) => recoverablePatterns.some((p) => String(item.error_message || "").includes(p)))
+    .map((item: any) => item.id);
+
+  if (ids.length > 0) {
+    const { error: resetErr } = await sb
+      .from("import_job_items")
+      .update({ status: "pending", error_message: null, error_type: null, confidence_score: null })
+      .in("id", ids);
+    if (resetErr) throw new Error(`Failed to reset recoverable skipped items: ${resetErr.message}`);
+    await sb.from("import_jobs").update({ status: "ready" }).eq("id", job_id);
+  }
+
+  return { reset_count: ids.length, scanned_count: items?.length || 0 };
+}
+
 // ─── APPROVE ITEM (manual review) ───────────────────────────────────────────
 
 async function handleApproveItem(body: any) {
