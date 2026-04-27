@@ -3389,6 +3389,13 @@ async function processOneItem(
           fieldSourceMap["features"] = incomingSource;
         }
 
+        // Images: only agency-owned website imports are allowed to add stored photos.
+        if (incomingSource === "website_scrape" && imageUrls.length > 0) {
+          const existingImages = Array.isArray(existing.images) ? existing.images as string[] : [];
+          patch.images = [...new Set([...existingImages, ...imageUrls])];
+          fieldSourceMap["images"] = incomingSource;
+        }
+
         patch.field_source_map = fieldSourceMap;
 
         // Recalculate quality score as max of both
@@ -3437,48 +3444,6 @@ async function processOneItem(
 
         dlog(`[Merge] Enriched property ${crossSourceMatchId} from ${incomingSource} (trust=${incomingRank}, conflicts=${conflictsToLog.length})`);
         return { succeeded: true };
-      }
-    }
-
-    // ── IMAGE HANDLING ──
-    // For Yad2 / Madlan scrapes: images are copyrighted, do NOT download.
-    // For agency's OWN website imports: these are the agency's own photos — download and store them.
-    let imageUrls: string[] = [];
-    listing.image_hashes = [];
-    if (isAgencyOwnWebsite) {
-      // Collect image URLs from multiple sources: AI extraction, structured data, HTML parsing
-      const candidateImages: string[] = [];
-
-      // 1. AI-extracted image URLs
-      if (listing.image_urls && Array.isArray(listing.image_urls)) {
-        candidateImages.push(...listing.image_urls);
-      }
-      // 2. Structured data images (JSON-LD, OG tags)
-      if (structuredData?.structured_images?.length) {
-        candidateImages.push(...structuredData.structured_images);
-      }
-      // 3. Parse images directly from HTML as fallback
-      if (candidateImages.length < 3 && pageHtml) {
-        const htmlImages = extractImagesFromHtml(pageHtml, item.url);
-        candidateImages.push(...htmlImages);
-      }
-
-      // Deduplicate and resolve relative URLs
-      const uniqueImages = [...new Set(candidateImages.map(img => {
-        if (!img || typeof img !== "string") return "";
-        if (img.startsWith("//")) return `https:${img}`;
-        if (img.startsWith("/")) {
-          try { return new URL(img, item.url).toString(); } catch { return ""; }
-        }
-        return img;
-      }).filter(u => u && u.startsWith("http")))];
-
-      if (uniqueImages.length > 0) {
-        dlog(`Found ${uniqueImages.length} candidate images for ${item.url}`);
-        const downloaded = await parallelImageDownload(uniqueImages, sb, "property-images", jobId, 15);
-        imageUrls = Array.from(new Set(downloaded.urls));
-        listing.image_hashes = Array.from(new Set(downloaded.hashes || []));
-        dlog(`Downloaded ${imageUrls.length} images for ${item.url}`);
       }
     }
 
