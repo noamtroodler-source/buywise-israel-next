@@ -2173,6 +2173,60 @@ function extractImagesFromHtml(html: string, pageUrl: string): string[] {
   return images.slice(0, 30); // Cap at 30 candidates
 }
 
+function decodeHtmlEntities(input: string): string {
+  return input
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#039;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">");
+}
+
+function textFromHtmlFragment(fragment: string): string {
+  return decodeHtmlEntities(fragment.replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<style[\s\S]*?<\/style>/gi, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim());
+}
+
+function extractAgencyHtmlFallback(html: string, markdown: string, url: string): Record<string, any> | null {
+  const result: Record<string, any> = { listing_category: "property" };
+  const combined = `${decodeURIComponent(url)}\n${markdown}\n${textFromHtmlFragment(html).slice(0, 6000)}`;
+  const h1 = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+  const titleTag = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+  const title = h1 ? textFromHtmlFragment(h1[1]) : titleTag ? textFromHtmlFragment(titleTag[1]).split("|")[0].trim() : "";
+  if (title) result.title = title;
+  const mainMatch = html.match(/<(?:main|article|div)[^>]*(?:property|estate|content|entry-content)[^>]*>([\s\S]{200,6000}?)<\/(?:main|article|div)>/i);
+  const desc = mainMatch ? textFromHtmlFragment(mainMatch[1]) : markdown.replace(/\s+/g, " ").trim();
+  if (desc && desc.length > 40) result.description = desc.slice(0, 2000);
+  const priceMatch = combined.match(/(?:₪|ש["״]?ח|nis)\s*([\d,.]{4,})|([\d,.]{4,})\s*(?:₪|ש["״]?ח|nis)/i);
+  if (priceMatch) {
+    const price = parseFloat(String(priceMatch[1] || priceMatch[2]).replace(/[^\d.]/g, ""));
+    if (!Number.isNaN(price) && price > 0) result.price = price;
+  }
+  const roomMatch = combined.match(/(\d+(?:\.5)?)\s*(?:חדרים|rooms?)/i);
+  if (roomMatch) {
+    const rooms = parseFloat(roomMatch[1]);
+    result.source_rooms = rooms;
+    result.bedrooms = Math.max(0, Math.floor(rooms) - 1);
+  }
+  const sizeMatch = combined.match(/(\d{2,4})\s*(?:מ["״]?ר|sqm|m²|square meters?)/i);
+  if (sizeMatch) result.size_sqm = parseFloat(sizeMatch[1]);
+  const city = inferCityFromHebrew(combined) || matchSupportedCity(combined.match(/(?:Tel Aviv|Jerusalem|Herzliya|Ramat Gan|Netanya|Haifa)/i)?.[0] || null);
+  if (city) result.city = city;
+  if (/להשכרה|השכרה|לטווח|\brent\b/i.test(combined)) result.listing_status = "for_rent";
+  else result.listing_status = "for_sale";
+  if (/פנטהאוז|penthouse/i.test(combined)) result.property_type = "penthouse";
+  else if (/דופלקס|duplex/i.test(combined)) result.property_type = "duplex";
+  else if (/דירת גן|garden apartment/i.test(combined)) result.property_type = "garden_apartment";
+  else if (/בית|וילה|house|villa/i.test(combined)) result.property_type = "house";
+  else result.property_type = "apartment";
+  const images = extractImagesFromHtml(html, url);
+  if (images.length > 0) {
+    result.image_urls = images;
+    result._photo_count = images.length;
+  }
+  return Object.keys(result).length >= 4 ? result : null;
+}
+
 // ─── STRUCTURED DATA EXTRACTION (JSON-LD, Open Graph) ───────────────────────
 
 function extractStructuredData(html: string): Record<string, any> | null {
