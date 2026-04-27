@@ -106,26 +106,21 @@ const reviewConfig: Record<AgencyReviewStatus, { label: string; color: string; i
 
 function getReviewBucket(listing: AgencyListing) {
   const status = listing.agency_review_status || 'needs_review';
-  if (status === 'needs_review' && listing.safe_to_batch_approve) return 'ready';
-  if ((status === 'needs_review' || status === 'needs_edit') && (listing.has_critical_flags || (listing.missing_quick_fields?.length ?? 0) >= 3)) return 'incomplete';
+  if (status === 'needs_review' && listing.safe_to_batch_approve && (listing.missing_quick_fields?.length ?? 0) === 0) return 'ready';
   if (status === 'needs_review' || status === 'needs_edit') return 'fix';
   return status;
 }
 
 function LaunchReviewGuidance({ listings, reviewFilter, setReviewFilter }: {
   listings: AgencyListing[];
-  reviewFilter: 'all' | 'ready' | 'fix' | 'incomplete' | AgencyReviewStatus;
-  setReviewFilter: (value: 'all' | 'ready' | 'fix' | 'incomplete' | AgencyReviewStatus) => void;
+  reviewFilter: 'all' | 'ready' | 'fix' | AgencyReviewStatus;
+  setReviewFilter: (value: 'all' | 'ready' | 'fix' | AgencyReviewStatus) => void;
 }) {
   const [dismissed, setDismissed] = useState(() => localStorage.getItem(LAUNCH_REVIEW_GUIDANCE_KEY) === 'true');
 
   const counts = useMemo(() => ({
-    all: listings.length,
     ready: listings.filter((listing) => getReviewBucket(listing) === 'ready').length,
     fix: listings.filter((listing) => getReviewBucket(listing) === 'fix').length,
-    incomplete: listings.filter((listing) => getReviewBucket(listing) === 'incomplete').length,
-    approved: listings.filter(l => l.agency_review_status === 'approved_live').length,
-    archived: listings.filter(l => l.agency_review_status === 'archived_stale').length,
   }), [listings]);
 
   if (dismissed || listings.length === 0) return null;
@@ -139,15 +134,9 @@ function LaunchReviewGuidance({ listings, reviewFilter, setReviewFilter }: {
     },
     {
       key: 'fix' as const,
-      label: 'Needs quick fixes',
+      label: 'Needs missing info/photos',
       value: counts.fix,
-      description: 'Mostly ready, but missing small details like photos, size, floor, bathrooms, or agent assignment.',
-    },
-    {
-      key: 'incomplete' as const,
-      label: 'Needs more information',
-      value: counts.incomplete,
-      description: 'Missing too much to confidently publish yet. Complete these before going live.',
+      description: 'These need small missing details, stronger features, or more photos before they should go live.',
     },
   ];
 
@@ -176,7 +165,7 @@ function LaunchReviewGuidance({ listings, reviewFilter, setReviewFilter }: {
           </Button>
         </div>
 
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-2">
           {categories.map((category) => (
             <button
               key={category.key}
@@ -289,7 +278,7 @@ export default function AgencyListings() {
   const [agentFilter, setAgentFilter] = useState<string>('all');
   const [cityFilter, setCityFilter] = useState<string>('all');
   const [roleFilter, setRoleFilter] = useState<'all' | 'primary' | 'co_listed'>('all');
-  const [reviewFilter, setReviewFilter] = useState<'all' | 'ready' | 'fix' | 'incomplete' | AgencyReviewStatus>('all');
+  const [reviewFilter, setReviewFilter] = useState<'all' | 'ready' | 'fix' | AgencyReviewStatus>('all');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [sort, setSort] = useState<{ key: SortKey; direction: SortDirection } | null>({ key: 'review', direction: 'desc' });
@@ -362,7 +351,6 @@ export default function AgencyListings() {
     needsReview: listings.filter(l => l.agency_review_status === 'needs_review').length,
     ready: listings.filter(l => getReviewBucket(l) === 'ready').length,
     quickFix: listings.filter(l => getReviewBucket(l) === 'fix').length,
-    incomplete: listings.filter(l => getReviewBucket(l) === 'incomplete').length,
     archived: listings.filter(l => l.agency_review_status === 'archived_stale').length,
     totalViews: listings.reduce((sum, l) => sum + (l.views_count || 0), 0),
   };
@@ -616,8 +604,7 @@ export default function AgencyListings() {
                   <SelectContent>
                     <SelectItem value="all">All Reviews</SelectItem>
                     <SelectItem value="ready">Ready to publish</SelectItem>
-                    <SelectItem value="fix">Quick fixes</SelectItem>
-                    <SelectItem value="incomplete">Needs more information</SelectItem>
+                    <SelectItem value="fix">Needs info/photos</SelectItem>
                     <SelectItem value="approved_live">Confirmed</SelectItem>
                     <SelectItem value="archived_stale">Archived</SelectItem>
                   </SelectContent>
