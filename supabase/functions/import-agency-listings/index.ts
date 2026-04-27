@@ -3542,7 +3542,7 @@ async function processOneItem(
         // Images: website images always enrich; Madlan images only fill an empty image set; Yad2 never downloads.
         if (incomingSource === "website_scrape" && imageUrls.length > 0) {
           const existingImages = Array.isArray(existing.images) ? existing.images as string[] : [];
-          patch.images = [...new Set([...existingImages, ...imageUrls])].slice(0, MAX_STORED_LISTING_IMAGES);
+          patch.images = [...new Set([...existingImages, ...imageUrls])];
           fieldSourceMap["images"] = incomingSource;
         } else if (incomingSource === "madlan" && imageUrls.length > 0) {
           const existingImages = Array.isArray(existing.images) ? existing.images as string[] : [];
