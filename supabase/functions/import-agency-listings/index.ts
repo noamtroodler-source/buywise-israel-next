@@ -1121,17 +1121,19 @@ function sanitizeDiscoveredUrl(raw: string, baseUrl?: string): { url: string | n
   }
 }
 
-function canonicalizeDiscoveredUrls(urls: string[], baseUrl: string): { urls: string[]; rejected: number; repaired: number } {
+function canonicalizeDiscoveredUrls(urls: string[], baseUrl: string): { urls: string[]; rejected: number; repaired: number; diagnostics: Record<string, number> } {
   const seen = new Set<string>();
   let rejected = 0;
   let repaired = 0;
+  const diagnostics: Record<string, number> = {};
   for (const raw of urls) {
     const sanitized = sanitizeDiscoveredUrl(raw, baseUrl);
+    if (sanitized.reason) diagnostics[sanitized.reason] = (diagnostics[sanitized.reason] || 0) + 1;
     if (!sanitized.url) { rejected++; continue; }
     if (sanitized.reason?.startsWith("repaired")) repaired++;
     seen.add(sanitized.url);
   }
-  return { urls: Array.from(seen), rejected, repaired };
+  return { urls: Array.from(seen), rejected, repaired, diagnostics };
 }
 
 async function discoverSitemapListingUrls(siteRoot: string): Promise<string[]> {
@@ -1487,7 +1489,7 @@ async function handleDiscover(body: any) {
 
   const canonical = canonicalizeDiscoveredUrls(rawUrls, formattedUrl);
   if (canonical.rejected > 0 || canonical.repaired > 0) {
-    console.log(`URL sanitation: ${canonical.repaired} repaired, ${canonical.rejected} rejected, ${canonical.urls.length} canonical`);
+    console.log(`URL sanitation: ${canonical.repaired} repaired, ${canonical.rejected} rejected, ${canonical.urls.length} canonical`, canonical.diagnostics);
   }
 
   const allUrls = canonical.urls.filter(url => {
@@ -1537,6 +1539,7 @@ async function handleDiscover(body: any) {
         status: "completed",
         total_urls: 0,
         discovered_urls: allUrls,
+        failure_reason: JSON.stringify({ url_sanitation: canonical.diagnostics, skipped_existing: skippedExisting }),
         processed_count: 0,
         failed_count: 0,
       }).eq("id", existingJobId);
@@ -1569,13 +1572,13 @@ async function handleDiscover(body: any) {
   if (existingJobId) {
     const { error: updateJobErr } = await sb
       .from("import_jobs")
-      .update({ status: "ready", total_urls: listingUrls.length, discovered_urls: allUrls, import_type })
+      .update({ status: "ready", total_urls: listingUrls.length, discovered_urls: allUrls, import_type, failure_reason: JSON.stringify({ url_sanitation: canonical.diagnostics, discovered_raw: rawUrls.length, canonical: canonical.urls.length, queued: listingUrls.length }) })
       .eq("id", existingJobId);
     if (updateJobErr) throw new Error(`Failed to update import job: ${updateJobErr.message}`);
   } else {
     const { data: insertedJob, error: jobErr } = await sb
       .from("import_jobs")
-      .insert({ agency_id, website_url: formattedUrl, status: "ready", total_urls: listingUrls.length, discovered_urls: allUrls, import_type, source_type: "website" })
+      .insert({ agency_id, website_url: formattedUrl, status: "ready", total_urls: listingUrls.length, discovered_urls: allUrls, import_type, source_type: "website", failure_reason: JSON.stringify({ url_sanitation: canonical.diagnostics, discovered_raw: rawUrls.length, canonical: canonical.urls.length, queued: listingUrls.length }) })
       .select("id").single();
     if (jobErr) throw new Error(`Failed to create import job: ${jobErr.message}`);
     job = insertedJob;
@@ -2323,6 +2326,14 @@ async function collectAllowedSourceImages(
   maxImages = 15,
 ): Promise<string[]> {
   const normalized = String(sourceType || "website").toLowerCase();
+  if (listing.image_urls && !Array.isArray(listing.image_urls)) listing.image_urls = [listing.image_urls];
+  if (Array.isArray(listing.image_urls)) {
+    listing.image_urls = listing.image_urls.flatMap((img: any) => {
+      if (typeof img === "string") return [img];
+      if (img && typeof img === "object") return [img.url, img.src, img.source_url, img.large, img.full].filter(Boolean);
+      return [];
+    });
+  }
   if (normalized.includes("yad2")) return [];
   if (isAgencyOwnWebsiteSource(sourceType)) {
     const urls = await collectAgencyOwnedImages(listing, structuredData, pageHtml, itemUrl, sb, jobId);
@@ -4979,6 +4990,7 @@ async function runMadlanAgencyDiscoverJob(params: {
     let totalDiscovered = 0;
     let totalNew = 0;
     let totalInserted = 0;
+    let totalMerged = 0;
     const allDiscoveredUrls: string[] = [];
 
     for (const dealType of dealTypes) {
@@ -5086,6 +5098,52 @@ async function runMadlanAgencyDiscoverJob(params: {
 
           const madlanImages = await collectAllowedSourceImages("madlan", listing, null, "", listingUrl, sb, jobId, 12);
 
+          let existingMatch: any = null;
+          if (address && city) {
+            const normalizedAddr = normalizeAddressForDedup(address);
+            const addrPattern = buildAddressQueryPattern(normalizedAddr);
+            if (normalizedAddr.length > 0) {
+              const { data: byAddress } = await sb
+                .from("properties")
+                .select("id, images, merged_source_urls, source_url, field_source_map")
+                .ilike("address", addrPattern)
+                .ilike("city", String(city).trim())
+                .not("import_source", "is", null)
+                .limit(1);
+              existingMatch = byAddress?.[0] || null;
+            }
+          }
+          if (!existingMatch && city && bedrooms != null && madlanItem.areaSqm && madlanItem.price) {
+            const { data: byFacts } = await sb
+              .from("properties")
+              .select("id, images, merged_source_urls, source_url, field_source_map")
+              .ilike("city", String(city).trim())
+              .eq("bedrooms", Math.floor(bedrooms))
+              .gte("size_sqm", Number(madlanItem.areaSqm) - 5)
+              .lte("size_sqm", Number(madlanItem.areaSqm) + 5)
+              .gte("price", Number(madlanItem.price) * 0.90)
+              .lte("price", Number(madlanItem.price) * 1.10)
+              .not("import_source", "is", null)
+              .limit(1);
+            existingMatch = byFacts?.[0] || null;
+          }
+
+          if (existingMatch) {
+            const mergedUrls: string[] = Array.isArray(existingMatch.merged_source_urls)
+              ? [...existingMatch.merged_source_urls]
+              : (existingMatch.source_url ? [existingMatch.source_url] : []);
+            if (!mergedUrls.includes(listingUrl)) mergedUrls.push(listingUrl);
+            const patch: Record<string, any> = { merged_source_urls: mergedUrls, source_last_checked_at: new Date().toISOString() };
+            const existingImages = Array.isArray(existingMatch.images) ? existingMatch.images : [];
+            if (existingImages.length === 0 && madlanImages.length > 0) {
+              patch.images = madlanImages;
+              patch.field_source_map = { ...((existingMatch.field_source_map as any) || {}), images: "madlan_fallback" };
+            }
+            await sb.from("properties").update(patch).eq("id", existingMatch.id);
+            totalMerged++;
+            continue;
+          }
+
           const { error: propErr } = await sb
             .from("properties")
             .insert({
@@ -5141,15 +5199,16 @@ async function runMadlanAgencyDiscoverJob(params: {
       }).eq("id", jobId);
     }
 
-    dlog(`[Madlan/Apify] Summary: ${totalDiscovered} discovered, ${totalNew} new, ${totalInserted} inserted`);
+    dlog(`[Madlan/Apify] Summary: ${totalDiscovered} discovered, ${totalNew} new, ${totalInserted} inserted, ${totalMerged} merged`);
 
     // Update job
     await sb.from("import_jobs").update({
       status: totalInserted > 0 ? "completed" : (totalDiscovered > 0 ? "completed" : "failed"),
       total_urls: totalNew,
       discovered_urls: allDiscoveredUrls.slice(0, 500), // cap stored URLs
-      processed_count: totalInserted,
-      failed_count: totalNew - totalInserted,
+      processed_count: totalInserted + totalMerged,
+      failed_count: totalNew - totalInserted - totalMerged,
+      failure_reason: JSON.stringify({ source: "madlan", discovered: totalDiscovered, new: totalNew, inserted: totalInserted, merged: totalMerged }),
     }).eq("id", jobId);
 
     // Update agency source
@@ -5162,7 +5221,7 @@ async function runMadlanAgencyDiscoverJob(params: {
       .eq("agency_id", agencyId)
       .eq("source_type", "madlan");
 
-    dlog(`[Madlan/Apify] discovery+import finished for job ${jobId}: ${totalInserted} properties created`);
+    dlog(`[Madlan/Apify] discovery+import finished for job ${jobId}: ${totalInserted} properties created, ${totalMerged} merged`);
   } catch (err) {
     console.error(`[Madlan/Apify] discovery failed for job ${jobId}:`, err);
     await sb.from("import_jobs").update({ status: "failed" }).eq("id", jobId);

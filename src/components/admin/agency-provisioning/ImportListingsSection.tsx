@@ -90,6 +90,11 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
 
   const currentJobSourceLabel = getJobSourceLabel(currentJob?.source_type);
   const currentJobImportTypeLabel = getImportTypeLabel(currentJob?.import_type);
+  const currentJobDiagnostics = useMemo(() => {
+    if (!currentJob?.failure_reason) return null;
+    try { return JSON.parse(currentJob.failure_reason) as Record<string, unknown>; }
+    catch { return null; }
+  }, [currentJob?.failure_reason]);
 
   const { data: jobItems = [] } = useImportJobItems(currentJob?.id);
   useRealtimeImportProgress(currentJob?.id);
@@ -126,6 +131,8 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
   const pendingCount = jobItems.filter(i => i.status === 'pending').length;
   const processingCount = jobItems.filter(i => i.status === 'processing').length;
   const totalItems = jobItems.length;
+  const mergedCount = jobItems.filter(i => i.status === 'done' && /merged/i.test(i.error_message || '')).length;
+  const flaggedCount = jobItems.filter(i => (i.extracted_data as any)?.provisioning_audit_status === 'flagged').length;
   const reasonBuckets = useMemo(() => {
     const classify = (message?: string | null) => {
       const text = (message || '').toLowerCase();
@@ -321,6 +328,14 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
                 </div>
                 <p className="truncate">Source URL: <span className="text-foreground font-medium">{currentJob.website_url}</span></p>
                 <p className="text-xs">These controls import this source job only, not every saved source at once.</p>
+                <div className="flex flex-wrap gap-2 pt-1 text-xs">
+                  <Badge variant="secondary">Imported {doneCount}</Badge>
+                  {mergedCount > 0 && <Badge variant="outline">Merged {mergedCount}</Badge>}
+                  {flaggedCount > 0 && <Badge variant="outline">Flagged {flaggedCount}</Badge>}
+                  {currentJobDiagnostics?.discovered_raw != null && <Badge variant="outline">Raw {String(currentJobDiagnostics.discovered_raw)}</Badge>}
+                  {currentJobDiagnostics?.canonical != null && <Badge variant="outline">Canonical {String(currentJobDiagnostics.canonical)}</Badge>}
+                  {currentJobDiagnostics?.inserted != null && <Badge variant="outline">Inserted {String(currentJobDiagnostics.inserted)}</Badge>}
+                </div>
               </div>
               <Badge variant="outline" className={cn(
                 isCompleted && 'bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]',
