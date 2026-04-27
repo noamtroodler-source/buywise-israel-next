@@ -3180,7 +3180,7 @@ async function processOneItem(
     // 0a. Source URL dedup
     const normalizedItemUrl = normalizeUrl(item.url);
     const { data: existingByUrl } = await sb
-      .from("properties").select("id, source_url").or(`source_url.eq.${item.url},source_url.eq.${normalizedItemUrl}`).limit(1);
+      .from("properties").select("id, source_url").in("source_url", [item.url, normalizedItemUrl]).limit(1);
     if (existingByUrl && existingByUrl.length > 0) {
       await sb.from("import_job_items")
         .update({ status: "skipped", error_message: `Duplicate: URL already imported as property ${existingByUrl[0].id}`, error_type: "permanent" })
