@@ -3524,6 +3524,7 @@ async function processOneItem(
     // Guard against Hebrew agency pages being mislabeled as rentals because
     // generic words like "לטווח" appear in text while the price is clearly a sale price.
     const preValidationWarnings: string[] = [];
+    preValidationWarnings.push(...normalizeCompactAgencyPrice(listing, `${decodeURIComponent(item.url)}\n${markdown}\n${pageHtml}`, importType));
     if (listing.listing_status === "for_rent" && listing.price && listing.price > 100_000) {
       const rentSignals = /לחודש|חודשי|שכירות חודשית|per month|monthly/i.test(`${markdown}\n${pageHtml}`);
       if (!rentSignals || /למכירה|מכירה|for sale/i.test(`${decodeURIComponent(item.url)}\n${markdown}`)) {
