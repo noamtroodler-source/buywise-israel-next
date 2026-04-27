@@ -3666,14 +3666,35 @@ async function processOneItem(
     imageUrls = await collectAllowedSourceImages(job.source_type, listing, structuredData, pageHtml, item.url, sb, jobId);
     if (imageUrls.length > 0) dlog(`Downloaded ${imageUrls.length} allowed ${job.source_type || "website"} images for ${item.url}`);
 
-    // ── Intra-agency dedup (Tier 2 / 2.5) — REMOVED in co-listing v2 ──
-    // Previous behavior silently dropped listings that matched the same
-    // agency's other listings on (address+city) or (city+rooms+size+price).
-    // That was net-destructive in towers: an agency uploading 40 units in one
-    // building would lose 35 of them with no error surface. Each unit now
-    // inserts independently. If a genuine intra-agency duplicate slips in
-    // (same apartment, two different URLs on one agency's site), it surfaces
-    // for admin review via detect-duplicates pair flagging — not here.
+    // ── Intra-agency strict dedup ──
+    // Keep same-building/multi-unit inventory, but block exact same-unit repeats
+    // that arrive through alternate URLs, portal mirrors, or URL encoding variants.
+    if (job.agency_id && listing.city && (listing.address || (listing.size_sqm && listing.price && listing.bedrooms != null))) {
+      const query = sb
+        .from("properties")
+        .select("id, title, address, city, listing_status, price, size_sqm, bedrooms, bathrooms, floor, source_url")
+        .or(`primary_agency_id.eq.${job.agency_id},claimed_by_agency_id.eq.${job.agency_id}`)
+        .eq("listing_status", listing.listing_status || "for_sale")
+        .ilike("city", listing.city.trim())
+        .limit(50);
+
+      if (listing.bedrooms != null) query.eq("bedrooms", Math.floor(listing.bedrooms));
+      if (listing.size_sqm) query.gte("size_sqm", listing.size_sqm - 3).lte("size_sqm", listing.size_sqm + 3);
+      if (listing.price) query.gte("price", listing.price * 0.97).lte("price", listing.price * 1.03);
+
+      const { data: sameAgencyCandidates } = await query;
+      const sameUnit = (sameAgencyCandidates || []).find((candidate: any) => isStrictSameUnitDuplicate(candidate, listing));
+      if (sameUnit) {
+        await sb.from("import_job_items").update({
+          status: "skipped",
+          error_message: `Duplicate: same agency same unit already imported as property ${sameUnit.id}`,
+          error_type: "permanent",
+          property_id: sameUnit.id,
+          extracted_data: { ...listing, duplicate_of: sameUnit.id },
+        }).eq("id", item.id);
+        return { succeeded: false };
+      }
+    }
 
     // ── DEDUP: Tier 3 — Cross-source merge ──
     // If this listing already exists from another source, MERGE rather than duplicate.
