@@ -196,27 +196,6 @@ function LaunchReviewGuidance({ listings, reviewFilter, setReviewFilter }: {
           ))}
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          {[
-            { key: 'all', label: 'All', value: counts.all },
-            { key: 'approved_live', label: 'Confirmed', value: counts.approved },
-            { key: 'archived_stale', label: 'Archived', value: counts.archived },
-          ].map((item) => (
-            <button
-              key={item.key}
-              type="button"
-              onClick={() => setReviewFilter(item.key as any)}
-              className={cn(
-                'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors',
-                reviewFilter === item.key
-                  ? 'bg-primary text-primary-foreground border-primary'
-                  : 'bg-background border-border hover:bg-muted'
-              )}
-            >
-              {item.label} <span className="opacity-80">{item.value}</span>
-            </button>
-          ))}
-        </div>
       </CardContent>
     </Card>
   );
