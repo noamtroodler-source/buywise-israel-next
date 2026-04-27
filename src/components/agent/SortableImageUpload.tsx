@@ -27,7 +27,6 @@ import { Button } from '@/components/ui/button';
 interface SortableImageUploadProps {
   images: string[];
   onImagesChange: (images: string[]) => void;
-  maxImages?: number;
   minImages?: number;
 }
 
@@ -137,7 +136,6 @@ function SortableImageItem({ url, index, onRemove, onSetCover, isFirst }: Sortab
 export function SortableImageUpload({
   images,
   onImagesChange,
-  maxImages = 20,
   minImages = 3,
 }: SortableImageUploadProps) {
   const [uploading, setUploading] = useState(false);
@@ -204,22 +202,12 @@ export function SortableImageUpload({
     const files = event.target.files;
     if (!files || files.length === 0) return;
 
-    const remainingSlots = maxImages - images.length;
-    if (remainingSlots <= 0) {
-      toast({
-        title: "Maximum images reached",
-        description: `You can only upload up to ${maxImages} images.`,
-        variant: "destructive",
-      });
-      return;
-    }
-
     // Validate file sizes (10MB max)
     const MAX_SIZE = 10 * 1024 * 1024;
     const validFiles: File[] = [];
     const oversizedFiles: string[] = [];
     
-    Array.from(files).slice(0, remainingSlots).forEach(file => {
+    Array.from(files).forEach(file => {
       if (file.size > MAX_SIZE) {
         oversizedFiles.push(file.name);
       } else {
@@ -359,26 +347,24 @@ export function SortableImageUpload({
             ))}
 
             {/* Upload button */}
-            {images.length < maxImages && (
-              <label className="relative flex flex-col items-center justify-center h-32 rounded-xl border-2 border-dashed border-muted-foreground/25 hover:border-primary/50 hover:bg-primary/5 transition-colors cursor-pointer group">
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleFileChange}
-                  className="hidden"
-                  disabled={uploading}
-                />
-                {uploading ? (
-                  <Loader2 className="h-8 w-8 text-muted-foreground animate-spin" />
-                ) : (
-                  <>
-                    <ImagePlus className="h-8 w-8 text-muted-foreground group-hover:text-primary transition-colors" />
-                    <span className="text-xs text-muted-foreground mt-2">Add Photos</span>
-                  </>
-                )}
-              </label>
-            )}
+            <label className="relative flex flex-col items-center justify-center h-32 rounded-xl border-2 border-dashed border-muted-foreground/25 hover:border-primary/50 hover:bg-primary/5 transition-colors cursor-pointer group">
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleFileChange}
+                className="hidden"
+                disabled={uploading}
+              />
+              {uploading ? (
+                <Loader2 className="h-8 w-8 text-muted-foreground animate-spin" />
+              ) : (
+                <>
+                  <ImagePlus className="h-8 w-8 text-muted-foreground group-hover:text-primary transition-colors" />
+                  <span className="text-xs text-muted-foreground mt-2">Add Photos</span>
+                </>
+              )}
+            </label>
           </div>
         </SortableContext>
       </DndContext>
@@ -444,7 +430,7 @@ export function SortableImageUpload({
 
       {/* Counter */}
       <p className="text-sm text-muted-foreground text-center">
-        {images.length} / {maxImages} photos
+        {images.length} photo{images.length !== 1 ? 's' : ''} uploaded
         {images.length < minImages && (
           <span className="text-destructive ml-1">
             (minimum {minImages} required)
