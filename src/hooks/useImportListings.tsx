@@ -14,6 +14,7 @@ export interface ImportJob {
   discovered_urls: string[];
   import_type: string;
   source_type?: string | null;
+  failure_reason?: string | null;
   is_incremental: boolean;
   created_at: string;
   updated_at: string;
