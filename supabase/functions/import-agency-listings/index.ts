@@ -5215,7 +5215,7 @@ async function runMadlanAgencyDiscoverJob(params: {
           if (!flattenImageCandidates(listing.image_urls).length) {
             detailHtml = await fetchMadlanDetailHtml(listingUrl);
           }
-          const madlanImages = await collectAllowedSourceImages("madlan", listing, null, detailHtml, listingUrl, sb, jobId, 12);
+          const madlanImages = await collectAllowedSourceImages("madlan", listing, null, detailHtml, listingUrl, sb, jobId, DEFAULT_MADLAN_IMAGE_LIMIT);
           if (madlanImages.length === 0) totalImageFailures++;
 
           let existingMatch: any = null;
