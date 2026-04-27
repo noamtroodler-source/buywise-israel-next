@@ -51,6 +51,7 @@ import { AgencyListingsSkeleton } from '@/components/agency/skeletons/AgencyPage
 import { EnhancedEmptyState } from '@/components/shared/EnhancedEmptyState';
 
 const IMPORTED_BANNER_KEY = 'agency_imported_drafts_banner_dismissed';
+const LAUNCH_REVIEW_GUIDANCE_KEY = 'agency_launch_review_guidance_dismissed';
 
 function ImportedDraftsGuidance({ listings }: { listings: any[] }) {
   const [dismissed, setDismissed] = useState(true);
@@ -106,8 +107,119 @@ const reviewConfig: Record<AgencyReviewStatus, { label: string; color: string; i
 function getReviewBucket(listing: AgencyListing) {
   const status = listing.agency_review_status || 'needs_review';
   if (status === 'needs_review' && listing.safe_to_batch_approve) return 'ready';
+  if ((status === 'needs_review' || status === 'needs_edit') && (listing.has_critical_flags || (listing.missing_quick_fields?.length ?? 0) >= 3)) return 'incomplete';
   if (status === 'needs_review' || status === 'needs_edit') return 'fix';
   return status;
+}
+
+function LaunchReviewGuidance({ listings, reviewFilter, setReviewFilter }: {
+  listings: AgencyListing[];
+  reviewFilter: 'all' | 'ready' | 'fix' | 'incomplete' | AgencyReviewStatus;
+  setReviewFilter: (value: 'all' | 'ready' | 'fix' | 'incomplete' | AgencyReviewStatus) => void;
+}) {
+  const [dismissed, setDismissed] = useState(() => localStorage.getItem(LAUNCH_REVIEW_GUIDANCE_KEY) === 'true');
+
+  const counts = useMemo(() => ({
+    all: listings.length,
+    ready: listings.filter((listing) => getReviewBucket(listing) === 'ready').length,
+    fix: listings.filter((listing) => getReviewBucket(listing) === 'fix').length,
+    incomplete: listings.filter((listing) => getReviewBucket(listing) === 'incomplete').length,
+    approved: listings.filter(l => l.agency_review_status === 'approved_live').length,
+    archived: listings.filter(l => l.agency_review_status === 'archived_stale').length,
+  }), [listings]);
+
+  if (dismissed || listings.length === 0) return null;
+
+  const categories = [
+    {
+      key: 'ready' as const,
+      label: 'Ready to publish',
+      value: counts.ready,
+      description: 'Core fields look ready. We still recommend a quick accuracy check before publishing.',
+    },
+    {
+      key: 'fix' as const,
+      label: 'Needs quick fixes',
+      value: counts.fix,
+      description: 'Mostly ready, but missing small details like photos, size, floor, bathrooms, or agent assignment.',
+    },
+    {
+      key: 'incomplete' as const,
+      label: 'Needs more information',
+      value: counts.incomplete,
+      description: 'Missing too much to confidently publish yet. Complete these before going live.',
+    },
+  ];
+
+  return (
+    <Card className="rounded-2xl border-primary/15 bg-primary/5 shadow-sm">
+      <CardContent className="p-4 space-y-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-foreground">Review your imported listings before going live</p>
+            <p className="text-sm text-muted-foreground max-w-4xl">
+              Start with the listings that are closest to ready, then work through quick fixes. Your agency is responsible for accuracy, and richer features/photos help buyers trust and notice each listing.
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 shrink-0 rounded-full text-muted-foreground hover:text-foreground"
+            onClick={() => {
+              localStorage.setItem(LAUNCH_REVIEW_GUIDANCE_KEY, 'true');
+              setDismissed(true);
+            }}
+            aria-label="Dismiss onboarding guidance"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-3">
+          {categories.map((category) => (
+            <button
+              key={category.key}
+              type="button"
+              onClick={() => setReviewFilter(category.key)}
+              className={cn(
+                'text-left rounded-xl border p-3 transition-colors bg-background/80 hover:bg-background',
+                reviewFilter === category.key ? 'border-primary ring-1 ring-primary/30' : 'border-border/70'
+              )}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm font-semibold text-foreground">{category.label}</span>
+                <span className="text-lg font-bold text-primary">{category.value}</span>
+              </div>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{category.description}</p>
+            </button>
+          ))}
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {[
+            { key: 'all', label: 'All', value: counts.all },
+            { key: 'approved_live', label: 'Confirmed', value: counts.approved },
+            { key: 'archived_stale', label: 'Archived', value: counts.archived },
+          ].map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              onClick={() => setReviewFilter(item.key as any)}
+              className={cn(
+                'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors',
+                reviewFilter === item.key
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'bg-background border-border hover:bg-muted'
+              )}
+            >
+              {item.label} <span className="opacity-80">{item.value}</span>
+            </button>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
 type SortKey = 'review' | 'price' | 'views' | 'saves' | 'inquiries' | 'days';
@@ -198,7 +310,7 @@ export default function AgencyListings() {
   const [agentFilter, setAgentFilter] = useState<string>('all');
   const [cityFilter, setCityFilter] = useState<string>('all');
   const [roleFilter, setRoleFilter] = useState<'all' | 'primary' | 'co_listed'>('all');
-  const [reviewFilter, setReviewFilter] = useState<'all' | 'ready' | 'fix' | AgencyReviewStatus>('all');
+  const [reviewFilter, setReviewFilter] = useState<'all' | 'ready' | 'fix' | 'incomplete' | AgencyReviewStatus>('all');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [sort, setSort] = useState<{ key: SortKey; direction: SortDirection } | null>({ key: 'review', direction: 'desc' });
@@ -269,8 +381,9 @@ export default function AgencyListings() {
     active: listings.filter(l => l.verification_status === 'approved').length,
     pending: listings.filter(l => l.verification_status === 'pending_review').length,
     needsReview: listings.filter(l => l.agency_review_status === 'needs_review').length,
-    ready: listings.filter(l => l.agency_review_status === 'needs_review' && l.safe_to_batch_approve).length,
-    quickFix: listings.filter(l => (l.agency_review_status === 'needs_review' && !l.safe_to_batch_approve) || l.agency_review_status === 'needs_edit').length,
+    ready: listings.filter(l => getReviewBucket(l) === 'ready').length,
+    quickFix: listings.filter(l => getReviewBucket(l) === 'fix').length,
+    incomplete: listings.filter(l => getReviewBucket(l) === 'incomplete').length,
     archived: listings.filter(l => l.agency_review_status === 'archived_stale').length,
     totalViews: listings.reduce((sum, l) => sum + (l.views_count || 0), 0),
   };
@@ -449,40 +562,7 @@ export default function AgencyListings() {
             ))}
           </div>
 
-          {/* Role pills — click to filter by primary / co-listed */}
-          <Card className="rounded-2xl border-primary/10 bg-primary/5">
-            <CardContent className="p-4">
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                <div>
-                  <p className="text-sm font-semibold text-foreground">Private launch review</p>
-                  <p className="text-sm text-muted-foreground">Confirm availability and accuracy before listings go live. These labels stay inside the agency portal.</p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    { key: 'all', label: 'All', value: listings.length },
-                    { key: 'ready', label: 'Safe to approve', value: stats.ready },
-                    { key: 'fix', label: 'Quick fixes', value: stats.quickFix },
-                    { key: 'approved_live', label: 'Confirmed', value: listings.filter(l => l.agency_review_status === 'approved_live').length },
-                    { key: 'archived_stale', label: 'Archived', value: stats.archived },
-                  ].map((item) => (
-                    <button
-                      key={item.key}
-                      type="button"
-                      onClick={() => setReviewFilter(item.key as any)}
-                      className={cn(
-                        'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors',
-                        reviewFilter === item.key
-                          ? 'bg-primary text-primary-foreground border-primary'
-                          : 'bg-background border-border hover:bg-muted'
-                      )}
-                    >
-                      {item.label} <span className="opacity-80">{item.value}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <LaunchReviewGuidance listings={listings} reviewFilter={reviewFilter} setReviewFilter={setReviewFilter} />
 
           {/* Role pills — click to filter by primary / co-listed */}
           {(primaryCount > 0 || coListedCount > 0) && (
@@ -556,8 +636,9 @@ export default function AgencyListings() {
                   <SelectTrigger className="w-[170px] rounded-xl"><SelectValue placeholder="Review" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Reviews</SelectItem>
-                    <SelectItem value="ready">Safe to approve</SelectItem>
+                    <SelectItem value="ready">Ready to publish</SelectItem>
                     <SelectItem value="fix">Quick fixes</SelectItem>
+                    <SelectItem value="incomplete">Needs more information</SelectItem>
                     <SelectItem value="approved_live">Confirmed</SelectItem>
                     <SelectItem value="archived_stale">Archived</SelectItem>
                   </SelectContent>
