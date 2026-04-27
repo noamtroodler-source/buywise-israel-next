@@ -541,6 +541,11 @@ export default function AgencyListings() {
                                 <Badge variant="outline" className={cn('text-xs', status.color)}>
                                   {status.label}
                                 </Badge>
+                                {(listing as any).import_source && (
+                                  <Badge variant="secondary" className="text-xs bg-primary/10 text-primary border-primary/20">
+                                    Imported
+                                  </Badge>
+                                )}
                               </div>
                             </TableCell>
                             <TableCell className="text-right font-medium">
