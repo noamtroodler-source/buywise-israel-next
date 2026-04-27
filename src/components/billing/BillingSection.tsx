@@ -34,7 +34,7 @@ export function BillingSection() {
 
   if (isLoading) {
     return (
-      <Card className="rounded-2xl">
+      <Card className="rounded-2xl border-border/50 shadow-sm">
         <CardContent className="flex items-center justify-center py-8">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </CardContent>
@@ -52,21 +52,21 @@ export function BillingSection() {
     : null;
 
   return (
-    <Card className="rounded-2xl border-border hover:shadow-lg hover:border-primary/30 transition-all">
+    <Card className="rounded-2xl border-border/50 bg-card shadow-sm transition-all hover:border-primary/30 hover:shadow-md">
       <CardHeader className="pb-4">
         <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-            <CreditCard className="h-4 w-4 text-primary" />
+          <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+            <CreditCard className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <CardTitle>Billing & Subscription</CardTitle>
+            <CardTitle className="text-xl">Billing & Subscription</CardTitle>
             <CardDescription>Manage your plan</CardDescription>
           </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Current Plan */}
-        <div className="p-4 rounded-xl bg-muted/50 border border-border/50 space-y-3">
+        <div className="p-4 rounded-xl bg-muted/30 border border-border/50 space-y-3">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
               <p className="text-sm text-muted-foreground">Current Plan</p>
@@ -77,11 +77,11 @@ export function BillingSection() {
                 variant="secondary"
                 className={
                   sub.status === 'past_due'
-                    ? 'bg-destructive/10 text-destructive'
+                    ? 'bg-destructive/10 text-destructive border-destructive/20'
                     : sub.status === 'trialing'
-                    ? 'bg-primary/10 text-primary'
+                    ? 'bg-primary/10 text-primary border-primary/20'
                     : sub.status === 'active'
-                    ? 'bg-primary/10 text-primary'
+                    ? 'bg-primary/10 text-primary border-primary/20'
                     : 'bg-muted text-muted-foreground'
                 }
               >
@@ -120,7 +120,7 @@ export function BillingSection() {
         {/* Actions */}
         <div className="flex flex-wrap gap-2">
           {!isFoundingAgency && (
-            <Button variant="outline" size="sm" asChild className="rounded-xl">
+            <Button variant="outline" size="sm" asChild className="rounded-xl border-primary/20 hover:bg-primary/5">
               <Link to="/pricing">
                 <ArrowUpRight className="h-4 w-4 mr-1.5" />
                 {hasSubscription ? 'Change Plan' : 'View Plans'}
@@ -131,7 +131,7 @@ export function BillingSection() {
             <Button
               variant="outline"
               size="sm"
-              className="rounded-xl"
+              className="rounded-xl border-primary/20 hover:bg-primary/5"
               onClick={openBillingPortal}
               disabled={portalLoading}
             >
