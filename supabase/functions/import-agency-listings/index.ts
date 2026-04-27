@@ -3579,6 +3579,7 @@ async function processOneItem(
         is_published: false,
         is_featured: false, views_count: 0,
         verification_status: "pending_review",
+        provisioning_audit_status: listing.provisioning_audit_status || "pending",
         primary_agency_id: job.agency_id,
         claimed_by_agency_id: job.agency_id,
         import_source: job.source_type === "yad2" ? "yad2" : job.source_type === "madlan" ? "madlan" : "website_scrape",
