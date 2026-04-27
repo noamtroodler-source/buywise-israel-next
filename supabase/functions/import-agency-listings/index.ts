@@ -5021,6 +5021,7 @@ async function runMadlanAgencyDiscoverJob(params: {
             floor: madlanItem.floor || null,
             condition: madlanItem.condition || null,
             parking: madlanItem.parking || 0,
+            image_urls: madlanItem.images || madlanItem.photos || madlanItem.imageUrls || madlanItem.media || [],
           };
 
           const title = generateListingTitle(listing);
@@ -5045,6 +5046,8 @@ async function runMadlanAgencyDiscoverJob(params: {
             + (madlanItem.neighbourhood ? 5 : 0)
           );
 
+          const madlanImages = await collectAllowedSourceImages("madlan", listing, null, "", listingUrl, sb, jobId, 12);
+
           const { error: propErr } = await sb
             .from("properties")
             .insert({
@@ -5066,8 +5069,7 @@ async function runMadlanAgencyDiscoverJob(params: {
               features,
               parking: madlanItem.parking || 0,
               condition: madlanItem.condition || null,
-              // Don't store external images — copyright
-              images: null,
+              images: madlanImages.length > 0 ? madlanImages : null,
               // Always import as draft — agency owner must review before going live
               is_published: false,
               is_featured: false,
@@ -5082,6 +5084,7 @@ async function runMadlanAgencyDiscoverJob(params: {
               is_claimed: false,
               source_status: "active",
               source_last_checked_at: new Date().toISOString(),
+              field_source_map: madlanImages.length > 0 ? { images: "madlan_fallback" } : null,
             });
 
           if (propErr) {
