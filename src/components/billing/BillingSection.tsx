@@ -52,7 +52,7 @@ export function BillingSection() {
     : null;
 
   return (
-    <Card className="rounded-2xl border-border/50 bg-card shadow-sm transition-all hover:border-primary/30 hover:shadow-md">
+    <Card className="h-full rounded-2xl border-border/50 bg-card shadow-sm transition-all hover:border-primary/30 hover:shadow-md">
       <CardHeader className="pb-4">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
