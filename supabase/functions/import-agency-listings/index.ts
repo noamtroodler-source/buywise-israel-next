@@ -3745,16 +3745,13 @@ async function processOneItem(
           fieldSourceMap["features"] = incomingFieldSource("features");
         }
 
-        // Images: website images always enrich; Madlan images only fill an empty image set; Yad2 never downloads.
-        if (incomingSource === "website_scrape" && imageUrls.length > 0) {
+        // Images: first successful source wins. Later matched sources enrich facts/features only,
+        // avoiding duplicated/overlapping galleries across agency/Madlan/Yad2.
+        if (imageUrls.length > 0) {
           const existingImages = Array.isArray(existing.images) ? existing.images as string[] : [];
-          patch.images = [...new Set([...existingImages, ...imageUrls])];
-          fieldSourceMap["images"] = incomingSource;
-        } else if (incomingSource === "madlan" && imageUrls.length > 0) {
-          const existingImages = Array.isArray(existing.images) ? existing.images as string[] : [];
-          if (existingImages.length === 0) {
+          if (existingImages.length === 0 && incomingSource !== "yad2") {
             patch.images = imageUrls;
-            fieldSourceMap["images"] = "madlan_fallback";
+            fieldSourceMap["images"] = incomingSource === "madlan" ? "madlan_fallback" : incomingSource;
           }
         }
 
