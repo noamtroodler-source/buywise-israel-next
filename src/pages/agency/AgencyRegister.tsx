@@ -38,6 +38,7 @@ import { getUserFriendlyError } from '@/utils/userFriendlyErrors';
 import { AgentProfileStep, type AgentProfileData } from '@/components/agency/AgentProfileStep';
 import { Switch } from '@/components/ui/switch';
 import { AIDescriptionChecker } from '@/components/shared/AIDescriptionChecker';
+import { useMyAgency } from '@/hooks/useAgencyManagement';
 
 const baseSteps = [
   { id: 'basics', title: 'Agency Basics', description: 'Your agency details', icon: Building2 },
@@ -98,6 +99,7 @@ export default function AgencyRegister() {
   const [searchParams] = useSearchParams();
   const claimPropertyId = searchParams.get('claim');
   const { user, loading } = useAuth();
+  const { data: existingAgency, isLoading: agencyLoading } = useMyAgency();
   const { data: cities = [] } = useCities();
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -153,6 +155,12 @@ export default function AgencyRegister() {
       navigate('/auth?tab=signup&role=agency');
     }
   }, [user, loading, navigate]);
+
+  useEffect(() => {
+    if (!loading && !agencyLoading && existingAgency) {
+      navigate('/agency', { replace: true });
+    }
+  }, [loading, agencyLoading, existingAgency, navigate]);
 
   const [formData, setFormData] = useState({
     name: '',
