@@ -995,6 +995,36 @@ function normalizeAddressForDedup(address: string): string {
   return norm;
 }
 
+function normalizeTextKey(value: string | null | undefined): string {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[\u0590-\u05FF]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\b(apartment|apt|property|listing|for|rent|sale|new|renovated|luxury|spacious)\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function isStrictSameUnitDuplicate(existing: Record<string, any>, listing: Record<string, any>): boolean {
+  if ((existing.listing_status || "for_sale") !== (listing.listing_status || "for_sale")) return false;
+  if (existing.city && listing.city && normalizeCityStr(existing.city) !== normalizeCityStr(listing.city)) return false;
+
+  const existingAddress = normalizeAddressForDedup(existing.address || "");
+  const incomingAddress = normalizeAddressForDedup(listing.address || "");
+  const hasSameAddress = existingAddress.length > 4 && incomingAddress.length > 4 && existingAddress === incomingAddress;
+
+  const sameBeds = existing.bedrooms == null || listing.bedrooms == null || Math.floor(existing.bedrooms) === Math.floor(listing.bedrooms);
+  const sameBaths = existing.bathrooms == null || listing.bathrooms == null || Math.floor(existing.bathrooms) === Math.floor(listing.bathrooms);
+  const sameFloor = existing.floor == null || listing.floor == null || Math.floor(existing.floor) === Math.floor(listing.floor);
+  const sizeClose = existing.size_sqm && listing.size_sqm ? Math.abs(existing.size_sqm - listing.size_sqm) <= 3 : false;
+  const priceClose = existing.price && listing.price ? Math.abs(existing.price - listing.price) / Math.max(existing.price, listing.price) <= 0.03 : false;
+  const titleOverlap = normalizeTextKey(existing.title) && normalizeTextKey(existing.title) === normalizeTextKey(listing.title);
+
+  if (hasSameAddress && sameBeds && sameBaths && sameFloor && (sizeClose || priceClose)) return true;
+  if (!hasSameAddress && sameBeds && sameBaths && sameFloor && sizeClose && priceClose && titleOverlap) return true;
+  return false;
+}
+
 /** Clean address for storage — strips apartment/floor info and street prefixes for consistency */
 function normalizeAddressForStorage(address: string): string {
   let norm = address.trim();
