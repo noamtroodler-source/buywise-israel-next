@@ -53,7 +53,9 @@ Deno.serve(async (req) => {
 
     // Initialize ImageMagick WASM (once per cold start)
     if (!wasmInitialized) {
-      await initializeImageMagick();
+      await initializeImageMagick(
+        new URL("https://cdn.jsdelivr.net/npm/@imagemagick/magick-wasm@0.0.30/dist/magick.wasm")
+      );
       wasmInitialized = true;
     }
 
@@ -81,7 +83,7 @@ Deno.serve(async (req) => {
           image.resize(geometry);
         }
 
-        image.write(MagickFormat.Webp, (data) => {
+        image.write(MagickFormat.WebP, (data) => {
           const path = `${base_path}/${size.name}.webp`;
           // Store for upload after we exit the callback
           urls[size.name] = path;
