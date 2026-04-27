@@ -5332,12 +5332,19 @@ async function runMadlanAgencyDiscoverJob(params: {
               neighborhood: madlanItem.neighbourhood || null,
               latitude, longitude,
               bedrooms,
+              bathrooms: listing.bathrooms != null ? Math.floor(listing.bathrooms) : null,
               source_rooms: rooms,
               size_sqm: madlanItem.areaSqm || null,
               floor: madlanItem.floor ? parseInt(madlanItem.floor) || null : null,
+              total_floors: listing.total_floors ? parseInt(String(listing.total_floors)) || null : null,
               features,
               parking: madlanItem.parking || 0,
               condition: madlanItem.condition || null,
+              ac_type: listing.ac_type || null,
+              entry_date: sanitizeEntryDate(listing.entry_date),
+              vaad_bayit_monthly: listing.vaad_bayit_monthly ?? null,
+              is_furnished: listing.is_furnished ?? false,
+              is_accessible: listing.is_accessible ?? false,
               images: madlanImages.length > 0 ? madlanImages : null,
               // Always import as draft — agency owner must review before going live
               is_published: false,
@@ -5353,7 +5360,12 @@ async function runMadlanAgencyDiscoverJob(params: {
               is_claimed: false,
               source_status: "active",
               source_last_checked_at: new Date().toISOString(),
-              field_source_map: madlanImages.length > 0 ? { images: "madlan_fallback" } : null,
+              field_source_map: {
+                price: "madlan", size_sqm: "madlan", bedrooms: "madlan", bathrooms: "madlan", source_rooms: "madlan",
+                floor: "madlan", total_floors: "madlan", parking: "madlan", condition: "madlan", ac_type: "madlan",
+                entry_date: "madlan", vaad_bayit_monthly: "madlan", is_furnished: "madlan", is_accessible: "madlan",
+                neighborhood: "madlan", description: "madlan", features: "madlan", ...(madlanImages.length > 0 ? { images: "madlan_fallback" } : {}),
+              },
             });
 
           if (propErr) {
