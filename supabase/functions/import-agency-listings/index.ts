@@ -5098,6 +5098,52 @@ async function runMadlanAgencyDiscoverJob(params: {
 
           const madlanImages = await collectAllowedSourceImages("madlan", listing, null, "", listingUrl, sb, jobId, 12);
 
+          let existingMatch: any = null;
+          if (address && city) {
+            const normalizedAddr = normalizeAddressForDedup(address);
+            const addrPattern = buildAddressQueryPattern(normalizedAddr);
+            if (normalizedAddr.length > 0) {
+              const { data: byAddress } = await sb
+                .from("properties")
+                .select("id, images, merged_source_urls, source_url, field_source_map")
+                .ilike("address", addrPattern)
+                .ilike("city", String(city).trim())
+                .not("import_source", "is", null)
+                .limit(1);
+              existingMatch = byAddress?.[0] || null;
+            }
+          }
+          if (!existingMatch && city && bedrooms != null && madlanItem.areaSqm && madlanItem.price) {
+            const { data: byFacts } = await sb
+              .from("properties")
+              .select("id, images, merged_source_urls, source_url, field_source_map")
+              .ilike("city", String(city).trim())
+              .eq("bedrooms", Math.floor(bedrooms))
+              .gte("size_sqm", Number(madlanItem.areaSqm) - 5)
+              .lte("size_sqm", Number(madlanItem.areaSqm) + 5)
+              .gte("price", Number(madlanItem.price) * 0.90)
+              .lte("price", Number(madlanItem.price) * 1.10)
+              .not("import_source", "is", null)
+              .limit(1);
+            existingMatch = byFacts?.[0] || null;
+          }
+
+          if (existingMatch) {
+            const mergedUrls: string[] = Array.isArray(existingMatch.merged_source_urls)
+              ? [...existingMatch.merged_source_urls]
+              : (existingMatch.source_url ? [existingMatch.source_url] : []);
+            if (!mergedUrls.includes(listingUrl)) mergedUrls.push(listingUrl);
+            const patch: Record<string, any> = { merged_source_urls: mergedUrls, source_last_checked_at: new Date().toISOString() };
+            const existingImages = Array.isArray(existingMatch.images) ? existingMatch.images : [];
+            if (existingImages.length === 0 && madlanImages.length > 0) {
+              patch.images = madlanImages;
+              patch.field_source_map = { ...((existingMatch.field_source_map as any) || {}), images: "madlan_fallback" };
+            }
+            await sb.from("properties").update(patch).eq("id", existingMatch.id);
+            totalMerged++;
+            continue;
+          }
+
           const { error: propErr } = await sb
             .from("properties")
             .insert({
