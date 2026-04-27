@@ -2256,6 +2256,52 @@ async function computeSha256(buffer: ArrayBuffer): Promise<string> {
   return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
+function readImageDimensions(buffer: ArrayBuffer, contentType: string): { width: number; height: number } | null {
+  const bytes = new Uint8Array(buffer);
+  const view = new DataView(buffer);
+  const type = contentType.toLowerCase();
+
+  if ((type.includes("png") || (bytes[0] === 0x89 && bytes[1] === 0x50)) && bytes.length >= 24) {
+    return { width: view.getUint32(16), height: view.getUint32(20) };
+  }
+
+  if ((type.includes("jpeg") || type.includes("jpg") || (bytes[0] === 0xff && bytes[1] === 0xd8)) && bytes.length > 4) {
+    let offset = 2;
+    while (offset + 9 < bytes.length) {
+      if (bytes[offset] !== 0xff) { offset++; continue; }
+      const marker = bytes[offset + 1];
+      const length = view.getUint16(offset + 2);
+      if (length < 2) break;
+      if ((marker >= 0xc0 && marker <= 0xc3) || (marker >= 0xc5 && marker <= 0xc7) || (marker >= 0xc9 && marker <= 0xcb) || (marker >= 0xcd && marker <= 0xcf)) {
+        return { height: view.getUint16(offset + 5), width: view.getUint16(offset + 7) };
+      }
+      offset += 2 + length;
+    }
+  }
+
+  if ((type.includes("webp") || String.fromCharCode(...bytes.slice(0, 4)) === "RIFF") && bytes.length >= 30) {
+    const chunk = String.fromCharCode(...bytes.slice(12, 16));
+    if (chunk === "VP8X" && bytes.length >= 30) {
+      const width = 1 + bytes[24] + (bytes[25] << 8) + (bytes[26] << 16);
+      const height = 1 + bytes[27] + (bytes[28] << 8) + (bytes[29] << 16);
+      return { width, height };
+    }
+  }
+
+  return null;
+}
+
+function isLogoLikeImage(dimensions: { width: number; height: number } | null, byteLength: number): boolean {
+  if (!dimensions) return false;
+  const { width, height } = dimensions;
+  if (width < 400 || height < 250) return true;
+  const aspectRatio = width / Math.max(height, 1);
+  // Catch wide, low banner/logo artwork while preserving high-resolution wide property photos.
+  if (height < 450 && aspectRatio > 2.35) return true;
+  if (byteLength < 25_000 && height < 500 && aspectRatio > 1.9) return true;
+  return false;
+}
+
 async function optimizeImage(
   sourceUrl: string, bucket: string, basePath: string
 ): Promise<{ thumb?: string; medium?: string; full?: string } | null> {
@@ -2355,6 +2401,12 @@ async function parallelImageDownload(
 
         // Double-check size after download
         if (imgBuffer.byteLength < 5000) return null;
+
+        const dimensions = readImageDimensions(imgBuffer, contentType);
+        if (isLogoLikeImage(dimensions, imgBuffer.byteLength)) {
+          dlog(`Skipping logo-like/branding image (${dimensions?.width}x${dimensions?.height}, ${imgBuffer.byteLength} bytes): ${imgUrl.slice(0, 80)}`);
+          return null;
+        }
 
         // SHA-256 dedup: skip exact byte-match duplicates
         const hash = await computeSha256(imgBuffer);
