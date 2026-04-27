@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -10,19 +10,26 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
 import {
   useImportJobs,
   useImportJobItems,
-  useDiscoverListings,
   useProcessBatch,
   useDeleteImportJob,
   useRetryFailed,
   useProcessAll,
   useResumeJob,
 } from '@/hooks/useImportListings';
+import { useAgencySources, useTriggerAgencySourcesSync, useTriggerSourceSync, useUpsertAgencySources } from '@/hooks/useAgencySources';
 import { cn } from '@/lib/utils';
 import { useRealtimeImportProgress } from '@/hooks/useRealtimeImportProgress';
 import { ImportProgressBar } from '@/components/agency/ImportProgressBar';
+
+const SOURCE_META = {
+  website: { label: 'Agency website', placeholder: 'https://agency-website.com/listings', priority: 1 as const },
+  madlan: { label: 'Madlan', placeholder: 'https://www.madlan.co.il/agentsOffice/re_office_...', priority: 2 as const },
+  yad2: { label: 'Yad2', placeholder: 'https://www.yad2.co.il/realestate/agency/...', priority: 3 as const },
+};
 
 /**
  * Embedded admin import tool — scoped to a single agency. Used inside the
@@ -30,17 +37,36 @@ import { ImportProgressBar } from '@/components/agency/ImportProgressBar';
  * agency currently being set up.
  */
 export function ImportListingsSection({ agencyId, agencyName }: { agencyId: string; agencyName?: string }) {
-  const [websiteUrl, setWebsiteUrl] = useState('');
-  const [sourceType, setSourceType] = useState<'website' | 'yad2' | 'madlan'>('website');
+  const [sourceUrls, setSourceUrls] = useState<Record<'website' | 'yad2' | 'madlan', string>>({
+    website: '',
+    yad2: '',
+    madlan: '',
+  });
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
 
   const { data: jobs = [] } = useImportJobs(agencyId);
-  const discoverMutation = useDiscoverListings();
+  const { data: sources = [] } = useAgencySources(agencyId);
+  const upsertSourcesMutation = useUpsertAgencySources();
+  const syncAllSourcesMutation = useTriggerAgencySourcesSync();
+  const syncOneSourceMutation = useTriggerSourceSync();
   const processBatchMutation = useProcessBatch();
   const deleteJobMutation = useDeleteImportJob();
   const retryFailedMutation = useRetryFailed();
   const resumeJobMutation = useResumeJob();
   const { startProcessAll, stopProcessAll, isProcessingAll, processingStartTime, processedSoFar } = useProcessAll();
+
+  useEffect(() => {
+    setSourceUrls({
+      website: sources.find((source) => source.source_type === 'website')?.source_url || '',
+      yad2: sources.find((source) => source.source_type === 'yad2')?.source_url || '',
+      madlan: sources.find((source) => source.source_type === 'madlan')?.source_url || '',
+    });
+  }, [sources]);
+
+  const activeSources = useMemo(
+    () => sources.filter((source) => source.is_active && source.source_url),
+    [sources]
+  );
 
   const currentJob = jobs.length === 0
     ? undefined
@@ -51,21 +77,23 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
   const { data: jobItems = [] } = useImportJobItems(currentJob?.id);
   useRealtimeImportProgress(currentJob?.id);
 
-  const handleDiscover = async (e: React.FormEvent) => {
+  const handleSaveAndDiscover = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!websiteUrl.trim()) return;
+    const entries = (['website', 'madlan', 'yad2'] as const)
+      .map((sourceType) => ({ source_type: sourceType, source_url: sourceUrls[sourceType].trim(), priority: SOURCE_META[sourceType].priority }))
+      .filter((source) => source.source_url.length > 0);
+    if (entries.length === 0) return;
 
-    const result = await discoverMutation.mutateAsync({
-      agencyId,
-      websiteUrl: websiteUrl.trim(),
-      importType: 'all',
-      sourceType,
+    const savedSources = await upsertSourcesMutation.mutateAsync({
+      agency_id: agencyId,
+      sources: entries,
     });
 
-    if (result.job_id) {
-      setActiveJobId(result.job_id);
+    const results = await syncAllSourcesMutation.mutateAsync(savedSources);
+    const firstJobId = results.find((result) => result.data?.job_id)?.data?.job_id;
+    if (firstJobId) {
+      setActiveJobId(firstJobId);
     }
-    setWebsiteUrl('');
   };
 
   const handleProcessBatch = () => {
@@ -90,11 +118,11 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
   })();
 
   const isBackgroundDiscovering = currentJob?.status === 'discovering';
-  const isDiscovering = discoverMutation.isPending || isBackgroundDiscovering;
+  const isDiscovering = upsertSourcesMutation.isPending || syncAllSourcesMutation.isPending || syncOneSourceMutation.isPending || isBackgroundDiscovering;
   const isProcessing = processBatchMutation.isPending || (currentJob?.status === 'processing' && !isStalled) || isProcessingAll;
   const isReady = (currentJob?.status === 'ready' && pendingCount > 0) || isStalled;
   const isCompleted = currentJob?.status === 'completed';
-  const discoveringSourceType = isBackgroundDiscovering ? currentJob?.source_type : sourceType;
+  const discoveringSourceType = isBackgroundDiscovering ? currentJob?.source_type : undefined;
 
   return (
     <Card className="p-6 space-y-4">
