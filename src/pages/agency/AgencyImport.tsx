@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import {
   ArrowLeft, Globe, Loader2, Download, CheckCircle2,
   XCircle, AlertCircle, FileText, RefreshCw, Trash2,
-  Info, MinusCircle, ShieldAlert, ToggleLeft, Lightbulb, ArrowLeftRight,
+  Info, MinusCircle, ToggleLeft, Lightbulb, ArrowLeftRight,
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -59,7 +59,7 @@ export default function AgencyImport() {
   const { startProcessAll, stopProcessAll, isProcessingAll, processingStartTime, processedSoFar } = useProcessAll();
   const [websiteUrl, setWebsiteUrl] = useState('');
   const [importType, setImportType] = useState<'resale' | 'rental' | 'all'>('all');
-  const [sourceType, setSourceType] = useState<'website' | 'yad2' | 'madlan'>('website');
+  const sourceType = 'website' as const;
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
 
   // Use the most recent active job or the one selected
@@ -154,8 +154,6 @@ export default function AgencyImport() {
   const isProcessing = processBatchMutation.isPending || (currentJob?.status === 'processing' && !isStalled) || isProcessingAll;
   const isReady = (currentJob?.status === 'ready' && pendingCount > 0) || isStalled;
   const isCompleted = currentJob?.status === 'completed';
-  const discoveringSourceType = isBackgroundDiscovering ? currentJob?.source_type : sourceType;
-
   return (
     <Layout>
       <div className="container py-8 max-w-4xl">
@@ -166,7 +164,7 @@ export default function AgencyImport() {
             </Button>
             <div>
               <h1 className="text-2xl font-bold">Import Listings</h1>
-              <p className="text-muted-foreground">Import active sale and rental listings from your website, Yad2, or Madlan</p>
+              <p className="text-muted-foreground">Import active sale and rental listings from your agency website</p>
             </div>
           </div>
 
@@ -182,26 +180,6 @@ export default function AgencyImport() {
             </p>
           </div>
 
-          <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-500/5 border border-amber-500/20">
-            <ShieldAlert className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
-            <div className="text-sm text-muted-foreground flex-1">
-              <p className="font-medium text-foreground mb-0.5">Multi-source merging</p>
-              <p>
-                Got the same listing on Yad2, Madlan and your website? Import all three —
-                we automatically merge them with the <strong className="text-foreground">agency website first</strong> for owned photos/content,
-                while Madlan and Yad2 enrich missing details. Conflicts &gt;10% appear in{' '}
-                <Link to="/agency/conflicts" className="text-primary font-medium hover:underline">
-                  Source conflicts
-                </Link>
-                . Manage all sources on the{' '}
-                <Link to="/agency/sources" className="text-primary font-medium hover:underline">
-                  Sources page
-                </Link>
-                .
-              </p>
-            </div>
-          </div>
-
           <Card className="rounded-2xl border-primary/10">
             <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent rounded-t-2xl">
               <CardTitle className="flex items-center gap-2">
@@ -210,46 +188,15 @@ export default function AgencyImport() {
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-4 space-y-4">
-              {sourceType === 'website' ? (
-                <div className="text-sm text-muted-foreground space-y-2">
-                  <p>Paste your agency's <strong className="text-foreground">homepage URL</strong> — the main page that links to all your property listings.</p>
-                </div>
-              ) : sourceType === 'yad2' ? (
-                <div className="text-sm text-muted-foreground space-y-2">
-                  <p>Paste your <strong className="text-foreground">Yad2 agency profile page</strong> or a <strong className="text-foreground">Yad2 search URL</strong> filtered to your listings.</p>
-                </div>
-              ) : (
-                <div className="text-sm text-muted-foreground space-y-2">
-                  <p>Paste your <strong className="text-foreground">Madlan office page</strong> (e.g. madlan.co.il/agentsOffice/re_office_…) to import all listings from that office.</p>
-                </div>
-              )}
-
-              <div className="flex flex-wrap gap-2">
-                {(['website', 'yad2', 'madlan'] as const).map((type) => (
-                  <Button
-                    key={type}
-                    type="button"
-                    variant={sourceType === type ? 'default' : 'outline'}
-                    size="sm"
-                    className="rounded-lg"
-                    onClick={() => setSourceType(type)}
-                  >
-                    {type === 'website' ? 'Agency Website' : type === 'yad2' ? 'Yad2' : 'Madlan'}
-                  </Button>
-                ))}
+              <div className="text-sm text-muted-foreground space-y-2">
+                <p>Paste your agency's <strong className="text-foreground">homepage URL</strong> — the main page that links to all your property listings.</p>
               </div>
 
               <form onSubmit={handleDiscover} className="flex flex-col sm:flex-row gap-3">
                 <Input
                   value={websiteUrl}
                   onChange={(e) => setWebsiteUrl(e.target.value)}
-                  placeholder={
-                    sourceType === 'yad2'
-                      ? 'https://www.yad2.co.il/realestate/agency/7783701/forsale?sort=price-desc'
-                      : sourceType === 'madlan'
-                      ? 'https://www.madlan.co.il/agentsOffice/re_office_XXXXXX'
-                      : 'https://your-agency-website.com'
-                  }
+                  placeholder="https://your-agency-website.com"
                   className="rounded-xl flex-1"
                   required
                   disabled={isDiscovering}
@@ -271,11 +218,7 @@ export default function AgencyImport() {
 
               {isDiscovering && (
                 <p className="text-sm text-muted-foreground mt-3 animate-pulse">
-                  {discoveringSourceType === 'yad2'
-                    ? 'Scanning your agency page on Yad2... This may take 2-5 minutes.'
-                    : discoveringSourceType === 'madlan'
-                    ? 'Scanning your Madlan office page... This may take 2-5 minutes.'
-                    : 'Scanning your website for listing pages... This may take 2-5 minutes.'}
+                  Scanning your website for listing pages... This may take 2-5 minutes.
                 </p>
               )}
             </CardContent>
@@ -340,7 +283,7 @@ export default function AgencyImport() {
                 {/* Job info */}
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">
-                    Source: <span className="text-foreground font-medium">{currentJob.website_url}</span>
+                    Website: <span className="text-foreground font-medium">{currentJob.website_url}</span>
                   </span>
                   <Badge variant="outline" className={cn(
                     isCompleted && 'bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]',
