@@ -3203,7 +3203,7 @@ async function processOneItem(
     // Those should import as draft/needs-review rather than disappearing.
     if (confidenceScore < 40 && isStrongAgencyListing) {
       validationWarnings.push(`agency_site_low_confidence_imported_${confidenceScore}`);
-      listing.provisioning_audit_status = "needs_review";
+      listing.provisioning_audit_status = "flagged";
       confidenceScore = Math.max(confidenceScore, 40);
       await sb.from("import_job_items").update({
         confidence_score: confidenceScore,
