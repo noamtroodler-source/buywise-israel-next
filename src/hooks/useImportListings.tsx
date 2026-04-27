@@ -157,6 +157,29 @@ export function useRetryFailed() {
   });
 }
 
+export function useRetryRecoverableSkipped() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (jobId: string) => {
+      const { data, error } = await supabase.functions.invoke('import-agency-listings', {
+        body: { action: 'retry_recoverable_skipped', job_id: jobId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data as { reset_count: number; scanned_count: number };
+    },
+    onSuccess: (data) => {
+      toast.success(`${data.reset_count} recoverable skipped items reset — ready to retry`);
+      queryClient.invalidateQueries({ queryKey: ['importJobs'] });
+      queryClient.invalidateQueries({ queryKey: ['importJobItems'] });
+    },
+    onError: (err: Error) => {
+      toast.error(`Retry skipped failed: ${err.message}`);
+    },
+  });
+}
+
 export function useDeleteImportJob() {
   const queryClient = useQueryClient();
 

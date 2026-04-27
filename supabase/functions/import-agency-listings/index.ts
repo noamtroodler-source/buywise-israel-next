@@ -1104,6 +1104,63 @@ function normalizeUrl(raw: string): string {
   }
 }
 
+function sanitizeDiscoveredUrl(raw: string, baseUrl?: string): { url: string | null; reason?: string } {
+  if (!raw || typeof raw !== "string") return { url: null, reason: "empty_url" };
+  let candidate = raw.trim().replace(/&amp;/g, "&");
+  try {
+    candidate = new URL(candidate, baseUrl || undefined).toString();
+    const parsed = new URL(candidate);
+    const originalPath = parsed.pathname;
+    parsed.pathname = parsed.pathname
+      .replace(/\/(estate_property|property|properties)\/NaN\d*/i, "/$1/")
+      .replace(/\/(estate_property|property|properties)\/NaN(?=%[dD]7|[\u0590-\u05FF])/i, "/$1/");
+    const normalized = normalizeUrl(parsed.toString());
+    return { url: normalized, reason: originalPath !== parsed.pathname ? "repaired_malformed_nan_path" : undefined };
+  } catch {
+    return { url: null, reason: "malformed_url" };
+  }
+}
+
+function canonicalizeDiscoveredUrls(urls: string[], baseUrl: string): { urls: string[]; rejected: number; repaired: number } {
+  const seen = new Set<string>();
+  let rejected = 0;
+  let repaired = 0;
+  for (const raw of urls) {
+    const sanitized = sanitizeDiscoveredUrl(raw, baseUrl);
+    if (!sanitized.url) { rejected++; continue; }
+    if (sanitized.reason?.startsWith("repaired")) repaired++;
+    seen.add(sanitized.url);
+  }
+  return { urls: Array.from(seen), rejected, repaired };
+}
+
+async function discoverSitemapListingUrls(siteRoot: string): Promise<string[]> {
+  const sitemapPaths = [
+    "/sitemap.xml",
+    "/property-sitemap.xml",
+    "/estate_property-sitemap.xml",
+    "/wp-sitemap-posts-estate_property-1.xml",
+  ];
+  const links = new Set<string>();
+  for (const path of sitemapPaths) {
+    try {
+      const sitemapUrl = new URL(path, siteRoot).toString();
+      const res = await fetchWithTimeout(sitemapUrl, { headers: { Accept: "application/xml,text/xml,*/*" } }, 12_000);
+      if (!res.ok) continue;
+      const xml = await res.text();
+      const locRegex = /<loc>\s*([^<]+)\s*<\/loc>/gi;
+      let match: RegExpExecArray | null;
+      while ((match = locRegex.exec(xml)) !== null) {
+        const cleaned = decodeHtmlEntities(match[1]);
+        if (isStrongAgencyListingUrl(cleaned, siteRoot)) links.add(normalizeUrl(cleaned));
+      }
+    } catch (err) {
+      console.warn(`Sitemap discovery failed for ${path}: ${err}`);
+    }
+  }
+  return Array.from(links);
+}
+
 function isSameSiteUrl(candidate: string, sourceUrl: string): boolean {
   try {
     const candidateHost = new URL(candidate).hostname.toLowerCase().replace(/^www\./, "");
@@ -1338,6 +1395,9 @@ async function handleDiscover(body: any) {
   // scrape the specific entered URL for direct links + pagination.
   console.log(`Discover: mapping from site root: ${siteRoot} (entered: ${formattedUrl})`);
 
+  const sitemapUrls = await discoverSitemapListingUrls(siteRoot);
+  if (sitemapUrls.length > 0) console.log(`Sitemap discovery found ${sitemapUrls.length} canonical listing URLs`);
+
   const mapRes = await fetch("https://api.firecrawl.dev/v1/map", {
     method: "POST",
     headers: { Authorization: `Bearer ${FIRECRAWL_API_KEY}`, "Content-Type": "application/json" },
@@ -1349,7 +1409,7 @@ async function handleDiscover(body: any) {
   }
   const mapData = await mapRes.json();
 
-  const rawUrls: string[] = mapData.links || mapData.data || [];
+  const rawUrls: string[] = [...sitemapUrls, ...(mapData.links || mapData.data || [])];
   console.log(`Root map discovered ${rawUrls.length} URLs`);
 
   // Always scrape the entered URL for direct links (catches listings the map misses)
@@ -1425,7 +1485,12 @@ async function handleDiscover(body: any) {
     '%D7%A0%D7%9E%D7%9B%D7%A8', '%D7%94%D7%95%D7%A9%D7%9B%D7%A8',
   ];
 
-  const allUrls = rawUrls.filter(url => {
+  const canonical = canonicalizeDiscoveredUrls(rawUrls, formattedUrl);
+  if (canonical.rejected > 0 || canonical.repaired > 0) {
+    console.log(`URL sanitation: ${canonical.repaired} repaired, ${canonical.rejected} rejected, ${canonical.urls.length} canonical`);
+  }
+
+  const allUrls = canonical.urls.filter(url => {
     try {
       const decoded = decodeURIComponent(url).toLowerCase();
       return !SOLD_URL_KEYWORDS.some(kw => decoded.includes(kw));
@@ -2245,6 +2310,31 @@ async function collectAgencyOwnedImages(listing: any, structuredData: any, pageH
   const downloaded = await parallelImageDownload(uniqueImages, sb, "property-images", jobId, 15);
   listing.image_hashes = Array.from(new Set(downloaded.hashes || []));
   return Array.from(new Set(downloaded.urls || []));
+}
+
+async function collectAllowedSourceImages(
+  sourceType: string | null | undefined,
+  listing: any,
+  structuredData: any,
+  pageHtml: string,
+  itemUrl: string,
+  sb: any,
+  jobId: string,
+  maxImages = 15,
+): Promise<string[]> {
+  const normalized = String(sourceType || "website").toLowerCase();
+  if (normalized.includes("yad2")) return [];
+  if (isAgencyOwnWebsiteSource(sourceType)) {
+    const urls = await collectAgencyOwnedImages(listing, structuredData, pageHtml, itemUrl, sb, jobId);
+    if (urls.length > 0) listing._image_source_policy = "agency_website_preferred";
+    return urls;
+  }
+  if (normalized.includes("madlan")) {
+    const urls = await collectAgencyOwnedImages(listing, structuredData, pageHtml, itemUrl, sb, jobId);
+    if (urls.length > 0) listing._image_source_policy = "madlan_fallback";
+    return urls.slice(0, maxImages);
+  }
+  return [];
 }
 
 // ─── STRUCTURED DATA EXTRACTION (JSON-LD, Open Graph) ───────────────────────
@@ -3230,13 +3320,11 @@ async function processOneItem(
       return { succeeded: false };
     }
 
-    // Download agency-owned website photos before merge so website images can enrich Madlan/Yad2 rows.
+    // Download only allowed source photos: website preferred, Madlan fallback, Yad2 never.
     let imageUrls: string[] = [];
     listing.image_hashes = [];
-    if (isAgencyOwnWebsite) {
-      imageUrls = await collectAgencyOwnedImages(listing, structuredData, pageHtml, item.url, sb, jobId);
-      if (imageUrls.length > 0) dlog(`Downloaded ${imageUrls.length} agency-owned images for ${item.url}`);
-    }
+    imageUrls = await collectAllowedSourceImages(job.source_type, listing, structuredData, pageHtml, item.url, sb, jobId);
+    if (imageUrls.length > 0) dlog(`Downloaded ${imageUrls.length} allowed ${job.source_type || "website"} images for ${item.url}`);
 
     // ── Intra-agency dedup (Tier 2 / 2.5) — REMOVED in co-listing v2 ──
     // Previous behavior silently dropped listings that matched the same
@@ -3399,11 +3487,17 @@ async function processOneItem(
           fieldSourceMap["features"] = incomingSource;
         }
 
-        // Images: only agency-owned website imports are allowed to add stored photos.
+        // Images: website images always enrich; Madlan images only fill an empty image set; Yad2 never downloads.
         if (incomingSource === "website_scrape" && imageUrls.length > 0) {
           const existingImages = Array.isArray(existing.images) ? existing.images as string[] : [];
           patch.images = [...new Set([...existingImages, ...imageUrls])];
           fieldSourceMap["images"] = incomingSource;
+        } else if (incomingSource === "madlan" && imageUrls.length > 0) {
+          const existingImages = Array.isArray(existing.images) ? existing.images as string[] : [];
+          if (existingImages.length === 0) {
+            patch.images = imageUrls;
+            fieldSourceMap["images"] = "madlan_fallback";
+          }
         }
 
         patch.field_source_map = fieldSourceMap;
@@ -3861,6 +3955,44 @@ async function handleRetryFailed(body: any) {
   if (resetCount > 0) await sb.from("import_jobs").update({ status: "ready" }).eq("id", job_id);
 
   return { reset_count: resetCount, transient_count: resetCount, permanent_count: permanentCount || 0 };
+}
+
+async function handleRetryRecoverableSkipped(body: any) {
+  const { job_id } = body;
+  if (!job_id) throw new Error("job_id required");
+
+  const sb = supabaseAdmin();
+  const recoverablePatterns = [
+    "Low confidence",
+    "Page content too short",
+    "AI returned no extraction data",
+    "Not a listing page",
+    "Pre-check timed out",
+    "Pre-check network error",
+    "malformed",
+  ];
+  const { data: items, error } = await sb
+    .from("import_job_items")
+    .select("id, error_message")
+    .eq("job_id", job_id)
+    .eq("status", "skipped")
+    .eq("error_type", "permanent");
+  if (error) throw new Error(`Failed to load skipped items: ${error.message}`);
+
+  const ids = (items || [])
+    .filter((item: any) => recoverablePatterns.some((p) => String(item.error_message || "").includes(p)))
+    .map((item: any) => item.id);
+
+  if (ids.length > 0) {
+    const { error: resetErr } = await sb
+      .from("import_job_items")
+      .update({ status: "pending", error_message: null, error_type: null, confidence_score: null })
+      .in("id", ids);
+    if (resetErr) throw new Error(`Failed to reset recoverable skipped items: ${resetErr.message}`);
+    await sb.from("import_jobs").update({ status: "ready" }).eq("id", job_id);
+  }
+
+  return { reset_count: ids.length, scanned_count: items?.length || 0 };
 }
 
 // ─── APPROVE ITEM (manual review) ───────────────────────────────────────────
@@ -4927,6 +5059,7 @@ async function runMadlanAgencyDiscoverJob(params: {
             floor: madlanItem.floor || null,
             condition: madlanItem.condition || null,
             parking: madlanItem.parking || 0,
+            image_urls: madlanItem.images || madlanItem.photos || madlanItem.imageUrls || madlanItem.media || [],
           };
 
           const title = generateListingTitle(listing);
@@ -4951,6 +5084,8 @@ async function runMadlanAgencyDiscoverJob(params: {
             + (madlanItem.neighbourhood ? 5 : 0)
           );
 
+          const madlanImages = await collectAllowedSourceImages("madlan", listing, null, "", listingUrl, sb, jobId, 12);
+
           const { error: propErr } = await sb
             .from("properties")
             .insert({
@@ -4972,8 +5107,7 @@ async function runMadlanAgencyDiscoverJob(params: {
               features,
               parking: madlanItem.parking || 0,
               condition: madlanItem.condition || null,
-              // Don't store external images — copyright
-              images: null,
+              images: madlanImages.length > 0 ? madlanImages : null,
               // Always import as draft — agency owner must review before going live
               is_published: false,
               is_featured: false,
@@ -4988,6 +5122,7 @@ async function runMadlanAgencyDiscoverJob(params: {
               is_claimed: false,
               source_status: "active",
               source_last_checked_at: new Date().toISOString(),
+              field_source_map: madlanImages.length > 0 ? { images: "madlan_fallback" } : null,
             });
 
           if (propErr) {
@@ -5324,6 +5459,7 @@ Deno.serve(async (req) => {
       }
     }
     else if (action === "retry_failed") result = await handleRetryFailed(body);
+    else if (action === "retry_recoverable_skipped") result = await handleRetryRecoverableSkipped(body);
     else if (action === "approve_item") result = await handleApproveItem(body);
     else if (action === "resume_job") result = await handleResumeJob(body);
     else if (action === "check_existing") result = await handleCheckExisting(body);

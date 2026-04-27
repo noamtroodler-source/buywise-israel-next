@@ -1,136 +1,265 @@
-Plan to fix the Erez import properly
+## Goal
+Make the import pipeline work reliably across agency websites, Madlan, and Yad2, including the important case where some listings exist only on Madlan/Yad2 and not on the agency website.
 
-The real failure is not just “11 imported.” It is a pipeline design issue: discovery only queued 82 URLs, then processing treated most Erez `/estate_property/...` pages as invalid because the AI/category confidence gates are too conservative for this WordPress real-estate site.
+The importer should not assume the agency website has every property. It should build the agency inventory from all available sources, merge duplicates intelligently, and use the best allowed photo source.
 
-Goal: make agency website imports behave like a trusted owned-source import, while keeping Madlan/Yad2 safe and non-photo-storing.
-
-1. Fix discovery so we find the right Erez pages
-
-- Add deterministic URL rules before AI classification:
-  - Any same-domain URL with `/estate_property/` is a strong listing candidate.
-  - Do not let the AI classifier remove these candidates.
-  - Still exclude true sold/rented/archive URLs and true 404s.
-- Add Erez/WordPress pagination coverage:
-  - Scrape likely archive/category pages like sale, rent, property action/category pages, and paginated `/page/N/` URLs.
-  - Increase Firecrawl map limit from the current 500 if needed for agency sites.
-- Keep discovered URLs, queued URLs, and filtered-out URLs separately in job metadata where possible, so the UI can show “found X, queued Y, skipped Z by reason.”
-
-Expected result: website import should queue all live Erez property pages, not only the subset the AI happens to recognize.
-
-2. Fix processing so valid agency pages are not skipped
-
-- Add a source-aware listing override:
-  - If source_type is `website` and URL path contains `/estate_property/`, treat it as a property page unless the fetch returns 404 or the page explicitly says sold/rented/unavailable.
-  - Ignore AI `listing_category = not_listing` for this pattern when page content has title/images/property terms.
-- Lower the confidence behavior for agency-owned sites:
-  - For Madlan/Yad2, keep strict thresholds.
-  - For agency website pages, do not skip solely because confidence is below 40 if the URL and page structure are clearly a property page.
-  - Instead import a partial listing and flag it for quality review.
-- Make low-confidence agency-site listings visible as “needs review,” not silently skipped.
-
-Expected result: a page with missing price/rooms can still import if it is clearly an Erez listing, especially if it has photos and title/content.
-
-3. Improve Erez extraction specifically without hardcoding fake data
-
-- Add an Erez/WordPress parser fallback before/after AI:
-  - Pull title from `<h1>`, Open Graph title, or WordPress title.
-  - Pull description from main property content.
-  - Pull price from common Hebrew/WordPress real-estate fields.
-  - Pull rooms/size/floor/property type from page labels where present.
-  - Infer sale/rent from Hebrew title/path words:
-    - `למכירה` / `מכירה` => for_sale
-    - `להשכרה` / `השכרה` / `לטווח` => for_rent
-  - Infer city/neighborhood from page text/title where available.
-- The fallback must not fabricate missing values. Missing fields remain null/0 and go to review.
-
-Expected result: Erez pages that AI struggles with still produce enough structured data to create or merge a listing.
-
-4. Fix photo behavior exactly as required
-
-- Agency website photos:
-  - Extract from AI result, JSON-LD, OG tags, HTML image tags, lazy-load attributes, `srcset`, and WordPress gallery markup.
-  - Download/store only for agency-owned website pages.
-- Madlan photos:
-  - Do not store/download Madlan photos.
-  - Madlan can fill text/data fields only.
-- Yad2 photos:
-  - Do not store/download Yad2 photos.
-  - Yad2 should never contribute images.
-- Dedup photos:
-  - Deduplicate by normalized URL before download.
-  - Deduplicate by image hash after download.
-  - When merging into existing Madlan rows, add only new agency-site images.
-
-Expected result: Erez own-site images become the primary images; Madlan/Yad2 images remain excluded.
-
-5. Fix source priority for this business case
-
-For provisioning, source priority should be:
+## Updated media rule
+Use this source policy:
 
 ```text
-Photos:
-1. Agency website only
-2. Madlan only if explicitly allowed later — currently no storage
-3. Yad2 never
-
-Structured data:
-1. Agency website for owned/official details
-2. Madlan for missing data enrichment
-3. Yad2 as fallback metadata only
+Agency website photos: allowed and preferred
+Madlan photos: allowed only when the listing is not available on the agency website, or when the agency website has no usable photos
+Yad2 photos: never store/download
 ```
 
-Implementation detail: keep the merge logic source-aware so website data enriches existing Madlan properties instead of being skipped or duplicated.
+So the visual priority becomes:
 
-6. Add a repair/retry path for the existing failed Erez job
+```text
+1. Agency website photos
+2. Madlan photos, only as fallback / Madlan-only inventory support
+3. Yad2 photos: never
+4. AI/generated placeholder or neighborhood illustration if no allowed photos exist
+```
 
-- Add logic to reprocess skipped job items after the importer fix:
-  - Reset Erez website job skipped items from `skipped` to `pending`, excluding true 404s and explicit sold/rented pages.
-  - Re-run processing against the same 82 URLs.
-- Then run a fresh discovery after the discovery fix to catch any additional pages beyond the original 82.
+This matters because a real agency may have:
+- listings on its own site only
+- listings on Madlan only
+- listings on Yad2 only
+- the same listing across multiple sources
+- stale or partial listings on one source but better data on another
 
-Expected result: we recover the current job and then find anything discovery missed.
+## Current diagnosis
+The previous fix improved one major failure: valid agency website URLs like `/estate_property/...` should no longer be rejected just because the AI classifier is uncertain.
 
-7. Improve admin visibility so this is debuggable next time
+The next problems to solve are:
+1. Some discovered Hebrew URLs appear malformed, for example `NaN7...`, so URL sanitation needs to happen before scraping.
+2. The importer needs a true multi-source merge model, not “website first and everything else secondary.”
+3. The admin UI needs clear reasons for skipped/failed items instead of one generic skipped count.
+4. Madlan-only listings need to survive as real inventory and may need Madlan photos if no agency-site equivalent exists.
 
-- In the import UI, show skipped breakdown by reason:
-  - Not a listing page
-  - Low confidence
-  - 404
-  - Sold/rented
-  - Unsupported city
-  - Validation failed
-- Add a “Retry skipped valid-looking website pages” action for admin provisioning jobs.
-- Show “Imported,” “Merged,” and “Needs review” separately so “11 imported” is not misleading when some were merges.
+## Plan
 
-8. Validation/testing plan
+### 1. Build a source-aware import model
+Treat each source as an inventory feed, not merely enrichment.
 
-- Test against current Erez agency job:
-  - Confirm the 58 “Not a listing page” items are reclassified if they are `/estate_property/` pages.
-  - Confirm true 404 URLs stay skipped.
-  - Confirm at least the known 30+ sale and 15+ rent are represented either as imported or merged.
-- Confirm image policy:
-  - Website imports have stored images.
-  - Madlan-imported rows still have no Madlan-stored photos unless enriched by website photos.
-  - Yad2 contributes zero stored photos.
-- Deploy the updated backend function and run one Erez import pass.
+For each agency source:
+- Agency website: discover and import all clear property pages.
+- Madlan: discover and import all agency-office listings, including listings not present on the agency website.
+- Yad2: discover and import listing facts, but never store photos.
 
-Technical files likely touched
+Each imported candidate should carry:
+- `source_type`: website, madlan, or yad2
+- `source_url`
+- normalized address/location fields
+- price/rooms/size
+- allowed image policy status
+- extraction confidence
+- merge candidates
 
+### 2. Harden URL discovery and sanitation
+Before inserting URLs into `import_job_items`:
+- normalize canonical URLs
+- repair or reject malformed paths like `/estate_property/NaN7...`
+- avoid double-decoding or corrupting Hebrew slugs
+- remove tracking parameters
+- deduplicate after canonicalization
+- store diagnostics for any rejected malformed URL
+
+This prevents wasting import attempts on broken URLs that can never scrape successfully.
+
+### 3. Add sitemap-first agency website discovery
+For WordPress/Erez-style websites, check sitemap sources before Firecrawl map output:
+
+```text
+/sitemap.xml
+/property-sitemap.xml
+/estate_property-sitemap.xml
+/wp-sitemap-posts-estate_property-1.xml
+```
+
+Then merge with:
+- Firecrawl map
+- direct page links
+- category pages
+- sale/rent index pages
+- pagination expansion
+
+Sitemap URLs should be prioritized because they are usually canonical and cleaner than scraped links.
+
+### 4. Add deterministic agency website profiles
+For Erez-style sites:
+- include `/estate_property/`
+- exclude sold/rented/archive/category/search/blog/agent pages
+- support Hebrew sale/rent keywords
+- treat clear listing paths as listing pages even if AI confidence is low
+
+This makes the importer less dependent on AI classification for obvious agency listing URLs.
+
+### 5. Import partial agency listings instead of dropping them
+For agency-owned website pages, use a partial-first policy:
+
+If the page is clearly a property page, keep it unless it is clearly sold/rented, unsupported, or completely empty.
+
+Partial records should become `flagged` for review when fields are missing, instead of being skipped.
+
+Examples:
+- has title + city + images but missing size: import flagged
+- has price + rooms + city but weak description: import flagged
+- has only generic text and no property facts: skip with clear reason
+
+### 6. Strengthen deterministic extraction
+Improve fallback extraction from:
+- JSON-LD
+- Open Graph tags
+- WordPress property meta fields
+- Hebrew labels for rooms, size, floor, price, sale/rent
+- gallery images and `srcset`
+- canonical URL hints
+
+Extraction merge order:
+
+```text
+1. canonical URL / source facts
+2. structured data
+3. WordPress/Erez HTML parser
+4. Madlan/Yad2-specific parser where applicable
+5. AI extraction
+6. domain/city fallback
+```
+
+### 7. Implement source-aware photo handling
+Photo storage should follow this exact logic:
+
+#### Website listing
+- Download and store agency website images.
+- These are the preferred images for that property.
+
+#### Madlan listing that matches a website listing
+- Do not replace good agency website photos with Madlan photos.
+- Use Madlan for text/data enrichment only unless the website record has zero usable images.
+
+#### Madlan listing with no website match
+- Import the listing as real inventory.
+- Download/store Madlan photos because this is the only visual source available for that listing.
+- Mark image source metadata as `madlan_fallback` or equivalent so we know where photos came from.
+
+#### Yad2 listing
+- Never download/store Yad2 photos.
+- If it matches website/Madlan, use those allowed images.
+- If it is Yad2-only, import facts if quality is sufficient, but use generated/neighborhood/placeholder imagery.
+
+### 8. Improve duplicate detection and merging
+Use multi-source matching to prevent duplicates while preserving source-specific inventory.
+
+Match using:
+- normalized address
+- city/neighborhood
+- price variance
+- room count
+- size
+- coordinate proximity if available
+- image similarity only for allowed image sources
+- source URL canonicalization
+
+Merge behavior:
+- If website + Madlan + Yad2 refer to the same listing, create/keep one property.
+- Preserve all source URLs for audit.
+- Use source priority for facts, but photo priority should follow allowed media logic:
+
+```text
+Best photos: website
+Fallback photos: Madlan
+Never photos: Yad2
+```
+
+### 9. Make skip/failure reporting operational
+Update the admin provisioning UI to show grouped reason buckets:
+
+```text
+Malformed URL
+Fetch/scrape failed
+Blocked/rate limited
+Not a listing
+Sold/rented
+Unsupported city
+Validation failed
+Low confidence
+Duplicate/merged
+No allowed photos
+Imported but flagged
+```
+
+Each bucket should show count and sample URLs. This makes it clear whether a source is failing because of real data limits or importer bugs.
+
+### 10. Add smarter retry controls
+Keep separate actions:
+- Retry transient failures: network, rate limit, timeout, scrape blocked.
+- Retry recoverable skipped: low-confidence agency page, parser improved, malformed URL repaired, AI returned no data.
+- Do not retry true permanent skips by default: sold/rented, unsupported city, intentionally blocked ownership conflict.
+
+### 11. Improve job funnel metrics
+Show a full funnel in the UI:
+
+```text
+URLs discovered
+Canonical listing URLs
+Already imported
+Queued
+Fetched
+Extracted
+Imported
+Imported flagged
+Merged into existing
+Skipped by reason
+Failed transiently
+```
+
+For multi-source imports, also show per-source counts:
+
+```text
+Website: discovered / imported / merged / failed
+Madlan: discovered / imported / merged / failed
+Yad2: discovered / imported / merged / failed
+```
+
+### 12. Validate against the current Erez run
+After implementation:
+- Re-run website discovery.
+- Re-run Madlan discovery if an active Madlan source exists.
+- Re-run Yad2 discovery if an active Yad2 source exists.
+- Confirm the importer can capture listings that are missing from the agency website but present on Madlan/Yad2.
+- Confirm Madlan-only listings can have Madlan photos.
+- Confirm Yad2-only listings never store Yad2 photos.
+- Confirm all remaining skipped items have clear, useful reasons.
+
+## Technical implementation areas
+
+Backend:
 - `supabase/functions/import-agency-listings/index.ts`
-  - discovery rules
-  - URL classification fallback
-  - Erez/WordPress parser fallback
-  - confidence handling
-  - agency-site photo extraction/dedup
-  - skipped retry behavior if needed
+  - URL sanitation and malformed URL diagnostics
+  - sitemap-first discovery
+  - source-aware media rules
+  - Madlan-only photo fallback
+  - Yad2 photo ban enforcement
+  - stronger deterministic extraction
+  - smarter retry categories
+  - richer job summary metadata
+
+Frontend/admin:
 - `src/components/admin/agency-provisioning/ImportListingsSection.tsx`
-  - skipped reason breakdown / clearer status
-  - optional retry skipped action
-- Possibly `src/hooks/useImportListings.tsx` or related provisioning hook if the UI needs a new retry action.
+- `src/hooks/useImportListings.tsx`
+  - grouped skip/failure buckets
+  - per-source import metrics
+  - clearer retry controls
+  - better explanation of imported, flagged, merged, skipped, failed
 
-What not to do
-
-- Do not blindly import Madlan/Yad2 photos.
-- Do not fabricate missing property data.
-- Do not let AI classification be the only gate for known agency listing URL patterns.
-- Do not silently skip agency-owned pages that are clearly property pages.
+## Success criteria
+- Valid `/estate_property/` pages are not rejected by AI uncertainty.
+- Malformed `NaN...` URLs are repaired or excluded before scraping.
+- Website, Madlan, and Yad2 are all treated as real inventory sources.
+- Madlan-only listings import successfully and can use Madlan photos.
+- Website photos remain preferred when available.
+- Yad2 photos are never stored.
+- Good partial agency listings become flagged instead of disappearing.
+- The admin can see exactly why every non-imported URL did not import.
+- Final import count reflects actual agency inventory across sources, not just the agency website.
