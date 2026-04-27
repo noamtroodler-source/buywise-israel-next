@@ -1720,7 +1720,7 @@ async function getStreetViewMetadata(
 ): Promise<{ status: string; camLat?: number; camLng?: number } | null> {
   try {
     const url = `https://maps.googleapis.com/maps/api/streetview/metadata?location=${lat},${lng}&key=${apiKey}`;
-    const res = await fetch(url);
+    const res = await fetchWithTimeout(url, {}, 8_000);
     if (!res.ok) { await res.text(); return null; }
     const data = await res.json();
     return {
@@ -1783,7 +1783,7 @@ async function generateAndStoreStreetView(
     }
 
     // ── Step 1b: Fetch the image and upload to storage (never store raw Google URLs) ──
-    const imgRes = await fetch(sourceUrl);
+    const imgRes = await fetchWithTimeout(sourceUrl, {}, 10_000);
     if (!imgRes.ok) {
       console.warn(`Failed to fetch street view image for ${propertyId}: ${imgRes.status}`);
       return { updated: false };
@@ -1810,7 +1810,7 @@ async function generateAndStoreStreetView(
     if (!skipEnhance) try {
       const ENHANCE_URL = `${Deno.env.get("SUPABASE_URL")}/functions/v1/enhance-image`;
       const enhancePath = `street-view/${propertyId}.png`;
-      const enhanceRes = await fetch(ENHANCE_URL, {
+      const enhanceRes = await fetchWithTimeout(ENHANCE_URL, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
@@ -1822,7 +1822,7 @@ async function generateAndStoreStreetView(
           path: enhancePath,
           style: imageType === "street_view" ? "architectural" : "photo_correct",
         }),
-      });
+      }, 20_000);
 
       if (enhanceRes.ok) {
         const enhanceData = await enhanceRes.json();
