@@ -17,6 +17,7 @@ import {
   useProcessBatch,
   useDeleteImportJob,
   useRetryFailed,
+  useRetryRecoverableSkipped,
   useProcessAll,
   useResumeJob,
 } from '@/hooks/useImportListings';
@@ -64,6 +65,7 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
   const processBatchMutation = useProcessBatch();
   const deleteJobMutation = useDeleteImportJob();
   const retryFailedMutation = useRetryFailed();
+  const retryRecoverableSkippedMutation = useRetryRecoverableSkipped();
   const resumeJobMutation = useResumeJob();
   const { startProcessAll, stopProcessAll, isProcessingAll, processingStartTime, processedSoFar } = useProcessAll();
 
@@ -124,6 +126,34 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
   const pendingCount = jobItems.filter(i => i.status === 'pending').length;
   const processingCount = jobItems.filter(i => i.status === 'processing').length;
   const totalItems = jobItems.length;
+  const reasonBuckets = useMemo(() => {
+    const classify = (message?: string | null) => {
+      const text = (message || '').toLowerCase();
+      if (text.includes('nan') || text.includes('malformed')) return 'Malformed URL';
+      if (text.includes('timeout') || text.includes('network') || text.includes('rate') || text.includes('scrape failed') || text.includes('captcha')) return 'Fetch / blocked';
+      if (text.includes('not a listing')) return 'Not a listing';
+      if (text.includes('sold') || text.includes('rented')) return 'Sold / rented';
+      if (text.includes('city not supported')) return 'Unsupported city';
+      if (text.includes('validation failed')) return 'Validation failed';
+      if (text.includes('low confidence')) return 'Low confidence';
+      if (text.includes('duplicate') || text.includes('merged')) return 'Duplicate / merged';
+      if (text.includes('too short') || text.includes('no extraction')) return 'Extraction incomplete';
+      return 'Other';
+    };
+    return jobItems
+      .filter((item) => ['skipped', 'failed'].includes(item.status))
+      .reduce<Record<string, { count: number; samples: string[] }>>((acc, item) => {
+        const key = classify(item.error_message);
+        acc[key] ||= { count: 0, samples: [] };
+        acc[key].count += 1;
+        if (acc[key].samples.length < 2) acc[key].samples.push(item.url);
+        return acc;
+      }, {});
+  }, [jobItems]);
+  const recoverableSkippedCount = jobItems.filter((item) => {
+    const message = item.error_message || '';
+    return item.status === 'skipped' && item.error_type === 'permanent' && /Low confidence|Page content too short|AI returned no extraction data|Not a listing page|Pre-check timed out|Pre-check network error|malformed/i.test(message);
+  }).length;
 
   const STALL_THRESHOLD_MS = 10 * 60 * 1000;
   const isStalled = currentJob?.status === 'processing' && !isProcessingAll && (() => {
