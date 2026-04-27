@@ -17,6 +17,7 @@ export interface SubscriptionData {
   maxListings: number | null;
   maxSeats: number | null;
   maxBlogsPerMonth: number | null;
+  isFoundingAgency?: boolean;
 }
 
 async function fetchEntityForUser(userId: string) {
@@ -52,6 +53,10 @@ export function useSubscription() {
       const entity = await fetchEntityForUser(user.id);
       if (!entity) return null;
 
+      const { data: isFoundingAgency } = entity.entityType === 'agency'
+        ? await (supabase.rpc as any)('is_founding_agency', { p_agency_id: entity.entityId })
+        : { data: false };
+
       // Fetch subscription with plan details
       const { data: sub } = await supabase
         .from('subscriptions')
@@ -65,6 +70,26 @@ export function useSubscription() {
 
 
       if (!sub) {
+        if (isFoundingAgency) {
+          return {
+            id: '',
+            planName: 'Founding Agency',
+            tier: 'founding',
+            entityType: entity.entityType,
+            entityId: entity.entityId,
+            status: 'active',
+            billingCycle: '',
+            currentPeriodEnd: null,
+            trialEnd: null,
+            trialStart: null,
+            canceledAt: null,
+            maxListings: null,
+            maxSeats: null,
+            maxBlogsPerMonth: null,
+            isFoundingAgency: true,
+          };
+        }
+
         // Fetch free plan limits from DB
         const { data: freePlan } = await supabase
           .from('membership_plans')
@@ -88,6 +113,7 @@ export function useSubscription() {
           maxListings: freePlan?.max_listings ?? null,
           maxSeats: freePlan?.max_seats ?? null,
           maxBlogsPerMonth: freePlan?.max_blogs_per_month ?? null,
+          isFoundingAgency: false,
         };
       }
 
@@ -108,6 +134,7 @@ export function useSubscription() {
         maxListings: plan?.max_listings || null,
         maxSeats: plan?.max_seats || null,
         maxBlogsPerMonth: plan?.max_blogs_per_month || null,
+        isFoundingAgency: !!isFoundingAgency,
       };
     },
     enabled: !!user,

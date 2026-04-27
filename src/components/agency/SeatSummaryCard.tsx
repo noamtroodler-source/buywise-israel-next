@@ -1,14 +1,27 @@
-import { Link } from 'react-router-dom';
-import { ArrowUpRight, Users } from 'lucide-react';
+import { Users } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useSeatLimitCheck } from '@/hooks/useSeatLimitCheck';
+import { useSubscription } from '@/hooks/useSubscription';
 
 export function SeatSummaryCard() {
   const { currentSeats, maxSeats, isOverLimit, overageRate, usagePercent, isLoading, needsSubscription } = useSeatLimitCheck();
+  const { data: sub } = useSubscription();
 
   if (isLoading || needsSubscription) return null;
+
+  if (sub?.isFoundingAgency) {
+    return (
+      <Card className="rounded-2xl border-primary/10 bg-gradient-to-br from-primary/5 to-transparent">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4 text-primary" />
+            <span className="text-sm font-medium">{currentSeats} team seat{currentSeats !== 1 ? 's' : ''} active · Founding agency access</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const overSeats = maxSeats !== null ? Math.max(0, currentSeats - maxSeats) : 0;
   const estOverage = overSeats * (overageRate ?? 0);
@@ -41,13 +54,7 @@ export function SeatSummaryCard() {
             )}
           </div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span>₪{overageRate ?? '—'}/extra seat/mo</span>
-            <Button variant="ghost" size="sm" asChild className="h-7 rounded-lg text-xs gap-1 text-primary hover:text-primary">
-              <Link to="/pricing">
-                Upgrade plan
-                <ArrowUpRight className="h-3 w-3" />
-              </Link>
-            </Button>
+            <span>Team seats are included in your current access</span>
           </div>
         </div>
         {maxSeats !== null && (

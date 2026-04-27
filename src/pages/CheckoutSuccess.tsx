@@ -43,7 +43,7 @@ export default function CheckoutSuccess() {
               Welcome, Founding Partner!
             </h1>
             <p className="text-muted-foreground mb-6">
-              Your 3-month free trial is now active. You're one of our first 30 founding agencies — thank you for believing in us early.
+              Your founding agency access is active. You're one of our first 30 agencies — platform access is free.
             </p>
 
             <div className="space-y-3 mb-6">
@@ -51,14 +51,14 @@ export default function CheckoutSuccess() {
                 <div className="flex items-start gap-2 rounded-xl bg-primary/5 border border-primary/20 px-4 py-3 text-left">
                   <CalendarClock className="h-4 w-4 text-primary mt-0.5 shrink-0" />
                   <p className="text-sm text-muted-foreground">
-                    Your trial runs until <span className="font-medium text-foreground">{formattedTrialEnd}</span>
+                    Your original onboarding period runs until <span className="font-medium text-foreground">{formattedTrialEnd}</span>, but founding agency access stays free.
                   </p>
                 </div>
               )}
               <div className="flex items-start gap-2 rounded-xl bg-primary/5 border border-primary/20 px-4 py-3 text-left">
                 <Star className="h-4 w-4 text-primary mt-0.5 shrink-0" />
                 <p className="text-sm text-muted-foreground">
-                  <span className="font-medium text-foreground">3 free featured listings</span> are available now — go feature your best properties!
+                  <span className="font-medium text-foreground">3 free featured listings per month</span> are included. Additional featured listings are paid.
                 </p>
               </div>
             </div>

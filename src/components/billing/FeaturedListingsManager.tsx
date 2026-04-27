@@ -91,8 +91,6 @@ export function FeaturedListingsManager({ agencyId }: FeaturedListingsManagerPro
       propertyId: confirmDialog.listing.id,
       action: confirmDialog.action,
       useFreeCredit: confirmDialog.useFreeCredit,
-      creditRowId: foundingStatus?.currentCreditRow?.id,
-      currentCreditsUsed: foundingStatus?.currentCreditRow?.credits_used,
     });
 
     setConfirmDialog({ open: false, action: 'activate', listing: null, useFreeCredit: false });
@@ -134,15 +132,15 @@ export function FeaturedListingsManager({ agencyId }: FeaturedListingsManagerPro
         </CardContent>
       </Card>
 
-      {/* Founding Partner Credits */}
-      {foundingStatus?.isFoundingPartner && (
+      {/* Free monthly featured slots */}
+      {foundingStatus && foundingStatus.freeCreditsTotal > 0 && (
         <Card className="rounded-2xl border-accent/20 bg-gradient-to-br from-accent/5 to-transparent">
           <CardContent className="p-4 flex items-center gap-3">
             <Crown className="h-5 w-5 text-accent flex-shrink-0" />
             <div>
-              <p className="text-sm font-medium">Founding Partner</p>
+              <p className="text-sm font-medium">Monthly Featured Credits</p>
               <p className="text-sm text-muted-foreground">
-                {foundingStatus.freeCreditsRemaining} of {foundingStatus.freeCreditsTotal} free featured credits remaining this month
+                {foundingStatus.freeCreditsRemaining} of {foundingStatus.freeCreditsTotal} free featured listing slots remaining this month
               </p>
             </div>
           </CardContent>
@@ -266,7 +264,7 @@ export function FeaturedListingsManager({ agencyId }: FeaturedListingsManagerPro
                 <>
                   {confirmDialog.useFreeCredit ? (
                     <>
-                      This will use one of your founding partner free credits to feature{' '}
+                      This will use one of your 3 free monthly featured listing slots for{' '}
                       <strong>{confirmDialog.listing?.title}</strong>. No charge this month.
                     </>
                   ) : (

@@ -17,6 +17,7 @@ export interface FoundingPartnerStatus {
   isFoundingPartner: boolean;
   freeCreditsRemaining: number;
   freeCreditsTotal: number;
+  freeCreditsUsed?: number;
   currentCreditRow: { id: string; credits_used: number; credits_granted: number } | null;
 }
 
@@ -48,37 +49,15 @@ export function useFoundingPartnerStatus(agencyId: string | undefined) {
         return { isFoundingPartner: false, freeCreditsRemaining: 0, freeCreditsTotal: 0, currentCreditRow: null };
       }
 
-      // Check if agency is a founding partner
-      const { data: partner } = await supabase
-        .from('founding_partners')
-        .select('id, is_active, free_credits_per_month')
-        .eq('agency_id', agencyId)
-        .eq('is_active', true)
-        .maybeSingle();
-
-      if (!partner) {
-        return { isFoundingPartner: false, freeCreditsRemaining: 0, freeCreditsTotal: 0, currentCreditRow: null };
-      }
-
-      // Get current month's credit row (not expired)
-      const { data: creditRow } = await supabase
-        .from('founding_featured_credits')
-        .select('id, credits_granted, credits_used')
-        .eq('founding_partner_id', partner.id)
-        .gte('expires_at', new Date().toISOString())
-        .order('month_number', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      const remaining = creditRow
-        ? creditRow.credits_granted - creditRow.credits_used
-        : 0;
+      const { data, error } = await (supabase.rpc as any)('get_founding_featured_status', { p_agency_id: agencyId });
+      if (error) throw error;
 
       return {
-        isFoundingPartner: true,
-        freeCreditsRemaining: Math.max(0, remaining),
-        freeCreditsTotal: partner.free_credits_per_month,
-        currentCreditRow: creditRow ? { id: creditRow.id, credits_used: creditRow.credits_used, credits_granted: creditRow.credits_granted } : null,
+        isFoundingPartner: !!data?.isFoundingPartner,
+        freeCreditsRemaining: Number(data?.freeCreditsRemaining ?? 0),
+        freeCreditsTotal: Number(data?.freeCreditsTotal ?? 3),
+        freeCreditsUsed: Number(data?.freeCreditsUsed ?? 0),
+        currentCreditRow: null,
       };
     },
     enabled: !!agencyId,
@@ -94,15 +73,11 @@ export function useToggleFeaturedListing() {
       propertyId,
       action,
       useFreeCredit,
-      creditRowId,
-      currentCreditsUsed,
     }: {
       agencyId: string;
       propertyId: string;
       action: 'activate' | 'deactivate';
       useFreeCredit?: boolean;
-      creditRowId?: string;
-      currentCreditsUsed?: number;
     }) => {
       if (action === 'activate') {
         // Insert new featured listing
@@ -115,16 +90,6 @@ export function useToggleFeaturedListing() {
           });
 
         if (error) throw error;
-
-        // If using free credit, increment credits_used
-        if (useFreeCredit && creditRowId && currentCreditsUsed !== undefined) {
-          const { error: creditError } = await supabase
-            .from('founding_featured_credits')
-            .update({ credits_used: currentCreditsUsed + 1 })
-            .eq('id', creditRowId);
-
-          if (creditError) throw creditError;
-        }
 
         // Activate primary-slot boost on the property. If this agency is
         // already primary, this is a no-op that just stamps the boost
