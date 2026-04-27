@@ -3179,7 +3179,18 @@ async function processOneItem(
       extracted_data: { ...listing, confidence_score: confidenceScore, validation_warnings: validationWarnings },
     }).eq("id", item.id);
 
-    // Below 40: skip with low confidence
+    // Below 40: skip with low confidence, except trusted agency-owned listing URLs.
+    // Those should import as draft/needs-review rather than disappearing.
+    if (confidenceScore < 40 && isStrongAgencyListing) {
+      validationWarnings.push(`agency_site_low_confidence_imported_${confidenceScore}`);
+      listing.provisioning_audit_status = "needs_review";
+      confidenceScore = Math.max(confidenceScore, 40);
+      await sb.from("import_job_items").update({
+        confidence_score: confidenceScore,
+        extracted_data: { ...listing, confidence_score: confidenceScore, validation_warnings: validationWarnings },
+      }).eq("id", item.id);
+    }
+
     if (confidenceScore < 40) {
       await sb.from("import_job_items").update({
         status: "skipped",
