@@ -188,8 +188,8 @@ export default function AgencyImport() {
               <p className="font-medium text-foreground mb-0.5">Multi-source merging</p>
               <p>
                 Got the same listing on Yad2, Madlan and your website? Import all three —
-                we automatically merge them and trust <strong className="text-foreground">Yad2 → Madlan → Website</strong> in that order
-                for price and size. Conflicts &gt;10% appear in{' '}
+                we automatically merge them with the <strong className="text-foreground">agency website first</strong> for owned photos/content,
+                while Madlan and Yad2 enrich missing details. Conflicts &gt;10% appear in{' '}
                 <Link to="/agency/conflicts" className="text-primary font-medium hover:underline">
                   Source conflicts
                 </Link>
