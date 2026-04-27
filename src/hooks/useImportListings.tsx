@@ -71,7 +71,7 @@ export function useDiscoverListings() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ agencyId, websiteUrl, importType = 'resale', sourceType = 'website' }: { agencyId: string; websiteUrl: string; importType?: string; sourceType?: string }) => {
+    mutationFn: async ({ agencyId, websiteUrl, importType = 'both', sourceType = 'website' }: { agencyId: string; websiteUrl: string; importType?: string; sourceType?: string }) => {
       const { data, error } = await supabase.functions.invoke('import-agency-listings', {
         body: { action: 'discover', agency_id: agencyId, website_url: websiteUrl, import_type: importType, source_type: sourceType },
       });

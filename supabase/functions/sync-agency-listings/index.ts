@@ -98,7 +98,7 @@ Deno.serve(async (req) => {
                 agency_id: agencyId,
                 website_url: source.source_url,
                 source_type: source.source_type,
-                import_type: "resale",
+                import_type: "both",
               }),
             }
           );

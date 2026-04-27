@@ -81,7 +81,7 @@ async function enqueueYad2Sources(
         agency_source_id: source.id,
         agency_id: source.agency_id,
         website_url: source.source_url,
-        import_type: source.import_type || "resale",
+        import_type: source.import_type || "both",
         status: "pending",
         scheduled_for: scheduledFor,
         attempt_number: 1,
@@ -124,7 +124,7 @@ async function processSourceInBackground(source: any): Promise<void> {
       source_type: sourceType,
       website_url: source.source_url,
       agency_id: source.agency_id,
-      import_type: source.import_type || "resale",
+      import_type: source.import_type || "both",
     });
 
     if (discoverResult.error) throw new Error(discoverResult.error);

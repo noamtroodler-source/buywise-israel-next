@@ -89,7 +89,7 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
       sources: entries,
     });
 
-    const results = await syncAllSourcesMutation.mutateAsync(savedSources);
+    const results = await syncAllSourcesMutation.mutateAsync({ sources: savedSources, importType: 'both' });
     const firstJobId = results.find((result) => result.data?.job_id)?.data?.job_id;
     if (firstJobId) {
       setActiveJobId(firstJobId);
@@ -185,7 +185,7 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
                 variant="outline"
                 disabled={isDiscovering || activeSources.length === 0}
                 onClick={async () => {
-                  const results = await syncAllSourcesMutation.mutateAsync(activeSources);
+                  const results = await syncAllSourcesMutation.mutateAsync({ sources: activeSources, importType: 'both' });
                   const firstJobId = results.find((result) => result.data?.job_id)?.data?.job_id;
                   if (firstJobId) setActiveJobId(firstJobId);
                 }}
@@ -218,7 +218,7 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
                     variant="outline"
                     size="sm"
                     disabled={isDiscovering}
-                    onClick={() => syncOneSourceMutation.mutate(source)}
+                    onClick={() => syncOneSourceMutation.mutate({ source, importType: 'both' })}
                     className="rounded-lg sm:shrink-0"
                   >
                     <RefreshCw className={cn('h-3.5 w-3.5 mr-1.5', syncOneSourceMutation.isPending && 'animate-spin')} />
@@ -419,7 +419,7 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
           <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
           <span>
             <strong className="text-foreground">Tip:</strong> Paste the agency's Yad2 profile URL, Madlan office page,
-            or their own website above and hit Discover. Once listings are found, you can import them in batches.
+            or their own website above and hit Discover. Active sale and rental listings are pulled; projects are skipped.
           </span>
         </div>
       )}
