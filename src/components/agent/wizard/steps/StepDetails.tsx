@@ -7,11 +7,16 @@ import { Bed, Bath, Ruler, Building, Calendar, Car, LandPlot, Info, AlertCircle 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
-function ReviewHint({ children }: { children: ReactNode }) {
+function ReviewHint({ children, tone = 'required' }: { children: ReactNode; tone?: 'required' | 'recommended' }) {
+  const isRequired = tone === 'required';
+
   return (
-    <div className="flex items-start gap-2 rounded-lg bg-primary/5 border border-primary/20 px-3 py-2">
-      <AlertCircle className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
-      <p className="text-xs text-primary">{children}</p>
+    <div className={cn(
+      'flex items-start gap-2 rounded-lg border px-3 py-2',
+      isRequired ? 'bg-destructive/10 border-destructive/30' : 'bg-primary/5 border-primary/20'
+    )}>
+      <AlertCircle className={cn('h-3.5 w-3.5 shrink-0 mt-0.5', isRequired ? 'text-destructive' : 'text-primary')} />
+      <p className={cn('text-xs', isRequired ? 'text-destructive' : 'text-primary')}>{children}</p>
     </div>
   );
 }
@@ -97,7 +102,7 @@ export function StepDetails() {
                   onChange={(e) => updateData({ additional_rooms: Number(e.target.value) || 0 })}
                   onFocus={(e) => e.target.select()}
                   placeholder="0"
-                  className={cn('h-11 rounded-xl', shouldReviewOtherRooms && 'border-primary/40 bg-primary/5')}
+                  className={cn('h-11 rounded-xl', shouldReviewOtherRooms && 'border-destructive/50 bg-destructive/5')}
                 />
                 {shouldReviewOtherRooms ? (
                   <ReviewHint>Imported listing needs review: add living room, mamad, office, or keep 0 if none.</ReviewHint>
@@ -202,7 +207,7 @@ export function StepDetails() {
                 className={cn('h-11 rounded-xl', shouldReviewApartmentNumber && 'border-primary/40 bg-primary/5')}
               />
               {shouldReviewApartmentNumber ? (
-                <ReviewHint>Recommended for imported listings. Add the apartment number if you know it; it stays internal.</ReviewHint>
+                <ReviewHint tone="recommended">Recommended for imported listings. Add the apartment number if you know it; it stays internal.</ReviewHint>
               ) : (
                 <p className="text-xs text-muted-foreground">
                   Helps us tell your listing apart from other apartments in the same building. Stays internal — not shown publicly.
@@ -260,7 +265,7 @@ export function StepDetails() {
               onChange={(e) => updateData({ parking: Number(e.target.value) || 0 })}
               onFocus={(e) => e.target.select()}
               placeholder="0"
-              className={cn('h-11 rounded-xl', shouldReviewParking && 'border-primary/40 bg-primary/5')}
+              className={cn('h-11 rounded-xl', shouldReviewParking && 'border-destructive/50 bg-destructive/5')}
             />
             {shouldReviewParking && (
               <ReviewHint>Imported listing needs review: enter parking spots, or keep 0 if there is no parking.</ReviewHint>
