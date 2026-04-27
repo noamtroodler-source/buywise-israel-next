@@ -2312,7 +2312,7 @@ async function collectAgencyOwnedImages(listing: any, structuredData: any, pageH
     return first;
   }).filter(u => u && u.startsWith("http")))];
   if (uniqueImages.length === 0) return [];
-  const downloaded = await parallelImageDownload(uniqueImages, sb, "property-images", jobId, 15);
+  const downloaded = await parallelImageDownload(uniqueImages, sb, "property-images", jobId, MAX_STORED_LISTING_IMAGES);
   listing.image_hashes = Array.from(new Set(downloaded.hashes || []));
   return Array.from(new Set(downloaded.urls || []));
 }
@@ -2339,7 +2339,7 @@ async function collectAllowedSourceImages(
   itemUrl: string,
   sb: any,
   jobId: string,
-  maxImages = 15,
+  maxImages = MAX_STORED_LISTING_IMAGES,
 ): Promise<string[]> {
   const normalized = String(sourceType || "website").toLowerCase();
   if (listing.image_urls && !Array.isArray(listing.image_urls)) listing.image_urls = [listing.image_urls];
@@ -3515,7 +3515,7 @@ async function processOneItem(
         // Images: website images always enrich; Madlan images only fill an empty image set; Yad2 never downloads.
         if (incomingSource === "website_scrape" && imageUrls.length > 0) {
           const existingImages = Array.isArray(existing.images) ? existing.images as string[] : [];
-          patch.images = [...new Set([...existingImages, ...imageUrls])];
+          patch.images = [...new Set([...existingImages, ...imageUrls])].slice(0, MAX_STORED_LISTING_IMAGES);
           fieldSourceMap["images"] = incomingSource;
         } else if (incomingSource === "madlan" && imageUrls.length > 0) {
           const existingImages = Array.isArray(existing.images) ? existing.images as string[] : [];
