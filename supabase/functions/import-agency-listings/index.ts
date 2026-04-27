@@ -3554,6 +3554,17 @@ async function processOneItem(
       return { succeeded: false };
     }
 
+    const shortTermPostCheck = detectShortTermRental(`${decodeURIComponent(item.url)}\n${listing.title || ""}\n${listing.description || ""}\n${markdown}\n${pageHtml}`);
+    if (listing.short_term_rental === true || shortTermPostCheck.isShortTerm) {
+      await sb.from("import_job_items").update({
+        status: "skipped",
+        error_message: `Short-term rental not supported${shortTermPostCheck.reason ? ` (${shortTermPostCheck.reason})` : ""}`,
+        error_type: "permanent",
+        extracted_data: { ...listing, short_term_rental: true },
+      }).eq("id", item.id);
+      return { succeeded: false };
+    }
+
     // Guard against Hebrew agency pages being mislabeled as rentals because
     // generic words like "לטווח" appear in text while the price is clearly a sale price.
     const preValidationWarnings: string[] = [];
