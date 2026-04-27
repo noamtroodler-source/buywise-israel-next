@@ -3417,8 +3417,6 @@ async function processOneItem(
     // For agency's OWN website imports: these are the agency's own photos — download and store them.
     let imageUrls: string[] = [];
     listing.image_hashes = [];
-    const isAgencyOwnWebsite = job.source_type === "website" || job.source_type === "website_scrape" || (!job.source_type?.includes("yad2") && !job.source_type?.includes("madlan"));
-
     if (isAgencyOwnWebsite) {
       // Collect image URLs from multiple sources: AI extraction, structured data, HTML parsing
       const candidateImages: string[] = [];
@@ -3450,8 +3448,8 @@ async function processOneItem(
       if (uniqueImages.length > 0) {
         dlog(`Found ${uniqueImages.length} candidate images for ${item.url}`);
         const downloaded = await parallelImageDownload(uniqueImages, sb, "property-images", jobId, 15);
-        imageUrls = downloaded.urls;
-        listing.image_hashes = downloaded.hashes;
+        imageUrls = Array.from(new Set(downloaded.urls));
+        listing.image_hashes = Array.from(new Set(downloaded.hashes || []));
         dlog(`Downloaded ${imageUrls.length} images for ${item.url}`);
       }
     }
