@@ -5459,6 +5459,7 @@ Deno.serve(async (req) => {
       }
     }
     else if (action === "retry_failed") result = await handleRetryFailed(body);
+    else if (action === "retry_recoverable_skipped") result = await handleRetryRecoverableSkipped(body);
     else if (action === "approve_item") result = await handleApproveItem(body);
     else if (action === "resume_job") result = await handleResumeJob(body);
     else if (action === "check_existing") result = await handleCheckExisting(body);
