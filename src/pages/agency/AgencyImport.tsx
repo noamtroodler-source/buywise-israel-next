@@ -189,7 +189,7 @@ export default function AgencyImport() {
             </CardHeader>
             <CardContent className="pt-4 space-y-4">
               <div className="text-sm text-muted-foreground space-y-2">
-                <p>Paste your agency's <strong className="text-foreground">homepage URL</strong> — the main page that links to all your property listings.</p>
+                <p>Paste your agency's <strong className="text-foreground">homepage URL</strong>.</p>
               </div>
 
               <form onSubmit={handleDiscover} className="flex flex-col sm:flex-row gap-3">
