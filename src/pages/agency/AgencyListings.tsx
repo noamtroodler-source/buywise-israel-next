@@ -110,10 +110,24 @@ function getReviewBucket(listing: AgencyListing) {
   return status;
 }
 
-type SortKey = 'price' | 'views' | 'saves' | 'inquiries' | 'days';
+type SortKey = 'review' | 'price' | 'views' | 'saves' | 'inquiries' | 'days';
 type SortDirection = 'asc' | 'desc';
 
 function getSortValue(listing: any, key: SortKey) {
+  if (key === 'review') {
+    const status = listing.agency_review_status || 'needs_review';
+    const missingCount = listing.missing_quick_fields?.length ?? 0;
+    const baseScore = status === 'approved_live'
+      ? 100
+      : listing.safe_to_batch_approve
+        ? 90
+        : status === 'needs_review'
+          ? 70
+          : status === 'needs_edit'
+            ? 35
+            : 0;
+    return baseScore - (listing.has_critical_flags ? 25 : 0) - Math.min(missingCount * 5, 30);
+  }
   if (key === 'price') return Number(listing.price || 0);
   if (key === 'views') return Number(listing.views_count || 0);
   if (key === 'saves') return Number(listing.total_saves || 0);
@@ -151,10 +165,10 @@ function SortableHeader({
       </DropdownMenuTrigger>
       <DropdownMenuContent align={align === 'right' ? 'end' : 'center'} className="w-40">
         <DropdownMenuItem onClick={() => onSort(sortKey, 'asc')}>
-          <ArrowUp className="mr-2 h-4 w-4" /> Low to high
+          <ArrowUp className="mr-2 h-4 w-4" /> {sortKey === 'review' ? 'Least ready first' : 'Low to high'}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => onSort(sortKey, 'desc')}>
-          <ArrowDown className="mr-2 h-4 w-4" /> High to low
+          <ArrowDown className="mr-2 h-4 w-4" /> {sortKey === 'review' ? 'Most ready first' : 'High to low'}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
