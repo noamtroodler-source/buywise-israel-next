@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -23,7 +22,7 @@ import {
 } from "@/hooks/useAgencySources";
 import { useAuth } from "@/hooks/useAuth";
 import { SourceHealthBadge } from "@/components/agency/SourceHealthBadge";
-import { Pause, Play, Trash2, RefreshCw, Plus, Globe, Zap, Building2 } from "lucide-react";
+import { Pause, Play, Trash2, RefreshCw, Plus, Globe } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 function DocTitle({ title }: { title: string }) {
@@ -32,14 +31,10 @@ function DocTitle({ title }: { title: string }) {
 }
 
 const SOURCE_ICONS: Record<string, typeof Globe> = {
-  yad2: Zap,
-  madlan: Building2,
   website: Globe,
 };
 
 const SOURCE_LABELS: Record<string, string> = {
-  yad2: "Yad2",
-  madlan: "Madlan",
   website: "Agency Website",
 };
 
@@ -72,7 +67,7 @@ export default function AgencySources() {
   const syncAll = useTriggerNightlySync();
 
   const [addOpen, setAddOpen] = useState(false);
-  const [newType, setNewType] = useState<"yad2" | "madlan" | "website">("yad2");
+  const [newType] = useState<"website">("website");
   const [newUrl, setNewUrl] = useState("");
   const [newNotes, setNewNotes] = useState("");
 
@@ -89,7 +84,7 @@ export default function AgencySources() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Listing Sources</h1>
             <p className="text-muted-foreground">
-              Connect your agency website, Madlan, and Yad2. Sale and rental listings sync nightly; projects stay in the Project Wizard.
+              Connect your agency website. Sale and rental listings sync nightly; projects stay in the Project Wizard.
             </p>
           </div>
           <div className="flex gap-2">
@@ -115,18 +110,9 @@ export default function AgencySources() {
                 <div className="space-y-4">
                   <div>
                     <Label>Source type</Label>
-                    <Select value={newType} onValueChange={(v) => setNewType(v as typeof newType)}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="yad2">Yad2</SelectItem>
-                        <SelectItem value="madlan">Madlan</SelectItem>
-                        <SelectItem value="website">Agency website</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Input value="Agency website" disabled />
                     <p className="mt-1 text-xs text-muted-foreground">
-                      Priority: Website → Madlan → Yad2. Active sale and rental listings are pulled; portals enrich missing fields and flag conflicts.
+                      Active sale and rental listings are pulled from your agency website. Projects should be added in the Project Wizard.
                     </p>
                   </div>
                   <div>
@@ -134,7 +120,7 @@ export default function AgencySources() {
                     <Input
                       value={newUrl}
                       onChange={(e) => setNewUrl(e.target.value)}
-                      placeholder="https://www.yad2.co.il/realestate/..."
+                      placeholder="https://your-agency-website.com"
                     />
                   </div>
                   <div>
@@ -201,7 +187,7 @@ export default function AgencySources() {
             )}
             {!isLoading && mySources.length === 0 && (
               <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-                No sources yet. Add your agency website first for photos and owned content, then Madlan/Yad2 for enrichment.
+                No sources yet. Add your agency website to sync listings from your own site.
               </div>
             )}
             {mySources.map((src) => (
