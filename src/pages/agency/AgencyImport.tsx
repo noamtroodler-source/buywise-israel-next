@@ -58,7 +58,7 @@ export default function AgencyImport() {
   const resumeJobMutation = useResumeJob();
   const { startProcessAll, stopProcessAll, isProcessingAll, processingStartTime, processedSoFar } = useProcessAll();
   const [websiteUrl, setWebsiteUrl] = useState('');
-  const [importType, setImportType] = useState<'resale' | 'rental' | 'all'>('resale');
+  const [importType, setImportType] = useState<'resale' | 'rental' | 'all'>('all');
   const [sourceType, setSourceType] = useState<'website' | 'yad2' | 'madlan'>('website');
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
 
@@ -166,7 +166,7 @@ export default function AgencyImport() {
             </Button>
             <div>
               <h1 className="text-2xl font-bold">Import Listings</h1>
-              <p className="text-muted-foreground">Import property listings from your website automatically</p>
+              <p className="text-muted-foreground">Import active sale and rental listings from your website, Yad2, or Madlan</p>
             </div>
           </div>
 
@@ -174,7 +174,7 @@ export default function AgencyImport() {
           <div className="flex items-start gap-3 p-4 rounded-xl bg-primary/5 border border-primary/10">
             <Info className="h-4 w-4 text-primary mt-0.5 shrink-0" />
             <p className="text-sm text-muted-foreground">
-              Projects and developments are always skipped — add those via the{' '}
+              Active sale and rental listings are imported together. Projects and developments are always skipped — add those via the{' '}
               <Link to="/agency/projects/new" className="text-primary font-medium hover:underline">
                 Project Wizard
               </Link>{' '}
