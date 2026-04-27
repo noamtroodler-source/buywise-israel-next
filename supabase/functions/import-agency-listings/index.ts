@@ -1489,7 +1489,7 @@ async function handleDiscover(body: any) {
 
   const canonical = canonicalizeDiscoveredUrls(rawUrls, formattedUrl);
   if (canonical.rejected > 0 || canonical.repaired > 0) {
-    console.log(`URL sanitation: ${canonical.repaired} repaired, ${canonical.rejected} rejected, ${canonical.urls.length} canonical`);
+    console.log(`URL sanitation: ${canonical.repaired} repaired, ${canonical.rejected} rejected, ${canonical.urls.length} canonical`, canonical.diagnostics);
   }
 
   const allUrls = canonical.urls.filter(url => {
@@ -1539,6 +1539,7 @@ async function handleDiscover(body: any) {
         status: "completed",
         total_urls: 0,
         discovered_urls: allUrls,
+        failure_reason: JSON.stringify({ url_sanitation: canonical.diagnostics, skipped_existing: skippedExisting }),
         processed_count: 0,
         failed_count: 0,
       }).eq("id", existingJobId);
@@ -1571,13 +1572,13 @@ async function handleDiscover(body: any) {
   if (existingJobId) {
     const { error: updateJobErr } = await sb
       .from("import_jobs")
-      .update({ status: "ready", total_urls: listingUrls.length, discovered_urls: allUrls, import_type })
+      .update({ status: "ready", total_urls: listingUrls.length, discovered_urls: allUrls, import_type, failure_reason: JSON.stringify({ url_sanitation: canonical.diagnostics, discovered_raw: rawUrls.length, canonical: canonical.urls.length, queued: listingUrls.length }) })
       .eq("id", existingJobId);
     if (updateJobErr) throw new Error(`Failed to update import job: ${updateJobErr.message}`);
   } else {
     const { data: insertedJob, error: jobErr } = await sb
       .from("import_jobs")
-      .insert({ agency_id, website_url: formattedUrl, status: "ready", total_urls: listingUrls.length, discovered_urls: allUrls, import_type, source_type: "website" })
+      .insert({ agency_id, website_url: formattedUrl, status: "ready", total_urls: listingUrls.length, discovered_urls: allUrls, import_type, source_type: "website", failure_reason: JSON.stringify({ url_sanitation: canonical.diagnostics, discovered_raw: rawUrls.length, canonical: canonical.urls.length, queued: listingUrls.length }) })
       .select("id").single();
     if (jobErr) throw new Error(`Failed to create import job: ${jobErr.message}`);
     job = insertedJob;
