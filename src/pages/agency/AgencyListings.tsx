@@ -604,8 +604,7 @@ export default function AgencyListings() {
                   <SelectContent>
                     <SelectItem value="all">All Reviews</SelectItem>
                     <SelectItem value="ready">Ready to publish</SelectItem>
-                    <SelectItem value="fix">Quick fixes</SelectItem>
-                    <SelectItem value="incomplete">Needs more information</SelectItem>
+                    <SelectItem value="fix">Needs info/photos</SelectItem>
                     <SelectItem value="approved_live">Confirmed</SelectItem>
                     <SelectItem value="archived_stale">Archived</SelectItem>
                   </SelectContent>
