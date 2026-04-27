@@ -3394,6 +3394,11 @@ async function processOneItem(
         }
         if (!cmsExtracted) cmsExtracted = "agency_html_fallback";
       }
+
+      if (isAgencyOwnWebsite) {
+        listing = enrichListingFromVisibleFacts(listing, pageHtml, markdown);
+        listing._agency_visible_facts_extracted = true;
+      }
     }
 
     // Merge structured data from HTML (JSON-LD, OG tags) — fills remaining gaps
