@@ -545,6 +545,7 @@ export default function AgentProperties() {
                         {filteredListings.map((listing) => {
                           const verificationStatus = (listing as any).verification_status as keyof typeof statusConfig;
                           const status = statusConfig[verificationStatus] || statusConfig.draft;
+                          const origin = getListingOrigin(listing);
                           const isDraft = verificationStatus === 'draft';
                           const isChangesRequested = verificationStatus === 'changes_requested';
                           const isApproved = verificationStatus === 'approved';
@@ -586,6 +587,16 @@ export default function AgentProperties() {
                                   <Badge variant="outline" className={cn('text-xs w-fit', status.color)}>
                                     {status.label}
                                   </Badge>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Badge variant="outline" className={cn('text-xs w-fit', origin.className)}>
+                                        {origin.label}
+                                      </Badge>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>{origin.description}</p>
+                                    </TooltipContent>
+                                  </Tooltip>
                                   {stale && isApproved && (
                                     <Badge variant="outline" className="text-xs w-fit bg-amber-50 text-amber-700 border-amber-200 gap-1">
                                       <AlertTriangle className="h-3 w-3" />
