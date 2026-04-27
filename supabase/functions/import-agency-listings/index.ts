@@ -1625,7 +1625,7 @@ function filterNonListingUrls(urls: string[]): { listingCandidates: string[]; re
 
 async function geocodeWithRateLimit(address: string, city: string, neighborhood?: string | null): Promise<{ lat: number; lng: number } | null> {
   try {
-    const res = await fetch(
+    const res = await fetchWithTimeout(
       `${Deno.env.get("SUPABASE_URL")}/functions/v1/geocode-address`,
       {
         method: "POST",
@@ -1641,7 +1641,8 @@ async function geocodeWithRateLimit(address: string, city: string, neighborhood?
           neighborhood: neighborhood || undefined,
           skipDbSave: true,
         }),
-      }
+      },
+      12_000
     );
     const data = await res.json();
     if (data.success) {
@@ -1662,11 +1663,11 @@ async function enhanceImage(imagePublicUrl: string, sb: any, bucketName: string,
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) return imagePublicUrl;
     const enhancePath = `imports/${jobId}/${crypto.randomUUID()}-enhanced.png`;
-    const res = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/enhance-image`, {
+    const res = await fetchWithTimeout(`${Deno.env.get("SUPABASE_URL")}/functions/v1/enhance-image`, {
       method: "POST",
       headers: { Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`, "Content-Type": "application/json" },
       body: JSON.stringify({ image_url: imagePublicUrl, bucket: bucketName, path: enhancePath }),
-    });
+    }, 20_000);
     if (!res.ok) return imagePublicUrl;
     const data = await res.json();
     return (data.success && data.enhanced && data.image_url) ? data.image_url : imagePublicUrl;
