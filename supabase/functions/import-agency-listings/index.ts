@@ -3942,10 +3942,12 @@ async function processOneItem(
         source_last_checked_at: new Date().toISOString(),
         field_source_map: (() => {
           const src = job.source_type === "yad2" ? "yad2" : job.source_type === "madlan" ? "madlan" : "website_scrape";
+          const visibleFactFields = new Set<string>(Array.isArray(listing._visible_fact_fields) ? listing._visible_fact_fields : []);
           const map: Record<string, string> = {};
           for (const f of ["price", "size_sqm", "bedrooms", "bathrooms", "source_rooms", "floor", "total_floors", "year_built", "parking", "condition", "ac_type", "entry_date", "original_price", "lot_size_sqm", "vaad_bayit_monthly", "is_furnished", "is_accessible", "additional_rooms", "featured_highlight", "lease_term", "furnished_status", "pets_policy", "subletting_allowed", "agent_fee_required", "bank_guarantee_required", "checks_required", "address", "neighborhood", "description", "features"]) {
-            if ((listing as any)[f] != null && (listing as any)[f] !== "") map[f] = src;
+            if ((listing as any)[f] != null && (listing as any)[f] !== "") map[f] = visibleFactFields.has(f) ? `${src}_parser` : src;
           }
+          if (latitude != null && longitude != null) map.location = listing._yad2_latitude ? "yad2" : "geocoding";
           return map;
         })(),
       })
