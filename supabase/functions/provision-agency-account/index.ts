@@ -24,7 +24,7 @@ function generatePassword(): string {
   return out;
 }
 
-async function findUserByEmail(admin: ReturnType<typeof createClient>, email: string) {
+async function findUserByEmail(admin: any, email: string) {
   const target = email.trim().toLowerCase();
   let page = 1;
   const perPage = 200;
