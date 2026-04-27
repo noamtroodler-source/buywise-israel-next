@@ -3702,6 +3702,17 @@ async function processOneItem(
 
     // ── CONFIDENCE SCORING ──
     let confidenceScore = computeConfidenceScore(listing, cityMatchType, validationWarnings, !!listing._has_structured_data, cmsExtracted);
+    const copy = await generateBuyWiseTitleAndDescription(
+      listing,
+      `${listing.title || ""}\n${listing.description || ""}\n${structuredData?.og_title || ""}\n${structuredData?.og_description || ""}\n${markdown}`,
+      lovableKey,
+      jobId,
+      sb,
+    );
+    listing.ai_title = copy.title;
+    listing.ai_english_description = copy.description;
+    listing.description = copy.description;
+    if (!copy.aiGenerated) validationWarnings.push("ai_description_fallback_generated_from_facts");
 
     // Apply penalty for simplified prompt extraction
     if (usedSimplifiedPrompt) {
@@ -4086,8 +4097,9 @@ async function processOneItem(
       .from("properties")
       .insert({
         agent_id: agentId,
-        title: generateListingTitle(listing, new URL(item.url).hostname),
-        description: generateListingDescription(listing) || listing.description || null,
+        title: listing.ai_title || generateListingTitle(listing, new URL(item.url).hostname),
+        description: listing.description,
+        ai_english_description: listing.ai_english_description,
         property_type: listing.property_type || "apartment",
         listing_status: listing.listing_status || "for_sale",
         price: listing.price || 0,
