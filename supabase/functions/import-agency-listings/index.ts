@@ -3703,18 +3703,7 @@ async function processOneItem(
 
     // Insert property
     // Sanitize entry_date: only accept valid ISO dates, convert "immediate"/Hebrew equivalents to today
-    const entryDate = (() => {
-      const raw = listing.entry_date;
-      if (!raw || typeof raw !== "string") return null;
-      const trimmed = raw.trim().toLowerCase();
-      if (trimmed === "immediate" || trimmed === "מיידי" || trimmed === "מיידית") {
-        return new Date().toISOString().split("T")[0];
-      }
-      if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
-      const match = trimmed.match(/^(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})$/);
-      if (match) return `${match[3]}-${match[2].padStart(2,'0')}-${match[1].padStart(2,'0')}`;
-      return null; // Hebrew text like "גמישה" → null
-    })();
+    const entryDate = sanitizeEntryDate(listing.entry_date);
 
     const { data: property, error: propErr } = await sb
       .from("properties")
@@ -3779,7 +3768,7 @@ async function processOneItem(
         field_source_map: (() => {
           const src = job.source_type === "yad2" ? "yad2" : job.source_type === "madlan" ? "madlan" : "website_scrape";
           const map: Record<string, string> = {};
-          for (const f of ["price", "size_sqm", "bedrooms", "floor", "year_built", "address", "neighborhood", "description", "features"]) {
+          for (const f of ["price", "size_sqm", "bedrooms", "bathrooms", "source_rooms", "floor", "total_floors", "year_built", "parking", "condition", "ac_type", "entry_date", "original_price", "lot_size_sqm", "vaad_bayit_monthly", "is_furnished", "is_accessible", "additional_rooms", "featured_highlight", "lease_term", "furnished_status", "pets_policy", "subletting_allowed", "agent_fee_required", "bank_guarantee_required", "checks_required", "address", "neighborhood", "description", "features"]) {
             if ((listing as any)[f] != null && (listing as any)[f] !== "") map[f] = src;
           }
           return map;
