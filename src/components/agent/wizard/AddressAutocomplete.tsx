@@ -269,6 +269,7 @@ function GoogleAddressAutocomplete({
           className={cn(
             'h-11 rounded-xl pr-10',
             hasCompleteAddressSelection && 'border-primary/50 bg-primary/5',
+            hasValidSelection && !hasRequiredStreetNumber && 'border-primary bg-primary/10',
             className
           )}
         />
@@ -327,6 +328,13 @@ function GoogleAddressAutocomplete({
         </div>
       )}
 
+      {!unsupportedCityError && !cityMismatchError && hasValidSelection && !hasRequiredStreetNumber && (
+        <div className="mt-1.5 flex items-start gap-2 text-xs text-primary bg-primary/10 rounded-lg p-2.5">
+          <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+          <span>Street number is required before this listing can be confirmed.</span>
+        </div>
+      )}
+
       {!unsupportedCityError && !cityMismatchError && !hasValidSelection && inputValue.length > 0 && inputValue.length < 3 && (
         <p className="mt-1 text-xs text-muted-foreground">
           Type at least 3 characters to search
@@ -356,6 +364,8 @@ function NominatimAddressAutocomplete({
   const [cityMismatchError, setCityMismatchError] = useState<{ extracted: string; selected: string } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const hasRequiredStreetNumber = /\d/.test(inputValue || value || '');
+  const hasCompleteAddressSelection = hasValidSelection && hasRequiredStreetNumber;
 
   useEffect(() => {
     setInputValue(value);
@@ -498,15 +508,18 @@ function NominatimAddressAutocomplete({
           name="notASearchField"
           className={cn(
             'h-11 rounded-xl pr-10',
-            hasValidSelection && 'border-primary/50 bg-primary/5',
+            hasCompleteAddressSelection && 'border-primary/50 bg-primary/5',
+            hasValidSelection && !hasRequiredStreetNumber && 'border-primary bg-primary/10',
             className
           )}
         />
         <div className="absolute right-3 top-1/2 -translate-y-1/2">
           {isLoading ? (
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-          ) : hasValidSelection ? (
+          ) : hasCompleteAddressSelection ? (
             <Check className="h-4 w-4 text-primary" />
+          ) : hasValidSelection && !hasRequiredStreetNumber ? (
+            <AlertCircle className="h-4 w-4 text-primary" />
           ) : (
             <MapPin className="h-4 w-4 text-muted-foreground" />
           )}
@@ -552,6 +565,13 @@ function NominatimAddressAutocomplete({
             This address is in {cityMismatchError.extracted}, but you selected {cityMismatchError.selected} above. 
             Please choose a matching address or change the city selection.
           </span>
+        </div>
+      )}
+
+      {!unsupportedCityError && !cityMismatchError && hasValidSelection && !hasRequiredStreetNumber && (
+        <div className="mt-1.5 flex items-start gap-2 text-xs text-primary bg-primary/10 rounded-lg p-2.5">
+          <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+          <span>Street number is required before this listing can be confirmed.</span>
         </div>
       )}
 
