@@ -1267,6 +1267,23 @@ function normalizeUrl(raw: string): string {
   }
 }
 
+function canonicalUrlIdentity(raw: string | null | undefined): string {
+  if (!raw) return "";
+  try {
+    const normalized = normalizeUrl(raw);
+    const parsed = new URL(normalized);
+    parsed.search = "";
+    parsed.hash = "";
+    return decodeURIComponent(parsed.toString()).toLowerCase().replace(/\/+$/, "");
+  } catch {
+    try {
+      return decodeURIComponent(String(raw)).toLowerCase().split(/[?#]/)[0].replace(/\/+$/, "");
+    } catch {
+      return String(raw).toLowerCase().split(/[?#]/)[0].replace(/\/+$/, "");
+    }
+  }
+}
+
 function sanitizeDiscoveredUrl(raw: string, baseUrl?: string): { url: string | null; reason?: string } {
   if (!raw || typeof raw !== "string") return { url: null, reason: "empty_url" };
   let candidate = raw.trim().replace(/&amp;/g, "&");
