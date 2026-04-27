@@ -3449,7 +3449,7 @@ async function processOneItem(
 
       const { data: existing } = await sb
         .from("properties")
-        .select("id, price, size_sqm, bedrooms, images, description, address, floor, year_built, features, merged_source_urls, source_url, data_quality_score, neighborhood, import_source, field_source_map, agent_id")
+        .select("id, price, size_sqm, bedrooms, bathrooms, source_rooms, images, description, address, floor, total_floors, year_built, features, merged_source_urls, source_url, data_quality_score, neighborhood, import_source, field_source_map, agent_id, parking, condition, ac_type, entry_date, original_price, lot_size_sqm, vaad_bayit_monthly, is_furnished, is_accessible, additional_rooms, featured_highlight, lease_term, furnished_status, pets_policy, subletting_allowed, agent_fee_required, bank_guarantee_required, checks_required")
         .eq("id", crossSourceMatchId)
         .single();
 
@@ -3515,10 +3515,29 @@ async function processOneItem(
           ["price", listing.price > 0 ? listing.price : null],
           ["size_sqm", listing.size_sqm && listing.size_sqm > 0 ? listing.size_sqm : null],
           ["bedrooms", listing.bedrooms != null ? Math.floor(listing.bedrooms) : null],
+          ["bathrooms", listing.bathrooms != null ? Math.floor(listing.bathrooms) : null],
+          ["source_rooms", listing.source_rooms ?? null],
           ["floor", listing.floor ?? null],
+          ["total_floors", listing.total_floors ?? null],
           ["year_built", listing.year_built ?? null],
           ["parking", listing.parking ?? null],
           ["condition", listing.condition ?? null],
+          ["ac_type", listing.ac_type || null],
+          ["entry_date", sanitizeEntryDate(listing.entry_date)],
+          ["original_price", listing.original_price ?? null],
+          ["lot_size_sqm", listing.lot_size_sqm ?? null],
+          ["vaad_bayit_monthly", listing.vaad_bayit_monthly ?? null],
+          ["is_furnished", listing.is_furnished === true ? true : null],
+          ["is_accessible", listing.is_accessible === true ? true : null],
+          ["additional_rooms", listing.additional_rooms ?? null],
+          ["featured_highlight", listing.featured_highlight || null],
+          ["lease_term", listing.lease_term || null],
+          ["furnished_status", listing.furnished_status || null],
+          ["pets_policy", listing.pets_policy || null],
+          ["subletting_allowed", listing.subletting_allowed === true ? true : null],
+          ["agent_fee_required", listing.agent_fee_required ?? null],
+          ["bank_guarantee_required", listing.bank_guarantee_required ?? null],
+          ["checks_required", listing.checks_required ?? null],
           ["address", listing.address ? normalizeAddressForStorage(listing.address) : null],
           ["neighborhood", listing.neighborhood ?? null],
         ];
