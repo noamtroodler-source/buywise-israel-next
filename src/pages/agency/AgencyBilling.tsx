@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowLeft, CreditCard, Receipt, Star, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, CreditCard, Receipt, Star, ShieldAlert, Building2 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -38,61 +38,95 @@ export default function AgencyBilling() {
 
   return (
     <Layout>
-      <div className="container py-8 space-y-6 max-w-5xl">
+      <div className="container py-8 pb-24 md:pb-8 space-y-6 max-w-6xl">
         <FoundingMemberBanner />
         <TrialCountdownBanner />
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" asChild className="rounded-xl hover:bg-primary/10">
             <Link to="/agency">
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
-          <div className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5 text-primary" />
-            <h1 className="text-2xl font-bold text-foreground">Billing</h1>
+            <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+              <CreditCard className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-foreground">Billing</h1>
+              <p className="text-sm text-muted-foreground">Plan, featured placement, and invoices</p>
+            </div>
           </div>
+          <Button variant="outline" size="sm" asChild className="rounded-xl border-primary/20 hover:bg-primary/5">
+            <Link to="/agency">
+              <Building2 className="h-4 w-4 mr-2" />
+              Agency Portal
+            </Link>
+          </Button>
         </div>
 
-        <Tabs defaultValue="overview">
-          <TabsList className="rounded-xl">
-            <TabsTrigger value="overview" className="rounded-lg gap-1.5">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-1">
+          <span className="flex items-center gap-1.5 text-sm">
+            <span className="font-semibold text-foreground">{featuredListings.length}</span>
+            <span className="text-muted-foreground">featured active</span>
+          </span>
+          <span className="text-muted-foreground/40">·</span>
+          <span className="flex items-center gap-1.5 text-sm">
+            <span className="font-semibold text-foreground">₪{monthlyCost.toLocaleString()}/mo</span>
+            <span className="text-muted-foreground">featured spend</span>
+          </span>
+          <span className="text-muted-foreground/40">·</span>
+          <span className="flex items-center gap-1.5 text-sm">
+            <span className="font-semibold text-foreground">3</span>
+            <span className="text-muted-foreground">free founding slots</span>
+          </span>
+        </div>
+
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList className="rounded-2xl bg-muted/60 p-1">
+            <TabsTrigger value="overview" className="rounded-xl gap-1.5 data-[state=active]:bg-background data-[state=active]:shadow-sm">
               <CreditCard className="h-3.5 w-3.5" />
               Overview
             </TabsTrigger>
-            <TabsTrigger value="invoices" className="rounded-lg gap-1.5">
+            <TabsTrigger value="invoices" className="rounded-xl gap-1.5 data-[state=active]:bg-background data-[state=active]:shadow-sm">
               <Receipt className="h-3.5 w-3.5" />
               Invoices
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview" className="mt-6">
-            <div className="grid gap-6 lg:grid-cols-2">
-              <div className="space-y-6">
+          <TabsContent value="overview" className="mt-0">
+            <div className="grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
+              <div className="space-y-5">
                 <BillingSection />
               </div>
-              <div className="space-y-6">
+              <div className="space-y-5">
                 <UsageMeters entityType="agency" authorType="agency" profileId={agency?.id} />
                 <UpgradePromptCard entityType="agency" />
 
-                {/* Featured Listings Summary */}
-                <Card className="rounded-2xl border-primary/10 bg-gradient-to-br from-primary/5 to-transparent">
-                  <CardContent className="p-5 space-y-3">
-                    <div className="flex items-center gap-2">
-                      <Star className="h-4 w-4 text-primary" />
-                      <span className="font-medium text-sm">Featured Listings</span>
+                <Card className="rounded-2xl border-border/50 bg-card shadow-sm transition-all hover:border-primary/30 hover:shadow-md">
+                  <CardContent className="p-5 space-y-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                          <Star className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <h2 className="font-semibold text-foreground">Featured Listings</h2>
+                          <p className="text-sm text-muted-foreground">Premium placement usage</p>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <div>
-                        <p className="text-xl font-bold">{featuredListings.length}</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="rounded-xl border border-border/50 bg-muted/30 p-3">
+                        <p className="text-2xl font-bold text-foreground">{featuredListings.length}</p>
                         <p className="text-xs text-muted-foreground">Active</p>
                       </div>
-                      <div>
-                        <p className="text-xl font-bold">₪{monthlyCost.toLocaleString()}/mo</p>
+                      <div className="rounded-xl border border-border/50 bg-muted/30 p-3">
+                        <p className="text-2xl font-bold text-foreground">₪{monthlyCost.toLocaleString()}</p>
                         <p className="text-xs text-muted-foreground">Monthly cost</p>
                       </div>
                     </div>
-                    <UiButton variant="outline" size="sm" asChild className="rounded-xl border-primary/20">
+                    <UiButton variant="outline" size="sm" asChild className="rounded-xl border-primary/20 hover:bg-primary/5">
                       <Link to="/agency/featured">Manage Featured</Link>
                     </UiButton>
                   </CardContent>
@@ -101,7 +135,7 @@ export default function AgencyBilling() {
             </div>
           </TabsContent>
 
-          <TabsContent value="invoices" className="mt-6 space-y-6">
+          <TabsContent value="invoices" className="mt-0 space-y-6">
             <InvoiceHistoryTable />
           </TabsContent>
         </Tabs>
