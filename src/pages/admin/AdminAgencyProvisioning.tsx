@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { useProvisioningAgencies, useProvisioningAgency, useCreateAgency } from '@/hooks/useAgencyProvisioning';
+import { useProvisioningAgencies, useProvisioningAgency, useCreateAgency, useDeleteProvisioningAgency } from '@/hooks/useAgencyProvisioning';
 import { AgencyProvisioningSidebar } from '@/components/admin/agency-provisioning/AgencyProvisioningSidebar';
 import { AgencyProfileSection } from '@/components/admin/agency-provisioning/AgencyProfileSection';
 import { AgentRosterSection } from '@/components/admin/agency-provisioning/AgentRosterSection';
@@ -26,6 +26,7 @@ export default function AdminAgencyProvisioning() {
   const { data: agencies = [], isLoading } = useProvisioningAgencies();
   const { data: selectedAgency, isFetched: selectedAgencyFetched } = useProvisioningAgency(selectedId);
   const create = useCreateAgency();
+  const deleteAgency = useDeleteProvisioningAgency();
   const lastMissingAgencyNoticeRef = useRef<string | null>(null);
 
   const [createOpen, setCreateOpen] = useState(false);
@@ -95,6 +96,8 @@ export default function AdminAgencyProvisioning() {
           selectedId={selectedId}
           onSelect={selectAgency}
           onCreate={() => setCreateOpen(true)}
+          onDelete={(id) => deleteAgency.mutate(id)}
+          deletingId={deleteAgency.isPending ? deleteAgency.variables ?? null : null}
         />
 
         <div className="min-w-0 space-y-6">

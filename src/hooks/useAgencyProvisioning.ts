@@ -135,6 +135,27 @@ export function useCreateAgency() {
   });
 }
 
+export function useDeleteProvisioningAgency() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (agencyId: string) => {
+      const { data, error } = await (supabase as any).rpc('delete_provisioning_agency', {
+        p_agency_id: agencyId,
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_data, agencyId) => {
+      qc.invalidateQueries({ queryKey: ['provisioning-agencies'] });
+      qc.invalidateQueries({ queryKey: ['provisioning-agency', agencyId] });
+      qc.invalidateQueries({ queryKey: ['admin-agencies'] });
+      qc.invalidateQueries({ queryKey: ['admin-agency-stats'] });
+      toast.success('Agency deleted');
+    },
+    onError: (e: any) => toast.error(e?.message || 'Failed to delete agency'),
+  });
+}
+
 function computeAgentCompleteness(a: Partial<ProvisioningAgent>) {
   const fields: Array<[keyof ProvisioningAgent, boolean]> = [
     ['name', !!a.name],

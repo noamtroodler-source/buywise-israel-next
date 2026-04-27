@@ -7524,6 +7524,10 @@ export type Database = {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
       }
+      delete_provisioning_agency: {
+        Args: { p_agency_id: string }
+        Returns: Json
+      }
       end_primary_boost: { Args: { p_property_id: string }; Returns: Json }
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
