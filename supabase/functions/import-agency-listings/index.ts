@@ -2323,6 +2323,14 @@ async function collectAllowedSourceImages(
   maxImages = 15,
 ): Promise<string[]> {
   const normalized = String(sourceType || "website").toLowerCase();
+  if (listing.image_urls && !Array.isArray(listing.image_urls)) listing.image_urls = [listing.image_urls];
+  if (Array.isArray(listing.image_urls)) {
+    listing.image_urls = listing.image_urls.flatMap((img: any) => {
+      if (typeof img === "string") return [img];
+      if (img && typeof img === "object") return [img.url, img.src, img.source_url, img.large, img.full].filter(Boolean);
+      return [];
+    });
+  }
   if (normalized.includes("yad2")) return [];
   if (isAgencyOwnWebsiteSource(sourceType)) {
     const urls = await collectAgencyOwnedImages(listing, structuredData, pageHtml, itemUrl, sb, jobId);
