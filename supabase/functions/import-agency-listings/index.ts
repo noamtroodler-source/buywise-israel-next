@@ -3178,8 +3178,9 @@ async function processOneItem(
     }
 
     // 0a. Source URL dedup
+    const normalizedItemUrl = normalizeUrl(item.url);
     const { data: existingByUrl } = await sb
-      .from("properties").select("id").eq("source_url", item.url).limit(1);
+      .from("properties").select("id, source_url").or(`source_url.eq.${item.url},source_url.eq.${normalizedItemUrl}`).limit(1);
     if (existingByUrl && existingByUrl.length > 0) {
       await sb.from("import_job_items")
         .update({ status: "skipped", error_message: `Duplicate: URL already imported as property ${existingByUrl[0].id}`, error_type: "permanent" })
@@ -3190,7 +3191,7 @@ async function processOneItem(
     // 0b. In-job URL dedup
     const { data: existingJobItem } = await sb
       .from("import_job_items").select("id, property_id")
-      .eq("job_id", jobId).eq("url", item.url).eq("status", "done").neq("id", item.id).limit(1);
+      .eq("job_id", jobId).in("url", [item.url, normalizedItemUrl]).eq("status", "done").neq("id", item.id).limit(1);
     if (existingJobItem && existingJobItem.length > 0) {
       await sb.from("import_job_items")
         .update({ status: "skipped", error_message: "Duplicate: same URL already processed in this job", error_type: "permanent" })
