@@ -118,7 +118,7 @@ function generateSponsorBlockHtml(sponsors: Sponsor[], baseUrl: string): string 
   `;
 }
 
-async function fetchActiveSponsors(supabase: ReturnType<typeof createClient>): Promise<Sponsor[]> {
+async function fetchActiveSponsors(supabase: any): Promise<Sponsor[]> {
   // Step 1: Get the email_digest_sponsored product ID
   const { data: product } = await supabase
     .from("visibility_products")
@@ -126,14 +126,15 @@ async function fetchActiveSponsors(supabase: ReturnType<typeof createClient>): P
     .eq("slug", "email_digest_sponsored")
     .eq("is_active", true)
     .maybeSingle();
+  const productRow = product as { id: string } | null;
 
-  if (!product?.id) return [];
+  if (!productRow?.id) return [];
 
   // Step 2: Fetch active boosts for this product (up to 2 slots)
   const { data: boosts } = await supabase
     .from("active_boosts")
     .select("entity_type, target_id")
-    .eq("product_id", product.id)
+    .eq("product_id", productRow.id)
     .eq("is_active", true)
     .gt("ends_at", new Date().toISOString())
     .order("created_at", { ascending: true })
@@ -142,7 +143,7 @@ async function fetchActiveSponsors(supabase: ReturnType<typeof createClient>): P
   if (!boosts || boosts.length === 0) return [];
 
   // Step 3: Resolve entity details in parallel
-  const sponsorPromises = boosts.map(async (boost) => {
+  const sponsorPromises = (boosts as Array<{ entity_type: string; target_id: string }>).map(async (boost) => {
     const table = boost.entity_type === "agency" ? "agencies" : "developers";
     const { data: entity } = await supabase
       .from(table)
@@ -150,13 +151,14 @@ async function fetchActiveSponsors(supabase: ReturnType<typeof createClient>): P
       .eq("id", boost.target_id)
       .maybeSingle();
 
-    if (!entity) return null;
+    const entityRow = entity as { name: string; logo_url?: string | null; slug: string; description?: string | null } | null;
+    if (!entityRow) return null;
 
     return {
-      name: entity.name,
-      logo_url: entity.logo_url ?? null,
-      slug: entity.slug,
-      description: entity.description ?? null,
+      name: entityRow.name,
+      logo_url: entityRow.logo_url ?? null,
+      slug: entityRow.slug,
+      description: entityRow.description ?? null,
       entity_type: boost.entity_type as "agency" | "developer",
     } satisfies Sponsor;
   });
