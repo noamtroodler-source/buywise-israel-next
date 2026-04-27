@@ -1746,7 +1746,7 @@ async function geocodeWithRateLimit(address: string, city: string, neighborhood?
 
 // ─── IMAGE HANDLING (with placeholder detection) ────────────────────────────
 
-const MAX_STORED_LISTING_IMAGES = 12;
+const DEFAULT_MADLAN_IMAGE_LIMIT = 12;
 
 async function enhanceImage(imagePublicUrl: string, sb: any, bucketName: string, jobId: string): Promise<string> {
   try {
@@ -2072,16 +2072,24 @@ async function registerImageHashes(propertyId: string, imageUrls: string[], sb: 
 }
 
 async function parallelImageDownload(
-  sourceImages: string[], sb: any, bucketName: string, jobId: string, maxImages = MAX_STORED_LISTING_IMAGES
+  sourceImages: string[], sb: any, bucketName: string, jobId: string, maxImages: number | null = null
 ): Promise<{ urls: string[]; hashes: string[] }> {
   const imageUrls: string[] = [];
   const imageHashes: string[] = [];
   const seenHashes = new Set<string>();
+  const seenCanonicalUrls = new Set<string>();
   // Filter out placeholder images first
-  const validImages = sourceImages.filter(url => !isPlaceholderImage(url)).slice(0, maxImages);
+  const validImages = sourceImages.filter(url => {
+    if (!url || isPlaceholderImage(url)) return false;
+    const canonical = canonicalImageKey(url);
+    if (seenCanonicalUrls.has(canonical)) return false;
+    seenCanonicalUrls.add(canonical);
+    return true;
+  });
   const BATCH_SIZE = 5;
 
   for (let i = 0; i < validImages.length; i += BATCH_SIZE) {
+    if (maxImages != null && imageUrls.length >= maxImages) break;
     const batch = validImages.slice(i, i + BATCH_SIZE);
     const results = await Promise.allSettled(
       batch.map(async (imgUrl, batchIdx) => {
@@ -2097,6 +2105,7 @@ async function parallelImageDownload(
         }
 
         const contentType = imgRes.headers.get("content-type") || "image/jpeg";
+        if (!contentType.toLowerCase().startsWith("image/")) return null;
         const ext = contentType.includes("png") ? "png" : contentType.includes("webp") ? "webp" : "jpg";
         const imgBuffer = await imgRes.arrayBuffer();
 
@@ -2137,7 +2146,10 @@ async function parallelImageDownload(
       }
     }
   }
-  return { urls: imageUrls.slice(0, maxImages), hashes: imageHashes.slice(0, maxImages) };
+  return {
+    urls: maxImages == null ? imageUrls : imageUrls.slice(0, maxImages),
+    hashes: maxImages == null ? imageHashes : imageHashes.slice(0, maxImages),
+  };
 }
 
 // ─── PRE-CHECK ──────────────────────────────────────────────────────────────
@@ -2206,8 +2218,9 @@ function extractImagesFromHtml(html: string, pageUrl: string): string[] {
       else if (firstUrl.startsWith("/")) absolute = new URL(firstUrl, pageUrl).toString();
       else if (!firstUrl.startsWith("http")) absolute = new URL(firstUrl, pageUrl).toString();
     } catch { return; }
-    if (!seen.has(absolute)) {
-      seen.add(absolute);
+    const canonical = canonicalImageKey(absolute);
+    if (!seen.has(canonical)) {
+      seen.add(canonical);
       images.push(absolute);
     }
   };
@@ -2240,7 +2253,21 @@ function extractImagesFromHtml(html: string, pageUrl: string): string[] {
     addCandidate(match[1]);
   }
 
-  return images.slice(0, MAX_STORED_LISTING_IMAGES * 2); // Candidate pool; downloader applies final cap.
+  return images;
+}
+
+function canonicalImageKey(rawUrl: string): string {
+  try {
+    const url = new URL(rawUrl.startsWith("//") ? `https:${rawUrl}` : rawUrl);
+    const path = url.pathname
+      .toLowerCase()
+      .replace(/-\d+x\d+(?=\.(?:jpe?g|png|webp)$)/i, "")
+      .replace(/_\d+x\d+(?=\.(?:jpe?g|png|webp)$)/i, "")
+      .replace(/-(?:scaled|cropped)(?=\.(?:jpe?g|png|webp)$)/i, "");
+    return `${url.hostname.toLowerCase()}${path}`;
+  } catch {
+    return rawUrl.split("?")[0].toLowerCase();
+  }
 }
 
 function decodeHtmlEntities(input: string): string {
@@ -2312,7 +2339,7 @@ async function collectAgencyOwnedImages(listing: any, structuredData: any, pageH
     return first;
   }).filter(u => u && u.startsWith("http")))];
   if (uniqueImages.length === 0) return [];
-  const downloaded = await parallelImageDownload(uniqueImages, sb, "property-images", jobId, MAX_STORED_LISTING_IMAGES);
+  const downloaded = await parallelImageDownload(uniqueImages, sb, "property-images", jobId);
   listing.image_hashes = Array.from(new Set(downloaded.hashes || []));
   return Array.from(new Set(downloaded.urls || []));
 }
@@ -2339,7 +2366,7 @@ async function collectAllowedSourceImages(
   itemUrl: string,
   sb: any,
   jobId: string,
-  maxImages = MAX_STORED_LISTING_IMAGES,
+  maxImages: number | null = null,
 ): Promise<string[]> {
   const normalized = String(sourceType || "website").toLowerCase();
   if (listing.image_urls && !Array.isArray(listing.image_urls)) listing.image_urls = [listing.image_urls];
@@ -2355,7 +2382,7 @@ async function collectAllowedSourceImages(
   if (normalized.includes("madlan")) {
     const urls = await collectAgencyOwnedImages(listing, structuredData, pageHtml, itemUrl, sb, jobId);
     if (urls.length > 0) listing._image_source_policy = "madlan_fallback";
-    return urls.slice(0, maxImages);
+    return maxImages == null ? urls : urls.slice(0, maxImages);
   }
   return [];
 }
@@ -3515,7 +3542,7 @@ async function processOneItem(
         // Images: website images always enrich; Madlan images only fill an empty image set; Yad2 never downloads.
         if (incomingSource === "website_scrape" && imageUrls.length > 0) {
           const existingImages = Array.isArray(existing.images) ? existing.images as string[] : [];
-          patch.images = [...new Set([...existingImages, ...imageUrls])].slice(0, MAX_STORED_LISTING_IMAGES);
+          patch.images = [...new Set([...existingImages, ...imageUrls])];
           fieldSourceMap["images"] = incomingSource;
         } else if (incomingSource === "madlan" && imageUrls.length > 0) {
           const existingImages = Array.isArray(existing.images) ? existing.images as string[] : [];
@@ -5188,7 +5215,7 @@ async function runMadlanAgencyDiscoverJob(params: {
           if (!flattenImageCandidates(listing.image_urls).length) {
             detailHtml = await fetchMadlanDetailHtml(listingUrl);
           }
-          const madlanImages = await collectAllowedSourceImages("madlan", listing, null, detailHtml, listingUrl, sb, jobId, 12);
+          const madlanImages = await collectAllowedSourceImages("madlan", listing, null, detailHtml, listingUrl, sb, jobId, DEFAULT_MADLAN_IMAGE_LIMIT);
           if (madlanImages.length === 0) totalImageFailures++;
 
           let existingMatch: any = null;
