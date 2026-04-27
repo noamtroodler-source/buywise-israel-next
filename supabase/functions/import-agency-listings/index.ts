@@ -5420,6 +5420,7 @@ async function runMadlanAgencyDiscoverJob(params: {
   const { jobId, agencyId, websiteUrl, effectiveImportType } = params;
   const sb = supabaseAdmin();
   const APIFY_API_KEY = Deno.env.get("APIFY_API_KEY");
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY") || "";
 
   try {
     dlog(`[Madlan/Apify] background discovery started for job ${jobId}: ${websiteUrl}`);
@@ -5593,7 +5594,7 @@ async function runMadlanAgencyDiscoverJob(params: {
           const address = madlanItem.address || (madlanItem.streetName ? `${madlanItem.streetName} ${madlanItem.streetNumber || ""}`.trim() : "");
 
           // Build listing object for title/description generation
-          const listing = {
+          const listing: any = {
             property_type: "apartment",
             listing_status: listingStatus,
             price: madlanItem.price || 0,
