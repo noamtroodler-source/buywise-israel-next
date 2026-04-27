@@ -2227,6 +2227,26 @@ function extractAgencyHtmlFallback(html: string, markdown: string, url: string):
   return Object.keys(result).length >= 4 ? result : null;
 }
 
+async function collectAgencyOwnedImages(listing: any, structuredData: any, pageHtml: string, itemUrl: string, sb: any, jobId: string): Promise<string[]> {
+  const candidateImages: string[] = [];
+  if (listing.image_urls && Array.isArray(listing.image_urls)) candidateImages.push(...listing.image_urls);
+  if (structuredData?.structured_images?.length) candidateImages.push(...structuredData.structured_images);
+  if (candidateImages.length < 3 && pageHtml) candidateImages.push(...extractImagesFromHtml(pageHtml, itemUrl));
+  const uniqueImages = [...new Set(candidateImages.map(img => {
+    if (!img || typeof img !== "string") return "";
+    const first = img.split(",")[0]?.trim().split(/\s+/)[0] || img;
+    if (first.startsWith("//")) return `https:${first}`;
+    if (first.startsWith("/")) {
+      try { return new URL(first, itemUrl).toString(); } catch { return ""; }
+    }
+    return first;
+  }).filter(u => u && u.startsWith("http")))];
+  if (uniqueImages.length === 0) return [];
+  const downloaded = await parallelImageDownload(uniqueImages, sb, "property-images", jobId, 15);
+  listing.image_hashes = Array.from(new Set(downloaded.hashes || []));
+  return Array.from(new Set(downloaded.urls || []));
+}
+
 // ─── STRUCTURED DATA EXTRACTION (JSON-LD, Open Graph) ───────────────────────
 
 function extractStructuredData(html: string): Record<string, any> | null {
