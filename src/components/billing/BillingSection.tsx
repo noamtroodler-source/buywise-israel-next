@@ -46,6 +46,7 @@ export function BillingSection() {
 
   const hasSubscription = sub.status !== 'none';
   const isTrialing = sub.status === 'trialing';
+  const isFoundingAgency = !!sub.isFoundingAgency;
   const trialDaysLeft = isTrialing && sub.trialEnd
     ? Math.max(0, differenceInDays(new Date(sub.trialEnd), new Date()))
     : null;
@@ -101,6 +102,13 @@ export function BillingSection() {
             </p>
           )}
 
+          {isFoundingAgency && (
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              Founding agency access is free. Only featured listings beyond the 3 monthly free slots are paid.
+            </p>
+          )}
+
           {!isTrialing && hasSubscription && sub.currentPeriodEnd && (
             <p className="text-xs text-muted-foreground flex items-center gap-1">
               <Calendar className="h-3 w-3" />
@@ -111,12 +119,14 @@ export function BillingSection() {
 
         {/* Actions */}
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" asChild className="rounded-xl">
-            <Link to="/pricing">
-              <ArrowUpRight className="h-4 w-4 mr-1.5" />
-              {hasSubscription ? 'Change Plan' : 'View Plans'}
-            </Link>
-          </Button>
+          {!isFoundingAgency && (
+            <Button variant="outline" size="sm" asChild className="rounded-xl">
+              <Link to="/pricing">
+                <ArrowUpRight className="h-4 w-4 mr-1.5" />
+                {hasSubscription ? 'Change Plan' : 'View Plans'}
+              </Link>
+            </Button>
+          )}
           {hasSubscription && !isTrialing && (
             <Button
               variant="outline"
