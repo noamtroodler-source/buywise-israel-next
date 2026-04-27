@@ -94,44 +94,45 @@ export default function AgencyBilling() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview" className="mt-0">
-            <div className="grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
-              <div className="space-y-5">
+          <TabsContent value="overview" className="mt-0 space-y-5">
+            <div className="grid gap-5 lg:grid-cols-2 items-stretch">
+              <div className="h-full">
                 <BillingSection />
               </div>
-              <div className="space-y-5">
-                <UsageMeters entityType="agency" authorType="agency" profileId={agency?.id} />
-                <UpgradePromptCard entityType="agency" />
-
-                <Card className="rounded-2xl border-border/50 bg-card shadow-sm transition-all hover:border-primary/30 hover:shadow-md">
-                  <CardContent className="p-5 space-y-4">
+              <div className="h-full">
+                <Card className="h-full rounded-2xl border-border/50 bg-card shadow-sm transition-all hover:border-primary/30 hover:shadow-md">
+                  <CardContent className="flex h-full flex-col justify-between p-6 space-y-6">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-3">
                         <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
                           <Star className="h-5 w-5 text-primary" />
                         </div>
                         <div>
-                          <h2 className="font-semibold text-foreground">Featured Listings</h2>
+                          <h2 className="text-xl font-semibold text-foreground">Featured Listings</h2>
                           <p className="text-sm text-muted-foreground">Premium placement usage</p>
                         </div>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="rounded-xl border border-border/50 bg-muted/30 p-3">
-                        <p className="text-2xl font-bold text-foreground">{featuredListings.length}</p>
-                        <p className="text-xs text-muted-foreground">Active</p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="rounded-xl border border-border/50 bg-muted/30 p-4 min-h-[96px] flex flex-col justify-center">
+                        <p className="text-3xl font-bold text-foreground">{featuredListings.length}</p>
+                        <p className="text-sm text-muted-foreground">Active</p>
                       </div>
-                      <div className="rounded-xl border border-border/50 bg-muted/30 p-3">
-                        <p className="text-2xl font-bold text-foreground">₪{monthlyCost.toLocaleString()}</p>
-                        <p className="text-xs text-muted-foreground">Monthly cost</p>
+                      <div className="rounded-xl border border-border/50 bg-muted/30 p-4 min-h-[96px] flex flex-col justify-center">
+                        <p className="text-3xl font-bold text-foreground">₪{monthlyCost.toLocaleString()}</p>
+                        <p className="text-sm text-muted-foreground">Monthly cost</p>
                       </div>
                     </div>
-                    <UiButton variant="outline" size="sm" asChild className="rounded-xl border-primary/20 hover:bg-primary/5">
+                    <UiButton variant="outline" size="sm" asChild className="w-fit rounded-xl border-primary/20 hover:bg-primary/5">
                       <Link to="/agency/featured">Manage Featured</Link>
                     </UiButton>
                   </CardContent>
                 </Card>
               </div>
+            </div>
+            <div className="grid gap-5 lg:grid-cols-2">
+              <UsageMeters entityType="agency" authorType="agency" profileId={agency?.id} />
+              <UpgradePromptCard entityType="agency" />
             </div>
           </TabsContent>
 
