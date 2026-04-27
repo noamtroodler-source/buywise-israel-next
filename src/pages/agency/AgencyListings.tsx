@@ -5,7 +5,7 @@ import {
   ArrowLeft, Loader2, Home, Plus, Search, Download, FileSpreadsheet,
   Eye, Clock, CheckCircle2, Building2, Heart, MessageSquare,
   Edit, Trash2, Send, MoreHorizontal, Copy, Key, ArrowLeftRight, X,
-  ArrowUpDown, ArrowUp, ArrowDown,
+  ArrowUpDown, ArrowUp, ArrowDown, AlertTriangle, Archive, CheckCheck,
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,7 +30,16 @@ import {
   Popover, PopoverContent, PopoverTrigger,
 } from '@/components/ui/popover';
 import { useMyAgency, useAgencyTeam } from '@/hooks/useAgencyManagement';
-import { useAgencyListingsManagement } from '@/hooks/useAgencyListings';
+import {
+  AgencyListing,
+  AgencyReviewStatus,
+  useAgencyListingsManagement,
+  useApproveAgencyListing,
+  useArchiveAgencyListing,
+  useBulkApproveAgencyListings,
+  useMarkAgencyListingNeedsEdit,
+  useSkipAgencyListingReview,
+} from '@/hooks/useAgencyListings';
 import { useDeleteProperty, useSubmitForReview, useBulkDeleteProperties, useBulkSubmitForReview, useReassignProperty } from '@/hooks/useAgentProperties';
 import { AgentReassignPopover } from '@/components/agency/AgentReassignPopover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -86,6 +95,19 @@ const statusConfig = {
   changes_requested: { label: 'Changes', color: 'bg-orange-500/10 text-orange-600' },
   rejected: { label: 'Rejected', color: 'bg-red-500/10 text-red-600' },
 };
+
+const reviewConfig: Record<AgencyReviewStatus, { label: string; color: string; icon: typeof Clock }> = {
+  needs_review: { label: 'Confirm', color: 'bg-yellow-500/10 text-yellow-700 border-yellow-500/20', icon: Clock },
+  approved_live: { label: 'Confirmed', color: 'bg-green-500/10 text-green-700 border-green-500/20', icon: CheckCircle2 },
+  needs_edit: { label: 'Quick edit', color: 'bg-orange-500/10 text-orange-700 border-orange-500/20', icon: AlertTriangle },
+  archived_stale: { label: 'Archived', color: 'bg-muted text-muted-foreground border-border', icon: Archive },
+};
+
+function getReviewBucket(listing: AgencyListing) {
+  if (listing.agency_review_status === 'needs_review' && listing.safe_to_batch_approve) return 'ready';
+  if (listing.agency_review_status === 'needs_review' || listing.agency_review_status === 'needs_edit') return 'fix';
+  return listing.agency_review_status;
+}
 
 type SortKey = 'price' | 'views' | 'saves' | 'inquiries' | 'days';
 type SortDirection = 'asc' | 'desc';
