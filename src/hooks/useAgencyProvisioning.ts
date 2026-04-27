@@ -271,11 +271,22 @@ export function useProvisionAgentAccount(agencyId: string | null) {
 
 export type ProvisioningListing = {
   id: string;
+  title: string | null;
+  property_type: string | null;
+  listing_status: string | null;
   address: string;
   city: string;
+  neighborhood: string | null;
+  latitude: number | null;
+  longitude: number | null;
   price: number | null;
   size_sqm: number | null;
+  lot_size_sqm: number | null;
   bedrooms: number | null;
+  additional_rooms: number | null;
+  bathrooms: number | null;
+  floor: number | null;
+  total_floors: number | null;
   images: string[] | null;
   agent_id: string | null;
   primary_agency_id: string | null;
@@ -287,9 +298,21 @@ export type ProvisioningListing = {
   provisioning_audit_status: 'pending' | 'flagged' | 'reviewed' | 'approved' | null;
   last_audit_at: string | null;
   source_url: string | null;
+  import_source: string | null;
   source_last_checked_at: string | null;
   year_built: number | null;
   condition: string | null;
+  ac_type: string | null;
+  entry_date: string | null;
+  vaad_bayit_monthly: number | null;
+  features: string[] | null;
+  lease_term: string | null;
+  subletting_allowed: string | null;
+  furnished_status: string | null;
+  pets_policy: string | null;
+  agent_fee_required: boolean | null;
+  furniture_items: string[] | null;
+  featured_highlight: string | null;
   parking: number | null;
 };
 
@@ -327,7 +350,7 @@ export function useAgencyListings(agencyId: string | null) {
       const { data, error } = await supabase
         .from('properties')
         .select(
-          'id, address, city, price, size_sqm, bedrooms, images, agent_id, primary_agency_id, claimed_by_agency_id, ai_english_description, description, ai_suggestions, quality_audit_score, provisioning_audit_status, last_audit_at, source_url, source_last_checked_at, year_built, condition, parking'
+          'id, title, property_type, listing_status, address, city, neighborhood, latitude, longitude, price, size_sqm, lot_size_sqm, bedrooms, additional_rooms, bathrooms, floor, total_floors, images, agent_id, primary_agency_id, claimed_by_agency_id, ai_english_description, description, ai_suggestions, quality_audit_score, provisioning_audit_status, last_audit_at, source_url, import_source, source_last_checked_at, year_built, condition, ac_type, entry_date, vaad_bayit_monthly, features, lease_term, subletting_allowed, furnished_status, pets_policy, agent_fee_required, furniture_items, featured_highlight, parking'
         )
         .or(orParts.join(','))
         .order('quality_audit_score', { ascending: true, nullsFirst: true })
