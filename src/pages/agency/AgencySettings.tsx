@@ -377,7 +377,7 @@ export default function AgencySettings() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="description">Description</Label>
+                      <Label htmlFor="agency-description">Description</Label>
                       <Textarea
                         id="agency-description"
                         value={formData.description}
@@ -418,7 +418,7 @@ export default function AgencySettings() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="phone" className="flex items-center gap-2">
+                        <Label htmlFor="agency-phone" className="flex items-center gap-2">
                           <Phone className="h-3.5 w-3.5 text-muted-foreground" />
                           Phone
                         </Label>
@@ -445,7 +445,7 @@ export default function AgencySettings() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="website" className="flex items-center gap-2">
+                      <Label htmlFor="agency-website" className="flex items-center gap-2">
                         <Globe className="h-3.5 w-3.5 text-muted-foreground" />
                         Website
                       </Label>
