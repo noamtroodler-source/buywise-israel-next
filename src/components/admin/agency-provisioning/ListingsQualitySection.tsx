@@ -15,6 +15,7 @@ import {
 import { ListingDetailDrawer } from './ListingDetailDrawer';
 
 type Filter = 'all' | 'ready' | 'review' | 'critical';
+type PriceSort = 'none' | 'price_desc' | 'price_asc';
 
 const STATUS_BADGE: Record<string, { label: string; cls: string; icon: any }> = {
   approved: { label: 'Ready', cls: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20', icon: CheckCircle2 },
@@ -31,6 +32,7 @@ export function ListingsQualitySection({ agencyId }: { agencyId: string }) {
 
   const [filter, setFilter] = useState<Filter>('all');
   const [search, setSearch] = useState('');
+  const [priceSort, setPriceSort] = useState<PriceSort>('none');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [drawerListing, setDrawerListing] = useState<ProvisioningListing | null>(null);
   const [bulkAgent, setBulkAgent] = useState<string>('');
@@ -66,14 +68,17 @@ export function ListingsQualitySection({ agencyId }: { agencyId: string }) {
   }, [listings]);
 
   const filtered = useMemo(() => {
-    return listings.filter(l => {
+    const rows = listings.filter(l => {
       if (filter === 'ready' && !(l.provisioning_audit_status === 'approved' || l.provisioning_audit_status === 'reviewed')) return false;
       if (filter === 'review' && l.provisioning_audit_status !== 'pending') return false;
       if (filter === 'critical' && l.provisioning_audit_status !== 'flagged') return false;
       if (search && !`${l.address} ${l.city}`.toLowerCase().includes(search.toLowerCase())) return false;
       return true;
     });
-  }, [listings, filter, search]);
+    if (priceSort === 'price_desc') return [...rows].sort((a, b) => (Number(b.price) || 0) - (Number(a.price) || 0));
+    if (priceSort === 'price_asc') return [...rows].sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0));
+    return rows;
+  }, [listings, filter, search, priceSort]);
 
   function toggleSelect(id: string) {
     setSelected(prev => {
@@ -161,6 +166,16 @@ export function ListingsQualitySection({ agencyId }: { agencyId: string }) {
           onChange={e => setSearch(e.target.value)}
           className="ml-auto max-w-xs h-9"
         />
+        <Select value={priceSort} onValueChange={(value) => setPriceSort(value as PriceSort)}>
+          <SelectTrigger className="h-9 w-[160px]">
+            <SelectValue placeholder="Sort price" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">Default order</SelectItem>
+            <SelectItem value="price_desc">Price high to low</SelectItem>
+            <SelectItem value="price_asc">Price low to high</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Bulk actions */}
