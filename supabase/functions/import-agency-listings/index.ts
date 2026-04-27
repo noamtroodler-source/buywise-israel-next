@@ -2305,6 +2305,12 @@ function extractAgencyHtmlFallback(html: string, markdown: string, url: string):
   }
   const sizeMatch = combined.match(/(\d{2,4})\s*(?:מ["״]?ר|sqm|m²|square meters?)/i);
   if (sizeMatch) result.size_sqm = parseFloat(sizeMatch[1]);
+  const enriched = extractAgencyVisibleFacts(html, markdown);
+  for (const [key, value] of Object.entries(enriched)) {
+    if (value != null && (result[key] == null || result[key] === "" || result[key] === 0 || (Array.isArray(result[key]) && result[key].length === 0))) {
+      result[key] = value;
+    }
+  }
   const city = inferCityFromHebrew(combined) || matchSupportedCity(combined.match(/(?:Tel Aviv|Jerusalem|Herzliya|Ramat Gan|Netanya|Haifa)/i)?.[0] || null);
   if (city) result.city = city;
   if (/להשכרה|השכרה|לטווח|\brent\b/i.test(combined)) result.listing_status = "for_rent";
@@ -2320,6 +2326,152 @@ function extractAgencyHtmlFallback(html: string, markdown: string, url: string):
     result._photo_count = images.length;
   }
   return Object.keys(result).length >= 4 ? result : null;
+}
+
+function firstNumber(value: string | null | undefined): number | null {
+  if (!value) return null;
+  const match = value.replace(/,/g, "").match(/\d+(?:\.\d+)?/);
+  if (!match) return null;
+  const n = Number(match[0]);
+  return Number.isFinite(n) ? n : null;
+}
+
+function cleanFactValue(value: string): string {
+  return textFromHtmlFragment(value)
+    .replace(/\s+/g, " ")
+    .replace(/^[\s:：\-–—|]+|[\s:：\-–—|]+$/g, "")
+    .trim();
+}
+
+function normalizeFeatureKey(raw: string): string | null {
+  const t = raw.toLowerCase();
+  if (/private\s+pool|בריכה\s+פרטית/.test(t)) return "pool";
+  if (/\bpool\b|בריכה/.test(t)) return "pool";
+  if (/parking|חנ(?:י|י)ה|חניות/.test(t)) return "parking";
+  if (/storage|storeroom|מחסן|מחסנים/.test(t)) return "storage";
+  if (/balcony|terrace|מרפסת/.test(t)) return t.includes("sun") || t.includes("שמש") ? "sun_balcony" : "balcony";
+  if (/elevator|lift|מעלית/.test(t)) return "elevator";
+  if (/safe room|mamad|ממ["״]?ד/.test(t)) return "mamad";
+  if (/sea view|ocean view|view to the sea|נוף לים/.test(t)) return "sea_view";
+  if (/city view|נוף עיר/.test(t)) return "city_view";
+  if (/garden|גינה/.test(t)) return "garden";
+  if (/gym|fitness|חדר כושר/.test(t)) return "gym";
+  if (/doorman|concierge|שוער/.test(t)) return "doorman";
+  if (/security|guard|שמירה|אבטחה/.test(t)) return "security";
+  if (/central\s+(?:a\/c|ac|air)|mini[-\s]?central|מיני מרכזי|מיזוג מרכזי/.test(t)) return "central_ac";
+  if (/air.?conditioning|\ba\/c\b|\bac\b|מזגן|מיזוג/.test(t)) return "air_conditioning";
+  if (/furnished|מרוהט/.test(t)) return "furnished";
+  if (/accessible|wheelchair|נגיש/.test(t)) return "accessible";
+  if (/renovated kitchen/.test(t)) return "renovated_kitchen";
+  if (/renovated bathroom/.test(t)) return "renovated_bathrooms";
+  if (/smart home/.test(t)) return "smart_home";
+  if (/underfloor heating|floor heating/.test(t)) return "underfloor_heating";
+  if (/jacuzzi|ג'קוזי/.test(t)) return "jacuzzi";
+  if (/sauna/.test(t)) return "sauna";
+  if (/wine cellar/.test(t)) return "wine_cellar";
+  if (/private entrance|כניסה פרטית/.test(t)) return "private_entrance";
+  if (/quiet street|רחוב שקט/.test(t)) return "quiet_street";
+  return null;
+}
+
+function addFeature(features: Set<string>, raw: string | null | undefined) {
+  if (!raw) return;
+  const key = normalizeFeatureKey(raw);
+  if (key) features.add(key);
+}
+
+function extractAgencyVisibleFacts(html: string, markdown: string): Record<string, any> {
+  const result: Record<string, any> = {};
+  const features = new Set<string>();
+  const plain = cleanFactValue(`${markdown}\n${textFromHtmlFragment(html).slice(0, 12000)}`);
+  const rows: Array<[string, string]> = [];
+
+  const rowPattern = /<(?:li|tr|p|div|span)[^>]*>([\s\S]{0,500}?)<\/(?:li|tr|p|div|span)>/gi;
+  let rowMatch: RegExpExecArray | null;
+  while ((rowMatch = rowPattern.exec(html)) && rows.length < 500) {
+    const txt = cleanFactValue(rowMatch[1]);
+    if (txt.length < 3 || txt.length > 220) continue;
+    const kv = txt.match(/^([^:：|\-–—]{2,45})\s*[:：|\-–—]\s*(.{1,160})$/);
+    if (kv) rows.push([cleanFactValue(kv[1]), cleanFactValue(kv[2])]);
+    else rows.push([txt, txt]);
+  }
+
+  for (const line of plain.split(/\n|(?<=\d)\s{2,}|\s\|\s/).slice(0, 800)) {
+    const txt = cleanFactValue(line);
+    const kv = txt.match(/^([^:：|\-–—]{2,45})\s*[:：|\-–—]\s*(.{1,160})$/);
+    if (kv) rows.push([cleanFactValue(kv[1]), cleanFactValue(kv[2])]);
+  }
+
+  const setNumber = (field: string, value: string, transform: (n: number) => number = n => n) => {
+    const n = firstNumber(value);
+    if (n != null && result[field] == null) result[field] = transform(n);
+  };
+
+  for (const [labelRaw, valueRaw] of rows) {
+    const label = labelRaw.toLowerCase();
+    const value = valueRaw || labelRaw;
+    const joined = `${labelRaw} ${valueRaw}`;
+
+    if (/^(address|street|location|כתובת)$/i.test(labelRaw) && !result.address && valueRaw && !/tel aviv|jerusalem|israel/i.test(valueRaw)) result.address = valueRaw;
+    if (/neighbou?rhood|area|שכונה|אזור/i.test(labelRaw) && !result.neighborhood && valueRaw && valueRaw.length < 60) result.neighborhood = valueRaw;
+    if (/\brooms?\b|חדרים/i.test(label)) setNumber("source_rooms", value, n => n);
+    if (/bedrooms?|חדרי שינה/i.test(label)) setNumber("bedrooms", value, n => Math.floor(n));
+    if (/bathrooms?|baths?|חדרי רחצה|מקלחות|שירותים/i.test(label)) setNumber("bathrooms", value, n => Math.floor(n));
+    if (/parking|חנ(?:י|י)ות?/i.test(joined)) { setNumber("parking", value, n => Math.floor(n)); addFeature(features, "parking"); }
+    if (/storage|storerooms?|מחסנים?/i.test(joined)) { setNumber("storage_count", value, n => Math.floor(n)); addFeature(features, "storage"); }
+    if (/^(floor|קומה)$/i.test(labelRaw)) setNumber("floor", value, n => Math.floor(n));
+    if (/total floors|floors in building|building floors|קומות בבניין|סה["״]?כ קומות/i.test(joined)) setNumber("total_floors", value, n => Math.floor(n));
+    if (/year built|construction year|year of construction|built in|שנת בנייה|שנת בניה/i.test(joined)) setNumber("year_built", value, n => Math.floor(n));
+    if (/size|built area|property size|sqm|m²|מ["״]?ר/i.test(joined)) setNumber("size_sqm", value, n => n);
+    if (/vaad|maintenance|house committee|ועד בית/i.test(joined)) setNumber("vaad_bayit_monthly", value, n => Math.floor(n));
+    if (/central\s+(?:a\/c|ac|air)|mini[-\s]?central|מיני מרכזי|מיזוג מרכזי/i.test(joined)) result.ac_type = "central";
+    else if (/air.?conditioning|\ba\/c\b|\bac\b|מזגן|מיזוג/i.test(joined)) result.ac_type = result.ac_type || "split";
+    if (/furnished|מרוהט/i.test(joined)) result.is_furnished = true;
+    if (/accessible|wheelchair|נגיש/i.test(joined)) result.is_accessible = true;
+    addFeature(features, joined);
+  }
+
+  const proseRules: Array<[RegExp, string]> = [
+    [/private\s+pool|בריכה\s+פרטית/i, "pool"],
+    [/single\s+(?:apartment|unit)\s+on\s+(?:the\s+)?floor|only\s+(?:apartment|unit)\s+on\s+(?:the\s+)?floor|דירה\s+יחידה\s+בקומה/i, "private_entrance"],
+    [/sea\s+view|view\s+to\s+the\s+sea|נוף\s+לים/i, "sea_view"],
+    [/quiet\s+street|רחוב\s+שקט/i, "quiet_street"],
+  ];
+  for (const [re, feature] of proseRules) if (re.test(plain)) features.add(feature);
+
+  const parkingProse = plain.match(/(\d+)\s+(?:private\s+)?parking\s+(?:spaces?|spots?)|(\d+)\s+חנ(?:י|י)ות/i);
+  if (parkingProse && result.parking == null) result.parking = Number(parkingProse[1] || parkingProse[2]);
+  if (result.parking && result.parking > 0) features.add("parking");
+  const storageProse = plain.match(/(\d+)\s+(?:storage\s+rooms?|storerooms?)|(\d+)\s+מחסנים/i);
+  if (storageProse) { result.storage_count = Number(storageProse[1] || storageProse[2]); features.add("storage"); }
+  if (result.source_rooms != null && result.bedrooms == null) result.bedrooms = Math.max(0, Math.floor(result.source_rooms) - 1);
+  if (features.size > 0) result.features = Array.from(features);
+  if (!result.featured_highlight) {
+    if (features.has("pool")) result.featured_highlight = "Private Pool";
+    else if (features.has("sea_view")) result.featured_highlight = "Sea View";
+    else if (features.has("parking") && result.parking >= 2) result.featured_highlight = `${result.parking} Parking Spaces`;
+  }
+  return result;
+}
+
+function enrichListingFromVisibleFacts(listing: Record<string, any>, html: string, markdown: string): Record<string, any> {
+  const facts = extractAgencyVisibleFacts(html, markdown);
+  const merged = { ...listing };
+  const appliedFields = new Set<string>(Array.isArray(merged._visible_fact_fields) ? merged._visible_fact_fields : []);
+  for (const [key, value] of Object.entries(facts)) {
+    if (value == null) continue;
+    if (key === "features") {
+      merged.features = Array.from(new Set([...(Array.isArray(merged.features) ? merged.features : []), ...(value as string[])]));
+      appliedFields.add("features");
+    } else if (merged[key] == null || merged[key] === "" || merged[key] === 0 || (Array.isArray(merged[key]) && merged[key].length === 0)) {
+      merged[key] = value;
+      appliedFields.add(key);
+    }
+  }
+  if (merged.storage_count && !merged.additional_rooms) { merged.additional_rooms = Number(merged.storage_count); appliedFields.add("additional_rooms"); }
+  if (Array.isArray(merged.features)) merged.features = Array.from(new Set(merged.features.map((f: string) => normalizeFeatureKey(f) || f).filter(Boolean)));
+  if (appliedFields.size > 0) merged._visible_fact_fields = Array.from(appliedFields);
+  return merged;
 }
 
 async function collectAgencyOwnedImages(listing: any, structuredData: any, pageHtml: string, itemUrl: string, sb: any, jobId: string): Promise<string[]> {
@@ -3122,7 +3274,7 @@ async function processOneItem(
         method: "POST",
         headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
+          model: "google/gemini-3-flash-preview",
           messages: [{ role: "user", content: extractionPrompt }],
           tools: [{
             type: "function",
@@ -3148,9 +3300,27 @@ async function processOneItem(
                   listing_status: { type: "string", enum: ["for_sale", "for_rent"] },
                   floor: { type: "number" },
                   total_floors: { type: "number" },
-                  features: { type: "array", items: { type: "string" }, description: "Short feature keys only, e.g. elevator, balcony, parking, storage, mamad, furnished" },
+                  year_built: { type: "number", description: "Year built / construction year if shown" },
+                  features: { type: "array", items: { type: "string" }, description: "Standardized feature keys only, e.g. elevator, balcony, parking, storage, mamad, furnished, pool, sea_view" },
                   parking: { type: "number" },
+                  storage_count: { type: "number", description: "Number of storage rooms/storerooms if shown" },
                   condition: { type: "string", enum: ["new", "renovated", "good", "needs_renovation"] },
+                  ac_type: { type: "string", enum: ["split", "central", "mini_central", "none"] },
+                  entry_date: { type: "string" },
+                  original_price: { type: "number" },
+                  lot_size_sqm: { type: "number" },
+                  vaad_bayit_monthly: { type: "number" },
+                  is_furnished: { type: "boolean" },
+                  is_accessible: { type: "boolean" },
+                  additional_rooms: { type: "number" },
+                  featured_highlight: { type: "string" },
+                  lease_term: { type: "string" },
+                  furnished_status: { type: "string", enum: ["fully", "semi", "unfurnished"] },
+                  pets_policy: { type: "string", enum: ["allowed", "case_by_case", "not_allowed"] },
+                  subletting_allowed: { type: "boolean" },
+                  agent_fee_required: { type: "boolean" },
+                  bank_guarantee_required: { type: "boolean" },
+                  checks_required: { type: "boolean" },
                   photo_count: { type: "number" },
                 },
                 required: ["listing_category"],
@@ -3227,6 +3397,11 @@ async function processOneItem(
           }
         }
         if (!cmsExtracted) cmsExtracted = "agency_html_fallback";
+      }
+
+      if (isAgencyOwnWebsite) {
+        listing = enrichListingFromVisibleFacts(listing, pageHtml, markdown);
+        listing._agency_visible_facts_extracted = true;
       }
     }
 
@@ -3507,6 +3682,8 @@ async function processOneItem(
           merged_source_urls: mergedUrls,
           source_last_checked_at: new Date().toISOString(),
         };
+        const visibleFactFields = new Set<string>(Array.isArray(listing._visible_fact_fields) ? listing._visible_fact_fields : []);
+        const incomingFieldSource = (field: string) => visibleFactFields.has(field) ? `${incomingSource}_parser` : incomingSource;
 
         // Structural fields — apply source-trust ranking
         const structuralFields: Array<[string, any]> = [
@@ -3549,23 +3726,23 @@ async function processOneItem(
           }
           if (shouldOverride(field, existingVal)) {
             patch[field] = incomingVal;
-            fieldSourceMap[field] = incomingSource;
+            fieldSourceMap[field] = incomingFieldSource(field);
           }
         }
 
         // Description: longer wins regardless of source
         if (listing.description && (!existing.description || listing.description.length > existing.description.length)) {
           patch.description = listing.description;
-          fieldSourceMap["description"] = incomingSource;
+          fieldSourceMap["description"] = incomingFieldSource("description");
         }
 
         // Features: union of both arrays
         if (listing.features?.length && existing.features) {
           patch.features = [...new Set([...(existing.features as string[]), ...listing.features])];
-          fieldSourceMap["features"] = incomingSource;
+          fieldSourceMap["features"] = incomingFieldSource("features");
         } else if (listing.features?.length && !existing.features) {
           patch.features = listing.features;
-          fieldSourceMap["features"] = incomingSource;
+          fieldSourceMap["features"] = incomingFieldSource("features");
         }
 
         // Images: website images always enrich; Madlan images only fill an empty image set; Yad2 never downloads.
@@ -3765,10 +3942,12 @@ async function processOneItem(
         source_last_checked_at: new Date().toISOString(),
         field_source_map: (() => {
           const src = job.source_type === "yad2" ? "yad2" : job.source_type === "madlan" ? "madlan" : "website_scrape";
+          const visibleFactFields = new Set<string>(Array.isArray(listing._visible_fact_fields) ? listing._visible_fact_fields : []);
           const map: Record<string, string> = {};
           for (const f of ["price", "size_sqm", "bedrooms", "bathrooms", "source_rooms", "floor", "total_floors", "year_built", "parking", "condition", "ac_type", "entry_date", "original_price", "lot_size_sqm", "vaad_bayit_monthly", "is_furnished", "is_accessible", "additional_rooms", "featured_highlight", "lease_term", "furnished_status", "pets_policy", "subletting_allowed", "agent_fee_required", "bank_guarantee_required", "checks_required", "address", "neighborhood", "description", "features"]) {
-            if ((listing as any)[f] != null && (listing as any)[f] !== "") map[f] = src;
+            if ((listing as any)[f] != null && (listing as any)[f] !== "") map[f] = visibleFactFields.has(f) ? `${src}_parser` : src;
           }
+          if (latitude != null && longitude != null) map.location = listing._yad2_latitude ? "yad2" : "geocoding";
           return map;
         })(),
       })
