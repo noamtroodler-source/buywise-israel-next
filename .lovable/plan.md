@@ -1,125 +1,107 @@
-Plan: Make Madlan imports active-only, image-aware, and safe
+Plan: make imported listings much more complete
 
 Goal
-Fix the current Erez import problem and harden the pipeline so Madlan can never again create hundreds of stale/hidden listings when the public page only shows a small active count. Madlan photos remain allowed as fallback. Yad2 photos remain blocked.
+Build the importer so agency websites are treated as the primary source of truth, especially English agency listings, and the system extracts every visible useful fact before relying on Madlan/Yad2 enrichment.
 
-Current diagnosis
-- Erez Madlan public page shows 36 active listings: 25 sale, 11 rent.
-- Database has 593 Madlan-imported Erez rows.
-- Only 8 of those 593 Madlan rows have images, even though the public Madlan cards visibly have photos.
-- Erez website import is working better: website rows have images.
-- Therefore the Madlan importer is over-collecting candidates and under-extracting images.
+What will change
 
-Immediate cleanup plan
-1. Quarantine the bad Madlan batch
-   - Do not publish the 593 Madlan rows.
-   - Mark the existing Erez Madlan rows as requiring review / quarantined, or delete only those bad Madlan rows if we confirm they are not needed.
-   - Keep Erez own-website listings because those are the trusted first-party source and already include images.
+1. English-first agency extraction
+- Update the listing extraction prompt and schema so it can return all fields the site supports, not just the current limited set.
+- Prioritize English listing text and English labels, while still keeping Hebrew parsing as fallback.
+- Extract facts from both structured sections and prose descriptions.
 
-2. Preserve any useful website/import data
-   - Keep all website_scrape listings and their stored images.
-   - Do not touch Yad2 rows unless they were queued but not imported.
-   - Avoid deleting anything from the agency website source.
+Fields to improve:
+- address
+- neighborhood
+- bedrooms / original room count
+- bathrooms
+- parking count
+- storage count
+- floor / total floors
+- year built / construction year
+- property type
+- size
+- condition
+- balconies / pool / private pool / view / elevator / mamad / doorman / gym / storage / parking
+- furnished / accessibility / AC
+- vaad bayit / entry date when visible
+- strongest highlighted feature
 
-3. Re-run Madlan only after the importer is fixed
-   - Re-import only the public active Madlan listings.
-   - Expected target should be near 36, not 593.
-   - Any count mismatch should block the import and show a warning instead of inserting rows.
+2. Add a stronger agency-page parser
+- Expand the current fallback parser so it recognizes common English agency labels like:
+  - Address
+  - Neighborhood
+  - Rooms
+  - Bedrooms
+  - Bathrooms
+  - Floor
+  - Floors in building
+  - Year built / Year of construction
+  - Parking spaces
+  - Storage rooms
+  - Property size
+  - Balcony / Pool / Private pool / Sea view / Elevator
+- This avoids relying only on AI when the page has clear key/value details.
 
-Future-proof importer changes
-1. Add a Madlan active-count gate
-   - Parse the public Madlan office page active counts: sale count + rent count.
-   - Use that as the expected maximum import count.
-   - If discovered candidates are far above the public active count, stop the job before inserting.
-   - Example: public active count = 36, discovered candidates = 593 → block import.
+3. Add a prose fact extractor
+- Parse descriptions like “single apartment on the floor”, “3 parking spaces”, “2 storage rooms”, “private pool”, “near the beach”, etc.
+- Convert those into BuyWise fields/features instead of leaving them buried in the text.
+- Store standardized feature keys while keeping a clean buyer-friendly description.
 
-2. Restrict discovery to active listings only
-   - Only crawl/parse the active properties section.
-   - Exclude transaction history, broker database, team/about/review tabs, archived records, and hidden stale listing payloads.
-   - Sale and rent should be handled explicitly as two active buckets.
+4. Improve geocoding flow
+- If address + city are extracted, automatically geocode the listing.
+- If neighborhood is missing, infer it from address/geocode/city/neighborhood matching where possible.
+- This should fix cases where listings are technically in Tel Aviv but have no usable location on the site/map.
 
-3. Confirm each Madlan listing before insert
-   For each candidate listing, verify:
-   - belongs to Erez Real Estate or the selected agency,
-   - is currently active/public,
-   - is for sale or for rent,
-   - has a usable address/area/price signal,
-   - has a canonical listing URL,
-   - has images or is flagged as image extraction failed.
+5. Make Madlan/Yad2 enrichment more effective
+- Keep agency website data/photos as preferred.
+- Use Madlan and Yad2 to fill missing fields only.
+- Improve matching so it does not rely only on exact address. Use a weighted match from city, neighborhood, price, size, rooms, floor, title, description, and source signals.
+- This helps when agency website extraction is missing address but the listing is clearly the same one on Madlan.
 
-4. Fix Madlan image extraction
-   - Extract image URLs from the visible cards and/or listing detail pages.
-   - Support lazy-loaded sources such as srcset, data-src, background-image, JSON embedded state, and nested image objects.
-   - Normalize relative/proxy URLs into absolute URLs.
-   - Download allowed Madlan images into our property image storage for Madlan-only fallback listings.
-   - Do not overwrite agency website images with Madlan images.
+6. Add field-level source tracking for review
+- In the import item/extracted data, include which source filled important fields where practical:
+  - agency website
+  - parser
+  - AI extraction
+  - Madlan
+  - Yad2
+  - geocoding
+- This will make the wizard-style review more useful because you can see not just what is missing, but where each value came from.
 
-5. Add strict source-aware image rules
-   - Agency website: preferred image source, can overwrite empty image arrays.
-   - Madlan: allowed fallback only when no agency website images exist.
-   - Yad2: never store images.
+7. Add safety guards
+- Do not store Yad2 photos.
+- Keep agency-owned photos preferred.
+- Do not overwrite good agency data with weaker portal data.
+- If a field conflicts materially, flag it for review instead of silently replacing it.
+- Keep unsupported or uncertain fields out rather than fabricating.
 
-6. Add pre-insert validation
-   Before inserting a Madlan row, require:
-   - active listing confirmation,
-   - valid source URL,
-   - sane price/transaction type,
-   - duplicate check against existing website/Madlan rows,
-   - image extraction result recorded as success/warning/failure.
+Technical implementation
 
-7. Add duplicate/merge protection
-   - Match Madlan rows against existing website listings by address, city, price, size, rooms, and source URLs.
-   - If a website listing already exists, merge the Madlan source URL but keep website photos.
-   - If Madlan-only listing exists and no website match exists, create it with Madlan fallback photos.
+Primary file:
+- `supabase/functions/import-agency-listings/index.ts`
 
-Admin UI improvements
-1. Show expected vs discovered count
-   Add diagnostics to the agency provisioning screen:
-   - Madlan public active count
-   - discovered candidates
-   - accepted active listings
-   - rejected stale/hidden listings
-   - image success count
-   - image extraction failure count
+Expected implementation details:
+- Expand the AI tool schema to include the missing property fields currently blocked by `additionalProperties: false`.
+- Add/extend helpers for:
+  - English key/value extraction from HTML/markdown
+  - prose-derived feature extraction
+  - feature normalization
+  - storage/parking/pool/private-pool/single-floor-unit mapping
+  - missing-field enrichment logic
+- Improve the merge patch so additional fields are gap-filled from Madlan/Yad2 when the existing listing is empty.
+- Ensure geocoding runs after address extraction and before final insert/update.
 
-2. Block dangerous imports visibly
-   If the public count is 36 and the importer discovers 593, show:
-   “Blocked: Madlan reports 36 active listings, but 593 candidates were discovered. No rows inserted.”
-
-3. Add cleanup/retry actions
-   Add admin actions:
-   - Quarantine current bad Madlan rows
-   - Retry Madlan active-only import
-   - Retry image extraction for Madlan rows missing images
-   - View rejected reasons
-
-Technical implementation details
-- Update `supabase/functions/import-agency-listings/index.ts`:
-  - add Madlan active-count parsing,
-  - add candidate filtering by active tab/section,
-  - add pre-insert validation,
-  - improve image extraction from card/detail/embedded data,
-  - add count mismatch blocking,
-  - add structured diagnostics in `failure_reason` or job metadata.
-
-- Update admin hooks/components:
-  - `src/hooks/useImportListings.tsx`
-  - `src/components/admin/agency-provisioning/ImportListingsSection.tsx`
-  - expose expected/accepted/rejected/image metrics,
-  - add quarantine/retry actions.
-
-- Database/data operations:
-  - Use data update tooling for cleanup of the current Erez Madlan rows.
-  - Use schema migration only if we need new persistent diagnostic columns/tables.
-  - Prefer reusing `import_jobs.failure_reason` for structured JSON diagnostics if sufficient.
-
-Validation checklist
-1. Erez Madlan import should target approximately 36 active listings, not 593.
-2. Website listings remain intact with images.
-3. Madlan-only active listings get Madlan fallback photos.
-4. Yad2 images are still never stored.
-5. Admin audit no longer shows hundreds of stale Madlan rows as normal review items.
-6. If Madlan changes page structure, the importer fails safe: no mass insert, clear warning.
+Validation
+- Re-run the Erez import after implementation.
+- Specifically inspect the ₪19M listing and verify it captures more of:
+  - address/neighborhood
+  - bathrooms
+  - parking
+  - floor/total floors/year built if visible
+  - storage/private pool/single apartment per floor as features
+  - lat/lng when address exists
+- Check importer logs for AI/Firecrawl/rate-limit failures.
 
 Expected result
-The current bad Madlan over-import gets contained, the agency website inventory remains safe, and future Madlan imports become active-only, count-checked, and photo-aware.
+The import pipeline should move from “basic listing + photos” to a much richer listing profile where agency website details are harvested first, then Madlan/Yad2 fill the remaining gaps. This should make the review drawer meaningfully show complete listings rather than lots of missing fields.
