@@ -60,8 +60,9 @@ Deno.serve(async (req: Request) => {
     );
   } catch (error) {
     console.error("Exchange rate update failed:", error);
+    const message = error instanceof Error ? error.message : String(error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
