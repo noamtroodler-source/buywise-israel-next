@@ -607,8 +607,8 @@ export default function AgencyListings() {
                   <SelectTrigger className="w-[170px] rounded-xl"><SelectValue placeholder="Review" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Reviews</SelectItem>
-                    <SelectItem value="ready">Ready to publish</SelectItem>
-                    <SelectItem value="fix">Needs info/photos</SelectItem>
+                    <SelectItem value="almost_ready">Almost ready</SelectItem>
+                    <SelectItem value="needs_work">Needs work</SelectItem>
                     <SelectItem value="approved_live">Confirmed</SelectItem>
                     <SelectItem value="archived_stale">Archived</SelectItem>
                   </SelectContent>
