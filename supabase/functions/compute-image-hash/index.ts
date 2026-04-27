@@ -23,7 +23,9 @@ let wasmReady = false;
 
 async function ensureWasm() {
   if (!wasmReady) {
-    await initializeImageMagick();
+    await initializeImageMagick(
+      new URL("https://cdn.jsdelivr.net/npm/@imagemagick/magick-wasm@0.0.30/dist/magick.wasm")
+    );
     wasmReady = true;
   }
 }

@@ -71,7 +71,8 @@ Deno.serve(async (req) => {
       }
     } catch (e) {
       failed++;
-      failures.push(`${poi.name}: ${e.message}`);
+      const message = e instanceof Error ? e.message : String(e);
+      failures.push(`${poi.name}: ${message}`);
     }
 
     // Rate limit

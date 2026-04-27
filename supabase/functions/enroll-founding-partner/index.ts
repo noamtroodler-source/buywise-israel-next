@@ -207,8 +207,9 @@ Deno.serve(async (req: Request) => {
     );
   } catch (error) {
     console.error("Enroll founding partner error:", error);
+    const message = error instanceof Error ? error.message : "Enrollment failed";
     return new Response(
-      JSON.stringify({ error: error.message || "Enrollment failed" }),
+      JSON.stringify({ error: message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

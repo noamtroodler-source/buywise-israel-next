@@ -326,10 +326,9 @@ Deno.serve(async (req) => {
   const stuckCutoff = new Date(Date.now() - 15 * 60 * 1000).toISOString();
   const { count: stuckCount } = await sb
     .from("yad2_scrape_queue")
-    .update({ status: "pending", updated_at: new Date().toISOString() })
+    .update({ status: "pending", updated_at: new Date().toISOString() }, { count: "exact" })
     .eq("status", "running")
-    .lt("updated_at", stuckCutoff)
-    .select("*", { count: "exact", head: true });
+    .lt("updated_at", stuckCutoff);
 
   if (stuckCount && stuckCount > 0) {
     console.log(`[Yad2Queue] Reset ${stuckCount} stuck running items back to pending`);

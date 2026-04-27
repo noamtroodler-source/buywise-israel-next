@@ -55,9 +55,10 @@ Deno.serve(async (req) => {
       .select("id, name, email, user_id, welcome_email_sent_at")
       .eq("agency_id", agencyId)
       .is("welcome_email_sent_at", null);
+    const agentRows = agents ?? [];
 
     let sent = 0;
-    for (const agent of agents as any[]) {
+    for (const agent of agentRows as any[]) {
       if (!agent.email) continue;
       let setupUrl = `${APP_URL}/agent`;
       if (agent.user_id) {
@@ -95,7 +96,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    return json({ success: true, sent, total: agents.length });
+    return json({ success: true, sent, total: agentRows.length });
   } catch (err: any) {
     console.error("send-agent-welcome error:", err);
     return json({ error: err?.message || "Internal error" }, 500);

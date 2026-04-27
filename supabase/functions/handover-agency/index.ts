@@ -77,6 +77,7 @@ Deno.serve(async (req) => {
       .from("agents")
       .select("id, name, email, user_id, is_provisional, welcome_email_sent_at, pending_fields")
       .eq("agency_id", agencyId);
+    const agentRows = agents ?? [];
 
     // ---- Load listings count + flag summary for owner email ----
     const { count: listingCount = 0 } = await admin
@@ -112,7 +113,7 @@ Deno.serve(async (req) => {
             ownerName: null,
             agencyName: agency.name,
             setupUrl: ownerSetupUrl,
-            agentCount: agents.length,
+            agentCount: agentRows.length,
             listingCount: listingCount ?? 0,
             pendingItems,
           },
@@ -128,7 +129,7 @@ Deno.serve(async (req) => {
     const strategy = agency.agent_email_strategy || "send_all_now";
 
     if (strategy === "send_all_now") {
-      for (const agent of agents as any[]) {
+      for (const agent of agentRows as any[]) {
         if (!agent.email || agent.welcome_email_sent_at) continue;
 
         let setupUrl = `${APP_URL}/agent`;
@@ -189,7 +190,7 @@ Deno.serve(async (req) => {
       _target_user_id: agency.admin_user_id,
       _metadata: {
         strategy,
-        agents_total: agents.length,
+        agents_total: agentRows.length,
         agents_emailed: agentsEmailed,
         listings: listingCount ?? 0,
       },
@@ -198,7 +199,7 @@ Deno.serve(async (req) => {
     return json({
       success: true,
       agentsEmailed,
-      agentsTotal: agents.length,
+      agentsTotal: agentRows.length,
       strategy,
     });
   } catch (err: any) {
