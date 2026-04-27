@@ -5,6 +5,7 @@ import {
   ArrowLeft, Loader2, Home, Plus, Search, Download, FileSpreadsheet,
   Eye, Clock, CheckCircle2, Building2, Heart, MessageSquare,
   Edit, Trash2, Send, MoreHorizontal, Copy, Key, ArrowLeftRight, X,
+  ArrowUpDown, ArrowUp, ArrowDown,
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -86,6 +87,57 @@ const statusConfig = {
   rejected: { label: 'Rejected', color: 'bg-red-500/10 text-red-600' },
 };
 
+type SortKey = 'price' | 'views' | 'saves' | 'inquiries' | 'days';
+type SortDirection = 'asc' | 'desc';
+
+function getSortValue(listing: any, key: SortKey) {
+  if (key === 'price') return Number(listing.price || 0);
+  if (key === 'views') return Number(listing.views_count || 0);
+  if (key === 'saves') return Number(listing.total_saves || 0);
+  if (key === 'inquiries') return Number(listing.my_inquiries_count ?? listing.inquiries_count ?? 0);
+  return Math.floor((Date.now() - new Date(listing.created_at).getTime()) / (1000 * 60 * 60 * 24));
+}
+
+function SortableHeader({
+  label,
+  sortKey,
+  activeSort,
+  onSort,
+  align = 'center',
+}: {
+  label: string;
+  sortKey: SortKey;
+  activeSort: { key: SortKey; direction: SortDirection } | null;
+  onSort: (key: SortKey, direction: SortDirection) => void;
+  align?: 'center' | 'right';
+}) {
+  const isActive = activeSort?.key === sortKey;
+  const Icon = isActive ? (activeSort.direction === 'asc' ? ArrowUp : ArrowDown) : ArrowUpDown;
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className={cn('h-8 gap-1 px-2 text-xs font-medium text-muted-foreground hover:text-foreground', align === 'right' && 'ml-auto')}
+        >
+          {label}
+          <Icon className={cn('h-3.5 w-3.5', isActive && 'text-primary')} />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align={align === 'right' ? 'end' : 'center'} className="w-40">
+        <DropdownMenuItem onClick={() => onSort(sortKey, 'asc')}>
+          <ArrowUp className="mr-2 h-4 w-4" /> Low to high
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onSort(sortKey, 'desc')}>
+          <ArrowDown className="mr-2 h-4 w-4" /> High to low
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 export default function AgencyListings() {
   const navigate = useNavigate();
   const { data: agency, isLoading: agencyLoading } = useMyAgency();
@@ -106,6 +158,7 @@ export default function AgencyListings() {
   const [roleFilter, setRoleFilter] = useState<'all' | 'primary' | 'co_listed'>('all');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+  const [sort, setSort] = useState<{ key: SortKey; direction: SortDirection } | null>(null);
   const formatPrice = useFormatPrice();
 
   const toggleSelect = useCallback((id: string) => {
@@ -154,6 +207,15 @@ export default function AgencyListings() {
     if (roleFilter !== 'all' && listing.role !== roleFilter) return false;
     return true;
   });
+
+  const sortedListings = sort
+    ? [...filteredListings].sort((a, b) => {
+      const diff = getSortValue(a, sort.key) - getSortValue(b, sort.key);
+      return sort.direction === 'asc' ? diff : -diff;
+    })
+    : filteredListings;
+
+  const handleSort = (key: SortKey, direction: SortDirection) => setSort({ key, direction });
 
   const primaryCount = listings.filter(l => l.role === 'primary').length;
   const coListedCount = listings.filter(l => l.role === 'co_listed').length;
@@ -471,16 +533,16 @@ export default function AgencyListings() {
                           </TooltipProvider>
                         </TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Price</TableHead>
-                        <TableHead className="text-center">Views</TableHead>
-                        <TableHead className="text-center">Saves</TableHead>
-                        <TableHead className="text-center">Inquiries</TableHead>
-                        <TableHead className="text-center">Days</TableHead>
+                        <TableHead className="text-right"><SortableHeader label="Price" sortKey="price" activeSort={sort} onSort={handleSort} align="right" /></TableHead>
+                        <TableHead className="text-center"><SortableHeader label="Views" sortKey="views" activeSort={sort} onSort={handleSort} /></TableHead>
+                        <TableHead className="text-center"><SortableHeader label="Saves" sortKey="saves" activeSort={sort} onSort={handleSort} /></TableHead>
+                        <TableHead className="text-center"><SortableHeader label="Inquiries" sortKey="inquiries" activeSort={sort} onSort={handleSort} /></TableHead>
+                        <TableHead className="text-center"><SortableHeader label="Days" sortKey="days" activeSort={sort} onSort={handleSort} /></TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredListings.map((listing) => {
+                      {sortedListings.map((listing) => {
                         const status = statusConfig[listing.verification_status as keyof typeof statusConfig] || statusConfig.draft;
                         const isDraft = listing.verification_status === 'draft';
                         const isApproved = listing.verification_status === 'approved';
