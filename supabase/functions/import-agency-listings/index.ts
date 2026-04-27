@@ -1104,6 +1104,53 @@ function isStrictSameUnitDuplicate(existing: Record<string, any>, listing: Recor
   return false;
 }
 
+function textSimilarity(a: string | null | undefined, b: string | null | undefined): number {
+  const left = normalizeTextKey(a || "");
+  const right = normalizeTextKey(b || "");
+  if (!left || !right) return 0;
+  if (left === right) return 1;
+  if (left.includes(right) || right.includes(left)) return Math.min(left.length, right.length) / Math.max(left.length, right.length);
+  const aSet = new Set(left.split(" ").filter((w) => w.length > 2));
+  const bSet = new Set(right.split(" ").filter((w) => w.length > 2));
+  if (!aSet.size || !bSet.size) return 0;
+  let intersection = 0;
+  for (const token of aSet) if (bSet.has(token)) intersection++;
+  return intersection / Math.max(aSet.size, bSet.size);
+}
+
+function isLikelySameAgencyDuplicate(existing: Record<string, any>, listing: Record<string, any>, incomingUrl?: string | null): boolean {
+  if ((existing.listing_status || "for_sale") !== (listing.listing_status || "for_sale")) return false;
+  if (existing.city && listing.city && normalizeCityStr(existing.city) !== normalizeCityStr(listing.city)) return false;
+
+  const existingUrl = canonicalUrlIdentity(existing.source_url);
+  const incomingCanonicalUrl = canonicalUrlIdentity(incomingUrl);
+  if (existingUrl && incomingCanonicalUrl && existingUrl === incomingCanonicalUrl) return true;
+
+  const existingPrice = Number(existing.price || 0);
+  const incomingPrice = Number(listing.price || 0);
+  if (!existingPrice || !incomingPrice) return false;
+  const priceDiff = Math.abs(existingPrice - incomingPrice) / Math.max(existingPrice, incomingPrice);
+  const samePrice = priceDiff <= 0.001;
+  const nearPrice = priceDiff <= 0.03;
+  if (!samePrice && !nearPrice) return false;
+
+  const sameBeds = existing.bedrooms == null || listing.bedrooms == null || Math.abs(Math.floor(existing.bedrooms) - Math.floor(listing.bedrooms)) <= 1;
+  if (!sameBeds) return false;
+
+  const existingAddress = normalizeAddressForDedup(existing.address || "");
+  const incomingAddress = normalizeAddressForDedup(listing.address || "");
+  const addressScore = textSimilarity(existingAddress, incomingAddress);
+  const titleScore = textSimilarity(existing.title, listing.title);
+  const locationScore = textSimilarity(`${existing.title || ""} ${existing.address || ""} ${existing.neighborhood || ""}`, `${listing.title || ""} ${listing.address || ""} ${listing.neighborhood || ""}`);
+  const sizeClose = existing.size_sqm && listing.size_sqm
+    ? Math.abs(Number(existing.size_sqm) - Number(listing.size_sqm)) <= Math.max(8, Math.max(Number(existing.size_sqm), Number(listing.size_sqm)) * 0.10)
+    : false;
+
+  if (samePrice && (addressScore >= 0.45 || titleScore >= 0.45 || locationScore >= 0.45 || sizeClose)) return true;
+  if (nearPrice && (addressScore >= 0.70 || titleScore >= 0.70 || locationScore >= 0.70 || (sizeClose && locationScore >= 0.45))) return true;
+  return false;
+}
+
 /** Clean address for storage — strips apartment/floor info and street prefixes for consistency */
 function normalizeAddressForStorage(address: string): string {
   let norm = address.trim();
