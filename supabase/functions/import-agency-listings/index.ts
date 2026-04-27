@@ -5400,6 +5400,45 @@ async function handleResumeJob(body: any) {
   return { reset_count: resetCount };
 }
 
+async function handleQuarantineMadlanBatch(body: any) {
+  const { agency_id } = body;
+  if (!agency_id) throw new Error("agency_id required");
+  const sb = supabaseAdmin();
+  const { data: agents } = await sb.from("agents").select("id").eq("agency_id", agency_id);
+  const agentIds = (agents || []).map((agent: any) => agent.id).filter(Boolean);
+  const ids = new Set<string>();
+  const addIds = (rows?: Array<{ id: string }> | null) => (rows || []).forEach((row) => ids.add(row.id));
+
+  const { data: directRows } = await sb
+    .from("properties")
+    .select("id")
+    .eq("import_source", "madlan")
+    .or(`primary_agency_id.eq.${agency_id},claimed_by_agency_id.eq.${agency_id}`);
+  addIds(directRows);
+
+  if (agentIds.length > 0) {
+    const { data: agentRows } = await sb
+      .from("properties")
+      .select("id")
+      .eq("import_source", "madlan")
+      .in("agent_id", agentIds);
+    addIds(agentRows);
+  }
+
+  const propertyIds = Array.from(ids);
+  for (let i = 0; i < propertyIds.length; i += 100) {
+    const batch = propertyIds.slice(i, i + 100);
+    await sb.from("properties").update({
+      is_published: false,
+      source_status: "quarantined_active_count_mismatch",
+      provisioning_audit_status: "critical",
+      admin_notes: "Quarantined: Madlan import exceeded public active listing count and requires active-only reimport.",
+      source_last_checked_at: new Date().toISOString(),
+    }).in("id", batch);
+  }
+  return { quarantined_count: propertyIds.length };
+}
+
 // ─── CHECK EXISTING LISTINGS (Price Change + Removal Detection) ────────────
 
 async function handleCheckExisting(body: any) {
@@ -5617,6 +5656,7 @@ Deno.serve(async (req) => {
     else if (action === "retry_recoverable_skipped") result = await handleRetryRecoverableSkipped(body);
     else if (action === "approve_item") result = await handleApproveItem(body);
     else if (action === "resume_job") result = await handleResumeJob(body);
+    else if (action === "quarantine_madlan_batch") result = await handleQuarantineMadlanBatch(body);
     else if (action === "check_existing") result = await handleCheckExisting(body);
     else if (action === "backfill_street_view") result = await handleBackfillStreetView(body);
     else throw new Error(`Unknown action: ${action}`);
