@@ -2082,8 +2082,11 @@ function inferCityFromHebrew(text: string): string | null {
   return null;
 }
 
-function buildExtractionPrompt(url: string, domain: string, markdown: string, pageLinks: string[]): string {
+function buildExtractionPrompt(url: string, domain: string, markdown: string, pageLinks: string[], includeImages = true): string {
   const yad2Hint = url.includes("yad2.co.il") ? `\n${inferYad2RegionHint(url)}` : "";
+  const imageInstruction = includeImages
+    ? "- Extract ALL image URLs you can find"
+    : "- Do NOT extract, return, store, download, or reference image/photo URLs from this source";
   return `You are extracting structured data from a scraped Israeli real estate page.
 
 IMPORTANT CONTEXT:
@@ -2161,7 +2164,7 @@ FOR PROPERTIES — extract these fields:
 - Detect if sold (נמכר), rented (הושכר), under contract (בהסכם). Set is_sold_or_rented=true if so.
 - Price might appear as "₪1,500,000" or "1,500,000 ש״ח" or "$450,000"
 - For rentals, price is monthly rent (e.g., "₪5,500/חודש" or "5,500 ש״ח לחודש")
-- Extract ALL image URLs you can find
+${imageInstruction}
 - For floor: use the Hebrew ordinal map above
 - For rental listings: extract lease_term, furnished_status, pets_policy, subletting_allowed, agent_fee_required, bank_guarantee_required, checks_required if mentioned
 
