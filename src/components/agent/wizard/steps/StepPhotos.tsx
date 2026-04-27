@@ -66,7 +66,6 @@ export function StepPhotos() {
         <SortableImageUpload
           images={data.images}
           onImagesChange={(images) => updateData({ images })}
-          maxImages={20}
           minImages={safeMinPhotos}
         />
 
