@@ -47,7 +47,7 @@ export function AgencyOnboardingProgress({ agency, teamCount, listingsCount = 0 
       description: 'Add a professional logo to build trust',
       icon: Image,
       isComplete: !!agency.logo_url,
-      link: '/agency/settings',
+      link: '/agency/settings#agency-logo',
     },
     {
       id: 'description',
@@ -55,7 +55,7 @@ export function AgencyOnboardingProgress({ agency, teamCount, listingsCount = 0 
       description: 'Tell clients about your agency',
       icon: FileText,
       isComplete: (agency.description?.length || 0) >= 150,
-      link: '/agency/settings',
+      link: '/agency/settings#agency-description',
     },
     {
       id: 'phone',
@@ -63,7 +63,7 @@ export function AgencyOnboardingProgress({ agency, teamCount, listingsCount = 0 
       description: 'Let clients reach you directly',
       icon: Phone,
       isComplete: !!agency.phone,
-      link: '/agency/settings',
+      link: '/agency/settings#agency-phone',
     },
     {
       id: 'website',
@@ -71,7 +71,7 @@ export function AgencyOnboardingProgress({ agency, teamCount, listingsCount = 0 
       description: 'Link to your company website',
       icon: Globe,
       isComplete: !!agency.website,
-      link: '/agency/settings',
+      link: '/agency/settings#agency-website',
     },
     {
       id: 'socials',
@@ -87,7 +87,7 @@ export function AgencyOnboardingProgress({ agency, teamCount, listingsCount = 0 
       description: 'Show where you operate',
       icon: MapPin,
       isComplete: (agency.cities_covered?.length || 0) >= 3,
-      link: '/agency/settings',
+      link: '/agency/settings#service-areas',
     },
     {
       id: 'specializations',
@@ -95,7 +95,7 @@ export function AgencyOnboardingProgress({ agency, teamCount, listingsCount = 0 
       description: 'Highlight your expertise',
       icon: Briefcase,
       isComplete: (agency.specializations?.length || 0) >= 1,
-      link: '/agency/settings',
+      link: '/agency/settings#agency-specializations',
     },
     {
       id: 'team',
