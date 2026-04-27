@@ -2945,7 +2945,7 @@ async function processOneItem(
     } else {
       // Normal AI extraction flow. For Yad2/Madlan, do not ask AI for image URLs.
       const sourceType = String(job.source_type || "").toLowerCase();
-      const includeImagesInExtraction = !(isYad2Item || sourceType.includes("yad2") || sourceType.includes("madlan"));
+      const includeImagesInExtraction = isAgencyOwnWebsite;
       const extractionPrompt = buildExtractionPrompt(item.url, domain, markdown, pageLinks, includeImagesInExtraction);
 
       const extractRes = await fetchWithTimeout("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -3029,6 +3029,11 @@ async function processOneItem(
         }
       }
 
+      if (!listing && agencyHtmlFallback) {
+        listing = agencyHtmlFallback;
+        cmsExtracted = "agency_html_fallback";
+      }
+
       // Merge partial CMS data into AI result (CMS takes priority for filling gaps)
       if (cmsData) {
         cmsExtracted = cmsType;
@@ -3038,6 +3043,14 @@ async function processOneItem(
           }
         }
         dlog(`CMS adapter (${cmsType}) merged partial data into AI extraction`);
+      }
+      if (agencyHtmlFallback) {
+        for (const [key, value] of Object.entries(agencyHtmlFallback)) {
+          if (value != null && (listing[key] == null || listing[key] === "" || listing[key] === 0 || (Array.isArray(listing[key]) && listing[key].length === 0))) {
+            listing[key] = value;
+          }
+        }
+        if (!cmsExtracted) cmsExtracted = "agency_html_fallback";
       }
     }
 
@@ -3071,9 +3084,14 @@ async function processOneItem(
 
     const category = listing.listing_category || (listing.is_listing_page === false ? "not_listing" : "property");
 
-    if (category === "not_listing") {
+    if (category === "not_listing" && !isStrongAgencyListing) {
       await sb.from("import_job_items").update({ status: "skipped", error_message: "Not a listing page", error_type: "permanent" }).eq("id", item.id);
       return { succeeded: false };
+    }
+
+    if (category === "not_listing" && isStrongAgencyListing) {
+      listing.listing_category = "property";
+      listing._category_overridden = "agency_listing_url";
     }
 
     if (category === "project") {
