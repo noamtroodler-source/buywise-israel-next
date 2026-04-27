@@ -328,6 +328,14 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
                 </div>
                 <p className="truncate">Source URL: <span className="text-foreground font-medium">{currentJob.website_url}</span></p>
                 <p className="text-xs">These controls import this source job only, not every saved source at once.</p>
+                <div className="flex flex-wrap gap-2 pt-1 text-xs">
+                  <Badge variant="secondary">Imported {doneCount}</Badge>
+                  {mergedCount > 0 && <Badge variant="outline">Merged {mergedCount}</Badge>}
+                  {flaggedCount > 0 && <Badge variant="outline">Flagged {flaggedCount}</Badge>}
+                  {currentJobDiagnostics?.discovered_raw != null && <Badge variant="outline">Raw {String(currentJobDiagnostics.discovered_raw)}</Badge>}
+                  {currentJobDiagnostics?.canonical != null && <Badge variant="outline">Canonical {String(currentJobDiagnostics.canonical)}</Badge>}
+                  {currentJobDiagnostics?.inserted != null && <Badge variant="outline">Inserted {String(currentJobDiagnostics.inserted)}</Badge>}
+                </div>
               </div>
               <Badge variant="outline" className={cn(
                 isCompleted && 'bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]',
