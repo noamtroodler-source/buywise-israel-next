@@ -212,8 +212,9 @@ Deno.serve(async (req) => {
     );
   } catch (err) {
     console.error("detect-duplicates error:", err);
+    const message = err instanceof Error ? err.message : String(err);
     return new Response(
-      JSON.stringify({ error: err.message }),
+      JSON.stringify({ error: message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
