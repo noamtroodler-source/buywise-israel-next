@@ -647,6 +647,25 @@ const SKIP_PROPERTY_TYPES = new Set([
   "building", "agricultural_estate", "assisted_living",
 ]);
 
+function detectShortTermRental(text: string): { isShortTerm: boolean; reason: string } {
+  const snippet = text.slice(0, 80_000);
+  const shortTermPatterns: Array<[RegExp, string]> = [
+    [/\bshort[\s-]?term\b/i, "short-term wording"],
+    [/\bvacation\s+rental\b|\bholiday\s+rental\b|\bairbnb\b/i, "vacation/Airbnb wording"],
+    [/\bper\s+night\b|\bnightly\b|\bby\s+the\s+night\b/i, "nightly pricing"],
+    [/\bper\s+week\b|\bweekly\b|\bby\s+the\s+week\b/i, "weekly pricing"],
+    [/\bminimum\s+(?:stay|rental)\b|\bmin(?:imum)?\s+\d+\s+nights?\b/i, "minimum-stay wording"],
+    [/השכרה\s+לטווח\s+קצר|לטווח\s+קצר|קצר\s+טווח/, "Hebrew short-term wording"],
+    [/לילה|לילות|יומי|יומית|ליום|לשבוע|שבועי|שבועית|נופש|חופשה|איירבנב|אירוח/, "Hebrew nightly/weekly/vacation wording"],
+  ];
+
+  for (const [pattern, reason] of shortTermPatterns) {
+    if (pattern.test(snippet)) return { isShortTerm: true, reason };
+  }
+
+  return { isShortTerm: false, reason: "" };
+}
+
 function normalizeCompactAgencyPrice(
   listing: Record<string, any>,
   visibleText: string,
