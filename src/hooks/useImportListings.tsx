@@ -111,14 +111,16 @@ export function useProcessBatch() {
   return useMutation({
     mutationFn: async (jobId: string) => {
       const { data, error } = await supabase.functions.invoke('import-agency-listings', {
-        body: { action: 'process_batch', job_id: jobId },
+        body: { action: 'process_batch', job_id: jobId, background: true },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      return data as { processed: number; succeeded: number; failed: number; remaining: number; status: string };
+      return data as { processed?: number; succeeded?: number; failed?: number; remaining?: number; status: string; started_async?: boolean };
     },
     onSuccess: (data) => {
-      toast.success(`Batch complete: ${data.succeeded} imported, ${data.failed} skipped/failed, ${data.remaining} remaining`);
+      toast.success(data.started_async
+        ? 'Import started — processing continues in the background.'
+        : `Batch complete: ${data.succeeded || 0} imported, ${data.failed || 0} skipped/failed, ${data.remaining || 0} remaining`);
       queryClient.invalidateQueries({ queryKey: ['importJobs'] });
       queryClient.invalidateQueries({ queryKey: ['importJobItems'] });
       queryClient.invalidateQueries({ queryKey: ['agencyListingsManagement'] });
@@ -299,10 +301,17 @@ export function useProcessAll() {
       while (!stopRef.current) {
         const { data, error } = await supabase.functions.invoke(
           'import-agency-listings',
-          { body: { action: 'process_batch', job_id: jobId } }
+          { body: { action: 'process_batch', job_id: jobId, background: true } }
         );
         if (error) throw error;
         if (data?.error) throw new Error(data.error);
+
+        if (data.started_async) {
+          toast.success('Import started — processing continues in the background.');
+          queryClient.invalidateQueries({ queryKey: ['importJobs'] });
+          queryClient.invalidateQueries({ queryKey: ['importJobItems'] });
+          break;
+        }
 
         totalSucceeded += data.succeeded;
         totalFailed += data.failed;

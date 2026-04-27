@@ -1558,6 +1558,16 @@ async function handleWebsiteDiscoverAsync(body: any) {
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+async function fetchWithTimeout(input: string | URL | Request, init: RequestInit = {}, timeoutMs = 30_000): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 // ─── NON-LISTING URL PATTERN FILTER ─────────────────────────────────────────
 
 const NON_LISTING_SEGMENTS = new Set([
@@ -1615,7 +1625,7 @@ function filterNonListingUrls(urls: string[]): { listingCandidates: string[]; re
 
 async function geocodeWithRateLimit(address: string, city: string, neighborhood?: string | null): Promise<{ lat: number; lng: number } | null> {
   try {
-    const res = await fetch(
+    const res = await fetchWithTimeout(
       `${Deno.env.get("SUPABASE_URL")}/functions/v1/geocode-address`,
       {
         method: "POST",
@@ -1631,7 +1641,8 @@ async function geocodeWithRateLimit(address: string, city: string, neighborhood?
           neighborhood: neighborhood || undefined,
           skipDbSave: true,
         }),
-      }
+      },
+      12_000
     );
     const data = await res.json();
     if (data.success) {
@@ -1652,11 +1663,11 @@ async function enhanceImage(imagePublicUrl: string, sb: any, bucketName: string,
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) return imagePublicUrl;
     const enhancePath = `imports/${jobId}/${crypto.randomUUID()}-enhanced.png`;
-    const res = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/enhance-image`, {
+    const res = await fetchWithTimeout(`${Deno.env.get("SUPABASE_URL")}/functions/v1/enhance-image`, {
       method: "POST",
       headers: { Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`, "Content-Type": "application/json" },
       body: JSON.stringify({ image_url: imagePublicUrl, bucket: bucketName, path: enhancePath }),
-    });
+    }, 20_000);
     if (!res.ok) return imagePublicUrl;
     const data = await res.json();
     return (data.success && data.enhanced && data.image_url) ? data.image_url : imagePublicUrl;
@@ -1709,7 +1720,7 @@ async function getStreetViewMetadata(
 ): Promise<{ status: string; camLat?: number; camLng?: number } | null> {
   try {
     const url = `https://maps.googleapis.com/maps/api/streetview/metadata?location=${lat},${lng}&key=${apiKey}`;
-    const res = await fetch(url);
+    const res = await fetchWithTimeout(url, {}, 8_000);
     if (!res.ok) { await res.text(); return null; }
     const data = await res.json();
     return {
@@ -1772,7 +1783,7 @@ async function generateAndStoreStreetView(
     }
 
     // ── Step 1b: Fetch the image and upload to storage (never store raw Google URLs) ──
-    const imgRes = await fetch(sourceUrl);
+    const imgRes = await fetchWithTimeout(sourceUrl, {}, 10_000);
     if (!imgRes.ok) {
       console.warn(`Failed to fetch street view image for ${propertyId}: ${imgRes.status}`);
       return { updated: false };
@@ -1799,7 +1810,7 @@ async function generateAndStoreStreetView(
     if (!skipEnhance) try {
       const ENHANCE_URL = `${Deno.env.get("SUPABASE_URL")}/functions/v1/enhance-image`;
       const enhancePath = `street-view/${propertyId}.png`;
-      const enhanceRes = await fetch(ENHANCE_URL, {
+      const enhanceRes = await fetchWithTimeout(ENHANCE_URL, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
@@ -1811,7 +1822,7 @@ async function generateAndStoreStreetView(
           path: enhancePath,
           style: imageType === "street_view" ? "architectural" : "photo_correct",
         }),
-      });
+      }, 20_000);
 
       if (enhanceRes.ok) {
         const enhanceData = await enhanceRes.json();
@@ -2596,7 +2607,7 @@ Content:
 ${truncatedContent}`;
 
   try {
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const res = await fetchWithTimeout("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -2628,7 +2639,7 @@ ${truncatedContent}`;
         }],
         tool_choice: { type: "function", function: { name: "extract_listing" } },
       }),
-    });
+    }, 20_000);
 
     if (!res.ok) {
       console.error(`Simplified retry also failed: ${res.status}`);
@@ -2722,11 +2733,11 @@ async function processOneItem(
     // Stealth proxy requests occasionally hang indefinitely, blocking the whole batch.
     let scrapeRes: Response;
     if (isYad2Item) {
-      const scrapePromise = fetch("https://api.firecrawl.dev/v1/scrape", {
+      const scrapePromise = fetchWithTimeout("https://api.firecrawl.dev/v1/scrape", {
         method: "POST",
         headers: { Authorization: `Bearer ${firecrawlKey}`, "Content-Type": "application/json" },
         body: JSON.stringify({ url: item.url, formats: ["markdown", "links", "html"], onlyMainContent: true, proxy: "stealth", waitFor: 5000 }),
-      });
+      }, 35_000);
       const timeoutPromise = new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error("Yad2 stealth scrape timeout after 35s")), 35_000)
       );
@@ -2742,11 +2753,11 @@ async function processOneItem(
         return { succeeded: false };
       }
     } else {
-      scrapeRes = await fetch("https://api.firecrawl.dev/v1/scrape", {
+      scrapeRes = await fetchWithTimeout("https://api.firecrawl.dev/v1/scrape", {
         method: "POST",
         headers: { Authorization: `Bearer ${firecrawlKey}`, "Content-Type": "application/json" },
         body: JSON.stringify({ url: item.url, formats: ["markdown", "links", "html"], onlyMainContent: true }),
-      });
+      }, 30_000);
     }
 
     // Retry logic for transient errors (401/500/502/503)
@@ -2769,11 +2780,11 @@ async function processOneItem(
           return { succeeded: false };
         }
       } else {
-        scrapeRes = await fetch("https://api.firecrawl.dev/v1/scrape", {
+        scrapeRes = await fetchWithTimeout("https://api.firecrawl.dev/v1/scrape", {
           method: "POST",
           headers: { Authorization: `Bearer ${firecrawlKey}`, "Content-Type": "application/json" },
           body: JSON.stringify({ url: item.url, formats: ["markdown", "links", "html"], onlyMainContent: true }),
-        });
+        }, 30_000);
       }
     }
 
@@ -2859,7 +2870,7 @@ async function processOneItem(
       const includeImagesInExtraction = !(isYad2Item || sourceType.includes("yad2") || sourceType.includes("madlan"));
       const extractionPrompt = buildExtractionPrompt(item.url, domain, markdown, pageLinks, includeImagesInExtraction);
 
-      const extractRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      const extractRes = await fetchWithTimeout("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -2876,43 +2887,23 @@ async function processOneItem(
                   listing_category: { type: "string", enum: ["property", "project", "not_listing"] },
                   title: { type: "string" },
                   description: { type: "string" },
-                  price: { type: "number", description: "Price (0 if Price on Request)" },
-                  original_price: { type: "number", description: "Previous/original price if a price reduction is shown" },
+                  price: { type: "number", description: "Price in NIS; use 0 only for Price on Request" },
                   currency: { type: "string", enum: ["ILS", "USD"] },
-                  bedrooms: { type: "number", description: "Sleeping bedrooms only (Israeli rooms minus 1 living room). E.g. '4 rooms' in Hebrew = 3 bedrooms." },
-                  source_rooms: { type: "number", description: "Original Israeli room count as shown on the source site (חדרים). E.g. '4 חדרים' = 4. Store this EXACTLY as shown — do not subtract." },
-                  bathrooms: { type: "number", description: "Number of bathrooms. If not mentioned, omit — do not default to 1." },
+                  bedrooms: { type: "number", description: "Sleeping bedrooms only; Israeli rooms minus 1 living room" },
+                  source_rooms: { type: "number", description: "Original Israeli room count shown on the source" },
+                  bathrooms: { type: "number" },
                   size_sqm: { type: "number" },
-                  lot_size_sqm: { type: "number", description: "Total land/plot size for houses, cottages, land listings" },
                   address: { type: "string" },
-                  city: { type: "string", description: "Must be one of the supported cities" },
+                  city: { type: "string", description: "Supported city name only" },
                   neighborhood: { type: "string" },
-                  property_type: { type: "string", enum: ["apartment", "garden_apartment", "penthouse", "mini_penthouse", "duplex", "house", "cottage", "land"] },
+                  property_type: { type: "string", enum: ["apartment", "garden_apartment", "penthouse", "duplex", "house", "cottage", "land"] },
                   listing_status: { type: "string", enum: ["for_sale", "for_rent"] },
                   floor: { type: "number" },
                   total_floors: { type: "number" },
-                  features: { type: "array", items: { type: "string" }, description: "Standardized feature keys: elevator, balcony, sun_balcony, sukkah_balcony, mamad, parking, storage, garden, pool, gym, doorman, security, air_conditioning, central_ac, solar_heater, furnished, accessible, shutters, window_bars, security_doors, roof_access, sea_view, city_view, quiet_street, renovated_kitchen, renovated_bathrooms, smart_home, underfloor_heating, jacuzzi, sauna, wine_cellar, private_entrance" },
+                  features: { type: "array", items: { type: "string" }, description: "Short feature keys only, e.g. elevator, balcony, parking, storage, mamad, furnished" },
                   parking: { type: "number" },
-                  entry_date: { type: "string", description: "Move-in date: 'immediate', 'flexible', or ISO date (YYYY-MM-DD)" },
-                  year_built: { type: "number" },
                   condition: { type: "string", enum: ["new", "renovated", "good", "needs_renovation"] },
-                  ac_type: { type: "string", enum: ["none", "split", "central", "mini_central"], description: "Air conditioning type" },
-                  vaad_bayit_monthly: { type: "number", description: "Monthly building maintenance fee (ועד בית) in NIS" },
-                  is_furnished: { type: "boolean", description: "Whether the property comes furnished" },
-                  is_accessible: { type: "boolean", description: "Whether the property is wheelchair accessible" },
-                  additional_rooms: { type: "number", description: "Extra half-rooms: storage room, laundry, service balcony, walk-in closet" },
-                  featured_highlight: { type: "string", description: "The single most standout feature of this property in 3-6 words (e.g. 'Panoramic Sea View', 'Private Rooftop Terrace', 'Fully Renovated with Garden')" },
-                  // Rental-specific fields
-                  lease_term: { type: "string", enum: ["6_months", "12_months", "24_months", "flexible", "other"] },
-                  furnished_status: { type: "string", enum: ["fully", "semi", "unfurnished"] },
-                  pets_policy: { type: "string", enum: ["allowed", "case_by_case", "not_allowed"] },
-                  subletting_allowed: { type: "string", enum: ["allowed", "case_by_case", "not_allowed"] },
-                  agent_fee_required: { type: "boolean" },
-                  bank_guarantee_required: { type: "boolean" },
-                  checks_required: { type: "boolean" },
-                  is_sold_or_rented: { type: "boolean" },
                   photo_count: { type: "number" },
-                  image_urls: { type: "array", items: { type: "string" }, description: includeImagesInExtraction ? "All property photo URLs found on the page (full absolute URLs). Include gallery images, slider images, thumbnail src. Exclude logos, icons, agent photos, map screenshots." : "Leave empty for this source." },
                 },
                 required: ["listing_category"],
                 additionalProperties: false,
@@ -2921,7 +2912,7 @@ async function processOneItem(
           }],
           tool_choice: { type: "function", function: { name: "extract_listing" } },
         }),
-      });
+      }, 25_000);
 
       if (!extractRes.ok) {
         const errText = await extractRes.text();
@@ -3519,9 +3510,12 @@ async function processOneItem(
       }
     }
 
-    // ── Generate & enhance street view image ──
+    // ── Generate & enhance street view image after the item is imported.
+    // Keep this out of the critical import path so slow image work cannot idle-timeout the batch request.
     if (property?.id) {
-      await generateAndStoreStreetView(sb, property.id, latitude, longitude, listing.address, listing.city, listing.floor, listing.apartment_number || null);
+      EdgeRuntime.waitUntil(
+        generateAndStoreStreetView(sb, property.id, latitude, longitude, listing.address, listing.city, listing.floor, listing.apartment_number || null)
+      );
     }
 
     // Insert cross-source duplicate pair if detected
@@ -3581,12 +3575,12 @@ async function handleProcessBatch(body: any) {
   _geoQueue = Promise.resolve();
   _batchImageUrlCounts.clear();
 
-  let currentConcurrency = 3;
-  const MAX_CONCURRENCY = 3;
-  const MIN_CONCURRENCY = 2;
-  const REFILL_SIZE = 10;
-  const MAX_ITEMS = 25;
-  const TIME_LIMIT_MS = 120_000;
+  let currentConcurrency = 2;
+  const MAX_CONCURRENCY = 2;
+  const MIN_CONCURRENCY = 1;
+  const REFILL_SIZE = 6;
+  const MAX_ITEMS = 12;
+  const TIME_LIMIT_MS = 75_000;
   const batchStartTime = Date.now();
 
   let totalProcessed = 0;
@@ -5202,7 +5196,18 @@ Deno.serve(async (req) => {
         result = await handleWebsiteDiscoverAsync(body);
       }
     }
-    else if (action === "process_batch") result = await handleProcessBatch(body);
+    else if (action === "process_batch") {
+      if (body.background === true) {
+        const jobId = body.job_id;
+        if (!jobId) throw new Error("job_id required");
+        EdgeRuntime.waitUntil(handleProcessBatch(body).catch((err) => {
+          console.error(`Background process_batch failed for ${jobId}:`, err);
+        }));
+        result = { job_id: jobId, started_async: true, status: "processing" };
+      } else {
+        result = await handleProcessBatch(body);
+      }
+    }
     else if (action === "retry_failed") result = await handleRetryFailed(body);
     else if (action === "approve_item") result = await handleApproveItem(body);
     else if (action === "resume_job") result = await handleResumeJob(body);
