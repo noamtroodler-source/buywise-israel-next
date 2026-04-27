@@ -26,6 +26,10 @@ export default function SetupPassword() {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState<{ email: string | null; redirect: string } | null>(null);
 
+  const passwordChecks = getPasswordChecks(password);
+  const passwordIsStrong = passwordChecks.every((check) => check.valid);
+  const passwordsMatch = password.length > 0 && confirm.length > 0 && password === confirm;
+
   useEffect(() => {
     if (!token) {
       setValidation({ status: "invalid" });
@@ -66,8 +70,8 @@ export default function SetupPassword() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password.length < 10) {
-      toast.error("Password must be at least 10 characters.");
+    if (!passwordIsStrong) {
+      toast.error("Use a stronger password with uppercase, lowercase, number, and symbol.");
       return;
     }
     if (password !== confirm) {
@@ -236,11 +240,20 @@ export default function SetupPassword() {
 
             <Alert>
               <AlertDescription className="text-xs">
-                Use at least 10 characters. Mix letters, numbers, and symbols for best protection.
+                <div className="space-y-1">
+                  {passwordChecks.map((check) => (
+                    <div key={check.label} className={check.valid ? "text-success" : "text-muted-foreground"}>
+                      {check.valid ? "✓" : "•"} {check.label}
+                    </div>
+                  ))}
+                  <div className={passwordsMatch ? "text-success" : "text-muted-foreground"}>
+                    {passwordsMatch ? "✓" : "•"} Passwords match
+                  </div>
+                </div>
               </AlertDescription>
             </Alert>
 
-            <Button type="submit" className="w-full" disabled={submitting}>
+            <Button type="submit" className="w-full" disabled={submitting || !passwordIsStrong || !passwordsMatch}>
               {submitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -255,6 +268,16 @@ export default function SetupPassword() {
       </Card>
     </Shell>
   );
+}
+
+function getPasswordChecks(password: string) {
+  return [
+    { label: "At least 12 characters", valid: password.length >= 12 },
+    { label: "One uppercase letter", valid: /[A-Z]/.test(password) },
+    { label: "One lowercase letter", valid: /[a-z]/.test(password) },
+    { label: "One number", valid: /\d/.test(password) },
+    { label: "One symbol", valid: /[^A-Za-z0-9]/.test(password) },
+  ];
 }
 
 function Shell({ children }: { children: React.ReactNode }) {
