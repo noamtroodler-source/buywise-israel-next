@@ -3682,6 +3682,8 @@ async function processOneItem(
           merged_source_urls: mergedUrls,
           source_last_checked_at: new Date().toISOString(),
         };
+        const visibleFactFields = new Set<string>(Array.isArray(listing._visible_fact_fields) ? listing._visible_fact_fields : []);
+        const incomingFieldSource = (field: string) => visibleFactFields.has(field) ? `${incomingSource}_parser` : incomingSource;
 
         // Structural fields — apply source-trust ranking
         const structuralFields: Array<[string, any]> = [
@@ -3724,23 +3726,23 @@ async function processOneItem(
           }
           if (shouldOverride(field, existingVal)) {
             patch[field] = incomingVal;
-            fieldSourceMap[field] = incomingSource;
+            fieldSourceMap[field] = incomingFieldSource(field);
           }
         }
 
         // Description: longer wins regardless of source
         if (listing.description && (!existing.description || listing.description.length > existing.description.length)) {
           patch.description = listing.description;
-          fieldSourceMap["description"] = incomingSource;
+          fieldSourceMap["description"] = incomingFieldSource("description");
         }
 
         // Features: union of both arrays
         if (listing.features?.length && existing.features) {
           patch.features = [...new Set([...(existing.features as string[]), ...listing.features])];
-          fieldSourceMap["features"] = incomingSource;
+          fieldSourceMap["features"] = incomingFieldSource("features");
         } else if (listing.features?.length && !existing.features) {
           patch.features = listing.features;
-          fieldSourceMap["features"] = incomingSource;
+          fieldSourceMap["features"] = incomingFieldSource("features");
         }
 
         // Images: website images always enrich; Madlan images only fill an empty image set; Yad2 never downloads.
