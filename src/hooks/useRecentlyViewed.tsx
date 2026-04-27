@@ -83,7 +83,8 @@ export function useRecentlyViewed() {
         .from('properties')
         .select('*, agent:agent_id (*)')
         .in('id', guestPropertyIds)
-        .eq('is_published', true);
+        .eq('is_published', true)
+        .eq('verification_status', 'approved');
 
       if (error) throw error;
       

@@ -15,6 +15,7 @@ export function useSimilarProperties(currentProperty: Property | null | undefine
         .from('properties')
         .select('*')
         .eq('is_published', true)
+        .eq('verification_status', 'approved')
         .eq('city', currentProperty.city)
         .eq('listing_status', currentProperty.listing_status)
         .gte('price', priceMin)

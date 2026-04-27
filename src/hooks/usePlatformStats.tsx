@@ -10,16 +10,19 @@ export function usePlatformStats() {
           .from('properties')
           .select('id', { count: 'exact', head: true })
           .eq('is_published', true)
+        .eq('verification_status', 'approved')
           .eq('listing_status', 'for_sale'),
         supabase
           .from('properties')
           .select('id', { count: 'exact', head: true })
           .eq('is_published', true)
+        .eq('verification_status', 'approved')
           .eq('listing_status', 'for_rent'),
         supabase
           .from('projects')
           .select('id', { count: 'exact', head: true })
           .eq('is_published', true)
+        .eq('verification_status', 'approved')
       ]);
       
       return {
