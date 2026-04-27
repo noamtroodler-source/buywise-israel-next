@@ -1746,8 +1746,6 @@ async function geocodeWithRateLimit(address: string, city: string, neighborhood?
 
 // ─── IMAGE HANDLING (with placeholder detection) ────────────────────────────
 
-const DEFAULT_MADLAN_IMAGE_LIMIT = 12;
-
 async function enhanceImage(imagePublicUrl: string, sb: any, bucketName: string, jobId: string): Promise<string> {
   try {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
