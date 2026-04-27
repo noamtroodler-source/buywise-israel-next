@@ -38,7 +38,7 @@ import {
   useArchiveAgencyListing,
   useBulkApproveAgencyListings,
   useMarkAgencyListingNeedsEdit,
-  useSkipAgencyListingReview,
+  useUnpublishAgencyListing,
 } from '@/hooks/useAgencyListings';
 import { useDeleteProperty, useSubmitForReview, useBulkDeleteProperties, useBulkSubmitForReview, useReassignProperty } from '@/hooks/useAgentProperties';
 import { AgentReassignPopover } from '@/components/agency/AgentReassignPopover';
@@ -268,9 +268,8 @@ export default function AgencyListings() {
   const bulkSubmit = useBulkSubmitForReview();
   const reassignProperty = useReassignProperty();
   const approveListing = useApproveAgencyListing();
-  const needsEditListing = useMarkAgencyListingNeedsEdit();
   const archiveListing = useArchiveAgencyListing();
-  const skipListing = useSkipAgencyListingReview();
+  const unpublishListing = useUnpublishAgencyListing();
   const bulkApproveListings = useBulkApproveAgencyListings();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -697,6 +696,7 @@ export default function AgencyListings() {
                         const ReviewIcon = review.icon;
                         const isDraft = listing.verification_status === 'draft';
                         const isApproved = listing.verification_status === 'approved';
+                        const isPublished = listing.is_published === true;
                         const isSelected = selectedIds.has(listing.id);
 
                         return (
@@ -848,40 +848,47 @@ export default function AgencyListings() {
                                         Edit listing
                                       </Link>
                                     </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={() => approveListing.mutate({ propertyId: listing.id, agencyId: agency.id })}>
-                                      <CheckCheck className="h-4 w-4 mr-2" />
-                                      Approve & publish
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => needsEditListing.mutate({ propertyId: listing.id, agencyId: agency.id })}>
-                                      <AlertTriangle className="h-4 w-4 mr-2" />
-                                      Needs quick edit
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => skipListing.mutate({ propertyId: listing.id, agencyId: agency.id })}>
-                                      <Clock className="h-4 w-4 mr-2" />
-                                      Skip for later
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => archiveListing.mutate({ propertyId: listing.id, agencyId: agency.id })}>
-                                      <Archive className="h-4 w-4 mr-2" />
-                                      Not available / archive
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={() => handleDuplicate(listing.id)}>
-                                      <Copy className="h-4 w-4 mr-2" />
-                                      Duplicate
-                                    </DropdownMenuItem>
-                                    {isApproved && listing.listing_status === 'for_sale' && (
+                                    {isPublished ? (
+                                      <>
+                                        <DropdownMenuItem asChild>
+                                          <Link to={`/property/${listing.id}`} target="_blank">
+                                            <Eye className="h-4 w-4 mr-2" />
+                                            View live listing
+                                          </Link>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => unpublishListing.mutate({ propertyId: listing.id, agencyId: agency.id })}>
+                                          <Clock className="h-4 w-4 mr-2" />
+                                          Unpublish
+                                        </DropdownMenuItem>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <DropdownMenuItem onClick={() => approveListing.mutate({ propertyId: listing.id, agencyId: agency.id })}>
+                                          <CheckCheck className="h-4 w-4 mr-2" />
+                                          Publish
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleDuplicate(listing.id)}>
+                                          <Copy className="h-4 w-4 mr-2" />
+                                          Duplicate
+                                        </DropdownMenuItem>
+                                      </>
+                                    )}
+                                    {listing.listing_status === 'for_sale' && (
                                       <DropdownMenuItem onClick={() => updateStatus.mutate({ id: listing.id, listing_status: 'sold' })}>
                                         <Home className="h-4 w-4 mr-2" />
                                         Mark as Sold
                                       </DropdownMenuItem>
                                     )}
-                                    {isApproved && listing.listing_status === 'for_rent' && (
+                                    {listing.listing_status === 'for_rent' && (
                                       <DropdownMenuItem onClick={() => updateStatus.mutate({ id: listing.id, listing_status: 'rented' })}>
                                         <Key className="h-4 w-4 mr-2" />
                                         Mark as Rented
                                       </DropdownMenuItem>
                                     )}
+                                    <DropdownMenuItem onClick={() => archiveListing.mutate({ propertyId: listing.id, agencyId: agency.id })}>
+                                      <Archive className="h-4 w-4 mr-2" />
+                                      Archive
+                                    </DropdownMenuItem>
                                     <DropdownMenuSeparator />
                                     <AlertDialog>
                                       <AlertDialogTrigger asChild>

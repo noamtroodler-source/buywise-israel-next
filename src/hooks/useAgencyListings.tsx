@@ -20,6 +20,7 @@ export interface AgencyListing {
   property_type: string;
   listing_status: string;
   verification_status: string;
+  is_published: boolean | null;
   views_count: number | null;
   total_saves: number;
   images: string[] | null;
@@ -90,7 +91,7 @@ export function useAgencyListingsManagement(agencyId: string | undefined) {
         .from('properties') as any)
         .select(`
           id, title, address, city, price, currency,
-          property_type, listing_status, verification_status,
+          property_type, listing_status, verification_status, is_published,
           views_count, total_saves, images, agent_id,
           primary_agency_id, import_source, merged_source_urls,
           source_url, source_last_checked_at, neighborhood,
@@ -122,7 +123,7 @@ export function useAgencyListingsManagement(agencyId: string | undefined) {
           .from('properties')
           .select(`
             id, title, address, city, price, currency,
-            property_type, listing_status, verification_status,
+            property_type, listing_status, verification_status, is_published,
             views_count, total_saves, images, agent_id,
             primary_agency_id, import_source, merged_source_urls,
             source_url, source_last_checked_at, neighborhood,
@@ -287,3 +288,29 @@ export const useMarkAgencyListingNeedsEdit = () => useReviewMutation('mark_agenc
 export const useArchiveAgencyListing = () => useReviewMutation('archive_agency_listing', 'Listing archived internally');
 export const useSkipAgencyListingReview = () => useReviewMutation('skip_agency_listing_review', 'Listing skipped for later');
 export const useBulkApproveAgencyListings = () => useReviewMutation('bulk_approve_agency_listings', 'Safe listings approved');
+
+export function useUnpublishAgencyListing() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ propertyId }: { propertyId: string; agencyId?: string }) => {
+      const { error } = await supabase
+        .from('properties')
+        .update({ is_published: false } as any)
+        .eq('id', propertyId);
+
+      if (error) throw error;
+    },
+    onSuccess: (_data, variables) => {
+      toast.success('Listing unpublished');
+      if (variables.agencyId) {
+        qc.invalidateQueries({ queryKey: ['agencyListingsManagement', variables.agencyId] });
+        qc.invalidateQueries({ queryKey: ['agency-pending-items', variables.agencyId] });
+      } else {
+        qc.invalidateQueries({ queryKey: ['agencyListingsManagement'] });
+      }
+      qc.invalidateQueries({ queryKey: ['properties'] });
+    },
+    onError: (error: any) => toast.error(error?.message || 'Could not unpublish listing'),
+  });
+}
