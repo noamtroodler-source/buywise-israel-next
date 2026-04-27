@@ -32,6 +32,17 @@ Deno.serve(async (req: Request) => {
 
     for (const sub of expired || []) {
       try {
+        if (sub.entity_type === "agency" && sub.is_founding_partner) {
+          const { error: foundingUpdateError } = await supabase
+            .from("subscriptions")
+            .update({ status: "active", trial_end: null, updated_at: new Date().toISOString() })
+            .eq("id", sub.id);
+
+          if (foundingUpdateError) throw foundingUpdateError;
+          console.log(`Founding agency subscription kept active: ${sub.id}`);
+          continue;
+        }
+
         // For now, set to expired. When PayPlus is live, we'll initiate a charge instead.
         const { error: updateError } = await supabase
           .from("subscriptions")
