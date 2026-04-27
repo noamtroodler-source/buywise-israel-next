@@ -201,7 +201,7 @@ export default function AgencyListings() {
   const [reviewFilter, setReviewFilter] = useState<'all' | 'ready' | 'fix' | AgencyReviewStatus>('all');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
-  const [sort, setSort] = useState<{ key: SortKey; direction: SortDirection } | null>(null);
+  const [sort, setSort] = useState<{ key: SortKey; direction: SortDirection } | null>({ key: 'review', direction: 'desc' });
   const formatPrice = useFormatPrice();
 
   const toggleSelect = useCallback((id: string) => {
@@ -634,7 +634,7 @@ export default function AgencyListings() {
                           </TooltipProvider>
                         </TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead>Review</TableHead>
+                        <TableHead><SortableHeader label="Review" sortKey="review" activeSort={sort} onSort={handleSort} /></TableHead>
                         <TableHead className="text-right"><SortableHeader label="Price" sortKey="price" activeSort={sort} onSort={handleSort} align="right" /></TableHead>
                         <TableHead className="text-center"><SortableHeader label="Views" sortKey="views" activeSort={sort} onSort={handleSort} /></TableHead>
                         <TableHead className="text-center"><SortableHeader label="Saves" sortKey="saves" activeSort={sort} onSort={handleSort} /></TableHead>
