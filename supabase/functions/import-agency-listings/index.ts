@@ -2988,8 +2988,9 @@ async function processOneItem(
 
     if (crossSourceMatchId) {
       // ── MERGE: enrich existing property with better data from this source ──
-      // Source trust ranking: yad2 (1) > madlan (2) > website_scrape (3). Lower number = more trusted.
-      const SOURCE_TRUST: Record<string, number> = { yad2: 1, madlan: 2, website_scrape: 3 };
+      // Source content priority: agency website (1) > Madlan (2) > Yad2 (3). Lower number = preferred.
+      // Agency-owned website content/photos should be the base; portals enrich missing fields and surface conflicts.
+      const SOURCE_TRUST: Record<string, number> = { website_scrape: 1, madlan: 2, yad2: 3 };
       const incomingSource =
         job.source_type === "yad2" ? "yad2" :
         job.source_type === "madlan" ? "madlan" : "website_scrape";
@@ -3013,12 +3014,12 @@ async function processOneItem(
         }> = [];
 
         // Helper: decide if incoming should win for a structural field.
-        // Rule: incoming wins only if (a) existing is empty OR (b) incoming source is strictly more trusted.
+        // Rule: incoming wins only if (a) existing is empty OR (b) incoming source is strictly preferred.
         const shouldOverride = (fieldName: string, existingVal: any): boolean => {
           if (existingVal == null || existingVal === "" || existingVal === 0) return true;
           const existingSrc = fieldSourceMap[fieldName] || existing.import_source || "website_scrape";
           const existingRank = SOURCE_TRUST[existingSrc] ?? 99;
-          return incomingRank < existingRank; // strictly higher trust
+          return incomingRank < existingRank; // strictly preferred source
         };
 
         // Helper: record conflict if values differ meaningfully on a numeric field
