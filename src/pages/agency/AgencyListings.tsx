@@ -255,7 +255,7 @@ export default function AgencyListings() {
     pending: listings.filter(l => l.verification_status === 'pending_review').length,
     needsReview: listings.filter(l => l.agency_review_status === 'needs_review').length,
     ready: listings.filter(l => l.agency_review_status === 'needs_review' && l.safe_to_batch_approve).length,
-    quickFix: listings.filter(l => l.agency_review_status === 'needs_review' && !l.safe_to_batch_approve || l.agency_review_status === 'needs_edit').length,
+    quickFix: listings.filter(l => (l.agency_review_status === 'needs_review' && !l.safe_to_batch_approve) || l.agency_review_status === 'needs_edit').length,
     archived: listings.filter(l => l.agency_review_status === 'archived_stale').length,
     totalViews: listings.reduce((sum, l) => sum + (l.views_count || 0), 0),
   };
@@ -619,6 +619,7 @@ export default function AgencyListings() {
                           </TooltipProvider>
                         </TableHead>
                         <TableHead>Status</TableHead>
+                        <TableHead>Review</TableHead>
                         <TableHead className="text-right"><SortableHeader label="Price" sortKey="price" activeSort={sort} onSort={handleSort} align="right" /></TableHead>
                         <TableHead className="text-center"><SortableHeader label="Views" sortKey="views" activeSort={sort} onSort={handleSort} /></TableHead>
                         <TableHead className="text-center"><SortableHeader label="Saves" sortKey="saves" activeSort={sort} onSort={handleSort} /></TableHead>
@@ -630,6 +631,8 @@ export default function AgencyListings() {
                     <TableBody>
                       {sortedListings.map((listing) => {
                         const status = statusConfig[listing.verification_status as keyof typeof statusConfig] || statusConfig.draft;
+                        const review = reviewConfig[listing.agency_review_status];
+                        const ReviewIcon = review.icon;
                         const isDraft = listing.verification_status === 'draft';
                         const isApproved = listing.verification_status === 'approved';
                         const isSelected = selectedIds.has(listing.id);
@@ -696,6 +699,23 @@ export default function AgencyListings() {
                                 )}
                               </div>
                             </TableCell>
+                            <TableCell>
+                              <div className="space-y-1.5 min-w-[160px]">
+                                <Badge variant="outline" className={cn('text-xs gap-1', review.color)}>
+                                  <ReviewIcon className="h-3 w-3" />
+                                  {review.label}
+                                </Badge>
+                                {listing.has_critical_flags ? (
+                                  <p className="text-[11px] text-destructive">Critical issue needs review</p>
+                                ) : listing.missing_quick_fields.length > 0 ? (
+                                  <p className="text-[11px] text-muted-foreground truncate max-w-[180px]">
+                                    Missing: {listing.missing_quick_fields.slice(0, 2).join(', ')}{listing.missing_quick_fields.length > 2 ? '…' : ''}
+                                  </p>
+                                ) : (
+                                  <p className="text-[11px] text-muted-foreground">Core fields look ready</p>
+                                )}
+                              </div>
+                            </TableCell>
                             <TableCell className="text-right font-medium">
                               {formatPrice(listing.price, listing.currency)}
                             </TableCell>
@@ -732,6 +752,18 @@ export default function AgencyListings() {
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center justify-end gap-1">
+                                {listing.agency_review_status !== 'approved_live' && listing.agency_review_status !== 'archived_stale' && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="rounded-lg text-green-700 hover:text-green-700 hover:bg-green-500/10"
+                                    onClick={() => approveListing.mutate({ propertyId: listing.id, agencyId: agency.id })}
+                                    disabled={approveListing.isPending}
+                                    title="Approve and publish"
+                                  >
+                                    <CheckCheck className="h-4 w-4" />
+                                  </Button>
+                                )}
                                 <Button variant="ghost" size="sm" asChild className="rounded-lg">
                                   <Link to={`/agency/properties/${listing.id}/edit`}>
                                     <Edit className="h-4 w-4" />
