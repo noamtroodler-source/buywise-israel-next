@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowLeft, CreditCard, Receipt, Star, ShieldAlert, Building2 } from 'lucide-react';
+import { ArrowLeft, CreditCard, Receipt, Star, ShieldAlert } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -42,7 +42,7 @@ export default function AgencyBilling() {
         <FoundingMemberBanner />
         <TrialCountdownBanner />
 
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center gap-3">
           <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" asChild className="rounded-xl hover:bg-primary/10">
             <Link to="/agency">
@@ -57,12 +57,6 @@ export default function AgencyBilling() {
               <p className="text-sm text-muted-foreground">Plan, featured placement, and invoices</p>
             </div>
           </div>
-          <Button variant="outline" size="sm" asChild className="rounded-xl border-primary/20 hover:bg-primary/5">
-            <Link to="/agency">
-              <Building2 className="h-4 w-4 mr-2" />
-              Agency Portal
-            </Link>
-          </Button>
         </div>
 
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-1">
