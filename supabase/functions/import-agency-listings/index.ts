@@ -3836,7 +3836,7 @@ async function processOneItem(
 
       const { data: existing } = await sb
         .from("properties")
-        .select("id, price, size_sqm, bedrooms, bathrooms, source_rooms, images, description, address, floor, total_floors, year_built, features, merged_source_urls, source_url, data_quality_score, neighborhood, import_source, field_source_map, agent_id, parking, condition, ac_type, entry_date, original_price, lot_size_sqm, vaad_bayit_monthly, is_furnished, is_accessible, additional_rooms, featured_highlight, lease_term, furnished_status, pets_policy, subletting_allowed, agent_fee_required, bank_guarantee_required, checks_required")
+        .select("id, price, size_sqm, bedrooms, bathrooms, source_rooms, images, description, ai_english_description, address, floor, total_floors, year_built, features, merged_source_urls, source_url, data_quality_score, neighborhood, import_source, field_source_map, agent_id, parking, condition, ac_type, entry_date, original_price, lot_size_sqm, vaad_bayit_monthly, is_furnished, is_accessible, additional_rooms, featured_highlight, lease_term, furnished_status, pets_policy, subletting_allowed, agent_fee_required, bank_guarantee_required, checks_required")
         .eq("id", crossSourceMatchId)
         .single();
 
