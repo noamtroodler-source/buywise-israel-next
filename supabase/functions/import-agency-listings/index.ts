@@ -1426,6 +1426,53 @@ async function handleDiscover(body: any) {
   return { job_id: job.id, total_listings: listingUrls.length, total_discovered: allUrls.length, new_urls: listingUrls.length, skipped_existing: skippedExisting };
 }
 
+async function handleWebsiteDiscoverAsync(body: any) {
+  const { agency_id, website_url, import_type = "resale" } = body;
+  if (!agency_id || !website_url) throw new Error("agency_id and website_url required");
+
+  const sb = supabaseAdmin();
+  const formattedUrl = normalizeUrl(website_url);
+  const { data: agency, error: agencyErr } = await sb
+    .from("agencies")
+    .select("id")
+    .eq("id", agency_id)
+    .single();
+  if (agencyErr || !agency) throw new Error("Agency not found");
+
+  const { data: job, error: jobErr } = await sb
+    .from("import_jobs")
+    .insert({
+      agency_id,
+      website_url: formattedUrl,
+      status: "discovering",
+      total_urls: 0,
+      discovered_urls: [],
+      processed_count: 0,
+      failed_count: 0,
+      import_type,
+      source_type: "website",
+    })
+    .select("id")
+    .single();
+  if (jobErr || !job) throw new Error(`Failed to create import job: ${jobErr?.message || "Unknown error"}`);
+
+  EdgeRuntime.waitUntil(
+    handleDiscover({ ...body, website_url: formattedUrl, job_id: job.id }).catch(async (err) => {
+      console.error(`[Website] background discovery failed for job ${job.id}:`, err);
+      await sb.from("import_jobs").update({ status: "failed" }).eq("id", job.id);
+    })
+  );
+
+  return {
+    job_id: job.id,
+    total_listings: 0,
+    total_discovered: 0,
+    new_urls: 0,
+    skipped_existing: 0,
+    started_async: true,
+  };
+}
+
 // ─── HELPERS ────────────────────────────────────────────────────────────────
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
