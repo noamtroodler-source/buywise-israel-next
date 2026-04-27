@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Loader2, ExternalLink, Check, X, Sparkles, Home, MapPin, DollarSign, Bed, Bath, Ruler, Building, Calendar, Car, Thermometer, Image as ImageIcon, FileText, AlertCircle, CheckCircle2, XCircle } from 'lucide-react';
+import { Loader2, ExternalLink, Check, X, Sparkles, Home, Ruler, Image as ImageIcon, FileText, AlertCircle, CheckCircle2, XCircle } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
