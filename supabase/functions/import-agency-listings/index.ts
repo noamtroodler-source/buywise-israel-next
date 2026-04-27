@@ -1104,6 +1104,53 @@ function isStrictSameUnitDuplicate(existing: Record<string, any>, listing: Recor
   return false;
 }
 
+function textSimilarity(a: string | null | undefined, b: string | null | undefined): number {
+  const left = normalizeTextKey(a || "");
+  const right = normalizeTextKey(b || "");
+  if (!left || !right) return 0;
+  if (left === right) return 1;
+  if (left.includes(right) || right.includes(left)) return Math.min(left.length, right.length) / Math.max(left.length, right.length);
+  const aSet = new Set(left.split(" ").filter((w) => w.length > 2));
+  const bSet = new Set(right.split(" ").filter((w) => w.length > 2));
+  if (!aSet.size || !bSet.size) return 0;
+  let intersection = 0;
+  for (const token of aSet) if (bSet.has(token)) intersection++;
+  return intersection / Math.max(aSet.size, bSet.size);
+}
+
+function isLikelySameAgencyDuplicate(existing: Record<string, any>, listing: Record<string, any>, incomingUrl?: string | null): boolean {
+  if ((existing.listing_status || "for_sale") !== (listing.listing_status || "for_sale")) return false;
+  if (existing.city && listing.city && normalizeCityStr(existing.city) !== normalizeCityStr(listing.city)) return false;
+
+  const existingUrl = canonicalUrlIdentity(existing.source_url);
+  const incomingCanonicalUrl = canonicalUrlIdentity(incomingUrl);
+  if (existingUrl && incomingCanonicalUrl && existingUrl === incomingCanonicalUrl) return true;
+
+  const existingPrice = Number(existing.price || 0);
+  const incomingPrice = Number(listing.price || 0);
+  if (!existingPrice || !incomingPrice) return false;
+  const priceDiff = Math.abs(existingPrice - incomingPrice) / Math.max(existingPrice, incomingPrice);
+  const samePrice = priceDiff <= 0.001;
+  const nearPrice = priceDiff <= 0.03;
+  if (!samePrice && !nearPrice) return false;
+
+  const sameBeds = existing.bedrooms == null || listing.bedrooms == null || Math.abs(Math.floor(existing.bedrooms) - Math.floor(listing.bedrooms)) <= 1;
+  if (!sameBeds) return false;
+
+  const existingAddress = normalizeAddressForDedup(existing.address || "");
+  const incomingAddress = normalizeAddressForDedup(listing.address || "");
+  const addressScore = textSimilarity(existingAddress, incomingAddress);
+  const titleScore = textSimilarity(existing.title, listing.title);
+  const locationScore = textSimilarity(`${existing.title || ""} ${existing.address || ""} ${existing.neighborhood || ""}`, `${listing.title || ""} ${listing.address || ""} ${listing.neighborhood || ""}`);
+  const sizeClose = existing.size_sqm && listing.size_sqm
+    ? Math.abs(Number(existing.size_sqm) - Number(listing.size_sqm)) <= Math.max(8, Math.max(Number(existing.size_sqm), Number(listing.size_sqm)) * 0.10)
+    : false;
+
+  if (samePrice && (addressScore >= 0.45 || titleScore >= 0.45 || locationScore >= 0.45 || sizeClose)) return true;
+  if (nearPrice && (addressScore >= 0.70 || titleScore >= 0.70 || locationScore >= 0.70 || (sizeClose && locationScore >= 0.45))) return true;
+  return false;
+}
+
 /** Clean address for storage — strips apartment/floor info and street prefixes for consistency */
 function normalizeAddressForStorage(address: string): string {
   let norm = address.trim();
@@ -1264,6 +1311,23 @@ function normalizeUrl(raw: string): string {
     return parsed.toString();
   } catch {
     return url.toLowerCase().replace(/\/+$/, "");
+  }
+}
+
+function canonicalUrlIdentity(raw: string | null | undefined): string {
+  if (!raw) return "";
+  try {
+    const normalized = normalizeUrl(raw);
+    const parsed = new URL(normalized);
+    parsed.search = "";
+    parsed.hash = "";
+    return decodeURIComponent(parsed.toString()).toLowerCase().replace(/\/+$/, "");
+  } catch {
+    try {
+      return decodeURIComponent(String(raw)).toLowerCase().split(/[?#]/)[0].replace(/\/+$/, "");
+    } catch {
+      return String(raw).toLowerCase().split(/[?#]/)[0].replace(/\/+$/, "");
+    }
   }
 }
 
@@ -3756,41 +3820,36 @@ async function processOneItem(
     imageUrls = await collectAllowedSourceImages(job.source_type, listing, structuredData, pageHtml, item.url, sb, jobId);
     if (imageUrls.length > 0) dlog(`Downloaded ${imageUrls.length} allowed ${job.source_type || "website"} images for ${item.url}`);
 
-    // ── Intra-agency strict dedup ──
+    let crossSourceMatchId: string | null = null;
+
+    // ── Intra-agency strict/price-led dedup ──
     // Keep same-building/multi-unit inventory, but block exact same-unit repeats
     // that arrive through alternate URLs, portal mirrors, or URL encoding variants.
     if (job.agency_id && listing.city && (listing.address || (listing.size_sqm && listing.price && listing.bedrooms != null))) {
       const query = sb
         .from("properties")
-        .select("id, title, address, city, listing_status, price, size_sqm, bedrooms, bathrooms, floor, source_url")
+        .select("id, title, address, city, neighborhood, listing_status, price, size_sqm, bedrooms, bathrooms, floor, source_url")
         .or(`primary_agency_id.eq.${job.agency_id},claimed_by_agency_id.eq.${job.agency_id}`)
         .eq("listing_status", listing.listing_status || "for_sale")
         .ilike("city", listing.city.trim())
-        .limit(50);
+        .limit(100);
 
       if (listing.bedrooms != null) query.eq("bedrooms", Math.floor(listing.bedrooms));
       if (listing.size_sqm) query.gte("size_sqm", listing.size_sqm - 3).lte("size_sqm", listing.size_sqm + 3);
       if (listing.price) query.gte("price", listing.price * 0.97).lte("price", listing.price * 1.03);
 
       const { data: sameAgencyCandidates } = await query;
-      const sameUnit = (sameAgencyCandidates || []).find((candidate: any) => isStrictSameUnitDuplicate(candidate, listing));
+      const sameUnit = (sameAgencyCandidates || []).find((candidate: any) =>
+        isStrictSameUnitDuplicate(candidate, listing) || isLikelySameAgencyDuplicate(candidate, listing, item.url)
+      );
       if (sameUnit) {
-        await sb.from("import_job_items").update({
-          status: "skipped",
-          error_message: `Duplicate: same agency same unit already imported as property ${sameUnit.id}`,
-          error_type: "permanent",
-          property_id: sameUnit.id,
-          extracted_data: { ...listing, duplicate_of: sameUnit.id },
-        }).eq("id", item.id);
-        return { succeeded: false };
+        crossSourceMatchId = sameUnit.id;
       }
     }
 
     // ── DEDUP: Tier 3 — Cross-source merge ──
     // If this listing already exists from another source, MERGE rather than duplicate.
     // Merge strategy: keep the richer version of each field, track all source URLs.
-    let crossSourceMatchId: string | null = null;
-
     // Search by address + city (most reliable)
     if (listing.address && listing.city) {
       const normalizedAddr = normalizeAddressForDedup(listing.address);
