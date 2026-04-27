@@ -185,10 +185,6 @@ function isGoodEnglishDescription(desc: string | undefined): boolean {
 }
 
 function generateListingDescription(listing: any): string | null {
-  // If already good English, keep it
-  if (isGoodEnglishDescription(listing.description)) {
-    return listing.description;
-  }
   // Build a basic English description from extracted fields
   const type = formatPropertyType(listing.property_type).toLowerCase();
   const parts: string[] = [];
@@ -244,6 +240,89 @@ function generateListingDescription(listing: any): string | null {
   }
 
   return parts.length > 1 ? (parts.join(", ") + ".").replace(/^./, c => c.toUpperCase()) : null;
+}
+
+async function generateBuyWiseTitleAndDescription(listing: any, sourceText: string, lovableKey: string, jobId?: string, sb?: any): Promise<{ title: string; description: string; aiGenerated: boolean }> {
+  const fallbackTitle = generateListingTitle(listing);
+  const fallbackDescription = generateListingDescription(listing) || `${formatPropertyType(listing.property_type)} in ${listing.neighborhood || listing.city || "Israel"}.`;
+  if (!lovableKey) return { title: fallbackTitle, description: fallbackDescription, aiGenerated: false };
+
+  const facts = {
+    property_type: listing.property_type,
+    listing_status: listing.listing_status,
+    city: listing.city,
+    neighborhood: listing.neighborhood,
+    address: listing.address,
+    price: listing.price,
+    currency: listing.currency || "ILS",
+    bedrooms: listing.bedrooms,
+    source_rooms: listing.source_rooms,
+    bathrooms: listing.bathrooms,
+    size_sqm: listing.size_sqm,
+    floor: listing.floor,
+    total_floors: listing.total_floors,
+    condition: listing.condition,
+    features: Array.isArray(listing.features) ? listing.features.slice(0, 12) : [],
+    parking: listing.parking,
+    lease_term: listing.lease_term,
+    furnished_status: listing.furnished_status,
+    pets_policy: listing.pets_policy,
+    entry_date: listing.entry_date,
+  };
+
+  try {
+    const res = await fetchWithTimeout("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "google/gemini-3-flash-preview",
+        messages: [
+          {
+            role: "system",
+            content: "You write BuyWise-quality English listing titles and descriptions for international buyers in Israel. Use only supplied facts/source text. Do not invent amenities, views, renovations, exact locations, agent names, phone numbers, or urgency. No Hebrew. Description should be concise, factual, polished, 45-110 words.",
+          },
+          {
+            role: "user",
+            content: JSON.stringify({ facts, source_text: (sourceText || "").slice(0, 4000), fallback_title: fallbackTitle, fallback_description: fallbackDescription }),
+          },
+        ],
+        tools: [{
+          type: "function",
+          function: {
+            name: "write_listing_copy",
+            description: "Return a fresh English title and BuyWise-quality description grounded only in the provided listing facts.",
+            parameters: {
+              type: "object",
+              properties: {
+                title: { type: "string", description: "Clear English title, 35-80 characters." },
+                description: { type: "string", description: "Polished English listing description, 45-110 words, no unsupported claims." },
+              },
+              required: ["title", "description"],
+              additionalProperties: false,
+            },
+          },
+        }],
+        tool_choice: { type: "function", function: { name: "write_listing_copy" } },
+      }),
+    }, 20_000);
+
+    if (!res.ok) {
+      console.warn(`BuyWise copy generation failed (${res.status})`);
+      return { title: fallbackTitle, description: fallbackDescription, aiGenerated: false };
+    }
+
+    const data = await res.json();
+    const args = data.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+    if (!args) return { title: fallbackTitle, description: fallbackDescription, aiGenerated: false };
+    if (sb && jobId) await trackCost(sb, jobId, "ai_tokens", Math.ceil((JSON.stringify(facts).length + sourceText.length + args.length) / 4), "tokens");
+    const parsed = JSON.parse(args);
+    const title = isGoodEnglishTitle(parsed.title) ? toTitleCase(parsed.title) : fallbackTitle;
+    const description = isGoodEnglishDescription(parsed.description) ? parsed.description.trim() : fallbackDescription;
+    return { title, description, aiGenerated: true };
+  } catch (err) {
+    console.warn("BuyWise copy generation error:", err);
+    return { title: fallbackTitle, description: fallbackDescription, aiGenerated: false };
+  }
 }
 
 
@@ -3623,6 +3702,17 @@ async function processOneItem(
 
     // ── CONFIDENCE SCORING ──
     let confidenceScore = computeConfidenceScore(listing, cityMatchType, validationWarnings, !!listing._has_structured_data, cmsExtracted);
+    const copy = await generateBuyWiseTitleAndDescription(
+      listing,
+      `${listing.title || ""}\n${listing.description || ""}\n${structuredData?.og_title || ""}\n${structuredData?.og_description || ""}\n${markdown}`,
+      lovableKey,
+      jobId,
+      sb,
+    );
+    listing.ai_title = copy.title;
+    listing.ai_english_description = copy.description;
+    listing.description = copy.description;
+    if (!copy.aiGenerated) validationWarnings.push("ai_description_fallback_generated_from_facts");
 
     // Apply penalty for simplified prompt extraction
     if (usedSimplifiedPrompt) {
@@ -3746,7 +3836,7 @@ async function processOneItem(
 
       const { data: existing } = await sb
         .from("properties")
-        .select("id, price, size_sqm, bedrooms, bathrooms, source_rooms, images, description, address, floor, total_floors, year_built, features, merged_source_urls, source_url, data_quality_score, neighborhood, import_source, field_source_map, agent_id, parking, condition, ac_type, entry_date, original_price, lot_size_sqm, vaad_bayit_monthly, is_furnished, is_accessible, additional_rooms, featured_highlight, lease_term, furnished_status, pets_policy, subletting_allowed, agent_fee_required, bank_guarantee_required, checks_required")
+        .select("id, price, size_sqm, bedrooms, bathrooms, source_rooms, images, description, ai_english_description, address, floor, total_floors, year_built, features, merged_source_urls, source_url, data_quality_score, neighborhood, import_source, field_source_map, agent_id, parking, condition, ac_type, entry_date, original_price, lot_size_sqm, vaad_bayit_monthly, is_furnished, is_accessible, additional_rooms, featured_highlight, lease_term, furnished_status, pets_policy, subletting_allowed, agent_fee_required, bank_guarantee_required, checks_required")
         .eq("id", crossSourceMatchId)
         .single();
 
@@ -3857,8 +3947,9 @@ async function processOneItem(
         }
 
         // Description: longer wins regardless of source
-        if (listing.description && (!existing.description || listing.description.length > existing.description.length)) {
+        if (listing.description && (!existing.description || existing.description === existing.ai_english_description || listing.description.length > existing.description.length)) {
           patch.description = listing.description;
+          patch.ai_english_description = listing.ai_english_description || listing.description;
           fieldSourceMap["description"] = incomingFieldSource("description");
         }
 
@@ -4007,8 +4098,9 @@ async function processOneItem(
       .from("properties")
       .insert({
         agent_id: agentId,
-        title: generateListingTitle(listing, new URL(item.url).hostname),
-        description: generateListingDescription(listing) || listing.description || null,
+        title: listing.ai_title || generateListingTitle(listing, new URL(item.url).hostname),
+        description: listing.description,
+        ai_english_description: listing.ai_english_description,
         property_type: listing.property_type || "apartment",
         listing_status: listing.listing_status || "for_sale",
         price: listing.price || 0,
@@ -4407,13 +4499,18 @@ async function handleApproveItem(body: any) {
   }
 
   const entryDate = listing.entry_date === "immediate" ? new Date().toISOString().split("T")[0] : listing.entry_date || null;
+  const copy = await generateBuyWiseTitleAndDescription(listing, `${listing.title || ""}\n${listing.description || ""}`, Deno.env.get("LOVABLE_API_KEY") || "", undefined, sb);
+  listing.ai_title = copy.title;
+  listing.ai_english_description = copy.description;
+  listing.description = copy.description;
 
   const { data: property, error: propErr } = await sb
     .from("properties")
     .insert({
       agent_id: agentId,
-      title: generateListingTitle(listing, item.import_jobs?.website_url),
-      description: listing.description || null,
+      title: listing.ai_title || generateListingTitle(listing, item.import_jobs?.website_url),
+      description: listing.description,
+      ai_english_description: listing.ai_english_description,
       property_type: listing.property_type || "apartment",
       listing_status: listing.listing_status || "for_sale",
       price: listing.price || 0,
@@ -5323,6 +5420,7 @@ async function runMadlanAgencyDiscoverJob(params: {
   const { jobId, agencyId, websiteUrl, effectiveImportType } = params;
   const sb = supabaseAdmin();
   const APIFY_API_KEY = Deno.env.get("APIFY_API_KEY");
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY") || "";
 
   try {
     dlog(`[Madlan/Apify] background discovery started for job ${jobId}: ${websiteUrl}`);
@@ -5496,7 +5594,7 @@ async function runMadlanAgencyDiscoverJob(params: {
           const address = madlanItem.address || (madlanItem.streetName ? `${madlanItem.streetName} ${madlanItem.streetNumber || ""}`.trim() : "");
 
           // Build listing object for title/description generation
-          const listing = {
+          const listing: any = {
             property_type: "apartment",
             listing_status: listingStatus,
             price: madlanItem.price || 0,
@@ -5519,8 +5617,16 @@ async function runMadlanAgencyDiscoverJob(params: {
             image_urls: madlanItem.images || madlanItem.photos || madlanItem.imageUrls || madlanItem.media || [],
           };
 
-          const title = generateListingTitle(listing);
-          const description = generateListingDescription(listing);
+          const copy = await generateBuyWiseTitleAndDescription(
+            listing,
+            `${madlanItem.title || ""}\n${madlanItem.description || madlanItem.shortDescription || madlanItem.descriptionText || ""}`,
+            LOVABLE_API_KEY,
+            jobId,
+            sb,
+          );
+          const title = copy.title;
+          const description = copy.description;
+          listing.ai_english_description = copy.description;
 
           // Geocode the address
           let latitude: number | null = null;
@@ -5555,7 +5661,7 @@ async function runMadlanAgencyDiscoverJob(params: {
             if (normalizedAddr.length > 0) {
               const { data: byAddress } = await sb
                 .from("properties")
-                .select("id, price, size_sqm, bedrooms, bathrooms, source_rooms, images, description, address, floor, total_floors, features, merged_source_urls, source_url, data_quality_score, neighborhood, import_source, field_source_map, parking, condition, ac_type, entry_date, vaad_bayit_monthly, is_furnished, is_accessible")
+                .select("id, price, size_sqm, bedrooms, bathrooms, source_rooms, images, description, ai_english_description, address, floor, total_floors, features, merged_source_urls, source_url, data_quality_score, neighborhood, import_source, field_source_map, parking, condition, ac_type, entry_date, vaad_bayit_monthly, is_furnished, is_accessible")
                 .ilike("address", addrPattern)
                 .ilike("city", String(city).trim())
                 .not("import_source", "is", null)
@@ -5566,7 +5672,7 @@ async function runMadlanAgencyDiscoverJob(params: {
           if (!existingMatch && city && bedrooms != null && madlanItem.areaSqm && madlanItem.price) {
             const { data: byFacts } = await sb
               .from("properties")
-              .select("id, price, size_sqm, bedrooms, bathrooms, source_rooms, images, description, address, floor, total_floors, features, merged_source_urls, source_url, data_quality_score, neighborhood, import_source, field_source_map, parking, condition, ac_type, entry_date, vaad_bayit_monthly, is_furnished, is_accessible")
+              .select("id, price, size_sqm, bedrooms, bathrooms, source_rooms, images, description, ai_english_description, address, floor, total_floors, features, merged_source_urls, source_url, data_quality_score, neighborhood, import_source, field_source_map, parking, condition, ac_type, entry_date, vaad_bayit_monthly, is_furnished, is_accessible")
               .ilike("city", String(city).trim())
               .eq("bedrooms", Math.floor(bedrooms))
               .gte("size_sqm", Number(madlanItem.areaSqm) - 5)
@@ -5602,6 +5708,7 @@ async function runMadlanAgencyDiscoverJob(params: {
             }
             if (description && (!existingMatch.description || description.length > existingMatch.description.length)) {
               patch.description = description;
+              patch.ai_english_description = description;
               fieldSourceMap.description = "madlan";
             }
             if (features.length) {
@@ -5624,7 +5731,8 @@ async function runMadlanAgencyDiscoverJob(params: {
             .insert({
               agent_id: agentId,
               title,
-              description: description || null,
+              description,
+              ai_english_description: description,
               property_type: "apartment",
               listing_status: listingStatus,
               price: madlanItem.price || 0,
