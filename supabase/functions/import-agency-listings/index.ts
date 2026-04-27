@@ -1746,8 +1746,6 @@ async function geocodeWithRateLimit(address: string, city: string, neighborhood?
 
 // ─── IMAGE HANDLING (with placeholder detection) ────────────────────────────
 
-const DEFAULT_MADLAN_IMAGE_LIMIT = 12;
-
 async function enhanceImage(imagePublicUrl: string, sb: any, bucketName: string, jobId: string): Promise<string> {
   try {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
@@ -2385,6 +2383,18 @@ async function collectAllowedSourceImages(
     return maxImages == null ? urls : urls.slice(0, maxImages);
   }
   return [];
+}
+
+function sanitizeEntryDate(raw: any): string | null {
+  if (!raw || typeof raw !== "string") return null;
+  const trimmed = raw.trim().toLowerCase();
+  if (trimmed === "immediate" || trimmed === "מיידי" || trimmed === "מיידית") {
+    return new Date().toISOString().split("T")[0];
+  }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+  const match = trimmed.match(/^(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})$/);
+  if (match) return `${match[3]}-${match[2].padStart(2, "0")}-${match[1].padStart(2, "0")}`;
+  return null;
 }
 
 // ─── STRUCTURED DATA EXTRACTION (JSON-LD, Open Graph) ───────────────────────
@@ -3437,7 +3447,7 @@ async function processOneItem(
 
       const { data: existing } = await sb
         .from("properties")
-        .select("id, price, size_sqm, bedrooms, images, description, address, floor, year_built, features, merged_source_urls, source_url, data_quality_score, neighborhood, import_source, field_source_map, agent_id")
+        .select("id, price, size_sqm, bedrooms, bathrooms, source_rooms, images, description, address, floor, total_floors, year_built, features, merged_source_urls, source_url, data_quality_score, neighborhood, import_source, field_source_map, agent_id, parking, condition, ac_type, entry_date, original_price, lot_size_sqm, vaad_bayit_monthly, is_furnished, is_accessible, additional_rooms, featured_highlight, lease_term, furnished_status, pets_policy, subletting_allowed, agent_fee_required, bank_guarantee_required, checks_required")
         .eq("id", crossSourceMatchId)
         .single();
 
@@ -3503,10 +3513,29 @@ async function processOneItem(
           ["price", listing.price > 0 ? listing.price : null],
           ["size_sqm", listing.size_sqm && listing.size_sqm > 0 ? listing.size_sqm : null],
           ["bedrooms", listing.bedrooms != null ? Math.floor(listing.bedrooms) : null],
+          ["bathrooms", listing.bathrooms != null ? Math.floor(listing.bathrooms) : null],
+          ["source_rooms", listing.source_rooms ?? null],
           ["floor", listing.floor ?? null],
+          ["total_floors", listing.total_floors ?? null],
           ["year_built", listing.year_built ?? null],
           ["parking", listing.parking ?? null],
           ["condition", listing.condition ?? null],
+          ["ac_type", listing.ac_type || null],
+          ["entry_date", sanitizeEntryDate(listing.entry_date)],
+          ["original_price", listing.original_price ?? null],
+          ["lot_size_sqm", listing.lot_size_sqm ?? null],
+          ["vaad_bayit_monthly", listing.vaad_bayit_monthly ?? null],
+          ["is_furnished", listing.is_furnished === true ? true : null],
+          ["is_accessible", listing.is_accessible === true ? true : null],
+          ["additional_rooms", listing.additional_rooms ?? null],
+          ["featured_highlight", listing.featured_highlight || null],
+          ["lease_term", listing.lease_term || null],
+          ["furnished_status", listing.furnished_status || null],
+          ["pets_policy", listing.pets_policy || null],
+          ["subletting_allowed", listing.subletting_allowed === true ? true : null],
+          ["agent_fee_required", listing.agent_fee_required ?? null],
+          ["bank_guarantee_required", listing.bank_guarantee_required ?? null],
+          ["checks_required", listing.checks_required ?? null],
           ["address", listing.address ? normalizeAddressForStorage(listing.address) : null],
           ["neighborhood", listing.neighborhood ?? null],
         ];
@@ -3672,18 +3701,7 @@ async function processOneItem(
 
     // Insert property
     // Sanitize entry_date: only accept valid ISO dates, convert "immediate"/Hebrew equivalents to today
-    const entryDate = (() => {
-      const raw = listing.entry_date;
-      if (!raw || typeof raw !== "string") return null;
-      const trimmed = raw.trim().toLowerCase();
-      if (trimmed === "immediate" || trimmed === "מיידי" || trimmed === "מיידית") {
-        return new Date().toISOString().split("T")[0];
-      }
-      if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
-      const match = trimmed.match(/^(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})$/);
-      if (match) return `${match[3]}-${match[2].padStart(2,'0')}-${match[1].padStart(2,'0')}`;
-      return null; // Hebrew text like "גמישה" → null
-    })();
+    const entryDate = sanitizeEntryDate(listing.entry_date);
 
     const { data: property, error: propErr } = await sb
       .from("properties")
@@ -3748,7 +3766,7 @@ async function processOneItem(
         field_source_map: (() => {
           const src = job.source_type === "yad2" ? "yad2" : job.source_type === "madlan" ? "madlan" : "website_scrape";
           const map: Record<string, string> = {};
-          for (const f of ["price", "size_sqm", "bedrooms", "floor", "year_built", "address", "neighborhood", "description", "features"]) {
+          for (const f of ["price", "size_sqm", "bedrooms", "bathrooms", "source_rooms", "floor", "total_floors", "year_built", "parking", "condition", "ac_type", "entry_date", "original_price", "lot_size_sqm", "vaad_bayit_monthly", "is_furnished", "is_accessible", "additional_rooms", "featured_highlight", "lease_term", "furnished_status", "pets_policy", "subletting_allowed", "agent_fee_required", "bank_guarantee_required", "checks_required", "address", "neighborhood", "description", "features"]) {
             if ((listing as any)[f] != null && (listing as any)[f] !== "") map[f] = src;
           }
           return map;
@@ -5166,8 +5184,11 @@ async function runMadlanAgencyDiscoverJob(params: {
           const features: string[] = [];
           if (madlanItem.hasElevator) features.push("elevator");
           if (madlanItem.hasBalcony) features.push("balcony");
-          if (madlanItem.hasSecureRoom) features.push("safe_room");
+          if (madlanItem.hasSecureRoom) features.push("mamad");
           if (madlanItem.parking && madlanItem.parking > 0) features.push("parking");
+          if (madlanItem.hasStorage) features.push("storage");
+          if (madlanItem.hasAirConditioner || madlanItem.hasAirConditioning) features.push("air_conditioning");
+          if (madlanItem.isFurnished) features.push("furnished");
 
           const city = madlanItem.city || cities[0];
           const address = madlanItem.address || (madlanItem.streetName ? `${madlanItem.streetName} ${madlanItem.streetNumber || ""}`.trim() : "");
@@ -5184,8 +5205,15 @@ async function runMadlanAgencyDiscoverJob(params: {
             size_sqm: madlanItem.areaSqm || null,
             address,
             floor: madlanItem.floor || null,
+            total_floors: madlanItem.totalFloors || madlanItem.total_floors || null,
+            bathrooms: madlanItem.bathrooms || madlanItem.bathroomCount || null,
             condition: madlanItem.condition || null,
             parking: madlanItem.parking || 0,
+            ac_type: madlanItem.hasCentralAir || madlanItem.centralAir ? "central" : (madlanItem.hasAirConditioner || madlanItem.hasAirConditioning ? "split" : null),
+            is_furnished: madlanItem.isFurnished === true,
+            is_accessible: madlanItem.isAccessible === true,
+            entry_date: madlanItem.entryDate || madlanItem.entry_date || null,
+            vaad_bayit_monthly: madlanItem.vaadBayit || madlanItem.houseCommittee || null,
             image_urls: madlanItem.images || madlanItem.photos || madlanItem.imageUrls || madlanItem.media || [],
           };
 
@@ -5215,7 +5243,7 @@ async function runMadlanAgencyDiscoverJob(params: {
           if (!flattenImageCandidates(listing.image_urls).length) {
             detailHtml = await fetchMadlanDetailHtml(listingUrl);
           }
-          const madlanImages = await collectAllowedSourceImages("madlan", listing, null, detailHtml, listingUrl, sb, jobId, DEFAULT_MADLAN_IMAGE_LIMIT);
+          const madlanImages = await collectAllowedSourceImages("madlan", listing, null, detailHtml, listingUrl, sb, jobId);
           if (madlanImages.length === 0) totalImageFailures++;
 
           let existingMatch: any = null;
@@ -5225,7 +5253,7 @@ async function runMadlanAgencyDiscoverJob(params: {
             if (normalizedAddr.length > 0) {
               const { data: byAddress } = await sb
                 .from("properties")
-                .select("id, images, merged_source_urls, source_url, field_source_map")
+                .select("id, price, size_sqm, bedrooms, bathrooms, source_rooms, images, description, address, floor, total_floors, features, merged_source_urls, source_url, data_quality_score, neighborhood, import_source, field_source_map, parking, condition, ac_type, entry_date, vaad_bayit_monthly, is_furnished, is_accessible")
                 .ilike("address", addrPattern)
                 .ilike("city", String(city).trim())
                 .not("import_source", "is", null)
@@ -5236,7 +5264,7 @@ async function runMadlanAgencyDiscoverJob(params: {
           if (!existingMatch && city && bedrooms != null && madlanItem.areaSqm && madlanItem.price) {
             const { data: byFacts } = await sb
               .from("properties")
-              .select("id, images, merged_source_urls, source_url, field_source_map")
+              .select("id, price, size_sqm, bedrooms, bathrooms, source_rooms, images, description, address, floor, total_floors, features, merged_source_urls, source_url, data_quality_score, neighborhood, import_source, field_source_map, parking, condition, ac_type, entry_date, vaad_bayit_monthly, is_furnished, is_accessible")
               .ilike("city", String(city).trim())
               .eq("bedrooms", Math.floor(bedrooms))
               .gte("size_sqm", Number(madlanItem.areaSqm) - 5)
@@ -5249,16 +5277,41 @@ async function runMadlanAgencyDiscoverJob(params: {
           }
 
           if (existingMatch) {
+            const fieldSourceMap: Record<string, string> = (existingMatch.field_source_map as any) || {};
             const mergedUrls: string[] = Array.isArray(existingMatch.merged_source_urls)
               ? [...existingMatch.merged_source_urls]
               : (existingMatch.source_url ? [existingMatch.source_url] : []);
             if (!mergedUrls.includes(listingUrl)) mergedUrls.push(listingUrl);
             const patch: Record<string, any> = { merged_source_urls: mergedUrls, source_last_checked_at: new Date().toISOString() };
+            const madlanFillFields: Array<[string, any]> = [
+              ["price", listing.price || null], ["size_sqm", listing.size_sqm || null], ["bedrooms", bedrooms],
+              ["bathrooms", listing.bathrooms != null ? Math.floor(listing.bathrooms) : null], ["source_rooms", rooms],
+              ["floor", listing.floor ?? null], ["total_floors", listing.total_floors ?? null], ["parking", listing.parking ?? null],
+              ["condition", listing.condition || null], ["ac_type", listing.ac_type || null], ["entry_date", sanitizeEntryDate(listing.entry_date)],
+              ["vaad_bayit_monthly", listing.vaad_bayit_monthly ?? null], ["is_furnished", listing.is_furnished === true ? true : null],
+              ["is_accessible", listing.is_accessible === true ? true : null], ["neighborhood", listing.neighborhood || null],
+            ];
+            for (const [field, incomingVal] of madlanFillFields) {
+              const existingVal = existingMatch[field];
+              if (incomingVal != null && (existingVal == null || existingVal === "" || existingVal === 0 || existingVal === false)) {
+                patch[field] = incomingVal;
+                fieldSourceMap[field] = "madlan";
+              }
+            }
+            if (description && (!existingMatch.description || description.length > existingMatch.description.length)) {
+              patch.description = description;
+              fieldSourceMap.description = "madlan";
+            }
+            if (features.length) {
+              patch.features = [...new Set([...(Array.isArray(existingMatch.features) ? existingMatch.features : []), ...features])];
+              fieldSourceMap.features = "madlan";
+            }
             const existingImages = Array.isArray(existingMatch.images) ? existingMatch.images : [];
             if (existingImages.length === 0 && madlanImages.length > 0) {
               patch.images = madlanImages;
-              patch.field_source_map = { ...((existingMatch.field_source_map as any) || {}), images: "madlan_fallback" };
+              fieldSourceMap.images = "madlan_fallback";
             }
+            patch.field_source_map = fieldSourceMap;
             await sb.from("properties").update(patch).eq("id", existingMatch.id);
             totalMerged++;
             continue;
@@ -5279,12 +5332,19 @@ async function runMadlanAgencyDiscoverJob(params: {
               neighborhood: madlanItem.neighbourhood || null,
               latitude, longitude,
               bedrooms,
+              bathrooms: listing.bathrooms != null ? Math.floor(listing.bathrooms) : null,
               source_rooms: rooms,
               size_sqm: madlanItem.areaSqm || null,
               floor: madlanItem.floor ? parseInt(madlanItem.floor) || null : null,
+              total_floors: listing.total_floors ? parseInt(String(listing.total_floors)) || null : null,
               features,
               parking: madlanItem.parking || 0,
               condition: madlanItem.condition || null,
+              ac_type: listing.ac_type || null,
+              entry_date: sanitizeEntryDate(listing.entry_date),
+              vaad_bayit_monthly: listing.vaad_bayit_monthly ?? null,
+              is_furnished: listing.is_furnished ?? false,
+              is_accessible: listing.is_accessible ?? false,
               images: madlanImages.length > 0 ? madlanImages : null,
               // Always import as draft — agency owner must review before going live
               is_published: false,
@@ -5300,7 +5360,12 @@ async function runMadlanAgencyDiscoverJob(params: {
               is_claimed: false,
               source_status: "active",
               source_last_checked_at: new Date().toISOString(),
-              field_source_map: madlanImages.length > 0 ? { images: "madlan_fallback" } : null,
+              field_source_map: {
+                price: "madlan", size_sqm: "madlan", bedrooms: "madlan", bathrooms: "madlan", source_rooms: "madlan",
+                floor: "madlan", total_floors: "madlan", parking: "madlan", condition: "madlan", ac_type: "madlan",
+                entry_date: "madlan", vaad_bayit_monthly: "madlan", is_furnished: "madlan", is_accessible: "madlan",
+                neighborhood: "madlan", description: "madlan", features: "madlan", ...(madlanImages.length > 0 ? { images: "madlan_fallback" } : {}),
+              },
             });
 
           if (propErr) {
