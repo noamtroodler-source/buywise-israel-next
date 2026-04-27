@@ -134,25 +134,28 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
   const processingCount = jobItems.filter(i => i.status === 'processing').length;
   const totalItems = jobItems.length;
   const mergedCount = jobItems.filter(i => i.status === 'done' && /merged/i.test(i.error_message || '')).length;
+  const importedNewCount = Math.max(0, doneCount - mergedCount);
   const flaggedCount = jobItems.filter(i => (i.extracted_data as any)?.provisioning_audit_status === 'flagged').length;
   const reasonBuckets = useMemo(() => {
-    const classify = (message?: string | null) => {
+    const classify = (item: typeof jobItems[number]) => {
+      const message = item.error_message;
       const text = (message || '').toLowerCase();
+      if (item.status === 'done' && text.includes('merged')) return 'Enriched existing';
       if (text.includes('nan') || text.includes('malformed')) return 'Malformed URL';
-      if (text.includes('timeout') || text.includes('network') || text.includes('rate') || text.includes('scrape failed') || text.includes('captcha')) return 'Fetch / blocked';
+      if (item.error_type === 'transient' || text.includes('aborted') || text.includes('timeout') || text.includes('network') || text.includes('rate') || text.includes('scrape failed') || text.includes('captcha')) return 'Retry needed';
       if (text.includes('not a listing')) return 'Not a listing';
       if (text.includes('sold') || text.includes('rented')) return 'Sold / rented';
       if (text.includes('city not supported')) return 'Unsupported city';
       if (text.includes('validation failed')) return 'Validation failed';
       if (text.includes('low confidence')) return 'Low confidence';
-      if (text.includes('duplicate') || text.includes('merged')) return 'Duplicate / merged';
+      if (text.includes('duplicate')) return 'Exact duplicate URL';
       if (text.includes('too short') || text.includes('no extraction')) return 'Extraction incomplete';
       return 'Other';
     };
     return jobItems
-      .filter((item) => ['skipped', 'failed'].includes(item.status))
+      .filter((item) => ['skipped', 'failed'].includes(item.status) || (item.status === 'done' && /merged/i.test(item.error_message || '')))
       .reduce<Record<string, { count: number; samples: string[] }>>((acc, item) => {
-        const key = classify(item.error_message);
+        const key = classify(item);
         acc[key] ||= { count: 0, samples: [] };
         acc[key].count += 1;
         if (acc[key].samples.length < 2) acc[key].samples.push(item.url);
@@ -332,8 +335,8 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
                 <p className="truncate">Source URL: <span className="text-foreground font-medium">{currentJob.website_url}</span></p>
                 <p className="text-xs">These controls import this source job only, not every saved source at once.</p>
                 <div className="flex flex-wrap gap-2 pt-1 text-xs">
-                  <Badge variant="secondary">Imported {doneCount}</Badge>
-                  {mergedCount > 0 && <Badge variant="outline">Merged {mergedCount}</Badge>}
+                  <Badge variant="secondary">Created {importedNewCount}</Badge>
+                  {mergedCount > 0 && <Badge variant="outline">Enriched existing {mergedCount}</Badge>}
                   {flaggedCount > 0 && <Badge variant="outline">Flagged {flaggedCount}</Badge>}
                   {currentJobDiagnostics?.discovered_raw != null && <Badge variant="outline">Raw {String(currentJobDiagnostics.discovered_raw)}</Badge>}
                   {currentJobDiagnostics?.canonical != null && <Badge variant="outline">Canonical {String(currentJobDiagnostics.canonical)}</Badge>}
@@ -489,7 +492,7 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
                   <Button variant="outline" asChild className="rounded-xl">
                     <Link to="/admin/properties">
                       <FileText className="h-4 w-4 mr-2" />
-                      View imported ({doneCount})
+                      View results ({doneCount})
                     </Link>
                   </Button>
                   <div className="flex items-start gap-2 p-3 rounded-xl bg-primary/5 border border-primary/15 text-xs text-muted-foreground">
