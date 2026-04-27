@@ -42,40 +42,40 @@ export function FoundingMemberBanner() {
   }
 
   return (
-    <div className="relative rounded-2xl overflow-hidden border border-amber-200/60 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/30 dark:to-yellow-950/30 dark:border-amber-800/40 p-5">
+    <div className="relative rounded-2xl overflow-hidden border border-primary/20 bg-card shadow-sm p-5">
       <button
         onClick={handleDismiss}
-        className="absolute top-3 right-3 text-amber-600/60 hover:text-amber-700 transition-colors"
+        className="absolute top-3 right-3 text-muted-foreground hover:text-foreground transition-colors"
         aria-label="Dismiss"
       >
         <X className="h-4 w-4" />
       </button>
 
       <div className="flex items-center gap-2 mb-3">
-        <div className="h-8 w-8 rounded-full bg-amber-400/20 flex items-center justify-center flex-shrink-0">
-          <Star className="h-4 w-4 text-amber-600 fill-amber-500" />
+        <div className="h-8 w-8 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+          <Star className="h-4 w-4 text-primary fill-primary/20" />
         </div>
         <div>
-          <h3 className="font-bold text-amber-900 dark:text-amber-200 text-sm leading-tight">
+          <h3 className="font-bold text-foreground text-sm leading-tight">
             You're a Founding Partner 🎉
           </h3>
-          <p className="text-xs text-amber-700 dark:text-amber-400">
+          <p className="text-xs text-muted-foreground">
             Your exclusive launch partner benefits are active
           </p>
         </div>
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-200 dark:border-amber-700">
+        <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
           <Sparkles className="h-3 w-3" /> Free founding agency access
         </span>
-        <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-200 dark:border-amber-700">
+        <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
           <Home className="h-3 w-3" /> 3 free featured listings/mo
         </span>
-        <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-200 dark:border-amber-700">
+        <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
           <Zap className="h-3 w-3" /> Exclusive early access
         </span>
-        <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-200 dark:border-amber-700">
+        <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
           <Sparkles className="h-3 w-3" /> Featured case study
         </span>
       </div>
