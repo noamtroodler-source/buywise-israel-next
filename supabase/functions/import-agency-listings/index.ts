@@ -5707,6 +5707,7 @@ async function runMadlanAgencyDiscoverJob(params: {
             }
             if (description && (!existingMatch.description || description.length > existingMatch.description.length)) {
               patch.description = description;
+              patch.ai_english_description = description;
               fieldSourceMap.description = "madlan";
             }
             if (features.length) {
@@ -5729,7 +5730,8 @@ async function runMadlanAgencyDiscoverJob(params: {
             .insert({
               agent_id: agentId,
               title,
-              description: description || null,
+              description,
+              ai_english_description: description,
               property_type: "apartment",
               listing_status: listingStatus,
               price: madlanItem.price || 0,
