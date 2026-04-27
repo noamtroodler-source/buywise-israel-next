@@ -89,7 +89,7 @@ export default function AgencySources() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Listing Sources</h1>
             <p className="text-muted-foreground">
-              Connect your agency website, Madlan, and Yad2. We auto-sync nightly and merge duplicates with your website as the owned-content source.
+              Connect your agency website, Madlan, and Yad2. Sale and rental listings sync nightly; projects stay in the Project Wizard.
             </p>
           </div>
           <div className="flex gap-2">
@@ -126,7 +126,7 @@ export default function AgencySources() {
                       </SelectContent>
                     </Select>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      Priority: Website → Madlan → Yad2. Portals enrich missing fields and flag conflicts.
+                      Priority: Website → Madlan → Yad2. Active sale and rental listings are pulled; portals enrich missing fields and flag conflicts.
                     </p>
                   </div>
                   <div>
@@ -208,7 +208,7 @@ export default function AgencySources() {
               <SourceRow
                 key={src.id}
                 source={src}
-                onSync={() => syncOne.mutate(src)}
+              onSync={() => syncOne.mutate({ source: src, importType: 'both' })}
                 onTogglePause={() =>
                   updateMutation.mutate({ id: src.id, updates: { is_active: !src.is_active } })
                 }
