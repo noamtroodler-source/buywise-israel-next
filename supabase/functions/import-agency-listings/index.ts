@@ -2869,7 +2869,7 @@ async function processOneItem(
       const includeImagesInExtraction = !(isYad2Item || sourceType.includes("yad2") || sourceType.includes("madlan"));
       const extractionPrompt = buildExtractionPrompt(item.url, domain, markdown, pageLinks, includeImagesInExtraction);
 
-      const extractRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      const extractRes = await fetchWithTimeout("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -2931,7 +2931,7 @@ async function processOneItem(
           }],
           tool_choice: { type: "function", function: { name: "extract_listing" } },
         }),
-      });
+      }, 25_000);
 
       if (!extractRes.ok) {
         const errText = await extractRes.text();
