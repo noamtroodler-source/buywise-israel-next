@@ -38,7 +38,7 @@ import {
   useArchiveAgencyListing,
   useBulkApproveAgencyListings,
   useMarkAgencyListingNeedsEdit,
-  useSkipAgencyListingReview,
+  useUnpublishAgencyListing,
 } from '@/hooks/useAgencyListings';
 import { useDeleteProperty, useSubmitForReview, useBulkDeleteProperties, useBulkSubmitForReview, useReassignProperty } from '@/hooks/useAgentProperties';
 import { AgentReassignPopover } from '@/components/agency/AgentReassignPopover';
@@ -270,7 +270,7 @@ export default function AgencyListings() {
   const approveListing = useApproveAgencyListing();
   const needsEditListing = useMarkAgencyListingNeedsEdit();
   const archiveListing = useArchiveAgencyListing();
-  const skipListing = useSkipAgencyListingReview();
+  const unpublishListing = useUnpublishAgencyListing();
   const bulkApproveListings = useBulkApproveAgencyListings();
 
   const [searchQuery, setSearchQuery] = useState('');
