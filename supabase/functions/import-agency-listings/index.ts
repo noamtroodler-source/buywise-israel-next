@@ -1558,6 +1558,16 @@ async function handleWebsiteDiscoverAsync(body: any) {
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+async function fetchWithTimeout(input: string | URL | Request, init: RequestInit = {}, timeoutMs = 30_000): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 // ─── NON-LISTING URL PATTERN FILTER ─────────────────────────────────────────
 
 const NON_LISTING_SEGMENTS = new Set([
