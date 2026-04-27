@@ -52,7 +52,8 @@ export function usePaginatedProperties(
       let query = supabase
         .from('properties')
         .select('id', { count: 'exact', head: true })
-        .eq('is_published', true);
+        .eq('is_published', true)
+        .eq('verification_status', 'approved');
 
       // Commute filter: resolve qualifying cities first (only for preset destinations)
       if (filters?.commute_destination && filters?.max_commute_minutes && !isSavedDest) {
@@ -103,7 +104,8 @@ export function usePaginatedProperties(
             agent:agents(id, name, agency_name, phone, avatar_url, agency:agencies(id, name, slug, logo_url))
           )
         `)
-        .eq('is_published', true);
+        .eq('is_published', true)
+        .eq('verification_status', 'approved');
 
       // Commute filter: resolve qualifying cities first (only for preset destinations)
       if (filters?.commute_destination && filters?.max_commute_minutes && !isSavedDest) {
@@ -153,7 +155,8 @@ export function usePaginatedProperties(
           )
         `)
         .in('id', boostedIds)
-        .eq('is_published', true);
+        .eq('is_published', true)
+        .eq('verification_status', 'approved');
 
       query = applyFilters(query, filters);
 

@@ -84,7 +84,8 @@ export function useFavorites() {
         .from('properties')
         .select('*, agent:agent_id (*)')
         .in('id', guestFavoriteIds)
-        .eq('is_published', true);
+        .eq('is_published', true)
+        .eq('verification_status', 'approved');
 
       if (error) throw error;
       
