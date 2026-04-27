@@ -1,57 +1,184 @@
+## Goal
 
+Update agency provisioning so an admin can add up to three source links at once for each agency:
 
-## Calculator Bug Fixes
+- Agency website
+- Yad2 agency/profile/search page
+- Madlan office/search page
 
-Seven bugs across the Mortgage, Affordability, and Tools router. All targeted, no architectural changes.
+Then run discovery/import across all provided sources and merge the results into the best single listing records.
 
-### 🔴 High
+## Current state
 
-**1. Affordability "Max Loan" can exceed "Max Budget"**
-File: `src/components/tools/AffordabilityCalculator.tsx` (calculations memo, ~lines 263–299)
-- Root cause: `maxPropertyLow/High` are clamped against `maxPropertyFromLTV`, but `maxLoanLow/High` are the raw PTI-derived loan figures and aren't reconciled with the actual selected max property. At low incomes the loan headroom can exceed `maxProperty − downPayment`.
-- Fix: derive `maxLoanLow/High` as `max(0, maxPropertyLow/High − downPayment)` so loan ≤ price − down payment by definition.
+Already built:
 
-**2. Currency switch (USD) doesn't convert displayed result numbers**
-Files: `src/components/tools/AffordabilityCalculator.tsx`, `src/components/tools/MortgageCalculator.tsx`
-- Affordability: result card uses `formatCurrencyRange(...maxPropertyLow, maxPropertyHigh, currencySymbol)` and similar. Values are in ILS but symbol is `$`. Same for "Maximum Loan", "Monthly Payment", "Rate sensitivity", "Next step" link, save-prompt summary.
-- Mortgage: `SaveResultsPrompt` line 793 passes ILS values with `currencySymbol`. Property-price input prefix is hardcoded `₪` (line 412) even when user prefers USD — should use `currencySymbol` like the down-payment field already does.
-- Fix: wrap every result value passed to `formatCurrencyRange`/`formatPrice` in `toDisplay(...)` when the symbol is `currencySymbol`. Replace hardcoded `₪` prefix on the mortgage Property Price input with `currencySymbol` (and update the placeholder accordingly).
+- `agency_sources` table for multiple sources per agency.
+- `/agency/sources` page where agencies can add sources and sync them.
+- `sync-agency-listings` function that processes all active sources per agency.
+- Cross-source merge logic in `import-agency-listings`.
+- No Yad2/Madlan image downloading.
+- Agency website image downloading.
 
-**3. User's interest rate ignored by Mortgage "Monthly Payment Range"**
-File: `src/components/tools/MortgageCalculator.tsx` (lines 168–185, ~540–550)
-- Root cause: `paymentRange` calls `estimateMonthlyPaymentRange(price, buyerType)` which hardcodes 4.5/5.25/6.0% and ignores `interestRate` and the user's actual `loanAmount`/`loanTermYears`.
-- Fix: compute the hero range inline using `calculateMortgagePayment(loanAmount, rate, loanTermYears)` at three rates anchored on the user's input: `[max(rate−0.75, 2), rate, min(rate+0.75, 12)]`. Update the helper caption to read "Based on ±0.75% around your rate, {term}-year term". Keep `interestRange` consistent (already user-rate-aware after fix #4).
+Needs adjustment:
 
-### 🟡 Medium
+- Admin provisioning currently only accepts one source URL at a time.
+- Existing copy and backend trust comments still describe `Yad2 → Madlan → Website`.
+- Backend field priority should be changed so the agency website is the preferred source for owned content and visuals, while Yad2/Madlan are enrichment/validation sources.
 
-**4. Two different loan bases in one Mortgage view**
-File: `src/components/tools/MortgageCalculator.tsx`
-- Hero "Monthly Range" and "Interest Paid" should use the same loan base (the user's actual `loanAmount`, derived from their down payment), not max-LTV. Resolved by fix #3 above (both will use `loanAmount`).
+## UX plan
 
-**5. Affordability "Rate sensitivity" shows "drops by ~₪0"**
-File: `src/components/tools/AffordabilityCalculator.tsx` (line ~514)
-- Root cause: `stressedReduction / 2` rounds to 0 for small values; also when LTV is the binding constraint, both stressed and unstressed budgets equal `maxPropertyFromLTV`, so reduction is genuinely 0.
-- Fix: compute a true +1% stressed budget separately (mirror the +2% block) instead of dividing by 2. When the result is below ~₪10k or LTV is the limiter, render a meaningful fallback: "Rate sensitivity: budget already capped by your down payment — rate changes don't affect it" (or an alternate message when income-bound and reduction is meaningfully zero).
+### 1. Replace the single-source selector in Admin Agency Provisioning
 
-**6. Affordability range collapses to single value but keeps "range" label**
-Files: `src/components/tools/shared/ResultRange.tsx` (`formatCurrencyRange`), `src/components/tools/AffordabilityCalculator.tsx`
-- `formatCurrencyRange` already collapses to one number when `low ≈ high`, but the surrounding labels still say "range".
-- Fix: detect collapse via a small helper `isRangeDegenerate(low, high)` exported from `ResultRange.tsx`. In Affordability, swap the subtitle "Maximum property price range" → "Maximum property price" when degenerate, and equivalent for "Maximum Loan" / "Monthly Payment".
+In the “Import listings” card, replace the Website/Yad2/Madlan tabs and single URL field with three optional fields:
 
-### 🟢 Low
+```text
+Step 1: Add listing sources
 
-**7. `/tools?tool=total-cost` silently shows index; title mismatch**
-Files: `src/pages/Tools.tsx`, `src/components/tools/TrueCostCalculator.tsx`
-- Add `'total-cost': TrueCostCalculator` alias to the `toolComponents` and `allTools` maps so both slugs resolve. Optionally normalize incoming param: if `tool === 'total-cost'`, transparently rewrite to `totalcost` to keep one canonical URL.
-- Decide one name. The tool is referenced as "Total Cost Calculator" in nav cards and "True Cost Calculator" inside the tool. **Recommendation: keep "True Cost Calculator" everywhere** (matches the file name, page title, and existing memory `true-cost-calculator-v6`). Update `Tools.tsx` `allTools.totalcost.label` → "True Cost Calculator" and the description tagline. Leave the slug `totalcost` as canonical with `total-cost` as a working alias.
+Agency website URL     [ https://agency-site.com/listings       ]
+Yad2 URL               [ https://www.yad2.co.il/...             ]
+Madlan URL             [ https://www.madlan.co.il/...           ]
 
-### Files Touched
-- `src/components/tools/AffordabilityCalculator.tsx` — bugs 1, 2, 5, 6
-- `src/components/tools/MortgageCalculator.tsx` — bugs 2, 3, 4
-- `src/components/tools/shared/ResultRange.tsx` — bug 6 (export degenerate helper)
-- `src/pages/Tools.tsx` — bug 7 (alias + label)
+[ Save sources + discover listings ]
+```
 
-### Out of scope
-- No DB changes, no edge functions, no new components.
-- Other calculators (Investment, RentVsBuy, etc.) are not touched in this pass.
+Rules:
 
+- At least one URL is required.
+- Empty fields are skipped.
+- Existing saved sources for that agency should prefill when available.
+- If a source already exists, update it instead of creating duplicates.
+- Show small helper text:
+  - “Agency website is preferred for photos and owned listing content.”
+  - “Yad2 and Madlan are used for enrichment, matching, and conflict checks.”
+
+### 2. Show source health/status in provisioning
+
+Below the three URL fields, show a compact list of saved sources:
+
+- Source type
+- Active/paused status
+- Last synced
+- Last failure reason if any
+- “Sync this source” action
+
+This reuses the existing `useAgencySources` hooks where possible.
+
+### 3. Add one admin action to run all sources
+
+Add a primary action:
+
+```text
+Discover from all active sources
+```
+
+This should process all saved sources for the selected agency, in the intended order:
+
+1. Agency website
+2. Madlan
+3. Yad2
+
+The button should trigger the existing multi-source sync path or a small helper that invokes discovery for each saved source.
+
+## Backend/import plan
+
+### 4. Update source priority semantics
+
+Change the effective merge priority from:
+
+```text
+Yad2 → Madlan → Website
+```
+
+to:
+
+```text
+Agency Website → Madlan/Yad2 enrichment
+```
+
+Practical field rules:
+
+- Agency website wins for:
+  - images
+  - description when credible/long enough
+  - agent assignment if detected from agency site
+  - source URL shown as “View original” when website has usable photos/content
+- Yad2/Madlan can fill missing or weak fields:
+  - price
+  - size
+  - rooms/bedrooms
+  - floor
+  - address/neighborhood
+  - coordinates
+  - amenities/features
+- If agency website has a field and Yad2/Madlan disagree materially, do not blindly overwrite. Log a conflict for review.
+- Keep conflict logging for large price/size differences.
+
+### 5. Preserve image compliance
+
+Keep the existing safety rule:
+
+- Do not extract/download/store Yad2 or Madlan photos.
+- Only download/store images from the agency’s own website.
+
+Also update the code comments and UI copy so this is clear.
+
+### 6. Align scheduled sync order
+
+Update `sync-agency-listings` so agency sources process in the new order:
+
+```text
+website → madlan → yad2
+```
+
+This helps the website listing become the base record first, then portal sources enrich/merge into it.
+
+### 7. Keep existing merge infrastructure
+
+Continue using:
+
+- `merged_source_urls`
+- `field_source_map`
+- `import_conflicts`
+- cross-source duplicate checks by address/city and fuzzy property specs
+- import job progress UI
+
+No database schema change is expected unless we discover the current uniqueness/indexing on `agency_sources` is missing and causes duplicate source rows. If schema work is required, it will be handled as a separate migration.
+
+## Files likely to change
+
+- `src/components/admin/agency-provisioning/ImportListingsSection.tsx`
+  - new three-field source UI
+  - save/update multiple sources
+  - run multi-source discovery
+
+- `src/hooks/useAgencySources.ts`
+  - add or reuse helper for upserting multiple agency sources
+  - possibly add admin-friendly “sync all for agency” helper
+
+- `supabase/functions/sync-agency-listings/index.ts`
+  - update source processing order to website-first
+  - update comments/copy
+
+- `supabase/functions/import-agency-listings/index.ts`
+  - update merge source trust rules
+  - keep Yad2/Madlan image skipping
+  - make agency website owned content the preferred source
+
+- Possibly `src/pages/agency/AgencySources.tsx` and `src/pages/agency/AgencyImport.tsx`
+  - update explanatory copy so all pages describe the same strategy
+
+## QA plan
+
+After implementation:
+
+1. Run TypeScript/build checks.
+2. Check the admin provisioning screen visually.
+3. Confirm the three source fields save and prefill correctly.
+4. Confirm “Discover from all active sources” queues/runs all non-empty sources.
+5. Confirm Yad2/Madlan import paths do not store images.
+6. Confirm agency website imports still store images.
+7. Confirm merge text/status shows all source URLs and conflicts where relevant.
+
+## Expected result
+
+Admin provisioning becomes a single multi-source setup step: paste any combination of website/Yad2/Madlan links once, then the system imports and merges them into richer listings while prioritizing agency-owned content and photos.
