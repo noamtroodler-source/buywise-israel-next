@@ -136,8 +136,8 @@ export function ListingDetailDrawer({ agencyId, listing, onClose }: Props) {
       title: 'Description',
       icon: FileText,
       fields: [
-        { label: 'Original description', value: listing.description, required: true },
-        { label: 'AI English description', value: listing.ai_english_description },
+        { label: 'Listing description', value: listing.description },
+        { label: 'AI English description', value: listing.ai_english_description, required: true },
       ],
     },
   ];
