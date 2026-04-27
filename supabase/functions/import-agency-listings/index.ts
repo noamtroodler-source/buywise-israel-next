@@ -2606,7 +2606,7 @@ Content:
 ${truncatedContent}`;
 
   try {
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const res = await fetchWithTimeout("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -2638,7 +2638,7 @@ ${truncatedContent}`;
         }],
         tool_choice: { type: "function", function: { name: "extract_listing" } },
       }),
-    });
+    }, 20_000);
 
     if (!res.ok) {
       console.error(`Simplified retry also failed: ${res.status}`);
