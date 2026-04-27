@@ -585,6 +585,11 @@ function isNonResalePage(markdown: string, importType: string = "resale"): { ski
     if (p.test(snippet)) return { skip: true, reason: "Pre-filter: listing appears sold/rented" };
   }
 
+  const shortTerm = detectShortTermRental(snippet);
+  if (shortTerm.isShortTerm) {
+    return { skip: true, reason: `Pre-filter: short-term rental not supported (${shortTerm.reason})` };
+  }
+
   // Rental indicators — only skip in resale-only mode
   if (importType === "resale") {
     const rentalPatterns = [
