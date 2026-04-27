@@ -22,6 +22,8 @@ interface OwnerWelcomeProps {
   agentCount?: number
   listingCount?: number
   pendingItems?: string[]
+  isAlsoAgent?: boolean
+  agentProfileName?: string
 }
 
 const OwnerWelcomeEmail = ({
@@ -31,6 +33,8 @@ const OwnerWelcomeEmail = ({
   agentCount,
   listingCount,
   pendingItems = [],
+  isAlsoAgent,
+  agentProfileName,
 }: OwnerWelcomeProps) => {
   const greeting = ownerName ? `Hi ${ownerName},` : 'Hi there,'
   const safeSetupUrl = setupUrl || 'https://buywiseisrael.com'
@@ -50,9 +54,23 @@ const OwnerWelcomeEmail = ({
             ready. We've done the heavy lifting so you can hit the ground
             running.
           </Text>
+          {isAlsoAgent ? (
+            <Text style={text}>
+              We also linked your agent profile{agentProfileName ? ` (${agentProfileName})` : ''}
+              {' '}to this agency, so listings and buyer leads can be assigned to you without a second account.
+            </Text>
+          ) : null}
 
           <Section style={summaryBox}>
             <Text style={summaryTitle}>We've prepared for you:</Text>
+            <Text style={summaryItem}>
+              🔑 Agency admin access for managing your team and listings
+            </Text>
+            {isAlsoAgent ? (
+              <Text style={summaryItem}>
+                🧑‍💼 Your agent profile is linked for listings and leads
+              </Text>
+            ) : null}
             <Text style={summaryItem}>
               👥 {agentCount ?? 0} agent{agentCount === 1 ? '' : 's'} added
               to your roster
@@ -103,6 +121,8 @@ export const template = {
     setupUrl: 'https://buywiseisrael.com/auth/setup-password?token=preview',
     agentCount: 5,
     listingCount: 42,
+    isAlsoAgent: true,
+    agentProfileName: 'Avi Cohen',
     pendingItems: [
       '3 agents need a license number added',
       '8 listings need additional photos',
