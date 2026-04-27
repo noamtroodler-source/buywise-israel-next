@@ -4990,6 +4990,7 @@ async function runMadlanAgencyDiscoverJob(params: {
     let totalDiscovered = 0;
     let totalNew = 0;
     let totalInserted = 0;
+    let totalMerged = 0;
     const allDiscoveredUrls: string[] = [];
 
     for (const dealType of dealTypes) {
