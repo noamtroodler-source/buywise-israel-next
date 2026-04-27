@@ -3320,13 +3320,11 @@ async function processOneItem(
       return { succeeded: false };
     }
 
-    // Download agency-owned website photos before merge so website images can enrich Madlan/Yad2 rows.
+    // Download only allowed source photos: website preferred, Madlan fallback, Yad2 never.
     let imageUrls: string[] = [];
     listing.image_hashes = [];
-    if (isAgencyOwnWebsite) {
-      imageUrls = await collectAgencyOwnedImages(listing, structuredData, pageHtml, item.url, sb, jobId);
-      if (imageUrls.length > 0) dlog(`Downloaded ${imageUrls.length} agency-owned images for ${item.url}`);
-    }
+    imageUrls = await collectAllowedSourceImages(job.source_type, listing, structuredData, pageHtml, item.url, sb, jobId);
+    if (imageUrls.length > 0) dlog(`Downloaded ${imageUrls.length} allowed ${job.source_type || "website"} images for ${item.url}`);
 
     // ── Intra-agency dedup (Tier 2 / 2.5) — REMOVED in co-listing v2 ──
     // Previous behavior silently dropped listings that matched the same
@@ -3489,11 +3487,17 @@ async function processOneItem(
           fieldSourceMap["features"] = incomingSource;
         }
 
-        // Images: only agency-owned website imports are allowed to add stored photos.
+        // Images: website images always enrich; Madlan images only fill an empty image set; Yad2 never downloads.
         if (incomingSource === "website_scrape" && imageUrls.length > 0) {
           const existingImages = Array.isArray(existing.images) ? existing.images as string[] : [];
           patch.images = [...new Set([...existingImages, ...imageUrls])];
           fieldSourceMap["images"] = incomingSource;
+        } else if (incomingSource === "madlan" && imageUrls.length > 0) {
+          const existingImages = Array.isArray(existing.images) ? existing.images as string[] : [];
+          if (existingImages.length === 0) {
+            patch.images = imageUrls;
+            fieldSourceMap["images"] = "madlan_fallback";
+          }
         }
 
         patch.field_source_map = fieldSourceMap;
