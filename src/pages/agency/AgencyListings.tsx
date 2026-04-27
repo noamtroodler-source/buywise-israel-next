@@ -767,12 +767,6 @@ export default function AgencyListings() {
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center justify-end gap-1">
-                                <Button variant="ghost" size="sm" asChild className="rounded-lg">
-                                  <Link to={`/agency/properties/${listing.id}/edit`}>
-                                    <Edit className="h-4 w-4" />
-                                  </Link>
-                                </Button>
-
                                 {isDraft && (
                                   <Button
                                     variant="ghost"
@@ -801,6 +795,13 @@ export default function AgencyListings() {
                                     </Button>
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end">
+                                    <DropdownMenuItem asChild>
+                                      <Link to={`/agency/properties/${listing.id}/edit`}>
+                                        <Edit className="h-4 w-4 mr-2" />
+                                        Edit listing
+                                      </Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
                                     <DropdownMenuItem onClick={() => approveListing.mutate({ propertyId: listing.id, agencyId: agency.id })}>
                                       <CheckCheck className="h-4 w-4 mr-2" />
                                       Approve & publish
