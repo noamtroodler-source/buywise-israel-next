@@ -104,9 +104,10 @@ const reviewConfig: Record<AgencyReviewStatus, { label: string; color: string; i
 };
 
 function getReviewBucket(listing: AgencyListing) {
-  if (listing.agency_review_status === 'needs_review' && listing.safe_to_batch_approve) return 'ready';
-  if (listing.agency_review_status === 'needs_review' || listing.agency_review_status === 'needs_edit') return 'fix';
-  return listing.agency_review_status;
+  const status = listing.agency_review_status || 'needs_review';
+  if (status === 'needs_review' && listing.safe_to_batch_approve) return 'ready';
+  if (status === 'needs_review' || status === 'needs_edit') return 'fix';
+  return status;
 }
 
 type SortKey = 'price' | 'views' | 'saves' | 'inquiries' | 'days';
@@ -631,7 +632,7 @@ export default function AgencyListings() {
                     <TableBody>
                       {sortedListings.map((listing) => {
                         const status = statusConfig[listing.verification_status as keyof typeof statusConfig] || statusConfig.draft;
-                        const review = reviewConfig[listing.agency_review_status];
+                        const review = reviewConfig[listing.agency_review_status as AgencyReviewStatus] || reviewConfig.needs_review;
                         const ReviewIcon = review.icon;
                         const isDraft = listing.verification_status === 'draft';
                         const isApproved = listing.verification_status === 'approved';
