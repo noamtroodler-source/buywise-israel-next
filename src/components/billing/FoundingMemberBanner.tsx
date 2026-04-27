@@ -56,8 +56,9 @@ export function FoundingMemberBanner() {
           <Star className="h-4 w-4 text-primary fill-primary/20" />
         </div>
         <div>
-          <h3 className="font-bold text-foreground text-sm leading-tight">
-            You're a Founding Partner 🎉
+          <h3 className="flex items-center gap-1.5 font-bold text-foreground text-sm leading-tight">
+            You're a Founding Partner
+            <Sparkles className="h-3.5 w-3.5 text-primary" />
           </h3>
           <p className="text-xs text-muted-foreground">
             Your exclusive launch partner benefits are active
