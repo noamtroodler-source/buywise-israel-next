@@ -2,11 +2,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { FormattedNumberInput } from '@/components/ui/formatted-number-input';
 import { usePropertyWizard } from '../PropertyWizardContext';
+import type { ReactNode } from 'react';
 import { Bed, Bath, Ruler, Building, Calendar, Car, LandPlot, Info, AlertCircle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
-function ReviewHint({ children }: { children: React.ReactNode }) {
+function ReviewHint({ children }: { children: ReactNode }) {
   return (
     <div className="flex items-start gap-2 rounded-lg bg-primary/5 border border-primary/20 px-3 py-2">
       <AlertCircle className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
