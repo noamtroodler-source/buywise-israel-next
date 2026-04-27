@@ -44,6 +44,17 @@ export function ListingsQualitySection({ agencyId }: { agencyId: string }) {
     return m;
   }, [flags]);
 
+  const getDisplayScore = (listing: ProvisioningListing) =>
+    listing.quality_audit_score ?? listing.data_quality_score ?? null;
+
+  const getDisplayFlagCount = (listing: ProvisioningListing) => {
+    const auditFlags = flagCountByProperty.get(listing.id) || 0;
+    if (auditFlags > 0) return auditFlags;
+    if (listing.provisioning_audit_status === 'flagged') return 1;
+    const score = getDisplayScore(listing);
+    return score != null && score < 70 ? 1 : 0;
+  };
+
   const summary = useMemo(() => {
     let ready = 0, review = 0, critical = 0;
     for (const l of listings) {
@@ -252,11 +263,11 @@ export function ListingsQualitySection({ agencyId }: { agencyId: string }) {
                         {badge.label}
                       </Badge>
                     </td>
-                    <td className="p-2 text-right">{l.quality_audit_score ?? '—'}</td>
+                    <td className="p-2 text-right">{getDisplayScore(l) ?? '—'}</td>
                     <td className="p-2 text-right">
-                      {(flagCountByProperty.get(l.id) || 0) > 0 ? (
+                      {getDisplayFlagCount(l) > 0 ? (
                         <Badge variant="outline" className="text-xs">
-                          {flagCountByProperty.get(l.id)}
+                          {getDisplayFlagCount(l)}
                         </Badge>
                       ) : (
                         <span className="text-xs text-muted-foreground">0</span>
