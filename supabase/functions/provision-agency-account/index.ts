@@ -24,6 +24,24 @@ function generatePassword(): string {
   return out;
 }
 
+async function findUserByEmail(admin: ReturnType<typeof createClient>, email: string) {
+  const target = email.trim().toLowerCase();
+  let page = 1;
+  const perPage = 200;
+
+  while (page <= 50) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage });
+    if (error) throw error;
+
+    const user = data.users.find((u) => u.email?.trim().toLowerCase() === target);
+    if (user) return user;
+    if (data.users.length < perPage) return null;
+    page += 1;
+  }
+
+  return null;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
