@@ -187,46 +187,15 @@ export default function AgencyImport() {
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-4 space-y-4">
-              {sourceType === 'website' ? (
-                <div className="text-sm text-muted-foreground space-y-2">
-                  <p>Paste your agency's <strong className="text-foreground">homepage URL</strong> — the main page that links to all your property listings.</p>
-                </div>
-              ) : sourceType === 'yad2' ? (
-                <div className="text-sm text-muted-foreground space-y-2">
-                  <p>Paste your <strong className="text-foreground">Yad2 agency profile page</strong> or a <strong className="text-foreground">Yad2 search URL</strong> filtered to your listings.</p>
-                </div>
-              ) : (
-                <div className="text-sm text-muted-foreground space-y-2">
-                  <p>Paste your <strong className="text-foreground">Madlan office page</strong> (e.g. madlan.co.il/agentsOffice/re_office_…) to import all listings from that office.</p>
-                </div>
-              )}
-
-              <div className="flex flex-wrap gap-2">
-                {(['website', 'yad2', 'madlan'] as const).map((type) => (
-                  <Button
-                    key={type}
-                    type="button"
-                    variant={sourceType === type ? 'default' : 'outline'}
-                    size="sm"
-                    className="rounded-lg"
-                    onClick={() => setSourceType(type)}
-                  >
-                    {type === 'website' ? 'Agency Website' : type === 'yad2' ? 'Yad2' : 'Madlan'}
-                  </Button>
-                ))}
+              <div className="text-sm text-muted-foreground space-y-2">
+                <p>Paste your agency's <strong className="text-foreground">homepage URL</strong> — the main page that links to all your property listings.</p>
               </div>
 
               <form onSubmit={handleDiscover} className="flex flex-col sm:flex-row gap-3">
                 <Input
                   value={websiteUrl}
                   onChange={(e) => setWebsiteUrl(e.target.value)}
-                  placeholder={
-                    sourceType === 'yad2'
-                      ? 'https://www.yad2.co.il/realestate/agency/7783701/forsale?sort=price-desc'
-                      : sourceType === 'madlan'
-                      ? 'https://www.madlan.co.il/agentsOffice/re_office_XXXXXX'
-                      : 'https://your-agency-website.com'
-                  }
+                  placeholder="https://your-agency-website.com"
                   className="rounded-xl flex-1"
                   required
                   disabled={isDiscovering}
@@ -248,11 +217,7 @@ export default function AgencyImport() {
 
               {isDiscovering && (
                 <p className="text-sm text-muted-foreground mt-3 animate-pulse">
-                  {discoveringSourceType === 'yad2'
-                    ? 'Scanning your agency page on Yad2... This may take 2-5 minutes.'
-                    : discoveringSourceType === 'madlan'
-                    ? 'Scanning your Madlan office page... This may take 2-5 minutes.'
-                    : 'Scanning your website for listing pages... This may take 2-5 minutes.'}
+                  Scanning your website for listing pages... This may take 2-5 minutes.
                 </p>
               )}
             </CardContent>
