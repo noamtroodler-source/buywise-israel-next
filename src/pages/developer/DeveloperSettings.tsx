@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { ArrowLeft, Loader2, Upload, Building2, Save, Globe, Mail, Phone, Calendar, Linkedin, Instagram, Facebook, MapPin, Users, X, Briefcase, Bell } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useDeveloperProfile } from '@/hooks/useDeveloperProfile';
 import { supabase } from '@/integrations/supabase/client';
@@ -59,6 +59,7 @@ const COMPANY_TYPE_OPTIONS = [
 ];
 
 export default function DeveloperSettings() {
+  const location = useLocation();
   const { data: developer, isLoading, refetch } = useDeveloperProfile();
   const [logoError, setLogoError] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -114,6 +115,15 @@ export default function DeveloperSettings() {
       });
     }
   }, [developer]);
+
+  useEffect(() => {
+    if (location.hash) {
+      const el = document.querySelector(location.hash);
+      if (el) {
+        setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+      }
+    }
+  }, [location.hash, isLoading]);
 
   if (isLoading) {
     return (
@@ -300,7 +310,7 @@ export default function DeveloperSettings() {
                   </CardHeader>
                   <CardContent className="space-y-6">
                     {/* Logo Upload Section */}
-                    <div className="flex items-center gap-6 p-6 rounded-2xl bg-gradient-to-br from-primary/5 to-muted/50 border border-border">
+                    <div id="developer-logo" className="flex items-center gap-6 p-6 rounded-2xl bg-gradient-to-br from-primary/5 to-muted/50 border border-border scroll-mt-24">
                       <div className="relative group">
                         <div className="h-24 w-24 rounded-2xl bg-card border-2 border-dashed border-border flex items-center justify-center overflow-hidden group-hover:border-primary/50 transition-colors">
                           {developer?.logo_url && !logoError ? (
@@ -335,7 +345,7 @@ export default function DeveloperSettings() {
                     </div>
 
                     {/* Company Details Section */}
-                    <div className="space-y-4">
+                    <div id="developer-profile" className="space-y-4 scroll-mt-24">
                       <div className="flex items-center gap-3 pt-2">
                         <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
                           <Building2 className="h-4 w-4 text-primary" />
@@ -416,7 +426,7 @@ export default function DeveloperSettings() {
                     </div>
 
                     {/* Office Address Section */}
-                    <div className="space-y-4">
+                    <div id="developer-social-links" className="space-y-4 scroll-mt-24">
                       <div className="flex items-center gap-3 pt-2">
                         <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
                           <MapPin className="h-4 w-4 text-primary" />
