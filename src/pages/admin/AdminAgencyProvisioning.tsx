@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Building2, Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -24,8 +24,9 @@ export default function AdminAgencyProvisioning() {
   const selectedId = searchParams.get('agency');
 
   const { data: agencies = [], isLoading } = useProvisioningAgencies();
-  const { data: selectedAgency } = useProvisioningAgency(selectedId);
+  const { data: selectedAgency, isFetched: selectedAgencyFetched } = useProvisioningAgency(selectedId);
   const create = useCreateAgency();
+  const lastMissingAgencyNoticeRef = useRef<string | null>(null);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [enrichOpen, setEnrichOpen] = useState(false);
@@ -37,6 +38,19 @@ export default function AdminAgencyProvisioning() {
       setSearchParams({ agency: agencies[0].id }, { replace: true });
     }
   }, [agencies, selectedId, setSearchParams]);
+
+  // If the URL still points at an agency that was deleted, clear the stale
+  // selection before child import tools can call backend functions with it.
+  useEffect(() => {
+    if (!selectedId || !selectedAgencyFetched || selectedAgency) return;
+
+    const nextAgency = agencies.find((agency) => agency.id !== selectedId);
+    if (lastMissingAgencyNoticeRef.current !== selectedId) {
+      toast.info('That agency no longer exists. Create a fresh agency draft to continue.');
+      lastMissingAgencyNoticeRef.current = selectedId;
+    }
+    setSearchParams(nextAgency ? { agency: nextAgency.id } : {}, { replace: true });
+  }, [agencies, selectedAgency, selectedAgencyFetched, selectedId, setSearchParams]);
 
   function selectAgency(id: string) {
     setSearchParams({ agency: id });
