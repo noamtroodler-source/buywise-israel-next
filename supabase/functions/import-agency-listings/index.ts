@@ -3947,8 +3947,9 @@ async function processOneItem(
         }
 
         // Description: longer wins regardless of source
-        if (listing.description && (!existing.description || listing.description.length > existing.description.length)) {
+        if (listing.description && (!existing.description || existing.description === existing.ai_english_description || listing.description.length > existing.description.length)) {
           patch.description = listing.description;
+          patch.ai_english_description = listing.ai_english_description || listing.description;
           fieldSourceMap["description"] = incomingFieldSource("description");
         }
 
