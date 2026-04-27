@@ -171,34 +171,32 @@ export function ListingDetailDrawer({ agencyId, listing, onClose }: Props) {
         </SheetHeader>
 
         <div className="mt-6 space-y-6">
-          {/* Snapshot */}
-          <div className="grid grid-cols-3 gap-3 text-sm">
-            <div>
-              <div className="text-xs text-muted-foreground">Price</div>
-              <div className="font-medium">
-                {listing.price ? `₪${Number(listing.price).toLocaleString()}` : '—'}
+          {/* Wizard-style audit overview */}
+          <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Listing completeness</p>
+                <p className="mt-1 text-2xl font-bold">{completeness}%</p>
+                <p className="text-xs text-muted-foreground">
+                  {presentCount}/{flatFields.length} fields found · {requiredMissing.length} required missing
+                </p>
               </div>
+              <Badge variant="outline" className={cn(
+                'rounded-lg',
+                requiredMissing.length ? 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-400' : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
+              )}>
+                {requiredMissing.length ? 'Needs review' : 'Core complete'}
+              </Badge>
             </div>
-            <div>
-              <div className="text-xs text-muted-foreground">Size</div>
-              <div className="font-medium">{listing.size_sqm ? `${listing.size_sqm} m²` : '—'}</div>
-            </div>
-            <div>
-              <div className="text-xs text-muted-foreground">Bedrooms</div>
-              <div className="font-medium">{listing.bedrooms ?? '—'}</div>
-            </div>
-            <div>
-              <div className="text-xs text-muted-foreground">Score</div>
-              <div className="font-medium">{listing.quality_audit_score ?? '—'}</div>
-            </div>
-            <div>
-              <div className="text-xs text-muted-foreground">Status</div>
-              <div className="font-medium capitalize">{listing.provisioning_audit_status ?? '—'}</div>
-            </div>
-            <div>
-              <div className="text-xs text-muted-foreground">Photos</div>
-              <div className="font-medium">{listing.images?.length ?? 0}</div>
-            </div>
+            {requiredMissing.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {requiredMissing.map(field => (
+                  <Badge key={field.label} variant="outline" className="rounded-lg border-amber-500/20 bg-background text-xs">
+                    <AlertCircle className="mr-1 h-3 w-3 text-amber-600" /> {field.label}
+                  </Badge>
+                ))}
+              </div>
+            )}
           </div>
 
           {listing.source_url && (
