@@ -646,6 +646,10 @@ function validatePropertyData(listing: Record<string, any>, importType: string =
   const errors: string[] = [];
   const warnings: string[] = [];
   const currentYear = new Date().getFullYear();
+  const effectiveImportType = normalizeImportType(importType);
+  const listingStatus = listing.listing_status === "for_rent" ? "for_rent" : "for_sale";
+  const validateAsRental = effectiveImportType === "rental" || (effectiveImportType === "both" && listingStatus === "for_rent");
+  const validateAsResale = effectiveImportType === "resale" || (effectiveImportType === "both" && listingStatus === "for_sale");
 
   // Price validation
   if (listing.price != null && listing.price < 0) {
@@ -653,20 +657,22 @@ function validatePropertyData(listing: Record<string, any>, importType: string =
   } else if (listing.price === 1) {
     errors.push("price=1 is a sold placeholder — skip");
   } else if (listing.price != null && listing.price > 0 && listing.price < 20_000) {
-    if (importType === "resale") {
+    if (validateAsResale) {
       errors.push(`price ${listing.price} NIS appears to be rent, not sale price`);
     } else {
       warnings.push(`price ${listing.price} NIS — verify this is correct for a rental listing`);
     }
   } else if (listing.price != null && listing.price > 0 && listing.price < 100_000) {
-    if (importType === "resale") {
+    if (validateAsResale) {
       warnings.push(`price ${listing.price} seems unusually low for a property`);
     }
   }
 
-  // Skip rentals only in resale mode
-  if (listing.listing_status === "for_rent" && importType === "resale") {
+  if (listing.listing_status === "for_rent" && effectiveImportType === "resale") {
     errors.push("rental listing — resale import only");
+  }
+  if (listing.listing_status === "for_sale" && effectiveImportType === "rental") {
+    errors.push("sale listing — rental import only");
   }
 
   // Skip non-resale property types
@@ -704,7 +710,7 @@ function validatePropertyData(listing: Record<string, any>, importType: string =
 
   // ── City-specific price range validation ──
   if (listing.city && listing.price && listing.price > 0) {
-    if (importType === "resale") {
+    if (validateAsResale) {
       const cityRange = CITY_PRICE_RANGES[listing.city];
       if (cityRange) {
         if (listing.price < cityRange.min * 0.5) {
@@ -721,7 +727,7 @@ function validatePropertyData(listing: Record<string, any>, importType: string =
           }
         }
       }
-    } else if (importType === "rental") {
+    } else if (validateAsRental) {
       // Rental price validation
       if (listing.price > 30_000) {
         errors.push(`rental price ${listing.price} NIS/mo is suspiciously high — likely a sale price`);
@@ -738,7 +744,7 @@ function validatePropertyData(listing: Record<string, any>, importType: string =
   }
 
   // ── Rental-specific field warnings ──
-  if (importType === "rental" || listing.listing_status === "for_rent") {
+  if (validateAsRental || listing.listing_status === "for_rent") {
     if (!listing.furnished_status) {
       warnings.push("rental listing missing furnished_status");
     }
