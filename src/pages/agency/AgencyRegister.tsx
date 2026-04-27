@@ -920,6 +920,16 @@ export default function AgencyRegister() {
 
   const StepIcon = steps[currentStep].icon;
 
+  if (loading || agencyLoading || existingAgency) {
+    return (
+      <Layout>
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       {/* Gradient Background */}
