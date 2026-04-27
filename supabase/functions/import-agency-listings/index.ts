@@ -2312,6 +2312,31 @@ async function collectAgencyOwnedImages(listing: any, structuredData: any, pageH
   return Array.from(new Set(downloaded.urls || []));
 }
 
+async function collectAllowedSourceImages(
+  sourceType: string | null | undefined,
+  listing: any,
+  structuredData: any,
+  pageHtml: string,
+  itemUrl: string,
+  sb: any,
+  jobId: string,
+  maxImages = 15,
+): Promise<string[]> {
+  const normalized = String(sourceType || "website").toLowerCase();
+  if (normalized.includes("yad2")) return [];
+  if (isAgencyOwnWebsiteSource(sourceType)) {
+    const urls = await collectAgencyOwnedImages(listing, structuredData, pageHtml, itemUrl, sb, jobId);
+    if (urls.length > 0) listing._image_source_policy = "agency_website_preferred";
+    return urls;
+  }
+  if (normalized.includes("madlan")) {
+    const urls = await collectAgencyOwnedImages(listing, structuredData, pageHtml, itemUrl, sb, jobId);
+    if (urls.length > 0) listing._image_source_policy = "madlan_fallback";
+    return urls.slice(0, maxImages);
+  }
+  return [];
+}
+
 // ─── STRUCTURED DATA EXTRACTION (JSON-LD, Open Graph) ───────────────────────
 
 function extractStructuredData(html: string): Record<string, any> | null {
