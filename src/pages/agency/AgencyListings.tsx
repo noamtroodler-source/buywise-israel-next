@@ -268,7 +268,6 @@ export default function AgencyListings() {
   const bulkSubmit = useBulkSubmitForReview();
   const reassignProperty = useReassignProperty();
   const approveListing = useApproveAgencyListing();
-  const needsEditListing = useMarkAgencyListingNeedsEdit();
   const archiveListing = useArchiveAgencyListing();
   const unpublishListing = useUnpublishAgencyListing();
   const bulkApproveListings = useBulkApproveAgencyListings();
