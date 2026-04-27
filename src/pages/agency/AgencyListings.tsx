@@ -697,7 +697,12 @@ export default function AgencyListings() {
                     <TableBody>
                       {sortedListings.map((listing) => {
                         const status = statusConfig[listing.verification_status as keyof typeof statusConfig] || statusConfig.draft;
-                        const review = reviewConfig[listing.agency_review_status as AgencyReviewStatus] || reviewConfig.needs_review;
+                        const hasMissingQuickFields = listing.missing_quick_fields.length > 0;
+                        const displayReviewStatus: AgencyReviewStatus =
+                          listing.agency_review_status === 'needs_review' && hasMissingQuickFields
+                            ? 'needs_edit'
+                            : listing.agency_review_status as AgencyReviewStatus;
+                        const review = reviewConfig[displayReviewStatus] || reviewConfig.needs_review;
                         const ReviewIcon = review.icon;
                         const isDraft = listing.verification_status === 'draft';
                         const isApproved = listing.verification_status === 'approved';
@@ -774,7 +779,7 @@ export default function AgencyListings() {
                                 </Badge>
                                 {listing.has_critical_flags ? (
                                   <p className="text-[11px] text-destructive">Critical issue needs review</p>
-                                ) : listing.missing_quick_fields.length > 0 ? (
+                                ) : hasMissingQuickFields ? (
                                   <p className="text-[11px] text-primary font-medium truncate max-w-[240px]" title={listing.missing_quick_fields.join(', ')}>
                                     Missing: {listing.missing_quick_fields.slice(0, 2).join(', ')}{listing.missing_quick_fields.length > 2 ? '…' : ''}
                                   </p>
