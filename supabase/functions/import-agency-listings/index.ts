@@ -1114,6 +1114,21 @@ function isSameSiteUrl(candidate: string, sourceUrl: string): boolean {
   }
 }
 
+function isAgencyOwnWebsiteSource(sourceType?: string | null): boolean {
+  const normalized = String(sourceType || "website").toLowerCase();
+  return !normalized.includes("yad2") && !normalized.includes("madlan");
+}
+
+function isStrongAgencyListingUrl(candidate: string, sourceUrl: string): boolean {
+  try {
+    if (!isSameSiteUrl(candidate, sourceUrl)) return false;
+    const path = decodeURIComponent(new URL(candidate).pathname).toLowerCase();
+    return /\/(estate_property|property|properties)\//i.test(path) && !/(sold|rented|archive|archived|נמכר|הושכר|בהסכם)/i.test(path);
+  } catch {
+    return false;
+  }
+}
+
 function extractLinksFromHtml(html: string, pageUrl: string): string[] {
   const links = new Set<string>();
   const linkRegex = /<a\s[^>]*href\s*=\s*["']([^"'#]+)["'][^>]*>/gi;
@@ -1326,7 +1341,7 @@ async function handleDiscover(body: any) {
   const mapRes = await fetch("https://api.firecrawl.dev/v1/map", {
     method: "POST",
     headers: { Authorization: `Bearer ${FIRECRAWL_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ url: siteRoot, limit: 500, includeSubdomains: false }),
+    body: JSON.stringify({ url: siteRoot, limit: 2000, includeSubdomains: false }),
   });
   if (!mapRes.ok) {
     const errText = await mapRes.text();
@@ -1464,8 +1479,13 @@ async function handleDiscover(body: any) {
     return { job_id: null, total_listings: 0, total_discovered: allUrls.length, new_urls: 0, skipped_existing: skippedExisting };
   }
 
-  const listingUrls = await classifyUrlsInBatches(newUrls, LOVABLE_API_KEY);
-  dlog(`AI identified ${listingUrls.length} listing URLs`);
+  const deterministicListingUrls = newUrls.filter((url) => isStrongAgencyListingUrl(url, formattedUrl));
+  const needsAiClassification = newUrls.filter((url) => !isStrongAgencyListingUrl(url, formattedUrl));
+  const aiListingUrls = needsAiClassification.length > 0
+    ? await classifyUrlsInBatches(needsAiClassification, LOVABLE_API_KEY)
+    : [];
+  const listingUrls = Array.from(new Set([...deterministicListingUrls, ...aiListingUrls].map((url) => normalizeUrl(url))));
+  console.log(`Listing classification: ${deterministicListingUrls.length} deterministic + ${aiListingUrls.length} AI = ${listingUrls.length}`);
 
   if (listingUrls.length === 0) {
     if (existingJobId) {
@@ -2101,6 +2121,27 @@ function extractImagesFromHtml(html: string, pageUrl: string): string[] {
   const images: string[] = [];
   const seen = new Set<string>();
 
+  const addCandidate = (rawUrl: string | null | undefined) => {
+    if (!rawUrl || rawUrl.length < 10) return;
+    const firstUrl = rawUrl.split(",")[0]?.trim().split(/\s+/)[0] || rawUrl.trim();
+    const lower = firstUrl.toLowerCase();
+    if (lower.includes("logo") || lower.includes("icon") || lower.includes("avatar") ||
+        lower.includes("agent") || lower.includes("team") || lower.includes("favicon") ||
+        lower.includes("pixel") || lower.includes("tracking") || lower.includes("badge") ||
+        lower.includes("flag") || lower.includes("social") || lower.includes("map") ||
+        lower.includes("googlemap") || lower.includes("maps.googleapis")) return;
+    let absolute = firstUrl;
+    try {
+      if (firstUrl.startsWith("//")) absolute = `https:${firstUrl}`;
+      else if (firstUrl.startsWith("/")) absolute = new URL(firstUrl, pageUrl).toString();
+      else if (!firstUrl.startsWith("http")) absolute = new URL(firstUrl, pageUrl).toString();
+    } catch { return; }
+    if (!seen.has(absolute)) {
+      seen.add(absolute);
+      images.push(absolute);
+    }
+  };
+
   // Match <img> tags with src attributes
   const imgRegex = /<img\s[^>]*src\s*=\s*["']([^"']+)["'][^>]*>/gi;
   let match: RegExpExecArray | null;
@@ -2118,39 +2159,92 @@ function extractImagesFromHtml(html: string, pageUrl: string): string[] {
     // Check for width/height attributes suggesting small images
     const widthMatch = src.match(/width\s*=\s*["']?(\d+)/i);
     if (widthMatch && parseInt(widthMatch[1]) < 80) continue;
-    // Resolve relative URLs
-    let absolute = url;
-    try {
-      if (url.startsWith("//")) absolute = `https:${url}`;
-      else if (url.startsWith("/")) absolute = new URL(url, pageUrl).toString();
-      else if (!url.startsWith("http")) absolute = new URL(url, pageUrl).toString();
-    } catch { continue; }
-    if (!seen.has(absolute)) {
-      seen.add(absolute);
-      images.push(absolute);
-    }
+    addCandidate(url);
+    const srcsetMatch = src.match(/srcset\s*=\s*["']([^"']+)["']/i);
+    if (srcsetMatch) addCandidate(srcsetMatch[1]);
   }
 
-  // Also check data-src, data-lazy-src (lazy loaded images)
-  const lazySrcRegex = /data-(?:src|lazy-src|original|srcset)\s*=\s*["']([^"'\s]+)["']/gi;
+  // Also check lazy-loaded and gallery attributes used by WordPress themes
+  const lazySrcRegex = /(?:data-(?:src|lazy-src|original|srcset|large_image|full|thumb)|href)\s*=\s*["']([^"']+)["']/gi;
   while ((match = lazySrcRegex.exec(html)) !== null) {
-    const url = match[1];
-    if (!url || url.length < 10) continue;
-    const lower = url.toLowerCase();
-    if (lower.includes("logo") || lower.includes("icon") || lower.includes("avatar") || lower.includes("agent")) continue;
-    let absolute = url;
-    try {
-      if (url.startsWith("//")) absolute = `https:${url}`;
-      else if (url.startsWith("/")) absolute = new URL(url, pageUrl).toString();
-      else if (!url.startsWith("http")) absolute = new URL(url, pageUrl).toString();
-    } catch { continue; }
-    if (!seen.has(absolute)) {
-      seen.add(absolute);
-      images.push(absolute);
-    }
+    addCandidate(match[1]);
   }
 
   return images.slice(0, 30); // Cap at 30 candidates
+}
+
+function decodeHtmlEntities(input: string): string {
+  return input
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#039;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">");
+}
+
+function textFromHtmlFragment(fragment: string): string {
+  return decodeHtmlEntities(fragment.replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<style[\s\S]*?<\/style>/gi, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim());
+}
+
+function extractAgencyHtmlFallback(html: string, markdown: string, url: string): Record<string, any> | null {
+  const result: Record<string, any> = { listing_category: "property" };
+  const combined = `${decodeURIComponent(url)}\n${markdown}\n${textFromHtmlFragment(html).slice(0, 6000)}`;
+  const h1 = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+  const titleTag = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+  const title = h1 ? textFromHtmlFragment(h1[1]) : titleTag ? textFromHtmlFragment(titleTag[1]).split("|")[0].trim() : "";
+  if (title) result.title = title;
+  const mainMatch = html.match(/<(?:main|article|div)[^>]*(?:property|estate|content|entry-content)[^>]*>([\s\S]{200,6000}?)<\/(?:main|article|div)>/i);
+  const desc = mainMatch ? textFromHtmlFragment(mainMatch[1]) : markdown.replace(/\s+/g, " ").trim();
+  if (desc && desc.length > 40) result.description = desc.slice(0, 2000);
+  const priceMatch = combined.match(/(?:₪|ש["״]?ח|nis)\s*([\d,.]{4,})|([\d,.]{4,})\s*(?:₪|ש["״]?ח|nis)/i);
+  if (priceMatch) {
+    const price = parseFloat(String(priceMatch[1] || priceMatch[2]).replace(/[^\d.]/g, ""));
+    if (!Number.isNaN(price) && price > 0) result.price = price;
+  }
+  const roomMatch = combined.match(/(\d+(?:\.5)?)\s*(?:חדרים|rooms?)/i);
+  if (roomMatch) {
+    const rooms = parseFloat(roomMatch[1]);
+    result.source_rooms = rooms;
+    result.bedrooms = Math.max(0, Math.floor(rooms) - 1);
+  }
+  const sizeMatch = combined.match(/(\d{2,4})\s*(?:מ["״]?ר|sqm|m²|square meters?)/i);
+  if (sizeMatch) result.size_sqm = parseFloat(sizeMatch[1]);
+  const city = inferCityFromHebrew(combined) || matchSupportedCity(combined.match(/(?:Tel Aviv|Jerusalem|Herzliya|Ramat Gan|Netanya|Haifa)/i)?.[0] || null);
+  if (city) result.city = city;
+  if (/להשכרה|השכרה|לטווח|\brent\b/i.test(combined)) result.listing_status = "for_rent";
+  else result.listing_status = "for_sale";
+  if (/פנטהאוז|penthouse/i.test(combined)) result.property_type = "penthouse";
+  else if (/דופלקס|duplex/i.test(combined)) result.property_type = "duplex";
+  else if (/דירת גן|garden apartment/i.test(combined)) result.property_type = "garden_apartment";
+  else if (/בית|וילה|house|villa/i.test(combined)) result.property_type = "house";
+  else result.property_type = "apartment";
+  const images = extractImagesFromHtml(html, url);
+  if (images.length > 0) {
+    result.image_urls = images;
+    result._photo_count = images.length;
+  }
+  return Object.keys(result).length >= 4 ? result : null;
+}
+
+async function collectAgencyOwnedImages(listing: any, structuredData: any, pageHtml: string, itemUrl: string, sb: any, jobId: string): Promise<string[]> {
+  const candidateImages: string[] = [];
+  if (listing.image_urls && Array.isArray(listing.image_urls)) candidateImages.push(...listing.image_urls);
+  if (structuredData?.structured_images?.length) candidateImages.push(...structuredData.structured_images);
+  if (candidateImages.length < 3 && pageHtml) candidateImages.push(...extractImagesFromHtml(pageHtml, itemUrl));
+  const uniqueImages = [...new Set(candidateImages.map(img => {
+    if (!img || typeof img !== "string") return "";
+    const first = img.split(",")[0]?.trim().split(/\s+/)[0] || img;
+    if (first.startsWith("//")) return `https:${first}`;
+    if (first.startsWith("/")) {
+      try { return new URL(first, itemUrl).toString(); } catch { return ""; }
+    }
+    return first;
+  }).filter(u => u && u.startsWith("http")))];
+  if (uniqueImages.length === 0) return [];
+  const downloaded = await parallelImageDownload(uniqueImages, sb, "property-images", jobId, 15);
+  listing.image_hashes = Array.from(new Set(downloaded.hashes || []));
+  return Array.from(new Set(downloaded.urls || []));
 }
 
 // ─── STRUCTURED DATA EXTRACTION (JSON-LD, Open Graph) ───────────────────────
@@ -2727,6 +2821,8 @@ async function processOneItem(
 
     // 1. Scrape
     const isYad2Item = item.url.includes("yad2.co.il");
+    const isAgencyOwnWebsite = isAgencyOwnWebsiteSource(job.source_type);
+    const isStrongAgencyListing = isAgencyOwnWebsite && isStrongAgencyListingUrl(item.url, job.website_url || item.url);
     dlog(`Scraping: ${item.url}`);
 
     // For Yad2, wrap the Firecrawl call in a 35s Promise.race timeout.
@@ -2828,7 +2924,7 @@ async function processOneItem(
       }
     }
 
-    if (!markdown || markdown.length < 50) {
+    if ((!markdown || markdown.length < 50) && !(isStrongAgencyListing && pageHtml && pageHtml.length > 500)) {
       await sb.from("import_job_items").update({ status: "skipped", error_message: "Page content too short", error_type: "permanent" }).eq("id", item.id);
       return { succeeded: false };
     }
@@ -2840,6 +2936,8 @@ async function processOneItem(
       await sb.from("import_job_items").update({ status: "skipped", error_message: preFilter.reason, error_type: "permanent" }).eq("id", item.id);
       return { succeeded: false };
     }
+
+    const agencyHtmlFallback = isStrongAgencyListing ? extractAgencyHtmlFallback(pageHtml, markdown, item.url) : null;
 
     // 1b. CMS detection + adapter extraction
     const cmsType = detectCmsType(pageHtml, item.url);
@@ -2867,7 +2965,7 @@ async function processOneItem(
     } else {
       // Normal AI extraction flow. For Yad2/Madlan, do not ask AI for image URLs.
       const sourceType = String(job.source_type || "").toLowerCase();
-      const includeImagesInExtraction = !(isYad2Item || sourceType.includes("yad2") || sourceType.includes("madlan"));
+      const includeImagesInExtraction = isAgencyOwnWebsite;
       const extractionPrompt = buildExtractionPrompt(item.url, domain, markdown, pageLinks, includeImagesInExtraction);
 
       const extractRes = await fetchWithTimeout("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -2936,11 +3034,17 @@ async function processOneItem(
         if (!extractToolCall?.function?.arguments) {
           const retryResult = await retryWithSimplifiedPrompt(item.url, markdown, lovableKey);
           if (!retryResult) {
+            if (agencyHtmlFallback) {
+              listing = agencyHtmlFallback;
+              cmsExtracted = "agency_html_fallback";
+            } else {
             await sb.from("import_job_items").update({ status: "failed", error_message: "AI returned no extraction data", error_type: "permanent" }).eq("id", item.id);
             return { succeeded: false };
+            }
+          } else {
+            listing = retryResult;
+            usedSimplifiedPrompt = true;
           }
-          listing = retryResult;
-          usedSimplifiedPrompt = true;
         } else {
         listing = JSON.parse(extractToolCall.function.arguments);
 
@@ -2949,6 +3053,11 @@ async function processOneItem(
           const responseTokens = Math.ceil((extractToolCall.function.arguments?.length || 0) / 4);
           await trackCost(sb, jobId, "ai_tokens", promptTokens + responseTokens, "tokens");
         }
+      }
+
+      if (!listing && agencyHtmlFallback) {
+        listing = agencyHtmlFallback;
+        cmsExtracted = "agency_html_fallback";
       }
 
       // Merge partial CMS data into AI result (CMS takes priority for filling gaps)
@@ -2960,6 +3069,14 @@ async function processOneItem(
           }
         }
         dlog(`CMS adapter (${cmsType}) merged partial data into AI extraction`);
+      }
+      if (agencyHtmlFallback) {
+        for (const [key, value] of Object.entries(agencyHtmlFallback)) {
+          if (value != null && (listing[key] == null || listing[key] === "" || listing[key] === 0 || (Array.isArray(listing[key]) && listing[key].length === 0))) {
+            listing[key] = value;
+          }
+        }
+        if (!cmsExtracted) cmsExtracted = "agency_html_fallback";
       }
     }
 
@@ -2993,9 +3110,14 @@ async function processOneItem(
 
     const category = listing.listing_category || (listing.is_listing_page === false ? "not_listing" : "property");
 
-    if (category === "not_listing") {
+    if (category === "not_listing" && !isStrongAgencyListing) {
       await sb.from("import_job_items").update({ status: "skipped", error_message: "Not a listing page", error_type: "permanent" }).eq("id", item.id);
       return { succeeded: false };
+    }
+
+    if (category === "not_listing" && isStrongAgencyListing) {
+      listing.listing_category = "property";
+      listing._category_overridden = "agency_listing_url";
     }
 
     if (category === "project") {
@@ -3047,6 +3169,16 @@ async function processOneItem(
       return { succeeded: false };
     }
 
+    // Guard against Hebrew agency pages being mislabeled as rentals because
+    // generic words like "לטווח" appear in text while the price is clearly a sale price.
+    if (listing.listing_status === "for_rent" && listing.price && listing.price > 100_000) {
+      const rentSignals = /לחודש|חודשי|שכירות חודשית|per month|monthly/i.test(`${markdown}\n${pageHtml}`);
+      if (!rentSignals || /למכירה|מכירה|for sale/i.test(`${decodeURIComponent(item.url)}\n${markdown}`)) {
+        listing.listing_status = "for_sale";
+        validationWarnings.push("corrected_rent_status_to_sale_due_high_price");
+      }
+    }
+
     // ── VALIDATION (enhanced with city-specific outlier detection) ──
     const { errors: propertyErrors, warnings: validationWarnings } = validatePropertyData(listing, importType);
     if (propertyErrors.length > 0) {
@@ -3077,7 +3209,18 @@ async function processOneItem(
       extracted_data: { ...listing, confidence_score: confidenceScore, validation_warnings: validationWarnings },
     }).eq("id", item.id);
 
-    // Below 40: skip with low confidence
+    // Below 40: skip with low confidence, except trusted agency-owned listing URLs.
+    // Those should import as draft/needs-review rather than disappearing.
+    if (confidenceScore < 40 && isStrongAgencyListing) {
+      validationWarnings.push(`agency_site_low_confidence_imported_${confidenceScore}`);
+      listing.provisioning_audit_status = "flagged";
+      confidenceScore = Math.max(confidenceScore, 40);
+      await sb.from("import_job_items").update({
+        confidence_score: confidenceScore,
+        extracted_data: { ...listing, confidence_score: confidenceScore, validation_warnings: validationWarnings },
+      }).eq("id", item.id);
+    }
+
     if (confidenceScore < 40) {
       await sb.from("import_job_items").update({
         status: "skipped",
@@ -3085,6 +3228,14 @@ async function processOneItem(
         error_type: "permanent",
       }).eq("id", item.id);
       return { succeeded: false };
+    }
+
+    // Download agency-owned website photos before merge so website images can enrich Madlan/Yad2 rows.
+    let imageUrls: string[] = [];
+    listing.image_hashes = [];
+    if (isAgencyOwnWebsite) {
+      imageUrls = await collectAgencyOwnedImages(listing, structuredData, pageHtml, item.url, sb, jobId);
+      if (imageUrls.length > 0) dlog(`Downloaded ${imageUrls.length} agency-owned images for ${item.url}`);
     }
 
     // ── Intra-agency dedup (Tier 2 / 2.5) — REMOVED in co-listing v2 ──
@@ -3248,6 +3399,13 @@ async function processOneItem(
           fieldSourceMap["features"] = incomingSource;
         }
 
+        // Images: only agency-owned website imports are allowed to add stored photos.
+        if (incomingSource === "website_scrape" && imageUrls.length > 0) {
+          const existingImages = Array.isArray(existing.images) ? existing.images as string[] : [];
+          patch.images = [...new Set([...existingImages, ...imageUrls])];
+          fieldSourceMap["images"] = incomingSource;
+        }
+
         patch.field_source_map = fieldSourceMap;
 
         // Recalculate quality score as max of both
@@ -3296,50 +3454,6 @@ async function processOneItem(
 
         dlog(`[Merge] Enriched property ${crossSourceMatchId} from ${incomingSource} (trust=${incomingRank}, conflicts=${conflictsToLog.length})`);
         return { succeeded: true };
-      }
-    }
-
-    // ── IMAGE HANDLING ──
-    // For Yad2 / Madlan scrapes: images are copyrighted, do NOT download.
-    // For agency's OWN website imports: these are the agency's own photos — download and store them.
-    let imageUrls: string[] = [];
-    listing.image_hashes = [];
-    const isAgencyOwnWebsite = job.source_type === "website" || job.source_type === "website_scrape" || (!job.source_type?.includes("yad2") && !job.source_type?.includes("madlan"));
-
-    if (isAgencyOwnWebsite) {
-      // Collect image URLs from multiple sources: AI extraction, structured data, HTML parsing
-      const candidateImages: string[] = [];
-
-      // 1. AI-extracted image URLs
-      if (listing.image_urls && Array.isArray(listing.image_urls)) {
-        candidateImages.push(...listing.image_urls);
-      }
-      // 2. Structured data images (JSON-LD, OG tags)
-      if (structuredData?.structured_images?.length) {
-        candidateImages.push(...structuredData.structured_images);
-      }
-      // 3. Parse images directly from HTML as fallback
-      if (candidateImages.length < 3 && pageHtml) {
-        const htmlImages = extractImagesFromHtml(pageHtml, item.url);
-        candidateImages.push(...htmlImages);
-      }
-
-      // Deduplicate and resolve relative URLs
-      const uniqueImages = [...new Set(candidateImages.map(img => {
-        if (!img || typeof img !== "string") return "";
-        if (img.startsWith("//")) return `https:${img}`;
-        if (img.startsWith("/")) {
-          try { return new URL(img, item.url).toString(); } catch { return ""; }
-        }
-        return img;
-      }).filter(u => u && u.startsWith("http")))];
-
-      if (uniqueImages.length > 0) {
-        dlog(`Found ${uniqueImages.length} candidate images for ${item.url}`);
-        const downloaded = await parallelImageDownload(uniqueImages, sb, "property-images", jobId, 15);
-        imageUrls = downloaded.urls;
-        listing.image_hashes = downloaded.hashes;
-        dlog(`Downloaded ${imageUrls.length} images for ${item.url}`);
       }
     }
 
@@ -3475,6 +3589,7 @@ async function processOneItem(
         is_published: false,
         is_featured: false, views_count: 0,
         verification_status: "pending_review",
+        provisioning_audit_status: listing.provisioning_audit_status || "pending",
         primary_agency_id: job.agency_id,
         claimed_by_agency_id: job.agency_id,
         import_source: job.source_type === "yad2" ? "yad2" : job.source_type === "madlan" ? "madlan" : "website_scrape",
