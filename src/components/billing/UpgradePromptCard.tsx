@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useListingLimitCheck } from '@/hooks/useListingLimitCheck';
 import { useSeatLimitCheck } from '@/hooks/useSeatLimitCheck';
+import { useSubscription } from '@/hooks/useSubscription';
 
 interface UpgradePromptCardProps {
   entityType: 'agency' | 'developer';
@@ -13,6 +14,9 @@ interface UpgradePromptCardProps {
 export function UpgradePromptCard({ entityType }: UpgradePromptCardProps) {
   const listing = useListingLimitCheck(entityType);
   const seat = useSeatLimitCheck();
+  const { data: sub } = useSubscription();
+
+  if (sub?.isFoundingAgency) return null;
 
   // Collect metrics that exceed 80%
   const metrics: { label: string; current: number; max: number; percent: number }[] = [];
