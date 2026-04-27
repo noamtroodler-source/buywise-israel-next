@@ -32,7 +32,6 @@ import { useMyAgency, useAgencyTeam } from '@/hooks/useAgencyManagement';
 import { useAgencyListingsManagement } from '@/hooks/useAgencyListings';
 import { useDeleteProperty, useSubmitForReview, useBulkDeleteProperties, useBulkSubmitForReview, useReassignProperty } from '@/hooks/useAgentProperties';
 import { AgentReassignPopover } from '@/components/agency/AgentReassignPopover';
-import { MergedSourcesBadges } from '@/components/agency/MergedSourcesBadges';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useUpdatePropertyStatus, useDuplicateProperty } from '@/hooks/useAgentProfile';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
@@ -288,7 +287,7 @@ export default function AgencyListings() {
               <Button variant="outline" asChild className="rounded-xl">
                 <Link to="/agency/import">
                   <Download className="h-4 w-4 mr-2" />
-                  Import from Website / Yad2 / Madlan
+                  Import from Website
                 </Link>
               </Button>
               <Button asChild className="rounded-xl">
@@ -542,12 +541,6 @@ export default function AgencyListings() {
                                 <Badge variant="outline" className={cn('text-xs', status.color)}>
                                   {status.label}
                                 </Badge>
-                                {(listing as any).import_source && (
-                                  <MergedSourcesBadges
-                                    primarySource={(listing as any).import_source}
-                                    mergedUrls={(listing as any).merged_source_urls}
-                                  />
-                                )}
                               </div>
                             </TableCell>
                             <TableCell className="text-right font-medium">
