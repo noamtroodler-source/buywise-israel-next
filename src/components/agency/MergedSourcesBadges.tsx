@@ -1,9 +1,7 @@
 /**
  * MergedSourcesBadges
  * --------------------
- * Compact source-origin badges for a property. Renders one chip per source
- * (Yad2 / Madlan / Website) so agencies can see where their listing data
- * came from at a glance.
+ * Compact source-origin badges for imported properties.
  */
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -23,8 +21,8 @@ function detectSource(url: string): 'yad2' | 'madlan' | 'website' {
 }
 
 const LABELS: Record<string, string> = {
-  yad2: 'Yad2',
-  madlan: 'Madlan',
+  yad2: 'External',
+  madlan: 'External',
   website: 'Website',
   website_scrape: 'Website',
 };
@@ -60,8 +58,8 @@ export function MergedSourcesBadges({ primarySource, mergedUrls, className }: Pr
       </TooltipTrigger>
       <TooltipContent>
         <p className="text-xs">
-          Listing data merged from {sources.size} source{sources.size > 1 ? 's' : ''}.
-          Website content is preferred; portals enrich missing details.
+          Listing data merged from {sources.size} import source{sources.size > 1 ? 's' : ''}.
+          Website content is preferred.
         </p>
       </TooltipContent>
     </Tooltip>
