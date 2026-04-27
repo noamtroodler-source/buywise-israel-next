@@ -106,6 +106,8 @@ function GoogleAddressAutocomplete({
   const [unsupportedCityError, setUnsupportedCityError] = useState<string | null>(null);
   const [cityMismatchError, setCityMismatchError] = useState<{ extracted: string; selected: string } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const hasRequiredStreetNumber = /\d/.test(inputValue || value || '');
+  const hasCompleteAddressSelection = hasValidSelection && hasRequiredStreetNumber;
 
   const {
     ready,
@@ -265,15 +267,17 @@ function GoogleAddressAutocomplete({
           name="notASearchField"
           className={cn(
             'h-11 rounded-xl pr-10',
-            hasValidSelection && 'border-primary/50 bg-primary/5',
+            hasCompleteAddressSelection && 'border-primary/50 bg-primary/5',
             className
           )}
         />
         <div className="absolute right-3 top-1/2 -translate-y-1/2">
           {!ready ? (
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-          ) : hasValidSelection ? (
+          ) : hasCompleteAddressSelection ? (
             <Check className="h-4 w-4 text-primary" />
+          ) : hasValidSelection && !hasRequiredStreetNumber ? (
+            <AlertCircle className="h-4 w-4 text-primary" />
           ) : (
             <MapPin className="h-4 w-4 text-muted-foreground" />
           )}
