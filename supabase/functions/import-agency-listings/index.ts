@@ -1341,7 +1341,7 @@ async function handleDiscover(body: any) {
   const mapRes = await fetch("https://api.firecrawl.dev/v1/map", {
     method: "POST",
     headers: { Authorization: `Bearer ${FIRECRAWL_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ url: siteRoot, limit: 500, includeSubdomains: false }),
+    body: JSON.stringify({ url: siteRoot, limit: 2000, includeSubdomains: false }),
   });
   if (!mapRes.ok) {
     const errText = await mapRes.text();
@@ -1479,8 +1479,13 @@ async function handleDiscover(body: any) {
     return { job_id: null, total_listings: 0, total_discovered: allUrls.length, new_urls: 0, skipped_existing: skippedExisting };
   }
 
-  const listingUrls = await classifyUrlsInBatches(newUrls, LOVABLE_API_KEY);
-  dlog(`AI identified ${listingUrls.length} listing URLs`);
+  const deterministicListingUrls = newUrls.filter((url) => isStrongAgencyListingUrl(url, formattedUrl));
+  const needsAiClassification = newUrls.filter((url) => !isStrongAgencyListingUrl(url, formattedUrl));
+  const aiListingUrls = needsAiClassification.length > 0
+    ? await classifyUrlsInBatches(needsAiClassification, LOVABLE_API_KEY)
+    : [];
+  const listingUrls = Array.from(new Set([...deterministicListingUrls, ...aiListingUrls].map((url) => normalizeUrl(url))));
+  console.log(`Listing classification: ${deterministicListingUrls.length} deterministic + ${aiListingUrls.length} AI = ${listingUrls.length}`);
 
   if (listingUrls.length === 0) {
     if (existingJobId) {
