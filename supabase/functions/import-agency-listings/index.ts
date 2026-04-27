@@ -1114,6 +1114,21 @@ function isSameSiteUrl(candidate: string, sourceUrl: string): boolean {
   }
 }
 
+function isAgencyOwnWebsiteSource(sourceType?: string | null): boolean {
+  const normalized = String(sourceType || "website").toLowerCase();
+  return !normalized.includes("yad2") && !normalized.includes("madlan");
+}
+
+function isStrongAgencyListingUrl(candidate: string, sourceUrl: string): boolean {
+  try {
+    if (!isSameSiteUrl(candidate, sourceUrl)) return false;
+    const path = decodeURIComponent(new URL(candidate).pathname).toLowerCase();
+    return /\/(estate_property|property|properties)\//i.test(path) && !/(sold|rented|archive|archived|נמכר|הושכר|בהסכם)/i.test(path);
+  } catch {
+    return false;
+  }
+}
+
 function extractLinksFromHtml(html: string, pageUrl: string): string[] {
   const links = new Set<string>();
   const linkRegex = /<a\s[^>]*href\s*=\s*["']([^"'#]+)["'][^>]*>/gi;
