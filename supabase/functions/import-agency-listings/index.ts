@@ -1104,6 +1104,63 @@ function normalizeUrl(raw: string): string {
   }
 }
 
+function sanitizeDiscoveredUrl(raw: string, baseUrl?: string): { url: string | null; reason?: string } {
+  if (!raw || typeof raw !== "string") return { url: null, reason: "empty_url" };
+  let candidate = raw.trim().replace(/&amp;/g, "&");
+  try {
+    candidate = new URL(candidate, baseUrl || undefined).toString();
+    const parsed = new URL(candidate);
+    const originalPath = parsed.pathname;
+    parsed.pathname = parsed.pathname
+      .replace(/\/(estate_property|property|properties)\/NaN\d*/i, "/$1/")
+      .replace(/\/(estate_property|property|properties)\/NaN(?=%[dD]7|[\u0590-\u05FF])/i, "/$1/");
+    const normalized = normalizeUrl(parsed.toString());
+    return { url: normalized, reason: originalPath !== parsed.pathname ? "repaired_malformed_nan_path" : undefined };
+  } catch {
+    return { url: null, reason: "malformed_url" };
+  }
+}
+
+function canonicalizeDiscoveredUrls(urls: string[], baseUrl: string): { urls: string[]; rejected: number; repaired: number } {
+  const seen = new Set<string>();
+  let rejected = 0;
+  let repaired = 0;
+  for (const raw of urls) {
+    const sanitized = sanitizeDiscoveredUrl(raw, baseUrl);
+    if (!sanitized.url) { rejected++; continue; }
+    if (sanitized.reason?.startsWith("repaired")) repaired++;
+    seen.add(sanitized.url);
+  }
+  return { urls: Array.from(seen), rejected, repaired };
+}
+
+async function discoverSitemapListingUrls(siteRoot: string): Promise<string[]> {
+  const sitemapPaths = [
+    "/sitemap.xml",
+    "/property-sitemap.xml",
+    "/estate_property-sitemap.xml",
+    "/wp-sitemap-posts-estate_property-1.xml",
+  ];
+  const links = new Set<string>();
+  for (const path of sitemapPaths) {
+    try {
+      const sitemapUrl = new URL(path, siteRoot).toString();
+      const res = await fetchWithTimeout(sitemapUrl, { headers: { Accept: "application/xml,text/xml,*/*" } }, 12_000);
+      if (!res.ok) continue;
+      const xml = await res.text();
+      const locRegex = /<loc>\s*([^<]+)\s*<\/loc>/gi;
+      let match: RegExpExecArray | null;
+      while ((match = locRegex.exec(xml)) !== null) {
+        const cleaned = decodeHtmlEntities(match[1]);
+        if (isStrongAgencyListingUrl(cleaned, siteRoot)) links.add(normalizeUrl(cleaned));
+      }
+    } catch (err) {
+      console.warn(`Sitemap discovery failed for ${path}: ${err}`);
+    }
+  }
+  return Array.from(links);
+}
+
 function isSameSiteUrl(candidate: string, sourceUrl: string): boolean {
   try {
     const candidateHost = new URL(candidate).hostname.toLowerCase().replace(/^www\./, "");
