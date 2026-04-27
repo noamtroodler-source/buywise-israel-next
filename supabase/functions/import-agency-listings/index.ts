@@ -585,6 +585,11 @@ function isNonResalePage(markdown: string, importType: string = "resale"): { ski
     if (p.test(snippet)) return { skip: true, reason: "Pre-filter: listing appears sold/rented" };
   }
 
+  const shortTerm = detectShortTermRental(snippet);
+  if (shortTerm.isShortTerm) {
+    return { skip: true, reason: `Pre-filter: short-term rental not supported (${shortTerm.reason})` };
+  }
+
   // Rental indicators — only skip in resale-only mode
   if (importType === "resale") {
     const rentalPatterns = [
@@ -642,6 +647,25 @@ const SKIP_PROPERTY_TYPES = new Set([
   "building", "agricultural_estate", "assisted_living",
 ]);
 
+function detectShortTermRental(text: string): { isShortTerm: boolean; reason: string } {
+  const snippet = text.slice(0, 80_000);
+  const shortTermPatterns: Array<[RegExp, string]> = [
+    [/\bshort[\s-]?term\b/i, "short-term wording"],
+    [/\bvacation\s+rental\b|\bholiday\s+rental\b|\bairbnb\b/i, "vacation/Airbnb wording"],
+    [/\bper\s+night\b|\bnightly\b|\bby\s+the\s+night\b/i, "nightly pricing"],
+    [/\bper\s+week\b|\bweekly\b|\bby\s+the\s+week\b/i, "weekly pricing"],
+    [/\bminimum\s+(?:stay|rental)\b|\bmin(?:imum)?\s+\d+\s+nights?\b/i, "minimum-stay wording"],
+    [/השכרה\s+לטווח\s+קצר|לטווח\s+קצר|קצר\s+טווח/, "Hebrew short-term wording"],
+    [/לילה|לילות|יומי|יומית|ליום|לשבוע|שבועי|שבועית|נופש|חופשה|איירבנב|אירוח/, "Hebrew nightly/weekly/vacation wording"],
+  ];
+
+  for (const [pattern, reason] of shortTermPatterns) {
+    if (pattern.test(snippet)) return { isShortTerm: true, reason };
+  }
+
+  return { isShortTerm: false, reason: "" };
+}
+
 function normalizeCompactAgencyPrice(
   listing: Record<string, any>,
   visibleText: string,
@@ -654,13 +678,16 @@ function normalizeCompactAgencyPrice(
   const effectiveImportType = normalizeImportType(importType);
   const status = listing.listing_status === "for_rent" ? "for_rent" : "for_sale";
   const validateAsSale = effectiveImportType === "resale" || (effectiveImportType === "both" && status === "for_sale");
-  if (!validateAsSale || price >= 100) return warnings;
 
   const text = visibleText.slice(0, 80_000);
   const hasRentSignal = /לחודש|חודשי|השכרה|שכירות|per\s+month|monthly|\/\s*month|for\s+rent/i.test(text);
   const hasSaleSignal = /למכירה|מכירה|for\s+sale|buy|purchase|₪\s*\d{1,2}(?:\.\d+)?\s*(?:m|million|מיליון)|\d{1,2}(?:\.\d+)?\s*(?:m|million|מיליון)/i.test(text);
 
-  if (hasSaleSignal && !hasRentSignal) {
+  if (status === "for_rent" && price > 0 && price < 100 && hasRentSignal) {
+    listing.price = Math.round(price * 1_000);
+    listing._price_normalized_from_compact_thousands = price;
+    warnings.push(`normalized compact agency rental price ${price}K to ${listing.price} NIS/month`);
+  } else if (validateAsSale && price < 100 && hasSaleSignal && !hasRentSignal) {
     listing.price = Math.round(price * 1_000_000);
     listing._price_normalized_from_compact_millions = price;
     warnings.push(`normalized compact agency sale price ${price}M to ${listing.price} NIS`);
@@ -2722,6 +2749,7 @@ FLOOR ORDINALS (Hebrew → number):
 RENTAL TERMS (Hebrew → BuyWise field):
 שכירות / להשכרה = listing_status: for_rent
 תקופת שכירות = lease_term | חוזה ל-12 חודשים = 12_months | חוזה ל-6 חודשים = 6_months | חוזה ל-24 חודשים = 24_months | גמיש = flexible
+לטווח קצר / השכרה לטווח קצר / לילה / לילות / יומי / שבועי / נופש / חופשה = short_term_rental: true — unsupported, skip
 מרוהט לגמרי / מרוהט = fully | מרוהט חלקית = semi | לא מרוהט / ללא ריהוט = unfurnished
 חיות מחמד / בע״ח = pets_policy | מותר חיות = allowed | לפי שיקול דעת = case_by_case | אין חיות = not_allowed
 סאבלט / השכרת משנה = subletting_allowed | מותר = allowed | אסור = not_allowed
@@ -2752,9 +2780,11 @@ FOR PROPERTIES — extract these fields:
 - Default currency is ILS (₪) unless explicitly stated otherwise.
 - Use the dictionary above for property types, not your own guess.
 - listing_status: for_sale if buying/מכירה, for_rent if renting/השכרה
+- short_term_rental: true if the listing is nightly, weekly, vacation/holiday/Airbnb, or Hebrew לטווח קצר/לילה/יומי/שבועי/נופש/חופשה. These are unsupported even if they are rentals.
 - Detect if sold (נמכר), rented (הושכר), under contract (בהסכם). Set is_sold_or_rented=true if so.
 - Price might appear as "₪1,500,000" or "1,500,000 ש״ח" or "$450,000"
 - For rentals, price is monthly rent (e.g., "₪5,500/חודש" or "5,500 ש״ח לחודש")
+- For long-term rentals only: accept monthly/yearly/6+ month leases. Do NOT treat nightly/weekly/vacation rentals as normal rentals.
 ${imageInstruction}
 - For floor: use the Hebrew ordinal map above
 - For rental listings: extract lease_term, furnished_status, pets_policy, subletting_allowed, agent_fee_required, bank_guarantee_required, checks_required if mentioned
@@ -3022,6 +3052,7 @@ ${yad2Hint}
 - address (street name + number)
 - property_type (one of: apartment, house, penthouse, duplex, garden_apartment, cottage, land)
 - listing_status (for_sale or for_rent)
+- short_term_rental (boolean; true for nightly/weekly/vacation/Airbnb/לטווח קצר rentals)
 - photo_count (number of photos on the page)
 - listing_category (property, project, or not_listing)
 
@@ -3053,6 +3084,7 @@ ${truncatedContent}`;
                 neighborhood: { type: "string" },
                 property_type: { type: "string", enum: ["apartment", "garden_apartment", "penthouse", "duplex", "house", "cottage", "land"] },
                 listing_status: { type: "string", enum: ["for_sale", "for_rent"] },
+                short_term_rental: { type: "boolean" },
                 photo_count: { type: "number" },
               },
               required: ["listing_category"],
@@ -3325,6 +3357,7 @@ async function processOneItem(
                   neighborhood: { type: "string" },
                   property_type: { type: "string", enum: ["apartment", "garden_apartment", "penthouse", "duplex", "house", "cottage", "land"] },
                   listing_status: { type: "string", enum: ["for_sale", "for_rent"] },
+                  short_term_rental: { type: "boolean" },
                   floor: { type: "number" },
                   total_floors: { type: "number" },
                   year_built: { type: "number", description: "Year built / construction year if shown" },
@@ -3518,6 +3551,17 @@ async function processOneItem(
     // ── SOLD/RENTED POST-EXTRACTION CHECK ──
     if (listing.is_sold_or_rented) {
       await sb.from("import_job_items").update({ status: "skipped", error_message: "Listing is sold or rented", error_type: "permanent" }).eq("id", item.id);
+      return { succeeded: false };
+    }
+
+    const shortTermPostCheck = detectShortTermRental(`${decodeURIComponent(item.url)}\n${listing.title || ""}\n${listing.description || ""}\n${markdown}\n${pageHtml}`);
+    if (listing.short_term_rental === true || shortTermPostCheck.isShortTerm) {
+      await sb.from("import_job_items").update({
+        status: "skipped",
+        error_message: `Short-term rental not supported${shortTermPostCheck.reason ? ` (${shortTermPostCheck.reason})` : ""}`,
+        error_type: "permanent",
+        extracted_data: { ...listing, short_term_rental: true },
+      }).eq("id", item.id);
       return { succeeded: false };
     }
 
