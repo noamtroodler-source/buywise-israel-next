@@ -678,13 +678,16 @@ function normalizeCompactAgencyPrice(
   const effectiveImportType = normalizeImportType(importType);
   const status = listing.listing_status === "for_rent" ? "for_rent" : "for_sale";
   const validateAsSale = effectiveImportType === "resale" || (effectiveImportType === "both" && status === "for_sale");
-  if (!validateAsSale || price >= 100) return warnings;
 
   const text = visibleText.slice(0, 80_000);
   const hasRentSignal = /לחודש|חודשי|השכרה|שכירות|per\s+month|monthly|\/\s*month|for\s+rent/i.test(text);
   const hasSaleSignal = /למכירה|מכירה|for\s+sale|buy|purchase|₪\s*\d{1,2}(?:\.\d+)?\s*(?:m|million|מיליון)|\d{1,2}(?:\.\d+)?\s*(?:m|million|מיליון)/i.test(text);
 
-  if (hasSaleSignal && !hasRentSignal) {
+  if (status === "for_rent" && price > 0 && price < 100 && hasRentSignal) {
+    listing.price = Math.round(price * 1_000);
+    listing._price_normalized_from_compact_thousands = price;
+    warnings.push(`normalized compact agency rental price ${price}K to ${listing.price} NIS/month`);
+  } else if (validateAsSale && price < 100 && hasSaleSignal && !hasRentSignal) {
     listing.price = Math.round(price * 1_000_000);
     listing._price_normalized_from_compact_millions = price;
     warnings.push(`normalized compact agency sale price ${price}M to ${listing.price} NIS`);
