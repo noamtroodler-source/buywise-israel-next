@@ -3052,6 +3052,7 @@ ${yad2Hint}
 - address (street name + number)
 - property_type (one of: apartment, house, penthouse, duplex, garden_apartment, cottage, land)
 - listing_status (for_sale or for_rent)
+- short_term_rental (boolean; true for nightly/weekly/vacation/Airbnb/לטווח קצר rentals)
 - photo_count (number of photos on the page)
 - listing_category (property, project, or not_listing)
 
@@ -3083,6 +3084,7 @@ ${truncatedContent}`;
                 neighborhood: { type: "string" },
                 property_type: { type: "string", enum: ["apartment", "garden_apartment", "penthouse", "duplex", "house", "cottage", "land"] },
                 listing_status: { type: "string", enum: ["for_sale", "for_rent"] },
+                short_term_rental: { type: "boolean" },
                 photo_count: { type: "number" },
               },
               required: ["listing_category"],
