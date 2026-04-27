@@ -24,6 +24,24 @@ function generatePassword(): string {
   return out;
 }
 
+async function findUserByEmail(admin: any, email: string) {
+  const target = email.trim().toLowerCase();
+  let page = 1;
+  const perPage = 200;
+
+  while (page <= 50) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage });
+    if (error) throw error;
+
+    const user = data.users.find((u: any) => u.email?.trim().toLowerCase() === target);
+    if (user) return user;
+    if (data.users.length < perPage) return null;
+    page += 1;
+  }
+
+  return null;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -90,28 +108,39 @@ Deno.serve(async (req) => {
     }
 
     const password = generatePassword();
+    let authUser = await findUserByEmail(admin, ownerEmail);
+    let reusedExistingUser = Boolean(authUser);
 
-    // Create auth user via admin API
-    const { data: created, error: createErr } = await admin.auth.admin.createUser({
-      email: ownerEmail,
-      password,
-      email_confirm: true,
-      user_metadata: {
-        full_name: ownerName,
-        phone: ownerPhone ?? null,
-        provisioned: true,
-        provisioned_for_agency_id: agencyId,
-        role_intent: "agency_owner",
-      },
-    });
-    if (createErr || !created?.user) {
-      console.error("createUser error:", createErr);
-      return new Response(
-        JSON.stringify({ success: false, error: createErr?.message || "Failed to create user" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    if (!authUser) {
+      const { data: created, error: createErr } = await admin.auth.admin.createUser({
+        email: ownerEmail,
+        password,
+        email_confirm: true,
+        user_metadata: {
+          full_name: ownerName,
+          phone: ownerPhone ?? null,
+          provisioned: true,
+          provisioned_for_agency_id: agencyId,
+          role_intent: "agency_owner",
+        },
+      });
+      if (createErr || !created?.user) {
+        if (createErr?.code === "email_exists" || createErr?.message?.includes("already been registered")) {
+          authUser = await findUserByEmail(admin, ownerEmail);
+          reusedExistingUser = Boolean(authUser);
+        }
+        if (!authUser) {
+          console.error("createUser error:", createErr);
+          return new Response(
+            JSON.stringify({ success: false, error: createErr?.message || "Failed to create user" }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      } else {
+        authUser = created.user;
+      }
     }
-    const newUserId = created.user.id;
+    const newUserId = authUser.id;
 
     // Ensure profile row exists
     await admin.from("profiles").upsert({
@@ -120,8 +149,9 @@ Deno.serve(async (req) => {
       full_name: ownerName,
     }, { onConflict: "id" });
 
-    // Grant agency_admin role (if that role exists in your enum) — fall back gracefully
-    await admin.from("user_roles").insert({ user_id: newUserId, role: "agency_admin" }).select();
+    await admin
+      .from("user_roles")
+      .upsert({ user_id: newUserId, role: "agency_admin" }, { onConflict: "user_id,role" });
 
     // Link to agency
     await admin
@@ -134,14 +164,15 @@ Deno.serve(async (req) => {
       })
       .eq("id", agencyId);
 
-    // Store provisional credentials
-    await admin.from("provisional_credentials").insert({
-      user_id: newUserId,
-      agency_id: agencyId,
-      role: "owner",
-      encrypted_password: password,
-      created_by: adminUserId,
-    });
+    if (!reusedExistingUser) {
+      await admin.from("provisional_credentials").insert({
+        user_id: newUserId,
+        agency_id: agencyId,
+        role: "owner",
+        encrypted_password: password,
+        created_by: adminUserId,
+      });
+    }
 
     // Create password setup token
     const { data: tokenRow, error: tokenErr } = await admin
@@ -160,7 +191,7 @@ Deno.serve(async (req) => {
       _agency_id: agencyId,
       _action: "owner_account_provisioned",
       _target_user_id: newUserId,
-      _metadata: { email: ownerEmail },
+        _metadata: { email: ownerEmail, reused_existing_user: reusedExistingUser },
     });
 
     return new Response(
