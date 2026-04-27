@@ -1989,6 +1989,70 @@ async function enhanceImage(imagePublicUrl: string, sb: any, bucketName: string,
   } catch { return imagePublicUrl; }
 }
 
+function moveImageToFront(urls: string[], index: number): string[] {
+  if (index <= 0 || index >= urls.length) return urls;
+  const next = [...urls];
+  const [cover] = next.splice(index, 1);
+  next.unshift(cover);
+  return next;
+}
+
+async function rankImportedCoverPhotos(imageUrls: string[], listing: any): Promise<string[]> {
+  if (imageUrls.length < 2) return imageUrls;
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  if (!LOVABLE_API_KEY) return imageUrls;
+
+  const candidates = imageUrls.slice(0, Math.min(imageUrls.length, 10));
+  const listingContext = {
+    title: listing?.title || listing?.ai_title || null,
+    property_type: listing?.property_type || null,
+    city: listing?.city || null,
+    neighborhood: listing?.neighborhood || null,
+    bedrooms: listing?.bedrooms ?? null,
+    size_sqm: listing?.size_sqm ?? null,
+    features: Array.isArray(listing?.features) ? listing.features.slice(0, 10) : [],
+  };
+
+  try {
+    const content: any[] = [
+      {
+        type: "text",
+        text: `Choose the best real-estate cover photo for this imported listing. Prefer bright, sharp, wide-angle living room, main interior, balcony/view, kitchen, or attractive exterior shots. Avoid bathrooms, corridors, floor plans, maps, logos, close-up details, dark/blurry images, duplicate-looking images, and images with heavy text overlays. Return JSON only: {"best_index": number, "reason": string}. Candidate indexes are zero-based. Listing context: ${JSON.stringify(listingContext)}`,
+      },
+    ];
+    candidates.forEach((url, index) => {
+      content.push({ type: "text", text: `Candidate ${index}` });
+      content.push({ type: "image_url", image_url: { url } });
+    });
+
+    const res = await fetchWithTimeout("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [{ role: "user", content }],
+        temperature: 0.1,
+      }),
+    }, 18_000);
+    if (!res.ok) return imageUrls;
+
+    const data = await res.json();
+    const raw = data.choices?.[0]?.message?.content;
+    const text = Array.isArray(raw)
+      ? raw.map((part: any) => part?.text || "").join(" ")
+      : String(raw || "");
+    const jsonText = text.match(/\{[\s\S]*\}/)?.[0] || text;
+    const parsed = JSON.parse(jsonText);
+    const bestIndex = Number(parsed.best_index);
+    if (!Number.isInteger(bestIndex) || bestIndex < 0 || bestIndex >= candidates.length) return imageUrls;
+    if (bestIndex > 0) dlog(`AI cover photo selected candidate ${bestIndex} over first image for ${listing?.source_url || listing?.title || "listing"}: ${parsed.reason || ""}`);
+    return moveImageToFront(imageUrls, bestIndex);
+  } catch (err) {
+    console.warn("Cover photo ranking skipped:", err);
+    return imageUrls;
+  }
+}
+
 /**
  * Derive a deterministic heading (0-359) from floor/unit data so that
  * same-building listings get slightly different camera angles.
