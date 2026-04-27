@@ -642,6 +642,33 @@ const SKIP_PROPERTY_TYPES = new Set([
   "building", "agricultural_estate", "assisted_living",
 ]);
 
+function normalizeCompactAgencyPrice(
+  listing: Record<string, any>,
+  visibleText: string,
+  importType: string = "resale",
+): string[] {
+  const warnings: string[] = [];
+  const price = typeof listing.price === "number" ? listing.price : Number(listing.price);
+  if (!Number.isFinite(price) || price <= 0) return warnings;
+
+  const effectiveImportType = normalizeImportType(importType);
+  const status = listing.listing_status === "for_rent" ? "for_rent" : "for_sale";
+  const validateAsSale = effectiveImportType === "resale" || (effectiveImportType === "both" && status === "for_sale");
+  if (!validateAsSale || price >= 100) return warnings;
+
+  const text = visibleText.slice(0, 80_000);
+  const hasRentSignal = /לחודש|חודשי|השכרה|שכירות|per\s+month|monthly|\/\s*month|for\s+rent/i.test(text);
+  const hasSaleSignal = /למכירה|מכירה|for\s+sale|buy|purchase|₪\s*\d{1,2}(?:\.\d+)?\s*(?:m|million|מיליון)|\d{1,2}(?:\.\d+)?\s*(?:m|million|מיליון)/i.test(text);
+
+  if (hasSaleSignal && !hasRentSignal) {
+    listing.price = Math.round(price * 1_000_000);
+    listing._price_normalized_from_compact_millions = price;
+    warnings.push(`normalized compact agency sale price ${price}M to ${listing.price} NIS`);
+  }
+
+  return warnings;
+}
+
 function validatePropertyData(listing: Record<string, any>, importType: string = "resale"): { errors: string[]; warnings: string[] } {
   const errors: string[] = [];
   const warnings: string[] = [];
