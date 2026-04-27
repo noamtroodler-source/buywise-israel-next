@@ -104,39 +104,44 @@ const reviewConfig: Record<AgencyReviewStatus, { label: string; color: string; i
   archived_stale: { label: 'Archived', color: 'bg-muted text-muted-foreground border-border', icon: Archive },
 };
 
-function getReviewBucket(listing: AgencyListing) {
+type ReviewWorkBucket = 'almost_ready' | 'needs_work';
+
+function getReviewBucket(listing: AgencyListing): ReviewWorkBucket | AgencyReviewStatus {
   const status = listing.agency_review_status || 'needs_review';
-  if (status === 'needs_review' && listing.safe_to_batch_approve && (listing.missing_quick_fields?.length ?? 0) === 0) return 'ready';
-  if (status === 'needs_review' || status === 'needs_edit') return 'fix';
+  if (status === 'needs_review' || status === 'needs_edit') {
+    const missingCount = listing.missing_quick_fields?.length ?? 0;
+    const imageCount = Array.isArray(listing.images) ? listing.images.length : 0;
+    return !listing.has_critical_flags && missingCount <= 1 && imageCount >= 2 ? 'almost_ready' : 'needs_work';
+  }
   return status;
 }
 
 function LaunchReviewGuidance({ listings, reviewFilter, setReviewFilter }: {
   listings: AgencyListing[];
-  reviewFilter: 'all' | 'ready' | 'fix' | AgencyReviewStatus;
-  setReviewFilter: (value: 'all' | 'ready' | 'fix' | AgencyReviewStatus) => void;
+  reviewFilter: 'all' | ReviewWorkBucket | AgencyReviewStatus;
+  setReviewFilter: (value: 'all' | ReviewWorkBucket | AgencyReviewStatus) => void;
 }) {
   const [dismissed, setDismissed] = useState(() => localStorage.getItem(LAUNCH_REVIEW_GUIDANCE_KEY) === 'true');
 
   const counts = useMemo(() => ({
-    ready: listings.filter((listing) => getReviewBucket(listing) === 'ready').length,
-    fix: listings.filter((listing) => getReviewBucket(listing) === 'fix').length,
+    almostReady: listings.filter((listing) => getReviewBucket(listing) === 'almost_ready').length,
+    needsWork: listings.filter((listing) => getReviewBucket(listing) === 'needs_work').length,
   }), [listings]);
 
   if (dismissed || listings.length === 0) return null;
 
   const categories = [
     {
-      key: 'ready' as const,
-      label: 'Ready to publish',
-      value: counts.ready,
-      description: 'Core fields look ready. We still recommend a quick accuracy check before publishing.',
+      key: 'almost_ready' as const,
+      label: 'Almost ready',
+      value: counts.almostReady,
+      description: 'These are basically ready and only need one small confirmation or edit before publishing.',
     },
     {
-      key: 'fix' as const,
-      label: 'Needs missing info/photos',
-      value: counts.fix,
-      description: 'These need small missing details, stronger features, or more photos before they should go live.',
+      key: 'needs_work' as const,
+      label: 'Needs work',
+      value: counts.needsWork,
+      description: 'These are missing multiple details or enough photos that they need proper attention before going live.',
     },
   ];
 
@@ -147,7 +152,7 @@ function LaunchReviewGuidance({ listings, reviewFilter, setReviewFilter }: {
           <div className="space-y-1">
             <p className="text-sm font-semibold text-foreground">Review your imported listings before going live</p>
             <p className="text-sm text-muted-foreground max-w-4xl">
-              Start with the listings that are closest to ready, then work through quick fixes. Your agency is responsible for accuracy, and richer features/photos help buyers trust and notice each listing.
+              Start with listings that are almost ready, then work through the ones missing more information or photos. Your agency is responsible for accuracy before anything goes live.
             </p>
           </div>
           <Button
@@ -277,7 +282,7 @@ export default function AgencyListings() {
   const [agentFilter, setAgentFilter] = useState<string>('all');
   const [cityFilter, setCityFilter] = useState<string>('all');
   const [roleFilter, setRoleFilter] = useState<'all' | 'primary' | 'co_listed'>('all');
-  const [reviewFilter, setReviewFilter] = useState<'all' | 'ready' | 'fix' | AgencyReviewStatus>('all');
+  const [reviewFilter, setReviewFilter] = useState<'all' | ReviewWorkBucket | AgencyReviewStatus>('all');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [sort, setSort] = useState<{ key: SortKey; direction: SortDirection } | null>({ key: 'review', direction: 'desc' });
@@ -348,8 +353,8 @@ export default function AgencyListings() {
     active: listings.filter(l => l.verification_status === 'approved').length,
     pending: listings.filter(l => l.verification_status === 'pending_review').length,
     needsReview: listings.filter(l => l.agency_review_status === 'needs_review').length,
-    ready: listings.filter(l => getReviewBucket(l) === 'ready').length,
-    quickFix: listings.filter(l => getReviewBucket(l) === 'fix').length,
+    ready: listings.filter(l => getReviewBucket(l) === 'almost_ready').length,
+    quickFix: listings.filter(l => getReviewBucket(l) === 'needs_work').length,
     archived: listings.filter(l => l.agency_review_status === 'archived_stale').length,
     totalViews: listings.reduce((sum, l) => sum + (l.views_count || 0), 0),
   };
@@ -602,8 +607,8 @@ export default function AgencyListings() {
                   <SelectTrigger className="w-[170px] rounded-xl"><SelectValue placeholder="Review" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Reviews</SelectItem>
-                    <SelectItem value="ready">Ready to publish</SelectItem>
-                    <SelectItem value="fix">Needs info/photos</SelectItem>
+                    <SelectItem value="almost_ready">Almost ready</SelectItem>
+                    <SelectItem value="needs_work">Needs work</SelectItem>
                     <SelectItem value="approved_live">Confirmed</SelectItem>
                     <SelectItem value="archived_stale">Archived</SelectItem>
                   </SelectContent>
