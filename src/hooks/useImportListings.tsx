@@ -301,6 +301,29 @@ export function useResumeJob() {
   });
 }
 
+export function useQuarantineMadlanBatch() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (agencyId: string) => {
+      const { data, error } = await supabase.functions.invoke('import-agency-listings', {
+        body: { action: 'quarantine_madlan_batch', agency_id: agencyId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data as { quarantined_count: number };
+    },
+    onSuccess: (data) => {
+      toast.success(`Quarantined ${data.quarantined_count} Madlan listings for review`);
+      queryClient.invalidateQueries({ queryKey: ['importJobs'] });
+      queryClient.invalidateQueries({ queryKey: ['agencyListingsManagement'] });
+    },
+    onError: (err: Error) => {
+      toast.error(`Quarantine failed: ${err.message}`);
+    },
+  });
+}
+
 
 export function useProcessAll() {
   const queryClient = useQueryClient();

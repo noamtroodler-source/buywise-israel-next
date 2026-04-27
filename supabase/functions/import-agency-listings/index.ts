@@ -2297,7 +2297,7 @@ function extractAgencyHtmlFallback(html: string, markdown: string, url: string):
 
 async function collectAgencyOwnedImages(listing: any, structuredData: any, pageHtml: string, itemUrl: string, sb: any, jobId: string): Promise<string[]> {
   const candidateImages: string[] = [];
-  if (listing.image_urls && Array.isArray(listing.image_urls)) candidateImages.push(...listing.image_urls);
+  if (listing.image_urls && Array.isArray(listing.image_urls)) candidateImages.push(...flattenImageCandidates(listing.image_urls));
   if (structuredData?.structured_images?.length) candidateImages.push(...structuredData.structured_images);
   if (candidateImages.length < 3 && pageHtml) candidateImages.push(...extractImagesFromHtml(pageHtml, itemUrl));
   const uniqueImages = [...new Set(candidateImages.map(img => {
@@ -2315,6 +2315,20 @@ async function collectAgencyOwnedImages(listing: any, structuredData: any, pageH
   return Array.from(new Set(downloaded.urls || []));
 }
 
+function flattenImageCandidates(input: any, depth = 0): string[] {
+  if (depth > 4 || input == null) return [];
+  if (typeof input === "string") return [input];
+  if (Array.isArray(input)) return input.flatMap((item) => flattenImageCandidates(item, depth + 1));
+  if (typeof input === "object") {
+    const directKeys = ["url", "src", "source_url", "large", "full", "original", "thumbnail", "imageUrl", "image_url", "srcset"];
+    const direct = directKeys.flatMap((key) => flattenImageCandidates(input[key], depth + 1));
+    const nested = [input.images, input.photos, input.media, input.gallery, input.items]
+      .flatMap((value) => flattenImageCandidates(value, depth + 1));
+    return [...direct, ...nested];
+  }
+  return [];
+}
+
 async function collectAllowedSourceImages(
   sourceType: string | null | undefined,
   listing: any,
@@ -2328,11 +2342,7 @@ async function collectAllowedSourceImages(
   const normalized = String(sourceType || "website").toLowerCase();
   if (listing.image_urls && !Array.isArray(listing.image_urls)) listing.image_urls = [listing.image_urls];
   if (Array.isArray(listing.image_urls)) {
-    listing.image_urls = listing.image_urls.flatMap((img: any) => {
-      if (typeof img === "string") return [img];
-      if (img && typeof img === "object") return [img.url, img.src, img.source_url, img.large, img.full].filter(Boolean);
-      return [];
-    });
+    listing.image_urls = flattenImageCandidates(listing.image_urls);
   }
   if (normalized.includes("yad2")) return [];
   if (isAgencyOwnWebsiteSource(sourceType)) {
@@ -3272,16 +3282,18 @@ async function processOneItem(
 
     // Guard against Hebrew agency pages being mislabeled as rentals because
     // generic words like "לטווח" appear in text while the price is clearly a sale price.
+    const preValidationWarnings: string[] = [];
     if (listing.listing_status === "for_rent" && listing.price && listing.price > 100_000) {
       const rentSignals = /לחודש|חודשי|שכירות חודשית|per month|monthly/i.test(`${markdown}\n${pageHtml}`);
       if (!rentSignals || /למכירה|מכירה|for sale/i.test(`${decodeURIComponent(item.url)}\n${markdown}`)) {
         listing.listing_status = "for_sale";
-        validationWarnings.push("corrected_rent_status_to_sale_due_high_price");
+        preValidationWarnings.push("corrected_rent_status_to_sale_due_high_price");
       }
     }
 
     // ── VALIDATION (enhanced with city-specific outlier detection) ──
     const { errors: propertyErrors, warnings: validationWarnings } = validatePropertyData(listing, importType);
+    validationWarnings.push(...preValidationWarnings);
     if (propertyErrors.length > 0) {
       await sb.from("import_job_items").update({
         status: "failed",
@@ -4916,6 +4928,43 @@ function toHebrewCity(englishCity: string): string {
   return englishCity;
 }
 
+async function fetchMadlanDetailHtml(url: string): Promise<string> {
+  try {
+    const res = await fetchWithTimeout(url, { headers: { Accept: "text/html,*/*", "User-Agent": "Mozilla/5.0" } }, 15_000);
+    return res.ok ? await res.text() : "";
+  } catch { return ""; }
+}
+
+async function inspectMadlanActiveOfficePage(url: string): Promise<{ activeCount: number; saleCount: number; rentCount: number; cardUrls: string[]; cardImages: string[] }> {
+  const html = await fetchMadlanDetailHtml(url);
+  const text = textFromHtmlFragment(html);
+  const numberBefore = (labels: RegExp[]) => {
+    for (const label of labels) {
+      const m = text.match(new RegExp(`(\\d{1,4})\\s*[·•-]?\\s*${label.source}`, "i"));
+      if (m) return parseInt(m[1], 10) || 0;
+    }
+    return 0;
+  };
+  const activeMatch = text.match(/(\d{1,4})\s*(?:Active properties|נכסים פעילים)/i);
+  const saleCount = numberBefore([/Residences? for sale/i, /דירות למכירה/i, /נכסים למכירה/i]);
+  const rentCount = numberBefore([/Residences? for rent/i, /דירות להשכרה/i, /נכסים להשכרה/i]);
+  const cardUrls = Array.from(new Set((html.match(/https?:\/\/(?:www\.)?madlan\.co\.il\/(?:listings|properties|forsale|rent)[^"'\s<>]*/gi) || []).map(normalizeUrl)));
+  const cardImages = extractImagesFromHtml(html, url).filter((img) => /madlan|img|image|cloud|cdn/i.test(img)).slice(0, 200);
+  return { activeCount: activeMatch ? parseInt(activeMatch[1], 10) || saleCount + rentCount : saleCount + rentCount, saleCount, rentCount, cardUrls, cardImages };
+}
+
+function isMadlanItemLiveAndAgencyScoped(item: any, agencyName?: string | null, officeUrl?: string): boolean {
+  const statusText = String(item.status || item.listingStatus || item.state || item.availability || item.transactionStatus || "").toLowerCase();
+  if (/sold|rented|inactive|archived|expired|history|transaction|נמכר|הושכר/.test(statusText)) return false;
+  const url = String(item.url || "");
+  if (url && !/madlan\.co\.il/i.test(url)) return false;
+  const ownerText = `${item.agencyName || ""} ${item.officeName || ""} ${item.agentName || ""} ${item.brokerName || ""}`.toLowerCase();
+  const expected = String(agencyName || "").toLowerCase().replace(/[^a-z0-9א-ת]+/g, " ").trim();
+  const hasOfficeRef = officeUrl && JSON.stringify(item).includes(String(officeUrl).split("?")[0]);
+  if (expected && ownerText && !ownerText.includes(expected.split(" ")[0]) && !hasOfficeRef) return false;
+  return true;
+}
+
 async function runMadlanAgencyDiscoverJob(params: {
   jobId: string;
   agencyId: string;
@@ -4928,6 +4977,27 @@ async function runMadlanAgencyDiscoverJob(params: {
 
   try {
     dlog(`[Madlan/Apify] background discovery started for job ${jobId}: ${websiteUrl}`);
+
+    const activeGate = await inspectMadlanActiveOfficePage(websiteUrl);
+    const expectedActive = effectiveImportType === "rental"
+      ? activeGate.rentCount
+      : effectiveImportType === "resale"
+        ? activeGate.saleCount
+        : activeGate.activeCount;
+    if (expectedActive > 0) {
+      await sb.from("import_jobs").update({
+        failure_reason: JSON.stringify({
+          source: "madlan",
+          gate: "active_count_detected",
+          expected_active: expectedActive,
+          public_active_count: activeGate.activeCount,
+          public_sale_count: activeGate.saleCount,
+          public_rent_count: activeGate.rentCount,
+          public_card_urls: activeGate.cardUrls.length,
+          public_card_images: activeGate.cardImages.length,
+        }),
+      }).eq("id", jobId);
+    }
 
     if (!APIFY_API_KEY) {
       const failReason = "APIFY_API_KEY not configured — required for Madlan scraping";
@@ -4991,6 +5061,8 @@ async function runMadlanAgencyDiscoverJob(params: {
     let totalNew = 0;
     let totalInserted = 0;
     let totalMerged = 0;
+    let totalRejectedInactive = 0;
+    let totalImageFailures = 0;
     const allDiscoveredUrls: string[] = [];
 
     for (const dealType of dealTypes) {
@@ -4998,10 +5070,13 @@ async function runMadlanAgencyDiscoverJob(params: {
 
       // Call Apify actor synchronously (returns dataset items directly)
       // Timeout: 120s for the sync call
-      const actorInput = {
+          const dealExpected = dealType === "rent" ? activeGate.rentCount : activeGate.saleCount;
+          const actorInput = {
         city: cityStr,
         dealType,
-        maxItems: 200,
+            officeUrl: websiteUrl,
+            agentOfficeUrl: websiteUrl,
+            maxItems: dealExpected > 0 ? Math.min(Math.max(dealExpected + 5, 10), 60) : 60,
       };
 
       let items: any[] = [];
@@ -5031,11 +5106,22 @@ async function runMadlanAgencyDiscoverJob(params: {
 
       totalDiscovered += items.length;
 
+      if (dealExpected > 0 && items.length > Math.max(dealExpected + 10, Math.ceil(dealExpected * 1.5))) {
+        totalRejectedInactive += items.length;
+        console.warn(`[Madlan/ActiveGate] Blocked ${dealType}: public active=${dealExpected}, actor returned=${items.length}`);
+        continue;
+      }
+
       // Process each item
       for (const madlanItem of items) {
         try {
           const listingUrl = madlanItem.url || `https://www.madlan.co.il/listings/${madlanItem.id}`;
           allDiscoveredUrls.push(listingUrl);
+
+          if (!isMadlanItemLiveAndAgencyScoped(madlanItem, agency?.name, websiteUrl)) {
+            totalRejectedInactive++;
+            continue;
+          }
 
           // Dedup check
           if (knownUrls.has(normalizeUrl(listingUrl))) continue;
@@ -5096,7 +5182,12 @@ async function runMadlanAgencyDiscoverJob(params: {
             + (madlanItem.neighbourhood ? 5 : 0)
           );
 
-          const madlanImages = await collectAllowedSourceImages("madlan", listing, null, "", listingUrl, sb, jobId, 12);
+          let detailHtml = "";
+          if (!flattenImageCandidates(listing.image_urls).length) {
+            detailHtml = await fetchMadlanDetailHtml(listingUrl);
+          }
+          const madlanImages = await collectAllowedSourceImages("madlan", listing, null, detailHtml, listingUrl, sb, jobId, 12);
+          if (madlanImages.length === 0) totalImageFailures++;
 
           let existingMatch: any = null;
           if (address && city) {
@@ -5199,7 +5290,14 @@ async function runMadlanAgencyDiscoverJob(params: {
       }).eq("id", jobId);
     }
 
-    dlog(`[Madlan/Apify] Summary: ${totalDiscovered} discovered, ${totalNew} new, ${totalInserted} inserted, ${totalMerged} merged`);
+    if (expectedActive > 0 && totalNew > Math.max(expectedActive + 10, Math.ceil(expectedActive * 1.5))) {
+      const reason = { source: "madlan", blocked: true, reason: "active_count_mismatch", expected_active: expectedActive, discovered: totalDiscovered, new: totalNew, rejected_inactive: totalRejectedInactive };
+      await sb.from("import_jobs").update({ status: "failed", total_urls: 0, discovered_urls: allDiscoveredUrls.slice(0, 500), processed_count: 0, failed_count: totalNew, failure_reason: JSON.stringify(reason) }).eq("id", jobId);
+      await sb.from("agency_sources").update({ last_failure_reason: `Blocked: Madlan reports ${expectedActive} active listings but ${totalNew} candidates were discovered`, last_sync_listings_found: expectedActive, last_synced_at: new Date().toISOString() }).eq("agency_id", agencyId).eq("source_type", "madlan");
+      return;
+    }
+
+    dlog(`[Madlan/Apify] Summary: ${totalDiscovered} discovered, ${totalNew} new, ${totalInserted} inserted, ${totalMerged} merged, ${totalRejectedInactive} rejected`);
 
     // Update job
     await sb.from("import_jobs").update({
@@ -5208,7 +5306,7 @@ async function runMadlanAgencyDiscoverJob(params: {
       discovered_urls: allDiscoveredUrls.slice(0, 500), // cap stored URLs
       processed_count: totalInserted + totalMerged,
       failed_count: totalNew - totalInserted - totalMerged,
-      failure_reason: JSON.stringify({ source: "madlan", discovered: totalDiscovered, new: totalNew, inserted: totalInserted, merged: totalMerged }),
+      failure_reason: JSON.stringify({ source: "madlan", expected_active: expectedActive || null, public_active_count: activeGate.activeCount || null, public_sale_count: activeGate.saleCount || null, public_rent_count: activeGate.rentCount || null, discovered: totalDiscovered, new: totalNew, inserted: totalInserted, merged: totalMerged, rejected_inactive: totalRejectedInactive, image_failures: totalImageFailures }),
     }).eq("id", jobId);
 
     // Update agency source
@@ -5302,6 +5400,45 @@ async function handleResumeJob(body: any) {
   await sb.from("import_jobs").update({ status: "ready", last_heartbeat: null }).eq("id", job_id);
 
   return { reset_count: resetCount };
+}
+
+async function handleQuarantineMadlanBatch(body: any) {
+  const { agency_id } = body;
+  if (!agency_id) throw new Error("agency_id required");
+  const sb = supabaseAdmin();
+  const { data: agents } = await sb.from("agents").select("id").eq("agency_id", agency_id);
+  const agentIds = (agents || []).map((agent: any) => agent.id).filter(Boolean);
+  const ids = new Set<string>();
+  const addIds = (rows?: Array<{ id: string }> | null) => (rows || []).forEach((row) => ids.add(row.id));
+
+  const { data: directRows } = await sb
+    .from("properties")
+    .select("id")
+    .eq("import_source", "madlan")
+    .or(`primary_agency_id.eq.${agency_id},claimed_by_agency_id.eq.${agency_id}`);
+  addIds(directRows);
+
+  if (agentIds.length > 0) {
+    const { data: agentRows } = await sb
+      .from("properties")
+      .select("id")
+      .eq("import_source", "madlan")
+      .in("agent_id", agentIds);
+    addIds(agentRows);
+  }
+
+  const propertyIds = Array.from(ids);
+  for (let i = 0; i < propertyIds.length; i += 100) {
+    const batch = propertyIds.slice(i, i + 100);
+    await sb.from("properties").update({
+      is_published: false,
+      source_status: "quarantined_active_count_mismatch",
+      provisioning_audit_status: "critical",
+      admin_notes: "Quarantined: Madlan import exceeded public active listing count and requires active-only reimport.",
+      source_last_checked_at: new Date().toISOString(),
+    }).in("id", batch);
+  }
+  return { quarantined_count: propertyIds.length };
 }
 
 // ─── CHECK EXISTING LISTINGS (Price Change + Removal Detection) ────────────
@@ -5521,6 +5658,7 @@ Deno.serve(async (req) => {
     else if (action === "retry_recoverable_skipped") result = await handleRetryRecoverableSkipped(body);
     else if (action === "approve_item") result = await handleApproveItem(body);
     else if (action === "resume_job") result = await handleResumeJob(body);
+    else if (action === "quarantine_madlan_batch") result = await handleQuarantineMadlanBatch(body);
     else if (action === "check_existing") result = await handleCheckExisting(body);
     else if (action === "backfill_street_view") result = await handleBackfillStreetView(body);
     else throw new Error(`Unknown action: ${action}`);
