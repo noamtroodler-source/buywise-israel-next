@@ -627,45 +627,6 @@ export default function AgentProperties() {
                                       </AlertDialog>
                                     </>
                                   )}
-                                  {/*
-                                  <DropdownMenuItem onSelect={() => {
-                                    const draft = propertyToWizardDraft(listing);
-                                    localStorage.setItem(PROPERTY_WIZARD_STORAGE_KEY, JSON.stringify(draft));
-                                    navigate('/agent/properties/new');
-                                  }}>
-                                    <Copy className="h-4 w-4 mr-2" />
-                                    Duplicate
-                                  </DropdownMenuItem>
-                                  <DropdownMenuSeparator />
-                                  <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                      <DropdownMenuItem
-                                        className="text-destructive focus:text-destructive"
-                                        onSelect={(e) => e.preventDefault()}
-                                      >
-                                        <Trash2 className="h-4 w-4 mr-2" />
-                                        Delete
-                                      </DropdownMenuItem>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                      <AlertDialogHeader>
-                                        <AlertDialogTitle>Delete Listing</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                          Are you sure you want to delete "{listing.title}"? This cannot be undone.
-                                        </AlertDialogDescription>
-                                      </AlertDialogHeader>
-                                      <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                        <AlertDialogAction
-                                          onClick={() => deleteProperty.mutate(listing.id)}
-                                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                        >
-                                          Delete
-                                        </AlertDialogAction>
-                                      </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                  </AlertDialog>
-                                  */}
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             </div>
