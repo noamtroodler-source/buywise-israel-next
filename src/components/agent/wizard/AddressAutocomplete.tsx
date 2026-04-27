@@ -106,8 +106,6 @@ function GoogleAddressAutocomplete({
   const [unsupportedCityError, setUnsupportedCityError] = useState<string | null>(null);
   const [cityMismatchError, setCityMismatchError] = useState<{ extracted: string; selected: string } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const hasRequiredStreetNumber = /\d/.test(inputValue || value || '');
-  const hasCompleteAddressSelection = hasValidSelection && hasRequiredStreetNumber;
 
   const {
     ready,
@@ -123,6 +121,9 @@ function GoogleAddressAutocomplete({
     debounce: 300,
     defaultValue: value,
   });
+
+  const hasRequiredStreetNumber = /\d/.test(inputValue || value || '');
+  const hasCompleteAddressSelection = hasValidSelection && hasRequiredStreetNumber;
 
   // Sync external value
   useEffect(() => {
