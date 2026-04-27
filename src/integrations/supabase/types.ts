@@ -7592,6 +7592,10 @@ export type Database = {
         }[]
       }
       get_colisting_telemetry: { Args: never; Returns: Json }
+      get_founding_featured_status: {
+        Args: { p_agency_id: string }
+        Returns: Json
+      }
       get_nearby_sold_comps: {
         Args: {
           p_city: string
@@ -7630,6 +7634,7 @@ export type Database = {
         Args: { p_promo_id: string }
         Returns: undefined
       }
+      is_founding_agency: { Args: { p_agency_id: string }; Returns: boolean }
       is_url_blocklisted: {
         Args: { p_agency_id: string; p_url: string }
         Returns: boolean
