@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { BarChart3, ShieldCheck, Info, ArrowRight, Sparkles, ChevronDown } from 'lucide-react';
+import { BarChart3, ShieldCheck, Info, ArrowRight, Sparkles, ChevronDown, CircleHelp, CheckCircle2 } from 'lucide-react';
 import { getIsraeliRoomCount } from '@/lib/israeliRoomCount';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
@@ -15,7 +15,7 @@ import { useRoomSpecificCityPrice } from '@/hooks/useRoomSpecificCityPrice';
 import { useNeighborhoodAvgPrice } from '@/hooks/useNeighborhoodPrices';
 import { usePriceTier } from '@/hooks/usePriceTier';
 import type { PriceTier } from '@/hooks/usePriceTier';
-import { getMarketFit, type MarketFitResult } from '@/lib/marketFit';
+import { getPriceContext, formatPriceContextValue, type PriceContextResult } from '@/lib/priceContext';
 
 interface MarketIntelligenceProps {
   property: {
@@ -48,6 +48,13 @@ interface MarketIntelligenceProps {
     premium_drivers?: string[] | null;
     premium_explanation?: string | null;
     market_fit_status?: string | null;
+    sqm_source?: string | null;
+    ownership_type?: string | null;
+    benchmark_review_status?: string | null;
+    price_context_public_label?: string | null;
+    price_context_confidence_tier?: string | null;
+    price_context_percentage_suppressed?: boolean | null;
+    price_context_badge_status?: string | null;
     created_at?: string;
     vaad_bayit_monthly?: number | null;
     latitude: number | null;
@@ -70,23 +77,25 @@ function formatPremiumDriver(driver: string) {
   return driver.replace(/[_/]+/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
-function MarketVerdictBadge({ avgComparison, compsCount, radiusUsedM, priceTier, marketFit }: { avgComparison: number | null; compsCount: number; radiusUsedM: number; priceTier?: PriceTier | null; marketFit: MarketFitResult }) {
+function MarketVerdictBadge({ compsCount, radiusUsedM, priceTier, priceContext }: { compsCount: number; radiusUsedM: number; priceTier?: PriceTier | null; priceContext: PriceContextResult }) {
   const radiusLabel = radiusUsedM >= 1000 ? '1km' : '500m';
-  const isPositive = marketFit.state === 'normal_range' && (avgComparison ?? 0) <= 15;
-  const isNeutral = marketFit.state === 'limited_comparable_match' || marketFit.state === 'above_recorded_sales';
+  const isPositive = priceContext.publicLabel === 'In line with available benchmarks';
+  const isNeutral = priceContext.percentageSuppressed || priceContext.confidenceTier !== 'strong_comparable_match';
 
   const badge = (
     <Badge
       variant={isNeutral ? 'secondary' : undefined}
       className={isNeutral ? 'text-xs' : isPositive ? 'bg-semantic-green text-semantic-green-foreground border-semantic-green' : 'bg-semantic-amber text-semantic-amber-foreground border-semantic-amber'}
     >
-      {marketFit.label}
+      {priceContext.displayGapPercent !== null
+        ? `${priceContext.displayGapPercent > 0 ? '+' : ''}${priceContext.displayGapPercent}% vs selected benchmarks`
+        : priceContext.publicLabel}
     </Badge>
   );
 
   const contextLine = priceTier && priceTier !== 'standard'
     ? `Comparing against similar ${priceTier}-tier properties`
-    : marketFit.contextLine;
+    : priceContext.buyWiseTake;
 
   return (
     <div className="space-y-1">
@@ -110,15 +119,12 @@ function MarketVerdictBadge({ avgComparison, compsCount, radiusUsedM, priceTier,
   );
 }
 
-function BuyWiseTake({ marketFit, premiumDrivers, premiumExplanation }: { marketFit: MarketFitResult; premiumDrivers: string[]; premiumExplanation?: string | null }) {
+function BuyWiseTake({ priceContext, premiumExplanation }: { priceContext: PriceContextResult; premiumExplanation?: string | null }) {
   const [open, setOpen] = useState(false);
-  const hasPremiumContext = premiumDrivers.length > 0 || Boolean(premiumExplanation?.trim());
-  const take = hasPremiumContext
-    ? 'Recorded sales may not fully capture the specific features and context that shape this listing’s price.'
-    : marketFit.contextLine;
+  const hasPremiumContext = priceContext.premiumDrivers.length > 0 || Boolean(premiumExplanation?.trim());
 
   return (
-    <div className="rounded-xl border border-primary/15 bg-primary/5 p-4 space-y-3">
+    <div className="rounded-xl border border-primary/15 bg-primary/5 p-4 space-y-4">
       <div className="flex items-start gap-3">
         <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
           <Sparkles className="h-4 w-4 text-primary" />
@@ -126,9 +132,19 @@ function BuyWiseTake({ marketFit, premiumDrivers, premiumExplanation }: { market
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2 mb-1">
             <p className="text-sm font-semibold text-foreground">BuyWise Take</p>
-            <Badge variant="secondary" className="text-xs">{marketFit.label}</Badge>
+            <Badge variant="secondary" className="text-xs">{priceContext.confidenceLabel}</Badge>
           </div>
-          <p className="text-sm text-muted-foreground">{take}</p>
+          <p className="text-sm text-muted-foreground">{priceContext.buyWiseTake}</p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <div className="rounded-lg border border-border/70 bg-background/70 p-3">
+              <p className="text-xs font-medium text-muted-foreground">Property class</p>
+              <p className="text-sm font-semibold text-foreground">{priceContext.propertyClassLabel}</p>
+            </div>
+            <div className="rounded-lg border border-border/70 bg-background/70 p-3">
+              <p className="text-xs font-medium text-muted-foreground">Public context</p>
+              <p className="text-sm font-semibold text-foreground">{priceContext.publicLabel}</p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -143,7 +159,7 @@ function BuyWiseTake({ marketFit, premiumDrivers, premiumExplanation }: { market
           <CollapsibleContent className="pt-2 space-y-3">
             {premiumDrivers.length > 0 && (
               <div className="flex flex-wrap gap-2">
-                {premiumDrivers.slice(0, 8).map((driver) => (
+                {priceContext.premiumDrivers.slice(0, 8).map((driver) => (
                   <Badge key={driver} variant="outline" className="rounded-lg bg-background/70">
                     {formatPremiumDriver(driver)}
                   </Badge>
@@ -157,6 +173,23 @@ function BuyWiseTake({ marketFit, premiumDrivers, premiumExplanation }: { market
             )}
           </CollapsibleContent>
         </Collapsible>
+      )}
+
+      {priceContext.buyerQuestions.length > 0 && (
+        <div className="rounded-lg border border-border/70 bg-background/70 p-3">
+          <div className="mb-2 flex items-center gap-2">
+            <CircleHelp className="h-4 w-4 text-primary" />
+            <p className="text-sm font-semibold text-foreground">Smart buyer questions</p>
+          </div>
+          <ul className="space-y-1.5 text-sm text-muted-foreground">
+            {priceContext.buyerQuestions.slice(0, 4).map((question) => (
+              <li key={question} className="flex gap-2">
+                <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                <span>{question}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
     </div>
   );
