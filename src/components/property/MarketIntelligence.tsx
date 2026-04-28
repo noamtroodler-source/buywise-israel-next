@@ -16,6 +16,7 @@ import { useRoomSpecificCityPrice } from '@/hooks/useRoomSpecificCityPrice';
 import { useNeighborhoodAvgPrice } from '@/hooks/useNeighborhoodPrices';
 import { usePriceTier } from '@/hooks/usePriceTier';
 import type { PriceTier } from '@/hooks/usePriceTier';
+import { getMarketFit } from '@/lib/marketFit';
 
 interface MarketIntelligenceProps {
   property: {
@@ -42,6 +43,9 @@ interface MarketIntelligenceProps {
     description?: string | null;
     features?: string[] | null;
     property_type?: string;
+    furnished_status?: string | null;
+    furniture_items?: string[] | null;
+    featured_highlight?: string | null;
     created_at?: string;
     vaad_bayit_monthly?: number | null;
     latitude: number | null;
@@ -60,71 +64,24 @@ interface MarketIntelligenceProps {
   } | null | undefined;
 }
 
-function MarketVerdictBadge({ avgComparison, compsCount, radiusUsedM, priceTier }: { avgComparison: number | null; compsCount: number; radiusUsedM: number; priceTier?: PriceTier | null }) {
-  // Quality gate: suppress verdict when comps are too few
-  if (avgComparison === null || compsCount < 3) {
-    return (
-      <Badge variant="secondary" className="text-xs">
-        Limited market data
-      </Badge>
-    );
-  }
-
-  const abs = Math.abs(avgComparison);
+function MarketVerdictBadge({ avgComparison, compsCount, radiusUsedM, priceTier, property }: { avgComparison: number | null; compsCount: number; radiusUsedM: number; priceTier?: PriceTier | null; property: MarketIntelligenceProps['property'] }) {
   const radiusLabel = radiusUsedM >= 1000 ? '1km' : '500m';
+  const marketFit = getMarketFit({ avgComparison, compsCount, radiusUsedM, property });
+  const isPositive = marketFit.state === 'normal_range' && (avgComparison ?? 0) <= 15;
+  const isNeutral = marketFit.state === 'limited_comparable_match' || marketFit.state === 'above_recorded_sales';
 
-  let badge: React.ReactNode;
-  let contextLine: string | null = null;
+  const badge = (
+    <Badge
+      variant={isNeutral ? 'secondary' : undefined}
+      className={isNeutral ? 'text-xs' : isPositive ? 'bg-semantic-green text-semantic-green-foreground border-semantic-green' : 'bg-semantic-amber text-semantic-amber-foreground border-semantic-amber'}
+    >
+      {marketFit.label}
+    </Badge>
+  );
 
-  if (avgComparison < 0) {
-    badge = (
-      <Badge className="bg-semantic-green text-semantic-green-foreground border-semantic-green">
-        Below recent sales avg — potential value
-      </Badge>
-    );
-  } else if (avgComparison <= 5) {
-    badge = (
-      <Badge className="bg-semantic-green text-semantic-green-foreground border-semantic-green">
-        In line with recent sales
-      </Badge>
-    );
-  } else if (avgComparison <= 15) {
-    badge = (
-      <Badge variant="secondary" className="text-xs">
-        Above recorded sales
-      </Badge>
-    );
-    contextLine = priceTier && priceTier !== 'standard'
-      ? `Comparing against similar ${priceTier}-tier properties`
-      : 'Common for active listings before negotiation';
-  } else if (avgComparison <= 35) {
-    badge = (
-      <Badge className="bg-semantic-amber text-semantic-amber-foreground border-semantic-amber">
-        Above recorded sales
-      </Badge>
-    );
-    contextLine = priceTier && priceTier !== 'standard'
-      ? `Comparing against similar ${priceTier}-tier properties`
-      : 'Recorded sales are a benchmark, not the full property story';
-  } else if (avgComparison <= 70) {
-    badge = (
-      <Badge className="bg-semantic-amber text-semantic-amber-foreground border-semantic-amber">
-        Premium needs context
-      </Badge>
-    );
-    contextLine = priceTier && priceTier !== 'standard'
-      ? `Comparing against similar ${priceTier}-tier properties`
-      : 'View, renovation, floor, outdoor space, parking, or rarity may explain the gap';
-  } else {
-    badge = (
-      <Badge className="bg-semantic-amber text-semantic-amber-foreground border-semantic-amber">
-        Asking price requires closer review
-      </Badge>
-    );
-    contextLine = priceTier && priceTier !== 'standard'
-      ? `Comparing against similar ${priceTier}-tier properties`
-      : 'The gap is not fully explained by nearby recorded sales alone';
-  }
+  const contextLine = priceTier && priceTier !== 'standard'
+    ? `Comparing against similar ${priceTier}-tier properties`
+    : marketFit.contextLine;
 
   return (
     <div className="space-y-1">
