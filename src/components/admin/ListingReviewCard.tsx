@@ -298,6 +298,16 @@ function formatDate(value: string | null | undefined) {
   return new Date(value).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
 }
 
+function formatSubmittedAt(value: string | null | undefined) {
+  if (!value) return 'Submission time unavailable';
+  const date = new Date(value);
+  return `${formatDistanceToNow(date, { addSuffix: true })} • ${date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })} at ${date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
+}
+
 function formatLabel(value: string | null | undefined) {
   if (!value) return '—';
   return value.replace(/[_/]+/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
