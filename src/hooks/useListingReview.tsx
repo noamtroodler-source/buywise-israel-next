@@ -128,7 +128,7 @@ export function useListingsForReview(status?: VerificationStatus) {
           reviewed_at,
           created_at,
           is_published,
-          primary_agency:primary_agency_id (
+          primary_agency:agencies!properties_primary_agency_id_fkey (
             id,
             name,
             email,
@@ -151,7 +151,7 @@ export function useListingsForReview(status?: VerificationStatus) {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data as PropertyForReview[];
+      return data as unknown as PropertyForReview[];
     },
   });
 }
