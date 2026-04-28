@@ -28,6 +28,8 @@ import { PropertyPreviewModal } from './PropertyPreviewModal';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { detectPremiumDrivers } from '@/lib/marketFit';
+import { getIsraeliRoomCount } from '@/lib/israeliRoomCount';
+import { useNeighborhoodAvgPrice } from '@/hooks/useNeighborhoodPrices';
 
 interface ListingReviewCardProps {
   property: PropertyForReview;
@@ -44,7 +46,14 @@ type Benchmark = {
 };
 
 function useMarketBenchmark(property: PropertyForReview) {
-  return useQuery({
+  const israeliRooms = getIsraeliRoomCount(property.bedrooms, null) ?? 4;
+  const { data: neighborhoodPrice } = useNeighborhoodAvgPrice(
+    property.city,
+    property.neighborhood ?? undefined,
+    israeliRooms,
+  );
+
+  const cityQuery = useQuery({
     queryKey: ['admin-market-benchmark', property.city, property.neighborhood],
     queryFn: async (): Promise<Benchmark> => {
       const { data: city } = await supabase
@@ -62,6 +71,19 @@ function useMarketBenchmark(property: PropertyForReview) {
     enabled: Boolean(property.city),
     staleTime: 10 * 60 * 1000,
   });
+
+  if (neighborhoodPrice?.avg_price_sqm) {
+    return {
+      ...cityQuery,
+      data: {
+        averagePriceSqm: neighborhoodPrice.avg_price_sqm,
+        source: 'neighborhood' as const,
+        label: `${property.neighborhood} neighborhood benchmark`,
+      },
+    };
+  }
+
+  return cityQuery;
 }
 
 function formatNumber(value: number | null | undefined) {
@@ -71,6 +93,114 @@ function formatNumber(value: number | null | undefined) {
 
 function formatDriver(driver: string) {
   return driver.replace(/[_/]+/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function MarketSanityPanel({ property, reviewed, onReviewedChange }: { property: PropertyForReview; reviewed: boolean; onReviewedChange: (reviewed: boolean) => void }) {
+  const { data: benchmark, isLoading } = useMarketBenchmark(property);
+  const pricePerSqm = property.price && property.size_sqm ? property.price / property.size_sqm : null;
+  const pricePerSqft = pricePerSqm ? pricePerSqm / 10.7639 : null;
+  const gapPercent = pricePerSqm && benchmark?.averagePriceSqm
+    ? Math.round(((pricePerSqm - benchmark.averagePriceSqm) / benchmark.averagePriceSqm) * 100)
+    : null;
+  const detectedDrivers = detectPremiumDrivers({
+    property_type: property.property_type,
+    condition: property.condition,
+    floor: property.floor,
+    total_floors: property.total_floors,
+    parking: property.parking,
+    features: property.features,
+    has_balcony: property.has_balcony,
+    has_storage: property.has_storage,
+    furnished_status: property.furnished_status,
+    furniture_items: property.furniture_items,
+    featured_highlight: property.featured_highlight,
+    description: property.description,
+  });
+  const premiumDrivers = Array.from(new Set([...(property.premium_drivers ?? []), ...detectedDrivers]));
+  const missingWarnings = [
+    !property.size_sqm && 'Missing size, so price per sqm cannot be verified',
+    !benchmark?.averagePriceSqm && 'No city/neighborhood benchmark found',
+    gapPercent !== null && gapPercent >= 35 && premiumDrivers.length === 0 && 'High price gap without premium drivers',
+    gapPercent !== null && gapPercent >= 70 && !property.premium_explanation && 'Large premium needs a buyer-facing explanation',
+    !property.images?.length && 'No photos attached',
+  ].filter(Boolean) as string[];
+  const status = gapPercent === null
+    ? { label: 'Needs data', className: 'bg-muted text-muted-foreground', icon: Info }
+    : gapPercent < 15
+      ? { label: 'Looks fair', className: 'bg-semantic-green text-semantic-green-foreground', icon: ShieldCheck }
+      : gapPercent < 35
+        ? { label: 'Above benchmark', className: 'bg-secondary text-secondary-foreground', icon: BarChart3 }
+        : { label: 'Premium review', className: 'bg-semantic-amber text-semantic-amber-foreground', icon: AlertTriangle };
+  const StatusIcon = status.icon;
+
+  return (
+    <div className="rounded-lg border border-border bg-muted/25 p-3 space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <BarChart3 className="h-4 w-4 text-primary" />
+          <h4 className="text-sm font-semibold text-foreground">Market Sanity</h4>
+          <Badge className={status.className}>
+            <StatusIcon className="mr-1 h-3 w-3" />
+            {status.label}
+          </Badge>
+        </div>
+        {gapPercent !== null && (
+          <span className="text-xs text-muted-foreground">
+            {gapPercent > 0 ? '+' : ''}{gapPercent}% vs {benchmark?.source === 'neighborhood' ? 'neighborhood' : 'city'} benchmark
+          </span>
+        )}
+      </div>
+
+      <div className="grid gap-2 sm:grid-cols-3">
+        <div className="rounded-md border bg-background p-2">
+          <p className="text-xs text-muted-foreground">Listing price</p>
+          <p className="text-sm font-semibold">{formatNumber(pricePerSqm)}/sqm</p>
+          <p className="text-xs text-muted-foreground">{formatNumber(pricePerSqft)}/sqft</p>
+        </div>
+        <div className="rounded-md border bg-background p-2">
+          <p className="text-xs text-muted-foreground">Benchmark</p>
+          <p className="text-sm font-semibold">{isLoading ? 'Checking…' : `${formatNumber(benchmark?.averagePriceSqm)}/sqm`}</p>
+          <p className="text-xs text-muted-foreground">{benchmark?.label ?? 'City/neighborhood data'}</p>
+        </div>
+        <div className="rounded-md border bg-background p-2">
+          <p className="text-xs text-muted-foreground">Saved context</p>
+          <p className="text-sm font-semibold">{property.market_fit_status?.replace(/_/g, ' ') || 'Not set'}</p>
+          <p className="text-xs text-muted-foreground line-clamp-1">{property.market_fit_review_reason || 'Admin should verify before approval'}</p>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex flex-wrap gap-2">
+          {premiumDrivers.length > 0 ? premiumDrivers.slice(0, 8).map((driver) => (
+            <Badge key={driver} variant="outline" className="bg-background">
+              <Sparkles className="mr-1 h-3 w-3 text-primary" />
+              {formatDriver(driver)}
+            </Badge>
+          )) : (
+            <span className="text-xs text-muted-foreground">No premium drivers detected yet.</span>
+          )}
+        </div>
+        {property.premium_explanation && (
+          <p className="border-l-2 border-primary/30 pl-3 text-xs text-muted-foreground">{property.premium_explanation}</p>
+        )}
+        {missingWarnings.length > 0 && (
+          <div className="rounded-md border border-semantic-amber/40 bg-semantic-amber/10 p-2">
+            <p className="mb-1 text-xs font-medium text-foreground">Review warnings</p>
+            <ul className="list-disc space-y-1 pl-4 text-xs text-muted-foreground">
+              {missingWarnings.map((warning) => <li key={warning}>{warning}</li>)}
+            </ul>
+          </div>
+        )}
+      </div>
+
+      {property.verification_status === 'pending_review' && (
+        <label className="flex items-center gap-2 rounded-md border bg-background p-2 text-sm cursor-pointer">
+          <Checkbox checked={reviewed} onCheckedChange={(checked) => onReviewedChange(checked === true)} />
+          <span>I reviewed market sanity for this listing</span>
+        </label>
+      )}
+    </div>
+  );
 }
 
 export function ListingReviewCard({ 
