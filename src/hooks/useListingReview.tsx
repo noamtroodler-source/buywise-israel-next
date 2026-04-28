@@ -83,6 +83,22 @@ export interface PropertyForReview {
   } | null;
 }
 
+export interface PriceContextEvent {
+  id: string;
+  property_id: string;
+  event_type: string;
+  actor_type: string;
+  actor_id: string | null;
+  raw_gap_percent: number | null;
+  public_label: string | null;
+  percentage_suppressed: boolean | null;
+  confidence_tier: string | null;
+  comp_pool_snapshot: Record<string, unknown> | null;
+  premium_context_snapshot: Record<string, unknown> | null;
+  reason: string | null;
+  created_at: string;
+}
+
 export function useListingsForReview(status?: VerificationStatus) {
   return useQuery({
     queryKey: ['listingsForReview', status],
@@ -196,6 +212,64 @@ export function usePendingReviewCount() {
   });
 }
 
+export function usePriceContextEvents(propertyId: string) {
+  return useQuery({
+    queryKey: ['priceContextEvents', propertyId],
+    queryFn: async () => {
+      const { data, error } = await (supabase
+        .from('price_context_events' as any)
+        .select('*') as any)
+        .eq('property_id', propertyId)
+        .order('created_at', { ascending: false })
+        .limit(25);
+
+      if (error) throw error;
+      return (data ?? []) as PriceContextEvent[];
+    },
+    enabled: Boolean(propertyId),
+  });
+}
+
+async function logPriceContextEvent(propertyId: string, eventType: string, reason?: string) {
+  try {
+    const [{ data: propertyData }, { data: userData }] = await Promise.all([
+      (supabase
+        .from('properties')
+        .select('price_context_confidence_score, price_context_confidence_tier, price_context_public_label, price_context_percentage_suppressed, price_context_badge_status, price_context_property_class, comp_pool_used, premium_drivers, premium_explanation') as any)
+        .eq('id', propertyId)
+        .maybeSingle(),
+      supabase.auth.getUser(),
+    ]);
+
+    const property = propertyData as Partial<PropertyForReview> | null;
+
+    const { error } = await (supabase.from('price_context_events' as any) as any).insert({
+      property_id: propertyId,
+      event_type: eventType,
+      actor_type: 'admin',
+      actor_id: userData.user?.id ?? null,
+      public_label: property?.price_context_public_label ?? null,
+      percentage_suppressed: property?.price_context_percentage_suppressed ?? null,
+      confidence_tier: property?.price_context_confidence_tier ?? null,
+      comp_pool_snapshot: {
+        source: property?.comp_pool_used ?? null,
+        badge_status: property?.price_context_badge_status ?? null,
+        property_class: property?.price_context_property_class ?? null,
+        confidence_score: property?.price_context_confidence_score ?? null,
+      },
+      premium_context_snapshot: {
+        drivers: property?.premium_drivers ?? [],
+        explanation_present: Boolean(property?.premium_explanation),
+      },
+      reason: reason ?? null,
+    });
+
+    if (error) throw error;
+  } catch (error) {
+    console.warn('Failed to write Price Context audit event:', error);
+  }
+}
+
 async function sendNotification(payload: {
   type: string;
   agentId: string;
@@ -237,6 +311,7 @@ export function useApproveListing() {
         .eq('id', id);
 
       if (error) throw error;
+      await logPriceContextEvent(id, 'admin_approved', adminNotes);
 
       // Send notification to agent
       if (agentId) {
@@ -282,6 +357,7 @@ export function useRequestChanges() {
         .eq('id', id);
 
       if (error) throw error;
+      await logPriceContextEvent(id, 'admin_changes_requested', reason);
 
       // Send notification to agent
       if (agentId) {
@@ -328,6 +404,7 @@ export function useRejectListing() {
         .eq('id', id);
 
       if (error) throw error;
+      await logPriceContextEvent(id, 'admin_rejected', reason);
 
       // Send notification to agent
       if (agentId) {
