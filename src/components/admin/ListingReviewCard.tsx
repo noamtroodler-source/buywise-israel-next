@@ -338,6 +338,7 @@ export function ListingReviewCard({
   const [adminNotes, setAdminNotes] = useState('');
   const [featureThis, setFeatureThis] = useState(false);
   const [marketSanityReviewed, setMarketSanityReviewed] = useState(property.verification_status !== 'pending_review');
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('he-IL', {
@@ -365,6 +366,11 @@ export function ListingReviewCard({
     setShowRejectDialog(false);
     setReason('');
     setAdminNotes('');
+  };
+
+  const openPhotoPreview = (index: number) => {
+    setSelectedPhotoIndex(index);
+    setShowPreviewModal(true);
   };
 
   const getStatusBadge = () => {
@@ -398,10 +404,12 @@ export function ListingReviewCard({
           <div className="flex flex-col lg:flex-row">
             {/* Image Section */}
             <div className="lg:w-48 h-48 lg:h-auto flex-shrink-0">
-              <img
-                src={property.images?.[0] || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400'}
+              <PropertyThumbnail
+                src={property.images?.[0]}
                 alt={property.title}
-                className="w-full h-full object-cover"
+                city={property.city}
+                neighborhood={property.neighborhood}
+                className="h-full w-full"
               />
             </div>
 
@@ -467,6 +475,8 @@ export function ListingReviewCard({
                   )}
                 </div>
               )}
+
+              <PhotoReviewStrip property={property} onPhotoClick={openPhotoPreview} />
 
               {/* Expandable Details */}
               <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
