@@ -55,6 +55,9 @@ export interface CreatePropertyData {
   agent_fee_required?: boolean;
    furniture_items?: string[];
    featured_highlight?: string | null;
+    premium_drivers?: string[];
+    premium_explanation?: string | null;
+    market_fit_status?: string | null;
 }
 
 export function useAgentProfile() {
