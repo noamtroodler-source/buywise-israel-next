@@ -35,6 +35,7 @@ import { ConfirmDuplicateDialog } from '@/components/agency/ConfirmDuplicateDial
 import { useCities } from '@/hooks/useCities';
 import { getMarketFitReview } from '@/lib/marketFit';
 import { Checkbox } from '@/components/ui/checkbox';
+import { PriceContextSubmissionPreview } from '@/components/agent/wizard/PriceContextSubmissionPreview';
 
 const steps = [
   { title: 'Basics', description: 'Property type, price, location' },
@@ -98,6 +99,7 @@ function WizardContent() {
       property: data,
     });
   }, [cities, data]);
+  const selectedCityAveragePriceSqm = cities.find((item) => item.name === data.city)?.average_price_sqm ?? null;
 
   useEffect(() => {
     setMarketFitConfirmed(false);
@@ -429,28 +431,16 @@ function WizardContent() {
                   </Alert>
                 )}
 
-                {isLastStep && marketFitReview.level !== 'none' && (
-                  <Alert variant="default" className="bg-primary/5 border-primary/20">
-                    <ShieldAlert className="h-4 w-4 text-primary" />
-                    <AlertTitle className="text-foreground">{marketFitReview.title}</AlertTitle>
-                    <AlertDescription className="space-y-3 text-muted-foreground">
-                      <p>{marketFitReview.message}</p>
-                      {marketFitReview.gapPercent !== null && (
-                        <p className="text-xs">Current benchmark gap: about {marketFitReview.gapPercent}% above city price/sqm.</p>
-                      )}
-                      {marketFitReview.requiresContext && (
-                        <Button variant="outline" size="sm" onClick={() => setCurrentStep(2)} className="rounded-xl">
-                          Add Premium Context
-                        </Button>
-                      )}
-                      {marketFitReview.requiresConfirmation && (
-                        <label className="flex items-start gap-2 text-sm text-foreground">
-                          <Checkbox checked={marketFitConfirmed} onCheckedChange={(checked) => setMarketFitConfirmed(Boolean(checked))} />
-                          <span>I confirm the asking price and understand this listing may receive closer market-fit review.</span>
-                        </label>
-                      )}
-                    </AlertDescription>
-                  </Alert>
+                {isLastStep && data.listing_status === 'for_sale' && (
+                  <PriceContextSubmissionPreview
+                    data={data}
+                    cityAveragePriceSqm={selectedCityAveragePriceSqm}
+                    review={marketFitReview}
+                    confirmed={marketFitConfirmed}
+                    onConfirmedChange={setMarketFitConfirmed}
+                    onEditDetails={() => setCurrentStep(1)}
+                    onEditPremiumContext={() => setCurrentStep(2)}
+                  />
                 )}
                 
                 <div className="flex justify-between items-center">
