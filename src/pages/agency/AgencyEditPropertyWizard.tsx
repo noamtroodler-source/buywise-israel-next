@@ -330,16 +330,29 @@ function AgencyEditWizardContent({ propertyId }: { propertyId: string }) {
 
             {/* Navigation */}
             <motion.div variants={itemVariants}>
-              <div className="flex justify-between items-center p-4 rounded-2xl bg-card/95 backdrop-blur-sm border border-border shadow-lg">
-                <Button
-                  variant="outline"
-                  onClick={goBack}
-                  disabled={currentStep === 0}
-                  className="rounded-xl h-11"
-                >
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Previous
-                </Button>
+              <div className="flex flex-col gap-4 p-4 rounded-2xl bg-card/95 backdrop-blur-sm border border-border shadow-lg">
+                {isLastStep && data.listing_status === 'for_sale' && (
+                  <PriceContextSubmissionPreview
+                    data={data}
+                    cityAveragePriceSqm={selectedCityAveragePriceSqm}
+                    review={marketFitReview}
+                    confirmed={marketFitConfirmed}
+                    onConfirmedChange={setMarketFitConfirmed}
+                    onEditDetails={() => setCurrentStep(1)}
+                    onEditPremiumContext={() => setCurrentStep(2)}
+                  />
+                )}
+
+                <div className="flex justify-between items-center">
+                  <Button
+                    variant="outline"
+                    onClick={goBack}
+                    disabled={currentStep === 0}
+                    className="rounded-xl h-11"
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Previous
+                  </Button>
 
                 {isLastStep ? (
                   <div className="flex gap-3">
@@ -358,12 +371,13 @@ function AgencyEditWizardContent({ propertyId }: { propertyId: string }) {
                       </Button>
                     )}
                   </div>
-                ) : (
-                  <Button onClick={goNext} className="rounded-xl h-11 px-6">
-                    Next
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </Button>
-                )}
+                  ) : (
+                    <Button onClick={goNext} className="rounded-xl h-11 px-6">
+                      Next
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  )}
+                </div>
               </div>
             </motion.div>
           </motion.div>
