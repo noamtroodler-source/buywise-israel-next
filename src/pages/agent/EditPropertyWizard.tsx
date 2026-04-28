@@ -223,6 +223,8 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
         pets_policy: data.pets_policy,
          furniture_items: data.furniture_items,
          featured_highlight: data.featured_highlight || null,
+         premium_drivers: data.premium_drivers,
+         premium_explanation: data.premium_explanation || null,
       } as any);
       clearSavedData();
       navigate('/agent/properties');
@@ -268,6 +270,8 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
         pets_policy: data.pets_policy,
          furniture_items: data.furniture_items,
          featured_highlight: data.featured_highlight || null,
+         premium_drivers: data.premium_drivers,
+         premium_explanation: data.premium_explanation || null,
       } as any);
       
       // Then submit for review
