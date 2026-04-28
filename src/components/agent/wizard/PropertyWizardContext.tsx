@@ -54,6 +54,9 @@ export interface PropertyWizardData {
    
    // Featured highlight - agent's standout feature
    featured_highlight: string;
+  premium_drivers: string[];
+  premium_explanation: string;
+  premium_context_touched: boolean;
    
     // Edit mode: the saved/published price for comparison
     savedPrice?: number;
@@ -136,6 +139,9 @@ export const defaultPropertyData: PropertyWizardData = {
    furniture_items: [],
    // Featured highlight
    featured_highlight: '',
+    premium_drivers: [],
+    premium_explanation: '',
+    premium_context_touched: false,
   images: [],
   description: '',
   highlights: [],
