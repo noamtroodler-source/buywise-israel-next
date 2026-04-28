@@ -18,14 +18,14 @@ import { PageTracker } from "@/hooks/usePageTracking";
 // Critical path - keep as static imports (homepage, listings, auth)
 import Index from "./pages/Index";
 import Listings from "./pages/Listings";
-import PropertyDetail from "./pages/PropertyDetail";
-import Projects from "./pages/Projects";
-import ProjectDetail from "./pages/ProjectDetail";
 import Auth from "./pages/Auth";
 import SetupPassword from "./pages/auth/SetupPassword";
 import NotFound from "./pages/NotFound";
 
 // Lazy load everything else for smaller initial bundle
+const PropertyDetail = lazy(() => import("./pages/PropertyDetail"));
+const Projects = lazy(() => import("./pages/Projects"));
+const ProjectDetail = lazy(() => import("./pages/ProjectDetail"));
 const Compare = lazy(() => import("./pages/Compare"));
 const CompareProjects = lazy(() => import("./pages/CompareProjects"));
 const Blog = lazy(() => import("./pages/Blog"));
