@@ -141,6 +141,25 @@ export function StepFeatures() {
   const { data, updateData } = usePropertyWizard();
   const isRental = data.listing_status === 'for_rent';
    const showFurnitureSection = data.furnished_status === 'fully' || data.furnished_status === 'semi';
+  const detectedPremiumDrivers = detectPremiumDrivers(data);
+  const selectedPremiumDrivers = data.premium_context_touched
+    ? data.premium_drivers
+    : Array.from(new Set([...data.premium_drivers, ...detectedPremiumDrivers]));
+  const shouldShowPremiumContext = data.listing_status === 'for_sale' && (
+    selectedPremiumDrivers.length > 0 ||
+    data.price >= 5000000 ||
+    data.property_type === 'penthouse' ||
+    data.property_type === 'mini_penthouse' ||
+    data.property_type === 'garden_apartment'
+  );
+
+  const togglePremiumDriver = (driver: string) => {
+    const current = selectedPremiumDrivers;
+    const next = current.includes(driver)
+      ? current.filter((item) => item !== driver)
+      : [...current, driver];
+    updateData({ premium_drivers: next, premium_context_touched: true });
+  };
 
   const toggleFeature = (featureId: string) => {
     const newFeatures = data.features.includes(featureId)
