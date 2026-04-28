@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Save, Send, Loader2, Sparkles, FileText } from 'lucide-react';
@@ -32,6 +32,10 @@ import {
 } from '@/hooks/useDuplicateCheck';
 import { ConfirmDuplicateDialog } from '@/components/agency/ConfirmDuplicateDialog';
 import { toast } from 'sonner';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useCities } from '@/hooks/useCities';
+import { getMarketFitReview } from '@/lib/marketFit';
 
 const AGENCY_WIZARD_STORAGE_KEY = 'agency-property-wizard-draft';
 
@@ -78,6 +82,7 @@ function AgencyWizardContent() {
   const { data: agency } = useMyAgency();
   const { data: team = [] } = useAgencyTeam(agency?.id);
   const { data: listings = [] } = useAgencyListingsManagement(agency?.id);
+  const { data: cities = [] } = useCities();
   const createProperty = useCreatePropertyForAgency();
 
   const [assignedAgentId, setAssignedAgentId] = useState<string | null>(null);
@@ -87,8 +92,26 @@ function AgencyWizardContent() {
   const [showRecoveryDialog, setShowRecoveryDialog] = useState(false);
   const [duplicateResult, setDuplicateResult] = useState<DuplicateCheckResult | null>(null);
   const [isActingOnDuplicate, setIsActingOnDuplicate] = useState(false);
+  const [marketFitConfirmed, setMarketFitConfirmed] = useState(false);
   const hasCheckedDraft = useRef(false);
   const duplicateCheck = useDuplicateCheck();
+
+  const marketFitReview = useMemo(() => {
+    const city = cities.find((item) => item.name === data.city);
+    return getMarketFitReview({
+      price: data.price,
+      size_sqm: data.size_sqm,
+      listing_status: data.listing_status,
+      cityAveragePriceSqm: city?.average_price_sqm,
+      premium_drivers: data.premium_drivers,
+      premium_explanation: data.premium_explanation,
+      property: data,
+    });
+  }, [cities, data]);
+
+  useEffect(() => {
+    setMarketFitConfirmed(false);
+  }, [marketFitReview.reviewReason]);
 
   const autoSave = useAutoSave<PropertyWizardData, AgencyWizardMetadata>({
     data,
@@ -172,6 +195,9 @@ function AgencyWizardContent() {
     featured_highlight: data.featured_highlight || null,
     premium_drivers: data.premium_drivers,
     premium_explanation: data.premium_explanation || null,
+    market_fit_status: marketFitReview.level,
+    market_fit_review_reason: marketFitReview.reviewReason,
+    market_fit_confirmed_at: submitForReview && marketFitReview.requiresConfirmation ? new Date().toISOString() : null,
     assignedAgentId: assignedAgentId!,
     submitForReview,
   });
@@ -254,6 +280,17 @@ function AgencyWizardContent() {
 
   const handleSubmitForReview = async () => {
     if (!assignedAgentId) return;
+    if (marketFitReview.requiresContext) {
+      toast.info('Add premium context so buyers understand the price difference.');
+      setCurrentStep(3);
+      return;
+    }
+
+    if (marketFitReview.requiresConfirmation && !marketFitConfirmed) {
+      toast.info('Confirm the price review note before submitting.');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       if (agency?.id && data.address && data.city) {
