@@ -15,10 +15,14 @@ export interface PropertyForReview {
   property_type: string;
   listing_status: string;
   bedrooms: number | null;
+  additional_rooms: number | null;
   bathrooms: number | null;
   size_sqm: number | null;
   floor: number | null;
   total_floors: number | null;
+  latitude: number | null;
+  longitude: number | null;
+  source_rooms: number | null;
   year_built: number | null;
   parking: number | null;
   condition: string | null;
@@ -70,10 +74,14 @@ export function useListingsForReview(status?: VerificationStatus) {
           property_type,
           listing_status,
           bedrooms,
+          additional_rooms,
           bathrooms,
           size_sqm,
           floor,
           total_floors,
+          latitude,
+          longitude,
+          source_rooms,
           year_built,
           parking,
           condition,
