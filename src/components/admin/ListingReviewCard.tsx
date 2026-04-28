@@ -693,6 +693,7 @@ export function ListingReviewCard({
         property={property} 
         open={showPreviewModal} 
         onOpenChange={setShowPreviewModal} 
+        initialImageIndex={selectedPhotoIndex}
       />
     </>
   );
