@@ -142,6 +142,8 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
         additional_rooms: (property as any).additional_rooms || 0,
         bathrooms: property.bathrooms || 0,
         size_sqm: property.size_sqm || undefined,
+        sqm_source: (property as any).sqm_source || undefined,
+        ownership_type: (property as any).ownership_type || undefined,
         lot_size_sqm: property.lot_size_sqm || undefined,
         floor: property.floor || undefined,
         total_floors: property.total_floors || undefined,
@@ -171,6 +173,7 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
          premium_drivers: (property as any).premium_drivers || [],
          premium_explanation: (property as any).premium_explanation || '',
          premium_context_touched: Boolean((property as any).premium_drivers?.length || (property as any).premium_explanation),
+          benchmark_review_status: (property as any).benchmark_review_status || 'none',
          savedPrice: property.price || undefined,
       };
       loadFromSaved(wizardData);
@@ -205,6 +208,8 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
         bedrooms: data.bedrooms,
         bathrooms: data.bathrooms,
         size_sqm: data.size_sqm,
+        sqm_source: data.sqm_source,
+        ownership_type: data.ownership_type,
         lot_size_sqm: data.lot_size_sqm,
         floor: data.floor,
         total_floors: data.total_floors,
@@ -225,6 +230,7 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
          featured_highlight: data.featured_highlight || null,
          premium_drivers: data.premium_drivers,
          premium_explanation: data.premium_explanation || null,
+          benchmark_review_status: data.benchmark_review_status,
       } as any);
       clearSavedData();
       navigate('/agent/properties');
