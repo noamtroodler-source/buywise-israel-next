@@ -11,12 +11,16 @@ import { PropertyForReview } from '@/hooks/useListingReview';
 import { 
   X, MapPin, Bed, Bath, Ruler, Building2, User, ChevronLeft, ChevronRight,
   Calendar, Layers, Car, Wrench, Wind, Eye, MessageSquare, Mail, Phone,
-  Home, Info
+  Home, Info, BarChart3
 } from 'lucide-react';
 import { useState, useCallback, useEffect } from 'react';
 import useEmblaCarousel from 'embla-carousel-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { PropertyThumbnail } from '@/components/shared/PropertyThumbnail';
+import { MarketIntelligence } from '@/components/property/MarketIntelligence';
+import { PropertyValueSnapshot } from '@/components/property/PropertyValueSnapshot';
+import { MarketDataContext } from '@/components/shared/MarketDataContext';
+import { useCityDetails } from '@/hooks/useCityDetails';
 
 interface PropertyPreviewModalProps {
   property: PropertyForReview;
@@ -34,6 +38,8 @@ export function PropertyPreviewModal({ property, open, onOpenChange, initialImag
     ? property.images 
     : [null];
   const safeInitialImageIndex = Math.min(Math.max(initialImageIndex, 0), images.length - 1);
+  const citySlug = property.city?.toLowerCase().replace(/['']/g, '').replace(/\s+/g, '-') || '';
+  const { data: cityData } = useCityDetails(citySlug);
 
   // Reset state when modal opens
   useEffect(() => {
