@@ -704,6 +704,7 @@ export default function AgencyListings() {
                         const ReviewIcon = review.icon;
                         const isDraft = listing.verification_status === 'draft';
                         const canSubmitForReview = listing.verification_status === 'draft' || listing.verification_status === 'changes_requested';
+                        const isPendingReview = listing.verification_status === 'pending_review';
                         const isApproved = listing.verification_status === 'approved';
                         const isPublished = listing.is_published === true;
                         const isSelected = selectedIds.has(listing.id);
@@ -842,6 +843,12 @@ export default function AgencyListings() {
                                           <DropdownMenuItem onClick={() => submitForReview.mutate(listing.id)} disabled={submitForReview.isPending}>
                                             <Send className="h-4 w-4 mr-2" />
                                             Submit for review
+                                          </DropdownMenuItem>
+                                        )}
+                                        {isPendingReview && (
+                                          <DropdownMenuItem disabled className="text-muted-foreground">
+                                            <Clock className="h-4 w-4 mr-2" />
+                                            Submitted for review
                                           </DropdownMenuItem>
                                         )}
                                         <DropdownMenuItem onClick={() => handleDuplicate(listing.id)}>
