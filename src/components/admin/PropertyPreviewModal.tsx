@@ -467,6 +467,36 @@ export function PropertyPreviewModal({ property, open, onOpenChange, initialImag
                 </div>
               )}
 
+              {/* Buyer-facing Market Intelligence Preview */}
+              <div className="rounded-xl border border-border bg-background p-4">
+                <div className="mb-4 flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-primary" />
+                  <h3 className="font-semibold">Market Intelligence</h3>
+                  <Badge variant="outline" className="ml-auto">Buyer preview</Badge>
+                </div>
+                {isSale ? (
+                  <MarketIntelligence property={property} cityData={cityData} />
+                ) : (
+                  <>
+                    <PropertyValueSnapshot
+                      price={property.price}
+                      sizeSqm={property.size_sqm}
+                      city={property.city}
+                      averagePriceSqm={cityData?.average_price_sqm}
+                      priceChange={cityData?.yoy_price_change}
+                      listingStatus={property.listing_status}
+                      bedrooms={property.bedrooms}
+                      cityRentalMin={property.bedrooms === 4 ? cityData?.rental_4_room_min : cityData?.rental_3_room_min}
+                      cityRentalMax={property.bedrooms === 4 ? cityData?.rental_4_room_max : cityData?.rental_3_room_max}
+                      vaadBayitMonthly={property.vaad_bayit_monthly}
+                      cityArnonaRate={cityData?.arnona_rate_sqm}
+                      cityAvgVaadBayit={cityData?.average_vaad_bayit}
+                    />
+                    <MarketDataContext variant="compact" className="mt-4" />
+                  </>
+                )}
+              </div>
+
               {/* Features & Amenities */}
               {property.features && property.features.length > 0 && (
                 <div>
