@@ -10,7 +10,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { PropertyForReview } from '@/hooks/useListingReview';
 import { 
   X, MapPin, Bed, Bath, Ruler, Building2, User, ChevronLeft, ChevronRight,
-  Calendar, Layers, Car, Wrench, Wind, Eye, MessageSquare, Mail, Phone,
+  Calendar, Layers, Car, Wrench, Wind, Eye, MessageSquare, Mail,
   Home, Info, BarChart3
 } from 'lucide-react';
 import { useState, useCallback, useEffect } from 'react';
