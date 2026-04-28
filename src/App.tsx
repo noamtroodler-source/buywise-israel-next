@@ -1,4 +1,4 @@
-import { Suspense, lazy, type ComponentType } from "react";
+import { Suspense, lazy, type ComponentType, type ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
@@ -30,7 +30,7 @@ const SectionFallback = ({ label = "this section" }: { label?: string }) => (
   </div>
 );
 
-const RouteBoundary = ({ children, label }: { children: React.ReactNode; label?: string }) => (
+const RouteBoundary = ({ children, label }: { children: ReactNode; label?: string }) => (
   <ErrorBoundary fallback={<SectionFallback label={label} />}>
     {children}
   </ErrorBoundary>
