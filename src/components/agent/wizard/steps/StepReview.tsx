@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { 
   MapPin, Bed, Bath, Ruler, Building, Calendar, Car,
-  Thermometer, CheckCircle, Edit2, Eye
+  Thermometer, CheckCircle, Edit2, Eye, Sparkles
 } from 'lucide-react';
 import { PropertyPreviewDialog } from './PropertyPreviewDialog';
 import { ValidationSummary } from './ValidationSummary';
@@ -20,6 +20,7 @@ export function StepReview({ onEditStep, stepOffset = 0 }: StepReviewProps) {
   const [showPreview, setShowPreview] = useState(false);
 
   const allErrors = getAllErrors();
+  const hasPremiumContext = data.premium_drivers.length > 0 || Boolean(data.premium_explanation);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('he-IL', {
@@ -185,6 +186,33 @@ export function StepReview({ onEditStep, stepOffset = 0 }: StepReviewProps) {
               ))}
             </div>
           </div>
+
+          {/* Premium Context */}
+          {hasPremiumContext && (
+            <div className="rounded-xl border border-primary/15 bg-primary/5 p-4 space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  <h4 className="font-semibold">Premium Context</h4>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => onEditStep(2 + stepOffset)} className="rounded-lg">
+                  <Edit2 className="h-4 w-4" />
+                </Button>
+              </div>
+              {data.premium_drivers.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {data.premium_drivers.map((driver) => (
+                    <Badge key={driver} variant="secondary" className="rounded-lg">
+                      {driver.replace(/\b\w/g, (char) => char.toUpperCase())}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+              {data.premium_explanation && (
+                <p className="text-sm text-muted-foreground">{data.premium_explanation}</p>
+              )}
+            </div>
+          )}
 
           {/* Photos */}
           <div>

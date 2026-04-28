@@ -124,6 +124,9 @@ function AgencyEditWizardContent({ propertyId }: { propertyId: string }) {
         highlights: [],
         furniture_items: (property as any).furniture_items || [],
         featured_highlight: (property as any).featured_highlight || '',
+        premium_drivers: (property as any).premium_drivers || [],
+        premium_explanation: (property as any).premium_explanation || '',
+        premium_context_touched: Boolean((property as any).premium_drivers?.length || (property as any).premium_explanation),
         savedPrice: property.price || undefined,
         import_source: (property as any).import_source || undefined,
       };

@@ -1,7 +1,9 @@
+import { useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
 import { FormattedNumberInput } from '@/components/ui/formatted-number-input';
 import { usePropertyWizard } from '../PropertyWizardContext';
 import { Thermometer, Calendar, Wrench, Sparkles, Building, FileText, Home, Banknote, Star, Lightbulb, Info } from 'lucide-react';
@@ -9,6 +11,7 @@ import { Thermometer, Calendar, Wrench, Sparkles, Building, FileText, Home, Bank
  import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { LeaseTermOption, SublettingOption, FurnishedStatus, PetsPolicy } from '@/types/database';
+import { detectPremiumDrivers } from '@/lib/marketFit';
 
 const conditions = [
   { value: 'new', label: 'New (from developer)' },
@@ -71,6 +74,28 @@ const commonFeatures = [
   { id: 'parking', label: 'Parking' },
   { id: 'sea_view', label: 'Sea View' },
 ];
+
+const premiumDriverOptions = [
+  'sea view',
+  'beachfront location',
+  'renovation',
+  'new build / project unit',
+  'penthouse',
+  'garden apartment',
+  'high floor',
+  'outdoor space',
+  'sukkah balcony',
+  'parking',
+  'storage',
+  'mamad',
+  'luxury finish',
+  'rarity / future potential',
+  'furnished / bundled extras',
+  'bundled extras',
+  'other explanation',
+];
+
+const premiumDriverLabel = (driver: string) => driver.replace(/\b\w/g, (char) => char.toUpperCase());
  
  // Furniture items grouped by category
  const furnitureCategories = [
@@ -117,6 +142,32 @@ export function StepFeatures() {
   const { data, updateData } = usePropertyWizard();
   const isRental = data.listing_status === 'for_rent';
    const showFurnitureSection = data.furnished_status === 'fully' || data.furnished_status === 'semi';
+  const detectedPremiumDrivers = detectPremiumDrivers(data);
+  const detectedPremiumDriversKey = detectedPremiumDrivers.join('|');
+  const selectedPremiumDrivers = data.premium_context_touched
+    ? data.premium_drivers
+    : Array.from(new Set([...data.premium_drivers, ...detectedPremiumDrivers]));
+  const shouldShowPremiumContext = data.listing_status === 'for_sale' && (
+    selectedPremiumDrivers.length > 0 ||
+    data.price >= 5000000 ||
+    data.property_type === 'penthouse' ||
+    data.property_type === 'mini_penthouse' ||
+    data.property_type === 'garden_apartment'
+  );
+
+  const togglePremiumDriver = (driver: string) => {
+    const current = selectedPremiumDrivers;
+    const next = current.includes(driver)
+      ? current.filter((item) => item !== driver)
+      : [...current, driver];
+    updateData({ premium_drivers: next, premium_context_touched: true });
+  };
+
+  useEffect(() => {
+    if (!data.premium_context_touched && detectedPremiumDrivers.length > 0) {
+      updateData({ premium_drivers: detectedPremiumDrivers });
+    }
+  }, [data.premium_context_touched, detectedPremiumDriversKey, updateData]);
 
   const toggleFeature = (featureId: string) => {
     const newFeatures = data.features.includes(featureId)
@@ -519,6 +570,73 @@ export function StepFeatures() {
             ))}
           </div>
         </div>
+
+        <AnimatePresence>
+          {shouldShowPremiumContext && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.25 }}
+              className="space-y-4 p-4 rounded-xl bg-primary/5 border border-primary/15"
+            >
+              <div className="flex items-start gap-3">
+                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">Help buyers understand the premium</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Confirm what may make this home compare differently from nearby recorded sales.
+                  </p>
+                </div>
+              </div>
+
+              {detectedPremiumDrivers.length > 0 && (
+                <div className="flex items-start gap-2 text-xs text-muted-foreground">
+                  <Info className="h-3.5 w-3.5 shrink-0 mt-0.5 text-primary" />
+                  <p>Suggested from your listing details: {detectedPremiumDrivers.map(premiumDriverLabel).join(', ')}.</p>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {premiumDriverOptions.map((driver) => (
+                  <label
+                    key={driver}
+                    className={cn(
+                      "flex items-center justify-center p-2.5 rounded-xl border cursor-pointer transition-all text-sm text-center",
+                      selectedPremiumDrivers.includes(driver)
+                        ? "bg-primary/10 border-primary text-primary font-medium"
+                        : "border-border hover:border-primary/50 hover:bg-background/70"
+                    )}
+                  >
+                    <Checkbox
+                      checked={selectedPremiumDrivers.includes(driver)}
+                      onCheckedChange={() => togglePremiumDriver(driver)}
+                      className="sr-only"
+                    />
+                    {premiumDriverLabel(driver)}
+                  </label>
+                ))}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="premium_explanation">Optional context</Label>
+                <Textarea
+                  id="premium_explanation"
+                  value={data.premium_explanation}
+                  onChange={(e) => updateData({ premium_explanation: e.target.value.slice(0, 180), premium_context_touched: true })}
+                  placeholder="Direct sea view from salon and balcony, renovated in 2024, private parking."
+                  className="rounded-xl bg-background min-h-[92px]"
+                  maxLength={180}
+                />
+                <p className="text-xs text-muted-foreground text-right">
+                  {data.premium_explanation.length}/180 characters
+                </p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
