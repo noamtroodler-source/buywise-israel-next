@@ -8,9 +8,9 @@ import { FavoritesProvider } from "@/contexts/FavoritesContext";
 import { ProtectedRoute } from "@/components/shared/ProtectedRoute";
 import { ScrollToTop } from "@/components/shared/ScrollToTop";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
-import { WhatsAppFallbackModal } from "@/components/ui/WhatsAppFallbackModal";
 import { PageLoader } from "@/components/shared/PageLoader";
 import { PageTracker } from "@/hooks/usePageTracking";
+import Index from "./pages/Index";
 
 type LazyPageModule = { default: ComponentType<any> };
 
@@ -34,7 +34,6 @@ const lazyWithRetry = (loadPage: () => Promise<LazyPageModule>, routeName: strin
 
 // Keep the startup bundle route-agnostic. Every heavy page loads only when matched,
 // so one broken/heavy page module cannot blank the entire preview.
-const Index = lazyWithRetry(() => import("./pages/Index"), "Index");
 const Listings = lazyWithRetry(() => import("./pages/Listings"), "Listings");
 const PropertyDetail = lazyWithRetry(() => import("./pages/PropertyDetail"), "PropertyDetail");
 const Projects = lazyWithRetry(() => import("./pages/Projects"), "Projects");
@@ -186,6 +185,10 @@ const AdminPrimaryDisputes = lazyWithRetry(() => import("./pages/admin/AdminPrim
 const AdminMergeReversals = lazyWithRetry(() => import("./pages/admin/AdminMergeReversals"), "AdminMergeReversals");
 const AdminColistingReports = lazyWithRetry(() => import("./pages/admin/AdminColistingReports"), "AdminColistingReports");
 const AdminColistingTelemetry = lazyWithRetry(() => import("./pages/admin/AdminColistingTelemetry"), "AdminColistingTelemetry");
+const WhatsAppFallbackModal = lazyWithRetry(
+  () => import("@/components/ui/WhatsAppFallbackModal").then((m) => ({ default: m.WhatsAppFallbackModal })),
+  "WhatsAppFallbackModal"
+);
 // Global query client config for optimal caching
 const queryClient = new QueryClient({
   defaultOptions: {
