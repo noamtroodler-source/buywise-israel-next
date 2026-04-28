@@ -7,7 +7,6 @@ import {
   Wrench, ChevronRight, PenLine, Bug, Zap, TrendingUp, Flame, Shield,
   History, Gavel, Combine, Flag, Activity
 } from 'lucide-react';
-import { Layout } from '@/components/layout/Layout';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { usePendingReviewCount } from '@/hooks/useListingReview';
@@ -158,7 +157,7 @@ export function AdminLayout() {
   ];
 
   return (
-    <Layout>
+    <div className="min-h-screen bg-background text-foreground">
       <div className="container py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -248,6 +247,6 @@ export function AdminLayout() {
           </div>
         </motion.div>
       </div>
-    </Layout>
+    </div>
   );
 }

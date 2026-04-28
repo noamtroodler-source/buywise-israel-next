@@ -1,7 +1,6 @@
 import { Suspense, lazy, type ComponentType } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import { CompareProvider } from "@/contexts/CompareContext";
 import { PreferencesProvider } from "@/contexts/PreferencesContext";
@@ -12,7 +11,6 @@ import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import { WhatsAppFallbackModal } from "@/components/ui/WhatsAppFallbackModal";
 import { PageLoader } from "@/components/shared/PageLoader";
 import { PageTracker } from "@/hooks/usePageTracking";
-import Index from "./pages/Index";
 
 type LazyPageModule = { default: ComponentType<any> };
 
@@ -31,21 +29,12 @@ const lazyWithRetry = (loadPage: () => Promise<LazyPageModule>, routeName: strin
       }
     }
 
-    const message = lastError instanceof Error ? lastError.message : String(lastError);
-    const isModuleFetchFailure = message.includes("Failed to fetch dynamically imported module");
-    const reloadKey = `lazy-reload:${routeName}`;
-
-    if (isModuleFetchFailure && !sessionStorage.getItem(reloadKey)) {
-      sessionStorage.setItem(reloadKey, String(Date.now()));
-      window.location.reload();
-      return { default: PageLoader };
-    }
-
     throw lastError;
   });
 
 // Keep the startup bundle route-agnostic. Every heavy page loads only when matched,
 // so one broken/heavy page module cannot blank the entire preview.
+const Index = lazyWithRetry(() => import("./pages/Index"), "Index");
 const Listings = lazyWithRetry(() => import("./pages/Listings"), "Listings");
 const PropertyDetail = lazyWithRetry(() => import("./pages/PropertyDetail"), "PropertyDetail");
 const Projects = lazyWithRetry(() => import("./pages/Projects"), "Projects");
@@ -216,8 +205,7 @@ const App = () => (
         <PreferencesProvider>
           <CompareProvider>
             <ErrorBoundary>
-              <TooltipProvider>
-                <WhatsAppFallbackModal>
+              <WhatsAppFallbackModal>
                   <BrowserRouter>
                     <PageTracker />
                     <ScrollToTop />
@@ -579,8 +567,7 @@ const App = () => (
                       </Routes>
                     </Suspense>
                   </BrowserRouter>
-                </WhatsAppFallbackModal>
-              </TooltipProvider>
+              </WhatsAppFallbackModal>
             </ErrorBoundary>
         </CompareProvider>
       </PreferencesProvider>
