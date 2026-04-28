@@ -1,6 +1,6 @@
 import { Suspense, lazy, type ComponentType } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Link } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { CompareProvider } from "@/contexts/CompareContext";
 import { PreferencesProvider } from "@/contexts/PreferencesContext";
