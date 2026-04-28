@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Save, Send, Loader2, Sparkles, ShieldAlert, FileText } from 'lucide-react';
@@ -32,6 +32,9 @@ import {
   type DuplicateCheckResult,
 } from '@/hooks/useDuplicateCheck';
 import { ConfirmDuplicateDialog } from '@/components/agency/ConfirmDuplicateDialog';
+import { useCities } from '@/hooks/useCities';
+import { getMarketFitReview } from '@/lib/marketFit';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const steps = [
   { title: 'Basics', description: 'Property type, price, location' },
@@ -67,6 +70,7 @@ function WizardContent() {
     if (errs.length > 0) stepErrors[i] = errs.length;
   }
   const { data: agentProfile } = useAgentProfile();
+  const { data: cities = [] } = useCities();
   const createProperty = useCreateProperty();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
@@ -75,11 +79,29 @@ function WizardContent() {
   const [showRecoveryDialog, setShowRecoveryDialog] = useState(false);
   const [duplicateResult, setDuplicateResult] = useState<DuplicateCheckResult | null>(null);
   const [isActingOnDuplicate, setIsActingOnDuplicate] = useState(false);
+  const [marketFitConfirmed, setMarketFitConfirmed] = useState(false);
   const hasCheckedDraft = useRef(false);
 
   const isAgentVerified = agentProfile?.status === 'active';
   const { canCreate: canCreateListing, isOverLimit } = useListingLimitCheck('agency');
   const duplicateCheck = useDuplicateCheck();
+
+  const marketFitReview = useMemo(() => {
+    const city = cities.find((item) => item.name === data.city);
+    return getMarketFitReview({
+      price: data.price,
+      size_sqm: data.size_sqm,
+      listing_status: data.listing_status,
+      cityAveragePriceSqm: city?.average_price_sqm,
+      premium_drivers: data.premium_drivers,
+      premium_explanation: data.premium_explanation,
+      property: data,
+    });
+  }, [cities, data]);
+
+  useEffect(() => {
+    setMarketFitConfirmed(false);
+  }, [marketFitReview.reviewReason]);
 
   const autoSave = useAutoSave<PropertyWizardData, WizardMetadata>({
     data,
@@ -152,6 +174,8 @@ function WizardContent() {
         featured_highlight: data.featured_highlight || null,
         premium_drivers: data.premium_drivers,
         premium_explanation: data.premium_explanation || null,
+        market_fit_status: marketFitReview.level,
+        market_fit_review_reason: marketFitReview.reviewReason,
         submitForReview: false,
       });
       autoSave.clearSavedData();
@@ -255,6 +279,11 @@ function WizardContent() {
   };
 
   const handleSubmitForReview = async () => {
+    if ((marketFitReview.requiresContext || marketFitReview.requiresConfirmation) && !marketFitConfirmed) {
+      toast.info('Add premium context or confirm the price review note before submitting.');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const allowed = await runDuplicateCheck();
@@ -296,6 +325,9 @@ function WizardContent() {
         featured_highlight: data.featured_highlight || null,
         premium_drivers: data.premium_drivers,
         premium_explanation: data.premium_explanation || null,
+        market_fit_status: marketFitReview.level,
+        market_fit_review_reason: marketFitReview.reviewReason,
+        market_fit_confirmed_at: marketFitReview.requiresConfirmation ? new Date().toISOString() : null,
         submitForReview: true,
       });
 
@@ -387,6 +419,30 @@ function WizardContent() {
                     <AlertTitle className="text-foreground">Pending Verification</AlertTitle>
                     <AlertDescription className="text-muted-foreground">
                       Your agent license is pending verification. You can save drafts, but submissions for review are disabled until your account is approved.
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {isLastStep && marketFitReview.level !== 'none' && (
+                  <Alert variant="default" className="bg-primary/5 border-primary/20">
+                    <ShieldAlert className="h-4 w-4 text-primary" />
+                    <AlertTitle className="text-foreground">{marketFitReview.title}</AlertTitle>
+                    <AlertDescription className="space-y-3 text-muted-foreground">
+                      <p>{marketFitReview.message}</p>
+                      {marketFitReview.gapPercent !== null && (
+                        <p className="text-xs">Current benchmark gap: about {marketFitReview.gapPercent}% above city price/sqm.</p>
+                      )}
+                      {marketFitReview.requiresContext && (
+                        <Button variant="outline" size="sm" onClick={() => setCurrentStep(2)} className="rounded-xl">
+                          Add Premium Context
+                        </Button>
+                      )}
+                      {marketFitReview.requiresConfirmation && (
+                        <label className="flex items-start gap-2 text-sm text-foreground">
+                          <Checkbox checked={marketFitConfirmed} onCheckedChange={(checked) => setMarketFitConfirmed(Boolean(checked))} />
+                          <span>I confirm the asking price and understand this listing may receive closer market-fit review.</span>
+                        </label>
+                      )}
                     </AlertDescription>
                   </Alert>
                 )}

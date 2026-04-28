@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Save, Send, Loader2, Sparkles, FileText } from 'lucide-react';
@@ -32,6 +32,10 @@ import {
 } from '@/hooks/useDuplicateCheck';
 import { ConfirmDuplicateDialog } from '@/components/agency/ConfirmDuplicateDialog';
 import { toast } from 'sonner';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useCities } from '@/hooks/useCities';
+import { getMarketFitReview } from '@/lib/marketFit';
 
 const AGENCY_WIZARD_STORAGE_KEY = 'agency-property-wizard-draft';
 
@@ -78,6 +82,7 @@ function AgencyWizardContent() {
   const { data: agency } = useMyAgency();
   const { data: team = [] } = useAgencyTeam(agency?.id);
   const { data: listings = [] } = useAgencyListingsManagement(agency?.id);
+  const { data: cities = [] } = useCities();
   const createProperty = useCreatePropertyForAgency();
 
   const [assignedAgentId, setAssignedAgentId] = useState<string | null>(null);
@@ -87,8 +92,26 @@ function AgencyWizardContent() {
   const [showRecoveryDialog, setShowRecoveryDialog] = useState(false);
   const [duplicateResult, setDuplicateResult] = useState<DuplicateCheckResult | null>(null);
   const [isActingOnDuplicate, setIsActingOnDuplicate] = useState(false);
+  const [marketFitConfirmed, setMarketFitConfirmed] = useState(false);
   const hasCheckedDraft = useRef(false);
   const duplicateCheck = useDuplicateCheck();
+
+  const marketFitReview = useMemo(() => {
+    const city = cities.find((item) => item.name === data.city);
+    return getMarketFitReview({
+      price: data.price,
+      size_sqm: data.size_sqm,
+      listing_status: data.listing_status,
+      cityAveragePriceSqm: city?.average_price_sqm,
+      premium_drivers: data.premium_drivers,
+      premium_explanation: data.premium_explanation,
+      property: data,
+    });
+  }, [cities, data]);
+
+  useEffect(() => {
+    setMarketFitConfirmed(false);
+  }, [marketFitReview.reviewReason]);
 
   const autoSave = useAutoSave<PropertyWizardData, AgencyWizardMetadata>({
     data,
@@ -172,6 +195,9 @@ function AgencyWizardContent() {
     featured_highlight: data.featured_highlight || null,
     premium_drivers: data.premium_drivers,
     premium_explanation: data.premium_explanation || null,
+    market_fit_status: marketFitReview.level,
+    market_fit_review_reason: marketFitReview.reviewReason,
+    market_fit_confirmed_at: submitForReview && marketFitReview.requiresConfirmation ? new Date().toISOString() : null,
     assignedAgentId: assignedAgentId!,
     submitForReview,
   });
@@ -254,6 +280,11 @@ function AgencyWizardContent() {
 
   const handleSubmitForReview = async () => {
     if (!assignedAgentId) return;
+    if ((marketFitReview.requiresContext || marketFitReview.requiresConfirmation) && !marketFitConfirmed) {
+      toast.info('Add premium context or confirm the price review note before submitting.');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       if (agency?.id && data.address && data.city) {
@@ -368,19 +399,44 @@ function AgencyWizardContent() {
 
             {/* Navigation */}
             <motion.div variants={itemVariants}>
-              <div className="flex justify-between items-center p-4 rounded-2xl bg-card/95 backdrop-blur-sm border border-border shadow-lg">
-                <Button
-                  variant="outline"
-                  onClick={goBack}
-                  disabled={currentStep === 0}
-                  className="rounded-xl h-11"
-                >
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Previous
-                </Button>
+              <div className="space-y-4 p-4 rounded-2xl bg-card/95 backdrop-blur-sm border border-border shadow-lg">
+                {isLastStep && marketFitReview.level !== 'none' && (
+                  <Alert variant="default" className="bg-primary/5 border-primary/20">
+                    <Sparkles className="h-4 w-4 text-primary" />
+                    <AlertTitle className="text-foreground">{marketFitReview.title}</AlertTitle>
+                    <AlertDescription className="space-y-3 text-muted-foreground">
+                      <p>{marketFitReview.message}</p>
+                      {marketFitReview.gapPercent !== null && (
+                        <p className="text-xs">Current benchmark gap: about {marketFitReview.gapPercent}% above city price/sqm.</p>
+                      )}
+                      {marketFitReview.requiresContext && (
+                        <Button variant="outline" size="sm" onClick={() => setCurrentStep(3)} className="rounded-xl">
+                          Add Premium Context
+                        </Button>
+                      )}
+                      {marketFitReview.requiresConfirmation && (
+                        <label className="flex items-start gap-2 text-sm text-foreground">
+                          <Checkbox checked={marketFitConfirmed} onCheckedChange={(checked) => setMarketFitConfirmed(Boolean(checked))} />
+                          <span>I confirm the asking price and understand this listing may receive closer market-fit review.</span>
+                        </label>
+                      )}
+                    </AlertDescription>
+                  </Alert>
+                )}
 
-                {isLastStep ? (
-                  <div className="flex gap-3">
+                <div className="flex justify-between items-center">
+                  <Button
+                    variant="outline"
+                    onClick={goBack}
+                    disabled={currentStep === 0}
+                    className="rounded-xl h-11"
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Previous
+                  </Button>
+
+                  {isLastStep ? (
+                    <div className="flex gap-3">
                     <Button
                       variant="outline"
                       onClick={handleSaveDraft}
@@ -405,17 +461,18 @@ function AgencyWizardContent() {
                         </>
                       )}
                     </Button>
-                  </div>
-                ) : (
-                  <Button
-                    onClick={goNext}
-                    disabled={currentStep === 0 && !assignedAgentId}
-                    className="rounded-xl h-11 px-6"
-                  >
-                    Next
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </Button>
-                )}
+                    </div>
+                  ) : (
+                    <Button
+                      onClick={goNext}
+                      disabled={currentStep === 0 && !assignedAgentId}
+                      className="rounded-xl h-11 px-6"
+                    >
+                      Next
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  )}
+                </div>
               </div>
             </motion.div>
           </motion.div>

@@ -36,6 +36,29 @@ export interface MarketFitResult {
   confidence: 'low' | 'medium' | 'high';
 }
 
+export type MarketFitReviewLevel = 'none' | 'soft_prompt' | 'context_required' | 'review_required';
+
+export interface MarketFitReviewInput {
+  price?: number | null;
+  size_sqm?: number | null;
+  listing_status?: string | null;
+  cityAveragePriceSqm?: number | null;
+  premium_drivers?: string[] | null;
+  premium_explanation?: string | null;
+  property: MarketFitPropertyInput;
+}
+
+export interface MarketFitReviewResult {
+  level: MarketFitReviewLevel;
+  gapPercent: number | null;
+  requiresContext: boolean;
+  requiresConfirmation: boolean;
+  hasPremiumContext: boolean;
+  title: string;
+  message: string;
+  reviewReason: string | null;
+}
+
 const FEATURE_DRIVER_LABELS: Record<string, string> = {
   sea_view: 'sea view',
   panoramic_view: 'view',
@@ -164,5 +187,73 @@ export function getMarketFit(input: MarketFitInput): MarketFitResult {
     contextLine: 'View, renovation, floor, outdoor space, parking, or rarity may explain the gap',
     premiumDrivers,
     confidence,
+  };
+}
+
+export function getMarketFitReview(input: MarketFitReviewInput): MarketFitReviewResult {
+  const price = input.price ?? 0;
+  const size = input.size_sqm ?? 0;
+  const average = input.cityAveragePriceSqm ?? 0;
+  const agentDrivers = input.premium_drivers ?? [];
+  const detectedDrivers = detectPremiumDrivers(input.property);
+  const hasPremiumContext = agentDrivers.length > 0 || detectedDrivers.length > 0 || Boolean(input.premium_explanation?.trim());
+
+  const base: MarketFitReviewResult = {
+    level: 'none',
+    gapPercent: null,
+    requiresContext: false,
+    requiresConfirmation: false,
+    hasPremiumContext,
+    title: 'Market fit looks ready',
+    message: 'The listing can be submitted normally.',
+    reviewReason: null,
+  };
+
+  if (input.listing_status !== 'for_sale' || price <= 0 || size <= 0 || average <= 0) {
+    return base;
+  }
+
+  const pricePerSqm = price / size;
+  const gapPercent = Math.round(((pricePerSqm - average) / average) * 100);
+
+  if (gapPercent < 35) {
+    return { ...base, gapPercent };
+  }
+
+  if (gapPercent < 70) {
+    return {
+      level: 'soft_prompt',
+      gapPercent,
+      requiresContext: false,
+      requiresConfirmation: false,
+      hasPremiumContext,
+      title: 'Help us present this listing accurately',
+      message: 'This asking price is above the city price/sqm benchmark. If view, renovation, floor, outdoor space, parking, new-build status, or rarity explain the gap, add that context so buyers understand the premium.',
+      reviewReason: `Soft review: ${gapPercent}% above city price/sqm benchmark`,
+    };
+  }
+
+  if (gapPercent < 100) {
+    return {
+      level: 'context_required',
+      gapPercent,
+      requiresContext: !hasPremiumContext,
+      requiresConfirmation: !hasPremiumContext,
+      hasPremiumContext,
+      title: 'Premium context needed before submission',
+      message: 'The asking price is significantly above recorded benchmarks. Add premium drivers or confirm that this needs closer review so the listing can be presented fairly.',
+      reviewReason: `Context required: ${gapPercent}% above city price/sqm benchmark`,
+    };
+  }
+
+  return {
+    level: 'review_required',
+    gapPercent,
+    requiresContext: false,
+    requiresConfirmation: true,
+    hasPremiumContext,
+    title: 'Closer review will be requested',
+    message: 'This listing is far above the city price/sqm benchmark. It can still be submitted, but please confirm the price and add any premium context that helps buyers understand the gap.',
+    reviewReason: `Closer review: ${gapPercent}% above city price/sqm benchmark`,
   };
 }

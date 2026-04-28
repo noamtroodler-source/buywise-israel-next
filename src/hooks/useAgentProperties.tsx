@@ -58,6 +58,8 @@ export interface CreatePropertyData {
     premium_drivers?: string[];
     premium_explanation?: string | null;
     market_fit_status?: string | null;
+     market_fit_confirmed_at?: string | null;
+     market_fit_review_reason?: string | null;
 }
 
 export function useAgentProfile() {
