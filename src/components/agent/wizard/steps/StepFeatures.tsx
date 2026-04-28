@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -142,6 +143,7 @@ export function StepFeatures() {
   const isRental = data.listing_status === 'for_rent';
    const showFurnitureSection = data.furnished_status === 'fully' || data.furnished_status === 'semi';
   const detectedPremiumDrivers = detectPremiumDrivers(data);
+  const detectedPremiumDriversKey = detectedPremiumDrivers.join('|');
   const selectedPremiumDrivers = data.premium_context_touched
     ? data.premium_drivers
     : Array.from(new Set([...data.premium_drivers, ...detectedPremiumDrivers]));
@@ -160,6 +162,12 @@ export function StepFeatures() {
       : [...current, driver];
     updateData({ premium_drivers: next, premium_context_touched: true });
   };
+
+  useEffect(() => {
+    if (!data.premium_context_touched && detectedPremiumDrivers.length > 0) {
+      updateData({ premium_drivers: detectedPremiumDrivers });
+    }
+  }, [data.premium_context_touched, detectedPremiumDriversKey, updateData]);
 
   const toggleFeature = (featureId: string) => {
     const newFeatures = data.features.includes(featureId)
