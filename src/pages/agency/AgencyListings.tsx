@@ -686,12 +686,12 @@ export default function AgencyListings() {
                         </TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead><SortableHeader label="Review" sortKey="review" activeSort={sort} onSort={handleSort} /></TableHead>
+                        <TableHead className="text-center">Actions</TableHead>
                         <TableHead className="text-right"><SortableHeader label="Price" sortKey="price" activeSort={sort} onSort={handleSort} align="right" /></TableHead>
                         <TableHead className="text-center"><SortableHeader label="Views" sortKey="views" activeSort={sort} onSort={handleSort} /></TableHead>
                         <TableHead className="text-center"><SortableHeader label="Saves" sortKey="saves" activeSort={sort} onSort={handleSort} /></TableHead>
                         <TableHead className="text-center"><SortableHeader label="Inquiries" sortKey="inquiries" activeSort={sort} onSort={handleSort} /></TableHead>
                         <TableHead className="text-center"><SortableHeader label="Days" sortKey="days" activeSort={sort} onSort={handleSort} /></TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -788,42 +788,8 @@ export default function AgencyListings() {
                                 )}
                               </div>
                             </TableCell>
-                            <TableCell className="text-right font-medium">
-                              {formatPrice(listing.price, listing.currency)}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <span className="text-sm text-muted-foreground">{listing.views_count || 0}</span>
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <span className="text-sm text-muted-foreground">{listing.total_saves || 0}</span>
-                            </TableCell>
-                            <TableCell className="text-center">
-                              {listing.other_agencies_count > 0 ? (
-                                <TooltipProvider delayDuration={200}>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <span className="text-sm text-muted-foreground cursor-help">
-                                        <span className="font-medium text-foreground">{listing.my_inquiries_count || 0}</span>
-                                        <span className="opacity-60"> / {listing.inquiries_count || 0}</span>
-                                      </span>
-                                    </TooltipTrigger>
-                                    <TooltipContent side="top">
-                                      <p className="text-xs">
-                                        Your share: <strong>{listing.my_inquiries_count || 0}</strong><br />
-                                        Total across all agencies: {listing.inquiries_count || 0}
-                                      </p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
-                              ) : (
-                                <span className="text-sm text-muted-foreground">{listing.inquiries_count || 0}</span>
-                              )}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <span className="text-sm text-muted-foreground">{getDaysOnMarket(listing.created_at)}</span>
-                            </TableCell>
                             <TableCell>
-                              <div className="flex items-center justify-end gap-1">
+                              <div className="flex items-center justify-center gap-1">
                                 {isDraft && (
                                   <Button
                                     variant="ghost"
@@ -931,6 +897,40 @@ export default function AgencyListings() {
                                   </DropdownMenuContent>
                                 </DropdownMenu>
                               </div>
+                            </TableCell>
+                            <TableCell className="text-right font-medium">
+                              {formatPrice(listing.price, listing.currency)}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <span className="text-sm text-muted-foreground">{listing.views_count || 0}</span>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <span className="text-sm text-muted-foreground">{listing.total_saves || 0}</span>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {listing.other_agencies_count > 0 ? (
+                                <TooltipProvider delayDuration={200}>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className="text-sm text-muted-foreground cursor-help">
+                                        <span className="font-medium text-foreground">{listing.my_inquiries_count || 0}</span>
+                                        <span className="opacity-60"> / {listing.inquiries_count || 0}</span>
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top">
+                                      <p className="text-xs">
+                                        Your share: <strong>{listing.my_inquiries_count || 0}</strong><br />
+                                        Total across all agencies: {listing.inquiries_count || 0}
+                                      </p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              ) : (
+                                <span className="text-sm text-muted-foreground">{listing.inquiries_count || 0}</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <span className="text-sm text-muted-foreground">{getDaysOnMarket(listing.created_at)}</span>
                             </TableCell>
                           </TableRow>
                         );
