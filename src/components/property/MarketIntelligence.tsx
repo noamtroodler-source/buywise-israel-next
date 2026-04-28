@@ -271,7 +271,7 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
           compsCount={verdictData.compsCount}
           radiusUsedM={verdictData.radiusUsedM}
           priceTier={priceTier}
-          property={property}
+          marketFit={marketFit}
         />
 
         {/* Value Snapshot Cards (no header) */}
@@ -333,8 +333,12 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
           />
         )}
 
-        {/* AI Market Insight — placed after evidence so it reads as a conclusion */}
-        <AIMarketInsight insight={insight} isLoading={insightLoading} />
+        {/* BuyWise Take — placed after evidence so it reads as a conclusion */}
+        <BuyWiseTake
+          marketFit={marketFit}
+          premiumDrivers={premiumDrivers}
+          premiumExplanation={property.premium_explanation}
+        />
 
         {/* Data context — help buyers understand data limitations */}
         <MarketDataContext variant="compact" />
