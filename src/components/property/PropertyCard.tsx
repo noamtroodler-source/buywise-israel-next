@@ -229,6 +229,11 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
 
   // Check if this is a rental (for more prominent freshness treatment)
   const isRental = property.listing_status === 'for_rent';
+  const hasPremiumContext = property.listing_status === 'for_sale' && (
+    ((property as any).premium_drivers?.length ?? 0) > 0 ||
+    Boolean((property as any).premium_explanation) ||
+    ['feature_driven_premium', 'soft_prompt', 'context_required', 'review_required'].includes((property as any).market_fit_status)
+  );
 
   const goToPrevImage = useCallback(() => {
     setImageLoaded(false);
@@ -516,6 +521,12 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                 {!hideTitle && property.title && (
                   <p className="text-sm font-medium text-foreground truncate leading-tight">{property.title}</p>
                 )}
+                {hasPremiumContext && (
+                  <div className="inline-flex w-fit items-center gap-1 rounded-lg border border-primary/15 bg-primary/5 px-2 py-1 text-xs font-medium text-primary">
+                    <Sparkles className="h-3 w-3" />
+                    Premium context
+                  </div>
+                )}
                 <p className="text-xs text-muted-foreground">
                   {property.bedrooms != null ? `${property.bedrooms}${(property as any).additional_rooms ? ` + ${(property as any).additional_rooms}` : ''} bd` : ''}
                   {property.bedrooms != null && property.bathrooms != null ? ' · ' : ''}
@@ -735,6 +746,13 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                 {/* Title */}
                 {!hideTitle && property.title && (
                   <p className="text-sm font-medium text-foreground truncate leading-tight">{property.title}</p>
+                )}
+
+                {hasPremiumContext && (
+                  <div className="inline-flex w-fit items-center gap-1 rounded-lg border border-primary/15 bg-primary/5 px-2 py-1 text-xs font-medium text-primary">
+                    <Sparkles className="h-3 w-3" />
+                    Premium context
+                  </div>
                 )}
 
                 {/* Location */}

@@ -1,22 +1,21 @@
-import { useState, useCallback, useEffect } from 'react';
-import { useAreaLabel } from '@/contexts/PreferencesContext';
-import { BarChart3, ShieldCheck, Info, ArrowRight } from 'lucide-react';
+import { useState, useCallback } from 'react';
+import { BarChart3, ShieldCheck, Info, ArrowRight, Sparkles, ChevronDown } from 'lucide-react';
 import { getIsraeliRoomCount } from '@/lib/israeliRoomCount';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { PropertyValueSnapshot } from './PropertyValueSnapshot';
 import { RecentNearbySales } from './RecentNearbySales';
 import { SpecBasedComps } from './SpecBasedComps';
 import { MarketDataContext } from '@/components/shared/MarketDataContext';
-import { AIMarketInsight } from './AIMarketInsight';
-import { useMarketInsight } from '@/hooks/useMarketInsight';
 import { useRoomSpecificCityPrice } from '@/hooks/useRoomSpecificCityPrice';
 import { useNeighborhoodAvgPrice } from '@/hooks/useNeighborhoodPrices';
 import { usePriceTier } from '@/hooks/usePriceTier';
 import type { PriceTier } from '@/hooks/usePriceTier';
-import { getMarketFit } from '@/lib/marketFit';
+import { getMarketFit, type MarketFitResult } from '@/lib/marketFit';
 
 interface MarketIntelligenceProps {
   property: {
@@ -46,6 +45,9 @@ interface MarketIntelligenceProps {
     furnished_status?: string | null;
     furniture_items?: string[] | null;
     featured_highlight?: string | null;
+    premium_drivers?: string[] | null;
+    premium_explanation?: string | null;
+    market_fit_status?: string | null;
     created_at?: string;
     vaad_bayit_monthly?: number | null;
     latitude: number | null;
@@ -64,9 +66,12 @@ interface MarketIntelligenceProps {
   } | null | undefined;
 }
 
-function MarketVerdictBadge({ avgComparison, compsCount, radiusUsedM, priceTier, property }: { avgComparison: number | null; compsCount: number; radiusUsedM: number; priceTier?: PriceTier | null; property: MarketIntelligenceProps['property'] }) {
+function formatPremiumDriver(driver: string) {
+  return driver.replace(/[_/]+/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function MarketVerdictBadge({ avgComparison, compsCount, radiusUsedM, priceTier, marketFit }: { avgComparison: number | null; compsCount: number; radiusUsedM: number; priceTier?: PriceTier | null; marketFit: MarketFitResult }) {
   const radiusLabel = radiusUsedM >= 1000 ? '1km' : '500m';
-  const marketFit = getMarketFit({ avgComparison, compsCount, radiusUsedM, property });
   const isPositive = marketFit.state === 'normal_range' && (avgComparison ?? 0) <= 15;
   const isNeutral = marketFit.state === 'limited_comparable_match' || marketFit.state === 'above_recorded_sales';
 
@@ -100,6 +105,58 @@ function MarketVerdictBadge({ avgComparison, compsCount, radiusUsedM, priceTier,
       </div>
       {contextLine && (
         <p className="text-xs text-muted-foreground pl-0.5">{contextLine}</p>
+      )}
+    </div>
+  );
+}
+
+function BuyWiseTake({ marketFit, premiumDrivers, premiumExplanation }: { marketFit: MarketFitResult; premiumDrivers: string[]; premiumExplanation?: string | null }) {
+  const [open, setOpen] = useState(false);
+  const hasPremiumContext = premiumDrivers.length > 0 || Boolean(premiumExplanation?.trim());
+  const take = hasPremiumContext
+    ? 'Recorded sales may not fully capture the specific features and context that shape this listing’s price.'
+    : marketFit.contextLine;
+
+  return (
+    <div className="rounded-xl border border-primary/15 bg-primary/5 p-4 space-y-3">
+      <div className="flex items-start gap-3">
+        <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+          <Sparkles className="h-4 w-4 text-primary" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2 mb-1">
+            <p className="text-sm font-semibold text-foreground">BuyWise Take</p>
+            <Badge variant="secondary" className="text-xs">{marketFit.label}</Badge>
+          </div>
+          <p className="text-sm text-muted-foreground">{take}</p>
+        </div>
+      </div>
+
+      {hasPremiumContext && (
+        <Collapsible open={open} onOpenChange={setOpen}>
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-8 px-2 text-xs text-primary hover:text-primary">
+              What recorded sales may not capture
+              <ChevronDown className={`ml-1 h-3.5 w-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="pt-2 space-y-3">
+            {premiumDrivers.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {premiumDrivers.slice(0, 8).map((driver) => (
+                  <Badge key={driver} variant="outline" className="rounded-lg bg-background/70">
+                    {formatPremiumDriver(driver)}
+                  </Badge>
+                ))}
+              </div>
+            )}
+            {premiumExplanation && (
+              <p className="text-sm text-muted-foreground border-l-2 border-primary/30 pl-3">
+                {premiumExplanation}
+              </p>
+            )}
+          </CollapsibleContent>
+        </Collapsible>
       )}
     </div>
   );
@@ -147,50 +204,17 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
     propertyPricePerSqm
   );
   const effectiveYoyChange = roomPrice?.yoyChange ?? cityData?.yoy_price_change ?? null;
-  const effectiveRoomCount = roomPrice ? israeliRooms : null;
-  const isRoomPriceFallback = roomPrice?.isFallback ?? false;
 
   // Neighborhood avg price per sqm (falls back to city if unavailable)
   const neighborhoodAvgPriceSqm = neighborhoodPrice?.avg_price_sqm ?? null;
 
-  // Compute days on market
-  const createdDate = property.created_at ? new Date(property.created_at) : new Date();
-  const daysOnMarket = Math.floor((Date.now() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
-
-  // AI Market Insight - only when comps are loaded
-  const insightInput = verdictData.compsCount > 0 ? {
-    property_id: property.id,
-    price: property.price,
-    size_sqm: property.size_sqm,
-    city: property.city,
-    neighborhood: property.neighborhood || null,
-    property_type: property.property_type || 'apartment',
-    bedrooms: property.bedrooms,
-    bathrooms: property.bathrooms || null,
-    israeli_room_count: israeliRooms,
-    floor: property.floor ?? null,
-    total_floors: property.total_floors ?? null,
-    year_built: property.year_built ?? null,
-    condition: property.condition ?? null,
-    has_elevator: property.has_elevator ?? null,
-    parking: property.parking ?? null,
-    has_balcony: property.has_balcony ?? null,
-    has_storage: property.has_storage ?? null,
-    is_accessible: property.is_accessible ?? null,
-    entry_date: property.entry_date ?? null,
-    days_on_market: daysOnMarket,
-    original_price: property.original_price ?? null,
-    description_snippet: property.description?.slice(0, 500) || null,
-    features: property.features || null,
-    listing_status: property.listing_status,
-    city_avg_price_sqm: effectiveAvgPriceSqm,
-    city_yoy_change: effectiveYoyChange,
-    city_5yr_change: roomPrice?.fiveYearChange ?? null,
-    comp_count: verdictData.compsCount,
-    avg_comp_deviation_percent: verdictData.avgComparison,
-  } : null;
-
-  const { data: insight, isLoading: insightLoading } = useMarketInsight(insightInput);
+  const marketFit = getMarketFit({
+    avgComparison: verdictData.avgComparison,
+    compsCount: verdictData.compsCount,
+    radiusUsedM: verdictData.radiusUsedM,
+    property,
+  });
+  const premiumDrivers = Array.from(new Set([...(property.premium_drivers ?? []), ...marketFit.premiumDrivers]));
 
   return (
     <TooltipProvider>
@@ -247,7 +271,7 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
           compsCount={verdictData.compsCount}
           radiusUsedM={verdictData.radiusUsedM}
           priceTier={priceTier}
-          property={property}
+          marketFit={marketFit}
         />
 
         {/* Value Snapshot Cards (no header) */}
@@ -309,8 +333,12 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
           />
         )}
 
-        {/* AI Market Insight — placed after evidence so it reads as a conclusion */}
-        <AIMarketInsight insight={insight} isLoading={insightLoading} />
+        {/* BuyWise Take — placed after evidence so it reads as a conclusion */}
+        <BuyWiseTake
+          marketFit={marketFit}
+          premiumDrivers={premiumDrivers}
+          premiumExplanation={property.premium_explanation}
+        />
 
         {/* Data context — help buyers understand data limitations */}
         <MarketDataContext variant="compact" />
