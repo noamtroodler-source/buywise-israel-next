@@ -735,7 +735,7 @@ export default function AgencyListings() {
                                       <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-muted/40 text-muted-foreground border-border">
                                         Co-listed
                                       </Badge>
-                                    )}
+                                    ) : null}
                                     {listing.has_active_boost && (
                                       <Badge className="text-[10px] px-1.5 py-0 bg-primary/10 text-primary border-primary/30 border">
                                         Boost → primary
