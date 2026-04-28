@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Save, Send, Loader2, Sparkles, ShieldAlert, FileText } from 'lucide-react';
@@ -32,6 +32,8 @@ import {
   type DuplicateCheckResult,
 } from '@/hooks/useDuplicateCheck';
 import { ConfirmDuplicateDialog } from '@/components/agency/ConfirmDuplicateDialog';
+import { useCities } from '@/hooks/useCities';
+import { getMarketFitReview } from '@/lib/marketFit';
 
 const steps = [
   { title: 'Basics', description: 'Property type, price, location' },
@@ -67,6 +69,7 @@ function WizardContent() {
     if (errs.length > 0) stepErrors[i] = errs.length;
   }
   const { data: agentProfile } = useAgentProfile();
+  const { data: cities = [] } = useCities();
   const createProperty = useCreateProperty();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
@@ -75,11 +78,29 @@ function WizardContent() {
   const [showRecoveryDialog, setShowRecoveryDialog] = useState(false);
   const [duplicateResult, setDuplicateResult] = useState<DuplicateCheckResult | null>(null);
   const [isActingOnDuplicate, setIsActingOnDuplicate] = useState(false);
+  const [marketFitConfirmed, setMarketFitConfirmed] = useState(false);
   const hasCheckedDraft = useRef(false);
 
   const isAgentVerified = agentProfile?.status === 'active';
   const { canCreate: canCreateListing, isOverLimit } = useListingLimitCheck('agency');
   const duplicateCheck = useDuplicateCheck();
+
+  const marketFitReview = useMemo(() => {
+    const city = cities.find((item) => item.name === data.city);
+    return getMarketFitReview({
+      price: data.price,
+      size_sqm: data.size_sqm,
+      listing_status: data.listing_status,
+      cityAveragePriceSqm: city?.average_price_sqm,
+      premium_drivers: data.premium_drivers,
+      premium_explanation: data.premium_explanation,
+      property: data,
+    });
+  }, [cities, data]);
+
+  useEffect(() => {
+    setMarketFitConfirmed(false);
+  }, [marketFitReview.reviewReason]);
 
   const autoSave = useAutoSave<PropertyWizardData, WizardMetadata>({
     data,
@@ -152,6 +173,8 @@ function WizardContent() {
         featured_highlight: data.featured_highlight || null,
         premium_drivers: data.premium_drivers,
         premium_explanation: data.premium_explanation || null,
+        market_fit_status: marketFitReview.level,
+        market_fit_review_reason: marketFitReview.reviewReason,
         submitForReview: false,
       });
       autoSave.clearSavedData();
@@ -255,6 +278,17 @@ function WizardContent() {
   };
 
   const handleSubmitForReview = async () => {
+    if (marketFitReview.requiresContext) {
+      toast.info('Add premium context so buyers understand the price difference.');
+      setCurrentStep(2);
+      return;
+    }
+
+    if (marketFitReview.requiresConfirmation && !marketFitConfirmed) {
+      toast.info('Confirm the price review note before submitting.');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const allowed = await runDuplicateCheck();
@@ -296,6 +330,9 @@ function WizardContent() {
         featured_highlight: data.featured_highlight || null,
         premium_drivers: data.premium_drivers,
         premium_explanation: data.premium_explanation || null,
+        market_fit_status: marketFitReview.level,
+        market_fit_review_reason: marketFitReview.reviewReason,
+        market_fit_confirmed_at: marketFitReview.requiresConfirmation ? new Date().toISOString() : null,
         submitForReview: true,
       });
 
