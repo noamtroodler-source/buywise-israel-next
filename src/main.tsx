@@ -16,7 +16,31 @@ root.innerHTML = `
   </div>
 `;
 
-import("./App.tsx")
+const loadApp = async () => {
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      const app = await import("./App.tsx");
+      sessionStorage.removeItem("app-module-reload");
+      return app;
+    } catch (error) {
+      lastError = error;
+      await new Promise((resolve) => window.setTimeout(resolve, 300 * (attempt + 1)));
+    }
+  }
+
+  const message = lastError instanceof Error ? lastError.message : String(lastError);
+  if (message.includes("Failed to fetch dynamically imported module") && !sessionStorage.getItem("app-module-reload")) {
+    sessionStorage.setItem("app-module-reload", String(Date.now()));
+    window.location.reload();
+    return new Promise<never>(() => undefined);
+  }
+
+  throw lastError;
+};
+
+loadApp()
   .then(({ default: App }) => {
     createRoot(root).render(<App />);
   })
