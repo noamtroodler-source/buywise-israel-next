@@ -27,6 +27,15 @@ export interface PropertyForReview {
   features: string[] | null;
   images: string[] | null;
   description: string | null;
+  has_balcony: boolean | null;
+  has_storage: boolean | null;
+  furnished_status: string | null;
+  furniture_items: string[] | null;
+  featured_highlight: string | null;
+  premium_drivers: string[] | null;
+  premium_explanation: string | null;
+  market_fit_status: string | null;
+  market_fit_review_reason: string | null;
   verification_status: VerificationStatus;
   rejection_reason: string | null;
   admin_notes: string | null;
@@ -73,6 +82,15 @@ export function useListingsForReview(status?: VerificationStatus) {
           features,
           images,
           description,
+          has_balcony,
+          has_storage,
+          furnished_status,
+          furniture_items,
+          featured_highlight,
+          premium_drivers,
+          premium_explanation,
+          market_fit_status,
+          market_fit_review_reason,
           verification_status,
           rejection_reason,
           admin_notes,
