@@ -510,9 +510,11 @@ const App = () => (
                         <Route path="/admin/hero-images" element={<HeroImageGenerator />} />
                         <Route path="/admin/hero-preview" element={<HeroPreview />} />
                         <Route path="/admin" element={
-                          <ProtectedRoute requiredRole="admin">
-                            <AdminLayout />
-                          </ProtectedRoute>
+                          <RouteBoundary label="the admin area">
+                            <ProtectedRoute requiredRole="admin">
+                              <AdminLayout />
+                            </ProtectedRoute>
+                          </RouteBoundary>
                         }>
                           <Route index element={<AdminDashboard />} />
                           <Route path="settings" element={<AdminSettings />} />
