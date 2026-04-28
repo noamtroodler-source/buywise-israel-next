@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { 
   Check, X, MessageSquare, Eye, MapPin, Bed, Bath, 
-  Ruler, User, Building2, ChevronDown, ChevronUp, Star
+  Ruler, User, Building2, ChevronDown, ChevronUp, Star,
+  BarChart3, AlertTriangle, ShieldCheck, Sparkles, Info
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +25,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { PropertyForReview } from '@/hooks/useListingReview';
 import { formatDistanceToNow } from 'date-fns';
 import { PropertyPreviewModal } from './PropertyPreviewModal';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { detectPremiumDrivers } from '@/lib/marketFit';
 
 interface ListingReviewCardProps {
   property: PropertyForReview;
@@ -31,6 +35,42 @@ interface ListingReviewCardProps {
   onRequestChanges: (id: string, reason: string, notes?: string, agentId?: string, propertyTitle?: string) => void;
   onReject: (id: string, reason: string, notes?: string, agentId?: string, propertyTitle?: string) => void;
   isLoading?: boolean;
+}
+
+type Benchmark = {
+  averagePriceSqm: number | null;
+  source: 'neighborhood' | 'city' | 'none';
+  label: string;
+};
+
+function useMarketBenchmark(property: PropertyForReview) {
+  return useQuery({
+    queryKey: ['admin-market-benchmark', property.city, property.neighborhood],
+    queryFn: async (): Promise<Benchmark> => {
+      const { data: city } = await supabase
+        .from('cities')
+        .select('average_price_sqm')
+        .eq('name', property.city)
+        .maybeSingle();
+
+      return {
+        averagePriceSqm: city?.average_price_sqm ?? null,
+        source: city?.average_price_sqm ? 'city' : 'none',
+        label: city?.average_price_sqm ? `${property.city} city benchmark` : 'No benchmark available',
+      };
+    },
+    enabled: Boolean(property.city),
+    staleTime: 10 * 60 * 1000,
+  });
+}
+
+function formatNumber(value: number | null | undefined) {
+  if (value == null || !Number.isFinite(value)) return '—';
+  return `₪${Math.round(value).toLocaleString()}`;
+}
+
+function formatDriver(driver: string) {
+  return driver.replace(/[_/]+/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
 export function ListingReviewCard({ 
