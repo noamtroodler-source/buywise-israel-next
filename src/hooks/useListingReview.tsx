@@ -311,6 +311,7 @@ export function useApproveListing() {
         .eq('id', id);
 
       if (error) throw error;
+      await logPriceContextEvent(id, 'admin_approved', adminNotes);
 
       // Send notification to agent
       if (agentId) {
@@ -356,6 +357,7 @@ export function useRequestChanges() {
         .eq('id', id);
 
       if (error) throw error;
+      await logPriceContextEvent(id, 'admin_changes_requested', reason);
 
       // Send notification to agent
       if (agentId) {
@@ -402,6 +404,7 @@ export function useRejectListing() {
         .eq('id', id);
 
       if (error) throw error;
+      await logPriceContextEvent(id, 'admin_rejected', reason);
 
       // Send notification to agent
       if (agentId) {
