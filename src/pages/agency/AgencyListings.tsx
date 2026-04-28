@@ -48,6 +48,7 @@ import { cn } from '@/lib/utils';
 import { exportToCSV } from '@/lib/csvExport';
 import { AgencyListingsSkeleton } from '@/components/agency/skeletons/AgencyPageSkeletons';
 import { EnhancedEmptyState } from '@/components/shared/EnhancedEmptyState';
+import { PriceContextBadge } from '@/components/property/PriceContextBadge';
 
 const IMPORTED_BANNER_KEY = 'agency_imported_drafts_banner_dismissed';
 const LAUNCH_REVIEW_GUIDANCE_KEY = 'agency_launch_review_guidance_dismissed';
@@ -785,6 +786,13 @@ export default function AgencyListings() {
                                   </p>
                                 ) : (
                                   <p className="text-[11px] text-muted-foreground">Core fields look ready</p>
+                                )}
+                                {listing.listing_status === 'for_sale' && (
+                                  <PriceContextBadge
+                                    status={listing.price_context_badge_status}
+                                    publicLabel={listing.price_context_public_label}
+                                    confidenceTier={listing.price_context_confidence_tier}
+                                  />
                                 )}
                               </div>
                             </TableCell>
