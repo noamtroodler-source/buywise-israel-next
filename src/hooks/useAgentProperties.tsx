@@ -200,6 +200,9 @@ export function useSubmitForReview() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['agentProperties'] });
+      queryClient.invalidateQueries({ queryKey: ['agencyListingsManagement'] });
+      queryClient.invalidateQueries({ queryKey: ['listingsForReview'] });
+      queryClient.invalidateQueries({ queryKey: ['properties'] });
       queryClient.invalidateQueries({ queryKey: ['pendingReviewCount'] });
     },
     onSuccess: () => {
