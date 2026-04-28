@@ -32,8 +32,7 @@ import {
 } from '@/hooks/useDuplicateCheck';
 import { ConfirmDuplicateDialog } from '@/components/agency/ConfirmDuplicateDialog';
 import { toast } from 'sonner';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Alert } from '@/components/ui/alert';
 import { useCities } from '@/hooks/useCities';
 import { getMarketFitReview } from '@/lib/marketFit';
 import { PriceContextSubmissionPreview } from '@/components/agent/wizard/PriceContextSubmissionPreview';
