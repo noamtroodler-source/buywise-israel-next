@@ -4731,6 +4731,62 @@ export type Database = {
         }
         Relationships: []
       }
+      price_context_events: {
+        Row: {
+          actor_id: string | null
+          actor_type: string
+          comp_pool_snapshot: Json | null
+          confidence_tier: string | null
+          created_at: string
+          event_type: string
+          id: string
+          percentage_suppressed: boolean | null
+          premium_context_snapshot: Json | null
+          property_id: string
+          public_label: string | null
+          raw_gap_percent: number | null
+          reason: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_type?: string
+          comp_pool_snapshot?: Json | null
+          confidence_tier?: string | null
+          created_at?: string
+          event_type: string
+          id?: string
+          percentage_suppressed?: boolean | null
+          premium_context_snapshot?: Json | null
+          property_id: string
+          public_label?: string | null
+          raw_gap_percent?: number | null
+          reason?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          actor_type?: string
+          comp_pool_snapshot?: Json | null
+          confidence_tier?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          percentage_suppressed?: boolean | null
+          premium_context_snapshot?: Json | null
+          property_id?: string
+          public_label?: string | null
+          raw_gap_percent?: number | null
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_context_events_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       price_drop_notifications: {
         Row: {
           created_at: string | null
@@ -5502,6 +5558,9 @@ export type Database = {
           bank_guarantee_required: boolean | null
           bathrooms: number | null
           bedrooms: number | null
+          benchmark_review_notes: string | null
+          benchmark_review_reason: string | null
+          benchmark_review_status: string
           boost_active_until: string | null
           boosted_by_agency_id: string | null
           checks_required: boolean | null
@@ -5509,6 +5568,7 @@ export type Database = {
           claimed_at: string | null
           claimed_by_agency_id: string | null
           co_listing_count: number
+          comp_pool_used: string | null
           condition: string | null
           created_at: string
           currency: string | null
@@ -5550,11 +5610,18 @@ export type Database = {
           merged_source_urls: string[] | null
           neighborhood: string | null
           original_price: number | null
+          ownership_type: string | null
           parking: number | null
           pets_policy: string | null
           premium_drivers: string[]
           premium_explanation: string | null
           price: number
+          price_context_badge_status: string
+          price_context_confidence_score: number | null
+          price_context_confidence_tier: string | null
+          price_context_percentage_suppressed: boolean
+          price_context_property_class: string | null
+          price_context_public_label: string | null
           price_reduced_at: string | null
           price_vs_avg_pct: number | null
           primary_agency_id: string | null
@@ -5574,6 +5641,7 @@ export type Database = {
           source_rooms_label: string | null
           source_status: string | null
           source_url: string | null
+          sqm_source: string | null
           street_view_type: string | null
           street_view_url: string | null
           subletting_allowed: string | null
@@ -5603,6 +5671,9 @@ export type Database = {
           bank_guarantee_required?: boolean | null
           bathrooms?: number | null
           bedrooms?: number | null
+          benchmark_review_notes?: string | null
+          benchmark_review_reason?: string | null
+          benchmark_review_status?: string
           boost_active_until?: string | null
           boosted_by_agency_id?: string | null
           checks_required?: boolean | null
@@ -5610,6 +5681,7 @@ export type Database = {
           claimed_at?: string | null
           claimed_by_agency_id?: string | null
           co_listing_count?: number
+          comp_pool_used?: string | null
           condition?: string | null
           created_at?: string
           currency?: string | null
@@ -5651,11 +5723,18 @@ export type Database = {
           merged_source_urls?: string[] | null
           neighborhood?: string | null
           original_price?: number | null
+          ownership_type?: string | null
           parking?: number | null
           pets_policy?: string | null
           premium_drivers?: string[]
           premium_explanation?: string | null
           price: number
+          price_context_badge_status?: string
+          price_context_confidence_score?: number | null
+          price_context_confidence_tier?: string | null
+          price_context_percentage_suppressed?: boolean
+          price_context_property_class?: string | null
+          price_context_public_label?: string | null
           price_reduced_at?: string | null
           price_vs_avg_pct?: number | null
           primary_agency_id?: string | null
@@ -5675,6 +5754,7 @@ export type Database = {
           source_rooms_label?: string | null
           source_status?: string | null
           source_url?: string | null
+          sqm_source?: string | null
           street_view_type?: string | null
           street_view_url?: string | null
           subletting_allowed?: string | null
@@ -5704,6 +5784,9 @@ export type Database = {
           bank_guarantee_required?: boolean | null
           bathrooms?: number | null
           bedrooms?: number | null
+          benchmark_review_notes?: string | null
+          benchmark_review_reason?: string | null
+          benchmark_review_status?: string
           boost_active_until?: string | null
           boosted_by_agency_id?: string | null
           checks_required?: boolean | null
@@ -5711,6 +5794,7 @@ export type Database = {
           claimed_at?: string | null
           claimed_by_agency_id?: string | null
           co_listing_count?: number
+          comp_pool_used?: string | null
           condition?: string | null
           created_at?: string
           currency?: string | null
@@ -5752,11 +5836,18 @@ export type Database = {
           merged_source_urls?: string[] | null
           neighborhood?: string | null
           original_price?: number | null
+          ownership_type?: string | null
           parking?: number | null
           pets_policy?: string | null
           premium_drivers?: string[]
           premium_explanation?: string | null
           price?: number
+          price_context_badge_status?: string
+          price_context_confidence_score?: number | null
+          price_context_confidence_tier?: string | null
+          price_context_percentage_suppressed?: boolean
+          price_context_property_class?: string | null
+          price_context_public_label?: string | null
           price_reduced_at?: string | null
           price_vs_avg_pct?: number | null
           primary_agency_id?: string | null
@@ -5776,6 +5867,7 @@ export type Database = {
           source_rooms_label?: string | null
           source_status?: string | null
           source_url?: string | null
+          sqm_source?: string | null
           street_view_type?: string | null
           street_view_url?: string | null
           subletting_allowed?: string | null
