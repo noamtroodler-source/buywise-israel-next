@@ -405,19 +405,44 @@ function AgencyWizardContent() {
 
             {/* Navigation */}
             <motion.div variants={itemVariants}>
-              <div className="flex justify-between items-center p-4 rounded-2xl bg-card/95 backdrop-blur-sm border border-border shadow-lg">
-                <Button
-                  variant="outline"
-                  onClick={goBack}
-                  disabled={currentStep === 0}
-                  className="rounded-xl h-11"
-                >
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Previous
-                </Button>
+              <div className="space-y-4 p-4 rounded-2xl bg-card/95 backdrop-blur-sm border border-border shadow-lg">
+                {isLastStep && marketFitReview.level !== 'none' && (
+                  <Alert variant="default" className="bg-primary/5 border-primary/20">
+                    <Sparkles className="h-4 w-4 text-primary" />
+                    <AlertTitle className="text-foreground">{marketFitReview.title}</AlertTitle>
+                    <AlertDescription className="space-y-3 text-muted-foreground">
+                      <p>{marketFitReview.message}</p>
+                      {marketFitReview.gapPercent !== null && (
+                        <p className="text-xs">Current benchmark gap: about {marketFitReview.gapPercent}% above city price/sqm.</p>
+                      )}
+                      {marketFitReview.requiresContext && (
+                        <Button variant="outline" size="sm" onClick={() => setCurrentStep(3)} className="rounded-xl">
+                          Add Premium Context
+                        </Button>
+                      )}
+                      {marketFitReview.requiresConfirmation && !marketFitReview.requiresContext && (
+                        <label className="flex items-start gap-2 text-sm text-foreground">
+                          <Checkbox checked={marketFitConfirmed} onCheckedChange={(checked) => setMarketFitConfirmed(Boolean(checked))} />
+                          <span>I confirm the asking price and understand this listing may receive closer market-fit review.</span>
+                        </label>
+                      )}
+                    </AlertDescription>
+                  </Alert>
+                )}
 
-                {isLastStep ? (
-                  <div className="flex gap-3">
+                <div className="flex justify-between items-center">
+                  <Button
+                    variant="outline"
+                    onClick={goBack}
+                    disabled={currentStep === 0}
+                    className="rounded-xl h-11"
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Previous
+                  </Button>
+
+                  {isLastStep ? (
+                    <div className="flex gap-3">
                     <Button
                       variant="outline"
                       onClick={handleSaveDraft}
@@ -442,17 +467,18 @@ function AgencyWizardContent() {
                         </>
                       )}
                     </Button>
-                  </div>
-                ) : (
-                  <Button
-                    onClick={goNext}
-                    disabled={currentStep === 0 && !assignedAgentId}
-                    className="rounded-xl h-11 px-6"
-                  >
-                    Next
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </Button>
-                )}
+                    </div>
+                  ) : (
+                    <Button
+                      onClick={goNext}
+                      disabled={currentStep === 0 && !assignedAgentId}
+                      className="rounded-xl h-11 px-6"
+                    >
+                      Next
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  )}
+                </div>
               </div>
             </motion.div>
           </motion.div>
