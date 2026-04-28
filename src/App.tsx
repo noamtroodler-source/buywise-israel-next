@@ -8,9 +8,14 @@ import { FavoritesProvider } from "@/contexts/FavoritesContext";
 import { ProtectedRoute } from "@/components/shared/ProtectedRoute";
 import { ScrollToTop } from "@/components/shared/ScrollToTop";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
-import { WhatsAppFallbackModal } from "@/components/ui/WhatsAppFallbackModal";
 import { PageLoader } from "@/components/shared/PageLoader";
 import { PageTracker } from "@/hooks/usePageTracking";
+import Index from "./pages/Index";
+import Listings from "./pages/Listings";
+import PropertyDetail from "./pages/PropertyDetail";
+import Projects from "./pages/Projects";
+import ProjectDetail from "./pages/ProjectDetail";
+import Auth from "./pages/Auth";
 
 type LazyPageModule = { default: ComponentType<any> };
 
@@ -34,12 +39,6 @@ const lazyWithRetry = (loadPage: () => Promise<LazyPageModule>, routeName: strin
 
 // Keep the startup bundle route-agnostic. Every heavy page loads only when matched,
 // so one broken/heavy page module cannot blank the entire preview.
-const Index = lazyWithRetry(() => import("./pages/Index"), "Index");
-const Listings = lazyWithRetry(() => import("./pages/Listings"), "Listings");
-const PropertyDetail = lazyWithRetry(() => import("./pages/PropertyDetail"), "PropertyDetail");
-const Projects = lazyWithRetry(() => import("./pages/Projects"), "Projects");
-const ProjectDetail = lazyWithRetry(() => import("./pages/ProjectDetail"), "ProjectDetail");
-const Auth = lazyWithRetry(() => import("./pages/Auth"), "Auth");
 const SetupPassword = lazyWithRetry(() => import("./pages/auth/SetupPassword"), "SetupPassword");
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"), "NotFound");
 
@@ -205,8 +204,7 @@ const App = () => (
         <PreferencesProvider>
           <CompareProvider>
             <ErrorBoundary>
-              <WhatsAppFallbackModal>
-                  <BrowserRouter>
+              <BrowserRouter>
                     <PageTracker />
                     <ScrollToTop />
                     <Suspense fallback={<PageLoader />}>
@@ -566,8 +564,7 @@ const App = () => (
                         <Route path="*" element={<NotFound />} />
                       </Routes>
                     </Suspense>
-                  </BrowserRouter>
-              </WhatsAppFallbackModal>
+              </BrowserRouter>
             </ErrorBoundary>
         </CompareProvider>
       </PreferencesProvider>
