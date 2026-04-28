@@ -39,12 +39,8 @@ export class ErrorBoundary extends Component<Props, State> {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
 
     if (error.message?.includes('Failed to fetch dynamically imported module')) {
-      const reloadKey = `boundary-module-reload:${window.location.pathname}`;
-      if (!sessionStorage.getItem(reloadKey)) {
-        sessionStorage.setItem(reloadKey, String(Date.now()));
-        window.location.reload();
-        return;
-      }
+      window.location.reload();
+      return;
     }
     
     this.setState({ errorInfo });
@@ -102,6 +98,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   handleReset = () => {
     this.setState({ hasError: false, error: undefined, errorInfo: undefined });
+    window.location.reload();
   };
 
   render() {
