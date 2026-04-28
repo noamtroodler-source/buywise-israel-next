@@ -836,18 +836,20 @@ export default function AgencyListings() {
                                           Unpublish
                                         </DropdownMenuItem>
                                       </>
-                                    ) : canSubmitForReview ? (
+                                    ) : (
                                       <>
-                                        <DropdownMenuItem onClick={() => submitForReview.mutate(listing.id)} disabled={submitForReview.isPending}>
-                                          <Send className="h-4 w-4 mr-2" />
-                                          Submit for review
-                                        </DropdownMenuItem>
+                                        {canSubmitForReview && (
+                                          <DropdownMenuItem onClick={() => submitForReview.mutate(listing.id)} disabled={submitForReview.isPending}>
+                                            <Send className="h-4 w-4 mr-2" />
+                                            Submit for review
+                                          </DropdownMenuItem>
+                                        )}
                                         <DropdownMenuItem onClick={() => handleDuplicate(listing.id)}>
                                           <Copy className="h-4 w-4 mr-2" />
                                           Duplicate
                                         </DropdownMenuItem>
                                       </>
-                                    ) : null}
+                                    )}
                                     {listing.listing_status === 'for_sale' && (
                                       <DropdownMenuItem onClick={() => updateStatus.mutate({ id: listing.id, listing_status: 'sold' })}>
                                         <Home className="h-4 w-4 mr-2" />
