@@ -170,6 +170,8 @@ function AgencyWizardContent() {
     pets_policy: data.pets_policy,
     furniture_items: data.furniture_items,
     featured_highlight: data.featured_highlight || null,
+    premium_drivers: data.premium_drivers,
+    premium_explanation: data.premium_explanation || null,
     assignedAgentId: assignedAgentId!,
     submitForReview,
   });

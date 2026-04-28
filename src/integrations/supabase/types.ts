@@ -5543,11 +5543,17 @@ export type Database = {
           location_confidence: string | null
           longitude: number | null
           lot_size_sqm: number | null
+          market_fit_confirmed_at: string | null
+          market_fit_confirmed_by: string | null
+          market_fit_review_reason: string | null
+          market_fit_status: string | null
           merged_source_urls: string[] | null
           neighborhood: string | null
           original_price: number | null
           parking: number | null
           pets_policy: string | null
+          premium_drivers: string[]
+          premium_explanation: string | null
           price: number
           price_reduced_at: string | null
           price_vs_avg_pct: number | null
@@ -5638,11 +5644,17 @@ export type Database = {
           location_confidence?: string | null
           longitude?: number | null
           lot_size_sqm?: number | null
+          market_fit_confirmed_at?: string | null
+          market_fit_confirmed_by?: string | null
+          market_fit_review_reason?: string | null
+          market_fit_status?: string | null
           merged_source_urls?: string[] | null
           neighborhood?: string | null
           original_price?: number | null
           parking?: number | null
           pets_policy?: string | null
+          premium_drivers?: string[]
+          premium_explanation?: string | null
           price: number
           price_reduced_at?: string | null
           price_vs_avg_pct?: number | null
@@ -5733,11 +5745,17 @@ export type Database = {
           location_confidence?: string | null
           longitude?: number | null
           lot_size_sqm?: number | null
+          market_fit_confirmed_at?: string | null
+          market_fit_confirmed_by?: string | null
+          market_fit_review_reason?: string | null
+          market_fit_status?: string | null
           merged_source_urls?: string[] | null
           neighborhood?: string | null
           original_price?: number | null
           parking?: number | null
           pets_policy?: string | null
+          premium_drivers?: string[]
+          premium_explanation?: string | null
           price?: number
           price_reduced_at?: string | null
           price_vs_avg_pct?: number | null
