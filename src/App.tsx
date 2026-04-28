@@ -19,48 +19,47 @@ import Auth from "./pages/Auth";
 
 type LazyPageModule = { default: ComponentType<any> };
 
-const lazyWithRetry = (loadPage: () => Promise<LazyPageModule>, routeName: string) =>
-  lazy(async () => {
-    let lastError: unknown;
+const lazyPage = (loadPage: () => Promise<LazyPageModule>) => lazy(loadPage);
 
-    for (let attempt = 0; attempt < 2; attempt += 1) {
-      try {
-        const page = await loadPage();
-        sessionStorage.removeItem(`lazy-reload:${routeName}`);
-        return page;
-      } catch (error) {
-        lastError = error;
-        await new Promise((resolve) => window.setTimeout(resolve, 250 * (attempt + 1)));
-      }
-    }
+const SectionFallback = ({ label = "this section" }: { label?: string }) => (
+  <div className="min-h-[420px] flex items-center justify-center bg-background px-6 text-foreground">
+    <div className="max-w-md text-center space-y-3">
+      <h2 className="text-xl font-semibold">We couldn’t open {label}</h2>
+      <p className="text-sm text-muted-foreground">Please refresh once. If it continues, the rest of the site remains available.</p>
+    </div>
+  </div>
+);
 
-    throw lastError;
-  });
+const RouteBoundary = ({ children, label }: { children: React.ReactNode; label?: string }) => (
+  <ErrorBoundary fallback={<SectionFallback label={label} />}>
+    {children}
+  </ErrorBoundary>
+);
 
 // Keep the startup bundle route-agnostic. Every heavy page loads only when matched,
 // so one broken/heavy page module cannot blank the entire preview.
-const SetupPassword = lazyWithRetry(() => import("./pages/auth/SetupPassword"), "SetupPassword");
-const NotFound = lazyWithRetry(() => import("./pages/NotFound"), "NotFound");
+const SetupPassword = lazyPage(() => import("./pages/auth/SetupPassword"));
+const NotFound = lazyPage(() => import("./pages/NotFound"));
 
 // Lazy load secondary routes for smaller initial bundle
-const Compare = lazyWithRetry(() => import("./pages/Compare"), "Compare");
-const CompareProjects = lazyWithRetry(() => import("./pages/CompareProjects"), "CompareProjects");
-const Blog = lazyWithRetry(() => import("./pages/Blog"), "Blog");
-const BlogPost = lazyWithRetry(() => import("./pages/BlogPost"), "BlogPost");
-const Areas = lazyWithRetry(() => import("./pages/Areas"), "Areas");
-const AreaDetail = lazyWithRetry(() => import("./pages/AreaDetail"), "AreaDetail");
-const Tools = lazyWithRetry(() => import("./pages/Tools"), "Tools");
-const Glossary = lazyWithRetry(() => import("./pages/Glossary"), "Glossary");
-const Developers = lazyWithRetry(() => import("./pages/Developers"), "Developers");
-const DeveloperDetail = lazyWithRetry(() => import("./pages/DeveloperDetail"), "DeveloperDetail");
-const AgentDetail = lazyWithRetry(() => import("./pages/AgentDetail"), "AgentDetail");
-const Agencies = lazyWithRetry(() => import("./pages/Agencies"), "Agencies");
-const AgencyDetail = lazyWithRetry(() => import("./pages/AgencyDetail"), "AgencyDetail");
-const Professionals = lazyWithRetry(() => import("./pages/Professionals"), "Professionals");
-const ProfessionalDetail = lazyWithRetry(() => import("./pages/ProfessionalDetail"), "ProfessionalDetail");
-const Contact = lazyWithRetry(() => import("./pages/Contact"), "Contact");
-const Principles = lazyWithRetry(() => import("./pages/Principles"), "Principles");
-const ForAgents = lazyWithRetry(() => import("./pages/ForAgents"), "ForAgents");
+const Compare = lazyPage(() => import("./pages/Compare"));
+const CompareProjects = lazyPage(() => import("./pages/CompareProjects"));
+const Blog = lazyPage(() => import("./pages/Blog"));
+const BlogPost = lazyPage(() => import("./pages/BlogPost"));
+const Areas = lazyPage(() => import("./pages/Areas"));
+const AreaDetail = lazyPage(() => import("./pages/AreaDetail"));
+const Tools = lazyPage(() => import("./pages/Tools"));
+const Glossary = lazyPage(() => import("./pages/Glossary"));
+const Developers = lazyPage(() => import("./pages/Developers"));
+const DeveloperDetail = lazyPage(() => import("./pages/DeveloperDetail"));
+const AgentDetail = lazyPage(() => import("./pages/AgentDetail"));
+const Agencies = lazyPage(() => import("./pages/Agencies"));
+const AgencyDetail = lazyPage(() => import("./pages/AgencyDetail"));
+const Professionals = lazyPage(() => import("./pages/Professionals"));
+const ProfessionalDetail = lazyPage(() => import("./pages/ProfessionalDetail"));
+const Contact = lazyPage(() => import("./pages/Contact"));
+const Principles = lazyPage(() => import("./pages/Principles"));
+const ForAgents = lazyPage(() => import("./pages/ForAgents"));
 
 const Advertise = lazyWithRetry(() => import("./pages/Advertise"), "Advertise");
 const GetStarted = lazyWithRetry(() => import("./pages/GetStarted"), "GetStarted");
