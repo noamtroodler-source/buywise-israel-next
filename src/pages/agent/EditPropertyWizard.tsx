@@ -24,6 +24,9 @@ import { useListingLimitCheck } from '@/hooks/useListingLimitCheck';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { SaveStatusIndicator } from '@/components/shared/SaveStatusIndicator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useCities } from '@/hooks/useCities';
+import { getMarketFitReview } from '@/lib/marketFit';
+import { PriceContextSubmissionPreview } from '@/components/agent/wizard/PriceContextSubmissionPreview';
 
 const steps = [
   { title: 'Basics', description: 'Property type, price, location' },
@@ -106,9 +109,11 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
   const { data: agentProfile } = useAgentProfile();
   const updateProperty = useUpdateProperty();
   const submitForReview = useSubmitForReview();
+  const { data: cities = [] } = useCities();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
+  const [marketFitConfirmed, setMarketFitConfirmed] = useState(false);
   
   const isAgentVerified = agentProfile?.status === 'active';
   const { canCreate: canCreateListing } = useListingLimitCheck('agency');
@@ -189,6 +194,20 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
   const canResubmit = verificationStatus === 'draft' || verificationStatus === 'changes_requested' || verificationStatus === 'rejected';
   const isLive = verificationStatus === 'approved';
   const isPending = verificationStatus === 'pending_review';
+  const selectedCityAveragePriceSqm = cities.find((item) => item.name === data.city)?.average_price_sqm ?? null;
+  const marketFitReview = useMemo(() => getMarketFitReview({
+    price: data.price,
+    size_sqm: data.size_sqm,
+    listing_status: data.listing_status,
+    cityAveragePriceSqm: selectedCityAveragePriceSqm,
+    premium_drivers: data.premium_drivers,
+    premium_explanation: data.premium_explanation,
+    property: data,
+  }), [data, selectedCityAveragePriceSqm]);
+
+  useEffect(() => {
+    setMarketFitConfirmed(false);
+  }, [marketFitReview.reviewReason]);
 
   const handleSaveChanges = async () => {
     setIsSubmitting(true);
@@ -258,6 +277,8 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
         bedrooms: data.bedrooms,
         bathrooms: data.bathrooms,
         size_sqm: data.size_sqm,
+        sqm_source: data.sqm_source,
+        ownership_type: data.ownership_type,
         lot_size_sqm: data.lot_size_sqm,
         floor: data.floor,
         total_floors: data.total_floors,
@@ -278,6 +299,7 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
          featured_highlight: data.featured_highlight || null,
          premium_drivers: data.premium_drivers,
          premium_explanation: data.premium_explanation || null,
+          benchmark_review_status: data.benchmark_review_status,
       } as any);
       
       // Then submit for review
