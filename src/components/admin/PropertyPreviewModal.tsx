@@ -10,13 +10,17 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { PropertyForReview } from '@/hooks/useListingReview';
 import { 
   X, MapPin, Bed, Bath, Ruler, Building2, User, ChevronLeft, ChevronRight,
-  Calendar, Layers, Car, Wrench, Wind, Eye, MessageSquare, Mail, Phone,
-  Home, Info
+  Calendar, Layers, Car, Wrench, Wind, Eye, MessageSquare, Mail,
+  Home, Info, BarChart3
 } from 'lucide-react';
 import { useState, useCallback, useEffect } from 'react';
 import useEmblaCarousel from 'embla-carousel-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { PropertyThumbnail } from '@/components/shared/PropertyThumbnail';
+import { MarketIntelligence } from '@/components/property/MarketIntelligence';
+import { PropertyValueSnapshot } from '@/components/property/PropertyValueSnapshot';
+import { MarketDataContext } from '@/components/shared/MarketDataContext';
+import { useCityDetails } from '@/hooks/useCityDetails';
 
 interface PropertyPreviewModalProps {
   property: PropertyForReview;
@@ -34,6 +38,8 @@ export function PropertyPreviewModal({ property, open, onOpenChange, initialImag
     ? property.images 
     : [null];
   const safeInitialImageIndex = Math.min(Math.max(initialImageIndex, 0), images.length - 1);
+  const citySlug = property.city?.toLowerCase().replace(/['']/g, '').replace(/\s+/g, '-') || '';
+  const { data: cityData } = useCityDetails(citySlug);
 
   // Reset state when modal opens
   useEffect(() => {
@@ -460,6 +466,36 @@ export function PropertyPreviewModal({ property, open, onOpenChange, initialImag
                   )}
                 </div>
               )}
+
+              {/* Buyer-facing Market Intelligence Preview */}
+              <div className="rounded-xl border border-border bg-background p-4">
+                <div className="mb-4 flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-primary" />
+                  <h3 className="font-semibold">Market Intelligence</h3>
+                  <Badge variant="outline" className="ml-auto">Buyer preview</Badge>
+                </div>
+                {isSale ? (
+                  <MarketIntelligence property={property} cityData={cityData} />
+                ) : (
+                  <>
+                    <PropertyValueSnapshot
+                      price={property.price}
+                      sizeSqm={property.size_sqm}
+                      city={property.city}
+                      averagePriceSqm={cityData?.average_price_sqm}
+                      priceChange={cityData?.yoy_price_change}
+                      listingStatus={property.listing_status}
+                      bedrooms={property.bedrooms}
+                      cityRentalMin={property.bedrooms === 4 ? cityData?.rental_4_room_min : cityData?.rental_3_room_min}
+                      cityRentalMax={property.bedrooms === 4 ? cityData?.rental_4_room_max : cityData?.rental_3_room_max}
+                      vaadBayitMonthly={property.vaad_bayit_monthly}
+                      cityArnonaRate={cityData?.arnona_rate_sqm}
+                      cityAvgVaadBayit={cityData?.average_vaad_bayit}
+                    />
+                    <MarketDataContext variant="compact" className="mt-4" />
+                  </>
+                )}
+              </div>
 
               {/* Features & Amenities */}
               {property.features && property.features.length > 0 && (
