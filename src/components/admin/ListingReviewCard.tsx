@@ -1092,7 +1092,7 @@ export function ListingReviewCard({ property, onApprove, onRequestChanges, onRej
                     <div className="flex min-w-0 items-center gap-2 text-muted-foreground">
                       <Building2 className="h-4 w-4 shrink-0" />
                       <span className="shrink-0 text-xs font-medium uppercase tracking-wide">Agency</span>
-                      <span className="truncate font-semibold text-foreground">{property.agent.agency_name || 'No agency shown'}</span>
+                      <span className="truncate font-semibold text-foreground">{property.primary_agency?.name || property.agent.agency_name || 'No agency shown'}</span>
                     </div>
                     <div className="flex min-w-0 items-center gap-2 text-muted-foreground sm:col-span-2">
                       <ClipboardCheck className="h-4 w-4 shrink-0" />

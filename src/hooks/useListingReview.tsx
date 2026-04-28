@@ -63,6 +63,12 @@ export interface PropertyForReview {
     agency_name: string | null;
     is_verified: boolean | null;
   } | null;
+  primary_agency: {
+    id: string;
+    name: string;
+    email: string | null;
+    phone: string | null;
+  } | null;
 }
 
 export function useListingsForReview(status?: VerificationStatus) {
@@ -122,6 +128,12 @@ export function useListingsForReview(status?: VerificationStatus) {
           reviewed_at,
           created_at,
           is_published,
+          primary_agency:agencies!properties_primary_agency_id_fkey (
+            id,
+            name,
+            email,
+            phone
+          ),
           agent:agent_id (
             id,
             name,
@@ -139,7 +151,7 @@ export function useListingsForReview(status?: VerificationStatus) {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data as PropertyForReview[];
+      return data as unknown as PropertyForReview[];
     },
   });
 }
