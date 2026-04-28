@@ -736,6 +736,8 @@ function PhotoPanel({ property, onPhotoClick }: { property: PropertyForReview; o
 }
 
 function MarketPanel({ property, market, reviewed, onReviewedChange }: { property: PropertyForReview; market: MarketReviewData; reviewed: boolean; onReviewedChange: (reviewed: boolean) => void }) {
+  const { data: events = [], isLoading: eventsLoading } = usePriceContextEvents(property.id);
+
   return (
     <div className="space-y-4">
       <div className="grid gap-3 md:grid-cols-3">
@@ -856,6 +858,8 @@ function MarketPanel({ property, market, reviewed, onReviewedChange }: { propert
           </div>
         )}
       </div>
+
+      <PriceContextHistoryPanel events={events} isLoading={eventsLoading} />
 
       {property.verification_status === 'pending_review' && (
         <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-background p-3 text-sm">
