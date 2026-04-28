@@ -13,16 +13,16 @@ import { WhatsAppFallbackModal } from "@/components/ui/WhatsAppFallbackModal";
 import { PageLoader } from "@/components/shared/PageLoader";
 import { PageTracker } from "@/hooks/usePageTracking";
 
-// Critical path - keep public entry routes static so preview/homepage cannot white-screen
-// on stale or failed dynamic chunks.
-import Index from "./pages/Index";
-import Listings from "./pages/Listings";
-import PropertyDetail from "./pages/PropertyDetail";
-import Projects from "./pages/Projects";
-import ProjectDetail from "./pages/ProjectDetail";
-import Auth from "./pages/Auth";
-import SetupPassword from "./pages/auth/SetupPassword";
-import NotFound from "./pages/NotFound";
+// Keep the startup bundle route-agnostic. Every page loads only when matched,
+// so one broken/heavy page module cannot blank the entire preview.
+const Index = lazy(() => import("./pages/Index"));
+const Listings = lazy(() => import("./pages/Listings"));
+const PropertyDetail = lazy(() => import("./pages/PropertyDetail"));
+const Projects = lazy(() => import("./pages/Projects"));
+const ProjectDetail = lazy(() => import("./pages/ProjectDetail"));
+const Auth = lazy(() => import("./pages/Auth"));
+const SetupPassword = lazy(() => import("./pages/auth/SetupPassword"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Lazy load secondary routes for smaller initial bundle
 const Compare = lazy(() => import("./pages/Compare"));
