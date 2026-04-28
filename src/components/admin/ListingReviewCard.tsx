@@ -30,6 +30,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { detectPremiumDrivers } from '@/lib/marketFit';
 import { getIsraeliRoomCount } from '@/lib/israeliRoomCount';
 import { useNeighborhoodAvgPrice } from '@/hooks/useNeighborhoodPrices';
+import { useNearbySoldComps } from '@/hooks/useNearbySoldComps';
+import { computeSpecCompStats, useSpecBasedSoldComps } from '@/hooks/useSpecBasedSoldComps';
 
 interface ListingReviewCardProps {
   property: PropertyForReview;
@@ -95,10 +97,41 @@ function formatDriver(driver: string) {
   return driver.replace(/[_/]+/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
+function formatDate(value: string | null | undefined) {
+  if (!value) return 'Unknown date';
+  return new Date(value).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+}
+
 function MarketSanityPanel({ property, reviewed, onReviewedChange }: { property: PropertyForReview; reviewed: boolean; onReviewedChange: (reviewed: boolean) => void }) {
   const { data: benchmark, isLoading } = useMarketBenchmark(property);
+  const israeliRooms = property.source_rooms ?? getIsraeliRoomCount(property.bedrooms, property.additional_rooms);
+  const hasCoordinates = Boolean(property.latitude && property.longitude);
+  const { data: nearbyComps = [], isLoading: nearbyLoading } = useNearbySoldComps(
+    property.latitude,
+    property.longitude,
+    property.city,
+    {
+      radiusKm: 0.75,
+      monthsBack: 24,
+      limit: 6,
+      minRooms: israeliRooms ? israeliRooms - 1 : undefined,
+      maxRooms: israeliRooms ? israeliRooms + 1 : undefined,
+      enabled: hasCoordinates,
+    },
+  );
+  const { data: specComps = [], isLoading: specLoading } = useSpecBasedSoldComps(
+    property.city,
+    property.bedrooms,
+    property.size_sqm,
+    property.neighborhood,
+    property.source_rooms,
+    { limit: 6, enabled: !hasCoordinates },
+  );
   const pricePerSqm = property.price && property.size_sqm ? property.price / property.size_sqm : null;
   const pricePerSqft = pricePerSqm ? pricePerSqm / 10.7639 : null;
+  const comparableComps = hasCoordinates ? nearbyComps : specComps;
+  const compStats = computeSpecCompStats(comparableComps, pricePerSqm);
+  const compsLoading = hasCoordinates ? nearbyLoading : specLoading;
   const gapPercent = pricePerSqm && benchmark?.averagePriceSqm
     ? Math.round(((pricePerSqm - benchmark.averagePriceSqm) / benchmark.averagePriceSqm) * 100)
     : null;
@@ -120,6 +153,9 @@ function MarketSanityPanel({ property, reviewed, onReviewedChange }: { property:
   const missingWarnings = [
     !property.size_sqm && 'Missing size, so price per sqm cannot be verified',
     !benchmark?.averagePriceSqm && 'No city/neighborhood benchmark found',
+    !hasCoordinates && 'No map pin, so using spec-matched sold comps instead of nearby sales',
+    !compsLoading && comparableComps.length < 3 && 'Fewer than 3 reliable sold comps found',
+    compStats?.vsSubjectPct != null && compStats.vsSubjectPct >= 35 && 'Listing is materially above sold-comp average',
     gapPercent !== null && gapPercent >= 35 && premiumDrivers.length === 0 && 'High price gap without premium drivers',
     gapPercent !== null && gapPercent >= 70 && !property.premium_explanation && 'Large premium needs a buyer-facing explanation',
     !property.images?.length && 'No photos attached',
