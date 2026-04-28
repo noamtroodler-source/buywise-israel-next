@@ -2,6 +2,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
 import { FormattedNumberInput } from '@/components/ui/formatted-number-input';
 import { usePropertyWizard } from '../PropertyWizardContext';
 import { Thermometer, Calendar, Wrench, Sparkles, Building, FileText, Home, Banknote, Star, Lightbulb, Info } from 'lucide-react';
@@ -9,6 +10,7 @@ import { Thermometer, Calendar, Wrench, Sparkles, Building, FileText, Home, Bank
  import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { LeaseTermOption, SublettingOption, FurnishedStatus, PetsPolicy } from '@/types/database';
+import { detectPremiumDrivers } from '@/lib/marketFit';
 
 const conditions = [
   { value: 'new', label: 'New (from developer)' },
@@ -71,6 +73,28 @@ const commonFeatures = [
   { id: 'parking', label: 'Parking' },
   { id: 'sea_view', label: 'Sea View' },
 ];
+
+const premiumDriverOptions = [
+  'sea view',
+  'beachfront location',
+  'renovation',
+  'new build / project unit',
+  'penthouse',
+  'garden apartment',
+  'high floor',
+  'outdoor space',
+  'sukkah balcony',
+  'parking',
+  'storage',
+  'mamad',
+  'luxury finish',
+  'rarity / future potential',
+  'furnished / bundled extras',
+  'bundled extras',
+  'other explanation',
+];
+
+const premiumDriverLabel = (driver: string) => driver.replace(/\b\w/g, (char) => char.toUpperCase());
  
  // Furniture items grouped by category
  const furnitureCategories = [
