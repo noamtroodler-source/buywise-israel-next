@@ -43,7 +43,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { PropertyThumbnail } from '@/components/shared/PropertyThumbnail';
-import { PropertyForReview } from '@/hooks/useListingReview';
+import { PropertyForReview, PriceContextEvent, usePriceContextEvents } from '@/hooks/useListingReview';
 import { useNearbySoldComps } from '@/hooks/useNearbySoldComps';
 import { computeSpecCompStats, useSpecBasedSoldComps } from '@/hooks/useSpecBasedSoldComps';
 import { useNeighborhoodAvgPrice } from '@/hooks/useNeighborhoodPrices';
@@ -308,6 +308,12 @@ function formatPrice(price: number) {
 function formatDate(value: string | null | undefined) {
   if (!value) return 'Unknown date';
   return new Date(value).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+}
+
+function formatEventDate(value: string | null | undefined) {
+  if (!value) return 'Unknown time';
+  const date = new Date(value);
+  return `${formatDistanceToNow(date, { addSuffix: true })} • ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
 }
 
 function formatSubmittedAt(value: string | null | undefined) {
