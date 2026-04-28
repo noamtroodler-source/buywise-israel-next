@@ -1,7 +1,6 @@
 import { Suspense, lazy, type ComponentType } from "react";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Link } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { CompareProvider } from "@/contexts/CompareContext";
 import { PreferencesProvider } from "@/contexts/PreferencesContext";
@@ -12,7 +11,6 @@ import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import { WhatsAppFallbackModal } from "@/components/ui/WhatsAppFallbackModal";
 import { PageLoader } from "@/components/shared/PageLoader";
 import { PageTracker } from "@/hooks/usePageTracking";
-import Index from "./pages/Index";
 
 type LazyPageModule = { default: ComponentType<any> };
 
@@ -44,7 +42,36 @@ const lazyWithRetry = (loadPage: () => Promise<LazyPageModule>, routeName: strin
     throw lastError;
   });
 
-// Keep the startup bundle route-agnostic. Every page loads only when matched,
+function Index() {
+  return (
+    <main className="min-h-screen bg-background text-foreground">
+      <section className="container flex min-h-screen flex-col justify-center gap-8 py-16">
+        <div className="max-w-3xl space-y-6">
+          <p className="text-sm font-semibold uppercase tracking-wide text-primary">BuyWise Israel</p>
+          <h1 className="text-4xl font-bold leading-tight md:text-6xl">
+            Navigate Israel real estate with clarity.
+          </h1>
+          <p className="max-w-2xl text-lg text-muted-foreground">
+            Search listings, compare markets, calculate costs, and connect with verified professionals — built for international buyers.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <Link to="/listings?status=for_sale" className="inline-flex h-11 items-center justify-center rounded-md bg-primary px-5 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+              Browse Listings
+            </Link>
+            <Link to="/projects" className="inline-flex h-11 items-center justify-center rounded-md border border-border bg-background px-5 text-sm font-medium hover:bg-muted">
+              View Projects
+            </Link>
+            <Link to="/agency/listings" className="inline-flex h-11 items-center justify-center rounded-md border border-border bg-background px-5 text-sm font-medium hover:bg-muted">
+              Agency Portal
+            </Link>
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}
+
+// Keep the startup bundle route-agnostic. Every heavy page loads only when matched,
 // so one broken/heavy page module cannot blank the entire preview.
 const Listings = lazyWithRetry(() => import("./pages/Listings"), "Listings");
 const PropertyDetail = lazyWithRetry(() => import("./pages/PropertyDetail"), "PropertyDetail");
@@ -215,7 +242,6 @@ const App = () => (
       <FavoritesProvider>
         <PreferencesProvider>
           <CompareProvider>
-          <TooltipProvider>
             <ErrorBoundary>
                 <WhatsAppFallbackModal>
                   <BrowserRouter>
@@ -581,7 +607,6 @@ const App = () => (
                   </BrowserRouter>
                 </WhatsAppFallbackModal>
             </ErrorBoundary>
-          </TooltipProvider>
         </CompareProvider>
       </PreferencesProvider>
     </FavoritesProvider>

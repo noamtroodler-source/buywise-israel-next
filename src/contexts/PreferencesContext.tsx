@@ -1,7 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useProfile, useUpdateProfile } from '@/hooks/useProfile';
 
 type Currency = 'ILS' | 'USD';
 type AreaUnit = 'sqm' | 'sqft';
@@ -27,8 +26,6 @@ interface StoredPreferences {
 
 export function PreferencesProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  const { data: profile } = useProfile();
-  const updateProfile = useUpdateProfile();
   
   const [currency, setCurrencyState] = useState<Currency>('USD');
   const [exchangeRate, setExchangeRate] = useState(FALLBACK_EXCHANGE_RATE);
@@ -75,20 +72,27 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
 
   // Load preferences from profile when user is logged in
   useEffect(() => {
-    if (profile && !profileLoadedRef.current) {
-      profileLoadedRef.current = true;
-      if (profile.preferred_currency) {
-        setCurrencyState(profile.preferred_currency);
-      }
-      if (profile.preferred_area_unit) {
-        setAreaUnitState(profile.preferred_area_unit);
-      }
-    }
-    // Reset flag when user logs out
     if (!user) {
       profileLoadedRef.current = false;
+      return;
     }
-  }, [profile, user]);
+    if (profileLoadedRef.current) return;
+    profileLoadedRef.current = true;
+
+    void (async () => {
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('preferred_currency, preferred_area_unit')
+          .eq('id', user.id)
+          .maybeSingle();
+        if (data?.preferred_currency) setCurrencyState(data.preferred_currency as Currency);
+        if (data?.preferred_area_unit) setAreaUnitState(data.preferred_area_unit as AreaUnit);
+      } catch (error) {
+        console.error('Failed to load profile preferences:', error);
+      }
+    })();
+  }, [user]);
 
   // Save preferences to localStorage when they change
   useEffect(() => {
@@ -107,14 +111,20 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
   const setCurrency = (c: Currency) => {
     setCurrencyState(c);
     if (user) {
-      updateProfile.mutate({ preferred_currency: c });
+      void (async () => {
+        const { error } = await supabase.from('profiles').update({ preferred_currency: c }).eq('id', user.id);
+        if (error) console.error('Failed to save currency preference:', error);
+      })();
     }
   };
   
   const setAreaUnit = (u: AreaUnit) => {
     setAreaUnitState(u);
     if (user) {
-      updateProfile.mutate({ preferred_area_unit: u });
+      void (async () => {
+        const { error } = await supabase.from('profiles').update({ preferred_area_unit: u }).eq('id', user.id);
+        if (error) console.error('Failed to save area unit preference:', error);
+      })();
     }
   };
 
