@@ -185,10 +185,6 @@ const AdminPrimaryDisputes = lazyWithRetry(() => import("./pages/admin/AdminPrim
 const AdminMergeReversals = lazyWithRetry(() => import("./pages/admin/AdminMergeReversals"), "AdminMergeReversals");
 const AdminColistingReports = lazyWithRetry(() => import("./pages/admin/AdminColistingReports"), "AdminColistingReports");
 const AdminColistingTelemetry = lazyWithRetry(() => import("./pages/admin/AdminColistingTelemetry"), "AdminColistingTelemetry");
-const WhatsAppFallbackModal = lazyWithRetry(
-  () => import("@/components/ui/WhatsAppFallbackModal").then((m) => ({ default: m.WhatsAppFallbackModal })),
-  "WhatsAppFallbackModal"
-);
 // Global query client config for optimal caching
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -208,8 +204,7 @@ const App = () => (
         <PreferencesProvider>
           <CompareProvider>
             <ErrorBoundary>
-              <WhatsAppFallbackModal>
-                  <BrowserRouter>
+              <BrowserRouter>
                     <PageTracker />
                     <ScrollToTop />
                     <Suspense fallback={<PageLoader />}>
@@ -569,8 +564,7 @@ const App = () => (
                         <Route path="*" element={<NotFound />} />
                       </Routes>
                     </Suspense>
-                  </BrowserRouter>
-              </WhatsAppFallbackModal>
+              </BrowserRouter>
             </ErrorBoundary>
         </CompareProvider>
       </PreferencesProvider>
