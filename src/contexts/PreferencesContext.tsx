@@ -79,16 +79,19 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     if (profileLoadedRef.current) return;
     profileLoadedRef.current = true;
 
-    supabase
-      .from('profiles')
-      .select('preferred_currency, preferred_area_unit')
-      .eq('id', user.id)
-      .maybeSingle()
-      .then(({ data }) => {
+    void (async () => {
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('preferred_currency, preferred_area_unit')
+          .eq('id', user.id)
+          .maybeSingle();
         if (data?.preferred_currency) setCurrencyState(data.preferred_currency as Currency);
         if (data?.preferred_area_unit) setAreaUnitState(data.preferred_area_unit as AreaUnit);
-      })
-      .catch((error) => console.error('Failed to load profile preferences:', error));
+      } catch (error) {
+        console.error('Failed to load profile preferences:', error);
+      }
+    })();
   }, [user]);
 
   // Save preferences to localStorage when they change
@@ -108,18 +111,20 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
   const setCurrency = (c: Currency) => {
     setCurrencyState(c);
     if (user) {
-      supabase.from('profiles').update({ preferred_currency: c }).eq('id', user.id).then(({ error }) => {
+      void (async () => {
+        const { error } = await supabase.from('profiles').update({ preferred_currency: c }).eq('id', user.id);
         if (error) console.error('Failed to save currency preference:', error);
-      });
+      })();
     }
   };
   
   const setAreaUnit = (u: AreaUnit) => {
     setAreaUnitState(u);
     if (user) {
-      supabase.from('profiles').update({ preferred_area_unit: u }).eq('id', user.id).then(({ error }) => {
+      void (async () => {
+        const { error } = await supabase.from('profiles').update({ preferred_area_unit: u }).eq('id', user.id);
         if (error) console.error('Failed to save area unit preference:', error);
-      });
+      })();
     }
   };
 
