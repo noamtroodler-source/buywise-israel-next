@@ -46,6 +46,18 @@ export interface PropertyForReview {
   featured_highlight: string | null;
   premium_drivers: string[] | null;
   premium_explanation: string | null;
+  sqm_source: string | null;
+  ownership_type: string | null;
+  benchmark_review_status: string | null;
+  benchmark_review_reason: string | null;
+  benchmark_review_notes: string | null;
+  price_context_property_class: string | null;
+  price_context_confidence_score: number | null;
+  price_context_confidence_tier: string | null;
+  price_context_public_label: string | null;
+  price_context_percentage_suppressed: boolean | null;
+  price_context_badge_status: string | null;
+  comp_pool_used: string | null;
   market_fit_status: string | null;
   market_fit_review_reason: string | null;
   verification_status: VerificationStatus;
@@ -119,6 +131,18 @@ export function useListingsForReview(status?: VerificationStatus) {
           featured_highlight,
           premium_drivers,
           premium_explanation,
+          sqm_source,
+          ownership_type,
+          benchmark_review_status,
+          benchmark_review_reason,
+          benchmark_review_notes,
+          price_context_property_class,
+          price_context_confidence_score,
+          price_context_confidence_tier,
+          price_context_public_label,
+          price_context_percentage_suppressed,
+          price_context_badge_status,
+          comp_pool_used,
           market_fit_status,
           market_fit_review_reason,
           verification_status,

@@ -11,6 +11,8 @@ export type LeaseTermOption = '6_months' | '12_months' | '24_months' | 'flexible
 export type SublettingOption = 'allowed' | 'case_by_case' | 'not_allowed';
 export type FurnishedStatus = 'fully' | 'semi' | 'unfurnished';
 export type PetsPolicy = 'allowed' | 'case_by_case' | 'not_allowed';
+export type SqmSourceOption = 'tabu' | 'arnona' | 'contractor_plan' | 'marketing_gross' | 'net_internal' | 'agent_estimate' | 'unknown';
+export type OwnershipTypeOption = 'private_tabu' | 'minhal_leasehold' | 'company_or_other' | 'unknown';
 
 export interface Profile {
   id: string;
@@ -105,6 +107,20 @@ export interface Property {
    furniture_items: string[] | null;
    // Featured highlight - agent's choice standout feature
    featured_highlight: string | null;
+    premium_drivers?: string[] | null;
+    premium_explanation?: string | null;
+    sqm_source?: SqmSourceOption | null;
+    ownership_type?: OwnershipTypeOption | null;
+    benchmark_review_status?: string | null;
+    benchmark_review_reason?: string | null;
+    benchmark_review_notes?: string | null;
+    price_context_property_class?: string | null;
+    price_context_confidence_score?: number | null;
+    price_context_confidence_tier?: string | null;
+    price_context_public_label?: string | null;
+    price_context_percentage_suppressed?: boolean | null;
+    price_context_badge_status?: string | null;
+    comp_pool_used?: string | null;
    created_at: string;
   updated_at: string;
   agent?: Agent;
