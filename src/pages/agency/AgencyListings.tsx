@@ -34,7 +34,6 @@ import {
   AgencyListing,
   AgencyReviewStatus,
   useAgencyListingsManagement,
-  useApproveAgencyListing,
   useArchiveAgencyListing,
   useBulkApproveAgencyListings,
   useMarkAgencyListingNeedsEdit,
@@ -272,7 +271,6 @@ export default function AgencyListings() {
   const bulkDelete = useBulkDeleteProperties();
   const bulkSubmit = useBulkSubmitForReview();
   const reassignProperty = useReassignProperty();
-  const approveListing = useApproveAgencyListing();
   const archiveListing = useArchiveAgencyListing();
   const unpublishListing = useUnpublishAgencyListing();
   const bulkApproveListings = useBulkApproveAgencyListings();
@@ -839,9 +837,9 @@ export default function AgencyListings() {
                                       </>
                                     ) : (
                                       <>
-                                        <DropdownMenuItem onClick={() => approveListing.mutate({ propertyId: listing.id, agencyId: agency.id })}>
-                                          <CheckCheck className="h-4 w-4 mr-2" />
-                                          Publish
+                                        <DropdownMenuItem onClick={() => submitForReview.mutate(listing.id)} disabled={submitForReview.isPending}>
+                                          <Send className="h-4 w-4 mr-2" />
+                                          Submit for review
                                         </DropdownMenuItem>
                                         <DropdownMenuItem onClick={() => handleDuplicate(listing.id)}>
                                           <Copy className="h-4 w-4 mr-2" />
