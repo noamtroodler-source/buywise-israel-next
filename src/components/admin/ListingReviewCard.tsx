@@ -864,10 +864,10 @@ function MarketPanel({ property, market, reviewed, onReviewedChange }: { propert
 function BuyerPageFitPanel({ property, market, checks }: { property: PropertyForReview; market: MarketReviewData; checks: ReviewCheck[] }) {
   const moduleRows = [
     { label: 'Hero gallery', ready: (property.images?.length ?? 0) >= 4, detail: `${property.images?.length ?? 0} photos submitted.` },
-    { label: 'Market Intelligence', ready: Boolean(property.size_sqm && (market.benchmark?.averagePriceSqm || market.comparableComps.length)), detail: market.status.description },
+    { label: 'Price Context', ready: Boolean(property.size_sqm && (market.benchmark?.averagePriceSqm || market.comparableComps.length)), detail: `${market.priceContext.publicLabel} • ${market.priceContext.confidenceLabel}` },
     { label: 'Price/sqm snapshot', ready: Boolean(property.size_sqm && property.price), detail: market.pricePerSqm ? `${formatCurrency(market.pricePerSqm)}/sqm can display.` : 'Missing size or price.' },
     { label: 'Buyer description', ready: (property.description?.length ?? 0) >= 100, detail: `${property.description?.length ?? 0} characters submitted.` },
-    { label: 'Feature chips', ready: (property.features?.length ?? 0) >= 3 || market.premiumDrivers.length > 0, detail: `${property.features?.length ?? 0} explicit features, ${market.premiumDrivers.length} premium drivers.` },
+    { label: 'Pricing Context Complete badge', ready: market.priceContext.badgeEligible, detail: market.priceContext.badgeEligible ? 'Buyer-safe context is complete.' : 'Needs size source, ownership type, or premium explanation.' },
   ];
   const suggestedRequests = Array.from(new Set(checks.map((check) => check.requestText).filter(Boolean))).slice(0, 6);
 
