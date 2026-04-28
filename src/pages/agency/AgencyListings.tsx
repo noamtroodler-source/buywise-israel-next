@@ -740,13 +740,13 @@ export default function AgencyListings() {
                                       <Badge className="text-[10px] px-1.5 py-0 bg-primary/10 text-primary border-primary/30 border">
                                         Boost → primary
                                       </Badge>
-                                    ) : null}
+                                    )}
                                   </div>
                                   <p className="text-xs text-muted-foreground">
                                     {listing.city}
                                     {listing.other_agencies_count > 0 && (
                                       <> · with {listing.other_agencies_count} other{listing.other_agencies_count === 1 ? '' : 's'}</>
-                                    )}
+                                    ) : null}
                                   </p>
                                 </div>
                               </div>
