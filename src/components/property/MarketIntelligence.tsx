@@ -247,6 +247,7 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
           compsCount={verdictData.compsCount}
           radiusUsedM={verdictData.radiusUsedM}
           priceTier={priceTier}
+          property={property}
         />
 
         {/* Value Snapshot Cards (no header) */}
