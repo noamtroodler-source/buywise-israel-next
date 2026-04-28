@@ -10,6 +10,7 @@ import { ScrollToTop } from "@/components/shared/ScrollToTop";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import { PageLoader } from "@/components/shared/PageLoader";
 import { PageTracker } from "@/hooks/usePageTracking";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import Index from "./pages/Index";
 import Listings from "./pages/Listings";
 import PropertyDetail from "./pages/PropertyDetail";
@@ -198,11 +199,12 @@ const queryClient = new QueryClient({
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <FavoritesProvider>
-        <PreferencesProvider>
-          <CompareProvider>
-            <ErrorBoundary>
+    <TooltipProvider delayDuration={150}>
+      <AuthProvider>
+        <FavoritesProvider>
+          <PreferencesProvider>
+            <CompareProvider>
+              <ErrorBoundary>
               <BrowserRouter>
                     <PageTracker />
                     <ScrollToTop />
@@ -566,11 +568,12 @@ const App = () => (
                       </Routes>
                     </Suspense>
               </BrowserRouter>
-            </ErrorBoundary>
-        </CompareProvider>
-      </PreferencesProvider>
-    </FavoritesProvider>
-  </AuthProvider>
+              </ErrorBoundary>
+          </CompareProvider>
+        </PreferencesProvider>
+      </FavoritesProvider>
+    </AuthProvider>
+  </TooltipProvider>
   </QueryClientProvider>
 );
 
