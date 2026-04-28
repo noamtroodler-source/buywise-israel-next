@@ -34,7 +34,6 @@ import {
 import { ConfirmDuplicateDialog } from '@/components/agency/ConfirmDuplicateDialog';
 import { useCities } from '@/hooks/useCities';
 import { getMarketFitReview } from '@/lib/marketFit';
-import { Checkbox } from '@/components/ui/checkbox';
 import { PriceContextSubmissionPreview } from '@/components/agent/wizard/PriceContextSubmissionPreview';
 
 const steps = [
