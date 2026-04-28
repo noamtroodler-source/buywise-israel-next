@@ -27,6 +27,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useCities } from '@/hooks/useCities';
 import { getMarketFitReview } from '@/lib/marketFit';
 import { PriceContextSubmissionPreview } from '@/components/agent/wizard/PriceContextSubmissionPreview';
+import { getWizardPriceContextPersistence } from '@/lib/wizardPriceContext';
 
 const steps = [
   { title: 'Basics', description: 'Property type, price, location' },
@@ -208,6 +209,10 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
   useEffect(() => {
     setMarketFitConfirmed(false);
   }, [marketFitReview.reviewReason]);
+  const priceContextFields = useMemo(
+    () => getWizardPriceContextPersistence(data, selectedCityAveragePriceSqm),
+    [data, selectedCityAveragePriceSqm]
+  );
 
   const handleSaveChanges = async () => {
     setIsSubmitting(true);
@@ -250,6 +255,7 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
          premium_drivers: data.premium_drivers,
          premium_explanation: data.premium_explanation || null,
           benchmark_review_status: data.benchmark_review_status,
+          ...priceContextFields,
       } as any);
       clearSavedData();
       navigate('/agent/properties');
