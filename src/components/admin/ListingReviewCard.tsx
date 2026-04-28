@@ -30,6 +30,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { detectPremiumDrivers } from '@/lib/marketFit';
 import { getIsraeliRoomCount } from '@/lib/israeliRoomCount';
 import { useNeighborhoodAvgPrice } from '@/hooks/useNeighborhoodPrices';
+import { useNearbySoldComps } from '@/hooks/useNearbySoldComps';
+import { computeSpecCompStats, useSpecBasedSoldComps } from '@/hooks/useSpecBasedSoldComps';
 
 interface ListingReviewCardProps {
   property: PropertyForReview;
@@ -95,10 +97,41 @@ function formatDriver(driver: string) {
   return driver.replace(/[_/]+/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
+function formatDate(value: string | null | undefined) {
+  if (!value) return 'Unknown date';
+  return new Date(value).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+}
+
 function MarketSanityPanel({ property, reviewed, onReviewedChange }: { property: PropertyForReview; reviewed: boolean; onReviewedChange: (reviewed: boolean) => void }) {
   const { data: benchmark, isLoading } = useMarketBenchmark(property);
+  const israeliRooms = property.source_rooms ?? getIsraeliRoomCount(property.bedrooms, property.additional_rooms);
+  const hasCoordinates = Boolean(property.latitude && property.longitude);
+  const { data: nearbyComps = [], isLoading: nearbyLoading } = useNearbySoldComps(
+    property.latitude,
+    property.longitude,
+    property.city,
+    {
+      radiusKm: 0.75,
+      monthsBack: 24,
+      limit: 6,
+      minRooms: israeliRooms ? israeliRooms - 1 : undefined,
+      maxRooms: israeliRooms ? israeliRooms + 1 : undefined,
+      enabled: hasCoordinates,
+    },
+  );
+  const { data: specComps = [], isLoading: specLoading } = useSpecBasedSoldComps(
+    property.city,
+    property.bedrooms,
+    property.size_sqm,
+    property.neighborhood,
+    property.source_rooms,
+    { limit: 6, enabled: !hasCoordinates },
+  );
   const pricePerSqm = property.price && property.size_sqm ? property.price / property.size_sqm : null;
   const pricePerSqft = pricePerSqm ? pricePerSqm / 10.7639 : null;
+  const comparableComps = hasCoordinates ? nearbyComps : specComps;
+  const compStats = computeSpecCompStats(comparableComps, pricePerSqm);
+  const compsLoading = hasCoordinates ? nearbyLoading : specLoading;
   const gapPercent = pricePerSqm && benchmark?.averagePriceSqm
     ? Math.round(((pricePerSqm - benchmark.averagePriceSqm) / benchmark.averagePriceSqm) * 100)
     : null;
@@ -120,6 +153,9 @@ function MarketSanityPanel({ property, reviewed, onReviewedChange }: { property:
   const missingWarnings = [
     !property.size_sqm && 'Missing size, so price per sqm cannot be verified',
     !benchmark?.averagePriceSqm && 'No city/neighborhood benchmark found',
+    !hasCoordinates && 'No map pin, so using spec-matched sold comps instead of nearby sales',
+    !compsLoading && comparableComps.length < 3 && 'Fewer than 3 reliable sold comps found',
+    compStats?.vsSubjectPct != null && compStats.vsSubjectPct >= 35 && 'Listing is materially above sold-comp average',
     gapPercent !== null && gapPercent >= 35 && premiumDrivers.length === 0 && 'High price gap without premium drivers',
     gapPercent !== null && gapPercent >= 70 && !property.premium_explanation && 'Large premium needs a buyer-facing explanation',
     !property.images?.length && 'No photos attached',
@@ -170,6 +206,45 @@ function MarketSanityPanel({ property, reviewed, onReviewedChange }: { property:
       </div>
 
       <div className="space-y-2">
+        <div className="rounded-md border bg-background p-2">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p className="text-xs font-medium text-foreground">Sold comps</p>
+              <p className="text-xs text-muted-foreground">
+                {hasCoordinates ? 'Nearby sales within 750m' : 'Spec-matched sales by city, rooms, and size'}
+              </p>
+            </div>
+            <Badge variant="outline">
+              {compsLoading ? 'Checking…' : compStats ? `${formatNumber(compStats.avgPriceSqm)}/sqm avg` : 'No comps'}
+            </Badge>
+          </div>
+          {compStats?.vsSubjectPct != null && (
+            <p className="mb-2 text-xs text-muted-foreground">
+              Listing is {compStats.vsSubjectPct > 0 ? '+' : ''}{compStats.vsSubjectPct}% vs sold-comp average from {compStats.count} comp{compStats.count === 1 ? '' : 's'}.
+            </p>
+          )}
+          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+            {comparableComps.slice(0, 6).map((comp) => (
+              <div key={comp.id} className="rounded-md border border-border/70 p-2 text-xs">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-semibold text-foreground">{formatNumber(comp.price_per_sqm)}/sqm</span>
+                  <span className="text-muted-foreground">{formatDate(comp.sold_date)}</span>
+                </div>
+                <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-muted-foreground">
+                  <span>{formatNumber(comp.sold_price)}</span>
+                  {comp.size_sqm && <span>{comp.size_sqm} sqm</span>}
+                  {comp.rooms && <span>{comp.rooms} rooms</span>}
+                  {'distance_meters' in comp && <span>{Math.round(comp.distance_meters)}m away</span>}
+                  {'neighborhood' in comp && comp.neighborhood && <span>{comp.neighborhood}</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+          {!compsLoading && comparableComps.length === 0 && (
+            <p className="text-xs text-muted-foreground">No reliable sold transactions found for this listing context.</p>
+          )}
+        </div>
+
         <div className="flex flex-wrap gap-2">
           {premiumDrivers.length > 0 ? premiumDrivers.slice(0, 8).map((driver) => (
             <Badge key={driver} variant="outline" className="bg-background">

@@ -106,7 +106,7 @@ export function useSpecBasedSoldComps(
 /**
  * Computes summary stats from spec-based comps for display.
  */
-export function computeSpecCompStats(comps: SpecBasedComp[], subjectPriceSqm?: number | null) {
+export function computeSpecCompStats(comps: Array<{ price_per_sqm: number | null }>, subjectPriceSqm?: number | null) {
   const validComps = comps.filter((c) => c.price_per_sqm && c.price_per_sqm > 0);
   if (validComps.length === 0) return null;
 
