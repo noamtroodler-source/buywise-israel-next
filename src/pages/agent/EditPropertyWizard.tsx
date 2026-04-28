@@ -467,6 +467,18 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
                     </AlertDescription>
                   </Alert>
                 )}
+
+                {isLastStep && data.listing_status === 'for_sale' && (
+                  <PriceContextSubmissionPreview
+                    data={data}
+                    cityAveragePriceSqm={selectedCityAveragePriceSqm}
+                    review={marketFitReview}
+                    confirmed={marketFitConfirmed}
+                    onConfirmedChange={setMarketFitConfirmed}
+                    onEditDetails={() => setCurrentStep(1)}
+                    onEditPremiumContext={() => setCurrentStep(2)}
+                  />
+                )}
                 
                 <div className="flex justify-between items-center">
                   <Button
