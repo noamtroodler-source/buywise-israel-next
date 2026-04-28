@@ -88,33 +88,42 @@ function MarketVerdictBadge({ avgComparison, compsCount, radiusUsedM, priceTier 
         In line with recent sales
       </Badge>
     );
-  } else if (avgComparison <= 12) {
+  } else if (avgComparison <= 15) {
     badge = (
       <Badge variant="secondary" className="text-xs">
-        Above recent sales avg
+        Above recorded sales
       </Badge>
     );
     contextLine = priceTier && priceTier !== 'standard'
       ? `Comparing against similar ${priceTier}-tier properties`
-      : 'Typical for active listings — room to negotiate';
-  } else if (avgComparison <= 20) {
+      : 'Common for active listings before negotiation';
+  } else if (avgComparison <= 35) {
     badge = (
       <Badge className="bg-semantic-amber text-semantic-amber-foreground border-semantic-amber">
-        Well above recent sales — negotiate
+        Above recorded sales
       </Badge>
     );
     contextLine = priceTier && priceTier !== 'standard'
       ? `Comparing against similar ${priceTier}-tier properties`
-      : 'Higher than area avg — negotiate or investigate';
+      : 'Recorded sales are a benchmark, not the full property story';
+  } else if (avgComparison <= 70) {
+    badge = (
+      <Badge className="bg-semantic-amber text-semantic-amber-foreground border-semantic-amber">
+        Premium needs context
+      </Badge>
+    );
+    contextLine = priceTier && priceTier !== 'standard'
+      ? `Comparing against similar ${priceTier}-tier properties`
+      : 'View, renovation, floor, outdoor space, parking, or rarity may explain the gap';
   } else {
     badge = (
       <Badge className="bg-semantic-amber text-semantic-amber-foreground border-semantic-amber">
-        Significantly above recent sales
+        Asking price requires closer review
       </Badge>
     );
     contextLine = priceTier && priceTier !== 'standard'
       ? `Comparing against similar ${priceTier}-tier properties`
-      : 'Review comparable sales before proceeding';
+      : 'The gap is not fully explained by nearby recorded sales alone';
   }
 
   return (

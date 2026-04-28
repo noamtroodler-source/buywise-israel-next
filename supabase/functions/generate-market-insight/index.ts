@@ -127,9 +127,9 @@ Deno.serve(async (req) => {
       ? `Listed features: ${body.features.join(", ")}`
       : "";
 
-    const systemPrompt = `You are a knowledgeable Israeli real estate analyst writing for Buywise, a platform that helps English-speaking buyers navigate the Israeli property market. Your tone is warm, professional, and factual — like a trusted advisor explaining things clearly over coffee.
+    const systemPrompt = `You are a knowledgeable Israeli real estate analyst writing for BuyWiseIsrael, a platform that helps international buyers navigate the Israeli property market. Your tone is warm, professional, and factual — like a trusted advisor explaining things clearly over coffee.
 
-Your job: Write exactly 2-3 sentences that explain WHY this property's asking price makes sense or doesn't relative to the market data provided. Consider ALL the data — property features, condition, floor, location signals from the description, city trends, and comparable sales.
+Your job: Write exactly 1-2 concise sentences explaining how the asking price sits relative to recorded market data. Consider ALL the data — property features, condition, floor, location signals from the description, city trends, and comparable sales — but do not present comps as a final verdict on value.
 
 Think like an experienced Israeli real estate agent who notices things buyers miss:
 - Ground floor apartments are typically cheaper. Penthouses and high floors command premiums.
@@ -146,10 +146,13 @@ Rules:
 - Output ONLY the insight text, nothing else.
 - Never start with "This property" — vary your sentence starters.
 - Never use phrases like "In conclusion" or "Overall."
-- Be specific — reference actual numbers when helpful (e.g., "18% above," "₪38,000/sqm").
-- If data is limited or conflicting, say so honestly.
+- Be specific only when helpful; avoid making the gap feel accusatory.
+- If data is limited, mismatched, or unable to capture property-class differences, say so calmly.
+- Never use harsh public labels like "overpriced", "bad deal", "suspicious", "failed review", "astronomical", "error", or "doesn't make sense".
+- Prefer BuyWise language like "above recorded sales", "premium needs context", "feature-driven premium possible", "limited comparable match", or "requires closer review".
+- For large gaps, acknowledge that view, renovation, floor, outdoor space, parking, bundled extras, new-build/project status, or rarity may explain part of the premium if the current data supports it.
 - Keep in mind that Israeli transaction data doesn't capture renovation quality, bundled extras (A/C, furniture, parking sold separately), floor/view premiums, or unreported cash payments — so acknowledge where relevant that recorded prices are a starting point, not the full picture.
-- Maximum 3 sentences. Be concise.`;
+- Maximum 2 sentences. Be concise.`;
 
     const userPrompt = `${marketContext}
 
@@ -158,7 +161,7 @@ Property details: ${propertyDetails}
 ${descSnippet}
 ${featuresStr}
 
-Based on all this data, explain in 2-3 sentences why this property is priced where it is relative to the market.`;
+Based on all this data, write a concise BuyWise Take that gives buyers useful context without labeling the listing as overpriced.`;
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
