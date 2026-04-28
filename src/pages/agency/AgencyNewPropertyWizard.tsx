@@ -36,6 +36,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useCities } from '@/hooks/useCities';
 import { getMarketFitReview } from '@/lib/marketFit';
+import { PriceContextSubmissionPreview } from '@/components/agent/wizard/PriceContextSubmissionPreview';
 
 const AGENCY_WIZARD_STORAGE_KEY = 'agency-property-wizard-draft';
 
@@ -108,6 +109,7 @@ function AgencyWizardContent() {
       property: data,
     });
   }, [cities, data]);
+  const selectedCityAveragePriceSqm = cities.find((item) => item.name === data.city)?.average_price_sqm ?? null;
 
   useEffect(() => {
     setMarketFitConfirmed(false);
@@ -403,28 +405,16 @@ function AgencyWizardContent() {
             {/* Navigation */}
             <motion.div variants={itemVariants}>
               <div className="space-y-4 p-4 rounded-2xl bg-card/95 backdrop-blur-sm border border-border shadow-lg">
-                {isLastStep && marketFitReview.level !== 'none' && (
-                  <Alert variant="default" className="bg-primary/5 border-primary/20">
-                    <Sparkles className="h-4 w-4 text-primary" />
-                    <AlertTitle className="text-foreground">{marketFitReview.title}</AlertTitle>
-                    <AlertDescription className="space-y-3 text-muted-foreground">
-                      <p>{marketFitReview.message}</p>
-                      {marketFitReview.gapPercent !== null && (
-                        <p className="text-xs">Current benchmark gap: about {marketFitReview.gapPercent}% above city price/sqm.</p>
-                      )}
-                      {marketFitReview.requiresContext && (
-                        <Button variant="outline" size="sm" onClick={() => setCurrentStep(3)} className="rounded-xl">
-                          Add Premium Context
-                        </Button>
-                      )}
-                      {marketFitReview.requiresConfirmation && (
-                        <label className="flex items-start gap-2 text-sm text-foreground">
-                          <Checkbox checked={marketFitConfirmed} onCheckedChange={(checked) => setMarketFitConfirmed(Boolean(checked))} />
-                          <span>I confirm the asking price and understand this listing may receive closer market-fit review.</span>
-                        </label>
-                      )}
-                    </AlertDescription>
-                  </Alert>
+                {isLastStep && data.listing_status === 'for_sale' && (
+                  <PriceContextSubmissionPreview
+                    data={data}
+                    cityAveragePriceSqm={selectedCityAveragePriceSqm}
+                    review={marketFitReview}
+                    confirmed={marketFitConfirmed}
+                    onConfirmedChange={setMarketFitConfirmed}
+                    onEditDetails={() => setCurrentStep(2)}
+                    onEditPremiumContext={() => setCurrentStep(3)}
+                  />
                 )}
 
                 <div className="flex justify-between items-center">
