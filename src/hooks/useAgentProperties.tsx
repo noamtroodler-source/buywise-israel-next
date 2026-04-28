@@ -57,6 +57,9 @@ export interface CreatePropertyData {
    featured_highlight?: string | null;
     premium_drivers?: string[];
     premium_explanation?: string | null;
+     sqm_source?: string | null;
+     ownership_type?: string | null;
+     benchmark_review_status?: string | null;
     market_fit_status?: string | null;
      market_fit_confirmed_at?: string | null;
      market_fit_review_reason?: string | null;
