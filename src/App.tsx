@@ -1,7 +1,6 @@
 import { Suspense, lazy, type ComponentType } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import { CompareProvider } from "@/contexts/CompareContext";
 import { PreferencesProvider } from "@/contexts/PreferencesContext";
@@ -216,8 +215,7 @@ const App = () => (
         <PreferencesProvider>
           <CompareProvider>
             <ErrorBoundary>
-              <TooltipProvider>
-                <WhatsAppFallbackModal>
+              <WhatsAppFallbackModal>
                   <BrowserRouter>
                     <PageTracker />
                     <ScrollToTop />
@@ -579,8 +577,7 @@ const App = () => (
                       </Routes>
                     </Suspense>
                   </BrowserRouter>
-                </WhatsAppFallbackModal>
-              </TooltipProvider>
+              </WhatsAppFallbackModal>
             </ErrorBoundary>
         </CompareProvider>
       </PreferencesProvider>
