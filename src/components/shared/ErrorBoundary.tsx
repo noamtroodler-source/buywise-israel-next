@@ -25,6 +25,8 @@ const getSessionId = (): string => {
   return sessionId;
 };
 
+const MODULE_RELOAD_KEY = 'module_fetch_reloaded_at';
+
 export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
@@ -39,9 +41,19 @@ export class ErrorBoundary extends Component<Props, State> {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
 
     if (error.message?.includes('Failed to fetch dynamically imported module')) {
-      window.location.reload();
+      if (!sessionStorage.getItem(MODULE_RELOAD_KEY)) {
+        sessionStorage.setItem(MODULE_RELOAD_KEY, String(Date.now()));
+        window.location.reload();
+        return;
+      }
+
+      sessionStorage.removeItem(MODULE_RELOAD_KEY);
+      this.setState({ errorInfo });
+      this.reportError(error, errorInfo);
       return;
     }
+
+    sessionStorage.removeItem(MODULE_RELOAD_KEY);
     
     this.setState({ errorInfo });
     
