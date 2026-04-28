@@ -217,6 +217,7 @@ export function ListingReviewCard({
   const [reason, setReason] = useState('');
   const [adminNotes, setAdminNotes] = useState('');
   const [featureThis, setFeatureThis] = useState(false);
+  const [marketSanityReviewed, setMarketSanityReviewed] = useState(property.verification_status !== 'pending_review');
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('he-IL', {
@@ -403,15 +404,21 @@ export function ListingReviewCard({
                 </CollapsibleContent>
               </Collapsible>
 
+              <MarketSanityPanel
+                property={property}
+                reviewed={marketSanityReviewed}
+                onReviewedChange={setMarketSanityReviewed}
+              />
+
               {/* Action Buttons */}
               <div className="flex flex-wrap items-center gap-2 pt-3 border-t mt-3">
                 <Button
                   onClick={handleApprove}
-                  disabled={isLoading}
+                  disabled={isLoading || !marketSanityReviewed}
                   className="bg-green-600 hover:bg-green-700"
                 >
                   <Check className="h-4 w-4 mr-1" />
-                  Approve
+                  {marketSanityReviewed ? 'Approve' : 'Review market sanity first'}
                 </Button>
                 
                 {/* Feature checkbox - only show for pending listings */}
