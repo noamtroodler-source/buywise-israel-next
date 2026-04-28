@@ -1,346 +1,184 @@
-## Quick answer: use existing features first, then add a small premium-context layer
+## Plan: rebuild Admin Listing Review as a clean buyer-quality review workspace
 
-Yes, many premium drivers should be pulled automatically from existing listing data. The system should not make agents re-enter obvious things like `sea_view`, `parking`, `storage`, `mamad`, `sukkah_balcony`, `garden_apartment`, `penthouse`, high floor, renovation condition, or furnished status.
+I’ll replace the current increasingly cluttered listing card with a structured review system that lets you quickly decide: “Is this good enough to publish for buyers?”
 
-But it should still have its own lightweight section because existing features do not answer the full question: “why does this listing deserve to sit above recorded sales?”
+## What will change
 
-### Best approach
-Use a hybrid model:
+### 1. New review card layout
 
-1. **Auto-detect premium drivers** from selected features, property type, floor, parking, condition, furnished status, furniture items, highlighted text, and description.
-2. **Show a “Premium Context” card only when needed** — not as a permanent scary compliance step.
-3. **Let agents confirm, add missing drivers, or write one short explanation**.
-4. **Feed that into BuyWise Take and Market Intelligence** so public language becomes cleaner and fairer.
-
-### Pros of only pulling from existing features
-- Less friction for agents.
-- No duplicate data entry.
-- Cleaner wizard.
-- Uses structured fields the app already stores.
-
-### Cons of only pulling from existing features
-- Existing features are too generic.
-- They do not capture nuance like “direct sea view from salon,” “boutique building,” “rare street,” “fully furnished with appliances,” or “project unit priced differently from resale comps.”
-- The system may still say “premium needs context” even when the agent knows exactly why.
-- Agencies lose a chance to frame the property properly.
-
-### Pros of a standalone Premium Context card
-- Gives agencies a positive marketing moment instead of a warning.
-- Helps BuyWise protect the agency publicly.
-- Creates better Market Intelligence language.
-- Gives admins a cleaner review signal.
-
-### Cons of a standalone section
-- If shown always, it adds friction.
-- If worded badly, it feels like compliance/punishment.
-- If duplicated with Features, it feels annoying.
-
-### Final decision
-Do **not** add a full separate wizard step at first. Add an intelligent **Premium Context card** inside the existing Features/Review flow. It should appear conditionally when the listing is above comps or likely premium, and it should pre-fill from existing fields.
-
----
-
-# Build plan: Market Fit Review system
-
-## Phase 1 — Clean public Market Intelligence language
-
-Goal: fix the current public experience quickly without building the entire workflow yet.
-
-### Changes
-- Replace harsh or overconfident language in Market Intelligence.
-- Stop labels like “Well above recent sales — negotiate” from feeling too judgmental.
-- Use softer BuyWise labels:
-  - `In line with recorded sales`
-  - `Above recorded sales`
-  - `Premium needs context`
-  - `Feature-driven premium likely`
-  - `Limited comparable match`
-  - `Asking price requires closer review`
-- Keep BuyWise Take, but make it shorter and more structured.
-- Update the AI market insight prompt so it avoids words like “astronomical,” “error,” “doesn’t make sense,” or “overpriced” unless the data is clearly impossible.
-
-### Public UI result
-Instead of long repeated paragraphs, buyers see:
+Each listing will become a compact publishing-desk style card:
 
 ```text
-Premium needs context
-This listing sits above nearby recorded sales. View, floor, renovation, outdoor space, parking, or rarity may explain part of the gap, but the current listing data does not fully explain the premium.
+[Cover photo + quick facts]  [Quality score + decision controls]
+---------------------------------------------------------------
+Tabs / sections:
+Overview | Data Audit | Photos | Market Intelligence | Buyer Page Fit
 ```
 
-Or:
+The collapsed/header view will show only the essentials:
+- Listing title
+- Price
+- City / neighborhood / address signal
+- Agent / agency
+- Photo count
+- Price per sqm
+- Overall quality status
+- Fast actions: Preview, Approve, Request Changes, Reject
 
-```text
-Feature-driven premium likely
-Recorded sales may not fully reflect this home’s view, floor, renovation, outdoor space, parking, or rarity.
-```
+### 2. Buyer-quality score and readiness badges
 
-## Phase 2 — Add Market Fit logic layer
+I’ll add an internal review scoring model with clear statuses:
+- **Ready to approve**
+- **Review recommended**
+- **Needs changes**
+- **Critical missing data**
 
-Goal: create a reusable rule engine that decides which state a listing is in.
+The score will be based on real submitted listing fields only, not mock data.
 
-### Market Fit states
-- `normal_range`
-- `above_recorded_sales`
-- `premium_needs_context`
-- `feature_driven_premium`
-- `limited_comparable_match`
-- `agency_review_needed`
+Score categories:
+- **Core data completeness**: title, price, city, neighborhood, address, rooms, size, description
+- **Location quality**: full address, street number, map pin, neighborhood present
+- **Photo readiness**: photo count and gallery sufficiency
+- **Feature richness**: condition, parking, balcony/storage/elevator signals, AC/furnishing/rental fields
+- **Market intelligence readiness**: size, city benchmark, location/comps availability, price variance warnings
+- **Buyer page readiness**: whether public page modules will feel complete or thin
 
-### Inputs
-Use existing data first:
-- price
-- size
-- price/sqm
-- nearby comps deviation
-- comp count
-- radius used
-- city/neighborhood averages
-- property type
-- floor / total floors
-- condition
-- parking
-- features array
-- furnished status / furniture items
-- property description
-- featured highlight
-- listing status
+### 3. Agency wizard field audit
 
-### Initial threshold logic
-```text
-0–15% above comps: normal / active listing margin
-15–35%: above recorded sales
-35–70%: ask for premium context
-70–100%: require premium context or confirmation
-100%+: force review/confirmation unless strong premium context or weak comps explain it
-```
+I’ll add a dedicated “Data Audit” section that mirrors the agency listing wizard:
+- Basics
+- Details
+- Features
+- Photos
+- Description
+- Market context
 
-### Softening factors
-Reduce severity when:
-- comp count is low
-- comps are old or sparse
-- property type differs
-- listing is penthouse/garden/project/new build
-- listing has sea view, beachfront, high floor, renovation, parking, large balcony, luxury finish, rare street, bundled extras
-- neighborhood has high variance
-- recent sales are not close enough in size/rooms/floor
-
-## Phase 3 — Premium Context inside the listing wizard
-
-Goal: help agencies explain premium listings without scaring them.
-
-### Placement
-Add a conditional **Premium Context** card inside the existing Features step and a compact reminder on Review.
-
-Do not add a full extra step initially.
-
-### Trigger
-Show the card when:
-- price appears materially above market, or
-- property has premium signals, or
-- the agent selects premium features like sea view, penthouse, garden apartment, high floor, renovation, parking, large balcony, luxury finish, furnished extras.
-
-### Behavior
-The card should say:
-
-```text
-Help buyers understand the premium
-We detected features that may make this home compare differently from nearby recorded sales. Confirm what applies so BuyWise can present the market context fairly.
-```
-
-### Auto-selected drivers
-Pull from existing fields:
-- `sea_view` → Sea view
-- `property_type = penthouse / mini_penthouse` → Penthouse
-- `property_type = garden_apartment` → Garden apartment
-- high floor logic → High floor
-- `condition = renovated / like_new / new` → Renovation / new build
-- `parking > 0` or `parking` feature → Parking
-- `storage` feature → Storage
-- `mamad` feature → Mamad
-- `sukkah_balcony` feature → Sukkah balcony
-- `garden` feature → Larger outdoor space / garden
-- `furnished_status` or `furniture_items` → Furnished / bundled extras
-- `featured_highlight` or description contains sea/view/beach/renovated/luxury/boutique/rare → suggested, not auto-confirmed
-
-### Agent-selectable drivers
-- Sea view
-- Beachfront / first line
-- Full renovation
-- New build / project unit
-- Penthouse
-- Garden apartment
-- High floor
-- Large balcony
-- Sukkah balcony
-- Parking
-- Storage
-- Mamad
-- Luxury finish
-- Rare street / boutique building
-- Expansion rights / Tama potential
-- Furnished / appliances / bundled extras
-- Larger-than-normal outdoor space
-- Other explanation
-
-### Optional explanation
-A short text box:
-
-```text
-Example: Direct sea view from salon and balcony, renovated in 2024, private parking.
-```
-
-This stays framed as marketing support, not compliance.
-
-## Phase 4 — Store premium context properly
-
-Goal: make the feature durable across creation, editing, public listing, admin review, and AI insights.
-
-### Database schema additions
-Add fields to `properties`:
-- `premium_drivers text[]`
-- `premium_explanation text`
-- `market_fit_status text`
-- `market_fit_confirmed_at timestamptz`
-- `market_fit_confirmed_by uuid nullable`
-- `market_fit_review_reason text nullable`
-
-This is a schema change, so it will use a migration.
-
-### Data policy
-No fabricated market data. These fields store agent-provided context and computed status, not invented values.
-
-## Phase 5 — Publish and review workflow
-
-Goal: prevent extreme unexplained mismatches without punishing legitimate luxury listings.
-
-### Publishing rules
-- Normal / mild premium: submit normally.
-- 35–70% gap: allow submit, but prompt for premium context.
-- 70–100% gap: require either premium drivers or confirmation before submit.
-- 100%+ gap: require confirmation and show a review message.
-
-### Agency-facing language
-Use:
-
-```text
-Help us present this listing accurately
-The asking price is significantly above recorded nearby sales. If view, renovation, floor, outdoor space, parking, new-build status, or rarity explain the gap, add that context so buyers understand the premium.
-```
-
-Avoid:
-- failed
-- suspicious
-- overpriced
-- blocked
-- bad data
-
-### Existing published listings
-Do not automatically unpublish normal expensive listings.
-
-Use two levels:
-- **Soft review**: listing stays live, agency dashboard asks for premium context.
-- **Hard review**: only for extreme likely data mismatch, such as impossible size/price, missing size, wrong property type, or price/sqm far beyond market with no drivers.
-
-## Phase 6 — Public listing design integration
-
-Goal: make this feel like BuyWiseIsrael, not a compliance warning.
-
-### Design direction
-- “Trusted Friend” tone.
-- Calm, factual, no shame language.
-- Semantic design tokens only.
-- Compact labels, short copy, expandable details.
-- No generic red warning unless the data itself is likely invalid.
-
-### Market Intelligence layout
-Keep the section, but simplify hierarchy:
-
-```text
-Market Intelligence
-[Status badge]
-[3 compact value cards]
-[Recent nearby sales]
-[BuyWise Take — one concise sentence/card]
-[Expandable: What recorded sales may not capture]
-```
-
-### BuyWise Take behavior
-BuyWise Take becomes the conclusion layer. It should reflect the Market Fit status rather than independently writing a long defensive paragraph.
+Each group will show:
+- Passed checks
+- Warnings
+- Critical missing items
+- Suggested request-change text
 
 Examples:
+- Address missing street number
+- No map pin, so nearby sales comparison is weaker
+- Neighborhood missing
+- Size missing, so price/sqm and market intelligence are limited
+- Description too short for buyer-facing quality
+- Few features selected
+- Sale listing has too few photos
+- Rental listing missing lease/furnished/pets details
 
-```text
-Feature-driven premium likely
-Recorded sales may not fully reflect this home’s view, floor, renovation, outdoor space, parking, or rarity.
-```
+### 4. Better photo review section
 
-```text
-Limited comparable match
-Nearby recorded sales are useful context, but may not be a close match for this property class.
-```
+I’ll replace the photo strip duplication with a cleaner photo panel:
+- Large cover photo
+- Thumbnail grid
+- Photo count status
+- Click any photo to open the buyer preview modal at that image
+- Warnings for weak gallery quality
 
-```text
-Premium needs context
-The asking price sits above nearby recorded sales, and the current listing data does not fully explain the premium.
-```
+Photo standards:
+- No photos = critical
+- 1–2 photos = likely needs changes
+- Sale listing target = at least 6 photos
+- Rental listing target = at least 4 photos
+- Larger/premium properties get stronger warnings if the gallery is thin
 
-## Phase 7 — Admin and agency dashboard follow-through
+### 5. Market Intelligence review section
 
-Goal: make the workflow operational after listings are submitted.
+I’ll keep and improve the current market sanity logic so it feels aligned with the buyer-facing Market Intelligence module.
 
-### Agency dashboard
-Add a small status indicator:
-- `Market context complete`
-- `Premium context recommended`
-- `Review price/details`
+It will show:
+- Price per sqm and sqft
+- City / neighborhood benchmark
+- Nearby sold comps when coordinates exist
+- Spec-matched comps when address/map pin is missing
+- Variance vs sold comps
+- Premium drivers detected
+- Saved premium explanation
+- Confidence level
+- Missing-data warnings
 
-Add an edit action:
-- `Add premium context`
+It will clearly say when the system cannot make a strong comparison, instead of implying false certainty.
 
-### Admin review
-Show:
-- computed gap
-- comp count
-- detected premium drivers
-- agent-entered explanation
-- market fit status
+### 6. Buyer Page Fit section
 
-This helps admins approve legitimate luxury listings faster.
+This new section will answer:
 
-## Phase 8 — AI insight update
+“Will the public listing page look complete and trustworthy?”
 
-Goal: make AI support the structured product logic instead of improvising.
+It will check:
+- Hero/gallery readiness
+- Whether Market Intelligence can render meaningfully
+- Whether calculators and price/sqm cards have enough data
+- Whether the listing has a strong buyer-facing description
+- Whether premium claims are supported by features/context
+- Whether empty/thin modules are likely
 
-### Edge function changes
-Update the market insight function to receive:
-- `market_fit_status`
-- `premium_drivers`
-- `premium_explanation`
-- `comp_quality_notes`
+### 7. Cleaner decision panel
 
-### Prompt rules
-The AI should:
-- follow the computed status
-- stay concise
-- avoid harsh pricing judgments
-- mention agent-provided premium context when relevant
-- acknowledge recorded data limitations without repeating the same paragraph every time
+The approval area will become more intentional:
+- Approve
+- Feature on homepage
+- Request changes
+- Reject
+- Admin notes
+- “Market reviewed” confirmation when needed
 
-## Recommended build order
+For request changes, I’ll add quick reason chips so you don’t need to type repetitive feedback:
+- Add full address
+- Add map pin
+- Add neighborhood
+- Confirm size
+- Confirm price
+- Add more photos
+- Improve description
+- Add missing features
+- Explain price premium
+- Market comps look high
 
-1. Public wording + AI prompt cleanup.
-2. Market Fit utility function.
-3. Premium Context card in wizard using existing features.
-4. Database fields for premium context/status.
-5. Save/edit payload integration for agent and agency wizards.
-6. Public Market Intelligence status display.
-7. Publish gating/confirmation for extreme cases.
-8. Agency/admin dashboard follow-up indicators.
+Clicking chips will build the feedback message automatically.
 
-## What this solves
+## Design direction
 
-- Buyers still get honest market context.
-- Agencies do not get publicly embarrassed by generic comps.
-- Luxury, sea-view, renovated, furnished, project, penthouse, garden, and rare listings are treated fairly.
-- BuyWise keeps trust because it does not hide comps, but it also does not overstate what comps can prove.
-- The wizard feels like a marketing enhancement, not a punishment.
+I’ll keep it within BuyWise’s current admin design system:
+- Semantic tokens only: primary, muted, card, border, semantic-green, semantic-amber, semantic-red
+- Clean card hierarchy
+- Fewer visible blocks at once
+- Stronger spacing and section rhythm
+- Clear status language in a trusted, practical voice
+- Desktop two-column review workspace, stacked on smaller screens
+
+No generic flashy redesign; this should feel like a professional editorial/quality-control tool.
+
+## Technical implementation
+
+Files I expect to update:
+- `src/components/admin/ListingReviewCard.tsx`
+- potentially new admin subcomponents under `src/components/admin/listing-review/`
+- possibly `src/hooks/useListingReview.tsx` if any missing review fields need to be selected
+
+I’ll avoid editing generated backend client/type files.
+
+I do not expect a database migration for this version because the review can be computed from existing listing fields and existing market/sold-comps hooks.
+
+## Approval behavior
+
+I’ll keep the existing approve/request/reject mutations intact.
+
+I’ll improve the gating so approvals are discouraged or blocked only for truly risky cases:
+- Market review confirmation required when market data exists or price looks unusual
+- Critical missing data clearly highlighted before approval
+- “Approve anyway” remains possible where appropriate, but with context visible first
+
+## Result
+
+After this, Admin → Review Listings should feel like a complete quality review workflow:
+
+1. Scan the listing quickly
+2. See what is missing
+3. Inspect photos
+4. Compare against market intelligence and nearby sales
+5. Check whether the buyer-facing page will look credible
+6. Approve or request precise changes
