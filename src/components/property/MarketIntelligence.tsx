@@ -1,9 +1,11 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useAreaLabel } from '@/contexts/PreferencesContext';
-import { BarChart3, ShieldCheck, Info, ArrowRight } from 'lucide-react';
+import { BarChart3, ShieldCheck, Info, ArrowRight, Sparkles, ChevronDown } from 'lucide-react';
 import { getIsraeliRoomCount } from '@/lib/israeliRoomCount';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { PropertyValueSnapshot } from './PropertyValueSnapshot';
@@ -16,7 +18,7 @@ import { useRoomSpecificCityPrice } from '@/hooks/useRoomSpecificCityPrice';
 import { useNeighborhoodAvgPrice } from '@/hooks/useNeighborhoodPrices';
 import { usePriceTier } from '@/hooks/usePriceTier';
 import type { PriceTier } from '@/hooks/usePriceTier';
-import { getMarketFit } from '@/lib/marketFit';
+import { getMarketFit, type MarketFitResult } from '@/lib/marketFit';
 
 interface MarketIntelligenceProps {
   property: {
@@ -46,6 +48,9 @@ interface MarketIntelligenceProps {
     furnished_status?: string | null;
     furniture_items?: string[] | null;
     featured_highlight?: string | null;
+    premium_drivers?: string[] | null;
+    premium_explanation?: string | null;
+    market_fit_status?: string | null;
     created_at?: string;
     vaad_bayit_monthly?: number | null;
     latitude: number | null;
@@ -64,9 +69,12 @@ interface MarketIntelligenceProps {
   } | null | undefined;
 }
 
-function MarketVerdictBadge({ avgComparison, compsCount, radiusUsedM, priceTier, property }: { avgComparison: number | null; compsCount: number; radiusUsedM: number; priceTier?: PriceTier | null; property: MarketIntelligenceProps['property'] }) {
+function formatPremiumDriver(driver: string) {
+  return driver.replace(/[_/]+/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function MarketVerdictBadge({ avgComparison, compsCount, radiusUsedM, priceTier, marketFit }: { avgComparison: number | null; compsCount: number; radiusUsedM: number; priceTier?: PriceTier | null; marketFit: MarketFitResult }) {
   const radiusLabel = radiusUsedM >= 1000 ? '1km' : '500m';
-  const marketFit = getMarketFit({ avgComparison, compsCount, radiusUsedM, property });
   const isPositive = marketFit.state === 'normal_range' && (avgComparison ?? 0) <= 15;
   const isNeutral = marketFit.state === 'limited_comparable_match' || marketFit.state === 'above_recorded_sales';
 
