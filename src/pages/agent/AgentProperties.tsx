@@ -35,6 +35,7 @@ import { STALE_THRESHOLD_DAYS, useUpdatePropertyStatus } from '@/hooks/useAgentP
 import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { differenceInDays, parseISO, format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { PriceContextBadge } from '@/components/property/PriceContextBadge';
 
 const statusConfig = {
   draft: { label: 'Draft', color: 'bg-muted text-muted-foreground' },
@@ -501,6 +502,13 @@ export default function AgentProperties() {
                                     Renewal
                                   </Badge>
                                 )}
+                                {listing.listing_status === 'for_sale' && (
+                                  <PriceContextBadge
+                                    status={listing.price_context_badge_status}
+                                    publicLabel={listing.price_context_public_label}
+                                    confidenceTier={listing.price_context_confidence_tier}
+                                  />
+                                )}
                               </div>
                               {isChangesRequested && (listing as any).rejection_reason && (
                                 <p className="text-xs text-orange-600 mt-1 line-clamp-1">
@@ -718,6 +726,13 @@ export default function AgentProperties() {
                                       <AlertTriangle className="h-3 w-3" />
                                       Renewal Due
                                     </Badge>
+                                  )}
+                                  {listing.listing_status === 'for_sale' && (
+                                    <PriceContextBadge
+                                      status={listing.price_context_badge_status}
+                                      publicLabel={listing.price_context_public_label}
+                                      confidenceTier={listing.price_context_confidence_tier}
+                                    />
                                   )}
                                 </div>
                               </TableCell>
