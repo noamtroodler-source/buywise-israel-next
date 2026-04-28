@@ -280,14 +280,8 @@ function AgencyWizardContent() {
 
   const handleSubmitForReview = async () => {
     if (!assignedAgentId) return;
-    if (marketFitReview.requiresContext) {
-      toast.info('Add premium context so buyers understand the price difference.');
-      setCurrentStep(3);
-      return;
-    }
-
-    if (marketFitReview.requiresConfirmation && !marketFitConfirmed) {
-      toast.info('Confirm the price review note before submitting.');
+    if ((marketFitReview.requiresContext || marketFitReview.requiresConfirmation) && !marketFitConfirmed) {
+      toast.info('Add premium context or confirm the price review note before submitting.');
       return;
     }
 
@@ -420,7 +414,7 @@ function AgencyWizardContent() {
                           Add Premium Context
                         </Button>
                       )}
-                      {marketFitReview.requiresConfirmation && !marketFitReview.requiresContext && (
+                      {marketFitReview.requiresConfirmation && (
                         <label className="flex items-start gap-2 text-sm text-foreground">
                           <Checkbox checked={marketFitConfirmed} onCheckedChange={(checked) => setMarketFitConfirmed(Boolean(checked))} />
                           <span>I confirm the asking price and understand this listing may receive closer market-fit review.</span>
