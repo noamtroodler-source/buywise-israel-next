@@ -11,8 +11,6 @@ import { PropertyValueSnapshot } from './PropertyValueSnapshot';
 import { RecentNearbySales } from './RecentNearbySales';
 import { SpecBasedComps } from './SpecBasedComps';
 import { MarketDataContext } from '@/components/shared/MarketDataContext';
-import { AIMarketInsight } from './AIMarketInsight';
-import { useMarketInsight } from '@/hooks/useMarketInsight';
 import { useRoomSpecificCityPrice } from '@/hooks/useRoomSpecificCityPrice';
 import { useNeighborhoodAvgPrice } from '@/hooks/useNeighborhoodPrices';
 import { usePriceTier } from '@/hooks/usePriceTier';
@@ -206,50 +204,17 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
     propertyPricePerSqm
   );
   const effectiveYoyChange = roomPrice?.yoyChange ?? cityData?.yoy_price_change ?? null;
-  const effectiveRoomCount = roomPrice ? israeliRooms : null;
-  const isRoomPriceFallback = roomPrice?.isFallback ?? false;
 
   // Neighborhood avg price per sqm (falls back to city if unavailable)
   const neighborhoodAvgPriceSqm = neighborhoodPrice?.avg_price_sqm ?? null;
 
-  // Compute days on market
-  const createdDate = property.created_at ? new Date(property.created_at) : new Date();
-  const daysOnMarket = Math.floor((Date.now() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
-
-  // AI Market Insight - only when comps are loaded
-  const insightInput = verdictData.compsCount > 0 ? {
-    property_id: property.id,
-    price: property.price,
-    size_sqm: property.size_sqm,
-    city: property.city,
-    neighborhood: property.neighborhood || null,
-    property_type: property.property_type || 'apartment',
-    bedrooms: property.bedrooms,
-    bathrooms: property.bathrooms || null,
-    israeli_room_count: israeliRooms,
-    floor: property.floor ?? null,
-    total_floors: property.total_floors ?? null,
-    year_built: property.year_built ?? null,
-    condition: property.condition ?? null,
-    has_elevator: property.has_elevator ?? null,
-    parking: property.parking ?? null,
-    has_balcony: property.has_balcony ?? null,
-    has_storage: property.has_storage ?? null,
-    is_accessible: property.is_accessible ?? null,
-    entry_date: property.entry_date ?? null,
-    days_on_market: daysOnMarket,
-    original_price: property.original_price ?? null,
-    description_snippet: property.description?.slice(0, 500) || null,
-    features: property.features || null,
-    listing_status: property.listing_status,
-    city_avg_price_sqm: effectiveAvgPriceSqm,
-    city_yoy_change: effectiveYoyChange,
-    city_5yr_change: roomPrice?.fiveYearChange ?? null,
-    comp_count: verdictData.compsCount,
-    avg_comp_deviation_percent: verdictData.avgComparison,
-  } : null;
-
-  const { data: insight, isLoading: insightLoading } = useMarketInsight(insightInput);
+  const marketFit = getMarketFit({
+    avgComparison: verdictData.avgComparison,
+    compsCount: verdictData.compsCount,
+    radiusUsedM: verdictData.radiusUsedM,
+    property,
+  });
+  const premiumDrivers = Array.from(new Set([...(property.premium_drivers ?? []), ...marketFit.premiumDrivers]));
 
   return (
     <TooltipProvider>
