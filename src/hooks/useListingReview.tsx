@@ -232,14 +232,16 @@ export function usePriceContextEvents(propertyId: string) {
 
 async function logPriceContextEvent(propertyId: string, eventType: string, reason?: string) {
   try {
-    const [{ data: property }, { data: userData }] = await Promise.all([
-      supabase
+    const [{ data: propertyData }, { data: userData }] = await Promise.all([
+      (supabase
         .from('properties')
-        .select('price_context_confidence_score, price_context_confidence_tier, price_context_public_label, price_context_percentage_suppressed, price_context_badge_status, price_context_property_class, comp_pool_used, premium_drivers, premium_explanation')
+        .select('price_context_confidence_score, price_context_confidence_tier, price_context_public_label, price_context_percentage_suppressed, price_context_badge_status, price_context_property_class, comp_pool_used, premium_drivers, premium_explanation') as any)
         .eq('id', propertyId)
         .maybeSingle(),
       supabase.auth.getUser(),
     ]);
+
+    const property = propertyData as Partial<PropertyForReview> | null;
 
     const { error } = await (supabase.from('price_context_events' as any) as any).insert({
       property_id: propertyId,
