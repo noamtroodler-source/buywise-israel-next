@@ -63,6 +63,13 @@ export interface CreatePropertyData {
     market_fit_status?: string | null;
      market_fit_confirmed_at?: string | null;
      market_fit_review_reason?: string | null;
+      price_context_property_class?: string | null;
+      price_context_confidence_score?: number | null;
+      price_context_confidence_tier?: string | null;
+      price_context_public_label?: string | null;
+      price_context_percentage_suppressed?: boolean | null;
+      price_context_badge_status?: string | null;
+      comp_pool_used?: string | null;
 }
 
 export function useAgentProfile() {

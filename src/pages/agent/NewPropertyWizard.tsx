@@ -35,6 +35,7 @@ import { ConfirmDuplicateDialog } from '@/components/agency/ConfirmDuplicateDial
 import { useCities } from '@/hooks/useCities';
 import { getMarketFitReview } from '@/lib/marketFit';
 import { PriceContextSubmissionPreview } from '@/components/agent/wizard/PriceContextSubmissionPreview';
+import { getWizardPriceContextPersistence } from '@/lib/wizardPriceContext';
 
 const steps = [
   { title: 'Basics', description: 'Property type, price, location' },
@@ -99,6 +100,10 @@ function WizardContent() {
     });
   }, [cities, data]);
   const selectedCityAveragePriceSqm = cities.find((item) => item.name === data.city)?.average_price_sqm ?? null;
+  const priceContextFields = useMemo(
+    () => getWizardPriceContextPersistence(data, selectedCityAveragePriceSqm),
+    [data, selectedCityAveragePriceSqm]
+  );
 
   useEffect(() => {
     setMarketFitConfirmed(false);
@@ -180,6 +185,7 @@ function WizardContent() {
         benchmark_review_status: data.benchmark_review_status,
         market_fit_status: marketFitReview.level,
         market_fit_review_reason: marketFitReview.reviewReason,
+        ...priceContextFields,
         submitForReview: false,
       });
       autoSave.clearSavedData();
@@ -335,6 +341,7 @@ function WizardContent() {
         market_fit_status: marketFitReview.level,
         market_fit_review_reason: marketFitReview.reviewReason,
         market_fit_confirmed_at: marketFitReview.requiresConfirmation ? new Date().toISOString() : null,
+        ...priceContextFields,
         submitForReview: true,
       });
 

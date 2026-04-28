@@ -25,6 +25,7 @@ import { SaveStatusIndicator } from '@/components/shared/SaveStatusIndicator';
 import { useCities } from '@/hooks/useCities';
 import { getMarketFitReview } from '@/lib/marketFit';
 import { PriceContextSubmissionPreview } from '@/components/agent/wizard/PriceContextSubmissionPreview';
+import { getWizardPriceContextPersistence } from '@/lib/wizardPriceContext';
 
 const steps = [
   { title: 'Basics', description: 'Property type, price, location' },
@@ -162,6 +163,10 @@ function AgencyEditWizardContent({ propertyId }: { propertyId: string }) {
   useEffect(() => {
     setMarketFitConfirmed(false);
   }, [marketFitReview.reviewReason]);
+  const priceContextFields = useMemo(
+    () => getWizardPriceContextPersistence(data, selectedCityAveragePriceSqm),
+    [data, selectedCityAveragePriceSqm]
+  );
 
   const buildPayload = () => ({
     id: propertyId,
@@ -200,6 +205,7 @@ function AgencyEditWizardContent({ propertyId }: { propertyId: string }) {
     premium_drivers: data.premium_drivers,
     premium_explanation: data.premium_explanation || null,
     benchmark_review_status: data.benchmark_review_status,
+    ...priceContextFields,
   });
 
   const handleSaveChanges = async () => {

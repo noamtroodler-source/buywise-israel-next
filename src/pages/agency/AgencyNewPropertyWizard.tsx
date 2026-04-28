@@ -36,6 +36,7 @@ import { Alert } from '@/components/ui/alert';
 import { useCities } from '@/hooks/useCities';
 import { getMarketFitReview } from '@/lib/marketFit';
 import { PriceContextSubmissionPreview } from '@/components/agent/wizard/PriceContextSubmissionPreview';
+import { getWizardPriceContextPersistence } from '@/lib/wizardPriceContext';
 
 const AGENCY_WIZARD_STORAGE_KEY = 'agency-property-wizard-draft';
 
@@ -109,6 +110,10 @@ function AgencyWizardContent() {
     });
   }, [cities, data]);
   const selectedCityAveragePriceSqm = cities.find((item) => item.name === data.city)?.average_price_sqm ?? null;
+  const priceContextFields = useMemo(
+    () => getWizardPriceContextPersistence(data, selectedCityAveragePriceSqm),
+    [data, selectedCityAveragePriceSqm]
+  );
 
   useEffect(() => {
     setMarketFitConfirmed(false);
@@ -202,6 +207,7 @@ function AgencyWizardContent() {
     market_fit_status: marketFitReview.level,
     market_fit_review_reason: marketFitReview.reviewReason,
     market_fit_confirmed_at: submitForReview && marketFitReview.requiresConfirmation ? new Date().toISOString() : null,
+    ...priceContextFields,
     assignedAgentId: assignedAgentId!,
     submitForReview,
   });
