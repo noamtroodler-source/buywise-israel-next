@@ -181,25 +181,41 @@ export function useSubmitForReview() {
       if (error) throw error;
     },
     onMutate: async (propertyId: string) => {
+      const submittedAt = new Date().toISOString();
       await queryClient.cancelQueries({ queryKey: ['agentProperties'] });
+      await queryClient.cancelQueries({ queryKey: ['agencyListingsManagement'] });
       const previous = queryClient.getQueryData<AgentProperty[]>(['agentProperties']);
+      const previousAgencyListings = queryClient.getQueriesData<any[]>({ queryKey: ['agencyListingsManagement'] });
       queryClient.setQueryData<AgentProperty[] | undefined>(['agentProperties'], (old) =>
         old?.map(p =>
           p.id === propertyId
-            ? { ...p, verification_status: 'pending_review' as const, rejection_reason: null, submitted_at: new Date().toISOString() }
+            ? { ...p, verification_status: 'pending_review' as const, rejection_reason: null, submitted_at: submittedAt }
             : p
         )
       );
-      return { previous };
+      queryClient.setQueriesData<any[]>({ queryKey: ['agencyListingsManagement'] }, (old) =>
+        old?.map(p =>
+          p.id === propertyId
+            ? { ...p, verification_status: 'pending_review', rejection_reason: null, submitted_at: submittedAt }
+            : p
+        )
+      );
+      return { previous, previousAgencyListings };
     },
     onError: (error, _propertyId, context) => {
       if (context?.previous) {
         queryClient.setQueryData(['agentProperties'], context.previous);
       }
+      context?.previousAgencyListings?.forEach(([queryKey, data]) => {
+        queryClient.setQueryData(queryKey, data);
+      });
       toast.error(getUserFriendlyError(error, 'Failed to submit for review'));
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['agentProperties'] });
+      queryClient.invalidateQueries({ queryKey: ['agencyListingsManagement'] });
+      queryClient.invalidateQueries({ queryKey: ['listingsForReview'] });
+      queryClient.invalidateQueries({ queryKey: ['properties'] });
       queryClient.invalidateQueries({ queryKey: ['pendingReviewCount'] });
     },
     onSuccess: () => {
