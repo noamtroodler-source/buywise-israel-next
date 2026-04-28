@@ -12,6 +12,7 @@ import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import { WhatsAppFallbackModal } from "@/components/ui/WhatsAppFallbackModal";
 import { PageLoader } from "@/components/shared/PageLoader";
 import { PageTracker } from "@/hooks/usePageTracking";
+import AgencyDashboard from "./pages/agency/AgencyDashboard";
 
 // Keep the startup bundle route-agnostic. Every page loads only when matched,
 // so one broken/heavy page module cannot blank the entire preview.
@@ -89,7 +90,6 @@ const AgentBlogWizard = lazy(() => import("./pages/agent/AgentBlogWizard"));
 
 // Agency dashboard - lazy load
 const AgencyRegister = lazy(() => import("./pages/agency/AgencyRegister"));
-const AgencyDashboard = lazy(() => import("./pages/agency/AgencyDashboard"));
 const AgencyAnalytics = lazy(() => import("./pages/agency/AgencyAnalytics"));
 const AgencySettings = lazy(() => import("./pages/agency/AgencySettings"));
 const AgencyListingsPage = lazy(() => import("./pages/agency/AgencyListings"));
