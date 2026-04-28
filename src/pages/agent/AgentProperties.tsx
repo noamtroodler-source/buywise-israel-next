@@ -5,7 +5,7 @@ import {
   ArrowLeft, Loader2, Home, Plus, Search, Eye, Clock,
   CheckCircle2, Building2, Edit, Trash2, Send, MoreHorizontal,
   AlertTriangle, MessageSquare, Heart, Download, X, FileEdit, Copy,
-  ArrowUpDown, ArrowUp, ArrowDown, Archive, CheckCheck, Key,
+  ArrowUpDown, ArrowUp, ArrowDown, Archive, Key,
 } from 'lucide-react';
 import { propertyToWizardDraft } from '@/utils/duplicateProperty';
 import { Layout } from '@/components/layout/Layout';
@@ -29,7 +29,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAgentProperties, useDeleteProperty, useSubmitForReview, useBulkDeleteProperties, useBulkSubmitForReview } from '@/hooks/useAgentProperties';
-import { useApproveAgencyListing, useArchiveAgencyListing, useUnpublishAgencyListing } from '@/hooks/useAgencyListings';
+import { useArchiveAgencyListing, useUnpublishAgencyListing } from '@/hooks/useAgencyListings';
 import { PROPERTY_WIZARD_STORAGE_KEY } from '@/components/agent/wizard/PropertyWizardContext';
 import { STALE_THRESHOLD_DAYS, useUpdatePropertyStatus } from '@/hooks/useAgentProfile';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
@@ -140,7 +140,6 @@ export default function AgentProperties() {
   const navigate = useNavigate();
   const deleteProperty = useDeleteProperty();
   const submitForReview = useSubmitForReview();
-  const approveListing = useApproveAgencyListing();
   const archiveListing = useArchiveAgencyListing();
   const unpublishListing = useUnpublishAgencyListing();
   const updateStatus = useUpdatePropertyStatus();
@@ -564,9 +563,9 @@ export default function AgentProperties() {
                                     </>
                                   ) : (
                                     <>
-                                      <DropdownMenuItem onClick={() => approveListing.mutate({ propertyId: listing.id, agencyId: (listing as any).primary_agency_id })}>
-                                        <CheckCheck className="h-4 w-4 mr-2" />
-                                        Publish
+                                      <DropdownMenuItem onClick={() => submitForReview.mutate(listing.id)} disabled={submitForReview.isPending}>
+                                        <Send className="h-4 w-4 mr-2" />
+                                        Submit for review
                                       </DropdownMenuItem>
                                       <DropdownMenuItem onSelect={() => {
                                         const draft = propertyToWizardDraft(listing);
@@ -791,9 +790,9 @@ export default function AgentProperties() {
                                         </>
                                       ) : (
                                         <>
-                                          <DropdownMenuItem onClick={() => approveListing.mutate({ propertyId: listing.id, agencyId: (listing as any).primary_agency_id })}>
-                                            <CheckCheck className="h-4 w-4 mr-2" />
-                                            Publish
+                                          <DropdownMenuItem onClick={() => submitForReview.mutate(listing.id)} disabled={submitForReview.isPending}>
+                                            <Send className="h-4 w-4 mr-2" />
+                                            Submit for review
                                           </DropdownMenuItem>
                                           <DropdownMenuItem onSelect={() => {
                                             const draft = propertyToWizardDraft(listing);
