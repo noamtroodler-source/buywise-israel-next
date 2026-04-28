@@ -1,351 +1,346 @@
-## Plan: Internal “1-Hour Listing Approval” System
+## Quick answer: use existing features first, then add a small premium-context layer
 
-### Goal
+Yes, many premium drivers should be pulled automatically from existing listing data. The system should not make agents re-enter obvious things like `sea_view`, `parking`, `storage`, `mamad`, `sukkah_balcony`, `garden_apartment`, `penthouse`, high floor, renovation condition, or furnished status.
 
-Create a private agency/admin workflow where Erez can quickly review and approve every imported listing, without making this visible to buyers. The site keeps a quality tone publicly, while the agency gets a lightweight but responsible approval process internally.
+But it should still have its own lightweight section because existing features do not answer the full question: “why does this listing deserve to sit above recorded sales?”
 
-The core shift:
+### Best approach
+Use a hybrid model:
 
-```text
-Not: “Complete 59 perfect listings before launch.”
-Yes: “Confirm each listing is accurate, available, and safe to publish.”
-```
+1. **Auto-detect premium drivers** from selected features, property type, floor, parking, condition, furnished status, furniture items, highlighted text, and description.
+2. **Show a “Premium Context” card only when needed** — not as a permanent scary compliance step.
+3. **Let agents confirm, add missing drivers, or write one short explanation**.
+4. **Feed that into BuyWise Take and Market Intelligence** so public language becomes cleaner and fairer.
 
-## 1. Add internal listing approval states
+### Pros of only pulling from existing features
+- Less friction for agents.
+- No duplicate data entry.
+- Cleaner wizard.
+- Uses structured fields the app already stores.
 
-Each imported agency listing should have an internal review status separate from public visibility.
+### Cons of only pulling from existing features
+- Existing features are too generic.
+- They do not capture nuance like “direct sea view from salon,” “boutique building,” “rare street,” “fully furnished with appliances,” or “project unit priced differently from resale comps.”
+- The system may still say “premium needs context” even when the agent knows exactly why.
+- Agencies lose a chance to frame the property properly.
 
-Recommended states:
+### Pros of a standalone Premium Context card
+- Gives agencies a positive marketing moment instead of a warning.
+- Helps BuyWise protect the agency publicly.
+- Creates better Market Intelligence language.
+- Gives admins a cleaner review signal.
 
-```text
-needs_review       Imported, not yet agency-confirmed
-approved_live      Agency confirmed; can be public
-needs_edit         Agency saw an issue; not ready yet
-archived/stale     Agency says it is no longer relevant
-```
+### Cons of a standalone section
+- If shown always, it adds friction.
+- If worded badly, it feels like compliance/punishment.
+- If duplicated with Features, it feels annoying.
 
-Important distinction:
+### Final decision
+Do **not** add a full separate wizard step at first. Add an intelligent **Premium Context card** inside the existing Features/Review flow. It should appear conditionally when the listing is above comps or likely premium, and it should pre-fill from existing fields.
 
-```text
-Agency approval status = internal workflow
-Public published status = buyer-facing visibility
-```
+---
 
-This means a listing can be imported and visible inside the agency dashboard, but not visible to buyers until approved.
+# Build plan: Market Fit Review system
 
-## 2. Create a fast review queue for agencies
+## Phase 1 — Clean public Market Intelligence language
 
-Add a private agency-facing review mode, likely from `/agency/listings`, focused only on imported listings that need confirmation.
+Goal: fix the current public experience quickly without building the entire workflow yet.
 
-The experience should feel like an inbox, not a full listing editor.
+### Changes
+- Replace harsh or overconfident language in Market Intelligence.
+- Stop labels like “Well above recent sales — negotiate” from feeling too judgmental.
+- Use softer BuyWise labels:
+  - `In line with recorded sales`
+  - `Above recorded sales`
+  - `Premium needs context`
+  - `Feature-driven premium likely`
+  - `Limited comparable match`
+  - `Asking price requires closer review`
+- Keep BuyWise Take, but make it shorter and more structured.
+- Update the AI market insight prompt so it avoids words like “astronomical,” “error,” “doesn’t make sense,” or “overpriced” unless the data is clearly impossible.
 
-For each listing, show only the fields they actually need to verify quickly:
-
-- Main photo/photos
-- Title
-- Price
-- City / neighborhood / Exact adress with street number 
-- Rooms / bedrooms
-- Size
-- Floor if available
-- Agent assignment
-- Source link
-- Key missing or risky fields
-- “Last imported from source” timestamp if available
-
-Primary actions:
-
-```text
-Approve & publish
-Needs quick edit
-Not available / archive
-Skip for now
-```
-
-This keeps the agency responsible for confirming each listing, but avoids forcing them into a long form for every property.
-
-## 3. Add “Approve with notes” instead of forcing perfection
-
-When a listing has missing non-critical information, allow approval if the core facts are good enough.
-
-A listing should be publishable if it has:
-
-- Real agency ownership
-- Price
-- City/location
-- Property type
-- Basic room/size info when available
-- At least one acceptable image or approved fallback treatment
-- Agency confirmation that it is available/current
-
-If fields are missing, show internal warnings like:
+### Public UI result
+Instead of long repeated paragraphs, buyers see:
 
 ```text
-Missing neighborhood
-Only 2 photos
-No floor info
-No bathroom count
+Premium needs context
+This listing sits above nearby recorded sales. View, floor, renovation, outdoor space, parking, or rarity may explain part of the gap, but the current listing data does not fully explain the premium.
 ```
 
-But do not block approval unless the issue is serious.
-
-Blocking issues should be limited to things like:
-
-- No price
-- No city/location
-- No usable title/address context
-- No ownership/agent connection
-- No confirmation that it is available
-- Duplicate/conflict requiring admin review
-
-## 4. Add batch approval only for very safe listings
-
-To save time, add a “safe batch approve” option, but only for listings that pass a minimum quality threshold.
-
-Example:
+Or:
 
 ```text
-12 listings look complete enough to approve together.
-Review summary → Approve selected
+Feature-driven premium likely
+Recorded sales may not fully reflect this home’s view, floor, renovation, outdoor space, parking, or rarity.
 ```
 
-This should not approve everything blindly. It should only include listings with no critical flags.
+## Phase 2 — Add Market Fit logic layer
 
-For Erez, this creates the feeling of momentum:
+Goal: create a reusable rule engine that decides which state a listing is in.
+
+### Market Fit states
+- `normal_range`
+- `above_recorded_sales`
+- `premium_needs_context`
+- `feature_driven_premium`
+- `limited_comparable_match`
+- `agency_review_needed`
+
+### Inputs
+Use existing data first:
+- price
+- size
+- price/sqm
+- nearby comps deviation
+- comp count
+- radius used
+- city/neighborhood averages
+- property type
+- floor / total floors
+- condition
+- parking
+- features array
+- furnished status / furniture items
+- property description
+- featured highlight
+- listing status
+
+### Initial threshold logic
+```text
+0–15% above comps: normal / active listing margin
+15–35%: above recorded sales
+35–70%: ask for premium context
+70–100%: require premium context or confirmation
+100%+: force review/confirmation unless strong premium context or weak comps explain it
+```
+
+### Softening factors
+Reduce severity when:
+- comp count is low
+- comps are old or sparse
+- property type differs
+- listing is penthouse/garden/project/new build
+- listing has sea view, beachfront, high floor, renovation, parking, large balcony, luxury finish, rare street, bundled extras
+- neighborhood has high variance
+- recent sales are not close enough in size/rooms/floor
+
+## Phase 3 — Premium Context inside the listing wizard
+
+Goal: help agencies explain premium listings without scaring them.
+
+### Placement
+Add a conditional **Premium Context** card inside the existing Features step and a compact reminder on Review.
+
+Do not add a full extra step initially.
+
+### Trigger
+Show the card when:
+- price appears materially above market, or
+- property has premium signals, or
+- the agent selects premium features like sea view, penthouse, garden apartment, high floor, renovation, parking, large balcony, luxury finish, furnished extras.
+
+### Behavior
+The card should say:
 
 ```text
-Approve 12 now
-Review 18 quick fixes
-Leave 29 for later polish/archive
+Help buyers understand the premium
+We detected features that may make this home compare differently from nearby recorded sales. Confirm what applies so BuyWise can present the market context fairly.
 ```
 
-## 5. Add a lightweight “quick edit drawer”
+### Auto-selected drivers
+Pull from existing fields:
+- `sea_view` → Sea view
+- `property_type = penthouse / mini_penthouse` → Penthouse
+- `property_type = garden_apartment` → Garden apartment
+- high floor logic → High floor
+- `condition = renovated / like_new / new` → Renovation / new build
+- `parking > 0` or `parking` feature → Parking
+- `storage` feature → Storage
+- `mamad` feature → Mamad
+- `sukkah_balcony` feature → Sukkah balcony
+- `garden` feature → Larger outdoor space / garden
+- `furnished_status` or `furniture_items` → Furnished / bundled extras
+- `featured_highlight` or description contains sea/view/beach/renovated/luxury/boutique/rare → suggested, not auto-confirmed
 
-For listings that need small fixes, do not send them into the full property wizard.
+### Agent-selectable drivers
+- Sea view
+- Beachfront / first line
+- Full renovation
+- New build / project unit
+- Penthouse
+- Garden apartment
+- High floor
+- Large balcony
+- Sukkah balcony
+- Parking
+- Storage
+- Mamad
+- Luxury finish
+- Rare street / boutique building
+- Expansion rights / Tama potential
+- Furnished / appliances / bundled extras
+- Larger-than-normal outdoor space
+- Other explanation
 
-Create a compact internal drawer/modal with only the most likely missing fields:
-
-- Price
-- Neighborhood
-- Size
-- Rooms/bedrooms
-- Bathrooms
-- Floor / total floors
-- Agent assignment
-- Photos/source link review
-- Availability status
-
-After saving, return them immediately to the review queue.
-
-This makes the task feel like:
+### Optional explanation
+A short text box:
 
 ```text
-Fix one thing → approve → next listing
+Example: Direct sea view from salon and balcony, renovated in 2024, private parking.
 ```
 
-Not:
+This stays framed as marketing support, not compliance.
+
+## Phase 4 — Store premium context properly
+
+Goal: make the feature durable across creation, editing, public listing, admin review, and AI insights.
+
+### Database schema additions
+Add fields to `properties`:
+- `premium_drivers text[]`
+- `premium_explanation text`
+- `market_fit_status text`
+- `market_fit_confirmed_at timestamptz`
+- `market_fit_confirmed_by uuid nullable`
+- `market_fit_review_reason text nullable`
+
+This is a schema change, so it will use a migration.
+
+### Data policy
+No fabricated market data. These fields store agent-provided context and computed status, not invented values.
+
+## Phase 5 — Publish and review workflow
+
+Goal: prevent extreme unexplained mismatches without punishing legitimate luxury listings.
+
+### Publishing rules
+- Normal / mild premium: submit normally.
+- 35–70% gap: allow submit, but prompt for premium context.
+- 70–100% gap: require either premium drivers or confirmation before submit.
+- 100%+ gap: require confirmation and show a review message.
+
+### Agency-facing language
+Use:
 
 ```text
-Open giant listing form → get lost → never finish
+Help us present this listing accurately
+The asking price is significantly above recorded nearby sales. If view, renovation, floor, outdoor space, parking, new-build status, or rarity explain the gap, add that context so buyers understand the premium.
 ```
 
-## 6. Keep incomplete but approved listings polished publicly
+Avoid:
+- failed
+- suspicious
+- overpriced
+- blocked
+- bad data
 
-Nothing buyer-facing should say “incomplete,” “needs review,” or “missing data.”
+### Existing published listings
+Do not automatically unpublish normal expensive listings.
 
-Public listing pages should continue to feel curated. Missing data should simply be omitted or softened.
+Use two levels:
+- **Soft review**: listing stays live, agency dashboard asks for premium context.
+- **Hard review**: only for extreme likely data mismatch, such as impossible size/price, missing size, wrong property type, or price/sqm far beyond market with no drivers.
+
+## Phase 6 — Public listing design integration
+
+Goal: make this feel like BuyWiseIsrael, not a compliance warning.
+
+### Design direction
+- “Trusted Friend” tone.
+- Calm, factual, no shame language.
+- Semantic design tokens only.
+- Compact labels, short copy, expandable details.
+- No generic red warning unless the data itself is likely invalid.
+
+### Market Intelligence layout
+Keep the section, but simplify hierarchy:
+
+```text
+Market Intelligence
+[Status badge]
+[3 compact value cards]
+[Recent nearby sales]
+[BuyWise Take — one concise sentence/card]
+[Expandable: What recorded sales may not capture]
+```
+
+### BuyWise Take behavior
+BuyWise Take becomes the conclusion layer. It should reflect the Market Fit status rather than independently writing a long defensive paragraph.
 
 Examples:
 
-- If floor is missing, do not show a blank floor row.
-- If neighborhood is uncertain, show city-level context instead.
-- If photos are limited, avoid calling attention to it.
-- If data was imported, avoid exposing internal scrape/review language.
-
-Public tone remains:
-
 ```text
-Verified agency listing
-Buyer-useful details
-Clear contact path
-No messy internal status
+Feature-driven premium likely
+Recorded sales may not fully reflect this home’s view, floor, renovation, outdoor space, parking, or rarity.
 ```
 
-## 7. Add an internal quality score, not public-facing
-
-Create an internal listing quality score/checklist for the agency/admin side only.
-
-Example scoring categories:
-
 ```text
-Critical readiness
-- price
-- city/location
-- agency/agent attached
-- availability confirmed
-
-Buyer usefulness
-- photos
-- neighborhood
-- rooms
-- size
-- floor
-- description
-
-Performance polish
-- features
-- parking/storage
-- balcony/elevator/mamad
-- better description
+Limited comparable match
+Nearby recorded sales are useful context, but may not be a close match for this property class.
 ```
 
-Use this to power internal labels:
-
 ```text
-Ready to approve
-Needs 1 quick fix
-Needs photos
-Needs agent confirmation
-Likely stale
+Premium needs context
+The asking price sits above nearby recorded sales, and the current listing data does not fully explain the premium.
 ```
 
-Do not show these quality labels to buyers.
+## Phase 7 — Admin and agency dashboard follow-through
 
-## 8. Add a post-launch backlog so they do not forget
+Goal: make the workflow operational after listings are submitted.
 
-After they approve enough listings to go live, keep the rest in a private backlog.
+### Agency dashboard
+Add a small status indicator:
+- `Market context complete`
+- `Premium context recommended`
+- `Review price/details`
 
-Agency dashboard widget:
+Add an edit action:
+- `Add premium context`
 
-```text
-Listing cleanup
-18 still need confirmation
-9 missing photos
-6 missing neighborhood
-4 likely stale
-```
+### Admin review
+Show:
+- computed gap
+- comp count
+- detected premium drivers
+- agent-entered explanation
+- market fit status
 
-Use small weekly goals:
+This helps admins approve legitimate luxury listings faster.
 
-```text
-Polish 5 listings this week
-Confirm stale listings
-Add missing neighborhoods
-```
+## Phase 8 — AI insight update
 
-The agency should not feel like launch failed because everything is not perfect. They should feel like the site is live, and now they have a manageable cleanup queue.
+Goal: make AI support the structured product logic instead of improvising.
 
-## 9. Add admin-side oversight for you
+### Edge function changes
+Update the market insight function to receive:
+- `market_fit_status`
+- `premium_drivers`
+- `premium_explanation`
+- `comp_quality_notes`
 
-Create or improve an admin view that lets you see Erez’s onboarding progress without relying on them to tell you.
+### Prompt rules
+The AI should:
+- follow the computed status
+- stay concise
+- avoid harsh pricing judgments
+- mention agent-provided premium context when relevant
+- acknowledge recorded data limitations without repeating the same paragraph every time
 
-Admin should see:
+## Recommended build order
 
-- Total imported listings
-- Approved listings
-- Needs review
-- Needs edit
-- Archived/stale
-- Listings with critical blockers
-- Listings missing photos
-- Listings missing agent
-- Last review activity
+1. Public wording + AI prompt cleanup.
+2. Market Fit utility function.
+3. Premium Context card in wizard using existing features.
+4. Database fields for premium context/status.
+5. Save/edit payload integration for agent and agency wizards.
+6. Public Market Intelligence status display.
+7. Publish gating/confirmation for extreme cases.
+8. Agency/admin dashboard follow-up indicators.
 
-This gives you leverage to follow up manually:
+## What this solves
 
-```text
-“You’re 70% through. Just 8 quick confirmations left to launch the first batch.”
-```
-
-## 10. Improve importer quality before asking them to review
-
-Before Erez spends time reviewing, improve the imported listing completeness as much as possible automatically.
-
-Use the existing importer improvement direction:
-
-- Extract more fields from agency pages
-- Better parse English labels
-- Pull useful facts from descriptions
-- Fill neighborhood/address when possible
-- Keep agency source data preferred
-- Use other sources only to fill gaps
-- Flag conflicts instead of silently overwriting
-
-This reduces how many listings feel “unfinished” when Erez opens the review queue.
-
-## Recommended Erez workflow
-
-```text
-Step 1: You/importer prepares listings as much as possible
-Step 2: Erez opens private Review Queue
-Step 3: They approve/archive every listing quickly
-Step 4: Approved listings go live
-Step 5: Remaining issues become internal backlog
-Step 6: Weekly nudges keep cleanup moving
-```
-
-The key is that every listing gets a yes/no/needs-edit decision, but only the important fields are reviewed during the first pass.
-
-## Technical implementation
-
-### Database
-
-Add or reuse internal fields on listings/properties for agency review, such as:
-
-- `agency_review_status`
-- `agency_reviewed_at`
-- `agency_reviewed_by`
-- `agency_review_notes`
-- `quality_score`
-- `quality_flags` or continue using `listing_quality_flags`
-- `last_imported_at` if not already available
-
-Keep this protected by backend security rules so only the owning agency/admin can see and update review state.
-
-### Hooks/data
-
-Update agency listing hooks to fetch review status and quality flags for agency dashboard use.
-
-Relevant existing areas:
-
-- `useAgencyListingsManagement`
-- `usePendingItems`
-- listing quality flags
-- agency listing pages
-- agency import review pages
-
-### Agency UI
-
-Add private agency components:
-
-- Review queue view
-- Listing review card
-- Quick edit drawer
-- Batch approval controls
-- Post-launch backlog widget
-
-### Admin UI
-
-Add or improve admin onboarding visibility:
-
-- Agency onboarding progress summary
-- Listing review status breakdown
-- Erez-specific progress tracking
-
-### Public UI
-
-No public-facing “incomplete,” “pending,” or “review” labels.
-
-Only approved/published listings appear publicly. Missing optional fields are hidden gracefully.
-
-## Success criteria
-
-This is working when:
-
-- Erez can review every listing without opening a full editor each time.
-- Listings do not go public until agency-confirmed.
-- The first useful batch can go live quickly.
-- Incomplete listings do not look messy to buyers.
-- Erez has a persistent private backlog so nothing gets forgotten.
-- You can monitor progress from admin.
-- Public site quality remains protected even while internal onboarding is still in progress.
+- Buyers still get honest market context.
+- Agencies do not get publicly embarrassed by generic comps.
+- Luxury, sea-view, renovated, furnished, project, penthouse, garden, and rare listings are treated fairly.
+- BuyWise keeps trust because it does not hide comps, but it also does not overstate what comps can prove.
+- The wizard feels like a marketing enhancement, not a punishment.
