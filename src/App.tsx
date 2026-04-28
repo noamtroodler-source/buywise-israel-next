@@ -216,6 +216,7 @@ const App = () => (
         <PreferencesProvider>
           <CompareProvider>
             <ErrorBoundary>
+              <TooltipProvider>
                 <WhatsAppFallbackModal>
                   <BrowserRouter>
                     <PageTracker />
@@ -579,6 +580,7 @@ const App = () => (
                     </Suspense>
                   </BrowserRouter>
                 </WhatsAppFallbackModal>
+              </TooltipProvider>
             </ErrorBoundary>
         </CompareProvider>
       </PreferencesProvider>
