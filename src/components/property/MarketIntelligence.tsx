@@ -15,7 +15,7 @@ import { useRoomSpecificCityPrice } from '@/hooks/useRoomSpecificCityPrice';
 import { useNeighborhoodAvgPrice } from '@/hooks/useNeighborhoodPrices';
 import { usePriceTier } from '@/hooks/usePriceTier';
 import type { PriceTier } from '@/hooks/usePriceTier';
-import { getPriceContext, formatPriceContextValue, type PriceContextResult } from '@/lib/priceContext';
+import { getPriceContext, type PriceContextResult } from '@/lib/priceContext';
 
 interface MarketIntelligenceProps {
   property: {
@@ -157,7 +157,7 @@ function BuyWiseTake({ priceContext, premiumExplanation }: { priceContext: Price
             </Button>
           </CollapsibleTrigger>
           <CollapsibleContent className="pt-2 space-y-3">
-            {premiumDrivers.length > 0 && (
+            {priceContext.premiumDrivers.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {priceContext.premiumDrivers.slice(0, 8).map((driver) => (
                   <Badge key={driver} variant="outline" className="rounded-lg bg-background/70">
@@ -241,13 +241,15 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
   // Neighborhood avg price per sqm (falls back to city if unavailable)
   const neighborhoodAvgPriceSqm = neighborhoodPrice?.avg_price_sqm ?? null;
 
-  const marketFit = getMarketFit({
+  const priceContext = getPriceContext({
     avgComparison: verdictData.avgComparison,
     compsCount: verdictData.compsCount,
     radiusUsedM: verdictData.radiusUsedM,
+    avgCompPriceSqm: verdictData.avgCompPriceSqm,
+    benchmarkPriceSqm: tierAvgPriceSqm ?? neighborhoodAvgPriceSqm ?? effectiveAvgPriceSqm,
+    pricePerSqm: propertyPricePerSqm,
     property,
   });
-  const premiumDrivers = Array.from(new Set([...(property.premium_drivers ?? []), ...marketFit.premiumDrivers]));
 
   return (
     <TooltipProvider>
@@ -256,7 +258,7 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5 text-primary" />
-            <h3 className="text-lg font-semibold text-foreground">Market Intelligence</h3>
+            <h3 className="text-lg font-semibold text-foreground">Price Context</h3>
           </div>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -300,11 +302,10 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
 
         {/* Hero Verdict Badge */}
         <MarketVerdictBadge 
-          avgComparison={verdictData.avgComparison} 
           compsCount={verdictData.compsCount}
           radiusUsedM={verdictData.radiusUsedM}
           priceTier={priceTier}
-          marketFit={marketFit}
+          priceContext={priceContext}
         />
 
         {/* Value Snapshot Cards (no header) */}
@@ -368,8 +369,7 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
 
         {/* BuyWise Take — placed after evidence so it reads as a conclusion */}
         <BuyWiseTake
-          marketFit={marketFit}
-          premiumDrivers={premiumDrivers}
+          priceContext={priceContext}
           premiumExplanation={property.premium_explanation}
         />
 
