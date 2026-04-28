@@ -12,6 +12,7 @@ import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import { WhatsAppFallbackModal } from "@/components/ui/WhatsAppFallbackModal";
 import { PageLoader } from "@/components/shared/PageLoader";
 import { PageTracker } from "@/hooks/usePageTracking";
+import Index from "./pages/Index";
 
 type LazyPageModule = { default: ComponentType<any> };
 
@@ -45,7 +46,6 @@ const lazyWithRetry = (loadPage: () => Promise<LazyPageModule>, routeName: strin
 
 // Keep the startup bundle route-agnostic. Every page loads only when matched,
 // so one broken/heavy page module cannot blank the entire preview.
-const Index = lazyWithRetry(() => import("./pages/Index"), "Index");
 const Listings = lazyWithRetry(() => import("./pages/Listings"), "Listings");
 const PropertyDetail = lazyWithRetry(() => import("./pages/PropertyDetail"), "PropertyDetail");
 const Projects = lazyWithRetry(() => import("./pages/Projects"), "Projects");
