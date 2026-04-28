@@ -50,6 +50,7 @@ import { useNeighborhoodAvgPrice } from '@/hooks/useNeighborhoodPrices';
 import { supabase } from '@/integrations/supabase/client';
 import { getIsraeliRoomCount } from '@/lib/israeliRoomCount';
 import { detectPremiumDrivers } from '@/lib/marketFit';
+import { formatPriceContextValue, getPriceContext, type PriceContextResult } from '@/lib/priceContext';
 import { PropertyPreviewModal } from './PropertyPreviewModal';
 
 interface ListingReviewCardProps {
@@ -102,6 +103,7 @@ type MarketReviewData = {
   pricePerSqft: number | null;
   gapPercent: number | null;
   premiumDrivers: string[];
+  priceContext: PriceContextResult;
   warnings: string[];
   hasCoordinates: boolean;
   confidence: 'High' | 'Medium' | 'Low';
@@ -234,6 +236,15 @@ function useMarketReview(property: PropertyForReview): MarketReviewData {
     description: property.description,
   });
   const premiumDrivers = Array.from(new Set([...(property.premium_drivers ?? []), ...detectedDrivers]));
+  const priceContext = getPriceContext({
+    avgComparison: gapPercent,
+    compsCount: comparableComps.length,
+    radiusUsedM: hasCoordinates ? 750 : 1000,
+    avgCompPriceSqm: compStats?.avgPriceSqm ?? null,
+    benchmarkPriceSqm: benchmark?.averagePriceSqm ?? null,
+    pricePerSqm,
+    property,
+  });
 
   const warnings = [
     !property.size_sqm && 'Missing size, so price per sqm cannot be verified.',
@@ -273,6 +284,7 @@ function useMarketReview(property: PropertyForReview): MarketReviewData {
     pricePerSqft,
     gapPercent,
     premiumDrivers,
+    priceContext,
     warnings,
     hasCoordinates,
     confidence,
