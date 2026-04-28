@@ -1063,11 +1063,6 @@ export function ListingReviewCard({ property, onApprove, onRequestChanges, onRej
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge className={statusStyles[property.verification_status]}>{statusLabels[property.verification_status]}</Badge>
                   <Badge className={toneBadgeClass(summary.status.tone)}>{summary.status.label}</Badge>
-                  {property.submitted_at && (
-                    <span className="text-xs text-muted-foreground">
-                      Submitted {formatDistanceToNow(new Date(property.submitted_at), { addSuffix: true })}
-                    </span>
-                  )}
                 </div>
 
                 <div>
@@ -1087,16 +1082,23 @@ export function ListingReviewCard({ property, onApprove, onRequestChanges, onRej
                 </div>
 
                 {property.agent && (
-                  <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                    <User className="h-4 w-4" />
-                    <span className="font-medium text-foreground">{property.agent.name}</span>
-                    {property.agent.agency_name && (
-                      <>
-                        <Building2 className="h-4 w-4" />
-                        <span>{property.agent.agency_name}</span>
-                      </>
-                    )}
-                    {property.agent.is_verified && <Badge variant="outline">Verified</Badge>}
+                  <div className="grid gap-2 rounded-lg border border-border bg-background/80 p-3 text-sm sm:grid-cols-2">
+                    <div className="flex min-w-0 items-center gap-2 text-muted-foreground">
+                      <User className="h-4 w-4 shrink-0" />
+                      <span className="shrink-0 text-xs font-medium uppercase tracking-wide">Agent</span>
+                      <span className="truncate font-semibold text-foreground">{property.agent.name}</span>
+                      {property.agent.is_verified && <Badge variant="outline" className="shrink-0">Verified</Badge>}
+                    </div>
+                    <div className="flex min-w-0 items-center gap-2 text-muted-foreground">
+                      <Building2 className="h-4 w-4 shrink-0" />
+                      <span className="shrink-0 text-xs font-medium uppercase tracking-wide">Agency</span>
+                      <span className="truncate font-semibold text-foreground">{property.agent.agency_name || 'No agency shown'}</span>
+                    </div>
+                    <div className="flex min-w-0 items-center gap-2 text-muted-foreground sm:col-span-2">
+                      <ClipboardCheck className="h-4 w-4 shrink-0" />
+                      <span className="shrink-0 text-xs font-medium uppercase tracking-wide">Submitted for review</span>
+                      <span className="truncate font-semibold text-foreground">{formatSubmittedAt(property.submitted_at)}</span>
+                    </div>
                   </div>
                 )}
               </div>
