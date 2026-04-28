@@ -29,16 +29,6 @@ const lazyWithRetry = (loadPage: () => Promise<LazyPageModule>, routeName: strin
       }
     }
 
-    const message = lastError instanceof Error ? lastError.message : String(lastError);
-    const isModuleFetchFailure = message.includes("Failed to fetch dynamically imported module");
-    const reloadKey = `lazy-reload:${routeName}`;
-
-    if (isModuleFetchFailure && !sessionStorage.getItem(reloadKey)) {
-      sessionStorage.setItem(reloadKey, String(Date.now()));
-      window.location.reload();
-      return { default: PageLoader };
-    }
-
     throw lastError;
   });
 
