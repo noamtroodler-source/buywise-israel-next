@@ -3,7 +3,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { getPriceContext } from '@/lib/priceContext';
+import { getWizardPriceContext } from '@/lib/wizardPriceContext';
 import type { MarketFitReviewResult } from '@/lib/marketFit';
 import type { PropertyWizardData } from './PropertyWizardContext';
 
@@ -30,14 +30,7 @@ export function PriceContextSubmissionPreview({
   const cityGap = pricePerSqm && cityAveragePriceSqm
     ? Math.round(((pricePerSqm - cityAveragePriceSqm) / cityAveragePriceSqm) * 100)
     : null;
-  const priceContext = getPriceContext({
-    avgComparison: cityGap,
-    compsCount: 0,
-    radiusUsedM: 1000,
-    benchmarkPriceSqm: cityAveragePriceSqm,
-    pricePerSqm,
-    property: data,
-  });
+  const priceContext = getWizardPriceContext(data, cityAveragePriceSqm);
   const needsDetails = !data.sqm_source || !data.ownership_type;
   const needsPremiumContext = review.requiresContext || (cityGap !== null && cityGap >= 25 && !data.premium_explanation?.trim());
 
