@@ -1,5 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
-import { useAreaLabel } from '@/contexts/PreferencesContext';
+import { useState, useCallback } from 'react';
 import { BarChart3, ShieldCheck, Info, ArrowRight, Sparkles, ChevronDown } from 'lucide-react';
 import { getIsraeliRoomCount } from '@/lib/israeliRoomCount';
 import { Link } from 'react-router-dom';
@@ -108,6 +107,58 @@ function MarketVerdictBadge({ avgComparison, compsCount, radiusUsedM, priceTier,
       </div>
       {contextLine && (
         <p className="text-xs text-muted-foreground pl-0.5">{contextLine}</p>
+      )}
+    </div>
+  );
+}
+
+function BuyWiseTake({ marketFit, premiumDrivers, premiumExplanation }: { marketFit: MarketFitResult; premiumDrivers: string[]; premiumExplanation?: string | null }) {
+  const [open, setOpen] = useState(false);
+  const hasPremiumContext = premiumDrivers.length > 0 || Boolean(premiumExplanation?.trim());
+  const take = hasPremiumContext
+    ? 'Recorded sales may not fully capture the specific features and context that shape this listing’s price.'
+    : marketFit.contextLine;
+
+  return (
+    <div className="rounded-xl border border-primary/15 bg-primary/5 p-4 space-y-3">
+      <div className="flex items-start gap-3">
+        <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+          <Sparkles className="h-4 w-4 text-primary" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2 mb-1">
+            <p className="text-sm font-semibold text-foreground">BuyWise Take</p>
+            <Badge variant="secondary" className="text-xs">{marketFit.label}</Badge>
+          </div>
+          <p className="text-sm text-muted-foreground">{take}</p>
+        </div>
+      </div>
+
+      {hasPremiumContext && (
+        <Collapsible open={open} onOpenChange={setOpen}>
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-8 px-2 text-xs text-primary hover:text-primary">
+              What recorded sales may not capture
+              <ChevronDown className={`ml-1 h-3.5 w-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="pt-2 space-y-3">
+            {premiumDrivers.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {premiumDrivers.slice(0, 8).map((driver) => (
+                  <Badge key={driver} variant="outline" className="rounded-lg bg-background/70">
+                    {formatPremiumDriver(driver)}
+                  </Badge>
+                ))}
+              </div>
+            )}
+            {premiumExplanation && (
+              <p className="text-sm text-muted-foreground border-l-2 border-primary/30 pl-3">
+                {premiumExplanation}
+              </p>
+            )}
+          </CollapsibleContent>
+        </Collapsible>
       )}
     </div>
   );
