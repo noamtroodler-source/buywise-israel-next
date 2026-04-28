@@ -25,6 +25,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { PropertyForReview } from '@/hooks/useListingReview';
 import { formatDistanceToNow } from 'date-fns';
 import { PropertyPreviewModal } from './PropertyPreviewModal';
+import { PropertyThumbnail } from '@/components/shared/PropertyThumbnail';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { detectPremiumDrivers } from '@/lib/marketFit';
@@ -100,6 +101,50 @@ function formatDriver(driver: string) {
 function formatDate(value: string | null | undefined) {
   if (!value) return 'Unknown date';
   return new Date(value).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+}
+
+function PhotoReviewStrip({ property, onPhotoClick }: { property: PropertyForReview; onPhotoClick: (index: number) => void }) {
+  const photos = property.images ?? [];
+
+  return (
+    <div className="rounded-lg border border-border bg-muted/25 p-3">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <h4 className="text-sm font-semibold text-foreground">Listing photos</h4>
+        <Badge variant={photos.length ? 'outline' : 'secondary'}>{photos.length || 'No'} photo{photos.length === 1 ? '' : 's'}</Badge>
+      </div>
+      {photos.length > 0 ? (
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-6">
+          {photos.slice(0, 12).map((img, i) => (
+            <button
+              key={`${img}-${i}`}
+              type="button"
+              onClick={() => onPhotoClick(i)}
+              className="group relative aspect-square overflow-hidden rounded-md border border-border bg-background text-left focus:outline-none focus:ring-2 focus:ring-ring"
+              aria-label={`Open listing photo ${i + 1}`}
+            >
+              <PropertyThumbnail
+                src={img}
+                alt={`${property.title} photo ${i + 1}`}
+                city={property.city}
+                neighborhood={property.neighborhood}
+                className="h-full w-full transition-transform group-hover:scale-105"
+              />
+              {i === 0 && (
+                <span className="absolute bottom-1 left-1 rounded-sm bg-primary px-1.5 py-0.5 text-[10px] font-medium text-primary-foreground">
+                  Cover
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground">No photos are attached, so request changes before approval if this listing needs visual review.</p>
+      )}
+      {photos.length > 12 && (
+        <p className="mt-2 text-xs text-muted-foreground">Showing first 12 of {photos.length}. Open preview to inspect the full listing.</p>
+      )}
+    </div>
+  );
 }
 
 function MarketSanityPanel({ property, reviewed, onReviewedChange }: { property: PropertyForReview; reviewed: boolean; onReviewedChange: (reviewed: boolean) => void }) {
@@ -293,6 +338,7 @@ export function ListingReviewCard({
   const [adminNotes, setAdminNotes] = useState('');
   const [featureThis, setFeatureThis] = useState(false);
   const [marketSanityReviewed, setMarketSanityReviewed] = useState(property.verification_status !== 'pending_review');
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('he-IL', {
@@ -320,6 +366,11 @@ export function ListingReviewCard({
     setShowRejectDialog(false);
     setReason('');
     setAdminNotes('');
+  };
+
+  const openPhotoPreview = (index: number) => {
+    setSelectedPhotoIndex(index);
+    setShowPreviewModal(true);
   };
 
   const getStatusBadge = () => {
@@ -353,10 +404,12 @@ export function ListingReviewCard({
           <div className="flex flex-col lg:flex-row">
             {/* Image Section */}
             <div className="lg:w-48 h-48 lg:h-auto flex-shrink-0">
-              <img
-                src={property.images?.[0] || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400'}
+              <PropertyThumbnail
+                src={property.images?.[0]}
                 alt={property.title}
-                className="w-full h-full object-cover"
+                city={property.city}
+                neighborhood={property.neighborhood}
+                className="h-full w-full"
               />
             </div>
 
@@ -422,6 +475,8 @@ export function ListingReviewCard({
                   )}
                 </div>
               )}
+
+              <PhotoReviewStrip property={property} onPhotoClick={openPhotoPreview} />
 
               {/* Expandable Details */}
               <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
@@ -638,6 +693,7 @@ export function ListingReviewCard({
         property={property} 
         open={showPreviewModal} 
         onOpenChange={setShowPreviewModal} 
+        initialImageIndex={selectedPhotoIndex}
       />
     </>
   );

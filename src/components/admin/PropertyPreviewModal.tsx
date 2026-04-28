@@ -16,30 +16,33 @@ import {
 import { useState, useCallback, useEffect } from 'react';
 import useEmblaCarousel from 'embla-carousel-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { PropertyThumbnail } from '@/components/shared/PropertyThumbnail';
 
 interface PropertyPreviewModalProps {
   property: PropertyForReview;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialImageIndex?: number;
 }
 
-export function PropertyPreviewModal({ property, open, onOpenChange }: PropertyPreviewModalProps) {
+export function PropertyPreviewModal({ property, open, onOpenChange, initialImageIndex = 0 }: PropertyPreviewModalProps) {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, startIndex: 0 });
   
   const images = property.images && property.images.length > 0 
     ? property.images 
-    : ['https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800'];
+    : [null];
+  const safeInitialImageIndex = Math.min(Math.max(initialImageIndex, 0), images.length - 1);
 
   // Reset state when modal opens
   useEffect(() => {
     if (open) {
-      setSelectedImageIndex(0);
+      setSelectedImageIndex(safeInitialImageIndex);
       setIsDescriptionExpanded(false);
-      emblaApi?.scrollTo(0);
+      emblaApi?.scrollTo(safeInitialImageIndex);
     }
-  }, [open, emblaApi]);
+  }, [open, emblaApi, safeInitialImageIndex]);
 
   // Sync embla with selected index
   useEffect(() => {
@@ -231,10 +234,12 @@ export function PropertyPreviewModal({ property, open, onOpenChange }: PropertyP
               <div className="flex h-full">
                 {images.map((img, index) => (
                   <div key={index} className="flex-[0_0_100%] min-w-0 h-full">
-                    <img
+                    <PropertyThumbnail
                       src={img}
                       alt={`${property.title} - Photo ${index + 1}`}
-                      className="w-full h-full object-cover"
+                      city={property.city}
+                      neighborhood={property.neighborhood}
+                      className="h-full w-full"
                     />
                   </div>
                 ))}
@@ -298,7 +303,13 @@ export function PropertyPreviewModal({ property, open, onOpenChange }: PropertyP
                       : 'border-transparent hover:border-muted-foreground/50'
                   }`}
                 >
-                  <img src={img} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" />
+                  <PropertyThumbnail
+                    src={img}
+                    alt={`Photo ${i + 1}`}
+                    city={property.city}
+                    neighborhood={property.neighborhood}
+                    className="h-full w-full"
+                  />
                 </button>
               ))}
             </div>
