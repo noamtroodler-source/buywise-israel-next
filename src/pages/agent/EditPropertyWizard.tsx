@@ -306,6 +306,7 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
          premium_drivers: data.premium_drivers,
          premium_explanation: data.premium_explanation || null,
           benchmark_review_status: data.benchmark_review_status,
+          ...priceContextFields,
       } as any);
       
       // Then submit for review
