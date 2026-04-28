@@ -206,6 +206,45 @@ function MarketSanityPanel({ property, reviewed, onReviewedChange }: { property:
       </div>
 
       <div className="space-y-2">
+        <div className="rounded-md border bg-background p-2">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p className="text-xs font-medium text-foreground">Sold comps</p>
+              <p className="text-xs text-muted-foreground">
+                {hasCoordinates ? 'Nearby sales within 750m' : 'Spec-matched sales by city, rooms, and size'}
+              </p>
+            </div>
+            <Badge variant="outline">
+              {compsLoading ? 'Checking…' : compStats ? `${formatNumber(compStats.avgPriceSqm)}/sqm avg` : 'No comps'}
+            </Badge>
+          </div>
+          {compStats?.vsSubjectPct != null && (
+            <p className="mb-2 text-xs text-muted-foreground">
+              Listing is {compStats.vsSubjectPct > 0 ? '+' : ''}{compStats.vsSubjectPct}% vs sold-comp average from {compStats.count} comp{compStats.count === 1 ? '' : 's'}.
+            </p>
+          )}
+          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+            {comparableComps.slice(0, 6).map((comp) => (
+              <div key={comp.id} className="rounded-md border border-border/70 p-2 text-xs">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-semibold text-foreground">{formatNumber(comp.price_per_sqm)}/sqm</span>
+                  <span className="text-muted-foreground">{formatDate(comp.sold_date)}</span>
+                </div>
+                <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-muted-foreground">
+                  <span>{formatNumber(comp.sold_price)}</span>
+                  {comp.size_sqm && <span>{comp.size_sqm} sqm</span>}
+                  {comp.rooms && <span>{comp.rooms} rooms</span>}
+                  {'distance_meters' in comp && <span>{Math.round(comp.distance_meters)}m away</span>}
+                  {'neighborhood' in comp && comp.neighborhood && <span>{comp.neighborhood}</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+          {!compsLoading && comparableComps.length === 0 && (
+            <p className="text-xs text-muted-foreground">No reliable sold transactions found for this listing context.</p>
+          )}
+        </div>
+
         <div className="flex flex-wrap gap-2">
           {premiumDrivers.length > 0 ? premiumDrivers.slice(0, 8).map((driver) => (
             <Badge key={driver} variant="outline" className="bg-background">
