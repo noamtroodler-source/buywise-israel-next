@@ -34,6 +34,7 @@ import {
 import { ConfirmDuplicateDialog } from '@/components/agency/ConfirmDuplicateDialog';
 import { useCities } from '@/hooks/useCities';
 import { getMarketFitReview } from '@/lib/marketFit';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const steps = [
   { title: 'Basics', description: 'Property type, price, location' },
@@ -424,6 +425,30 @@ function WizardContent() {
                     <AlertTitle className="text-foreground">Pending Verification</AlertTitle>
                     <AlertDescription className="text-muted-foreground">
                       Your agent license is pending verification. You can save drafts, but submissions for review are disabled until your account is approved.
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {isLastStep && marketFitReview.level !== 'none' && (
+                  <Alert variant="default" className="bg-primary/5 border-primary/20">
+                    <ShieldAlert className="h-4 w-4 text-primary" />
+                    <AlertTitle className="text-foreground">{marketFitReview.title}</AlertTitle>
+                    <AlertDescription className="space-y-3 text-muted-foreground">
+                      <p>{marketFitReview.message}</p>
+                      {marketFitReview.gapPercent !== null && (
+                        <p className="text-xs">Current benchmark gap: about {marketFitReview.gapPercent}% above city price/sqm.</p>
+                      )}
+                      {marketFitReview.requiresContext && (
+                        <Button variant="outline" size="sm" onClick={() => setCurrentStep(2)} className="rounded-xl">
+                          Add Premium Context
+                        </Button>
+                      )}
+                      {marketFitReview.requiresConfirmation && !marketFitReview.requiresContext && (
+                        <label className="flex items-start gap-2 text-sm text-foreground">
+                          <Checkbox checked={marketFitConfirmed} onCheckedChange={(checked) => setMarketFitConfirmed(Boolean(checked))} />
+                          <span>I confirm the asking price and understand this listing may receive closer market-fit review.</span>
+                        </label>
+                      )}
                     </AlertDescription>
                   </Alert>
                 )}
