@@ -746,7 +746,7 @@ export default function AgencyListings() {
                                     {listing.city}
                                     {listing.other_agencies_count > 0 && (
                                       <> · with {listing.other_agencies_count} other{listing.other_agencies_count === 1 ? '' : 's'}</>
-                                    ) : null}
+                                    )}
                                   </p>
                                 </div>
                               </div>
@@ -847,7 +847,7 @@ export default function AgencyListings() {
                                           Duplicate
                                         </DropdownMenuItem>
                                       </>
-                                    )}
+                                    ) : null}
                                     {listing.listing_status === 'for_sale' && (
                                       <DropdownMenuItem onClick={() => updateStatus.mutate({ id: listing.id, listing_status: 'sold' })}>
                                         <Home className="h-4 w-4 mr-2" />
