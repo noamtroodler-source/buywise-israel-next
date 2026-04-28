@@ -50,6 +50,7 @@ import { useNeighborhoodAvgPrice } from '@/hooks/useNeighborhoodPrices';
 import { supabase } from '@/integrations/supabase/client';
 import { getIsraeliRoomCount } from '@/lib/israeliRoomCount';
 import { detectPremiumDrivers } from '@/lib/marketFit';
+import { formatPriceContextValue, getPriceContext, type PriceContextResult } from '@/lib/priceContext';
 import { PropertyPreviewModal } from './PropertyPreviewModal';
 
 interface ListingReviewCardProps {
@@ -102,6 +103,7 @@ type MarketReviewData = {
   pricePerSqft: number | null;
   gapPercent: number | null;
   premiumDrivers: string[];
+  priceContext: PriceContextResult;
   warnings: string[];
   hasCoordinates: boolean;
   confidence: 'High' | 'Medium' | 'Low';
@@ -234,6 +236,15 @@ function useMarketReview(property: PropertyForReview): MarketReviewData {
     description: property.description,
   });
   const premiumDrivers = Array.from(new Set([...(property.premium_drivers ?? []), ...detectedDrivers]));
+  const priceContext = getPriceContext({
+    avgComparison: gapPercent,
+    compsCount: comparableComps.length,
+    radiusUsedM: hasCoordinates ? 750 : 1000,
+    avgCompPriceSqm: compStats?.avgPriceSqm ?? null,
+    benchmarkPriceSqm: benchmark?.averagePriceSqm ?? null,
+    pricePerSqm,
+    property,
+  });
 
   const warnings = [
     !property.size_sqm && 'Missing size, so price per sqm cannot be verified.',
@@ -252,7 +263,7 @@ function useMarketReview(property: PropertyForReview): MarketReviewData {
       : 'Medium';
 
   const status: MarketStatus = !pricePerSqm
-    ? { label: 'Cannot verify price/sqm', tone: 'critical', description: 'Size is required before market intelligence can be trusted.' }
+    ? { label: 'Cannot verify price/sqm', tone: 'critical', description: 'Size is required before Price Context can be trusted.' }
     : compStats?.vsSubjectPct != null && compStats.vsSubjectPct >= 35
       ? { label: 'Review premium', tone: 'warning', description: 'Asking price is materially above sold-comparison average.' }
       : gapPercent === null
@@ -273,6 +284,7 @@ function useMarketReview(property: PropertyForReview): MarketReviewData {
     pricePerSqft,
     gapPercent,
     premiumDrivers,
+    priceContext,
     warnings,
     hasCoordinates,
     confidence,
@@ -723,7 +735,54 @@ function MarketPanel({ property, market, reviewed, onReviewedChange }: { propert
       <div className="grid gap-3 md:grid-cols-3">
         <MetricTile icon={Ruler} label="Listing price" value={`${formatCurrency(market.pricePerSqm)}/sqm`} detail={`${formatCurrency(market.pricePerSqft)}/sqft`} />
         <MetricTile icon={BarChart3} label="Benchmark" value={market.isBenchmarkLoading ? 'Checking…' : `${formatCurrency(market.benchmark?.averagePriceSqm)}/sqm`} detail={market.benchmark?.label ?? 'City/neighborhood data'} />
-        <MetricTile icon={ShieldCheck} label="Confidence" value={market.confidence} detail={market.status.description} />
+        <MetricTile icon={ShieldCheck} label="Confidence" value={market.priceContext.confidenceLabel} detail={`${market.priceContext.confidenceScore}/100 internal score`} />
+      </div>
+
+      <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+        <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h4 className="font-semibold text-foreground">Price Context diagnostics</h4>
+              <Badge className={toneBadgeClass(market.priceContext.badgeEligible ? 'ready' : market.priceContext.badgeStatus === 'blocked' ? 'warning' : 'review')}>
+                {market.priceContext.badgeEligible ? 'Badge eligible' : formatPriceContextValue(market.priceContext.badgeStatus)}
+              </Badge>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">Internal raw gaps stay here; buyers see the safer public label.</p>
+          </div>
+          <Badge variant="secondary">Public: {market.priceContext.publicLabel}</Badge>
+        </div>
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-md border border-border bg-background/80 p-3">
+            <p className="text-xs text-muted-foreground">Raw benchmark gap</p>
+            <p className="text-lg font-semibold text-foreground">{market.gapPercent !== null ? `${market.gapPercent > 0 ? '+' : ''}${market.gapPercent}%` : '—'}</p>
+          </div>
+          <div className="rounded-md border border-border bg-background/80 p-3">
+            <p className="text-xs text-muted-foreground">Public percentage</p>
+            <p className="text-lg font-semibold text-foreground">{market.priceContext.displayGapPercent !== null ? `${market.priceContext.displayGapPercent}%` : 'Suppressed'}</p>
+          </div>
+          <div className="rounded-md border border-border bg-background/80 p-3">
+            <p className="text-xs text-muted-foreground">Property class</p>
+            <p className="text-sm font-semibold text-foreground">{market.priceContext.propertyClassLabel}</p>
+          </div>
+          <div className="rounded-md border border-border bg-background/80 p-3">
+            <p className="text-xs text-muted-foreground">Size / ownership</p>
+            <p className="text-sm font-semibold text-foreground">{formatPriceContextValue(property.sqm_source)} • {formatPriceContextValue(property.ownership_type)}</p>
+          </div>
+        </div>
+        {(market.priceContext.percentageSuppressionReason || market.priceContext.confidenceReasons.length > 0) && (
+          <div className="mt-3 grid gap-3 lg:grid-cols-2">
+            <div className="rounded-md border border-border bg-background/80 p-3">
+              <p className="text-sm font-medium text-foreground">Display rule</p>
+              <p className="mt-1 text-sm text-muted-foreground">{market.priceContext.percentageSuppressionReason ?? 'Strong standard-resale match allows public percentage display.'}</p>
+            </div>
+            <div className="rounded-md border border-border bg-background/80 p-3">
+              <p className="text-sm font-medium text-foreground">Confidence reasons</p>
+              <ul className="mt-1 list-disc space-y-1 pl-4 text-sm text-muted-foreground">
+                {market.priceContext.confidenceReasons.slice(0, 4).map((reason) => <li key={reason}>{reason}</li>)}
+              </ul>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="rounded-lg border border-border bg-background p-4">
@@ -795,7 +854,7 @@ function MarketPanel({ property, market, reviewed, onReviewedChange }: { propert
       {property.verification_status === 'pending_review' && (
         <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-background p-3 text-sm">
           <Checkbox checked={reviewed} onCheckedChange={(checked) => onReviewedChange(checked === true)} />
-          <span>I reviewed market intelligence and buyer-page context for this listing</span>
+          <span>I reviewed Price Context and buyer-page context for this listing</span>
         </label>
       )}
     </div>
@@ -805,10 +864,10 @@ function MarketPanel({ property, market, reviewed, onReviewedChange }: { propert
 function BuyerPageFitPanel({ property, market, checks }: { property: PropertyForReview; market: MarketReviewData; checks: ReviewCheck[] }) {
   const moduleRows = [
     { label: 'Hero gallery', ready: (property.images?.length ?? 0) >= 4, detail: `${property.images?.length ?? 0} photos submitted.` },
-    { label: 'Market Intelligence', ready: Boolean(property.size_sqm && (market.benchmark?.averagePriceSqm || market.comparableComps.length)), detail: market.status.description },
+    { label: 'Price Context', ready: Boolean(property.size_sqm && (market.benchmark?.averagePriceSqm || market.comparableComps.length)), detail: `${market.priceContext.publicLabel} • ${market.priceContext.confidenceLabel}` },
     { label: 'Price/sqm snapshot', ready: Boolean(property.size_sqm && property.price), detail: market.pricePerSqm ? `${formatCurrency(market.pricePerSqm)}/sqm can display.` : 'Missing size or price.' },
     { label: 'Buyer description', ready: (property.description?.length ?? 0) >= 100, detail: `${property.description?.length ?? 0} characters submitted.` },
-    { label: 'Feature chips', ready: (property.features?.length ?? 0) >= 3 || market.premiumDrivers.length > 0, detail: `${property.features?.length ?? 0} explicit features, ${market.premiumDrivers.length} premium drivers.` },
+    { label: 'Pricing Context Complete badge', ready: market.priceContext.badgeEligible, detail: market.priceContext.badgeEligible ? 'Buyer-safe context is complete.' : 'Needs size source, ownership type, or premium explanation.' },
   ];
   const suggestedRequests = Array.from(new Set(checks.map((check) => check.requestText).filter(Boolean))).slice(0, 6);
 
