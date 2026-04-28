@@ -263,7 +263,7 @@ function useMarketReview(property: PropertyForReview): MarketReviewData {
       : 'Medium';
 
   const status: MarketStatus = !pricePerSqm
-    ? { label: 'Cannot verify price/sqm', tone: 'critical', description: 'Size is required before market intelligence can be trusted.' }
+    ? { label: 'Cannot verify price/sqm', tone: 'critical', description: 'Size is required before Price Context can be trusted.' }
     : compStats?.vsSubjectPct != null && compStats.vsSubjectPct >= 35
       ? { label: 'Review premium', tone: 'warning', description: 'Asking price is materially above sold-comparison average.' }
       : gapPercent === null
@@ -854,7 +854,7 @@ function MarketPanel({ property, market, reviewed, onReviewedChange }: { propert
       {property.verification_status === 'pending_review' && (
         <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-background p-3 text-sm">
           <Checkbox checked={reviewed} onCheckedChange={(checked) => onReviewedChange(checked === true)} />
-          <span>I reviewed market intelligence and buyer-page context for this listing</span>
+          <span>I reviewed Price Context and buyer-page context for this listing</span>
         </label>
       )}
     </div>
