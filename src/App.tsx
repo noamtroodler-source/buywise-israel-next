@@ -1,4 +1,4 @@
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, type ComponentType } from "react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
@@ -12,7 +12,36 @@ import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import { WhatsAppFallbackModal } from "@/components/ui/WhatsAppFallbackModal";
 import { PageLoader } from "@/components/shared/PageLoader";
 import { PageTracker } from "@/hooks/usePageTracking";
-import AgencyDashboard from "./pages/agency/AgencyDashboard";
+
+type LazyPageModule = { default: ComponentType<any> };
+
+const lazyWithRetry = (loadPage: () => Promise<LazyPageModule>, routeName: string) =>
+  lazy(async () => {
+    let lastError: unknown;
+
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        const page = await loadPage();
+        sessionStorage.removeItem(`lazy-reload:${routeName}`);
+        return page;
+      } catch (error) {
+        lastError = error;
+        await new Promise((resolve) => window.setTimeout(resolve, 250 * (attempt + 1)));
+      }
+    }
+
+    const message = lastError instanceof Error ? lastError.message : String(lastError);
+    const isModuleFetchFailure = message.includes("Failed to fetch dynamically imported module");
+    const reloadKey = `lazy-reload:${routeName}`;
+
+    if (isModuleFetchFailure && !sessionStorage.getItem(reloadKey)) {
+      sessionStorage.setItem(reloadKey, String(Date.now()));
+      window.location.reload();
+      return { default: PageLoader };
+    }
+
+    throw lastError;
+  });
 
 // Keep the startup bundle route-agnostic. Every page loads only when matched,
 // so one broken/heavy page module cannot blank the entire preview.
@@ -90,6 +119,7 @@ const AgentBlogWizard = lazy(() => import("./pages/agent/AgentBlogWizard"));
 
 // Agency dashboard - lazy load
 const AgencyRegister = lazy(() => import("./pages/agency/AgencyRegister"));
+const AgencyDashboard = lazy(() => import("./pages/agency/AgencyDashboard"));
 const AgencyAnalytics = lazy(() => import("./pages/agency/AgencyAnalytics"));
 const AgencySettings = lazy(() => import("./pages/agency/AgencySettings"));
 const AgencyListingsPage = lazy(() => import("./pages/agency/AgencyListings"));
