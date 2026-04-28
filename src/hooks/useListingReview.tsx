@@ -18,8 +18,10 @@ export interface PropertyForReview {
   additional_rooms: number | null;
   bathrooms: number | null;
   size_sqm: number | null;
+  lot_size_sqm: number | null;
   floor: number | null;
   total_floors: number | null;
+  apartment_number: string | null;
   latitude: number | null;
   longitude: number | null;
   source_rooms: number | null;
@@ -27,12 +29,18 @@ export interface PropertyForReview {
   parking: number | null;
   condition: string | null;
   ac_type: string | null;
+  vaad_bayit_monthly: number | null;
   entry_date: string | null;
   features: string[] | null;
   images: string[] | null;
   description: string | null;
   has_balcony: boolean | null;
+  has_elevator: boolean | null;
   has_storage: boolean | null;
+  lease_term: string | null;
+  subletting_allowed: string | null;
+  pets_policy: string | null;
+  agent_fee_required: boolean | null;
   furnished_status: string | null;
   furniture_items: string[] | null;
   featured_highlight: string | null;
@@ -77,8 +85,10 @@ export function useListingsForReview(status?: VerificationStatus) {
           additional_rooms,
           bathrooms,
           size_sqm,
+          lot_size_sqm,
           floor,
           total_floors,
+          apartment_number,
           latitude,
           longitude,
           source_rooms,
@@ -86,12 +96,18 @@ export function useListingsForReview(status?: VerificationStatus) {
           parking,
           condition,
           ac_type,
+          vaad_bayit_monthly,
           entry_date,
           features,
           images,
           description,
           has_balcony,
+          has_elevator,
           has_storage,
+          lease_term,
+          subletting_allowed,
+          pets_policy,
+          agent_fee_required,
           furnished_status,
           furniture_items,
           featured_highlight,
