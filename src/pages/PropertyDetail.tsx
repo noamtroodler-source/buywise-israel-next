@@ -202,7 +202,7 @@ export default function PropertyDetail() {
             {/* Description */}
             <PropertyDescription description={property.description} />
 
-            {/* Market Intelligence (sale/sold) or Rental Snapshot */}
+            {/* Price Context (sale/sold) or Rental Snapshot */}
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -236,7 +236,7 @@ export default function PropertyDetail() {
               ) : (
                 <MobileCollapsibleSection
                   id="market-intelligence"
-                  title="Market Intelligence"
+                  title="Price Context"
                   icon={<BarChart3 className="h-5 w-5" />}
                   summary={`${formatPrice(property.price, 'ILS')} • ${property.city}`}
                   alwaysStartClosed
