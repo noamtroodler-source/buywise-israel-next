@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, ReactNode, useCallback } from 'react';
 import { scrollToTopInstant } from '@/lib/scrollToTop';
-import { PropertyType, ListingStatus, LeaseTermOption, SublettingOption, FurnishedStatus, PetsPolicy } from '@/types/database';
+import { PropertyType, ListingStatus, LeaseTermOption, SublettingOption, FurnishedStatus, PetsPolicy, SqmSourceOption, OwnershipTypeOption } from '@/types/database';
 
 export interface PropertyWizardData {
   // Step 1: Basics
@@ -20,6 +20,8 @@ export interface PropertyWizardData {
   additional_rooms: number;
   bathrooms: number;
   size_sqm: number | undefined;
+  sqm_source: SqmSourceOption | undefined;
+  ownership_type: OwnershipTypeOption | undefined;
   lot_size_sqm: number | undefined;
   floor: number | undefined;
   total_floors: number | undefined;
@@ -57,6 +59,7 @@ export interface PropertyWizardData {
   premium_drivers: string[];
   premium_explanation: string;
   premium_context_touched: boolean;
+  benchmark_review_status: string;
    
     // Edit mode: the saved/published price for comparison
     savedPrice?: number;
@@ -113,6 +116,8 @@ export const defaultPropertyData: PropertyWizardData = {
   additional_rooms: 0,
   bathrooms: 0,
   size_sqm: undefined,
+  sqm_source: undefined,
+  ownership_type: undefined,
   lot_size_sqm: undefined,
   floor: undefined,
   total_floors: undefined,
@@ -142,6 +147,7 @@ export const defaultPropertyData: PropertyWizardData = {
     premium_drivers: [],
     premium_explanation: '',
     premium_context_touched: false,
+     benchmark_review_status: 'none',
   images: [],
   description: '',
   highlights: [],
@@ -174,6 +180,8 @@ function computeStepErrors(data: PropertyWizardData, adjustedStep: number): stri
         if ((data.lot_size_sqm ?? 0) <= 0) errors.push('Lot size is required');
       } else {
         if ((data.size_sqm ?? 0) <= 0) errors.push('Size (sqm) is required');
+        if (!data.sqm_source) errors.push('SQM source is required');
+        if (!data.ownership_type) errors.push('Ownership type is required');
         const needsFloor = ['apartment', 'penthouse', 'mini_penthouse', 'duplex', 'garden_apartment'].includes(data.property_type);
         if (needsFloor && data.floor === undefined) errors.push('Floor number is required');
         if (needsFloor && data.total_floors === undefined) errors.push('Total floors is required');
