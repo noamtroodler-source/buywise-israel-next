@@ -703,6 +703,7 @@ export default function AgencyListings() {
                         const review = reviewConfig[displayReviewStatus] || reviewConfig.needs_review;
                         const ReviewIcon = review.icon;
                         const isDraft = listing.verification_status === 'draft';
+                        const canSubmitForReview = listing.verification_status === 'draft' || listing.verification_status === 'changes_requested';
                         const isApproved = listing.verification_status === 'approved';
                         const isPublished = listing.is_published === true;
                         const isSelected = selectedIds.has(listing.id);
@@ -788,7 +789,7 @@ export default function AgencyListings() {
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center justify-center gap-1">
-                                {isDraft && (
+                                {canSubmitForReview && (
                                   <Button
                                     variant="ghost"
                                     size="sm"
@@ -835,7 +836,7 @@ export default function AgencyListings() {
                                           Unpublish
                                         </DropdownMenuItem>
                                       </>
-                                    ) : (
+                                    ) : canSubmitForReview ? (
                                       <>
                                         <DropdownMenuItem onClick={() => submitForReview.mutate(listing.id)} disabled={submitForReview.isPending}>
                                           <Send className="h-4 w-4 mr-2" />
