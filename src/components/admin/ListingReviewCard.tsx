@@ -735,7 +735,54 @@ function MarketPanel({ property, market, reviewed, onReviewedChange }: { propert
       <div className="grid gap-3 md:grid-cols-3">
         <MetricTile icon={Ruler} label="Listing price" value={`${formatCurrency(market.pricePerSqm)}/sqm`} detail={`${formatCurrency(market.pricePerSqft)}/sqft`} />
         <MetricTile icon={BarChart3} label="Benchmark" value={market.isBenchmarkLoading ? 'Checking…' : `${formatCurrency(market.benchmark?.averagePriceSqm)}/sqm`} detail={market.benchmark?.label ?? 'City/neighborhood data'} />
-        <MetricTile icon={ShieldCheck} label="Confidence" value={market.confidence} detail={market.status.description} />
+        <MetricTile icon={ShieldCheck} label="Confidence" value={market.priceContext.confidenceLabel} detail={`${market.priceContext.confidenceScore}/100 internal score`} />
+      </div>
+
+      <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+        <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h4 className="font-semibold text-foreground">Price Context diagnostics</h4>
+              <Badge className={toneBadgeClass(market.priceContext.badgeEligible ? 'ready' : market.priceContext.badgeStatus === 'blocked' ? 'warning' : 'review')}>
+                {market.priceContext.badgeEligible ? 'Badge eligible' : formatPriceContextValue(market.priceContext.badgeStatus)}
+              </Badge>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">Internal raw gaps stay here; buyers see the safer public label.</p>
+          </div>
+          <Badge variant="secondary">Public: {market.priceContext.publicLabel}</Badge>
+        </div>
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-md border border-border bg-background/80 p-3">
+            <p className="text-xs text-muted-foreground">Raw benchmark gap</p>
+            <p className="text-lg font-semibold text-foreground">{market.gapPercent !== null ? `${market.gapPercent > 0 ? '+' : ''}${market.gapPercent}%` : '—'}</p>
+          </div>
+          <div className="rounded-md border border-border bg-background/80 p-3">
+            <p className="text-xs text-muted-foreground">Public percentage</p>
+            <p className="text-lg font-semibold text-foreground">{market.priceContext.displayGapPercent !== null ? `${market.priceContext.displayGapPercent}%` : 'Suppressed'}</p>
+          </div>
+          <div className="rounded-md border border-border bg-background/80 p-3">
+            <p className="text-xs text-muted-foreground">Property class</p>
+            <p className="text-sm font-semibold text-foreground">{market.priceContext.propertyClassLabel}</p>
+          </div>
+          <div className="rounded-md border border-border bg-background/80 p-3">
+            <p className="text-xs text-muted-foreground">Size / ownership</p>
+            <p className="text-sm font-semibold text-foreground">{formatPriceContextValue(property.sqm_source)} • {formatPriceContextValue(property.ownership_type)}</p>
+          </div>
+        </div>
+        {(market.priceContext.percentageSuppressionReason || market.priceContext.confidenceReasons.length > 0) && (
+          <div className="mt-3 grid gap-3 lg:grid-cols-2">
+            <div className="rounded-md border border-border bg-background/80 p-3">
+              <p className="text-sm font-medium text-foreground">Display rule</p>
+              <p className="mt-1 text-sm text-muted-foreground">{market.priceContext.percentageSuppressionReason ?? 'Strong standard-resale match allows public percentage display.'}</p>
+            </div>
+            <div className="rounded-md border border-border bg-background/80 p-3">
+              <p className="text-sm font-medium text-foreground">Confidence reasons</p>
+              <ul className="mt-1 list-disc space-y-1 pl-4 text-sm text-muted-foreground">
+                {market.priceContext.confidenceReasons.slice(0, 4).map((reason) => <li key={reason}>{reason}</li>)}
+              </ul>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="rounded-lg border border-border bg-background p-4">
