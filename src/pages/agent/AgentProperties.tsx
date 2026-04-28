@@ -563,9 +563,9 @@ export default function AgentProperties() {
                                     </>
                                   ) : (
                                     <>
-                                      <DropdownMenuItem onClick={() => approveListing.mutate({ propertyId: listing.id, agencyId: (listing as any).primary_agency_id })}>
-                                        <CheckCheck className="h-4 w-4 mr-2" />
-                                        Publish
+                                      <DropdownMenuItem onClick={() => submitForReview.mutate(listing.id)} disabled={submitForReview.isPending}>
+                                        <Send className="h-4 w-4 mr-2" />
+                                        Submit for review
                                       </DropdownMenuItem>
                                       <DropdownMenuItem onSelect={() => {
                                         const draft = propertyToWizardDraft(listing);
@@ -790,9 +790,9 @@ export default function AgentProperties() {
                                         </>
                                       ) : (
                                         <>
-                                          <DropdownMenuItem onClick={() => approveListing.mutate({ propertyId: listing.id, agencyId: (listing as any).primary_agency_id })}>
-                                            <CheckCheck className="h-4 w-4 mr-2" />
-                                            Publish
+                                          <DropdownMenuItem onClick={() => submitForReview.mutate(listing.id)} disabled={submitForReview.isPending}>
+                                            <Send className="h-4 w-4 mr-2" />
+                                            Submit for review
                                           </DropdownMenuItem>
                                           <DropdownMenuItem onSelect={() => {
                                             const draft = propertyToWizardDraft(listing);
