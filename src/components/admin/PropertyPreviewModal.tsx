@@ -475,7 +475,7 @@ export function PropertyPreviewModal({ property, open, onOpenChange, initialImag
                   <Badge variant="outline" className="ml-auto">Buyer preview</Badge>
                 </div>
                 {isSale ? (
-                  <MarketIntelligence property={property} cityData={cityData} />
+                  <MarketIntelligence property={property} cityData={cityData} trackingEnabled={false} />
                 ) : (
                   <>
                     <PropertyValueSnapshot
