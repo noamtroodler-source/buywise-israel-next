@@ -6653,6 +6653,18 @@ async function runMadlanAgencyDiscoverJob(params: {
           city = listing.city || city;
           address = listing.address || address;
 
+          if (!hasExactStreetAddress(address)) {
+            await sb.from("import_job_items").insert({
+              job_id: jobId,
+              url: listingUrl,
+              status: "skipped",
+              error_message: "Exact street address with street number required",
+              error_type: "permanent",
+              extracted_data: { ...listing, validation_errors: ["exact street address with street number required"] },
+            });
+            continue;
+          }
+
           const copy = await generateBuyWiseTitleAndDescription(
             listing,
             `${madlanItem.title || ""}\n${madlanItem.description || madlanItem.shortDescription || madlanItem.descriptionText || ""}`,
