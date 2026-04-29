@@ -648,7 +648,7 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
         <BuyWiseTake
           priceContext={priceContext}
           premiumExplanation={property.premium_explanation}
-          propertyPricePerSqm={propertyPricePerSqm}
+          benchmarkCards={benchmarkCards}
           compsCount={verdictData.compsCount}
           radiusUsedM={verdictData.radiusUsedM}
           sqmSource={property.sqm_source}
