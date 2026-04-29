@@ -395,6 +395,16 @@ export default function AgencyListings() {
 
   const safeSelectedIds = [...selectedIds].filter((id) => listings.find((l) => l.id === id)?.safe_to_batch_approve);
 
+  const handleStatusFilterChange = (value: 'all' | AgencyListingDisplayStatusKey) => {
+    setStatusFilter(value);
+    if (value !== 'all') setReviewFilter('all');
+  };
+
+  const handleReviewFilterChange = (value: 'all' | ReviewWorkBucket | AgencyReviewStatus) => {
+    setReviewFilter(value);
+    if (value !== 'all') setStatusFilter('all');
+  };
+
   const handleBulkConfirmSafe = () => {
     bulkConfirmListings.mutate({ propertyIds: safeSelectedIds, agencyId: agency.id }, {
       onSuccess: () => setSelectedIds(new Set()),
@@ -511,7 +521,7 @@ export default function AgencyListings() {
             ))}
           </div>
 
-          <LaunchReviewGuidance listings={listings} reviewFilter={reviewFilter} setReviewFilter={setReviewFilter} />
+          <LaunchReviewGuidance listings={listings} reviewFilter={reviewFilter} setReviewFilter={handleReviewFilterChange} />
 
           {/* Role pills — click to filter by primary / co-listed */}
           {(primaryCount > 0 || coListedCount > 0) && (
@@ -571,7 +581,7 @@ export default function AgencyListings() {
                     className="pl-10 rounded-xl"
                   />
                 </div>
-                <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as 'all' | AgencyListingDisplayStatusKey)}>
+                <Select value={statusFilter} onValueChange={(value) => handleStatusFilterChange(value as 'all' | AgencyListingDisplayStatusKey)}>
                   <SelectTrigger className="w-[140px] rounded-xl"><SelectValue placeholder="Status" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All statuses</SelectItem>
@@ -580,7 +590,7 @@ export default function AgencyListings() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Select value={reviewFilter} onValueChange={(value) => setReviewFilter(value as any)}>
+                <Select value={reviewFilter} onValueChange={(value) => handleReviewFilterChange(value as 'all' | ReviewWorkBucket | AgencyReviewStatus)}>
                   <SelectTrigger className="w-[170px] rounded-xl"><SelectValue placeholder="Review" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All readiness</SelectItem>
