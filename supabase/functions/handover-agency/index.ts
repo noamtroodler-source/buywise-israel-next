@@ -228,6 +228,30 @@ function normalizeEmail(email?: string | null): string {
   return (email ?? "").trim().toLowerCase();
 }
 
+async function sendTransactionalEmail(
+  supabaseUrl: string,
+  anonKey: string,
+  body: Record<string, unknown>
+): Promise<unknown | null> {
+  const response = await fetch(`${supabaseUrl}/functions/v1/send-transactional-email`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      apikey: anonKey,
+      Authorization: `Bearer ${anonKey}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (response.ok) {
+    await response.text();
+    return null;
+  }
+
+  const errorBody = await response.text();
+  return { status: response.status, statusText: response.statusText, body: errorBody };
+}
+
 function summarizeFlags(flags: any[], agents: any[]): string[] {
   const items: string[] = [];
   const byType = new Map<string, number>();
