@@ -85,6 +85,25 @@ export function useAgencyAnalytics(dateRange: DateRangeFilter = 'all') {
 
       const propertyIds = properties?.map(p => p.id) || [];
 
+      if (propertyIds.length === 0) {
+        return {
+          totalViews: 0,
+          totalSaves: 0,
+          totalInquiries: 0,
+          conversionRate: 0,
+          agentPerformance: agents?.map(agent => ({
+            agentId: agent.id,
+            agentName: agent.name,
+            avatarUrl: agent.avatar_url,
+            views: 0,
+            saves: 0,
+            inquiries: 0,
+            activeListings: 0,
+          })) || [],
+          inquiriesByType: { whatsapp: 0, email: 0, form: 0 },
+        };
+      }
+
       // Fetch favorites with optional date filter
       let favoritesQuery = supabase
         .from('favorites')
