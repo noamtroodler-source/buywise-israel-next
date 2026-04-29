@@ -118,7 +118,7 @@ export default function AdminAgencyProvisioning() {
               </div>
             </div>
           ) : (
-            <SelectedAgencyWorkspace agency={selectedAgency} />
+            <SelectedAgencyWorkspace key={selectedAgency.id} agency={selectedAgency} />
           )}
         </div>
       </div>
