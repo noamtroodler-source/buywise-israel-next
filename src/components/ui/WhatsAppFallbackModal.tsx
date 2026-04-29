@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 import * as QRCodeModule from 'react-qr-code';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -6,10 +7,10 @@ import { Copy, ExternalLink, QrCode, MessageSquare, Phone, Check, AlertTriangle 
 import { toast } from 'sonner';
 import { buildMobileWhatsAppUrl, setFallbackModalCallback } from '@/lib/whatsapp';
 
-const QRCode = QRCodeModule.default as unknown as React.ComponentType<{ value: string; size?: number }>;
+const QRCode = QRCodeModule as unknown as ComponentType<{ value: string; size?: number }>;
 
 interface WhatsAppFallbackModalProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 export function WhatsAppFallbackModal({ children }: WhatsAppFallbackModalProps) {
