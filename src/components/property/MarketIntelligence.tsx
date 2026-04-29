@@ -266,11 +266,8 @@ function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchma
     : 'Recorded sales and local benchmarks to help you understand the asking price.';
 
   return (
-    <div className="rounded-lg border border-primary/15 bg-primary/5 p-4 space-y-3">
+    <div className="space-y-4 border-y border-border py-5">
       <div className="flex items-start gap-3">
-        <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-          <BarChart3 className="h-4 w-4 text-primary" />
-        </div>
         <div className="min-w-0 flex-1">
           <div className="mb-2 space-y-1">
             <div className="flex flex-wrap items-center gap-2">
@@ -284,7 +281,7 @@ function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchma
               <BenchmarkCardTile key={card.id} card={card} onTrackInteraction={onTrackInteraction} />
             ))}
           </div>
-          <div className="mt-3 rounded-lg border border-primary/15 bg-background/70 px-3 py-2">
+          <div className="mt-3 rounded-lg border border-border bg-muted/20 px-3 py-2">
             <p className="text-sm leading-relaxed text-muted-foreground">
               <span className="font-semibold text-foreground">Buyer takeaway:</span> {buyerTakeaway}
             </p>
