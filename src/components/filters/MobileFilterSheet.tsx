@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MapPin, DollarSign, LayoutGrid, Building2, SlidersHorizontal, Filter, X, Loader2, Bath, Car, Layers, Clock, CalendarCheck, Cat, Dog, PawPrint, Navigation, ShieldCheck } from 'lucide-react';
+import { MapPin, DollarSign, LayoutGrid, Building2, SlidersHorizontal, Filter, X, Loader2, Bath, Car, Layers, Clock, CalendarCheck, Cat, Dog, PawPrint, Navigation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -29,7 +29,6 @@ interface MobileFilterSheetProps {
   showSoldToggle?: boolean;
   isSoldView?: boolean;
   onSoldToggle?: (showSold: boolean) => void;
-  showPriceContextFilter?: boolean;
 }
 
 const PROPERTY_TYPES: { value: PropertyType; label: string }[] = [
@@ -91,7 +90,6 @@ export function MobileFilterSheet({
   showSoldToggle,
   isSoldView,
   onSoldToggle,
-  showPriceContextFilter = true,
 }: MobileFilterSheetProps) {
   const [citySearch, setCitySearch] = useState('');
   
@@ -131,7 +129,6 @@ export function MobileFilterSheet({
     filters.min_parking,
     filters.max_days_listed,
     filters.commute_destination && filters.max_commute_minutes,
-    showPriceContextFilter && filters.pricing_context_complete,
   ].filter(Boolean).length;
 
   return (
