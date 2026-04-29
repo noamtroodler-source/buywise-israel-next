@@ -76,7 +76,7 @@ export function LeadQualityTab({ dateRange }: LeadQualityTabProps) {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Context Complete</p>
+                <p className="text-sm text-muted-foreground">Context Coverage</p>
                 <p className="text-3xl font-bold">{metrics?.priceContextCompleteRatedCount || 0}</p>
               </div>
               <CheckCircle className="h-8 w-8 text-green-500/60" />

@@ -945,7 +945,6 @@ function BuyerPageFitPanel({ property, market, checks }: { property: PropertyFor
     { label: 'Price Context', ready: Boolean(property.size_sqm && (market.benchmark?.averagePriceSqm || market.comparableComps.length)), detail: `${market.priceContext.publicLabel} • ${market.priceContext.confidenceLabel}` },
     { label: 'Price/sqm snapshot', ready: Boolean(property.size_sqm && property.price), detail: market.pricePerSqm ? `${formatCurrency(market.pricePerSqm)}/sqm can display.` : 'Missing size or price.' },
     { label: 'Buyer description', ready: (property.description?.length ?? 0) >= 100, detail: `${property.description?.length ?? 0} characters submitted.` },
-    { label: 'Pricing Context Complete badge', ready: market.priceContext.badgeEligible, detail: market.priceContext.badgeEligible ? 'Buyer-safe context is complete.' : 'Needs size source, ownership type, or premium explanation.' },
   ];
   const suggestedRequests = Array.from(new Set(checks.map((check) => check.requestText).filter(Boolean))).slice(0, 6);
 

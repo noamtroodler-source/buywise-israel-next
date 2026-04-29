@@ -4,7 +4,6 @@ export const PRICE_CONTEXT_FLAGS = {
   broadDisplay: 'PRICE_CONTEXT_BROAD_DISPLAY',
   buyerFilter: 'PRICE_CONTEXT_BUYER_FILTER',
   placementBoost: 'PRICE_CONTEXT_PLACEMENT_BOOST',
-  requireForFeatured: 'PRICE_CONTEXT_REQUIRE_FOR_FEATURED',
 } as const;
 
 export type FeatureFlagKey = (typeof PRICE_CONTEXT_FLAGS)[keyof typeof PRICE_CONTEXT_FLAGS] | string;

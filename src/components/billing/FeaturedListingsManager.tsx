@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Star, Loader2, Crown, Search, ShieldCheck } from 'lucide-react';
+import { Star, Loader2, Crown, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,9 +23,6 @@ import {
 } from '@/hooks/useFeaturedListings';
 import { format } from 'date-fns';
 import { FeaturedFAQ } from './FeaturedFAQ';
-import { getPriceContextFeatureGuardrail } from '@/lib/priceContextGuardrails';
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
-import { PRICE_CONTEXT_FLAGS } from '@/lib/featureFlags';
 
 const FEATURED_PRICE_ILS = 299;
 
@@ -37,7 +34,6 @@ export function FeaturedListingsManager({ agencyId }: FeaturedListingsManagerPro
   const { data: listings = [], isLoading: listingsLoading } = useAgencyListingsManagement(agencyId);
   const { data: featuredListings = [], isLoading: featuredLoading } = useFeaturedListings(agencyId);
   const { data: foundingStatus } = useFoundingPartnerStatus(agencyId);
-  const { data: requirePriceContextForFeatured = false } = useFeatureFlag(PRICE_CONTEXT_FLAGS.requireForFeatured, false);
   const toggleMutation = useToggleFeaturedListing();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -184,8 +180,6 @@ export function FeaturedListingsManager({ agencyId }: FeaturedListingsManagerPro
               {filteredListings.map((listing) => {
                 const featured = featuredMap.get(listing.id);
                 const isFeatured = !!featured;
-                const guardrail = getPriceContextFeatureGuardrail(listing, requirePriceContextForFeatured);
-                const isFeatureBlocked = !isFeatured && !guardrail.eligible;
 
                 return (
                   <div
@@ -231,12 +225,6 @@ export function FeaturedListingsManager({ agencyId }: FeaturedListingsManagerPro
                           )}
                         </p>
                       )}
-                      {isFeatureBlocked && (
-                        <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
-                          <ShieldCheck className="h-3 w-3 text-primary" />
-                          {guardrail.reason}
-                        </p>
-                      )}
                     </div>
 
                     <div className="flex items-center gap-3 flex-shrink-0">
@@ -248,7 +236,7 @@ export function FeaturedListingsManager({ agencyId }: FeaturedListingsManagerPro
                       <Switch
                         checked={isFeatured}
                         onCheckedChange={() => handleToggle(listing)}
-                        disabled={toggleMutation.isPending || isFeatureBlocked}
+                        disabled={toggleMutation.isPending}
                       />
                     </div>
                   </div>
