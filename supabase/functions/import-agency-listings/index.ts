@@ -5385,6 +5385,22 @@ async function handleApproveItem(body: any) {
   return { property_id: property.id };
 }
 
+async function handleResolveDuplicateReview(body: any) {
+  const { item_id, resolution, notes } = body;
+  if (!item_id) throw new Error("item_id required");
+  if (!resolution) throw new Error("resolution required");
+
+  const sb = supabaseAdmin();
+  const { data, error } = await sb.rpc("resolve_import_duplicate_review", {
+    p_item_id: item_id,
+    p_resolution: resolution,
+    p_notes: notes || null,
+  });
+
+  if (error) throw new Error(`Failed to resolve duplicate review: ${error.message}`);
+  return data;
+}
+
 // ─── YAD2 ADAPTER ───────────────────────────────────────────────────────────
 
 // Detect Yad2 agency profile URLs
