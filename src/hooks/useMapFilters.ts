@@ -28,6 +28,7 @@ export interface MapUrlFilters {
   polygon: string | null;
   commuteDest: string | null;
   maxCommute: number | null;
+  pricingContextComplete: boolean;
 }
 
 function toNum(v: string | null): number | null {
@@ -69,6 +70,7 @@ export function useMapFilters() {
     polygon: searchParams.get('polygon'),
     commuteDest: searchParams.get('commute_dest'),
     maxCommute: toNum(searchParams.get('max_commute')),
+    pricingContextComplete: searchParams.get('pricing_context_complete') === 'true',
   }), [searchParams]);
 
   const setFilter = useCallback(
