@@ -11,17 +11,21 @@ import { BENCHMARK_REVIEW_REASONS, useRequestBenchmarkReview } from '@/hooks/use
 interface BenchmarkReviewDialogProps {
   propertyId: string;
   propertyTitle?: string | null;
+  benchmarkReviewStatus?: string | null;
+  existingReason?: string | null;
+  existingNotes?: string | null;
   trigger?: ReactNode;
 }
 
-export function BenchmarkReviewDialog({ propertyId, propertyTitle, trigger }: BenchmarkReviewDialogProps) {
+export function BenchmarkReviewDialog({ propertyId, propertyTitle, benchmarkReviewStatus, existingReason, existingNotes, trigger }: BenchmarkReviewDialogProps) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState('');
   const [notes, setNotes] = useState('');
   const requestReview = useRequestBenchmarkReview();
+  const hasOpenReview = benchmarkReviewStatus === 'requested' || benchmarkReviewStatus === 'under_review';
 
   const submit = () => {
-    if (!reason) return;
+    if (!reason || hasOpenReview) return;
     requestReview.mutate({ propertyId, reason, notes }, {
       onSuccess: () => {
         setOpen(false);
@@ -35,8 +39,8 @@ export function BenchmarkReviewDialog({ propertyId, propertyTitle, trigger }: Be
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {trigger ?? (
-          <Button variant="outline" size="sm" className="gap-2 rounded-lg">
-            <AlertTriangle className="h-4 w-4" /> Request benchmark review
+          <Button variant="outline" size="sm" className="gap-2 rounded-lg" disabled={hasOpenReview}>
+            <AlertTriangle className="h-4 w-4" /> {hasOpenReview ? 'Context under review' : 'Request benchmark review'}
           </Button>
         )}
       </DialogTrigger>
@@ -48,9 +52,15 @@ export function BenchmarkReviewDialog({ propertyId, propertyTitle, trigger }: Be
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-2">
+          {hasOpenReview && (
+            <div className="rounded-lg border border-semantic-amber/30 bg-semantic-amber/10 p-3 text-sm text-semantic-amber">
+              This listing already has an open benchmark review{existingReason ? ` for “${existingReason}”` : ''}. Buyer-facing context will stay cautious until it is resolved.
+              {existingNotes && <p className="mt-2 text-xs opacity-90">Notes: {existingNotes}</p>}
+            </div>
+          )}
           <div className="space-y-2">
             <Label>Review reason</Label>
-            <Select value={reason} onValueChange={setReason}>
+            <Select value={reason} onValueChange={setReason} disabled={hasOpenReview}>
               <SelectTrigger>
                 <SelectValue placeholder="Select a reason" />
               </SelectTrigger>
@@ -67,8 +77,11 @@ export function BenchmarkReviewDialog({ propertyId, propertyTitle, trigger }: Be
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
               placeholder="Add comparable sale details, missing premium context, or the correction you recommend."
+              maxLength={1000}
+              disabled={hasOpenReview}
               rows={4}
             />
+            <p className="text-xs text-muted-foreground text-right">{notes.length}/1000</p>
           </div>
           <div className="rounded-lg border border-primary/15 bg-primary/5 p-3 text-sm text-muted-foreground">
             Buyer-facing context will show as under review until an admin resolves the request.
@@ -76,7 +89,7 @@ export function BenchmarkReviewDialog({ propertyId, propertyTitle, trigger }: Be
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-          <Button onClick={submit} disabled={!reason || requestReview.isPending}>
+          <Button onClick={submit} disabled={!reason || hasOpenReview || requestReview.isPending}>
             {requestReview.isPending ? 'Submitting…' : 'Submit review request'}
           </Button>
         </DialogFooter>
