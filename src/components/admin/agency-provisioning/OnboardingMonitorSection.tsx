@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
-import { AlertTriangle, CheckCircle2, Clock, Copy, KeyRound, Mail, RefreshCw, ShieldCheck, UserCheck, Users } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Clock, Copy, KeyRound, Mail, RefreshCw, ShieldCheck, UserCheck, Users, type LucideIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -49,8 +49,6 @@ type MonitorPerson = {
   token: SetupToken | null;
   passwordCompletedAt: string | null;
   lastActiveAt: string | null;
-  profileUpdatedAt: string | null;
-  recordUpdatedAt?: string | null;
 };
 
 interface Props {
@@ -154,8 +152,6 @@ export function OnboardingMonitorSection({ agency }: Props) {
         token: agency.admin_user_id ? latestTokenByKey.get(`${agency.admin_user_id}:owner_setup`) || null : null,
         passwordCompletedAt: agency.admin_user_id ? setupCompletedByUser.get(agency.admin_user_id) || null : null,
         lastActiveAt: ownerProfile?.last_active_at || null,
-        profileUpdatedAt: ownerProfile?.updated_at || null,
-        recordUpdatedAt: agency.updated_at || null,
       },
     ];
 
@@ -171,8 +167,6 @@ export function OnboardingMonitorSection({ agency }: Props) {
         token: agent.user_id ? latestTokenByKey.get(`${agent.user_id}:agent_setup`) || null : null,
         passwordCompletedAt: agent.user_id ? setupCompletedByUser.get(agent.user_id) || null : null,
         lastActiveAt: agent.last_active_at || profile?.last_active_at || null,
-        profileUpdatedAt: profile?.updated_at || null,
-        recordUpdatedAt: agent.updated_at || null,
       });
     }
 
@@ -368,7 +362,7 @@ export function OnboardingMonitorSection({ agency }: Props) {
   );
 }
 
-function Stat({ icon: Icon, label, value }: { icon: typeof Users; label: string; value: number }) {
+function Stat({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: number }) {
   return (
     <div className="rounded-lg border p-3">
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
