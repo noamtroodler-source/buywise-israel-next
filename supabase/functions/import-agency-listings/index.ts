@@ -334,7 +334,10 @@ async function generateBuyWiseTitleAndDescription(listing: any, sourceText: stri
     if (sb && jobId) await trackCost(sb, jobId, "ai_tokens", Math.ceil((JSON.stringify(facts).length + sourceText.length + args.length) / 4), "tokens");
     const parsed = JSON.parse(args);
     const title = isGoodEnglishTitle(parsed.title) ? toTitleCase(parsed.title) : fallbackTitle;
-    const description = isGoodEnglishDescription(parsed.description) ? parsed.description.trim() : fallbackDescription;
+    const generatedDescription = typeof parsed.description === "string" ? parsed.description.trim() : "";
+    const description = isGoodEnglishDescription(generatedDescription) && !isTooSimilarToSourceDescription(generatedDescription, originalSourceDescription)
+      ? generatedDescription
+      : fallbackDescription;
     return { title, description, aiGenerated: true };
   } catch (err) {
     console.warn("BuyWise copy generation error:", err);
