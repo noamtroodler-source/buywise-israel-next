@@ -196,7 +196,7 @@ export function getPriceContext(input: PriceContextInput): PriceContextResult {
   else if (input.sizeMatchQuality === 'directional') { score -= 8; reasons.push('Size match is directional'); }
   else if (input.sizeMatchQuality === 'strong') reasons.push('Size match is strong');
 
-  if (!property.size_sqm || !pricePerSqm) { score -= 35; reasons.push('Missing size weakens price/sqm context'); }
+  if (!property.size_sqm || !pricePerSqm) { score -= 35; reasons.push('Missing size weakens price/sqm context'); limitedCaps.push('missing_size_or_price_per_sqm'); }
   if (!property.sqm_source || property.sqm_source === 'unknown') { score -= 20; reasons.push('Unknown sqm source caps confidence'); limitedCaps.push('unknown_sqm_source'); }
   if (!property.ownership_type || property.ownership_type === 'unknown') { score -= 15; reasons.push('Unknown ownership type reduces comparability'); limitedCaps.push('unknown_ownership_type'); }
   if (isPremiumClass) { score -= 20; reasons.push('Premium/unique property class requires same-class caution'); }
