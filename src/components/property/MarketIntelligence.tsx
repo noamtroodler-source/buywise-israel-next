@@ -331,6 +331,7 @@ function MarketVerdictBadge({ compsCount, radiusUsedM, priceTier, priceContext }
 
 function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchmarkRanges, propertyPricePerSqm, compsCount, radiusUsedM, sqmSource, ownershipType, onTrackInteraction }: { priceContext: PriceContextResult; premiumExplanation?: string | null; benchmarkCards: BenchmarkCard[]; benchmarkRanges: BenchmarkRange[]; propertyPricePerSqm: number | null; compsCount: number; radiusUsedM: number; sqmSource?: string | null; ownershipType?: string | null; onTrackInteraction?: (eventName: string, properties?: Record<string, unknown>) => void }) {
   const [open, setOpen] = useState(false);
+  const trackedLadderViewRef = useRef(false);
   const hasPremiumContext = priceContext.confirmedPremiumDrivers.length > 0 || priceContext.detectedPremiumDrivers.length > 0 || Boolean(premiumExplanation?.trim());
   const radiusLabel = radiusUsedM >= 1000 ? '1km' : `${radiusUsedM}m`;
   const layeredTake = buildLayeredBuyWiseTake(priceContext, propertyPricePerSqm, benchmarkRanges);
@@ -343,6 +344,14 @@ function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchma
         detected_driver_count: priceContext.detectedPremiumDrivers.length,
       });
     }
+  };
+
+  const handleLadderViewed = (eventName: string, properties?: Record<string, unknown>) => {
+    if (eventName === 'price_context_benchmark_ladder_viewed') {
+      if (trackedLadderViewRef.current) return;
+      trackedLadderViewRef.current = true;
+    }
+    onTrackInteraction?.(eventName, properties);
   };
 
   return (
@@ -362,11 +371,11 @@ function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchma
           <p className="text-sm text-muted-foreground">{layeredTake}</p>
           <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {benchmarkCards.map((card) => (
-              <BenchmarkCardTile key={card.id} card={card} />
+              <BenchmarkCardTile key={card.id} card={card} onTrackInteraction={onTrackInteraction} />
             ))}
           </div>
           <div className="mt-3">
-            <BenchmarkLadder askingPriceSqm={propertyPricePerSqm} ranges={benchmarkRanges} />
+            <BenchmarkLadder askingPriceSqm={propertyPricePerSqm} ranges={benchmarkRanges} onTrackInteraction={handleLadderViewed} />
           </div>
           <div className="mt-3">
             <PremiumContextSummary priceContext={priceContext} premiumExplanation={premiumExplanation} />
