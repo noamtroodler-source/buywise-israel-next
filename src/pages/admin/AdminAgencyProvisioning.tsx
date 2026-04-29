@@ -13,6 +13,7 @@ import { AgentRosterSection } from '@/components/admin/agency-provisioning/Agent
 import { ImportListingsSection } from '@/components/admin/agency-provisioning/ImportListingsSection';
 import { ListingsQualitySection } from '@/components/admin/agency-provisioning/ListingsQualitySection';
 import { HandoverSection } from '@/components/admin/agency-provisioning/HandoverSection';
+import { OnboardingMonitorSection } from '@/components/admin/agency-provisioning/OnboardingMonitorSection';
 import { AuditLogSection } from '@/components/admin/agency-provisioning/AuditLogSection';
 import { PerplexityEnrichDialog } from '@/components/admin/agency-provisioning/PerplexityEnrichDialog';
 import { useAgencyAgents } from '@/hooks/useAgencyProvisioning';
@@ -210,6 +211,7 @@ function SelectedAgencyWorkspace({ agency }: { agency: any }) {
         agentCount={agents.length}
         listingCount={listingCount}
       />
+      <OnboardingMonitorSection agency={agency} />
       <AuditLogSection agencyId={agency.id} />
     </>
   );
