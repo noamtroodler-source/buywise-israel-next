@@ -1085,7 +1085,6 @@ export function ListingReviewCard({ property, onApprove, onRequestChanges, onRej
   const [reason, setReason] = useState('');
   const [adminNotes, setAdminNotes] = useState('');
   const [featureThis, setFeatureThis] = useState(false);
-  const [marketReviewed, setMarketReviewed] = useState(property.verification_status !== 'pending_review');
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
 
   const market = useMarketReview(property);
@@ -1191,7 +1190,6 @@ export function ListingReviewCard({ property, onApprove, onRequestChanges, onRej
                 <DecisionPanel
                   property={property}
                   summary={summary}
-                  marketReviewed={marketReviewed}
                   featureThis={featureThis}
                   setFeatureThis={setFeatureThis}
                   isLoading={isLoading}
@@ -1227,9 +1225,6 @@ export function ListingReviewCard({ property, onApprove, onRequestChanges, onRej
                 <MarketPanel
                   property={property}
                   market={market}
-                  reviewed={marketReviewed}
-                  onReviewedChange={setMarketReviewed}
-                  isLoading={isLoading}
                 />
               </TabsContent>
               <TabsContent value="buyer" className="mt-0">
