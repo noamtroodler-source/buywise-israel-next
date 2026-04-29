@@ -177,6 +177,11 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
               <p className="text-xs text-muted-foreground">Tracked inquiry actions after Price Context exposure</p>
             </div>
             <div className="rounded-xl border border-border/50 bg-background p-3">
+              <p className="text-xs font-medium text-muted-foreground">Saves after context</p>
+              <p className="mt-2 text-2xl font-bold text-foreground">{(context?.saveAfterContextViewRate || 0).toFixed(1)}%</p>
+              <p className="text-xs text-muted-foreground">{context?.savesAfterContextView || 0} saved listings in this period</p>
+            </div>
+            <div className="rounded-xl border border-border/50 bg-background p-3">
               <p className="text-xs font-medium text-muted-foreground">Context-to-inquiry CVR</p>
               <p className="mt-2 text-2xl font-bold text-foreground">{(context?.inquiryConversionRate || 0).toFixed(1)}%</p>
               <p className="text-xs text-muted-foreground">Inquiries per Price Context module view</p>
@@ -185,6 +190,29 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
               <p className="text-xs font-medium text-muted-foreground">Buyer trust feedback</p>
               <p className="mt-2 text-2xl font-bold text-foreground">{(context?.helpfulFeedbackRate || 0).toFixed(1)}%</p>
               <p className="text-xs text-muted-foreground">{context?.helpfulFeedback || 0} helpful · {context?.notHelpfulFeedback || 0} not yet</p>
+            </div>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-4">
+            <div className="rounded-xl border border-border/50 bg-background p-3">
+              <p className="text-xs font-medium text-muted-foreground">Premium context completion</p>
+              <p className="mt-2 text-2xl font-bold text-foreground">{(context?.premiumContextCompletionRate || 0).toFixed(1)}%</p>
+              <p className="text-xs text-muted-foreground">Listings with premium drivers or explanation</p>
+            </div>
+            <div className="rounded-xl border border-border/50 bg-background p-3">
+              <p className="text-xs font-medium text-muted-foreground">Review request rate</p>
+              <p className="mt-2 text-2xl font-bold text-foreground">{(context?.benchmarkReviewRequestRate || 0).toFixed(1)}%</p>
+              <p className="text-xs text-muted-foreground">Agency benchmark challenges per sale listing</p>
+            </div>
+            <div className="rounded-xl border border-border/50 bg-background p-3">
+              <p className="text-xs font-medium text-muted-foreground">Lead quality rating</p>
+              <p className="mt-2 text-2xl font-bold text-foreground">{(context?.contextCompleteAvgLeadQualityRating || 0).toFixed(1)}</p>
+              <p className="text-xs text-muted-foreground">Context-complete average vs {(context?.avgLeadQualityRating || 0).toFixed(1)} overall</p>
+            </div>
+            <div className="rounded-xl border border-border/50 bg-background p-3">
+              <p className="text-xs font-medium text-muted-foreground">Time to publish</p>
+              <p className="mt-2 text-2xl font-bold text-foreground">{(context?.avgTimeToPublishHours || 0).toFixed(0)}h</p>
+              <p className="text-xs text-muted-foreground">Average from submission to review where timestamps exist</p>
             </div>
           </div>
 
