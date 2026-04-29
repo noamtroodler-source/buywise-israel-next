@@ -1,8 +1,7 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  CheckCircle2, Circle, Image, FileText, Phone, Globe, MapPin,
-  Briefcase, Users, Home, Share2, UploadCloud, Send, Wrench
+  CheckCircle2, Circle, Image, Users, Home, UploadCloud, Send, Wrench
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
