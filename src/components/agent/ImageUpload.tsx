@@ -1,10 +1,11 @@
 import { useState, useCallback } from 'react';
-import { Upload, X, Loader2, AlertTriangle, Sparkles } from 'lucide-react';
+import { Upload, X, Loader2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { normalizePropertyPhoto, storageDisplayImageUrl } from '@/lib/imageQuality';
 
 interface ImageUploadProps {
   images: string[];
@@ -15,7 +16,6 @@ interface ImageUploadProps {
 export function ImageUpload({ images, onImagesChange, maxImages = 10 }: ImageUploadProps) {
   const { user } = useAuth();
   const [uploading, setUploading] = useState(false);
-  const [enhancingCount, setEnhancingCount] = useState(0);
   const [brokenImages, setBrokenImages] = useState<Set<number>>(new Set());
 
   const handleImageError = (index: number) => {
@@ -28,12 +28,15 @@ export function ImageUpload({ images, onImagesChange, maxImages = 10 }: ImageUpl
       return null;
     }
 
-    const fileExt = file.name.split('.').pop();
+    const normalizedFile = await normalizePropertyPhoto(file);
+    const fileExt = normalizedFile.name.split('.').pop();
     const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
     const { error: uploadError } = await supabase.storage
       .from('property-images')
-      .upload(fileName, file);
+      .upload(fileName, normalizedFile, {
+        contentType: normalizedFile.type,
+      });
 
     if (uploadError) {
       console.error('Upload error:', uploadError);
@@ -44,7 +47,7 @@ export function ImageUpload({ images, onImagesChange, maxImages = 10 }: ImageUpl
       .from('property-images')
       .getPublicUrl(fileName);
 
-    return publicUrl;
+    return storageDisplayImageUrl(publicUrl);
   }, [user]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -68,47 +71,10 @@ export function ImageUpload({ images, onImagesChange, maxImages = 10 }: ImageUpl
       const allImages = [...images, ...validUrls];
       onImagesChange(allImages);
       toast.success(`${validUrls.length} image(s) uploaded`);
-      setUploading(false);
-
-      // Background AI enhancement
-      if (validUrls.length > 0) {
-        setEnhancingCount(validUrls.length);
-        toast.info(`Enhancing ${validUrls.length} image(s) with AI...`);
-
-        const enhancedResults = await Promise.allSettled(
-          validUrls.map(async (url) => {
-            try {
-              const enhancePath = `property-images/enhanced-${crypto.randomUUID()}.png`;
-              const { data, error } = await supabase.functions.invoke('enhance-image', {
-                body: { image_url: url, bucket: 'property-images', path: enhancePath },
-              });
-              if (error || !data?.success || !data?.enhanced) return url;
-              return data.image_url || url;
-            } catch { return url; }
-          })
-        );
-
-        const enhancedUrls = enhancedResults.map((r, i) =>
-          r.status === 'fulfilled' ? r.value : validUrls[i]
-        );
-
-        const updatedImages = allImages.map(url => {
-          const origIdx = validUrls.indexOf(url);
-          return origIdx >= 0 ? enhancedUrls[origIdx] : url;
-        });
-        onImagesChange(updatedImages);
-
-        const count = enhancedResults.filter(
-          (r, i) => r.status === 'fulfilled' && r.value !== validUrls[i]
-        ).length;
-        if (count > 0) toast.success(`${count} image(s) enhanced with AI`);
-        setEnhancingCount(0);
-      }
     } catch (error) {
       toast.error('Failed to upload images');
     } finally {
       setUploading(false);
-      setEnhancingCount(0);
     }
   };
 
@@ -200,12 +166,6 @@ export function ImageUpload({ images, onImagesChange, maxImages = 10 }: ImageUpl
           </label>
         )}
       </div>
-      {enhancingCount > 0 && (
-        <div className="flex items-center justify-center gap-2 text-sm text-primary">
-          <Sparkles className="h-4 w-4 animate-pulse" />
-          <span>Enhancing {enhancingCount} image(s) with AI...</span>
-        </div>
-      )}
       <p className="text-xs text-muted-foreground">
         {images.length} of {maxImages} images uploaded
       </p>
