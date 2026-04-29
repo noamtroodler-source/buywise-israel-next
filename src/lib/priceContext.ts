@@ -311,13 +311,15 @@ export function getPriceContext(input: PriceContextInput): PriceContextResult {
   if (reviewOpen) { score -= 40; reasons.push('Benchmark review is open'); }
 
   score = Math.max(0, Math.min(100, score));
+  const hasStrongSpecMatch = (input.roomMatchQuality == null || input.roomMatchQuality === 'strong')
+    && (input.sizeMatchQuality == null || input.sizeMatchQuality === 'strong');
 
   let confidenceTier: PriceContextConfidenceTier;
   if (reviewOpen) confidenceTier = 'limited_comparable_match';
   else if (compsCount === 0 && !benchmarkPriceSqm) confidenceTier = 'insufficient_data';
   else if (isPremiumClass) confidenceTier = 'premium_unique_property';
   else if (limitedCaps.length > 0) confidenceTier = 'limited_comparable_match';
-  else if (score >= 80 && compsCount >= 8 && radiusUsedM <= 600) confidenceTier = 'strong_comparable_match';
+  else if (score >= 80 && compsCount >= 8 && radiusUsedM <= 600 && hasStrongSpecMatch) confidenceTier = 'strong_comparable_match';
   else if (score >= 60 && compsCount >= 5) confidenceTier = 'directional_benchmark';
   else confidenceTier = 'limited_comparable_match';
 
