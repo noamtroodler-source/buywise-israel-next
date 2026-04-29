@@ -1,17 +1,19 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Download, Plus } from 'lucide-react';
+import { Download, Plus, Wrench, Send } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
 interface ImportWelcomeBannerProps {
-  activeListings: number;
+  listingsCount: number;
+  toReviewCount: number;
+  readyToSubmitCount: number;
 }
 
 const STORAGE_KEY = 'agency_import_banner_dismissed';
 
-export function ImportWelcomeBanner({ activeListings }: ImportWelcomeBannerProps) {
+export function ImportWelcomeBanner({ listingsCount, toReviewCount, readyToSubmitCount }: ImportWelcomeBannerProps) {
   const [isDismissed, setIsDismissed] = useState(true); // default hidden to avoid flash
 
   useEffect(() => {
@@ -19,7 +21,36 @@ export function ImportWelcomeBanner({ activeListings }: ImportWelcomeBannerProps
     setIsDismissed(dismissed === 'true');
   }, []);
 
-  if (isDismissed || activeListings > 0) return null;
+  const hasNoListings = listingsCount === 0;
+  const hasListingsToReview = toReviewCount > 0;
+  const hasListingsReadyToSubmit = readyToSubmitCount > 0;
+  const shouldShow = hasNoListings || hasListingsToReview || hasListingsReadyToSubmit;
+
+  if (isDismissed || !shouldShow) return null;
+
+  const banner = hasNoListings
+    ? {
+        title: 'Get started quickly',
+        description: "Import your existing listings from your website in minutes. You'll review and complete each listing before publishing.",
+        href: '/agency/import',
+        action: 'Import Listings',
+        Icon: Download,
+      }
+    : hasListingsToReview
+      ? {
+          title: 'Review imported listings',
+          description: `We added ${toReviewCount} listing${toReviewCount === 1 ? '' : 's'} that need required details checked before BuyWise review.`,
+          href: '/agency/listings?status=to_review',
+          action: 'Review listings',
+          Icon: Wrench,
+        }
+      : {
+          title: 'Submit reviewed listings',
+          description: `${readyToSubmitCount} listing${readyToSubmitCount === 1 ? ' is' : 's are'} ready to send to BuyWise for final review.`,
+          href: '/agency/listings?status=ready_to_submit',
+          action: 'Submit listings',
+          Icon: Send,
+        };
 
   const handleDismiss = () => {
     localStorage.setItem(STORAGE_KEY, 'true');
@@ -40,17 +71,17 @@ export function ImportWelcomeBanner({ activeListings }: ImportWelcomeBannerProps
               <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold text-foreground mb-1">
-                    Get started quickly
+                    {banner.title}
                   </h3>
                    <p className="text-sm text-muted-foreground">
-                    Import your existing listings from your website in minutes. You'll review and complete each listing before publishing.
+                    {banner.description}
                   </p>
                 </div>
                 <div className="flex gap-2 flex-shrink-0">
                   <Button asChild className="rounded-xl">
-                    <Link to="/agency/import">
-                      <Download className="h-4 w-4 mr-2" />
-                      Import Listings
+                    <Link to={banner.href}>
+                      <banner.Icon className="h-4 w-4 mr-2" />
+                      {banner.action}
                     </Link>
                   </Button>
                   <Button
