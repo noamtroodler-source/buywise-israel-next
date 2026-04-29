@@ -471,7 +471,7 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
       {
         id: 'nearby_recorded_sales',
         label: 'Nearby recorded sales',
-        value: priceContext.benchmarkRange ? formatNisPerSqmRange(priceContext.benchmarkRange.min, priceContext.benchmarkRange.max) : 'Limited nearby evidence',
+        value: priceContext.benchmarkRange && verdictData.compsCount > 0 ? formatNisPerSqmRange(priceContext.benchmarkRange.min, priceContext.benchmarkRange.max) : 'Limited nearby evidence',
         detail: verdictData.compsCount > 0
           ? `${verdictData.compsCount} recorded sale${verdictData.compsCount > 1 ? 's' : ''} within ${verdictData.radiusUsedM >= 1000 ? '1km' : `${verdictData.radiusUsedM}m`}.`
           : 'No listing-level nearby sale range is available yet.',
@@ -479,7 +479,7 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
       },
       {
         id: 'broader_area_benchmark',
-        label: 'Broader area',
+        label: neighborhoodAvgPriceSqm ? 'Area benchmark' : 'Area benchmark · directional',
         value: broaderAreaValue,
         detail: broaderAreaDetail,
         icon: Building2,
