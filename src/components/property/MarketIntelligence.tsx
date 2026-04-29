@@ -139,15 +139,30 @@ function clampPercent(value: number) {
   return Math.max(0, Math.min(100, value));
 }
 
-function BenchmarkCardTile({ card }: { card: BenchmarkCard }) {
+function BenchmarkCardTile({ card, onTrackInteraction }: { card: BenchmarkCard; onTrackInteraction?: (eventName: string, properties?: Record<string, unknown>) => void }) {
   const Icon = card.icon;
 
   return (
-    <div className="rounded-lg border border-border/70 bg-background/70 p-3">
-      <p className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-        <Icon className="h-3 w-3" />
-        {card.label}
-      </p>
+    <div
+      className="rounded-lg border border-border/70 bg-background/70 p-3 transition-colors hover:border-primary/30 hover:bg-primary/5"
+      onClick={() => onTrackInteraction?.('price_context_benchmark_layer_clicked', { benchmark_layer: card.id, benchmark_label: card.label })}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+          <Icon className="h-3 w-3" />
+          {card.label}
+        </p>
+        <Tooltip onOpenChange={(open) => open && onTrackInteraction?.('price_context_benchmark_tooltip_opened', { benchmark_layer: card.id, benchmark_label: card.label })}>
+          <TooltipTrigger asChild>
+            <button type="button" className="rounded-sm text-muted-foreground hover:text-primary" aria-label={`About ${card.label}`} onClick={(event) => event.stopPropagation()}>
+              <Info className="h-3.5 w-3.5" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-xs">
+            <p className="text-xs">{card.detail}</p>
+          </TooltipContent>
+        </Tooltip>
+      </div>
       <p className="mt-1 text-sm font-semibold text-foreground">{card.value}</p>
       <p className="mt-1 text-[11px] leading-snug text-muted-foreground">{card.detail}</p>
     </div>
