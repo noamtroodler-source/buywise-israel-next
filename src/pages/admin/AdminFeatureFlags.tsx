@@ -5,7 +5,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { RefreshCw, ToggleLeft, AlertTriangle, ShieldCheck, Filter, TrendingUp, Star, DatabaseZap } from 'lucide-react';
+import { RefreshCw, ToggleLeft, AlertTriangle, ShieldCheck, Filter, TrendingUp, DatabaseZap } from 'lucide-react';
 import { PRICE_CONTEXT_FLAGS } from '@/lib/featureFlags';
 
 interface FeatureFlag {
@@ -39,12 +39,6 @@ export function AdminFeatureFlags() {
       description: 'Allows context-complete, high-confidence listings to receive controlled ranking support.',
       icon: TrendingUp,
       risk: 'Ranking',
-    },
-    [PRICE_CONTEXT_FLAGS.requireForFeatured]: {
-      label: 'Require context for featured',
-      description: 'Requires Pricing Context Complete before selected sale listings can qualify for featured exposure.',
-      icon: Star,
-      risk: 'Revenue',
     },
   };
 
@@ -222,7 +216,7 @@ export function AdminFeatureFlags() {
                 Price Context rollout controls
               </CardTitle>
               <CardDescription>
-                Stage buyer display, filters, ranking, and featured eligibility without bypassing review guardrails.
+                Stage buyer display, filters, and ranking using automatic Price Context confidence signals.
               </CardDescription>
             </div>
             <Button
