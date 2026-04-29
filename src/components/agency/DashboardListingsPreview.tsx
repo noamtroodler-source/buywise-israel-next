@@ -7,15 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAgencyListingsManagement, AgencyListing } from '@/hooks/useAgencyListings';
+import { getAgencyListingDisplayStatus } from '@/lib/agencyListingStatus';
+import { cn } from '@/lib/utils';
 import { useAgencyTeam } from '@/hooks/useAgencyManagement';
-
-const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
-  approved: { label: 'Approved', variant: 'default' },
-  pending: { label: 'Pending', variant: 'secondary' },
-  draft: { label: 'Draft', variant: 'outline' },
-  changes_requested: { label: 'Changes', variant: 'destructive' },
-  rejected: { label: 'Rejected', variant: 'destructive' },
-};
 
 interface Props {
   agencyId: string;
@@ -81,7 +75,7 @@ export function DashboardListingsPreview({ agencyId }: Props) {
               </TableHeader>
               <TableBody>
                 {filtered.map(listing => {
-                  const status = statusConfig[listing.verification_status] || { label: listing.verification_status, variant: 'outline' as const };
+                  const status = getAgencyListingDisplayStatus(listing);
                   return (
                     <TableRow key={listing.id} className="text-xs">
                       <TableCell className="py-2 font-medium truncate max-w-[140px]">
@@ -91,7 +85,7 @@ export function DashboardListingsPreview({ agencyId }: Props) {
                         {(listing.agent_id && agentMap.get(listing.agent_id)) || '—'}
                       </TableCell>
                       <TableCell className="py-2">
-                        <Badge variant={status.variant} className="text-[10px] px-1.5 py-0">
+                        <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0", status.badgeClassName)}>
                           {status.label}
                         </Badge>
                       </TableCell>
