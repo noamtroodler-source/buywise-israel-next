@@ -518,6 +518,7 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
             currency={(property as any).currency ?? 'ILS'}
             sourceRooms={(property as any).source_rooms}
             subjectProperty={property}
+            onVerdictComputed={handleVerdictComputed}
           />
         )}
 
