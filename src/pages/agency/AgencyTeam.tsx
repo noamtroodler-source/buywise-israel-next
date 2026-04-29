@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
-  ArrowLeft, Users, UserPlus, Plus, Copy, Check, Hash, Loader2, ShieldAlert
+  ArrowLeft, Users, UserPlus, Plus, Copy, Check, Hash, Loader2, ShieldAlert, Megaphone
 } from 'lucide-react';
 import { EnhancedEmptyState } from '@/components/shared/EnhancedEmptyState';
 import { Layout } from '@/components/layout/Layout';
@@ -26,6 +26,7 @@ import { CreateInviteDialog } from '@/components/agency/CreateInviteDialog';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { AgencyTeamSkeleton } from '@/components/agency/skeletons/AgencyPageSkeletons';
+import { AgencyAnnouncements } from '@/components/agency/AgencyAnnouncements';
 
 export default function AgencyTeam() {
   const { data: agency, isLoading, isAgencyAdmin } = useMyAgency();
@@ -113,6 +114,10 @@ export default function AgencyTeam() {
               {joinRequests.length > 0 && (
                 <Badge className="bg-primary/20 text-primary hover:bg-primary/20">{joinRequests.length}</Badge>
               )}
+            </TabsTrigger>
+            <TabsTrigger value="announcements" className="gap-2 rounded-lg">
+              <Megaphone className="h-4 w-4" />
+              Announcements
             </TabsTrigger>
           </TabsList>
 
@@ -328,6 +333,10 @@ export default function AgencyTeam() {
                 </p>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="announcements" className="mt-4">
+            <AgencyAnnouncements agencyId={agency.id} />
           </TabsContent>
         </Tabs>
       </div>
