@@ -14,6 +14,7 @@ import { MarketDataContext } from '@/components/shared/MarketDataContext';
 import { useRoomSpecificCityPrice } from '@/hooks/useRoomSpecificCityPrice';
 import { useNeighborhoodAvgPrice } from '@/hooks/useNeighborhoodPrices';
 import { usePriceTier } from '@/hooks/usePriceTier';
+import { cn } from '@/lib/utils';
 import type { PriceTier } from '@/hooks/usePriceTier';
 import { formatPriceContextValue, getPriceContext, type PriceContextResult, type PriceContextSpecMatchQuality } from '@/lib/priceContext';
 import { PRICE_CONTEXT_DISCLAIMER, PRICE_CONTEXT_SIZE_NOTE } from '@/lib/priceContextDisclaimer';
