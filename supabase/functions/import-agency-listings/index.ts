@@ -4530,6 +4530,13 @@ async function processOneItem(
       const coords = await geocodeWithRateLimit(listing.address, listing.city, listing.neighborhood);
       if (coords) { latitude = coords.lat; longitude = coords.lng; }
     }
+    const buildingIdentity = buildBuildingIdentity(listing.city, listing.address, latitude, longitude);
+    await sb.from("import_job_items").update({
+      normalized_city_key: buildingIdentity.normalizedCityKey,
+      normalized_address_key: buildingIdentity.normalizedAddressKey,
+      geocode_key: buildingIdentity.geocodeKey,
+      building_key: buildingIdentity.buildingKey,
+    }).eq("id", item.id);
 
     // ── CROSS-AGENCY MATCH → CO-LISTING (final gate before insert) ──
     // If this listing already exists from a DIFFERENT agency, don't insert a
