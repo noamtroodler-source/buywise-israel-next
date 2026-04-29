@@ -282,9 +282,11 @@ export function usePriceAnalytics(days: number = 30) {
         return acc;
       }, {});
 
-      const [{ data: inquiries }, { data: views }, { data: events }, { data: userEvents }] = await Promise.all([
+      const [{ data: inquiries }, { data: views }, { data: favorites }, { data: leadResponses }, { data: events }, { data: userEvents }] = await Promise.all([
         (supabase.from('property_inquiries').select('property_id, created_at') as any).gte('created_at', since),
         (supabase.from('property_views').select('property_id, created_at') as any).gte('created_at', since),
+        (supabase.from('favorites').select('property_id, created_at') as any).gte('created_at', since),
+        (supabase.from('lead_response_events').select('property_id, lead_quality_rating, price_context_complete, created_at') as any).gte('created_at', since),
         (supabase.from('price_context_events' as any).select('event_type, actor_type, property_id, created_at') as any).gte('created_at', since),
         (supabase.from('user_events').select('event_name, properties, created_at') as any)
           .in('event_name', ['price_context_module_viewed', 'buyer_question_engaged', 'price_context_post_view_inquiry', 'price_context_calculation_opened', 'price_context_details_opened', 'price_context_comparable_sales_viewed', 'price_context_trust_feedback_submitted'])
@@ -292,9 +294,15 @@ export function usePriceAnalytics(days: number = 30) {
       ]);
 
       const completePropertyIds = new Set(propertyRows.filter(p => p.price_context_badge_status === 'complete').map(p => p.id));
+      const incompletePropertyIds = new Set(propertyRows.filter(p => p.price_context_badge_status !== 'complete').map(p => p.id));
       const activePropertyIds = new Set(propertyRows.map(p => p.id));
       const completeViews = (views ?? []).filter((view: any) => completePropertyIds.has(view.property_id)).length;
       const completeInquiries = (inquiries ?? []).filter((inquiry: any) => completePropertyIds.has(inquiry.property_id)).length;
+      const incompleteInquiries = (inquiries ?? []).filter((inquiry: any) => incompletePropertyIds.has(inquiry.property_id)).length;
+      const incompleteViews = (views ?? []).filter((view: any) => incompletePropertyIds.has(view.property_id)).length;
+      const savesAfterContextView = (favorites ?? []).filter((favorite: any) => activePropertyIds.has(favorite.property_id)).length;
+      const ratedLeadRows = (leadResponses ?? []).filter((row: any) => row.lead_quality_rating != null);
+      const contextCompleteRatedLeadRows = ratedLeadRows.filter((row: any) => row.price_context_complete === true || completePropertyIds.has(row.property_id));
       const eventCounts = ((events ?? []) as any[]).reduce((acc: Record<string, number>, event: any) => {
         const key = event.event_type || 'unknown';
         acc[key] = (acc[key] || 0) + 1;
@@ -320,6 +328,11 @@ export function usePriceAnalytics(days: number = 30) {
         acc[key] = (acc[key] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
+      const insufficientDataByCity = Object.entries(insufficientDataByCityCounts).map(([city, count]) => ({
+        city,
+        count: Number(count),
+        percentage: propertyRows.length ? (Number(count) / propertyRows.length) * 100 : 0,
+      })).sort((a, b) => b.count - a.count);
 
       const priceContext: PriceContextKpis = {
         totalListings: propertyRows.length,
