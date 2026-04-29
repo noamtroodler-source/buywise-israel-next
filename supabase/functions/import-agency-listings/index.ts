@@ -5073,10 +5073,10 @@ async function processOneItem(
         agent_fee_required: listing.agent_fee_required ?? null,
         bank_guarantee_required: listing.bank_guarantee_required ?? null,
         checks_required: listing.checks_required ?? null,
-        // Always import as draft — agency owner must review before going live
+        // Always import as draft — agency owner must review before BuyWise final review/live
         is_published: false,
         is_featured: false, views_count: 0,
-        verification_status: "pending_review",
+        verification_status: "draft",
         provisioning_audit_status: listing.provisioning_audit_status || "pending",
         primary_agency_id: job.agency_id,
         claimed_by_agency_id: job.agency_id,
@@ -5514,7 +5514,7 @@ async function handleApproveItem(body: any) {
       bank_guarantee_required: listing.bank_guarantee_required ?? null,
       checks_required: listing.checks_required ?? null,
       is_published: false, is_featured: false, views_count: 0,
-      verification_status: "pending_review",
+      verification_status: "draft",
       primary_agency_id: agencyId,
       claimed_by_agency_id: agencyId,
       import_source: "website_scrape",
@@ -6804,11 +6804,11 @@ async function runMadlanAgencyDiscoverJob(params: {
               is_furnished: listing.is_furnished ?? false,
               is_accessible: listing.is_accessible ?? false,
               images: madlanImages.length > 0 ? madlanImages : null,
-              // Always import as draft — agency owner must review before going live
+              // Always import as draft — agency owner must review before BuyWise final review/live
               is_published: false,
               is_featured: false,
               views_count: 0,
-              verification_status: "pending_review",
+              verification_status: "draft",
               primary_agency_id: agencyId,
               claimed_by_agency_id: agencyId,
               import_source: "madlan",

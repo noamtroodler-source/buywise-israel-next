@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-export type AgencyReviewStatus = 'needs_review' | 'approved_live' | 'needs_edit' | 'archived_stale';
+export type AgencyReviewStatus = 'needs_review' | 'agency_confirmed' | 'approved_live' | 'needs_edit' | 'archived_stale';
 
 export interface ListingQualityFlag {
   severity: 'critical' | 'warning' | string;
@@ -269,13 +269,13 @@ export function useAgencyListingsManagement(agencyId: string | undefined) {
 }
 
 function useReviewMutation(
-  rpcName: 'approve_agency_listing' | 'mark_agency_listing_needs_edit' | 'archive_agency_listing' | 'skip_agency_listing_review' | 'bulk_approve_agency_listings',
+  rpcName: 'confirm_agency_listing' | 'mark_agency_listing_needs_edit' | 'archive_agency_listing' | 'skip_agency_listing_review' | 'bulk_confirm_agency_listings',
   successMessage: string,
 ) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (payload: { propertyId?: string; propertyIds?: string[]; notes?: string; agencyId?: string }) => {
-      const params = rpcName === 'bulk_approve_agency_listings'
+      const params = rpcName === 'bulk_confirm_agency_listings'
         ? { p_property_ids: payload.propertyIds ?? [] }
         : rpcName === 'skip_agency_listing_review'
           ? { p_property_id: payload.propertyId }
@@ -297,11 +297,11 @@ function useReviewMutation(
   });
 }
 
-export const useApproveAgencyListing = () => useReviewMutation('approve_agency_listing', 'Listing approved and published');
+export const useConfirmAgencyListing = () => useReviewMutation('confirm_agency_listing', 'Listing sent to BuyWise for final review');
 export const useMarkAgencyListingNeedsEdit = () => useReviewMutation('mark_agency_listing_needs_edit', 'Listing moved to quick edits');
 export const useArchiveAgencyListing = () => useReviewMutation('archive_agency_listing', 'Listing archived internally');
 export const useSkipAgencyListingReview = () => useReviewMutation('skip_agency_listing_review', 'Listing skipped for later');
-export const useBulkApproveAgencyListings = () => useReviewMutation('bulk_approve_agency_listings', 'Safe listings approved');
+export const useBulkConfirmAgencyListings = () => useReviewMutation('bulk_confirm_agency_listings', 'Listings sent to BuyWise for final review');
 
 export function useUnpublishAgencyListing() {
   const qc = useQueryClient();

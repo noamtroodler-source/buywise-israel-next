@@ -35,10 +35,11 @@ import {
   AgencyReviewStatus,
   useAgencyListingsManagement,
   useArchiveAgencyListing,
-  useBulkApproveAgencyListings,
+  useBulkConfirmAgencyListings,
+  useConfirmAgencyListing,
   useUnpublishAgencyListing,
 } from '@/hooks/useAgencyListings';
-import { useDeleteProperty, useSubmitForReview, useBulkDeleteProperties, useBulkSubmitForReview, useReassignProperty } from '@/hooks/useAgentProperties';
+import { useDeleteProperty, useBulkDeleteProperties, useReassignProperty } from '@/hooks/useAgentProperties';
 import { AgentReassignPopover } from '@/components/agency/AgentReassignPopover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useUpdatePropertyStatus, useDuplicateProperty } from '@/hooks/useAgentProfile';
@@ -251,15 +252,14 @@ export default function AgencyListings() {
   const { data: team = [] } = useAgencyTeam(agency?.id);
   const { data: listings = [], isLoading: listingsLoading } = useAgencyListingsManagement(agency?.id);
   const deleteProperty = useDeleteProperty();
-  const submitForReview = useSubmitForReview();
+  const confirmAgencyListing = useConfirmAgencyListing();
   const updateStatus = useUpdatePropertyStatus();
   const duplicateProperty = useDuplicateProperty();
   const bulkDelete = useBulkDeleteProperties();
-  const bulkSubmit = useBulkSubmitForReview();
   const reassignProperty = useReassignProperty();
   const archiveListing = useArchiveAgencyListing();
   const unpublishListing = useUnpublishAgencyListing();
-  const bulkApproveListings = useBulkApproveAgencyListings();
+  const bulkConfirmListings = useBulkConfirmAgencyListings();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | AgencyListingDisplayStatusKey>(() => (searchParams.get('status') as AgencyListingDisplayStatusKey) || 'all');
@@ -379,9 +379,9 @@ export default function AgencyListings() {
     }
   };
 
-  const allSelectedCanSubmit = selectedIds.size > 0 && [...selectedIds].every(id => {
+  const allSelectedCanConfirm = selectedIds.size > 0 && [...selectedIds].every(id => {
     const listing = listings.find(l => l.id === id);
-    return listing && (listing.verification_status === 'draft' || listing.verification_status === 'changes_requested');
+    return listing && listing.safe_to_batch_approve && (listing.verification_status === 'draft' || listing.verification_status === 'changes_requested');
   });
 
   const handleBulkDelete = () => {
@@ -393,16 +393,10 @@ export default function AgencyListings() {
     });
   };
 
-  const handleBulkSubmit = () => {
-    bulkSubmit.mutate([...selectedIds], {
-      onSuccess: () => setSelectedIds(new Set()),
-    });
-  };
-
   const safeSelectedIds = [...selectedIds].filter((id) => listings.find((l) => l.id === id)?.safe_to_batch_approve);
 
-  const handleBulkApproveSafe = () => {
-    bulkApproveListings.mutate({ propertyIds: safeSelectedIds, agencyId: agency.id }, {
+  const handleBulkConfirmSafe = () => {
+    bulkConfirmListings.mutate({ propertyIds: safeSelectedIds, agencyId: agency.id }, {
       onSuccess: () => setSelectedIds(new Set()),
     });
   };
@@ -678,7 +672,7 @@ export default function AgencyListings() {
                       {sortedListings.map((listing) => {
                         const status = getAgencyListingDisplayStatus(listing);
                         const hasMissingQuickFields = listing.missing_quick_fields.length > 0;
-                        const canSubmitForReview = listing.verification_status === 'draft' || listing.verification_status === 'changes_requested';
+                        const canConfirmForReview = listing.safe_to_batch_approve && (listing.verification_status === 'draft' || listing.verification_status === 'changes_requested');
                         const isPendingReview = listing.verification_status === 'pending_review';
                         const isApproved = listing.verification_status === 'approved';
                         const isPublished = listing.is_published === true;
@@ -769,14 +763,14 @@ export default function AgencyListings() {
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center justify-center gap-1">
-                                {canSubmitForReview && (
+                                {canConfirmForReview && (
                                   <Button
                                     variant="ghost"
                                     size="sm"
                                     className="rounded-lg"
-                                    onClick={() => submitForReview.mutate(listing.id)}
-                                    disabled={submitForReview.isPending}
-                                    title="Submit for Review"
+                                    onClick={() => confirmAgencyListing.mutate({ propertyId: listing.id, agencyId: agency.id })}
+                                    disabled={confirmAgencyListing.isPending}
+                                    title="Confirm and send to BuyWise review"
                                   >
                                     <Send className="h-4 w-4" />
                                   </Button>
@@ -818,10 +812,10 @@ export default function AgencyListings() {
                                       </>
                                     ) : (
                                       <>
-                                        {canSubmitForReview && (
-                                          <DropdownMenuItem onClick={() => submitForReview.mutate(listing.id)} disabled={submitForReview.isPending}>
+                                        {canConfirmForReview && (
+                                          <DropdownMenuItem onClick={() => confirmAgencyListing.mutate({ propertyId: listing.id, agencyId: agency.id })} disabled={confirmAgencyListing.isPending}>
                                             <Send className="h-4 w-4 mr-2" />
-                                            Submit for review
+                                            Confirm accuracy
                                           </DropdownMenuItem>
                                         )}
                                         {isPendingReview && (
@@ -944,29 +938,29 @@ export default function AgencyListings() {
                       {selectedIds.size} selected
                     </span>
 
-                    {allSelectedCanSubmit && (
+                    {allSelectedCanConfirm && (
                       <Button
                         size="sm"
                         variant="outline"
                         className="rounded-xl"
-                        onClick={handleBulkSubmit}
-                        disabled={bulkSubmit.isPending}
+                        onClick={handleBulkConfirmSafe}
+                        disabled={bulkConfirmListings.isPending}
                       >
                         <Send className="h-3.5 w-3.5 mr-1.5" />
-                        Submit for Review
+                        Confirm accuracy
                       </Button>
                     )}
 
-                    {safeSelectedIds.length > 0 && (
+                    {safeSelectedIds.length > 0 && !allSelectedCanConfirm && (
                       <Button
                         size="sm"
                         variant="outline"
-                        className="rounded-xl text-green-700 border-green-500/30 hover:bg-green-500/10"
-                        onClick={handleBulkApproveSafe}
-                        disabled={bulkApproveListings.isPending}
+                        className="rounded-xl"
+                        onClick={handleBulkConfirmSafe}
+                        disabled={bulkConfirmListings.isPending}
                       >
                         <CheckCheck className="h-3.5 w-3.5 mr-1.5" />
-                        Approve safe ({safeSelectedIds.length})
+                        Confirm ready ({safeSelectedIds.length})
                       </Button>
                     )}
 
