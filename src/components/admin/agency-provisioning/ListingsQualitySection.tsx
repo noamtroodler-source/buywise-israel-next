@@ -18,10 +18,17 @@ type Filter = 'all' | 'ready' | 'review' | 'critical';
 type PriceSort = 'none' | 'price_desc' | 'price_asc';
 
 const STATUS_BADGE: Record<string, { label: string; cls: string; icon: any }> = {
-  approved: { label: 'Ready', cls: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20', icon: CheckCircle2 },
-  pending: { label: 'Review', cls: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20', icon: AlertTriangle },
-  flagged: { label: 'Critical', cls: 'bg-destructive/10 text-destructive border-destructive/20', icon: AlertOctagon },
+  approved: { label: 'Ready to publish', cls: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20', icon: CheckCircle2 },
+  pending: { label: 'Needs quick review', cls: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20', icon: AlertTriangle },
+  flagged: { label: 'Needs major review', cls: 'bg-destructive/10 text-destructive border-destructive/20', icon: AlertOctagon },
   reviewed: { label: 'Reviewed', cls: 'bg-muted text-muted-foreground border-border', icon: CheckCircle2 },
+};
+
+const FILTER_LABEL: Record<Filter, string> = {
+  all: 'All',
+  ready: 'Ready to publish',
+  review: 'Needs quick review',
+  critical: 'Needs major review',
 };
 
 export function ListingsQualitySection({ agencyId }: { agencyId: string }) {
@@ -138,11 +145,11 @@ export function ListingsQualitySection({ agencyId }: { agencyId: string }) {
       <div className="p-4 bg-muted/30 border-b">
         <div className="flex items-center gap-4 flex-wrap text-sm">
           <span className="font-semibold">{summary.total} listings:</span>
-          <span className="text-emerald-700 dark:text-emerald-400">✅ {summary.ready} ready</span>
-          <span className="text-amber-700 dark:text-amber-400">⚠️ {summary.review} need review</span>
-          <span className="text-destructive">🔴 {summary.critical} critical</span>
+          <span className="text-emerald-700 dark:text-emerald-400">✅ {summary.ready} ready to publish</span>
+          <span className="text-amber-700 dark:text-amber-400">⚠️ {summary.review} need quick review</span>
+          <span className="text-destructive">🔴 {summary.critical} need major review</span>
           <span className="text-muted-foreground ml-auto">
-            Only critical and warnings need attention before handover.
+            Quick and major review items need attention before handover.
           </span>
         </div>
       </div>
@@ -155,9 +162,8 @@ export function ListingsQualitySection({ agencyId }: { agencyId: string }) {
             size="sm"
             variant={filter === f ? 'default' : 'outline'}
             onClick={() => setFilter(f)}
-            className="capitalize"
           >
-            {f}
+            {FILTER_LABEL[f]}
           </Button>
         ))}
         <Input
