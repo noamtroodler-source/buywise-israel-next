@@ -184,6 +184,22 @@ function isGoodEnglishDescription(desc: string | undefined): boolean {
   return hebrewChars < sample.length * 0.2;
 }
 
+function isTooSimilarToSourceDescription(description: string | undefined, sourceDescription: string | undefined): boolean {
+  if (!description || !sourceDescription || sourceDescription.trim().length < 80) return false;
+  const normalize = (value: string) => value.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+  const generated = normalize(description);
+  const source = normalize(sourceDescription);
+  if (generated.length < 60 || source.length < 80) return false;
+  if (source.includes(generated) || generated.includes(source)) return true;
+
+  const generatedTokens = new Set(generated.split(" ").filter((token) => token.length > 4));
+  const sourceTokens = new Set(source.split(" ").filter((token) => token.length > 4));
+  if (generatedTokens.size < 12 || sourceTokens.size < 12) return false;
+  let overlap = 0;
+  for (const token of generatedTokens) if (sourceTokens.has(token)) overlap++;
+  return overlap / generatedTokens.size > 0.72;
+}
+
 function generateListingDescription(listing: any): string | null {
   // Build a basic English description from extracted fields
   const type = formatPropertyType(listing.property_type).toLowerCase();
@@ -246,6 +262,7 @@ async function generateBuyWiseTitleAndDescription(listing: any, sourceText: stri
   const fallbackTitle = generateListingTitle(listing);
   const fallbackDescription = generateListingDescription(listing) || `${formatPropertyType(listing.property_type)} in ${listing.neighborhood || listing.city || "Israel"}.`;
   if (!lovableKey) return { title: fallbackTitle, description: fallbackDescription, aiGenerated: false };
+  const originalSourceDescription = typeof listing.description === "string" ? listing.description : "";
 
   const facts = {
     property_type: listing.property_type,
@@ -279,7 +296,7 @@ async function generateBuyWiseTitleAndDescription(listing: any, sourceText: stri
         messages: [
           {
             role: "system",
-            content: "You write BuyWise-quality English listing titles and descriptions for international buyers in Israel. Use only supplied facts/source text. Do not invent amenities, views, renovations, exact locations, agent names, phone numbers, or urgency. No Hebrew. Description should be concise, factual, polished, 45-110 words.",
+            content: "You write original BuyWise-quality English listing titles and descriptions for international buyers in Israel. Use source text only as factual input, never as copy to translate, paraphrase line-by-line, or imitate. Create fresh editorial copy in BuyWise's trusted-friend voice: clear, specific, buyer-oriented, and calm. Lead with the property's strongest verified facts, explain practical value, and mention limitations naturally when facts are sparse. Use only supplied facts/source text. Do not invent amenities, views, renovations, exact locations, agent names, phone numbers, scarcity, urgency, or claims like luxury/rare unless directly supported. No Hebrew. Avoid promotional clichés and generic filler. Description must be materially different from the source wording, concise, factual, polished, 55-95 words.",
           },
           {
             role: "user",
@@ -290,12 +307,12 @@ async function generateBuyWiseTitleAndDescription(listing: any, sourceText: stri
           type: "function",
           function: {
             name: "write_listing_copy",
-            description: "Return a fresh English title and BuyWise-quality description grounded only in the provided listing facts.",
+            description: "Return an original English title and BuyWise-quality description grounded only in the provided listing facts, not copied from source wording.",
             parameters: {
               type: "object",
               properties: {
                 title: { type: "string", description: "Clear English title, 35-80 characters." },
-                description: { type: "string", description: "Polished English listing description, 45-110 words, no unsupported claims." },
+                description: { type: "string", description: "Original polished English listing description, 55-95 words, materially different from source wording, no unsupported claims." },
               },
               required: ["title", "description"],
               additionalProperties: false,
@@ -317,7 +334,10 @@ async function generateBuyWiseTitleAndDescription(listing: any, sourceText: stri
     if (sb && jobId) await trackCost(sb, jobId, "ai_tokens", Math.ceil((JSON.stringify(facts).length + sourceText.length + args.length) / 4), "tokens");
     const parsed = JSON.parse(args);
     const title = isGoodEnglishTitle(parsed.title) ? toTitleCase(parsed.title) : fallbackTitle;
-    const description = isGoodEnglishDescription(parsed.description) ? parsed.description.trim() : fallbackDescription;
+    const generatedDescription = typeof parsed.description === "string" ? parsed.description.trim() : "";
+    const description = isGoodEnglishDescription(generatedDescription) && !isTooSimilarToSourceDescription(generatedDescription, originalSourceDescription)
+      ? generatedDescription
+      : fallbackDescription;
     return { title, description, aiGenerated: true };
   } catch (err) {
     console.warn("BuyWise copy generation error:", err);
@@ -3518,12 +3538,12 @@ FOR PROPERTIES — extract these fields:
   Examples: "Spacious 4-Bedroom Apartment in Arnona", "Renovated Penthouse in Neve Tzedek", "3-Bedroom Garden Apartment in Rehavia"
   If the page already has a good English title (not just an address, street name, or Hebrew text), keep it with Title Case.
   Do NOT just use the street address as the title. Do NOT return a Hebrew title.
-- description: Translate the property description into fluent, professional English for international buyers.
-  Keep all factual details (rooms, features, location highlights, renovation info, floor, views, parking, storage).
-  Rephrase marketing fluff into clear, compelling English. Make it informative and appealing.
-  If the description is already in good English, keep it as-is.
+- description: Extract the property facts needed for later BuyWise copywriting; do not preserve source wording.
+  Keep factual details (rooms, features, location highlights, renovation info, floor, views, parking, storage), but rewrite from scratch in original English.
+  Convert marketing fluff into clear, buyer-useful facts. Do not translate or paraphrase sentence-by-sentence.
+  If the source description is already in English, still rewrite it into fresh BuyWise wording instead of keeping it as-is.
   Do NOT include the agent's name, phone number, or any Hebrew text in the description.
-  Aim for 150-400 words. Write in paragraph form, not bullet points.
+  Aim for 70-140 words. Write in paragraph form, not bullet points.
 - In Israel, "rooms" (חדרים) = bedrooms + 1 living room. So 4 rooms = 3 bedrooms. Always subtract 1 for bedrooms.
 - Default currency is ILS (₪) unless explicitly stated otherwise.
 - Use the dictionary above for property types, not your own guess.
