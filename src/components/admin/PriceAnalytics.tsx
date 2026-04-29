@@ -262,22 +262,16 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
             </div>
 
             <div className="rounded-xl border border-border/50 p-4">
-              <p className="text-sm font-semibold text-foreground">Review signals</p>
+              <p className="text-sm font-semibold text-foreground">Activity signals</p>
               <div className="mt-3 space-y-3">
-                {(context?.reviewReasons || []).slice(0, 3).map((item) => (
-                  <div key={item.reason} className="flex items-center justify-between gap-3 text-sm">
-                    <span className="text-foreground">{formatLabel(item.reason)}</span>
-                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">{item.count}</span>
-                  </div>
-                ))}
                 {(context?.recentEvents || []).slice(0, 3).map((item) => (
                   <div key={item.eventType} className="flex items-center justify-between gap-3 text-sm">
                     <span className="text-muted-foreground">{formatLabel(item.eventType)}</span>
                     <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">{item.count}</span>
                   </div>
                 ))}
-                {(context?.reviewReasons || []).length === 0 && (context?.recentEvents || []).length === 0 && (
-                  <p className="text-sm text-muted-foreground">No review activity in this range</p>
+                {(context?.recentEvents || []).length === 0 && (
+                  <p className="text-sm text-muted-foreground">No Price Context activity in this range</p>
                 )}
               </div>
             </div>
