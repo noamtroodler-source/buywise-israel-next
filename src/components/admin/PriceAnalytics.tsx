@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { DollarSign, TrendingUp, Home, Building, BadgeCheck, AlertTriangle, Gauge, MousePointerClick, ShieldCheck, EyeOff, ArrowRight } from 'lucide-react';
+import { DollarSign, TrendingUp, Home, Building, BadgeCheck, AlertTriangle, Gauge, MousePointerClick, ShieldCheck, EyeOff, ArrowRight, Ruler, FileWarning, Wrench } from 'lucide-react';
 import { PriceAnalyticsData } from '@/hooks/usePriceAnalytics';
 import { usePriceContextBlockers } from '@/hooks/useListingReview';
 import { 
@@ -59,6 +59,13 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
     { label: 'Ranking Ready', value: `${(context?.rankingReadinessRate || 0).toFixed(0)}%`, sub: `${context?.rankingReady || 0} safe to prioritize`, icon: ShieldCheck },
     { label: 'Under Review', value: (context?.underReview || 0).toLocaleString(), sub: 'Agent benchmark challenges', icon: AlertTriangle },
     { label: 'Price Context Views', value: (context?.moduleViews || 0).toLocaleString(), sub: `${context?.buyerQuestionEngagements || 0} question interactions`, icon: MousePointerClick },
+  ];
+
+  const healthCards = [
+    { label: 'High-gap listings', value: (context?.highGapListings || 0).toLocaleString(), sub: `${(context?.highGapRate || 0).toFixed(0)}% of active sale listings`, icon: FileWarning },
+    { label: 'Unknown sqm source', value: `${(context?.unknownSqmSourceRate || 0).toFixed(0)}%`, sub: `${context?.unknownSqmSource || 0} listings need size-source cleanup`, icon: Ruler },
+    { label: 'Unknown ownership', value: `${(context?.unknownOwnershipRate || 0).toFixed(0)}%`, sub: `${context?.unknownOwnership || 0} listings need ownership context`, icon: ShieldCheck },
+    { label: 'Admin corrections', value: (context?.adminCorrectionEvents || 0).toLocaleString(), sub: `${(context?.adminCorrectionRate || 0).toFixed(1)} per 100 active listings`, icon: Wrench },
   ];
 
   const formatPriceCompact = (price: number, currency?: string | null) => `${currency || '₪'}${price.toLocaleString()}`;
@@ -134,6 +141,41 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
               <p className="mt-2 text-2xl font-bold text-foreground">{(context?.inquiryConversionRate || 0).toFixed(1)}%</p>
               <p className="text-xs text-muted-foreground">Inquiries per Price Context module view</p>
             </div>
+          </div>
+
+          <div className="rounded-xl border border-border/50 bg-muted/20 p-4">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-foreground">Price Context data-health audit</p>
+                <p className="text-xs text-muted-foreground">Internal cleanup signals for benchmark quality and admin review workload</p>
+              </div>
+              <Badge variant="outline">Admin only</Badge>
+            </div>
+            <div className="grid gap-3 md:grid-cols-4">
+              {healthCards.map((card) => (
+                <div key={card.label} className="rounded-lg border border-border/50 bg-background p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground">{card.label}</p>
+                      <p className="mt-1 text-xl font-bold text-foreground">{card.value}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">{card.sub}</p>
+                    </div>
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                      <card.icon className="h-4 w-4 text-primary" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {(context?.correctionEvents || []).length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {(context?.correctionEvents || []).slice(0, 4).map((item) => (
+                  <Badge key={item.eventType} variant="secondary" className="rounded-lg">
+                    {formatLabel(item.eventType)} · {item.count}
+                  </Badge>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="grid gap-4 lg:grid-cols-3">
