@@ -217,7 +217,8 @@ function useMarketReview(property: PropertyForReview): MarketReviewData {
   const pricePerSqm = property.price && property.size_sqm ? property.price / property.size_sqm : null;
   const pricePerSqft = pricePerSqm ? pricePerSqm / 10.7639 : null;
   const subjectClass = getPriceContextPropertyClass(property);
-  const { comps: comparableComps, metadata: compClassMetadata } = selectPriceContextComps(hasCoordinates ? nearbyComps : specComps, subjectClass, 6);
+  const rawComparableComps = (hasCoordinates ? nearbyComps : specComps) as Array<{ property_type?: string | null; price_per_sqm: number | null }>;
+  const { comps: comparableComps, metadata: compClassMetadata } = selectPriceContextComps(rawComparableComps, subjectClass, 6);
   const compsLoading = hasCoordinates ? nearbyLoading : specLoading;
   const compStats = computeSpecCompStats(comparableComps, pricePerSqm);
   const gapPercent = pricePerSqm && benchmark?.averagePriceSqm
