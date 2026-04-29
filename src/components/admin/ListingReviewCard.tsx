@@ -938,7 +938,6 @@ function BuyerPageFitPanel({ property, market, checks }: { property: PropertyFor
 function DecisionPanel({
   property,
   summary,
-  marketReviewed,
   featureThis,
   setFeatureThis,
   isLoading,
@@ -949,7 +948,6 @@ function DecisionPanel({
 }: {
   property: PropertyForReview;
   summary: ReturnType<typeof summarizeAudit>;
-  marketReviewed: boolean;
   featureThis: boolean;
   setFeatureThis: (value: boolean) => void;
   isLoading?: boolean;
@@ -969,11 +967,11 @@ function DecisionPanel({
       <div className="space-y-2">
         <Button
           onClick={onApprove}
-          disabled={isLoading || !marketReviewed}
+          disabled={isLoading}
           className="w-full bg-semantic-green text-semantic-green-foreground hover:bg-semantic-green/90"
         >
           <Check className="mr-2 h-4 w-4" />
-          {marketReviewed ? approveLabel : 'Review market first'}
+          {approveLabel}
         </Button>
         {property.verification_status === 'pending_review' && (
           <label className="flex cursor-pointer items-center gap-2 rounded-md border border-border p-2 text-sm hover:bg-muted/50">
