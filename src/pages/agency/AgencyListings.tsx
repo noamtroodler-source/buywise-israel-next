@@ -3,9 +3,9 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Loader2, Home, Plus, Search, Download, FileSpreadsheet,
-  Eye, Clock, CheckCircle2, Building2, Heart, MessageSquare,
+  Eye, Clock, CheckCircle2, Building2,
   Edit, Trash2, Send, MoreHorizontal, Copy, Key, ArrowLeftRight, X,
-  ArrowUpDown, ArrowUp, ArrowDown, AlertTriangle, Archive, CheckCheck,
+  ArrowUpDown, ArrowUp, ArrowDown, CheckCheck,
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,7 +36,6 @@ import {
   useAgencyListingsManagement,
   useArchiveAgencyListing,
   useBulkApproveAgencyListings,
-  useMarkAgencyListingNeedsEdit,
   useUnpublishAgencyListing,
 } from '@/hooks/useAgencyListings';
 import { useDeleteProperty, useSubmitForReview, useBulkDeleteProperties, useBulkSubmitForReview, useReassignProperty } from '@/hooks/useAgentProperties';
@@ -88,13 +87,6 @@ function ImportedDraftsGuidance({ listings }: { listings: any[] }) {
     </motion.div>
   );
 }
-
-const reviewConfig: Record<AgencyReviewStatus, { label: string; color: string; icon: typeof Clock }> = {
-  needs_review: { label: 'Confirm', color: 'bg-yellow-500/10 text-yellow-700 border-yellow-500/20', icon: Clock },
-  approved_live: { label: 'Confirmed', color: 'bg-green-500/10 text-green-700 border-green-500/20', icon: CheckCircle2 },
-  needs_edit: { label: 'Quick edit', color: 'bg-orange-500/10 text-orange-700 border-orange-500/20', icon: AlertTriangle },
-  archived_stale: { label: 'Archived', color: 'bg-muted text-muted-foreground border-border', icon: Archive },
-};
 
 type ReviewWorkBucket = 'almost_ready' | 'needs_work';
 
@@ -585,7 +577,7 @@ export default function AgencyListings() {
                     className="pl-10 rounded-xl"
                   />
                 </div>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as 'all' | AgencyListingDisplayStatusKey)}>
                   <SelectTrigger className="w-[140px] rounded-xl"><SelectValue placeholder="Status" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All statuses</SelectItem>
@@ -688,7 +680,6 @@ export default function AgencyListings() {
                       {sortedListings.map((listing) => {
                         const status = getAgencyListingDisplayStatus(listing);
                         const hasMissingQuickFields = listing.missing_quick_fields.length > 0;
-                        const isDraft = listing.verification_status === 'draft';
                         const canSubmitForReview = listing.verification_status === 'draft' || listing.verification_status === 'changes_requested';
                         const isPendingReview = listing.verification_status === 'pending_review';
                         const isApproved = listing.verification_status === 'approved';

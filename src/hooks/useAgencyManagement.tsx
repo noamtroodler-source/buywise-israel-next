@@ -215,36 +215,15 @@ export function useCreateInviteCode() {
 
 export function useApproveJoinRequest() {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-
   return useMutation({
     mutationFn: async ({ requestId, agentId, agencyId }: { requestId: string; agentId: string; agencyId: string }) => {
-      // Update the request status
-      const { error: requestError } = await supabase
-        .from('agency_join_requests')
-        .update({ 
-          status: 'approved',
-          reviewed_at: new Date().toISOString(),
-          reviewed_by: user?.id,
-        })
-        .eq('id', requestId);
+      const { error: approvalError } = await (supabase.rpc as any)('approve_agency_join_request', {
+        p_request_id: requestId,
+        p_agent_id: agentId,
+        p_agency_id: agencyId,
+      });
 
-      if (requestError) throw requestError;
-
-      // Link the agent to the agency
-      const { error: agentError } = await supabase
-        .from('agents')
-        .update({
-          agency_id: agencyId,
-          status: 'active',
-          is_verified: true,
-          approved_at: new Date().toISOString(),
-          approved_by: user?.id,
-        })
-        .eq('id', agentId)
-        .neq('status', 'suspended');
-
-      if (agentError) throw agentError;
+      if (approvalError) throw approvalError;
 
       // Send approval email to agent
       try {
