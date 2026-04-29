@@ -5,7 +5,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ListingReviewCard } from '@/components/admin/ListingReviewCard';
 import {
   useListingsForReview,
@@ -104,14 +103,6 @@ export default function AdminListingReview() {
       icon: FileText, 
       color: 'text-muted-foreground',
       bgColor: 'bg-muted',
-    },
-    {
-      key: 'benchmark_review',
-      label: 'Benchmark Review',
-      icon: BarChart3,
-      color: 'text-primary',
-      bgColor: 'bg-primary/10',
-    },
   ];
 
   return (
@@ -139,7 +130,7 @@ export default function AdminListingReview() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             whileHover={{ scale: 1.02 }}
-            onClick={() => setActiveTab(stat.key as VerificationStatus | 'benchmark_review')}
+            onClick={() => setActiveTab(stat.key as VerificationStatus)}
             className="cursor-pointer"
           >
             <Card className={`${activeTab === stat.key ? 'ring-2 ring-primary' : ''} transition-all`}>
@@ -162,7 +153,7 @@ export default function AdminListingReview() {
       </div>
 
       {/* Listings Tabs */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as VerificationStatus | 'all' | 'benchmark_review')}>
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as VerificationStatus | 'all')}>
         <TabsList className="mb-4">
           <TabsTrigger value="pending_review" className="gap-2">
             <ClipboardCheck className="h-4 w-4" />
@@ -187,50 +178,7 @@ export default function AdminListingReview() {
             <Filter className="h-4 w-4" />
             All
           </TabsTrigger>
-          <TabsTrigger value="benchmark_review" className="gap-2">
-            <BarChart3 className="h-4 w-4" />
-            Benchmark
-            {stats?.benchmark_review ? <Badge variant="secondary" className="ml-1">{stats.benchmark_review}</Badge> : null}
-          </TabsTrigger>
         </TabsList>
-
-        {activeTab === 'benchmark_review' && (
-          <Card className="mb-4">
-            <CardContent className="grid gap-3 p-4 md:grid-cols-4">
-              <Select value={benchmarkStatusFilter} onValueChange={setBenchmarkStatusFilter}>
-                <SelectTrigger><SelectValue placeholder="Review status" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="open">Requested + under review</SelectItem>
-                  <SelectItem value="requested">Requested</SelectItem>
-                  <SelectItem value="under_review">Under review</SelectItem>
-                  <SelectItem value="resolved">Resolved</SelectItem>
-                  <SelectItem value="all">All benchmark reviews</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={benchmarkConfidenceFilter} onValueChange={setBenchmarkConfidenceFilter}>
-                <SelectTrigger><SelectValue placeholder="Confidence tier" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All confidence tiers</SelectItem>
-                  {benchmarkConfidenceOptions.map((tier) => <SelectItem key={tier} value={tier}>{tier.replace(/_/g, ' ')}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              <Select value={benchmarkClassFilter} onValueChange={setBenchmarkClassFilter}>
-                <SelectTrigger><SelectValue placeholder="Property class" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All property classes</SelectItem>
-                  {benchmarkClassOptions.map((propertyClass) => <SelectItem key={propertyClass} value={propertyClass}>{propertyClass.replace(/_/g, ' ')}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              <Select value={benchmarkCityFilter} onValueChange={setBenchmarkCityFilter}>
-                <SelectTrigger><SelectValue placeholder="City / area" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All cities</SelectItem>
-                  {benchmarkCityOptions.map((city) => <SelectItem key={city} value={city}>{city}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Listings Content */}
         <div className="space-y-4">
@@ -246,8 +194,6 @@ export default function AdminListingReview() {
                 <p className="text-muted-foreground">
                    {activeTab === 'pending_review' 
                     ? "Great job! You've reviewed all pending listings."
-                    : activeTab === 'benchmark_review'
-                      ? 'No open benchmark review requests.'
                     : `No listings with status "${activeTab.replace('_', ' ')}"`
                   }
                 </p>
@@ -265,7 +211,6 @@ export default function AdminListingReview() {
                   onApprove={handleApprove}
                   onRequestChanges={handleRequestChanges}
                   onReject={handleReject}
-                  onBenchmarkReviewAction={(id, resolution, notes) => resolveBenchmarkReview.mutate({ id, resolution, notes })}
                   isLoading={isMutating}
                 />
               </motion.div>
