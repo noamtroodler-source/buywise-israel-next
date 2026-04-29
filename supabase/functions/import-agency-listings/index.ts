@@ -1331,6 +1331,101 @@ function canonicalUrlIdentity(raw: string | null | undefined): string {
   }
 }
 
+function sourceDomainFromUrl(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  try {
+    return new URL(normalizeUrl(raw)).hostname.toLowerCase().replace(/^www\./, "");
+  } catch {
+    return null;
+  }
+}
+
+function extractSourceItemId(raw: string | null | undefined, sourceType?: string | null): string | null {
+  if (!raw) return null;
+  try {
+    const parsed = new URL(normalizeUrl(raw));
+    const path = decodeURIComponent(parsed.pathname);
+    const source = (sourceType || "").toLowerCase();
+
+    if (source === "yad2" || parsed.hostname.includes("yad2.co.il")) {
+      const id = path.match(/(?:item|realestate\/item|forsale\/item|rent\/item)[^0-9]*(\d{5,})/i)?.[1]
+        || path.match(/(\d{6,})(?:\D*$)/)?.[1];
+      return id ? `yad2:${id}` : null;
+    }
+
+    if (source === "madlan" || parsed.hostname.includes("madlan.co.il")) {
+      const id = path.match(/(\d{5,})(?:\D*$)/)?.[1];
+      return id ? `madlan:${id}` : null;
+    }
+
+    const propertyIdParam = parsed.searchParams.get("property_id") || parsed.searchParams.get("id") || parsed.searchParams.get("listing_id");
+    if (propertyIdParam && /^[a-z0-9_-]{4,}$/i.test(propertyIdParam)) {
+      return `${source || parsed.hostname}:${propertyIdParam.toLowerCase()}`;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+function buildSourceIdentity(sourceType: string | null | undefined, sourceUrl: string | null | undefined) {
+  const canonicalSourceUrl = sourceUrl ? normalizeUrl(sourceUrl) : null;
+  const sourceItemId = extractSourceItemId(sourceUrl, sourceType);
+  const normalizedType = (sourceType || "website").toLowerCase();
+  return {
+    canonicalSourceUrl,
+    sourceItemId,
+    sourceDomain: sourceDomainFromUrl(sourceUrl),
+    sourceIdentityKey: sourceItemId
+      ? `${normalizedType}:id:${sourceItemId.toLowerCase()}`
+      : canonicalSourceUrl
+      ? `${normalizedType}:url:${canonicalUrlIdentity(canonicalSourceUrl)}`
+      : null,
+  };
+}
+
+async function recordSourceObservation(sb: any, params: {
+  propertyId?: string | null;
+  agencyId?: string | null;
+  importJobId?: string | null;
+  importJobItemId?: string | null;
+  sourceType?: string | null;
+  sourceUrl?: string | null;
+  confidenceScore?: number | null;
+  extractedData?: Record<string, any> | null;
+  duplicateDecision?: string | null;
+  duplicateReasonCodes?: string[];
+  matchedPropertyId?: string | null;
+}) {
+  if (!params.sourceUrl) return;
+  const identity = buildSourceIdentity(params.sourceType, params.sourceUrl);
+  if (!identity.sourceIdentityKey) return;
+  try {
+    await sb.from("property_source_observations").upsert({
+      property_id: params.propertyId || null,
+      agency_id: params.agencyId || null,
+      import_job_id: params.importJobId || null,
+      import_job_item_id: params.importJobItemId || null,
+      source_type: params.sourceType || "website",
+      source_url: params.sourceUrl,
+      canonical_source_url: identity.canonicalSourceUrl,
+      source_domain: identity.sourceDomain,
+      source_item_id: identity.sourceItemId,
+      source_identity_key: identity.sourceIdentityKey,
+      last_seen_at: new Date().toISOString(),
+      last_scraped_at: new Date().toISOString(),
+      observation_status: "active",
+      duplicate_decision: params.duplicateDecision || null,
+      duplicate_reason_codes: params.duplicateReasonCodes || [],
+      matched_property_id: params.matchedPropertyId || null,
+      confidence_score: params.confidenceScore ?? null,
+      raw_extracted_data: params.extractedData || null,
+    }, { onConflict: "agency_id,source_identity_key" });
+  } catch (err) {
+    console.warn("Failed to record source observation:", err);
+  }
+}
+
 function sanitizeDiscoveredUrl(raw: string, baseUrl?: string): { url: string | null; reason?: string } {
   if (!raw || typeof raw !== "string") return { url: null, reason: "empty_url" };
   let candidate = raw.trim().replace(/&amp;/g, "&");
