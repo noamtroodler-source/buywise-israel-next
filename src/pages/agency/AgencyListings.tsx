@@ -938,29 +938,29 @@ export default function AgencyListings() {
                       {selectedIds.size} selected
                     </span>
 
-                    {allSelectedCanSubmit && (
+                    {allSelectedCanConfirm && (
                       <Button
                         size="sm"
                         variant="outline"
                         className="rounded-xl"
-                        onClick={handleBulkSubmit}
-                        disabled={bulkSubmit.isPending}
+                        onClick={handleBulkConfirmSafe}
+                        disabled={bulkConfirmListings.isPending}
                       >
                         <Send className="h-3.5 w-3.5 mr-1.5" />
-                        Submit for Review
+                        Confirm accuracy
                       </Button>
                     )}
 
-                    {safeSelectedIds.length > 0 && (
+                    {safeSelectedIds.length > 0 && !allSelectedCanConfirm && (
                       <Button
                         size="sm"
                         variant="outline"
-                        className="rounded-xl text-green-700 border-green-500/30 hover:bg-green-500/10"
-                        onClick={handleBulkApproveSafe}
-                        disabled={bulkApproveListings.isPending}
+                        className="rounded-xl"
+                        onClick={handleBulkConfirmSafe}
+                        disabled={bulkConfirmListings.isPending}
                       >
                         <CheckCheck className="h-3.5 w-3.5 mr-1.5" />
-                        Approve safe ({safeSelectedIds.length})
+                        Confirm ready ({safeSelectedIds.length})
                       </Button>
                     )}
 
