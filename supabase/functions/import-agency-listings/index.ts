@@ -889,6 +889,10 @@ function validatePropertyData(listing: Record<string, any>, importType: string =
     errors.push(`invalid listing_status '${listing.listing_status}'`);
   }
 
+  if (!hasExactStreetAddress(listing.address)) {
+    errors.push("exact street address with street number required");
+  }
+
   // Numeric sanity
   if (listing.bedrooms != null && (typeof listing.bedrooms !== "number" || listing.bedrooms < 0)) {
     errors.push("bedrooms must be a non-negative number");
