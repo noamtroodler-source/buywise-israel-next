@@ -70,6 +70,33 @@ Deno.serve(async (req) => {
 
     const { data: cred, error: credErr } = await q.maybeSingle();
     if (credErr || !cred) {
+      if (userId && !credentialId) {
+        const { data: profile } = await admin
+          .from("profiles")
+          .select("email, full_name")
+          .eq("id", userId)
+          .maybeSingle();
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            credential: {
+              id: null,
+              userId,
+              agencyId: null,
+              role: null,
+              email: profile?.email ?? null,
+              fullName: profile?.full_name ?? null,
+              password: null,
+              createdAt: null,
+              deliveredAt: null,
+              unavailableReason: "existing_user_no_provisional_password",
+            },
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       return new Response(JSON.stringify({ success: false, error: "Credential not found" }), {
         status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
