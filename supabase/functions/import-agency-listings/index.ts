@@ -5018,7 +5018,7 @@ async function processOneItem(
 
     // Register image pHashes for cross-listing dedup
     if (imageUrls.length > 0 && property?.id) {
-      const phashWarnings = await registerImageHashes(property.id, imageUrls, sb);
+      const phashWarnings = await registerImageHashes(property.id, imageUrls, sb, listing.image_hashes || []);
       if (phashWarnings.length > 0) {
         dlog(`pHash warnings for ${property.id}:`, phashWarnings);
       }
@@ -5436,7 +5436,7 @@ async function handleApproveItem(body: any) {
 
   // Register image pHashes for cross-listing dedup
   if (imageUrls.length > 0 && property?.id) {
-    const phashWarnings = await registerImageHashes(property.id, imageUrls, sb);
+    const phashWarnings = await registerImageHashes(property.id, imageUrls, sb, listing.image_hashes || []);
     if (phashWarnings.length > 0) {
       dlog(`pHash warnings for approved item ${property.id}:`, phashWarnings);
     }
