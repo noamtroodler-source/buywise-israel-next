@@ -7909,6 +7909,10 @@ export type Database = {
         Args: { p_property_ids: string[] }
         Returns: Json
       }
+      bulk_confirm_agency_listings: {
+        Args: { p_property_ids: string[] }
+        Returns: Json
+      }
       calculate_journey_stage: { Args: { milestones: Json }; Returns: string }
       can_agent_view_profile: {
         Args: { _agent_user_id: string; _profile_id: string }
@@ -8022,6 +8026,10 @@ export type Database = {
           previous_agency_id: string
           property_id: string
         }[]
+      }
+      confirm_agency_listing: {
+        Args: { p_notes?: string; p_property_id: string }
+        Returns: boolean
       }
       consume_password_setup_token: {
         Args: { p_token: string }
