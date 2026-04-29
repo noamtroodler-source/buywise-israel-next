@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Property, PropertyFilters } from '@/types/database';
 import { isSavedLocationDest } from '@/lib/utils/commuteFilter';
 import { shuffleFeatured } from '@/lib/utils/shuffleFeatured';
+import { rankByPriceContext } from '@/lib/priceContextRanking';
 
 /**
  * Helper: fetch featured property IDs from the featured_listings table.
@@ -313,7 +314,8 @@ export function useProperties(filters?: PropertyFilters) {
       const { data, error } = await query;
 
       if (error) throw error;
-      return data as Property[];
+      const properties = (data ?? []) as Property[];
+      return filters?.sort_by ? properties : rankByPriceContext(properties);
     },
   });
 }
@@ -414,13 +416,13 @@ export function useFeaturedSaleProperties(options?: FeaturedPropertiesOptions) {
           .limit(8);
 
         if (error) throw error;
-        adminProperties = (data ?? []) as Property[];
+        adminProperties = rankByPriceContext((data ?? []) as Property[]);
         adminProperties.forEach(p => adminIds.add(p.id));
       }
 
       // Merge featured listings
       const boostedProperties = await fetchFeaturedProperties(adminIds, 'for_sale');
-      const merged = [...boostedProperties, ...adminProperties].slice(0, 8);
+      const merged = rankByPriceContext([...boostedProperties, ...adminProperties]).slice(0, 8);
       return merged;
     },
     enabled: options?.enabled !== false,
@@ -468,13 +470,13 @@ export function useFeaturedRentalProperties(options?: FeaturedPropertiesOptions)
           .limit(8);
 
         if (error) throw error;
-        adminProperties = (data ?? []) as Property[];
+        adminProperties = rankByPriceContext((data ?? []) as Property[]);
         adminProperties.forEach(p => adminIds.add(p.id));
       }
 
       // Merge featured listings
       const boostedProperties = await fetchFeaturedProperties(adminIds, 'for_rent');
-      const merged = [...boostedProperties, ...adminProperties].slice(0, 8);
+      const merged = rankByPriceContext([...boostedProperties, ...adminProperties]).slice(0, 8);
       return merged;
     },
     enabled: options?.enabled !== false,
@@ -497,7 +499,7 @@ export function useRecommendedProperties() {
         .limit(8);
 
       if (error) throw error;
-      return data as Property[];
+      return rankByPriceContext((data ?? []) as Property[]);
     },
   });
 }
@@ -535,7 +537,7 @@ export function useCityFeaturedProperties(cityName: string, limit: number = 8, l
       const { data: featuredData, error: featuredError } = await query;
       if (featuredError) throw featuredError;
 
-      const combined = [...cityBoosted, ...(featuredData ?? [])] as Property[];
+      const combined = rankByPriceContext([...cityBoosted, ...(featuredData ?? [])] as Property[]);
       if (combined.length >= limit) return combined.slice(0, limit);
 
       // Fill remaining with popular properties
@@ -557,7 +559,7 @@ export function useCityFeaturedProperties(cityName: string, limit: number = 8, l
       const { data: additionalData, error: additionalError } = await additionalQuery;
       if (additionalError) throw additionalError;
 
-      return [...combined, ...(additionalData ?? [])] as Property[];
+      return rankByPriceContext([...combined, ...(additionalData ?? [])] as Property[]);
     },
     enabled: !!cityName,
   });
