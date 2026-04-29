@@ -17,7 +17,7 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { useFormatPrice, useFormatPricePerArea } from '@/contexts/PreferencesContext';
 import { useSpecBasedSoldComps, computeSpecCompStats, SpecBasedComp } from '@/hooks/useSpecBasedSoldComps';
-import { computePriceContextSpecMatch, type PriceContextCompClassMatch, type PriceContextSpecMatchQuality } from '@/lib/priceContext';
+import { computePriceContextCompRecency, computePriceContextSpecMatch, type PriceContextCompClassMatch, type PriceContextSpecMatchQuality } from '@/lib/priceContext';
 
 interface SpecBasedCompsProps {
   city: string;
@@ -28,7 +28,7 @@ interface SpecBasedCompsProps {
   currency?: string;
   sourceRooms?: number | null; // Israeli room count from scraping
   subjectProperty?: Parameters<typeof useSpecBasedSoldComps>[5];
-  onVerdictComputed?: (avgComparison: number | null, compsCount: number, radiusUsedM: number, avgCompPriceSqm: number | null, compDispersionPercent?: number | null, compClassMatch?: PriceContextCompClassMatch | null, roomMatchQuality?: PriceContextSpecMatchQuality | null, sizeMatchQuality?: PriceContextSpecMatchQuality | null) => void;
+  onVerdictComputed?: (avgComparison: number | null, compsCount: number, radiusUsedM: number, avgCompPriceSqm: number | null, compDispersionPercent?: number | null, compClassMatch?: PriceContextCompClassMatch | null, roomMatchQuality?: PriceContextSpecMatchQuality | null, sizeMatchQuality?: PriceContextSpecMatchQuality | null, compRecencyMonths?: number | null) => void;
   className?: string;
 }
 
@@ -119,10 +119,11 @@ export function SpecBasedComps({
   const subjectPriceSqm = price && sizeSqm && sizeSqm > 0 ? price / sizeSqm : null;
   const stats = computeSpecCompStats(comps, subjectPriceSqm);
   const specMatchMetadata = computePriceContextSpecMatch(comps, sourceRooms ?? (bedrooms != null ? bedrooms + 1 : null), sizeSqm ?? null);
+  const recencyMetadata = computePriceContextCompRecency(comps);
 
   useEffect(() => {
-    onVerdictComputed?.(stats?.vsSubjectPct ?? null, stats?.count ?? comps.length, 1000, stats?.avgPriceSqm ?? null, stats?.dispersionPercent ?? null, null, specMatchMetadata.roomMatchQuality, specMatchMetadata.sizeMatchQuality);
-  }, [onVerdictComputed, stats?.vsSubjectPct, stats?.count, stats?.avgPriceSqm, stats?.dispersionPercent, comps.length, specMatchMetadata.roomMatchQuality, specMatchMetadata.sizeMatchQuality]);
+    onVerdictComputed?.(stats?.vsSubjectPct ?? null, stats?.count ?? comps.length, 1000, stats?.avgPriceSqm ?? null, stats?.dispersionPercent ?? null, null, specMatchMetadata.roomMatchQuality, specMatchMetadata.sizeMatchQuality, recencyMetadata.avgRecencyMonths);
+  }, [onVerdictComputed, stats?.vsSubjectPct, stats?.count, stats?.avgPriceSqm, stats?.dispersionPercent, comps.length, specMatchMetadata.roomMatchQuality, specMatchMetadata.sizeMatchQuality, recencyMetadata.avgRecencyMonths]);
 
   const locationLabel = neighborhood ? `${neighborhood}, ${city}` : city;
 
