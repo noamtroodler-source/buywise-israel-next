@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, type ComponentType } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef, type ComponentType } from 'react';
 import { BarChart3, ShieldCheck, Info, ArrowRight, ChevronDown, Calculator, Ruler, MapPin, Building2 } from 'lucide-react';
 import { getIsraeliRoomCount } from '@/lib/israeliRoomCount';
 import { Link, useLocation } from 'react-router-dom';
@@ -648,11 +648,6 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
           radiusUsedM={verdictData.radiusUsedM}
           sqmSource={property.sqm_source}
           ownershipType={property.ownership_type}
-          onTrackInteraction={handlePriceContextInteraction}
-        />
-
-        <PriceContextTrustFeedback
-          priceContext={priceContext}
           onTrackInteraction={handlePriceContextInteraction}
         />
 
