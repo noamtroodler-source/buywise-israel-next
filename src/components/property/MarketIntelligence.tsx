@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
-import { PropertyValueSnapshot } from './PropertyValueSnapshot';
 import { RecentNearbySales } from './RecentNearbySales';
 import { SpecBasedComps } from './SpecBasedComps';
 import { MarketDataContext } from '@/components/shared/MarketDataContext';
@@ -386,12 +385,11 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
 
   // Price tier classification (replaces old isPremiumSegment hack)
   const propertyPricePerSqm = property.size_sqm ? Math.round(property.price / property.size_sqm) : null;
-  const { tier: priceTier, tierLabel, tierAvgPriceSqm, tierAvgTotalPrice } = usePriceTier(
+  const { tier: priceTier, tierLabel, tierAvgPriceSqm } = usePriceTier(
     property.city,
     israeliRooms,
     propertyPricePerSqm
   );
-  const effectiveYoyChange = roomPrice?.yoyChange ?? cityData?.yoy_price_change ?? null;
 
   // Neighborhood avg price per sqm (falls back to city if unavailable)
   const neighborhoodAvgPriceSqm = neighborhoodPrice?.avg_price_sqm ?? null;
@@ -530,28 +528,6 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
           radiusUsedM={verdictData.radiusUsedM}
           priceTier={priceTier}
           priceContext={priceContext}
-        />
-
-        {/* Value Snapshot Cards (no header) */}
-        <PropertyValueSnapshot
-          price={property.price}
-          sizeSqm={property.size_sqm}
-          city={property.city}
-          averagePriceSqm={tierAvgPriceSqm ?? effectiveAvgPriceSqm}
-          priceChange={effectiveYoyChange}
-          listingStatus={property.listing_status}
-          bedrooms={israeliRooms}
-          cityArnonaRate={cityData?.arnona_rate_sqm}
-          cityAvgVaadBayit={cityData?.average_vaad_bayit}
-          roomSpecificCityAvgPrice={tierAvgTotalPrice ?? roomPrice?.avgPrice ?? null}
-          nearbyCompAvgPriceSqm={verdictData.avgCompPriceSqm}
-          nearbyCompCount={verdictData.compsCount}
-          nearbyCompRadiusM={verdictData.radiusUsedM}
-          priceTier={priceTier}
-          tierLabel={tierLabel}
-          neighborhoodAvgPriceSqm={neighborhoodAvgPriceSqm}
-          neighborhood={property.neighborhood}
-          hideHeader
         />
 
         {/* Divider with evidence count */}
