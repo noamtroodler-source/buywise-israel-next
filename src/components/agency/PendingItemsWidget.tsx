@@ -26,7 +26,7 @@ export function PendingItemsWidget({ agencyId }: PendingItemsWidgetProps) {
   if (isLoading || !data) return null;
   if (data.dismissedAt) return null;
 
-  const items: { icon: typeof Mail; label: string; href: string }[] = [];
+  const items: { icon: typeof AlertTriangle; label: string; href: string }[] = [];
   if (data.agentsMissingLicense > 0) {
     items.push({
       icon: BadgeCheck,
