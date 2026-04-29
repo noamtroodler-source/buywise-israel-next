@@ -4511,12 +4511,29 @@ async function processOneItem(
           .update({ last_primary_refresh: new Date().toISOString() })
           .eq("id", match.property_id);
 
+        await recordSourceObservation(sb, {
+          propertyId: match.property_id,
+          agencyId: job.agency_id,
+          importJobId: jobId,
+          importJobItemId: item.id,
+          sourceType: job.source_type || "website",
+          sourceUrl: item.url,
+          confidenceScore,
+          extractedData: sanitizedListing,
+          duplicateDecision: "high_confidence_cross_agency_colist",
+          duplicateReasonCodes: ["cross_agency_same_unit_score", "co_listing_created"],
+          matchedPropertyId: match.property_id,
+        });
+
         // Mark the import item as co_listed — distinct from skipped.
         await sb.from("import_job_items").update({
           status: "co_listed",
           error_message: `Co-listed under existing property ${match.property_id} (score ${match.similarity_score}).`,
           error_type: null,
           property_id: match.property_id,
+          matched_property_id: match.property_id,
+          duplicate_decision: "high_confidence_cross_agency_colist",
+          duplicate_reason_codes: ["cross_agency_same_unit_score", "co_listing_created"],
         }).eq("id", item.id);
 
         dlog(`[Co-Listing] Added agency ${job.agency_id} as secondary on property ${match.property_id} (score ${match.similarity_score})`);
@@ -4584,6 +4601,11 @@ async function processOneItem(
         claimed_by_agency_id: job.agency_id,
         import_source: job.source_type === "yad2" ? "yad2" : job.source_type === "madlan" ? "madlan" : "website_scrape",
         source_url: item.url,
+        canonical_source_url: sourceIdentity.canonicalSourceUrl,
+        source_item_id: sourceIdentity.sourceItemId,
+        source_identity_key: sourceIdentity.sourceIdentityKey,
+        source_domain: sourceIdentity.sourceDomain,
+        source_identity_reason: sourceIdentity.sourceItemId ? "native_source_item_id" : "canonical_source_url",
         data_quality_score: confidenceScore,
         location_confidence: listing.address?.length > 3 ? "exact" : listing.neighborhood ? "neighborhood" : "city",
         is_claimed: false,
@@ -4636,7 +4658,25 @@ async function processOneItem(
       }, { onConflict: "property_a,property_b", ignoreDuplicates: true });
     }
 
-    await sb.from("import_job_items").update({ status: "done", property_id: property.id }).eq("id", item.id);
+    await recordSourceObservation(sb, {
+      propertyId: property.id,
+      agencyId: job.agency_id,
+      importJobId: jobId,
+      importJobItemId: item.id,
+      sourceType: job.source_type || "website",
+      sourceUrl: item.url,
+      confidenceScore,
+      extractedData: sanitizedListing,
+      duplicateDecision: "new_property_created",
+      duplicateReasonCodes: ["no_exact_source_match"],
+    });
+
+    await sb.from("import_job_items").update({
+      status: "done",
+      property_id: property.id,
+      duplicate_decision: "new_property_created",
+      duplicate_reason_codes: ["no_exact_source_match"],
+    }).eq("id", item.id);
     return { succeeded: true };
   } catch (err) {
     console.error(`Error processing ${item.url}:`, err);
