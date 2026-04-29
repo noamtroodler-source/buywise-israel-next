@@ -479,24 +479,26 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
       },
       {
         id: 'nearby_recorded_sales',
-        label: 'Nearby recorded sales',
+        label: priceContext.isLuxuryPremiumMode ? 'Nearby sales context' : 'Nearby recorded sales',
         value: priceContext.benchmarkRange && verdictData.compsCount > 0 ? formatNisPerSqmRange(priceContext.benchmarkRange.min, priceContext.benchmarkRange.max) : 'Limited nearby evidence',
         detail: verdictData.compsCount > 0
-          ? `${verdictData.compsCount} recorded sale${verdictData.compsCount > 1 ? 's' : ''} within ${verdictData.radiusUsedM >= 1000 ? '1km' : `${verdictData.radiusUsedM}m`}.`
+          ? priceContext.isLuxuryPremiumMode
+            ? `${verdictData.compsCount} standard recorded sale${verdictData.compsCount > 1 ? 's' : ''} within ${verdictData.radiusUsedM >= 1000 ? '1km' : `${verdictData.radiusUsedM}m`}; background only for luxury evaluation.`
+            : `${verdictData.compsCount} recorded sale${verdictData.compsCount > 1 ? 's' : ''} within ${verdictData.radiusUsedM >= 1000 ? '1km' : `${verdictData.radiusUsedM}m`}.`
           : 'No listing-level nearby sale range is available yet.',
         icon: MapPin,
       },
       {
         id: 'broader_area_benchmark',
-        label: neighborhoodAvgPriceSqm ? 'Area benchmark' : 'Area benchmark · directional',
+        label: priceContext.isLuxuryPremiumMode ? 'Area benchmark' : neighborhoodAvgPriceSqm ? 'Area benchmark' : 'Area benchmark · directional',
         value: broaderAreaValue,
-        detail: broaderAreaDetail,
+        detail: priceContext.isLuxuryPremiumMode ? `${broaderAreaDetail} Standard recorded-sale context, not a luxury valuation.` : broaderAreaDetail,
         icon: Building2,
       },
     ];
 
     return cards;
-  }, [effectiveAvgPriceSqm, neighborhoodAvgPriceSqm, priceContext.benchmarkRange, property.city, property.neighborhood, property.size_sqm, propertyPricePerSqm, verdictData.compsCount, verdictData.radiusUsedM]);
+  }, [effectiveAvgPriceSqm, neighborhoodAvgPriceSqm, priceContext.benchmarkRange, priceContext.isLuxuryPremiumMode, property.city, property.neighborhood, property.size_sqm, propertyPricePerSqm, verdictData.compsCount, verdictData.radiusUsedM]);
 
   const benchmarkRanges: BenchmarkRange[] = useMemo(() => {
     const ranges: BenchmarkRange[] = [];
