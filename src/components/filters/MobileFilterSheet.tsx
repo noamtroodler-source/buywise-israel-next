@@ -464,8 +464,8 @@ export function MobileFilterSheet({
                 >
                   <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                   <span>
-                    <span className="block text-sm font-semibold">Pricing Context Complete</span>
-                    <span className="block text-xs text-muted-foreground">Show listings with complete BuyWise pricing context.</span>
+                    <span className="block text-sm font-semibold">Has Price Context</span>
+                    <span className="block text-xs text-muted-foreground">Show listings with buyer-facing BuyWise pricing context.</span>
                   </span>
                 </button>
               </section>

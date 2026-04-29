@@ -95,7 +95,7 @@ export function QuickFilterChips({ filters, onFiltersChange, listingType }: Quic
     : [
         {
           id: 'pricing_context_complete',
-          label: 'Pricing Context Complete',
+          label: 'Has Price Context',
           apply: (f) => ({ ...f, pricing_context_complete: true }),
           isActive: (f) => f.pricing_context_complete === true,
         },
