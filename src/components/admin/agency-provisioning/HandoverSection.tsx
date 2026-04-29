@@ -36,11 +36,7 @@ export function HandoverSection({ agency, agentCount, listingCount }: Props) {
       return data as { agentsEmailed: number; agentsTotal: number; strategy: string };
     },
     onSuccess: (data) => {
-      toast.success(
-        data.strategy === 'send_all_now'
-          ? `Handover complete — owner + ${data.agentsEmailed} agent emails sent`
-          : 'Handover complete — owner email sent. Agents will be notified by the owner.'
-      );
+      toast.success(`Handover complete — owner + ${data.agentsEmailed} agent emails sent`);
       qc.invalidateQueries({ queryKey: ['provisioning-agency'] });
       qc.invalidateQueries({ queryKey: ['provisioning-agencies'] });
       setConfirmOpen(false);
@@ -93,11 +89,7 @@ export function HandoverSection({ agency, agentCount, listingCount }: Props) {
           <div className="flex items-center gap-2 text-muted-foreground text-xs">
             <Mail className="h-3 w-3" /> Strategy
           </div>
-          <div className="text-xs font-medium mt-1">
-            {agency.agent_email_strategy === 'send_all_now'
-              ? 'All now'
-              : 'After owner'}
-          </div>
+          <div className="text-xs font-medium mt-1">Owner + agents</div>
         </div>
       </div>
 
@@ -127,17 +119,10 @@ export function HandoverSection({ agency, agentCount, listingCount }: Props) {
                 The owner ({agency.email}) will receive a welcome email with a
                 link to set their password.
               </span>
-              {agency.agent_email_strategy === 'send_all_now' ? (
-                <span className="block">
-                  All <strong>{agentCount}</strong> agents will also receive
-                  welcome emails immediately.
-                </span>
-              ) : (
-                <span className="block">
-                  Agents will <strong>not</strong> be emailed yet — the owner
-                  will trigger that from their dashboard.
-                </span>
-              )}
+              <span className="block">
+                All <strong>{agentCount}</strong> agents will also receive
+                welcome emails immediately.
+              </span>
               <span className="block text-xs">
                 Status will move to <code>handed_over</code>.
               </span>
