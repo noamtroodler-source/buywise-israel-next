@@ -7,6 +7,7 @@ const corsHeaders = {
 };
 
 const APP_URL = "https://buywiseisrael.com";
+const FALLBACK_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2ZXFoeXF4ZGliamF5bGlhenhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYyODAwNDMsImV4cCI6MjA4MTg1NjA0M30.Jj193wal4FT9oyYZpHa04VitNjnGb0Nt0eq34XDOJSQ";
 
 // Sends welcome emails to all unsent agents in an agency.
 // Used by the owner dashboard "Send welcome emails to my agents" button
@@ -20,6 +21,8 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const configuredAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || "";
+    const anonKey = isJwt(configuredAnonKey) ? configuredAnonKey : FALLBACK_ANON_KEY;
     const admin = createClient(supabaseUrl, serviceKey);
 
     const authHeader = req.headers.get("Authorization") ?? "";
@@ -75,16 +78,14 @@ Deno.serve(async (req) => {
         }
       }
 
-      const { error } = await admin.functions.invoke("send-transactional-email", {
-        body: {
-          templateName: "agent-welcome",
-          recipientEmail: agent.email,
-          idempotencyKey: `agent-welcome-${agent.id}`,
-          templateData: {
-            agentName: agent.name,
-            agencyName: agency.name,
-            setupUrl,
-          },
+      const error = await sendTransactionalEmail(supabaseUrl, anonKey, {
+        templateName: "agent-welcome",
+        recipientEmail: agent.email,
+        idempotencyKey: `agent-welcome-${agent.id}`,
+        templateData: {
+          agentName: agent.name,
+          agencyName: agency.name,
+          setupUrl,
         },
       });
       if (!error) {
@@ -108,4 +109,32 @@ function json(data: Record<string, unknown>, status = 200) {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
+}
+
+function isJwt(value: string): boolean {
+  return value.split(".").length === 3;
+}
+
+async function sendTransactionalEmail(
+  supabaseUrl: string,
+  anonKey: string,
+  body: Record<string, unknown>
+): Promise<unknown | null> {
+  const response = await fetch(`${supabaseUrl}/functions/v1/send-transactional-email`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      apikey: anonKey,
+      Authorization: `Bearer ${anonKey}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (response.ok) {
+    await response.text();
+    return null;
+  }
+
+  const errorBody = await response.text();
+  return { status: response.status, statusText: response.statusText, body: errorBody };
 }
