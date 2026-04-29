@@ -5044,6 +5044,7 @@ async function handleApproveItem(body: any) {
     const coords = await geocodeWithRateLimit(listing.address, listing.city, listing.neighborhood);
     if (coords) { latitude = coords.lat; longitude = coords.lng; }
   }
+  const buildingIdentity = buildBuildingIdentity(listing.city, listing.address, latitude, longitude);
 
   const entryDate = listing.entry_date === "immediate" ? new Date().toISOString().split("T")[0] : listing.entry_date || null;
   const copy = await generateBuyWiseTitleAndDescription(listing, `${listing.title || ""}\n${listing.description || ""}`, Deno.env.get("LOVABLE_API_KEY") || "", undefined, sb);
@@ -5125,6 +5126,10 @@ async function handleApproveItem(body: any) {
     canonical_source_url: sourceIdentity.canonicalSourceUrl,
     source_item_id: sourceIdentity.sourceItemId,
     source_identity_key: sourceIdentity.sourceIdentityKey,
+    normalized_city_key: buildingIdentity.normalizedCityKey,
+    normalized_address_key: buildingIdentity.normalizedAddressKey,
+    geocode_key: buildingIdentity.geocodeKey,
+    building_key: buildingIdentity.buildingKey,
     duplicate_decision: "manual_review_approved_created",
     duplicate_reason_codes: ["approved_from_import_review"],
   }).eq("id", item_id);
