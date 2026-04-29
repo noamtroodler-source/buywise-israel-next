@@ -23,7 +23,7 @@ export default function AdminListingReview() {
   
   const { data: stats, isLoading: statsLoading } = useReviewStats();
   const { data: listings = [], isLoading: listingsLoading } = useListingsForReview(
-    activeTab === 'all' ? undefined : activeTab
+    activeTab === 'all' || activeTab === 'benchmark_review' ? undefined : activeTab
   );
 
   const approveListing = useApproveListing();
