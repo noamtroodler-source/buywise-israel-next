@@ -4361,6 +4361,14 @@ async function processOneItem(
       }
     }
 
+    await translateHebrewLocationFields(
+      listing,
+      `${listing.title || ""}\n${listing.description || ""}\n${structuredData?.og_title || ""}\n${structuredData?.og_description || ""}\n${markdown}`,
+      lovableKey,
+      jobId,
+      sb,
+    );
+
     // ── CITY WHITELIST GATE ──
     const matchedCity = matchSupportedCity(listing.city);
     if (!matchedCity) {
@@ -6596,8 +6604,8 @@ async function runMadlanAgencyDiscoverJob(params: {
           if (madlanItem.hasAirConditioner || madlanItem.hasAirConditioning) features.push("air_conditioning");
           if (madlanItem.isFurnished) features.push("furnished");
 
-          const city = madlanItem.city || cities[0];
-          const address = madlanItem.address || (madlanItem.streetName ? `${madlanItem.streetName} ${madlanItem.streetNumber || ""}`.trim() : "");
+          let city = madlanItem.city || cities[0];
+          let address = madlanItem.address || (madlanItem.streetName ? `${madlanItem.streetName} ${madlanItem.streetNumber || ""}`.trim() : "");
 
           // Build listing object for title/description generation
           const listing: any = {
@@ -6622,6 +6630,16 @@ async function runMadlanAgencyDiscoverJob(params: {
             vaad_bayit_monthly: madlanItem.vaadBayit || madlanItem.houseCommittee || null,
             image_urls: madlanItem.images || madlanItem.photos || madlanItem.imageUrls || madlanItem.media || [],
           };
+
+          await translateHebrewLocationFields(
+            listing,
+            `${madlanItem.title || ""}\n${madlanItem.description || madlanItem.shortDescription || madlanItem.descriptionText || ""}`,
+            LOVABLE_API_KEY,
+            jobId,
+            sb,
+          );
+          city = listing.city || city;
+          address = listing.address || address;
 
           const copy = await generateBuyWiseTitleAndDescription(
             listing,
