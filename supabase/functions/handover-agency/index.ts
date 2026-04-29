@@ -16,7 +16,9 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const admin = createClient(supabaseUrl, serviceKey);
+    const functionInvoker = createClient(supabaseUrl, anonKey);
 
     // ---- Auth: require admin ----
     const authHeader = req.headers.get("Authorization") ?? "";
@@ -109,7 +111,7 @@ Deno.serve(async (req) => {
     const pendingItems = summarizeFlags(flags as any[], agents as any[]);
 
     // ---- Send owner welcome email via queue ----
-    const { error: ownerSendErr } = await admin.functions.invoke(
+    const { error: ownerSendErr } = await functionInvoker.functions.invoke(
       "send-transactional-email",
       {
         body: {
@@ -165,7 +167,7 @@ Deno.serve(async (req) => {
         }
       }
 
-      const { error: aErr } = await admin.functions.invoke(
+      const { error: aErr } = await functionInvoker.functions.invoke(
         "send-transactional-email",
         {
           body: {
