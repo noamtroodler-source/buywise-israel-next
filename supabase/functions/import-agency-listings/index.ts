@@ -4915,12 +4915,18 @@ async function processOneItem(
       extractedData: sanitizedListing,
       duplicateDecision: "new_property_created",
       duplicateReasonCodes: ["no_exact_source_match"],
+      duplicateDecisionBand: "no_match",
+      duplicateMatchScores: { exact_source_match: 0 },
+      duplicateDecisionMetadata: { action: "create_new_property", property_id: property.id },
     });
 
     await sb.from("import_job_items").update({
       status: "done",
       property_id: property.id,
       duplicate_decision: "new_property_created",
+      duplicate_decision_band: "no_match",
+      duplicate_match_scores: { exact_source_match: 0 },
+      duplicate_decision_metadata: { action: "create_new_property", property_id: property.id },
       duplicate_reason_codes: ["no_exact_source_match"],
     }).eq("id", item.id);
     return { succeeded: true };
