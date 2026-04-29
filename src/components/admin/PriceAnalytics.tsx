@@ -55,20 +55,20 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
   const exportPriceContextCsv = () => {
     if (!context) return;
     exportToCSV('price-context-kpis.csv', ['Metric', 'Value'], [
-      ['Context complete rate', `${context.completionRate.toFixed(1)}%`],
+      ['Context coverage rate', `${context.completionRate.toFixed(1)}%`],
       ['Module views', String(context.moduleViews)],
       ['Details open rate', `${context.detailsOpenRate.toFixed(1)}%`],
       ['Comparable views', String(context.comparableViews)],
       ['Saves after context view', String(context.savesAfterContextView)],
       ['Context inquiry conversion rate', `${context.inquiryConversionRate.toFixed(1)}%`],
       ['Trust helpful rate', `${context.helpfulFeedbackRate.toFixed(1)}%`],
-      ['Premium context completion rate', `${context.premiumContextCompletionRate.toFixed(1)}%`],
+      ['Premium context coverage rate', `${context.premiumContextCompletionRate.toFixed(1)}%`],
       ['Unknown sqm source rate', `${context.unknownSqmSourceRate.toFixed(1)}%`],
       ['Unknown ownership rate', `${context.unknownOwnershipRate.toFixed(1)}%`],
     ]);
   };
   const contextCards = [
-    { label: 'Context Complete', value: `${(context?.completionRate || 0).toFixed(0)}%`, sub: `${context?.complete || 0} of ${context?.totalListings || 0} active listings`, icon: BadgeCheck },
+    { label: 'Context Coverage', value: `${(context?.completionRate || 0).toFixed(0)}%`, sub: `${context?.complete || 0} of ${context?.totalListings || 0} active listings`, icon: BadgeCheck },
     { label: 'Ranking Ready', value: `${(context?.rankingReadinessRate || 0).toFixed(0)}%`, sub: `${context?.rankingReady || 0} safe to prioritize`, icon: ShieldCheck },
     { label: 'Limited Context', value: (context?.incomplete || 0).toLocaleString(), sub: 'Listings missing public context', icon: AlertTriangle },
     { label: 'Price Context Views', value: (context?.moduleViews || 0).toLocaleString(), sub: `${context?.buyerQuestionEngagements || 0} question interactions`, icon: MousePointerClick },
