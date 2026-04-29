@@ -58,8 +58,7 @@ export function PendingItemsWidget({ agencyId }: PendingItemsWidgetProps) {
     });
   }
 
-  const showSendAgentEmails =
-    data.emailStrategy === 'send_after_owner' && data.agentsPendingEmail > 0;
+  const showSendAgentEmails = false;
 
   if (items.length === 0 && !showSendAgentEmails) return null;
 
