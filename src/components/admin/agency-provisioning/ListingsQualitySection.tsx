@@ -18,17 +18,17 @@ type Filter = 'all' | 'ready' | 'review' | 'critical';
 type PriceSort = 'none' | 'price_desc' | 'price_asc';
 
 const STATUS_BADGE: Record<string, { label: string; cls: string; icon: any }> = {
-  approved: { label: 'Ready to publish', cls: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20', icon: CheckCircle2 },
-  pending: { label: 'Needs quick review', cls: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20', icon: AlertTriangle },
-  flagged: { label: 'Needs major review', cls: 'bg-destructive/10 text-destructive border-destructive/20', icon: AlertOctagon },
+  approved: { label: 'Ready', cls: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20', icon: CheckCircle2 },
+  pending: { label: 'Quick review', cls: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20', icon: AlertTriangle },
+  flagged: { label: 'Major review', cls: 'bg-destructive/10 text-destructive border-destructive/20', icon: AlertOctagon },
   reviewed: { label: 'Reviewed', cls: 'bg-muted text-muted-foreground border-border', icon: CheckCircle2 },
 };
 
 const FILTER_LABEL: Record<Filter, string> = {
   all: 'All',
-  ready: 'Ready to publish',
-  review: 'Needs quick review',
-  critical: 'Needs major review',
+  ready: 'Ready',
+  review: 'Quick review',
+  critical: 'Major review',
 };
 
 export function ListingsQualitySection({ agencyId }: { agencyId: string }) {
