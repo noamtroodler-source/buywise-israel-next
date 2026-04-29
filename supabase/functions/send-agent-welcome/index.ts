@@ -7,6 +7,7 @@ const corsHeaders = {
 };
 
 const APP_URL = "https://buywiseisrael.com";
+const FALLBACK_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIUzI1NiIsInJlZiI6ImV2ZXFoeXF4ZGliamF5bGlhenhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYyODAwNDMsImV4cCI6MjA4MTg1NjA0M30.Jj193wal4FT9oyYZpHa04VitNjnGb0Nt0eq34XDOJSQ";
 
 // Sends welcome emails to all unsent agents in an agency.
 // Used by the owner dashboard "Send welcome emails to my agents" button
@@ -20,9 +21,8 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || FALLBACK_ANON_KEY;
     const admin = createClient(supabaseUrl, serviceKey);
-    const functionInvoker = createClient(supabaseUrl, anonKey);
 
     const authHeader = req.headers.get("Authorization") ?? "";
     const jwt = authHeader.replace(/^Bearer\s+/i, "");
@@ -77,16 +77,14 @@ Deno.serve(async (req) => {
         }
       }
 
-      const { error } = await functionInvoker.functions.invoke("send-transactional-email", {
-        body: {
-          templateName: "agent-welcome",
-          recipientEmail: agent.email,
-          idempotencyKey: `agent-welcome-${agent.id}`,
-          templateData: {
-            agentName: agent.name,
-            agencyName: agency.name,
-            setupUrl,
-          },
+      const error = await sendTransactionalEmail(supabaseUrl, anonKey, {
+        templateName: "agent-welcome",
+        recipientEmail: agent.email,
+        idempotencyKey: `agent-welcome-${agent.id}`,
+        templateData: {
+          agentName: agent.name,
+          agencyName: agency.name,
+          setupUrl,
         },
       });
       if (!error) {
