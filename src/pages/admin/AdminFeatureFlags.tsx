@@ -3,8 +3,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { RefreshCw, ToggleLeft, AlertTriangle } from 'lucide-react';
+import { RefreshCw, ToggleLeft, AlertTriangle, ShieldCheck, Filter, TrendingUp, Star, DatabaseZap } from 'lucide-react';
+import { PRICE_CONTEXT_FLAGS } from '@/lib/featureFlags';
 
 interface FeatureFlag {
   id: string;
@@ -18,6 +20,33 @@ interface FeatureFlag {
 
 export function AdminFeatureFlags() {
   const queryClient = useQueryClient();
+
+  const priceContextFlagDescriptions: Record<string, { label: string; description: string; icon: typeof ShieldCheck; risk: string }> = {
+    [PRICE_CONTEXT_FLAGS.broadDisplay]: {
+      label: 'Broad Price Context display',
+      description: 'Shows listing-level Price Context more visibly across buyer surfaces while preserving public-language guardrails.',
+      icon: ShieldCheck,
+      risk: 'Buyer-facing',
+    },
+    [PRICE_CONTEXT_FLAGS.buyerFilter]: {
+      label: 'Buyer Price Context filter',
+      description: 'Enables the “complete Price Context” buyer filter only for listings backed by real metadata.',
+      icon: Filter,
+      risk: 'Discovery',
+    },
+    [PRICE_CONTEXT_FLAGS.placementBoost]: {
+      label: 'Placement boost eligibility',
+      description: 'Allows context-complete, high-confidence listings to receive controlled ranking support.',
+      icon: TrendingUp,
+      risk: 'Ranking',
+    },
+    [PRICE_CONTEXT_FLAGS.requireForFeatured]: {
+      label: 'Require context for featured',
+      description: 'Requires Pricing Context Complete before selected sale listings can qualify for featured exposure.',
+      icon: Star,
+      risk: 'Revenue',
+    },
+  };
 
   const { data: flags, isLoading } = useQuery({
     queryKey: ['admin-feature-flags'],
@@ -49,6 +78,60 @@ export function AdminFeatureFlags() {
     },
   });
 
+  const normalizePriceContextMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await (supabase
+        .from('properties')
+        .select('id, listing_status, price_context_badge_status, price_context_confidence_tier, benchmark_review_status, price_context_public_label') as any)
+        .eq('listing_status', 'for_sale')
+        .limit(500);
+
+      if (error) throw error;
+
+      const rows = (data ?? []) as Array<{
+        id: string;
+        listing_status: string | null;
+        price_context_badge_status: string | null;
+        price_context_confidence_tier: string | null;
+        benchmark_review_status: string | null;
+        price_context_public_label: string | null;
+      }>;
+
+      const safeConfidence = new Set(['strong_comparable_match', 'high_confidence', 'good_comparable_match']);
+      const updates = rows.map((row) => {
+        const underReview = row.benchmark_review_status === 'requested' || row.benchmark_review_status === 'under_review';
+        const complete = row.price_context_badge_status === 'complete';
+        const blocked = row.price_context_badge_status === 'blocked' || underReview;
+        const eligibleForFilter = complete && !underReview;
+        const eligibleForPlacement = eligibleForFilter && safeConfidence.has(row.price_context_confidence_tier || '');
+
+        return (supabase
+          .from('properties')
+          .update({
+            price_context_filter_eligible: eligibleForFilter,
+            price_context_placement_eligible: eligibleForPlacement,
+            price_context_featured_eligible: eligibleForPlacement,
+            price_context_display_mode: blocked || !row.price_context_public_label ? 'hidden' : 'soft',
+          } as any)
+          .eq('id', row.id) as any);
+      });
+
+      const results = await Promise.all(updates);
+      const failed = results.find((result: any) => result.error);
+      if (failed?.error) throw failed.error;
+
+      return rows.length;
+    },
+    onSuccess: (count) => {
+      queryClient.invalidateQueries({ queryKey: ['price-analytics'] });
+      queryClient.invalidateQueries({ queryKey: ['properties'] });
+      toast.success(`Price Context metadata refreshed for ${count} listings`);
+    },
+    onError: (error) => {
+      toast.error('Failed to refresh Price Context metadata: ' + error.message);
+    },
+  });
+
   const handleToggle = (flag: FeatureFlag) => {
     toggleMutation.mutate({ id: flag.id, is_enabled: !flag.is_enabled });
   };
@@ -66,7 +149,9 @@ export function AdminFeatureFlags() {
   }
 
   const maintenanceFlag = flags?.find((f) => f.flag_key === 'MAINTENANCE_MODE');
-  const otherFlags = flags?.filter((f) => f.flag_key !== 'MAINTENANCE_MODE');
+  const priceContextKeys = new Set(Object.values(PRICE_CONTEXT_FLAGS));
+  const priceContextFlags = flags?.filter((f) => priceContextKeys.has(f.flag_key as any)) || [];
+  const otherFlags = flags?.filter((f) => f.flag_key !== 'MAINTENANCE_MODE' && !priceContextKeys.has(f.flag_key as any));
 
   return (
     <div className="space-y-6">
