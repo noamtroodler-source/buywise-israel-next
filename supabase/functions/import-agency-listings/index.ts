@@ -1384,6 +1384,13 @@ function buildSourceIdentity(sourceType: string | null | undefined, sourceUrl: s
   };
 }
 
+function detectSourceType(url: string | null | undefined): "yad2" | "madlan" | "website" {
+  const u = String(url || "").toLowerCase();
+  if (u.includes("yad2.co.il")) return "yad2";
+  if (u.includes("madlan.co.il")) return "madlan";
+  return "website";
+}
+
 async function recordSourceObservation(sb: any, params: {
   propertyId?: string | null;
   agencyId?: string | null;
