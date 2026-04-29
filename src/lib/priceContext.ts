@@ -89,6 +89,7 @@ export interface PriceContextInput {
 export interface PriceContextResult {
   propertyClass: PriceContextPropertyClass;
   propertyClassLabel: string;
+  isLuxuryPremiumMode: boolean;
   confidenceTier: PriceContextConfidenceTier;
   confidenceLabel: string;
   confidenceScore: number;
@@ -296,6 +297,11 @@ function getGapBand(gap: number | null) {
   return 'Extreme mismatch to selected benchmarks';
 }
 
+function getInternalBenchmarkGap(pricePerSqm?: number | null, benchmarkPriceSqm?: number | null) {
+  if (!pricePerSqm || !benchmarkPriceSqm) return null;
+  return Math.round(((pricePerSqm - benchmarkPriceSqm) / benchmarkPriceSqm) * 100);
+}
+
 function confidenceCapDetail(code: string, input: PriceContextInput, compsCount: number, radiusUsedM: number): PriceContextConfidenceCap {
   const details: Record<string, Omit<PriceContextConfidenceCap, 'code'>> = {
     fewer_than_5_comps: { label: 'Sparse comp count', detail: `Only ${compsCount} comparable sale${compsCount === 1 ? '' : 's'} selected; strong confidence requires a deeper pool.`, severity: 'critical' },
@@ -325,7 +331,8 @@ export function getPriceContext(input: PriceContextInput): PriceContextResult {
   const premiumDrivers = unique([...confirmedPremiumDrivers, ...detectedPremiumDrivers]);
   const hasPremiumContext = premiumDrivers.length > 0 || Boolean(property.premium_explanation?.trim());
   const reviewOpen = property.benchmark_review_status === 'requested' || property.benchmark_review_status === 'under_review';
-  const gap = avgComparison === null ? null : Math.round(avgComparison);
+  const benchmarkGap = getInternalBenchmarkGap(pricePerSqm, benchmarkPriceSqm);
+  const gap = avgComparison === null ? benchmarkGap : Math.round(avgComparison);
   const reasons: string[] = [];
   const limitedCaps: string[] = [];
 
@@ -382,6 +389,13 @@ export function getPriceContext(input: PriceContextInput): PriceContextResult {
   else if (score >= 80 && compsCount >= 8 && radiusUsedM <= 600 && hasStrongSpecMatch) confidenceTier = 'strong_comparable_match';
   else if (score >= 60 && compsCount >= 5) confidenceTier = 'directional_benchmark';
   else confidenceTier = 'limited_comparable_match';
+
+  const isLuxuryPremiumMode = Boolean(
+    isPremiumClass
+    && gap !== null
+    && gap >= 35
+    && confidenceTier !== 'strong_comparable_match',
+  );
 
   const mayShowPercentage = confidenceTier === 'strong_comparable_match'
     && propertyClass === 'standard_resale'
@@ -443,6 +457,7 @@ export function getPriceContext(input: PriceContextInput): PriceContextResult {
   return {
     propertyClass,
     propertyClassLabel: propertyClassLabel(propertyClass),
+    isLuxuryPremiumMode,
     confidenceTier,
     confidenceLabel: confidenceLabel(confidenceTier),
     confidenceScore: score,
