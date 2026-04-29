@@ -172,7 +172,7 @@ function PremiumContextSummary({ priceContext, premiumExplanation }: { priceCont
   return (
     <div className="space-y-2">
       <div>
-        <p className="text-xs font-semibold text-foreground">Records may miss</p>
+        <p className="text-xs font-semibold text-foreground">What standard comps may miss</p>
         <p className="text-xs text-muted-foreground">Features that can make standard recorded-sale comps less direct.</p>
       </div>
       {contextChips.length > 0 && (
@@ -193,25 +193,20 @@ function PremiumContextSummary({ priceContext, premiumExplanation }: { priceCont
   );
 }
 
-function buildLayeredBuyWiseTake(priceContext: PriceContextResult, askingPriceSqm: number | null, ranges: BenchmarkRange[]) {
-  if (priceContext.confidenceTier === 'insufficient_data' || !askingPriceSqm || ranges.length === 0) {
-    return `${priceContext.buyWiseTake} Use the available city, neighborhood, and listing details as directional context while verifying sqm source, ownership, and included features.`;
+function buildBuyerTakeaway(priceContext: PriceContextResult) {
+  if (priceContext.publicLabel === 'Market context under review') {
+    return 'This benchmark is under review, so use the current context as directional only.';
   }
-
-  const strongestRange = ranges[0];
-  const relation = askingPriceSqm < strongestRange.min
-    ? `below the ${strongestRange.label.toLowerCase()} benchmark range`
-    : askingPriceSqm > strongestRange.max
-      ? `above the ${strongestRange.label.toLowerCase()} benchmark range`
-      : `within the ${strongestRange.label.toLowerCase()} benchmark range`;
-  const broaderContext = ranges.length > 1
-    ? ` We also compare it against ${ranges.slice(1).map((range) => range.label.toLowerCase()).join(' and ')} context so no single benchmark is treated as the full story.`
-    : '';
-  const premiumContext = priceContext.propertyClass !== 'standard_resale' || priceContext.premiumDrivers.length > 0
-    ? ` Because this is classified as ${priceContext.propertyClassLabel.toLowerCase()}, buyers should ask which features or included rights explain any premium.`
-    : ' Buyers should still verify the sqm source, ownership type, and included extras before relying on price/sqm comparisons.';
-
-  return `The asking price sits ${relation}.${broaderContext}${premiumContext}`;
+  if (priceContext.confidenceTier === 'insufficient_data') {
+    return 'There is not enough recorded-sale data for a reliable benchmark, so ask for recent comparable examples.';
+  }
+  if (priceContext.confidenceTier === 'limited_comparable_match') {
+    return 'Use this as directional pricing context only; comparable matches are limited.';
+  }
+  if (priceContext.confidenceTier === 'premium_unique_property' || priceContext.propertyClass !== 'standard_resale' || priceContext.premiumDrivers.length > 0) {
+    return 'Treat this as premium-property context; ask which features or rights explain the difference.';
+  }
+  return 'The asking price appears broadly aligned with available recorded-sale context, but key property details still matter.';
 }
 
 function MarketVerdictBadge({ compsCount, radiusUsedM, priceTier, priceContext }: { compsCount: number; radiusUsedM: number; priceTier?: PriceTier | null; priceContext: PriceContextResult }) {
