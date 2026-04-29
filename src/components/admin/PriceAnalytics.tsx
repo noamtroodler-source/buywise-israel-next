@@ -1,7 +1,11 @@
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { DollarSign, TrendingUp, Home, Building, BadgeCheck, AlertTriangle, Gauge, MousePointerClick, ShieldCheck, EyeOff } from 'lucide-react';
+import { DollarSign, TrendingUp, Home, Building, BadgeCheck, AlertTriangle, Gauge, MousePointerClick, ShieldCheck, EyeOff, ArrowRight } from 'lucide-react';
 import { PriceAnalyticsData } from '@/hooks/usePriceAnalytics';
+import { usePriceContextBlockers } from '@/hooks/useListingReview';
 import { 
   BarChart, Bar, XAxis, YAxis, ResponsiveContainer, 
   Tooltip, Cell, PieChart, Pie 
@@ -23,6 +27,8 @@ const COLORS = [
 ];
 
 export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
+  const { data: blockers = [], isLoading: blockersLoading } = usePriceContextBlockers();
+
   if (isLoading) {
     return (
       <Card className="rounded-2xl border-border/50">
@@ -54,6 +60,8 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
     { label: 'Under Review', value: (context?.underReview || 0).toLocaleString(), sub: 'Agent benchmark challenges', icon: AlertTriangle },
     { label: 'Complete Listing CVR', value: `${(context?.inquiryConversionRate || 0).toFixed(1)}%`, sub: 'Inquiries per view in range', icon: MousePointerClick },
   ];
+
+  const formatPriceCompact = (price: number, currency?: string | null) => `${currency || '₪'}${price.toLocaleString()}`;
 
   return (
     <Card className="rounded-2xl border-border/50 overflow-hidden">
@@ -150,6 +158,45 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
                   <p className="text-sm text-muted-foreground">No review activity in this range</p>
                 )}
               </div>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-border/50 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-foreground">Ranking blocker queue</p>
+                <p className="text-xs text-muted-foreground">Live sale listings excluded from Price Context boosts</p>
+              </div>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/admin/listing-review">
+                  Review queue
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+            <div className="mt-3 space-y-2">
+              {blockersLoading ? (
+                <Skeleton className="h-20 w-full" />
+              ) : blockers.length > 0 ? (
+                blockers.slice(0, 5).map((listing) => (
+                  <div key={listing.id} className="flex items-center justify-between gap-3 rounded-lg border border-border/50 bg-muted/20 p-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-foreground">{listing.title}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {[listing.neighborhood, listing.city].filter(Boolean).join(', ')} · {formatPriceCompact(listing.price, listing.currency)}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <Badge variant="outline">{formatLabel(listing.price_context_badge_status || 'missing_context')}</Badge>
+                      {(listing.benchmark_review_status === 'requested' || listing.benchmark_review_status === 'under_review') && (
+                        <Badge className="bg-primary/10 text-primary hover:bg-primary/10">{formatLabel(listing.benchmark_review_status)}</Badge>
+                      )}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="rounded-lg bg-muted/20 p-3 text-sm text-muted-foreground">No active Price Context ranking blockers.</p>
+              )}
             </div>
           </div>
         </div>
