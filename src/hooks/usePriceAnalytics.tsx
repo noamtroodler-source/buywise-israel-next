@@ -137,7 +137,7 @@ export function usePriceAnalytics(days: number = 30) {
       const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
       const { data: properties } = await (supabase
         .from('properties')
-        .select('id, city, price, size_sqm, bedrooms, listing_status, price_context_badge_status, price_context_confidence_tier, price_context_percentage_suppressed, price_context_public_label, sqm_source, ownership_type, benchmark_review_status, benchmark_review_reason, premium_explanation, premium_drivers, submitted_at, reviewed_at, created_at') as any)
+        .select('id, city, price, size_sqm, bedrooms, listing_status, price_context_badge_status, price_context_confidence_tier, price_context_percentage_suppressed, price_context_public_label, sqm_source, ownership_type, benchmark_review_status, benchmark_review_reason, benchmark_review_requested_at, premium_explanation, premium_drivers, submitted_at, reviewed_at, created_at') as any)
         .eq('listing_status', 'for_sale')
         .gt('price', 0);
 
