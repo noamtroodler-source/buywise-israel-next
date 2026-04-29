@@ -3813,7 +3813,7 @@ async function processOneItem(
           sourceType: incomingSourceType,
           sourceUrl: item.url,
           duplicateDecision: "exact_source_match_update",
-          duplicateReasonCodes: [sourceIdentity.sourceItemId ? "same_source_item_id" : "same_canonical_source_url"],
+          duplicateReasonCodes: normalizeDuplicateReasonCodes([sourceIdentity.sourceItemId ? "same_source_item_id" : "same_canonical_source_url"], "exact_source_match", { source_identity: 100 }, { action: "update_existing_property", matched_property_id: existing.id }),
           matchedPropertyId: existing.id,
           duplicateDecisionBand: "exact_source_match",
           duplicateMatchScores: { source_identity: 100 },
@@ -3849,7 +3849,7 @@ async function processOneItem(
         sourceType: incomingSourceType,
         sourceUrl: item.url,
         duplicateDecision: "exact_source_match_update",
-        duplicateReasonCodes: ["same_legacy_source_url"],
+        duplicateReasonCodes: normalizeDuplicateReasonCodes(["same_legacy_source_url"], "exact_source_match", { legacy_url: 100 }, { action: "update_existing_property", matched_property_id: existingByUrl[0].id }),
         matchedPropertyId: existingByUrl[0].id,
         duplicateDecisionBand: "exact_source_match",
         duplicateMatchScores: { legacy_url: 100 },
@@ -4951,7 +4951,7 @@ async function processOneItem(
       confidenceScore,
       extractedData: sanitizedListing,
       duplicateDecision: "new_property_created",
-      duplicateReasonCodes: ["no_exact_source_match"],
+      duplicateReasonCodes: normalizeDuplicateReasonCodes(["no_exact_source_match"], "no_match", { exact_source_match: 0 }, { action: "create_new_property", property_id: property.id }),
       duplicateDecisionBand: "no_match",
       duplicateMatchScores: { exact_source_match: 0 },
       duplicateDecisionMetadata: { action: "create_new_property", property_id: property.id },
@@ -4964,7 +4964,7 @@ async function processOneItem(
       duplicate_decision_band: "no_match",
       duplicate_match_scores: { exact_source_match: 0 },
       duplicate_decision_metadata: { action: "create_new_property", property_id: property.id },
-      duplicate_reason_codes: ["no_exact_source_match"],
+      duplicate_reason_codes: normalizeDuplicateReasonCodes(["no_exact_source_match"], "no_match", { exact_source_match: 0 }, { action: "create_new_property", property_id: property.id }),
     }).eq("id", item.id);
     return { succeeded: true };
   } catch (err) {
