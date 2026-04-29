@@ -1331,6 +1331,121 @@ function canonicalUrlIdentity(raw: string | null | undefined): string {
   }
 }
 
+function sourceDomainFromUrl(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  try {
+    return new URL(normalizeUrl(raw)).hostname.toLowerCase().replace(/^www\./, "");
+  } catch {
+    return null;
+  }
+}
+
+function extractSourceItemId(raw: string | null | undefined, sourceType?: string | null): string | null {
+  if (!raw) return null;
+  try {
+    const parsed = new URL(normalizeUrl(raw));
+    const path = decodeURIComponent(parsed.pathname);
+    const source = (sourceType || "").toLowerCase();
+
+    if (source === "yad2" || parsed.hostname.includes("yad2.co.il")) {
+      const id = path.match(/(?:item|realestate\/item|forsale\/item|rent\/item)[^0-9]*(\d{5,})/i)?.[1]
+        || path.match(/(\d{6,})(?:\D*$)/)?.[1];
+      return id ? `yad2:${id}` : null;
+    }
+
+    if (source === "madlan" || parsed.hostname.includes("madlan.co.il")) {
+      const id = path.match(/(\d{5,})(?:\D*$)/)?.[1];
+      return id ? `madlan:${id}` : null;
+    }
+
+    const propertyIdParam = parsed.searchParams.get("property_id") || parsed.searchParams.get("id") || parsed.searchParams.get("listing_id");
+    if (propertyIdParam && /^[a-z0-9_-]{4,}$/i.test(propertyIdParam)) {
+      return `${source || parsed.hostname}:${propertyIdParam.toLowerCase()}`;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+function buildSourceIdentity(sourceType: string | null | undefined, sourceUrl: string | null | undefined) {
+  const canonicalSourceUrl = sourceUrl ? normalizeUrl(sourceUrl) : null;
+  const sourceItemId = extractSourceItemId(sourceUrl, sourceType);
+  const normalizedType = (sourceType || "website").toLowerCase();
+  return {
+    canonicalSourceUrl,
+    sourceItemId,
+    sourceDomain: sourceDomainFromUrl(sourceUrl),
+    sourceIdentityKey: sourceItemId
+      ? `${normalizedType}:id:${sourceItemId.toLowerCase()}`
+      : canonicalSourceUrl
+      ? `${normalizedType}:url:${canonicalUrlIdentity(canonicalSourceUrl)}`
+      : null,
+  };
+}
+
+function detectSourceType(url: string | null | undefined): "yad2" | "madlan" | "website" {
+  const u = String(url || "").toLowerCase();
+  if (u.includes("yad2.co.il")) return "yad2";
+  if (u.includes("madlan.co.il")) return "madlan";
+  return "website";
+}
+
+async function recordSourceObservation(sb: any, params: {
+  propertyId?: string | null;
+  agencyId?: string | null;
+  importJobId?: string | null;
+  importJobItemId?: string | null;
+  sourceType?: string | null;
+  sourceUrl?: string | null;
+  confidenceScore?: number | null;
+  extractedData?: Record<string, any> | null;
+  duplicateDecision?: string | null;
+  duplicateReasonCodes?: string[];
+  matchedPropertyId?: string | null;
+}) {
+  if (!params.sourceUrl) return;
+  const identity = buildSourceIdentity(params.sourceType, params.sourceUrl);
+  if (!identity.sourceIdentityKey) return;
+  try {
+    const observationPayload = {
+      property_id: params.propertyId || null,
+      agency_id: params.agencyId || null,
+      import_job_id: params.importJobId || null,
+      import_job_item_id: params.importJobItemId || null,
+      source_type: params.sourceType || "website",
+      source_url: params.sourceUrl,
+      canonical_source_url: identity.canonicalSourceUrl,
+      source_domain: identity.sourceDomain,
+      source_item_id: identity.sourceItemId,
+      source_identity_key: identity.sourceIdentityKey,
+      last_seen_at: new Date().toISOString(),
+      last_scraped_at: new Date().toISOString(),
+      observation_status: "active",
+      duplicate_decision: params.duplicateDecision || null,
+      duplicate_reason_codes: params.duplicateReasonCodes || [],
+      matched_property_id: params.matchedPropertyId || null,
+      confidence_score: params.confidenceScore ?? null,
+      raw_extracted_data: params.extractedData || null,
+    };
+    const existingQuery = sb
+      .from("property_source_observations")
+      .select("id")
+      .eq("source_identity_key", identity.sourceIdentityKey)
+      .limit(1);
+    if (params.agencyId) existingQuery.eq("agency_id", params.agencyId);
+    else existingQuery.is("agency_id", null);
+    const { data: existing } = await existingQuery;
+    if (existing && existing.length > 0) {
+      await sb.from("property_source_observations").update(observationPayload).eq("id", existing[0].id);
+    } else {
+      await sb.from("property_source_observations").insert(observationPayload);
+    }
+  } catch (err) {
+    console.warn("Failed to record source observation:", err);
+  }
+}
+
 function sanitizeDiscoveredUrl(raw: string, baseUrl?: string): { url: string | null; reason?: string } {
   if (!raw || typeof raw !== "string") return { url: null, reason: "empty_url" };
   let candidate = raw.trim().replace(/&amp;/g, "&");
@@ -3486,15 +3601,88 @@ async function processOneItem(
       }
     }
 
-    // 0a. Source URL dedup
+    // 0a. Source identity dedup/idempotency
     const normalizedItemUrl = normalizeUrl(item.url);
+    const incomingSourceType = job.source_type || detectSourceType(item.url);
+    const sourceIdentity = buildSourceIdentity(incomingSourceType, item.url);
+    await sb.from("import_job_items").update({
+      canonical_source_url: sourceIdentity.canonicalSourceUrl,
+      source_item_id: sourceIdentity.sourceItemId,
+      source_identity_key: sourceIdentity.sourceIdentityKey,
+      duplicate_checked_at: new Date().toISOString(),
+    }).eq("id", item.id);
+
+    if (sourceIdentity.sourceIdentityKey) {
+      const { data: existingByIdentity } = await sb
+        .from("properties")
+        .select("id, source_url, merged_source_urls")
+        .eq("source_identity_key", sourceIdentity.sourceIdentityKey)
+        .limit(1);
+      if (existingByIdentity && existingByIdentity.length > 0) {
+        const existing = existingByIdentity[0];
+        const mergedUrls: string[] = Array.isArray(existing.merged_source_urls)
+          ? [...existing.merged_source_urls]
+          : (existing.source_url ? [existing.source_url] : []);
+        for (const url of [item.url, normalizedItemUrl, sourceIdentity.canonicalSourceUrl]) {
+          if (url && !mergedUrls.includes(url)) mergedUrls.push(url);
+        }
+        await sb.from("properties").update({
+          merged_source_urls: mergedUrls,
+          source_last_checked_at: new Date().toISOString(),
+        }).eq("id", existing.id);
+        await recordSourceObservation(sb, {
+          propertyId: existing.id,
+          agencyId: job.agency_id,
+          importJobId: jobId,
+          importJobItemId: item.id,
+          sourceType: incomingSourceType,
+          sourceUrl: item.url,
+          duplicateDecision: "exact_source_match_update",
+          duplicateReasonCodes: [sourceIdentity.sourceItemId ? "same_source_item_id" : "same_canonical_source_url"],
+          matchedPropertyId: existing.id,
+        });
+        await sb.from("import_job_items")
+          .update({
+            status: "done",
+            property_id: existing.id,
+            matched_property_id: existing.id,
+            duplicate_decision: "exact_source_match_update",
+            duplicate_reason_codes: [sourceIdentity.sourceItemId ? "same_source_item_id" : "same_canonical_source_url"],
+            error_message: `Updated existing property ${existing.id} from exact source identity match`,
+            error_type: null,
+          })
+          .eq("id", item.id);
+        return { succeeded: true };
+      }
+    }
+
+    // Legacy URL dedup fallback for rows not yet backfilled with identity.
     const { data: existingByUrl } = await sb
-      .from("properties").select("id, source_url").in("source_url", [item.url, normalizedItemUrl]).limit(1);
+      .from("properties").select("id, source_url, merged_source_urls").in("source_url", [item.url, normalizedItemUrl]).limit(1);
     if (existingByUrl && existingByUrl.length > 0) {
+      await recordSourceObservation(sb, {
+        propertyId: existingByUrl[0].id,
+        agencyId: job.agency_id,
+        importJobId: jobId,
+        importJobItemId: item.id,
+        sourceType: incomingSourceType,
+        sourceUrl: item.url,
+        duplicateDecision: "exact_source_match_update",
+        duplicateReasonCodes: ["same_legacy_source_url"],
+        matchedPropertyId: existingByUrl[0].id,
+      });
       await sb.from("import_job_items")
-        .update({ status: "skipped", error_message: `Duplicate: URL already imported as property ${existingByUrl[0].id}`, error_type: "permanent" })
+        .update({
+          status: "done",
+          property_id: existingByUrl[0].id,
+          matched_property_id: existingByUrl[0].id,
+          duplicate_decision: "exact_source_match_update",
+          duplicate_reason_codes: ["same_legacy_source_url"],
+          error_message: `Updated existing property ${existingByUrl[0].id} from exact source URL match`,
+          error_type: null,
+        })
         .eq("id", item.id);
-      return { succeeded: false };
+      return { succeeded: true };
     }
 
     // 0b. In-job URL dedup
@@ -3503,7 +3691,14 @@ async function processOneItem(
       .eq("job_id", jobId).in("url", [item.url, normalizedItemUrl]).eq("status", "done").neq("id", item.id).limit(1);
     if (existingJobItem && existingJobItem.length > 0) {
       await sb.from("import_job_items")
-        .update({ status: "skipped", error_message: "Duplicate: same URL already processed in this job", error_type: "permanent" })
+        .update({
+          status: "skipped",
+          matched_property_id: existingJobItem[0].property_id || null,
+          duplicate_decision: "in_job_source_duplicate",
+          duplicate_reason_codes: ["same_url_same_job"],
+          error_message: "Duplicate: same URL already processed in this job",
+          error_type: "permanent",
+        })
         .eq("id", item.id);
       return { succeeded: false };
     }
@@ -4121,6 +4316,11 @@ async function processOneItem(
 
         const patch: Record<string, any> = {
           merged_source_urls: mergedUrls,
+          canonical_source_url: sourceIdentity.canonicalSourceUrl,
+          source_item_id: sourceIdentity.sourceItemId,
+          source_identity_key: sourceIdentity.sourceIdentityKey,
+          source_domain: sourceIdentity.sourceDomain,
+          source_identity_reason: "cross_source_enrichment",
           source_last_checked_at: new Date().toISOString(),
         };
         const visibleFactFields = new Set<string>(Array.isArray(listing._visible_fact_fields) ? listing._visible_fact_fields : []);
@@ -4241,10 +4441,27 @@ async function processOneItem(
           }, { onConflict: "property_id,source_url", ignoreDuplicates: true });
         }
 
+        await recordSourceObservation(sb, {
+          propertyId: crossSourceMatchId,
+          agencyId: job.agency_id,
+          importJobId: jobId,
+          importJobItemId: item.id,
+          sourceType: incomingSource,
+          sourceUrl: item.url,
+          confidenceScore,
+          extractedData: sanitizedListing,
+          duplicateDecision: "cross_source_enrichment",
+          duplicateReasonCodes: ["matched_existing_property", "source_priority_enrichment"],
+          matchedPropertyId: crossSourceMatchId,
+        });
+
         // Mark this import item as merged (not a new property)
         await sb.from("import_job_items").update({
           status: "done",
           property_id: crossSourceMatchId,
+          matched_property_id: crossSourceMatchId,
+          duplicate_decision: "cross_source_enrichment",
+          duplicate_reason_codes: ["matched_existing_property", "source_priority_enrichment"],
           error_message: `Merged into existing property ${crossSourceMatchId} (cross-source enrichment, source=${incomingSource}, trust=${incomingRank})`,
         }).eq("id", item.id);
 
@@ -4307,12 +4524,29 @@ async function processOneItem(
           .update({ last_primary_refresh: new Date().toISOString() })
           .eq("id", match.property_id);
 
+        await recordSourceObservation(sb, {
+          propertyId: match.property_id,
+          agencyId: job.agency_id,
+          importJobId: jobId,
+          importJobItemId: item.id,
+          sourceType: job.source_type || "website",
+          sourceUrl: item.url,
+          confidenceScore,
+          extractedData: sanitizedListing,
+          duplicateDecision: "high_confidence_cross_agency_colist",
+          duplicateReasonCodes: ["cross_agency_same_unit_score", "co_listing_created"],
+          matchedPropertyId: match.property_id,
+        });
+
         // Mark the import item as co_listed — distinct from skipped.
         await sb.from("import_job_items").update({
           status: "co_listed",
           error_message: `Co-listed under existing property ${match.property_id} (score ${match.similarity_score}).`,
           error_type: null,
           property_id: match.property_id,
+          matched_property_id: match.property_id,
+          duplicate_decision: "high_confidence_cross_agency_colist",
+          duplicate_reason_codes: ["cross_agency_same_unit_score", "co_listing_created"],
         }).eq("id", item.id);
 
         dlog(`[Co-Listing] Added agency ${job.agency_id} as secondary on property ${match.property_id} (score ${match.similarity_score})`);
@@ -4380,6 +4614,11 @@ async function processOneItem(
         claimed_by_agency_id: job.agency_id,
         import_source: job.source_type === "yad2" ? "yad2" : job.source_type === "madlan" ? "madlan" : "website_scrape",
         source_url: item.url,
+        canonical_source_url: sourceIdentity.canonicalSourceUrl,
+        source_item_id: sourceIdentity.sourceItemId,
+        source_identity_key: sourceIdentity.sourceIdentityKey,
+        source_domain: sourceIdentity.sourceDomain,
+        source_identity_reason: sourceIdentity.sourceItemId ? "native_source_item_id" : "canonical_source_url",
         data_quality_score: confidenceScore,
         location_confidence: listing.address?.length > 3 ? "exact" : listing.neighborhood ? "neighborhood" : "city",
         is_claimed: false,
@@ -4432,7 +4671,25 @@ async function processOneItem(
       }, { onConflict: "property_a,property_b", ignoreDuplicates: true });
     }
 
-    await sb.from("import_job_items").update({ status: "done", property_id: property.id }).eq("id", item.id);
+    await recordSourceObservation(sb, {
+      propertyId: property.id,
+      agencyId: job.agency_id,
+      importJobId: jobId,
+      importJobItemId: item.id,
+      sourceType: job.source_type || "website",
+      sourceUrl: item.url,
+      confidenceScore,
+      extractedData: sanitizedListing,
+      duplicateDecision: "new_property_created",
+      duplicateReasonCodes: ["no_exact_source_match"],
+    });
+
+    await sb.from("import_job_items").update({
+      status: "done",
+      property_id: property.id,
+      duplicate_decision: "new_property_created",
+      duplicate_reason_codes: ["no_exact_source_match"],
+    }).eq("id", item.id);
     return { succeeded: true };
   } catch (err) {
     console.error(`Error processing ${item.url}:`, err);
@@ -4733,6 +4990,7 @@ async function handleApproveItem(body: any) {
   listing.ai_title = copy.title;
   listing.ai_english_description = copy.description;
   listing.description = copy.description;
+  const sourceIdentity = buildSourceIdentity("website", item.url);
 
   const { data: property, error: propErr } = await sb
     .from("properties")
@@ -4781,6 +5039,11 @@ async function handleApproveItem(body: any) {
       claimed_by_agency_id: agencyId,
       import_source: "website_scrape",
       source_url: item.url,
+      canonical_source_url: sourceIdentity.canonicalSourceUrl,
+      source_item_id: sourceIdentity.sourceItemId,
+      source_identity_key: sourceIdentity.sourceIdentityKey,
+      source_domain: sourceIdentity.sourceDomain,
+      source_identity_reason: sourceIdentity.sourceItemId ? "native_source_item_id" : "canonical_source_url",
     })
     .select("id")
     .single();
@@ -4799,7 +5062,24 @@ async function handleApproveItem(body: any) {
     status: "done",
     property_id: property.id,
     extracted_data: listing,
+    canonical_source_url: sourceIdentity.canonicalSourceUrl,
+    source_item_id: sourceIdentity.sourceItemId,
+    source_identity_key: sourceIdentity.sourceIdentityKey,
+    duplicate_decision: "manual_review_approved_created",
+    duplicate_reason_codes: ["approved_from_import_review"],
   }).eq("id", item_id);
+
+  await recordSourceObservation(sb, {
+    propertyId: property.id,
+    agencyId,
+    importJobId: item.job_id,
+    importJobItemId: item.id,
+    sourceType: "website",
+    sourceUrl: item.url,
+    extractedData: listing,
+    duplicateDecision: "manual_review_approved_created",
+    duplicateReasonCodes: ["approved_from_import_review"],
+  });
 
   return { property_id: property.id };
 }

@@ -3184,41 +3184,62 @@ export type Database = {
       }
       import_job_items: {
         Row: {
+          canonical_source_url: string | null
           confidence_score: number | null
           created_at: string
+          duplicate_checked_at: string | null
+          duplicate_decision: string | null
+          duplicate_reason_codes: string[]
           error_message: string | null
           error_type: string | null
           extracted_data: Json | null
           id: string
           job_id: string
+          matched_property_id: string | null
           project_id: string | null
           property_id: string | null
+          source_identity_key: string | null
+          source_item_id: string | null
           status: string
           url: string
         }
         Insert: {
+          canonical_source_url?: string | null
           confidence_score?: number | null
           created_at?: string
+          duplicate_checked_at?: string | null
+          duplicate_decision?: string | null
+          duplicate_reason_codes?: string[]
           error_message?: string | null
           error_type?: string | null
           extracted_data?: Json | null
           id?: string
           job_id: string
+          matched_property_id?: string | null
           project_id?: string | null
           property_id?: string | null
+          source_identity_key?: string | null
+          source_item_id?: string | null
           status?: string
           url: string
         }
         Update: {
+          canonical_source_url?: string | null
           confidence_score?: number | null
           created_at?: string
+          duplicate_checked_at?: string | null
+          duplicate_decision?: string | null
+          duplicate_reason_codes?: string[]
           error_message?: string | null
           error_type?: string | null
           extracted_data?: Json | null
           id?: string
           job_id?: string
+          matched_property_id?: string | null
           project_id?: string | null
           property_id?: string | null
+          source_identity_key?: string | null
+          source_item_id?: string | null
           status?: string
           url?: string
         }
@@ -3236,6 +3257,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "scraping_cost_by_job"
             referencedColumns: ["job_id"]
+          },
+          {
+            foreignKeyName: "import_job_items_matched_property_id_fkey"
+            columns: ["matched_property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "import_job_items_project_id_fkey"
@@ -5584,6 +5612,7 @@ export type Database = {
           bedrooms: number | null
           boost_active_until: string | null
           boosted_by_agency_id: string | null
+          canonical_source_url: string | null
           checks_required: boolean | null
           city: string
           claimed_at: string | null
@@ -5658,6 +5687,11 @@ export type Database = {
           reviewed_by: string | null
           size_sqm: number | null
           source_agency_name: string | null
+          source_domain: string | null
+          source_identity_key: string | null
+          source_identity_metadata: Json
+          source_identity_reason: string | null
+          source_item_id: string | null
           source_last_checked_at: string | null
           source_rooms: number | null
           source_rooms_label: string | null
@@ -5695,6 +5729,7 @@ export type Database = {
           bedrooms?: number | null
           boost_active_until?: string | null
           boosted_by_agency_id?: string | null
+          canonical_source_url?: string | null
           checks_required?: boolean | null
           city: string
           claimed_at?: string | null
@@ -5769,6 +5804,11 @@ export type Database = {
           reviewed_by?: string | null
           size_sqm?: number | null
           source_agency_name?: string | null
+          source_domain?: string | null
+          source_identity_key?: string | null
+          source_identity_metadata?: Json
+          source_identity_reason?: string | null
+          source_item_id?: string | null
           source_last_checked_at?: string | null
           source_rooms?: number | null
           source_rooms_label?: string | null
@@ -5806,6 +5846,7 @@ export type Database = {
           bedrooms?: number | null
           boost_active_until?: string | null
           boosted_by_agency_id?: string | null
+          canonical_source_url?: string | null
           checks_required?: boolean | null
           city?: string
           claimed_at?: string | null
@@ -5880,6 +5921,11 @@ export type Database = {
           reviewed_by?: string | null
           size_sqm?: number | null
           source_agency_name?: string | null
+          source_domain?: string | null
+          source_identity_key?: string | null
+          source_identity_metadata?: Json
+          source_identity_reason?: string | null
+          source_item_id?: string | null
           source_last_checked_at?: string | null
           source_rooms?: number | null
           source_rooms_label?: string | null
@@ -6145,6 +6191,131 @@ export type Database = {
           why_it_matters?: string
         }
         Relationships: []
+      }
+      property_source_observations: {
+        Row: {
+          agency_id: string | null
+          canonical_source_url: string | null
+          confidence_score: number | null
+          created_at: string
+          duplicate_decision: string | null
+          duplicate_reason_codes: string[]
+          first_seen_at: string
+          id: string
+          import_job_id: string | null
+          import_job_item_id: string | null
+          last_scraped_at: string | null
+          last_seen_at: string
+          matched_property_id: string | null
+          observation_status: string
+          property_id: string | null
+          raw_extracted_data: Json | null
+          source_domain: string | null
+          source_identity_key: string | null
+          source_item_id: string | null
+          source_type: string
+          source_url: string
+          updated_at: string
+        }
+        Insert: {
+          agency_id?: string | null
+          canonical_source_url?: string | null
+          confidence_score?: number | null
+          created_at?: string
+          duplicate_decision?: string | null
+          duplicate_reason_codes?: string[]
+          first_seen_at?: string
+          id?: string
+          import_job_id?: string | null
+          import_job_item_id?: string | null
+          last_scraped_at?: string | null
+          last_seen_at?: string
+          matched_property_id?: string | null
+          observation_status?: string
+          property_id?: string | null
+          raw_extracted_data?: Json | null
+          source_domain?: string | null
+          source_identity_key?: string | null
+          source_item_id?: string | null
+          source_type: string
+          source_url: string
+          updated_at?: string
+        }
+        Update: {
+          agency_id?: string | null
+          canonical_source_url?: string | null
+          confidence_score?: number | null
+          created_at?: string
+          duplicate_decision?: string | null
+          duplicate_reason_codes?: string[]
+          first_seen_at?: string
+          id?: string
+          import_job_id?: string | null
+          import_job_item_id?: string | null
+          last_scraped_at?: string | null
+          last_seen_at?: string
+          matched_property_id?: string | null
+          observation_status?: string
+          property_id?: string | null
+          raw_extracted_data?: Json | null
+          source_domain?: string | null
+          source_identity_key?: string | null
+          source_item_id?: string | null
+          source_type?: string
+          source_url?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_source_observations_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_source_observations_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_source_observations_import_job_id_fkey"
+            columns: ["import_job_id"]
+            isOneToOne: false
+            referencedRelation: "import_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_source_observations_import_job_id_fkey"
+            columns: ["import_job_id"]
+            isOneToOne: false
+            referencedRelation: "scraping_cost_by_job"
+            referencedColumns: ["job_id"]
+          },
+          {
+            foreignKeyName: "property_source_observations_import_job_item_id_fkey"
+            columns: ["import_job_item_id"]
+            isOneToOne: false
+            referencedRelation: "import_job_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_source_observations_matched_property_id_fkey"
+            columns: ["matched_property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_source_observations_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       property_views: {
         Row: {
@@ -7592,6 +7763,14 @@ export type Database = {
       auto_resolve_obvious_conflict: {
         Args: { p_conflict_id: string }
         Returns: Json
+      }
+      build_source_identity_key: {
+        Args: {
+          p_source_item_id?: string
+          p_source_type: string
+          p_source_url: string
+        }
+        Returns: string
       }
       bulk_approve_agency_listings: {
         Args: { p_property_ids: string[] }
