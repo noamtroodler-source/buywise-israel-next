@@ -15,7 +15,6 @@ interface PriceContextSubmissionPreviewProps {
   review: MarketFitReviewResult;
   confirmed: boolean;
   onConfirmedChange: (checked: boolean) => void;
-  onEditDetails: () => void;
   onEditPremiumContext: () => void;
 }
 
@@ -34,7 +33,6 @@ export function PriceContextSubmissionPreview({
   review,
   confirmed,
   onConfirmedChange,
-  onEditDetails,
   onEditPremiumContext,
 }: PriceContextSubmissionPreviewProps) {
   const pricePerSqm = data.price && data.size_sqm ? Math.round(data.price / data.size_sqm) : null;
