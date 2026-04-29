@@ -48,8 +48,6 @@ import { cn } from '@/lib/utils';
 import { exportToCSV } from '@/lib/csvExport';
 import { AgencyListingsSkeleton } from '@/components/agency/skeletons/AgencyPageSkeletons';
 import { EnhancedEmptyState } from '@/components/shared/EnhancedEmptyState';
-import { PriceContextBadge } from '@/components/property/PriceContextBadge';
-import { BenchmarkReviewDialog } from '@/components/property/BenchmarkReviewDialog';
 
 const IMPORTED_BANNER_KEY = 'agency_imported_drafts_banner_dismissed';
 const LAUNCH_REVIEW_GUIDANCE_KEY = 'agency_launch_review_guidance_dismissed';
@@ -788,14 +786,6 @@ export default function AgencyListings() {
                                 ) : (
                                   <p className="text-[11px] text-muted-foreground">Core fields look ready</p>
                                 )}
-                                {listing.listing_status === 'for_sale' && (
-                                  <PriceContextBadge
-                                    status={listing.price_context_badge_status}
-                                    publicLabel={listing.price_context_public_label}
-                                    confidenceTier={listing.price_context_confidence_tier}
-                                    benchmarkReviewStatus={listing.benchmark_review_status}
-                                  />
-                                )}
                               </div>
                             </TableCell>
                             <TableCell>
@@ -872,16 +862,6 @@ export default function AgencyListings() {
                                         <Home className="h-4 w-4 mr-2" />
                                         Mark as Sold
                                       </DropdownMenuItem>
-                                    )}
-                                    {listing.listing_status === 'for_sale' && (
-                                      <BenchmarkReviewDialog
-                                        propertyId={listing.id}
-                                        propertyTitle={listing.title}
-                                        benchmarkReviewStatus={listing.benchmark_review_status}
-                                        existingReason={listing.benchmark_review_reason}
-                                        existingNotes={listing.benchmark_review_notes}
-                                        trigger={<DropdownMenuItem disabled={listing.benchmark_review_status === 'requested' || listing.benchmark_review_status === 'under_review'} onSelect={(e) => e.preventDefault()}><AlertTriangle className="h-4 w-4 mr-2" />{listing.benchmark_review_status === 'requested' || listing.benchmark_review_status === 'under_review' ? 'Context under review' : 'Request benchmark review'}</DropdownMenuItem>}
-                                      />
                                     )}
                                     {listing.listing_status === 'for_rent' && (
                                       <DropdownMenuItem onClick={() => updateStatus.mutate({ id: listing.id, listing_status: 'rented' })}>
