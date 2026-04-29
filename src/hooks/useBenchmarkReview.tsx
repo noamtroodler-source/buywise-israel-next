@@ -28,6 +28,10 @@ export function useRequestBenchmarkReview() {
             benchmark_review_status: 'requested',
             benchmark_review_reason: reason,
             benchmark_review_notes: notes?.trim() || null,
+            benchmark_review_requested_at: new Date().toISOString(),
+            benchmark_review_resolved_at: null,
+            benchmark_review_admin_notes: null,
+            benchmark_review_resolution: null,
             price_context_badge_status: 'blocked',
             price_context_public_label: 'Market context under review',
           } as any)
