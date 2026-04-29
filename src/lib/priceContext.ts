@@ -148,6 +148,7 @@ export function selectPriceContextComps<T extends { property_type?: string | nul
   const selected = sameClass.length >= 3 || !standardFallbackAllowed
     ? sameClass.slice(0, limit)
     : comps.slice(0, limit);
+  const fallbackUsed = selected.length > 0 && sameClass.length < 3;
 
   return {
     comps: selected,
@@ -155,12 +156,12 @@ export function selectPriceContextComps<T extends { property_type?: string | nul
       subjectClass,
       selectedCount: selected.length,
       sameClassCount: sameClass.length,
-      fallbackUsed: selected.length > 0 && sameClass.length < 3,
+      fallbackUsed,
       classMatch: selected.length === 0
         ? 'no_comps'
         : sameClass.length >= 3
           ? 'same_class'
-          : standardFallbackAllowed
+          : fallbackUsed
             ? 'mixed_fallback'
             : 'similar_class',
     },
