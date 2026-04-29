@@ -324,7 +324,7 @@ export default function AgencyTeam() {
                 })}
 
                 <p className="text-xs text-muted-foreground">
-                  Share invite codes with agents to let them sign up and join your agency instantly
+                  Agents should use the normal sign-up flow and enter this code during signup to join your agency.
                 </p>
               </CardContent>
             </Card>
