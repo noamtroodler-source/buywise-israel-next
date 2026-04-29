@@ -29,6 +29,7 @@ interface SpecBasedCompsProps {
   sourceRooms?: number | null; // Israeli room count from scraping
   subjectProperty?: Parameters<typeof useSpecBasedSoldComps>[5];
   onVerdictComputed?: (avgComparison: number | null, compsCount: number, radiusUsedM: number, avgCompPriceSqm: number | null, compDispersionPercent?: number | null, compClassMatch?: PriceContextCompClassMatch | null, roomMatchQuality?: PriceContextSpecMatchQuality | null, sizeMatchQuality?: PriceContextSpecMatchQuality | null, compRecencyMonths?: number | null) => void;
+  onCompsViewed?: (payload: { compsCount: number; radiusUsedM: number; source: 'spec_based_sales' }) => void;
   className?: string;
 }
 
@@ -105,6 +106,7 @@ export function SpecBasedComps({
   sourceRooms,
   subjectProperty,
   onVerdictComputed,
+  onCompsViewed,
   className,
 }: SpecBasedCompsProps) {
   const { data: comps = [], isLoading } = useSpecBasedSoldComps(
@@ -124,6 +126,12 @@ export function SpecBasedComps({
   useEffect(() => {
     onVerdictComputed?.(stats?.vsSubjectPct ?? null, stats?.count ?? comps.length, 1000, stats?.avgPriceSqm ?? null, stats?.dispersionPercent ?? null, null, specMatchMetadata.roomMatchQuality, specMatchMetadata.sizeMatchQuality, recencyMetadata.avgRecencyMonths);
   }, [onVerdictComputed, stats?.vsSubjectPct, stats?.count, stats?.avgPriceSqm, stats?.dispersionPercent, comps.length, specMatchMetadata.roomMatchQuality, specMatchMetadata.sizeMatchQuality, recencyMetadata.avgRecencyMonths]);
+
+  useEffect(() => {
+    if (!isLoading && comps.length > 0) {
+      onCompsViewed?.({ compsCount: comps.length, radiusUsedM: 1000, source: 'spec_based_sales' });
+    }
+  }, [isLoading, comps.length, onCompsViewed]);
 
   const locationLabel = neighborhood ? `${neighborhood}, ${city}` : city;
 

@@ -1,160 +1,243 @@
-Based on the brief and the implementation already completed, the system is roughly 65–70% built out. The foundations are in place: confidence scoring, safe public labels, wizard fields, pre-publish preview, persistence, agent/agency badges, and an admin audit history.
+# Plan: Fully Build Out the Remaining Price Context System
 
-What is still needed for a “perfectly built out” Price Context system is mainly the final buyer UX, benchmark-review workflow, analytics, and rollout controls.
+## Goal
+Finish the Price Context implementation so it matches the brief end-to-end: buyer trust layer, agency correction/enrichment workflow, admin/data-quality controls, KPI measurement, and mature rollout hooks.
 
-## Remaining phases
-
-### Phase 1: Complete buyer-facing Price Context module
-Upgrade the current property-page module from a good first version into the final brief-compliant structure:
-
-1. Header: “BuyWise Price Context”.
-2. Clear subtitle explaining recorded sales, local benchmarks, and property-specific context.
-3. Status badge driven by the safe public label.
-4. One-sentence “BuyWise Take”.
-5. Three core cards:
-   - Asking price / sqm
-   - Recorded local benchmark range
-   - Comparable confidence
-6. Premium drivers split into:
-   - Confirmed by agency
-   - Detected from listing
-7. Smart buyer questions.
-8. Expandable “How we calculated this” section with comp set, limitations, sqm-source explanation, and disclaimer.
-
-Important: keep public listing-level gap percentages suppressed unless the confidence gate allows them. Use ranges, not single-point “fair value” claims.
-
-### Phase 2: Build benchmark review request flow for agents/agencies
-The database has benchmark-review fields, but the full agent-side workflow still needs to be built.
-
-Add a “Request benchmark review” flow from the listing management UI and/or Price Context badge:
-
-- Structured reasons:
-  - Wrong location or geocode
-  - Wrong property type
-  - Wrong sqm
-  - Wrong room count
-  - New-build compared to resale
-  - Penthouse/garden/sea-view features not reflected
-  - Comps are too old or too far away
-  - Price includes parking, storage, furniture, or extras
-  - Better comparable sales exist
-  - Recent deal not yet in government records
-  - Other explanation
-- Optional notes field.
-- Update the listing’s `benchmark_review_status` to `requested`.
-- Save reason/notes.
-- Log an immutable `price_context_events` event.
-- Show “Context under review” on the agent/agency listing badge.
-
-### Phase 3: Admin benchmark review queue and resolution tools
-Extend the existing admin review/audit work into a dedicated operational queue.
-
-Add admin controls to:
-
-- Filter listings where benchmark review is requested/under review.
-- See structured reason, notes, property class, confidence score, public label, and comp-pool snapshot.
-- Mark review as:
-  - Under review
-  - Resolved: benchmark accepted
-  - Resolved: listing data corrected
-  - Resolved: confidence downgraded / label softened
-- Write admin notes.
-- Log every decision into `price_context_events`.
-- Refresh the listing’s badge/public label after resolution.
-
-### Phase 4: Price Context analytics and KPI dashboard
-The brief calls for a measurement layer. This is the biggest remaining production-readiness item.
-
-Implement event tracking for:
-
-Buyer metrics:
-- Price Context module viewed
-- Expandable details opened
-- Comparable sales viewed/clicked
-- Inquiry after Price Context viewed
-- Save after Price Context viewed
-
-Agency metrics:
-- Premium-context completion rate
-- Price Context Complete badge rate
-- Benchmark review request rate
-- Time-to-submit/listing friction
-- Context-complete vs incomplete inquiry conversion
-
-Data-health metrics:
-- Listings by confidence tier
-- Unknown sqm-source rate
-- Unknown ownership-type rate
-- High-gap listings with/without premium explanation
-- Most common benchmark review reasons
-
-Surface this in the existing admin analytics area, likely as a dedicated Price Context/Price Intelligence dashboard section.
-
-### Phase 5: Mature marketplace controls and ranking hooks
-This should be built after the system is stable, but the hooks can be prepared now.
-
-Add internal-only controls for:
-
-- Whether listing-level Price Context is shown broadly or only softly.
-- Whether context-complete listings become eligible for stronger placement.
-- Whether featured placement requires Price Context completion.
-- Buyer filter: “Show listings with complete Price Context”.
-
-For now, these should be admin/feature-flag controlled, not hard-coded as public behavior.
-
-## Recommended next build
-
-The best next phase is Phase 1 + Phase 2 together:
-
-1. Finalize the buyer-facing Price Context module so the public product feels polished and trust-building.
-2. Add the agent/agency benchmark review request flow so professionals have a fair correction mechanism.
-
-That combination closes the most important product loop:
+Current status: the core safety engine is mostly in place: confidence tiers, public labels, suppression rules, buyer questions, premium-driver separation, lead-quality feedback, and admin confidence-cap diagnostics. The remaining work is mostly product workflow, measurement, and operational polish.
 
 ```text
-Buyer sees safe context
+Buyer sees safe Price Context
         ↓
-Agency can add/explain/request review
+Agent/agency can explain or request benchmark review
         ↓
-Admin can audit and resolve
+Admin resolves benchmark/data issues
         ↓
-Buyer-facing trust improves without attacking listings
+Analytics prove trust, lead quality, and data-health impact
+        ↓
+Rollout controls decide where Price Context affects discovery/placement
 ```
 
-## Technical implementation plan for the next build
+## Phase 15: Final buyer-facing Price Context module
 
-### Files likely to update
-- `src/components/property/MarketIntelligence.tsx`
-- `src/lib/priceContext.ts`
-- `src/components/property/PriceContextBadge.tsx`
-- Agent/agency listing management pages using the badge
-- `src/hooks/useAgentProperties.tsx`
-- `src/hooks/useAgencyListings.tsx`
-- `src/hooks/useListingReview.tsx`
+Build the final brief-compliant public module on property detail pages.
 
-### New files likely to add
-- `src/components/property/PriceContextModule.tsx`
-- `src/components/property/PriceContextDetailsDrawer.tsx` or similar expandable details component
-- `src/components/property/BenchmarkReviewDialog.tsx`
-- `src/hooks/useBenchmarkReview.tsx`
-
-### Database/backend changes likely needed
-Use a migration only if the current fields are not enough. The current fields may be sufficient for the first version:
-- `benchmark_review_status`
-- `benchmark_review_reason`
-- `benchmark_review_notes`
-- `price_context_events`
-
-If needed, add timestamps such as:
-- `benchmark_review_requested_at`
-- `benchmark_review_resolved_at`
+### Buyer UX
+- Rename/position the public section as “BuyWise Price Context”.
+- Add a short “Trusted Friend” subtitle explaining recorded sales, local benchmarks, and property-specific context.
+- Keep the safe public status badge driven by `priceContext.publicLabel`.
+- Preserve the one-sentence “BuyWise Take”.
+- Show three clear summary cards:
+  - Asking price / sqm.
+  - Recorded local benchmark range.
+  - Comparable confidence.
+- Keep benchmark display as ranges, never false-precision point estimates.
+- Keep public percentage gaps suppressed unless the existing confidence gate allows them.
+- Split premium drivers into:
+  - “Confirmed by agency”.
+  - “Detected from listing”.
+- Show smart buyer questions generated from property context.
+- Add an expandable “How we calculated this” area with:
+  - Comp set summary.
+  - Limitations/caps.
+  - SQM-source explanation.
+  - Ownership-type context where available.
+  - Legal/data disclaimer.
+- Track interactions:
+  - Module viewed.
+  - Details opened.
+  - Trust feedback submitted.
+  - Comparable details viewed.
 
 ### Guardrails
+- No “overpriced” language.
+- No harsh “requires closer review” public status.
 - No mock data.
-- No raw public “overpriced” language.
-- No public percentage display unless the confidence gate allows it.
-- Keep all internal math/storage in NIS.
-- Preserve the “Trusted Friend” tone.
-- Use “International buyers”, never “Anglo” in public UI.
+- Use NIS internally; display according to existing preferences.
+- Use semantic Tailwind tokens only.
 
-After this next build, the remaining work would mostly be analytics and mature rollout controls rather than core product UX.
+## Phase 16: Agent/agency benchmark review request flow
+
+Give professionals a fair correction path when they believe the benchmark is stale, wrong, or missing context.
+
+### Agent/agency UI
+- Add a “Request benchmark review” action in relevant listing management surfaces and/or Price Context badge states.
+- Use a structured dialog with reasons from the brief:
+  - Wrong location or geocode.
+  - Wrong property type.
+  - Wrong sqm.
+  - Wrong room count.
+  - New-build compared to resale.
+  - Penthouse/garden/sea-view features not reflected.
+  - Comps are too old or too far away.
+  - Price includes parking, storage, furniture, or extras.
+  - Better comparable sales exist.
+  - Recent deal not yet in government records.
+  - Other explanation.
+- Include optional notes.
+- Update the listing to `benchmark_review_status = requested`.
+- Save `benchmark_review_reason` and `benchmark_review_notes`.
+- Log immutable `price_context_events` event: `benchmark_review_requested`.
+- Show “Context under review” on agent/agency badges after submission.
+
+### Data additions if needed
+If existing fields are insufficient, add:
+- `benchmark_review_requested_at`.
+- `benchmark_review_resolved_at`.
+- `benchmark_review_admin_notes`.
+- `benchmark_review_resolution`.
+
+## Phase 17: Admin benchmark review queue and resolution tools
+
+Turn admin transparency into an operational workflow.
+
+### Admin queue
+- Add a Price Context Review Queue in the admin area.
+- Filter by:
+  - Requested.
+  - Under review.
+  - Resolved.
+  - Confidence tier.
+  - Property class.
+  - City/area.
+- For each listing, show:
+  - Property identity and listing details.
+  - Review reason and agency notes.
+  - Price Context status, confidence tier, score, public label.
+  - Confidence cap audit from Phase 14.
+  - Comp-pool summary.
+  - SQM source and ownership type.
+  - Premium drivers and explanation.
+  - Event history.
+
+### Admin actions
+- Mark as `under_review`.
+- Resolve as:
+  - Benchmark accepted.
+  - Listing data corrected.
+  - Confidence downgraded / public label softened.
+  - More data needed.
+- Add admin notes.
+- Log each decision to `price_context_events`.
+- Refresh derived badge/status metadata after resolution where appropriate.
+
+## Phase 18: Price Context analytics and KPI dashboard
+
+Build the measurement layer requested in the brief.
+
+### Buyer metrics
+- Price Context module view rate.
+- Expandable-details open rate.
+- Comparable-view click/open rate.
+- Save after viewing Price Context.
+- Inquiry after viewing Price Context.
+- Trust-feedback helpful/not-helpful rate.
+- Clarity-session conversion if that event exists in the app.
+
+### Agency metrics
+- Premium-context completion rate.
+- Price Context Complete badge rate.
+- Benchmark review request rate.
+- Time-to-publish/listing-friction indicators where timestamps exist.
+- Lead-quality rating averages.
+- Inquiry conversion for context-complete vs incomplete listings.
+
+### Data-health metrics
+- Listings by confidence tier.
+- Unknown SQM-source rate.
+- Unknown ownership-type rate.
+- High-gap listings with/without premium explanation.
+- Most common benchmark review reasons.
+- Confidence-cap frequency.
+- Insufficient-data rate by city/area/property class.
+
+### Admin UI
+- Add a dedicated “Price Context” or “Price Intelligence” tab in existing admin analytics.
+- Use real persisted data only; no placeholder metrics.
+- Display “not enough data yet” states when counts are too low.
+- Add CSV export if consistent with the existing analytics patterns.
+
+## Phase 19: Mature marketplace controls and ranking hooks
+
+Prepare controlled rollout without making aggressive public changes too early.
+
+### Controls
+- Add internal feature flags/settings for:
+  - Showing listing-level Price Context broadly vs softly.
+  - Enabling buyer filter: “Show listings with complete Price Context”.
+  - Allowing context-complete listings to qualify for stronger placement.
+  - Requiring complete Price Context for some featured placements later.
+- Apply existing `priceContextGuardrails` so listings under review or blocked do not receive enhanced placement.
+- Add buyer-facing filter only if it can be backed by real listing metadata.
+
+### Ranking integration
+- Do not overhaul ranking immediately.
+- Expose a safe eligibility signal such as `price_context_feature_eligible` or use an existing guardrail helper in listing queries/cards.
+- Keep this admin-controlled until the system has enough real data.
+
+## Phase 20: QA, security, and memory cleanup
+
+### QA checklist
+- Verify property pages across:
+  - Strong comparable match.
+  - Directional benchmark.
+  - Limited match.
+  - Premium/unique property.
+  - Insufficient data.
+  - Under review.
+- Verify agent/agency review submission permissions.
+- Verify admin-only review queue permissions.
+- Verify event logging does not expose private buyer data publicly.
+- Verify public UI never shows raw harsh gap language.
+- Verify empty states are honest and do not fabricate metrics.
+
+### Security/data rules
+- Keep roles in dedicated role tables only.
+- Do not rely on localStorage/client flags for admin access.
+- Use existing Lovable Cloud RLS patterns for new or updated tables.
+- Do not edit generated backend client/type files manually.
+
+## Technical implementation map
+
+### Likely files to update
+- `src/components/property/MarketIntelligence.tsx`
+- `src/components/property/PriceContextBadge.tsx`
+- `src/lib/priceContext.ts`
+- `src/lib/priceContextDisclaimer.ts`
+- `src/lib/priceContextGuardrails.ts`
+- `src/hooks/useBenchmarkReview.tsx`
+- Agent/agency listing management pages/components
+- Admin listing review components
+- Admin analytics components
+- Listing filter/query components if the buyer filter is added
+
+### Likely new files/components
+- `src/components/property/PriceContextModule.tsx`
+- `src/components/property/PriceContextDetailsPanel.tsx`
+- `src/components/property/BenchmarkReviewDialog.tsx`
+- `src/components/admin/PriceContextReviewQueue.tsx`
+- `src/components/admin/analytics/PriceContextAnalyticsTab.tsx`
+- `src/hooks/usePriceContextAnalytics.tsx`
+- `src/hooks/usePriceContextReviewQueue.tsx`
+
+### Likely backend/database updates
+Use migrations only for missing persisted fields. Expected additions may include:
+- Benchmark review timestamps.
+- Admin resolution fields.
+- Optional structured analytics/event metadata indexes.
+- Optional app setting/feature flag records if no suitable table already exists.
+
+RLS policies must ensure:
+- Agents/agencies can request reviews only for listings they own/manage.
+- Admins can read and resolve all review requests.
+- Public users cannot read internal event history or admin notes.
+
+## Recommended execution order
+
+1. Phase 15: finish public buyer module.
+2. Phase 16: add agent/agency benchmark review requests.
+3. Phase 17: add admin review queue and resolution.
+4. Phase 18: add analytics dashboard and event aggregation.
+5. Phase 19: add controlled rollout/ranking/filter hooks.
+6. Phase 20: QA/security pass.
+
+This order finishes the visible product loop first, then adds operations, measurement, and controlled marketplace impact.

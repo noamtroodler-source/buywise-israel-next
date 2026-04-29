@@ -51,6 +51,10 @@ export interface PropertyForReview {
   benchmark_review_status: string | null;
   benchmark_review_reason: string | null;
   benchmark_review_notes: string | null;
+  benchmark_review_requested_at?: string | null;
+  benchmark_review_resolved_at?: string | null;
+  benchmark_review_admin_notes?: string | null;
+  benchmark_review_resolution?: string | null;
   price_context_property_class: string | null;
   price_context_confidence_score: number | null;
   price_context_confidence_tier: string | null;
@@ -152,6 +156,10 @@ export function useListingsForReview(status?: VerificationStatus) {
           benchmark_review_status,
           benchmark_review_reason,
           benchmark_review_notes,
+          benchmark_review_requested_at,
+          benchmark_review_resolved_at,
+          benchmark_review_admin_notes,
+          benchmark_review_resolution,
           price_context_property_class,
           price_context_confidence_score,
           price_context_confidence_tier,
@@ -217,6 +225,10 @@ export function usePriceContextBlockers() {
           benchmark_review_status,
           benchmark_review_reason,
           benchmark_review_notes,
+          benchmark_review_requested_at,
+          benchmark_review_resolved_at,
+          benchmark_review_admin_notes,
+          benchmark_review_resolution,
           created_at,
           agent:agent_id (
             id,
@@ -472,7 +484,7 @@ export function useRejectListing() {
   });
 }
 
-export type BenchmarkReviewResolution = 'under_review' | 'accepted' | 'data_corrected' | 'confidence_softened';
+export type BenchmarkReviewResolution = 'under_review' | 'accepted' | 'data_corrected' | 'confidence_softened' | 'more_data_needed';
 
 export function useResolveBenchmarkReview() {
   const queryClient = useQueryClient();
@@ -480,22 +492,35 @@ export function useResolveBenchmarkReview() {
   return useMutation({
     mutationFn: async ({ id, resolution, notes }: { id: string; resolution: BenchmarkReviewResolution; notes?: string }) => {
       const updates: Record<string, unknown> = {
-        benchmark_review_notes: notes || null,
+        benchmark_review_admin_notes: notes || null,
       };
 
       if (resolution === 'under_review') {
         updates.benchmark_review_status = 'under_review';
         updates.price_context_badge_status = 'blocked';
         updates.price_context_public_label = 'Market context under review';
+        updates.price_context_filter_eligible = false;
+        updates.price_context_placement_eligible = false;
+        updates.price_context_featured_eligible = false;
       } else {
         updates.benchmark_review_status = 'resolved';
-        updates.benchmark_review_reason = null;
-        updates.price_context_badge_status = resolution === 'confidence_softened' ? 'incomplete' : 'complete';
+        updates.benchmark_review_resolution = resolution;
+        updates.benchmark_review_resolved_at = new Date().toISOString();
+        updates.price_context_badge_status = resolution === 'confidence_softened' || resolution === 'more_data_needed' ? 'incomplete' : 'complete';
         if (resolution === 'confidence_softened') {
           updates.price_context_confidence_tier = 'limited_comparable_match';
           updates.price_context_public_label = 'Limited comparable match';
           updates.price_context_percentage_suppressed = true;
         }
+        if (resolution === 'more_data_needed') {
+          updates.price_context_confidence_tier = 'insufficient_data';
+          updates.price_context_public_label = 'Not enough recorded data to benchmark reliably';
+          updates.price_context_percentage_suppressed = true;
+        }
+        const eligible = resolution === 'accepted' || resolution === 'data_corrected';
+        updates.price_context_filter_eligible = eligible;
+        updates.price_context_placement_eligible = eligible;
+        updates.price_context_featured_eligible = eligible;
       }
 
       const { error } = await supabase

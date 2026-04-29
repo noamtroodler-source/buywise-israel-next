@@ -35,8 +35,14 @@ export interface PriceContextKpis {
   moduleViews: number;
   buyerQuestionEngagements: number;
   postViewInquiries: number;
+  detailsOpened: number;
+  comparableViews: number;
+  helpfulFeedback: number;
+  notHelpfulFeedback: number;
   questionEngagementRate: number;
   inquiryConversionRate: number;
+  detailsOpenRate: number;
+  helpfulFeedbackRate: number;
   highGapListings: number;
   highGapRate: number;
   unknownSqmSource: number;
@@ -76,8 +82,14 @@ const emptyPriceContext: PriceContextKpis = {
   moduleViews: 0,
   buyerQuestionEngagements: 0,
   postViewInquiries: 0,
+  detailsOpened: 0,
+  comparableViews: 0,
+  helpfulFeedback: 0,
+  notHelpfulFeedback: 0,
   questionEngagementRate: 0,
   inquiryConversionRate: 0,
+  detailsOpenRate: 0,
+  helpfulFeedbackRate: 0,
   highGapListings: 0,
   highGapRate: 0,
   unknownSqmSource: 0,
@@ -232,7 +244,7 @@ export function usePriceAnalytics(days: number = 30) {
         (supabase.from('property_views').select('property_id, created_at') as any).gte('created_at', since),
         (supabase.from('price_context_events' as any).select('event_type, actor_type, property_id, created_at') as any).gte('created_at', since),
         (supabase.from('user_events').select('event_name, properties, created_at') as any)
-          .in('event_name', ['price_context_module_viewed', 'buyer_question_engaged', 'price_context_post_view_inquiry'])
+          .in('event_name', ['price_context_module_viewed', 'buyer_question_engaged', 'price_context_post_view_inquiry', 'price_context_calculation_opened', 'price_context_comparable_sales_viewed', 'price_context_trust_feedback_submitted'])
           .gte('created_at', since),
       ]);
 
@@ -252,6 +264,10 @@ export function usePriceAnalytics(days: number = 30) {
       const moduleViews = trackedPriceContextEvents.filter((event: any) => event.event_name === 'price_context_module_viewed').length;
       const buyerQuestionEngagements = trackedPriceContextEvents.filter((event: any) => event.event_name === 'buyer_question_engaged').length;
       const postViewInquiries = trackedPriceContextEvents.filter((event: any) => event.event_name === 'price_context_post_view_inquiry').length;
+      const detailsOpened = trackedPriceContextEvents.filter((event: any) => event.event_name === 'price_context_calculation_opened').length;
+      const comparableViews = trackedPriceContextEvents.filter((event: any) => event.event_name === 'price_context_comparable_sales_viewed').length;
+      const helpfulFeedback = trackedPriceContextEvents.filter((event: any) => event.event_name === 'price_context_trust_feedback_submitted' && event.properties?.helpful === true).length;
+      const notHelpfulFeedback = trackedPriceContextEvents.filter((event: any) => event.event_name === 'price_context_trust_feedback_submitted' && event.properties?.helpful === false).length;
       const correctionRows = ((events ?? []) as any[]).filter((event: any) => {
         const eventType = String(event.event_type || '').toLowerCase();
         return event.actor_type === 'admin' || eventType.includes('correct') || eventType.includes('resolved') || eventType.includes('override');
@@ -277,8 +293,14 @@ export function usePriceAnalytics(days: number = 30) {
         moduleViews,
         buyerQuestionEngagements,
         postViewInquiries,
+        detailsOpened,
+        comparableViews,
+        helpfulFeedback,
+        notHelpfulFeedback,
         questionEngagementRate: moduleViews ? (buyerQuestionEngagements / moduleViews) * 100 : 0,
         inquiryConversionRate: moduleViews ? (postViewInquiries / moduleViews) * 100 : completeViews ? (completeInquiries / completeViews) * 100 : 0,
+        detailsOpenRate: moduleViews ? (detailsOpened / moduleViews) * 100 : 0,
+        helpfulFeedbackRate: helpfulFeedback + notHelpfulFeedback ? (helpfulFeedback / (helpfulFeedback + notHelpfulFeedback)) * 100 : 0,
         highGapListings,
         highGapRate: propertyRows.length ? (highGapListings / propertyRows.length) * 100 : 0,
         unknownSqmSource,

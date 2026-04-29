@@ -345,6 +345,7 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
   const { user } = useAuth();
   const location = useLocation();
   const trackedViewKey = useRef<string | null>(null);
+  const trackedCompsKey = useRef<string | null>(null);
 
   const handleVerdictComputed = useCallback((avgComparison: number | null, compsCount: number, radiusUsedM: number, avgCompPriceSqm: number | null, compDispersionPercent: number | null = null, compClassMatch: 'same_class' | 'similar_class' | 'mixed_fallback' | 'no_comps' | null = null, roomMatchQuality: PriceContextSpecMatchQuality | null = null, sizeMatchQuality: PriceContextSpecMatchQuality | null = null, compRecencyMonths: number | null = null) => {
     setVerdictData(prev => {
@@ -456,6 +457,13 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
     });
   }, [trackingEnabled, user, location.pathname, priceContextTrackingPayload]);
 
+  const handleCompsViewed = useCallback((payload: { compsCount: number; radiusUsedM: number; source: string }) => {
+    const key = `${property.id}:${payload.source}:${payload.compsCount}:${payload.radiusUsedM}`;
+    if (trackedCompsKey.current === key) return;
+    trackedCompsKey.current = key;
+    handlePriceContextInteraction('price_context_comparable_sales_viewed', payload);
+  }, [property.id, handlePriceContextInteraction]);
+
   return (
     <TooltipProvider>
       <div className="space-y-5">
@@ -560,6 +568,7 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
             hideHeader
             hideVerdict
             onVerdictComputed={handleVerdictComputed}
+            onCompsViewed={handleCompsViewed}
           />
         ) : (
           <SpecBasedComps
@@ -572,6 +581,7 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
             sourceRooms={property.source_rooms}
             subjectProperty={property}
             onVerdictComputed={handleVerdictComputed}
+            onCompsViewed={handleCompsViewed}
           />
         )}
 
