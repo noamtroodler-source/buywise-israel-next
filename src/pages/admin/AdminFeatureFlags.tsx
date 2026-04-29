@@ -221,6 +221,66 @@ export function AdminFeatureFlags() {
         </Card>
       )}
 
+      <Card className="border-primary/20 bg-primary/5">
+        <CardHeader>
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <ShieldCheck className="h-5 w-5 text-primary" />
+                Price Context rollout controls
+              </CardTitle>
+              <CardDescription>
+                Stage buyer display, filters, ranking, and featured eligibility without bypassing review guardrails.
+              </CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => normalizePriceContextMutation.mutate()}
+              disabled={normalizePriceContextMutation.isPending}
+            >
+              <DatabaseZap className="mr-2 h-4 w-4" />
+              {normalizePriceContextMutation.isPending ? 'Refreshing…' : 'Refresh metadata'}
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {priceContextFlags.length > 0 ? priceContextFlags.map((flag) => {
+            const config = priceContextFlagDescriptions[flag.flag_key];
+            const Icon = config?.icon || ShieldCheck;
+            return (
+              <div key={flag.id} className="flex items-center justify-between gap-4 rounded-xl border border-border/50 bg-background p-4">
+                <div className="flex min-w-0 items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                    <Icon className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="min-w-0 space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-medium text-foreground">{config?.label || flag.label || flag.flag_key}</p>
+                      <Badge variant="outline">{config?.risk || 'Controlled'}</Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground">{config?.description || flag.description}</p>
+                    <p className="font-mono text-xs text-muted-foreground">{flag.flag_key}</p>
+                  </div>
+                </div>
+                <div className="flex shrink-0 items-center gap-3">
+                  <Badge variant={flag.is_enabled ? 'default' : 'secondary'}>{flag.is_enabled ? 'ON' : 'OFF'}</Badge>
+                  <Switch
+                    checked={flag.is_enabled}
+                    onCheckedChange={() => handleToggle(flag)}
+                    disabled={toggleMutation.isPending}
+                  />
+                </div>
+              </div>
+            );
+          }) : (
+            <p className="rounded-lg bg-background p-3 text-sm text-muted-foreground">
+              Price Context flags have not been seeded yet.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Feature Flags */}
       <Card>
         <CardHeader className="pb-2">
