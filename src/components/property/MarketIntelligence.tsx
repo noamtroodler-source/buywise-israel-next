@@ -179,7 +179,7 @@ function PremiumContextSummary({ priceContext, premiumExplanation }: { priceCont
       {contextChips.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {contextChips.map((chip) => (
-            <Badge key={chip} variant="outline" className="rounded-lg bg-muted/20 text-xs text-foreground">
+            <Badge key={chip} variant="outline" className="rounded-lg border-primary/15 bg-primary/5 text-xs text-foreground">
               {chip}
             </Badge>
           ))}
@@ -268,7 +268,7 @@ function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchma
     : 'Recorded sales and local benchmarks to help you understand the asking price.';
 
   return (
-    <div className="space-y-4 border-y border-border py-5">
+    <div className="space-y-4 rounded-xl border border-primary/10 bg-gradient-to-br from-background to-muted/20 p-4 shadow-sm">
       <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1">
           <div className="mb-2 space-y-1">
@@ -282,7 +282,10 @@ function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchma
               <BenchmarkCardTile key={card.id} card={card} onTrackInteraction={onTrackInteraction} />
             ))}
           </div>
-          <div className="mt-3 rounded-lg border border-border bg-muted/20 px-3 py-2">
+          <div className="mt-3 flex gap-3 rounded-lg border border-primary/15 bg-primary/5 px-3 py-3">
+            <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Sparkles className="h-3.5 w-3.5" />
+            </div>
             <p className="text-sm leading-relaxed text-muted-foreground">
               <span className="font-semibold text-foreground">Buyer takeaway:</span> {buyerTakeaway}
             </p>
