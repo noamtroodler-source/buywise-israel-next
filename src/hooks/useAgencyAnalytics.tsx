@@ -77,7 +77,9 @@ export function useAgencyAnalytics(dateRange: DateRangeFilter = 'all') {
       const { data: properties, error: propertiesError } = await supabase
         .from('properties')
         .select('id, agent_id, views_count, verification_status')
-        .in('agent_id', agentIds);
+        .in('agent_id', agentIds)
+        .eq('is_published', true)
+        .eq('verification_status', 'approved');
 
       if (propertiesError) throw propertiesError;
 
@@ -100,7 +102,8 @@ export function useAgencyAnalytics(dateRange: DateRangeFilter = 'all') {
       let inquiriesQuery = supabase
         .from('property_inquiries')
         .select('property_id, agent_id, inquiry_type, created_at')
-        .in('agent_id', agentIds);
+        .in('agent_id', agentIds)
+        .in('property_id', propertyIds);
       
       if (dateFilter) {
         inquiriesQuery = inquiriesQuery.gte('created_at', dateFilter);
