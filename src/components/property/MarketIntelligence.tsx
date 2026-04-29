@@ -17,7 +17,7 @@ import { useRoomSpecificCityPrice } from '@/hooks/useRoomSpecificCityPrice';
 import { useNeighborhoodAvgPrice } from '@/hooks/useNeighborhoodPrices';
 import { usePriceTier } from '@/hooks/usePriceTier';
 import type { PriceTier } from '@/hooks/usePriceTier';
-import { getPriceContext, type PriceContextResult } from '@/lib/priceContext';
+import { getPriceContext, type PriceContextResult, type PriceContextSpecMatchQuality } from '@/lib/priceContext';
 import { PRICE_CONTEXT_DISCLAIMER, PRICE_CONTEXT_SIZE_NOTE } from '@/lib/priceContextDisclaimer';
 
 const SESSION_KEY = 'analytics_session_id';
@@ -280,22 +280,24 @@ function BuyWiseTake({ priceContext, premiumExplanation, propertyPricePerSqm, co
 }
 
 export function MarketIntelligence({ property, cityData, trackingEnabled = true }: MarketIntelligenceProps) {
-  const [verdictData, setVerdictData] = useState<{ avgComparison: number | null; compsCount: number; radiusUsedM: number; avgCompPriceSqm: number | null; compDispersionPercent: number | null; compClassMatch: 'same_class' | 'similar_class' | 'mixed_fallback' | 'no_comps' | null }>({
+  const [verdictData, setVerdictData] = useState<{ avgComparison: number | null; compsCount: number; radiusUsedM: number; avgCompPriceSqm: number | null; compDispersionPercent: number | null; compClassMatch: 'same_class' | 'similar_class' | 'mixed_fallback' | 'no_comps' | null; roomMatchQuality: PriceContextSpecMatchQuality | null; sizeMatchQuality: PriceContextSpecMatchQuality | null }>({
     avgComparison: null,
     compsCount: 0,
     radiusUsedM: 500,
     avgCompPriceSqm: null,
     compDispersionPercent: null,
     compClassMatch: null,
+    roomMatchQuality: null,
+    sizeMatchQuality: null,
   });
   const { user } = useAuth();
   const location = useLocation();
   const trackedViewKey = useRef<string | null>(null);
 
-  const handleVerdictComputed = useCallback((avgComparison: number | null, compsCount: number, radiusUsedM: number, avgCompPriceSqm: number | null, compDispersionPercent: number | null = null, compClassMatch: 'same_class' | 'similar_class' | 'mixed_fallback' | 'no_comps' | null = null) => {
+  const handleVerdictComputed = useCallback((avgComparison: number | null, compsCount: number, radiusUsedM: number, avgCompPriceSqm: number | null, compDispersionPercent: number | null = null, compClassMatch: 'same_class' | 'similar_class' | 'mixed_fallback' | 'no_comps' | null = null, roomMatchQuality: PriceContextSpecMatchQuality | null = null, sizeMatchQuality: PriceContextSpecMatchQuality | null = null) => {
     setVerdictData(prev => {
-      if (prev.avgComparison === avgComparison && prev.compsCount === compsCount && prev.radiusUsedM === radiusUsedM && prev.avgCompPriceSqm === avgCompPriceSqm && prev.compDispersionPercent === compDispersionPercent && prev.compClassMatch === compClassMatch) return prev;
-      return { avgComparison, compsCount, radiusUsedM, avgCompPriceSqm, compDispersionPercent, compClassMatch };
+      if (prev.avgComparison === avgComparison && prev.compsCount === compsCount && prev.radiusUsedM === radiusUsedM && prev.avgCompPriceSqm === avgCompPriceSqm && prev.compDispersionPercent === compDispersionPercent && prev.compClassMatch === compClassMatch && prev.roomMatchQuality === roomMatchQuality && prev.sizeMatchQuality === sizeMatchQuality) return prev;
+      return { avgComparison, compsCount, radiusUsedM, avgCompPriceSqm, compDispersionPercent, compClassMatch, roomMatchQuality, sizeMatchQuality };
     });
   }, []);
 
@@ -336,6 +338,8 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
     radiusUsedM: verdictData.radiusUsedM,
     compDispersionPercent: verdictData.compDispersionPercent,
     compClassMatch: verdictData.compClassMatch,
+    roomMatchQuality: verdictData.roomMatchQuality,
+    sizeMatchQuality: verdictData.sizeMatchQuality,
     avgCompPriceSqm: verdictData.avgCompPriceSqm,
     benchmarkPriceSqm: tierAvgPriceSqm ?? neighborhoodAvgPriceSqm ?? effectiveAvgPriceSqm,
     pricePerSqm: propertyPricePerSqm,
