@@ -333,6 +333,29 @@ export function useResumeJob() {
   });
 }
 
+export function usePauseJob() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (jobId: string) => {
+      const { data, error } = await supabase.functions.invoke('import-agency-listings', {
+        body: { action: 'pause_job', job_id: jobId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data as { reset_count: number };
+    },
+    onSuccess: (data) => {
+      toast.info(`Import paused — ${data.reset_count} active item${data.reset_count !== 1 ? 's' : ''} returned to the queue`);
+      queryClient.invalidateQueries({ queryKey: ['importJobs'] });
+      queryClient.invalidateQueries({ queryKey: ['importJobItems'] });
+    },
+    onError: (err: Error) => {
+      toast.error(`Pause failed: ${err.message}`);
+    },
+  });
+}
+
 export function useQuarantineMadlanBatch() {
   const queryClient = useQueryClient();
 
