@@ -80,6 +80,12 @@ export interface StepValidationError {
   errors: string[];
 }
 
+export interface StepValidationRecommendation {
+  step: number;
+  stepName: string;
+  recommendations: string[];
+}
+
 interface PropertyWizardContextType {
   data: PropertyWizardData;
   updateData: (updates: Partial<PropertyWizardData>) => void;
@@ -98,6 +104,8 @@ interface PropertyWizardContextType {
   // Validation helpers for free navigation
   getStepErrors: (adjustedStep: number) => string[];
   getAllErrors: () => StepValidationError[];
+  getStepRecommendations: (adjustedStep: number) => string[];
+  getAllRecommendations: () => StepValidationRecommendation[];
 }
 
 export const defaultPropertyData: PropertyWizardData = {
@@ -158,7 +166,7 @@ export const PROPERTY_WIZARD_STORAGE_KEY = 'property-wizard-draft';
 
 const STEP_NAMES = ['Basics', 'Details', 'Features', 'Photos', 'Description'];
 
-function computeStepErrors(data: PropertyWizardData, adjustedStep: number): string[] {
+export function computeStepErrors(data: PropertyWizardData, adjustedStep: number): string[] {
   const errors: string[] = [];
   switch (adjustedStep) {
     case 0: { // Basics
@@ -201,11 +209,45 @@ function computeStepErrors(data: PropertyWizardData, adjustedStep: number): stri
       break;
     }
     case 4: { // Description
-      if (data.description.length < 100) errors.push(`Description must be at least 100 characters (${data.description.length}/100)`);
+      if (data.description.trim().length < 40) errors.push(`Add a short description before submitting (${data.description.trim().length}/40)`);
       break;
     }
   }
   return errors;
+}
+
+
+export function computeStepRecommendations(data: PropertyWizardData, adjustedStep: number): string[] {
+  const recommendations: string[] = [];
+  switch (adjustedStep) {
+    case 1: {
+      if (!data.year_built) recommendations.push('Add year built if you know it');
+      if (data.parking === 0) recommendations.push('Confirm parking availability');
+      if (data.vaad_bayit_monthly === undefined && data.listing_status === 'for_sale') recommendations.push('Add monthly vaad bayit if relevant');
+      break;
+    }
+    case 2: {
+      if (data.features.length < 3) recommendations.push('Add more amenities to improve buyer trust');
+      if (!data.featured_highlight.trim()) recommendations.push('Add one standout highlight');
+      if (data.listing_status === 'for_sale' && data.price > 0 && data.premium_drivers.length === 0 && !data.premium_explanation.trim()) {
+        recommendations.push('Explain premium pricing or unique value if the price may look high');
+      }
+      break;
+    }
+    case 3: {
+      const idealPhotos = Math.max(data.bedrooms + (data.additional_rooms || 0) + data.bathrooms + 2, 6);
+      if (data.images.length >= 3 && data.images.length < idealPhotos) recommendations.push(`Add more photos when possible (${data.images.length}/${idealPhotos})`);
+      break;
+    }
+    case 4: {
+      if (data.description.trim().length >= 40 && data.description.trim().length < 150) {
+        recommendations.push(`Expand the description for buyer trust (${data.description.trim().length}/150)`);
+      }
+      if (data.highlights.length === 0) recommendations.push('Add a few buyer-friendly highlights');
+      break;
+    }
+  }
+  return recommendations;
 }
 
 export function PropertyWizardProvider({ children, totalSteps = DEFAULT_TOTAL_STEPS }: { children: ReactNode; totalSteps?: number }) {
@@ -260,6 +302,21 @@ export function PropertyWizardProvider({ children, totalSteps = DEFAULT_TOTAL_ST
     return allErrors;
   }, [data]);
 
+  const getStepRecommendations = useCallback((adjustedStep: number): string[] => {
+    return computeStepRecommendations(data, adjustedStep);
+  }, [data]);
+
+  const getAllRecommendations = useCallback((): StepValidationRecommendation[] => {
+    const allRecommendations: StepValidationRecommendation[] = [];
+    for (let i = 0; i < 5; i++) {
+      const recommendations = computeStepRecommendations(data, i);
+      if (recommendations.length > 0) {
+        allRecommendations.push({ step: i, stepName: STEP_NAMES[i], recommendations });
+      }
+    }
+    return allRecommendations;
+  }, [data]);
+
   // canGoNext stays for backward compat / submit gating
   const adjustedStep = currentStep - stepOffset;
   const canGoNext = computeStepErrors(data, adjustedStep).length === 0;
@@ -283,6 +340,8 @@ export function PropertyWizardProvider({ children, totalSteps = DEFAULT_TOTAL_ST
         loadFromSaved,
         getStepErrors,
         getAllErrors,
+        getStepRecommendations,
+        getAllRecommendations,
       }}
     >
       {children}
