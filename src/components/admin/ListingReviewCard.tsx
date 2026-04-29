@@ -43,7 +43,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { PropertyThumbnail } from '@/components/shared/PropertyThumbnail';
-import { PropertyForReview, PriceContextEvent, usePriceContextEvents } from '@/hooks/useListingReview';
+import { PropertyForReview } from '@/hooks/useListingReview';
 import { useNearbySoldComps } from '@/hooks/useNearbySoldComps';
 import { computeSpecCompStats, useSpecBasedSoldComps } from '@/hooks/useSpecBasedSoldComps';
 import { useNeighborhoodAvgPrice } from '@/hooks/useNeighborhoodPrices';
@@ -745,49 +745,7 @@ function PhotoPanel({ property, onPhotoClick }: { property: PropertyForReview; o
   );
 }
 
-function PriceContextHistoryPanel({ events, isLoading }: { events: PriceContextEvent[]; isLoading: boolean }) {
-  return (
-    <div className="rounded-lg border border-border bg-background p-4">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h4 className="font-semibold text-foreground">Price Context audit history</h4>
-          <p className="text-xs text-muted-foreground">Internal trail of review decisions and public-display state.</p>
-        </div>
-        <Badge variant="outline">{isLoading ? 'Loading…' : `${events.length} event${events.length === 1 ? '' : 's'}`}</Badge>
-      </div>
-
-      {events.length > 0 ? (
-        <div className="space-y-2">
-          {events.map((event) => (
-            <div key={event.id} className="rounded-md border border-border/70 bg-muted/25 p-3">
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <div>
-                  <p className="text-sm font-medium text-foreground">{formatLabel(event.event_type)}</p>
-                  <p className="text-xs text-muted-foreground">{formatEventDate(event.created_at)} • {formatLabel(event.actor_type)}</p>
-                </div>
-                <Badge variant="secondary">{event.public_label ?? 'No public label'}</Badge>
-              </div>
-              <div className="mt-2 grid gap-2 text-xs text-muted-foreground sm:grid-cols-3">
-                <span>Confidence: <strong className="text-foreground">{formatPriceContextValue(event.confidence_tier)}</strong></span>
-                <span>Percentage: <strong className="text-foreground">{event.percentage_suppressed ? 'Suppressed' : 'Allowed'}</strong></span>
-                <span>Raw gap: <strong className="text-foreground">{event.raw_gap_percent != null ? `${event.raw_gap_percent}%` : 'Not stored'}</strong></span>
-              </div>
-              {event.reason && <p className="mt-2 border-l-2 border-primary/30 pl-3 text-xs text-muted-foreground">{event.reason}</p>}
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p className="text-sm text-muted-foreground">
-          {isLoading ? 'Loading Price Context events…' : 'No Price Context audit events have been logged for this listing yet.'}
-        </p>
-      )}
-    </div>
-  );
-}
-
-function MarketPanel({ property, market, reviewed, onReviewedChange, isLoading }: { property: PropertyForReview; market: MarketReviewData; reviewed: boolean; onReviewedChange: (reviewed: boolean) => void; isLoading?: boolean }) {
-  const { data: events = [], isLoading: eventsLoading } = usePriceContextEvents(property.id);
-
+function MarketPanel({ property, market }: { property: PropertyForReview; market: MarketReviewData }) {
   return (
     <div className="space-y-4">
       <div className="grid gap-3 md:grid-cols-3">
@@ -926,15 +884,6 @@ function MarketPanel({ property, market, reviewed, onReviewedChange, isLoading }
           </div>
         )}
       </div>
-
-      <PriceContextHistoryPanel events={events} isLoading={eventsLoading} />
-
-      {property.verification_status === 'pending_review' && (
-        <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-background p-3 text-sm">
-          <Checkbox checked={reviewed} onCheckedChange={(checked) => onReviewedChange(checked === true)} />
-          <span>I reviewed Price Context and buyer-page context for this listing</span>
-        </label>
-      )}
     </div>
   );
 }
