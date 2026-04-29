@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { BarChart3, ShieldCheck, Info, ArrowRight, ChevronDown, CircleHelp, CheckCircle2, Calculator, Ruler, TrendingUp } from 'lucide-react';
 import { getIsraeliRoomCount } from '@/lib/israeliRoomCount';
 import { Link } from 'react-router-dom';
@@ -315,7 +315,7 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
     property,
   });
 
-  const priceContextTrackingPayload = {
+  const priceContextTrackingPayload = useMemo(() => ({
     property_id: property.id,
     property_city: property.city,
     listing_status: property.listing_status,
@@ -329,7 +329,7 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
     premium_driver_count: priceContext.premiumDrivers.length,
     comps_count: verdictData.compsCount,
     radius_used_m: verdictData.radiusUsedM,
-  };
+  }), [property.id, property.city, property.listing_status, priceContext.publicLabel, priceContext.confidenceTier, priceContext.confidenceScore, priceContext.percentageSuppressed, priceContext.badgeStatus, priceContext.propertyClass, priceContext.buyerQuestions.length, priceContext.premiumDrivers.length, verdictData.compsCount, verdictData.radiusUsedM]);
 
   useEffect(() => {
     const viewKey = `${property.id}:${priceContext.confidenceTier}:${priceContext.publicLabel}:${verdictData.compsCount}:${verdictData.radiusUsedM}`;
@@ -340,7 +340,7 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
       component: 'MarketIntelligence',
       properties: priceContextTrackingPayload,
     });
-  }, [property.id, priceContext.confidenceTier, priceContext.publicLabel, verdictData.compsCount, verdictData.radiusUsedM, trackEvent]);
+  }, [property.id, priceContext.confidenceTier, priceContext.publicLabel, verdictData.compsCount, verdictData.radiusUsedM, trackEvent, priceContextTrackingPayload]);
 
   const handlePriceContextInteraction = useCallback((eventName: string, properties?: Record<string, unknown>) => {
     trackEvent('click', eventName, 'engagement', {
@@ -350,7 +350,7 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
         ...properties,
       },
     });
-  }, [trackEvent, property.id, property.city, property.listing_status, priceContext.publicLabel, priceContext.confidenceTier, priceContext.confidenceScore, priceContext.percentageSuppressed, priceContext.badgeStatus, priceContext.propertyClass, priceContext.buyerQuestions.length, priceContext.premiumDrivers.length, verdictData.compsCount, verdictData.radiusUsedM]);
+  }, [trackEvent, priceContextTrackingPayload]);
 
   return (
     <TooltipProvider>
