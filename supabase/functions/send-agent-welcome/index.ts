@@ -20,7 +20,9 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const admin = createClient(supabaseUrl, serviceKey);
+    const functionInvoker = createClient(supabaseUrl, anonKey);
 
     const authHeader = req.headers.get("Authorization") ?? "";
     const jwt = authHeader.replace(/^Bearer\s+/i, "");
@@ -75,7 +77,7 @@ Deno.serve(async (req) => {
         }
       }
 
-      const { error } = await admin.functions.invoke("send-transactional-email", {
+      const { error } = await functionInvoker.functions.invoke("send-transactional-email", {
         body: {
           templateName: "agent-welcome",
           recipientEmail: agent.email,
