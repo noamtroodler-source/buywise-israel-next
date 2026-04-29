@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect, useMemo, useRef, type ComponentType } from 'react';
-import { BarChart3, ShieldCheck, Info, ArrowRight, ChevronDown, Calculator, Ruler, ThumbsUp, ThumbsDown, MapPin, Building2 } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, type ComponentType } from 'react';
+import { BarChart3, ShieldCheck, Info, ArrowRight, ChevronDown, Calculator, Ruler, MapPin, Building2 } from 'lucide-react';
 import { getIsraeliRoomCount } from '@/lib/israeliRoomCount';
 import { Link, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -332,55 +332,6 @@ function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchma
           </div>
         </CollapsibleContent>
       </Collapsible>
-    </div>
-  );
-}
-
-function PriceContextTrustFeedback({ priceContext, onTrackInteraction }: { priceContext: PriceContextResult; onTrackInteraction?: (eventName: string, properties?: Record<string, unknown>) => void }) {
-  const [selection, setSelection] = useState<'helpful' | 'not_helpful' | null>(null);
-
-  const handleSelect = (nextSelection: 'helpful' | 'not_helpful') => {
-    setSelection(nextSelection);
-    onTrackInteraction?.('price_context_trust_feedback_submitted', {
-      feedback: nextSelection,
-      helpful: nextSelection === 'helpful',
-      confidence_tier: priceContext.confidenceTier,
-      public_label: priceContext.publicLabel,
-      property_class: priceContext.propertyClass,
-      percentage_suppressed: priceContext.percentageSuppressed,
-    });
-  };
-
-  return (
-    <div className="flex flex-col gap-3 rounded-lg border border-border bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <p className="text-sm font-medium text-foreground">Was this price context helpful?</p>
-        <p className="text-xs text-muted-foreground">Your response helps improve buyer trust signals.</p>
-      </div>
-      <div className="flex items-center gap-2">
-        <Button
-          type="button"
-          size="sm"
-          variant={selection === 'helpful' ? 'default' : 'outline'}
-          className="h-8"
-          disabled={selection === 'helpful'}
-          onClick={() => handleSelect('helpful')}
-        >
-          <ThumbsUp className="mr-1.5 h-3.5 w-3.5" />
-          Yes
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant={selection === 'not_helpful' ? 'secondary' : 'outline'}
-          className="h-8"
-          disabled={selection === 'not_helpful'}
-          onClick={() => handleSelect('not_helpful')}
-        >
-          <ThumbsDown className="mr-1.5 h-3.5 w-3.5" />
-          Not yet
-        </Button>
-      </div>
     </div>
   );
 }
