@@ -13,7 +13,7 @@ import { CarouselDots } from '@/components/shared/CarouselDots';
 import { format } from 'date-fns';
 import { useFormatPrice, useFormatPricePerArea, useAreaLabel } from '@/contexts/PreferencesContext';
 import { cn } from '@/lib/utils';
-import { getPriceContextPropertyClass, selectPriceContextComps, type PriceContextCompClassMatch, type PriceContextPropertyClass } from '@/lib/priceContext';
+import { computePriceContextSpecMatch, getPriceContextPropertyClass, selectPriceContextComps, type PriceContextCompClassMatch, type PriceContextPropertyClass, type PriceContextSpecMatchQuality } from '@/lib/priceContext';
 
 // Types for sold comps
 interface SoldComp {
@@ -218,7 +218,7 @@ interface RecentNearbySalesProps {
   /** When true, skip the verdict badge (parent renders it) */
   hideVerdict?: boolean;
   /** Callback to expose the computed average comparison to parent */
-  onVerdictComputed?: (avgComparison: number | null, compsCount: number, radiusUsedM: number, avgCompPriceSqm: number | null, compDispersionPercent?: number | null, compClassMatch?: PriceContextCompClassMatch | null) => void;
+  onVerdictComputed?: (avgComparison: number | null, compsCount: number, radiusUsedM: number, avgCompPriceSqm: number | null, compDispersionPercent?: number | null, compClassMatch?: PriceContextCompClassMatch | null, roomMatchQuality?: PriceContextSpecMatchQuality | null, sizeMatchQuality?: PriceContextSpecMatchQuality | null) => void;
 }
 
 export function RecentNearbySales({
@@ -304,6 +304,7 @@ export function RecentNearbySales({
   const isLoading = isLoading500m || (needs1km && isLoading1km);
   const error = error500m;
   const radiusUsedM = usedExpandedRadius ? 1000 : 500;
+  const specMatchMetadata = computePriceContextSpecMatch(comps, propertyRooms ?? null, propertySizeSqm ?? null);
 
   // Generate city slug for links
   const citySlug = city?.toLowerCase().replace(/['']/g, '').replace(/\s+/g, '-') || '';
@@ -353,9 +354,9 @@ export function RecentNearbySales({
   // Expose verdict data to parent (must be before early returns)
   useEffect(() => {
     if (onVerdictComputed) {
-      onVerdictComputed(avgComparison, comps?.length ?? 0, radiusUsedM, avgCompPriceSqm, compDispersionPercent, compClassMetadata.classMatch);
+      onVerdictComputed(avgComparison, comps?.length ?? 0, radiusUsedM, avgCompPriceSqm, compDispersionPercent, compClassMetadata.classMatch, specMatchMetadata.roomMatchQuality, specMatchMetadata.sizeMatchQuality);
     }
-  }, [avgComparison, comps?.length, radiusUsedM, avgCompPriceSqm, compDispersionPercent, compClassMetadata.classMatch, onVerdictComputed]);
+  }, [avgComparison, comps?.length, radiusUsedM, avgCompPriceSqm, compDispersionPercent, compClassMetadata.classMatch, specMatchMetadata.roomMatchQuality, specMatchMetadata.sizeMatchQuality, onVerdictComputed]);
 
   // Show empty state if we don't have coordinates
   if (!latitude || !longitude) {

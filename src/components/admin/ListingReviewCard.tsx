@@ -50,7 +50,7 @@ import { useNeighborhoodAvgPrice } from '@/hooks/useNeighborhoodPrices';
 import { supabase } from '@/integrations/supabase/client';
 import { getIsraeliRoomCount } from '@/lib/israeliRoomCount';
 import { detectPremiumDrivers } from '@/lib/marketFit';
-import { formatPriceContextValue, getPriceContext, getPriceContextPropertyClass, selectPriceContextComps, type PriceContextResult } from '@/lib/priceContext';
+import { computePriceContextSpecMatch, formatPriceContextValue, getPriceContext, getPriceContextPropertyClass, selectPriceContextComps, type PriceContextResult } from '@/lib/priceContext';
 import { PropertyPreviewModal } from './PropertyPreviewModal';
 
 interface ListingReviewCardProps {
@@ -221,6 +221,7 @@ function useMarketReview(property: PropertyForReview): MarketReviewData {
   const { comps: comparableComps, metadata: compClassMetadata } = selectPriceContextComps(rawComparableComps, subjectClass, 6);
   const compsLoading = hasCoordinates ? nearbyLoading : specLoading;
   const compStats = computeSpecCompStats(comparableComps, pricePerSqm);
+  const specMatchMetadata = computePriceContextSpecMatch(comparableComps, israeliRooms ?? null, property.size_sqm ?? null);
   const gapPercent = pricePerSqm && benchmark?.averagePriceSqm
     ? Math.round(((pricePerSqm - benchmark.averagePriceSqm) / benchmark.averagePriceSqm) * 100)
     : null;
@@ -246,6 +247,8 @@ function useMarketReview(property: PropertyForReview): MarketReviewData {
     radiusUsedM: hasCoordinates ? 750 : 1000,
     compDispersionPercent: compStats?.dispersionPercent ?? null,
     compClassMatch: compClassMetadata.classMatch,
+    roomMatchQuality: specMatchMetadata.roomMatchQuality,
+    sizeMatchQuality: specMatchMetadata.sizeMatchQuality,
     avgCompPriceSqm: compStats?.avgPriceSqm ?? null,
     benchmarkPriceSqm: benchmark?.averagePriceSqm ?? null,
     pricePerSqm,
