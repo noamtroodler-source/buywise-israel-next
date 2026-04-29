@@ -559,7 +559,9 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
         {/* Section Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-muted-foreground" />
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <BarChart3 className="h-5 w-5" />
+            </span>
             <h3 className="text-lg font-semibold text-foreground">BuyWise Price Context</h3>
           </div>
           <Tooltip>
