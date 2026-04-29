@@ -875,6 +875,11 @@ function MarketPanel({ property, market, reviewed, onReviewedChange, onBenchmark
           </div>
           {property.benchmark_review_notes && <p className="mb-3 border-l-2 border-primary/30 pl-3 text-sm text-muted-foreground">{property.benchmark_review_notes}</p>}
           {property.benchmark_review_requested_at && <p className="mb-3 text-xs text-muted-foreground">Requested {formatSubmittedAt(property.benchmark_review_requested_at)}</p>}
+          <div className="mb-3 grid gap-2 text-xs text-muted-foreground md:grid-cols-3">
+            <span>Comp pool: <strong className="text-foreground">{market.comparableComps.length} selected</strong></span>
+            <span>Source: <strong className="text-foreground">{market.hasCoordinates ? 'Nearby sold comps' : 'Spec-matched sold comps'}</strong></span>
+            <span>Benchmark: <strong className="text-foreground">{market.benchmark?.label ?? 'No benchmark available'}</strong></span>
+          </div>
           <Textarea value={reviewNotes} onChange={(event) => setReviewNotes(event.target.value)} placeholder="Admin resolution notes…" rows={3} className="mb-3 bg-background" />
           <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
             <Button variant="outline" disabled={isLoading} onClick={() => onBenchmarkReviewAction('under_review', reviewNotes)}>Mark under review</Button>
