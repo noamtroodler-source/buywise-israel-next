@@ -134,12 +134,14 @@ function BenchmarkCardTile({ card, onTrackInteraction }: { card: BenchmarkCard; 
 
   return (
     <div
-      className="rounded-lg border border-border bg-muted/20 p-3 transition-colors hover:border-border hover:bg-muted/35"
+      className="group rounded-lg border border-primary/10 bg-gradient-to-br from-background to-primary/5 p-3 transition-colors hover:border-primary/25 hover:from-primary/5 hover:to-primary/10"
       onClick={() => onTrackInteraction?.('price_context_benchmark_layer_clicked', { benchmark_layer: card.id, benchmark_label: card.label })}
     >
       <div className="flex items-start justify-between gap-2">
-        <p className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-          <Icon className="h-3 w-3" />
+        <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors group-hover:bg-primary/15">
+            <Icon className="h-3.5 w-3.5" />
+          </span>
           {card.label}
         </p>
         <Tooltip onOpenChange={(open) => open && onTrackInteraction?.('price_context_benchmark_tooltip_opened', { benchmark_layer: card.id, benchmark_label: card.label })}>
@@ -153,7 +155,7 @@ function BenchmarkCardTile({ card, onTrackInteraction }: { card: BenchmarkCard; 
           </TooltipContent>
         </Tooltip>
       </div>
-      <p className="mt-1 text-base font-semibold text-foreground">{card.value}</p>
+      <p className="mt-2 text-lg font-semibold text-foreground">{card.value}</p>
       <p className="mt-1 text-[11px] leading-snug text-muted-foreground">{card.detail}</p>
     </div>
   );
