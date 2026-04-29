@@ -81,6 +81,7 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
 
   const healthCards = [
     { label: 'High-gap listings', value: (context?.highGapListings || 0).toLocaleString(), sub: `${(context?.highGapRate || 0).toFixed(0)}% of active sale listings`, icon: FileWarning },
+    { label: 'High-gap missing context', value: (context?.highGapWithoutPremiumExplanation || 0).toLocaleString(), sub: 'Need premium explanation before buyer trust improves', icon: AlertTriangle },
     { label: 'Unknown sqm source', value: `${(context?.unknownSqmSourceRate || 0).toFixed(0)}%`, sub: `${context?.unknownSqmSource || 0} listings need size-source cleanup`, icon: Ruler },
     { label: 'Unknown ownership', value: `${(context?.unknownOwnershipRate || 0).toFixed(0)}%`, sub: `${context?.unknownOwnership || 0} listings need ownership context`, icon: ShieldCheck },
     { label: 'Admin corrections', value: (context?.adminCorrectionEvents || 0).toLocaleString(), sub: `${(context?.adminCorrectionRate || 0).toFixed(1)} per 100 active listings`, icon: Wrench },
