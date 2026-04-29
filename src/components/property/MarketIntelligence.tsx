@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo, useRef, type ComponentType } from 'react';
-import { BarChart3, ShieldCheck, Info, ArrowRight, ChevronDown, CircleHelp, CheckCircle2, Calculator, Ruler, TrendingUp, ThumbsUp, ThumbsDown, MapPin, Building2, Home } from 'lucide-react';
+import { BarChart3, ShieldCheck, Info, ArrowRight, ChevronDown, Calculator, Ruler, ThumbsUp, ThumbsDown, MapPin, Building2 } from 'lucide-react';
 import { getIsraeliRoomCount } from '@/lib/israeliRoomCount';
 import { Link, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -135,16 +135,12 @@ interface BenchmarkRange {
   detail: string;
 }
 
-function clampPercent(value: number) {
-  return Math.max(0, Math.min(100, value));
-}
-
 function BenchmarkCardTile({ card, onTrackInteraction }: { card: BenchmarkCard; onTrackInteraction?: (eventName: string, properties?: Record<string, unknown>) => void }) {
   const Icon = card.icon;
 
   return (
     <div
-      className="rounded-lg border border-border/70 bg-background/70 p-3 transition-colors hover:border-primary/30 hover:bg-primary/5"
+      className="rounded-lg border border-border/70 bg-background/80 p-3 transition-colors hover:border-primary/30 hover:bg-primary/5"
       onClick={() => onTrackInteraction?.('price_context_benchmark_layer_clicked', { benchmark_layer: card.id, benchmark_label: card.label })}
     >
       <div className="flex items-start justify-between gap-2">
@@ -163,72 +159,8 @@ function BenchmarkCardTile({ card, onTrackInteraction }: { card: BenchmarkCard; 
           </TooltipContent>
         </Tooltip>
       </div>
-      <p className="mt-1 text-sm font-semibold text-foreground">{card.value}</p>
+      <p className="mt-1 text-base font-semibold text-foreground">{card.value}</p>
       <p className="mt-1 text-[11px] leading-snug text-muted-foreground">{card.detail}</p>
-    </div>
-  );
-}
-
-function BenchmarkLadder({ askingPriceSqm, ranges, onTrackInteraction }: { askingPriceSqm: number | null; ranges: BenchmarkRange[]; onTrackInteraction?: (eventName: string, properties?: Record<string, unknown>) => void }) {
-  if (!askingPriceSqm || ranges.length === 0) return null;
-
-  const allValues = ranges.flatMap((range) => [range.min, range.max]).concat(askingPriceSqm);
-  const minValue = Math.min(...allValues);
-  const maxValue = Math.max(...allValues);
-  const spread = Math.max(1, maxValue - minValue);
-  const markerLeft = clampPercent(((askingPriceSqm - minValue) / spread) * 100);
-
-  return (
-    <div
-      className="rounded-lg border border-border/70 bg-background/70 p-3 space-y-3"
-      onMouseEnter={() => onTrackInteraction?.('price_context_benchmark_ladder_viewed', { benchmark_layer_count: ranges.length, asking_price_sqm: askingPriceSqm })}
-      onFocus={() => onTrackInteraction?.('price_context_benchmark_ladder_viewed', { benchmark_layer_count: ranges.length, asking_price_sqm: askingPriceSqm })}
-    >
-      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-sm font-semibold text-foreground">Benchmark ladder</p>
-          <p className="text-xs text-muted-foreground">Where the asking price sits across available recorded-sale reference layers.</p>
-        </div>
-        <Badge variant="outline" className="w-fit bg-background/70 text-xs">Ask {formatNisPerSqm(askingPriceSqm)}</Badge>
-      </div>
-      <div className="space-y-3">
-        {ranges.map((range) => {
-          const left = clampPercent(((range.min - minValue) / spread) * 100);
-          const width = Math.max(3, clampPercent(((range.max - range.min) / spread) * 100));
-          const positionLabel = askingPriceSqm < range.min
-            ? 'Below this range'
-            : askingPriceSqm > range.max
-              ? 'Above this range'
-              : 'Within this range';
-
-          return (
-            <div
-              key={range.id}
-              className="space-y-1.5 rounded-md p-1 transition-colors hover:bg-primary/5"
-              onClick={() => onTrackInteraction?.('price_context_benchmark_layer_clicked', { benchmark_layer: range.id, benchmark_label: range.label, source: 'ladder' })}
-            >
-              <div className="flex items-center justify-between gap-3 text-xs">
-                <span className="font-medium text-foreground">{range.label}</span>
-                <span className="text-muted-foreground">{positionLabel}</span>
-              </div>
-              <div className="relative h-6 rounded-md bg-muted/50">
-                <div
-                  className="absolute top-2 h-2 rounded-full bg-primary/25"
-                  style={{ left: `${left}%`, width: `${width}%` }}
-                />
-                <div
-                  className="absolute top-1 h-4 w-1.5 rounded-full bg-primary shadow-sm"
-                  style={{ left: `calc(${markerLeft}% - 3px)` }}
-                />
-              </div>
-              <div className="flex items-center justify-between gap-3 text-[11px] text-muted-foreground">
-                <span>{formatNisPerSqmRange(range.min, range.max)}</span>
-                <span>{range.detail}</span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
     </div>
   );
 }
