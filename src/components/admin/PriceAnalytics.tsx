@@ -132,6 +132,16 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
               <p className="text-xs text-muted-foreground">Question clicks per Price Context view</p>
             </div>
             <div className="rounded-xl border border-border/50 bg-background p-3">
+              <p className="text-xs font-medium text-muted-foreground">Details open rate</p>
+              <p className="mt-2 text-2xl font-bold text-foreground">{(context?.detailsOpenRate || 0).toFixed(1)}%</p>
+              <p className="text-xs text-muted-foreground">{context?.detailsOpened || 0} “How we calculated this” opens</p>
+            </div>
+            <div className="rounded-xl border border-border/50 bg-background p-3">
+              <p className="text-xs font-medium text-muted-foreground">Comparable views</p>
+              <p className="mt-2 text-2xl font-bold text-foreground">{(context?.comparableViews || 0).toLocaleString()}</p>
+              <p className="text-xs text-muted-foreground">Recorded-sale comp sections viewed</p>
+            </div>
+            <div className="rounded-xl border border-border/50 bg-background p-3">
               <p className="text-xs font-medium text-muted-foreground">Post-context inquiries</p>
               <p className="mt-2 text-2xl font-bold text-foreground">{(context?.postViewInquiries || 0).toLocaleString()}</p>
               <p className="text-xs text-muted-foreground">Tracked inquiry actions after Price Context exposure</p>
@@ -140,6 +150,11 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
               <p className="text-xs font-medium text-muted-foreground">Context-to-inquiry CVR</p>
               <p className="mt-2 text-2xl font-bold text-foreground">{(context?.inquiryConversionRate || 0).toFixed(1)}%</p>
               <p className="text-xs text-muted-foreground">Inquiries per Price Context module view</p>
+            </div>
+            <div className="rounded-xl border border-border/50 bg-background p-3">
+              <p className="text-xs font-medium text-muted-foreground">Buyer trust feedback</p>
+              <p className="mt-2 text-2xl font-bold text-foreground">{(context?.helpfulFeedbackRate || 0).toFixed(1)}%</p>
+              <p className="text-xs text-muted-foreground">{context?.helpfulFeedback || 0} helpful · {context?.notHelpfulFeedback || 0} not yet</p>
             </div>
           </div>
 
