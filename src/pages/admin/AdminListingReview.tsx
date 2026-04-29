@@ -103,6 +103,7 @@ export default function AdminListingReview() {
       icon: FileText, 
       color: 'text-muted-foreground',
       bgColor: 'bg-muted',
+    },
   ];
 
   return (
