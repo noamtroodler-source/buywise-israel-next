@@ -169,7 +169,7 @@ export function AgencyProfileSection({ agency }: Props) {
           <Label>Logo</Label>
           <div className="flex items-center gap-3 mt-1.5">
             <Avatar className="h-14 w-14 rounded-lg border">
-              <AvatarImage src={form.logo_url || undefined} alt="Agency logo" className="object-contain" />
+              <AvatarImage src={form.logo_url || undefined} alt="Agency logo" className="object-contain object-center p-1" />
               <AvatarFallback className="rounded-lg text-xs text-muted-foreground">
                 {form.name ? form.name.substring(0, 2).toUpperCase() : 'AG'}
               </AvatarFallback>
