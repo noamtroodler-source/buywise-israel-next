@@ -36,6 +36,10 @@ export interface PriceContextInput {
   avgComparison: number | null;
   compsCount: number;
   radiusUsedM: number;
+  compRecencyMonths?: number | null;
+  compDispersionPercent?: number | null;
+  roomMatchQuality?: 'strong' | 'directional' | 'weak' | null;
+  sizeMatchQuality?: 'strong' | 'directional' | 'weak' | null;
   avgCompPriceSqm?: number | null;
   benchmarkPriceSqm?: number | null;
   pricePerSqm?: number | null;
@@ -160,20 +164,41 @@ export function getPriceContext(input: PriceContextInput): PriceContextResult {
   const reviewOpen = property.benchmark_review_status === 'requested' || property.benchmark_review_status === 'under_review';
   const gap = avgComparison === null ? null : Math.round(avgComparison);
   const reasons: string[] = [];
+  const limitedCaps: string[] = [];
 
   let score = 100;
   if (compsCount >= 8) reasons.push('8+ recorded comps available');
   else if (compsCount >= 5) { score -= 15; reasons.push('5–7 comps: directional confidence'); }
-  else if (compsCount > 0) { score -= 35; reasons.push('Fewer than 5 comps caps confidence'); }
-  else { score -= 55; reasons.push('No comparable sales available'); }
+  else if (compsCount > 0) { score -= 35; reasons.push('Fewer than 5 comps caps confidence'); limitedCaps.push('fewer_than_5_comps'); }
+  else { score -= 55; reasons.push('No comparable sales available'); limitedCaps.push('no_listing_level_comps'); }
 
   if (radiusUsedM <= 300) reasons.push('Comp radius is tightly local');
   else if (radiusUsedM <= 600) { score -= 10; reasons.push('Comp radius is directional'); }
-  else { score -= 25; reasons.push('Comp radius above 600m caps confidence in dense markets'); }
+  else { score -= 25; reasons.push('Comp radius above 600m caps confidence in dense markets'); limitedCaps.push('wide_radius'); }
+
+  if (input.compRecencyMonths != null) {
+    if (input.compRecencyMonths <= 12) reasons.push('Recent recorded sales support the benchmark');
+    else if (input.compRecencyMonths <= 24) { score -= 8; reasons.push('Comparable sales are older, so the benchmark is directional'); }
+    else { score -= 18; reasons.push('Comparable sales are stale'); limitedCaps.push('stale_comps'); }
+  }
+
+  if (input.compDispersionPercent != null) {
+    if (input.compDispersionPercent <= 18) reasons.push('Comp prices are tightly clustered');
+    else if (input.compDispersionPercent <= 35) { score -= 10; reasons.push('Comp prices have moderate spread'); }
+    else { score -= 25; reasons.push('Wide comp dispersion caps confidence'); limitedCaps.push('wide_comp_dispersion'); }
+  }
+
+  if (input.roomMatchQuality === 'weak') { score -= 18; reasons.push('Room-count match is weak'); limitedCaps.push('weak_room_match'); }
+  else if (input.roomMatchQuality === 'directional') { score -= 8; reasons.push('Room-count match is directional'); }
+  else if (input.roomMatchQuality === 'strong') reasons.push('Room-count match is strong');
+
+  if (input.sizeMatchQuality === 'weak') { score -= 18; reasons.push('Size match is weak'); limitedCaps.push('weak_size_match'); }
+  else if (input.sizeMatchQuality === 'directional') { score -= 8; reasons.push('Size match is directional'); }
+  else if (input.sizeMatchQuality === 'strong') reasons.push('Size match is strong');
 
   if (!property.size_sqm || !pricePerSqm) { score -= 35; reasons.push('Missing size weakens price/sqm context'); }
-  if (!property.sqm_source || property.sqm_source === 'unknown') { score -= 20; reasons.push('Unknown sqm source caps confidence'); }
-  if (!property.ownership_type || property.ownership_type === 'unknown') { score -= 15; reasons.push('Unknown ownership type reduces comparability'); }
+  if (!property.sqm_source || property.sqm_source === 'unknown') { score -= 20; reasons.push('Unknown sqm source caps confidence'); limitedCaps.push('unknown_sqm_source'); }
+  if (!property.ownership_type || property.ownership_type === 'unknown') { score -= 15; reasons.push('Unknown ownership type reduces comparability'); limitedCaps.push('unknown_ownership_type'); }
   if (isPremiumClass) { score -= 20; reasons.push('Premium/unique property class requires same-class caution'); }
   if (reviewOpen) { score -= 40; reasons.push('Benchmark review is open'); }
 
@@ -183,6 +208,7 @@ export function getPriceContext(input: PriceContextInput): PriceContextResult {
   if (reviewOpen) confidenceTier = 'limited_comparable_match';
   else if (compsCount === 0 && !benchmarkPriceSqm) confidenceTier = 'insufficient_data';
   else if (isPremiumClass) confidenceTier = 'premium_unique_property';
+  else if (limitedCaps.length > 0) confidenceTier = 'limited_comparable_match';
   else if (score >= 80 && compsCount >= 8 && radiusUsedM <= 600) confidenceTier = 'strong_comparable_match';
   else if (score >= 60 && compsCount >= 5) confidenceTier = 'directional_benchmark';
   else confidenceTier = 'limited_comparable_match';
