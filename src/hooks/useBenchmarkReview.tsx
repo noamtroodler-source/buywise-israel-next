@@ -34,6 +34,9 @@ export function useRequestBenchmarkReview() {
             benchmark_review_resolution: null,
             price_context_badge_status: 'blocked',
             price_context_public_label: 'Market context under review',
+            price_context_filter_eligible: false,
+            price_context_placement_eligible: false,
+            price_context_featured_eligible: false,
           } as any)
           .eq('id', propertyId),
         supabase.auth.getUser(),
