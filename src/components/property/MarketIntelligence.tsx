@@ -386,8 +386,8 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
         {priceTier && priceTier !== 'standard' && (
           <div className="flex items-center gap-2">
             <Badge className={priceTier === 'luxury'
-              ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800'
-              : 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800'
+              ? 'bg-semantic-amber text-semantic-amber-foreground border-semantic-amber'
+              : 'bg-primary/10 text-primary border-primary/20'
             }>
               {tierLabel}
             </Badge>
