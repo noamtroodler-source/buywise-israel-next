@@ -205,13 +205,13 @@ export default function AgencyDashboard() {
           </div>
 
           {/* Main Dashboard Grid */}
-          <div className="grid lg:grid-cols-5 gap-6 lg:items-start">
+          <div className="grid lg:grid-cols-5 gap-6 lg:items-stretch">
             <div className="lg:col-span-3 space-y-6">
               {liveListingsCount > 0 && <AgencyPerformanceInsights />}
               <DashboardListingsPreview agencyId={agency.id} />
             </div>
 
-            <div className="lg:col-span-2 space-y-6">
+            <div className="lg:col-span-2 flex flex-col gap-6">
               {pendingRequests > 0 && (
                 <Card className="rounded-2xl border-primary/20 bg-primary/5">
                   <CardContent className="p-4">
@@ -231,25 +231,27 @@ export default function AgencyDashboard() {
                 </Card>
               )}
 
-              <Card className="rounded-2xl border-border/50">
-                <CardHeader className="pb-2 pt-4 px-4">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <Megaphone className="h-4 w-4 text-primary" />
-                    Team Announcements
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-[220px] text-xs">
-                        Post internal updates visible to all agents in your agency
-                      </TooltipContent>
-                    </Tooltip>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="px-4 pb-4">
-                  <AgencyAnnouncements agencyId={agency.id} compact />
-                </CardContent>
-              </Card>
+              {announcements.length > 0 && (
+                <Card className="rounded-2xl border-border/50">
+                  <CardHeader className="pb-2 pt-4 px-4">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Megaphone className="h-4 w-4 text-primary" />
+                      Team Announcements
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-[220px] text-xs">
+                          Post internal updates visible to all agents in your agency
+                        </TooltipContent>
+                      </Tooltip>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-4 pb-4">
+                    <AgencyAnnouncements agencyId={agency.id} compact />
+                  </CardContent>
+                </Card>
+              )}
 
               <AgencyTeamActivityFeed agencyId={agency.id} />
             </div>
