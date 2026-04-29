@@ -179,7 +179,6 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
          premium_drivers: (property as any).premium_drivers || [],
          premium_explanation: (property as any).premium_explanation || '',
          premium_context_touched: Boolean((property as any).premium_drivers?.length || (property as any).premium_explanation),
-          benchmark_review_status: (property as any).benchmark_review_status || 'none',
          savedPrice: property.price || undefined,
       };
       loadFromSaved(wizardData);
@@ -254,7 +253,6 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
          featured_highlight: data.featured_highlight || null,
          premium_drivers: data.premium_drivers,
          premium_explanation: data.premium_explanation || null,
-          benchmark_review_status: data.benchmark_review_status,
           ...priceContextFields,
       } as any);
       clearSavedData();
@@ -305,7 +303,6 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
          featured_highlight: data.featured_highlight || null,
          premium_drivers: data.premium_drivers,
          premium_explanation: data.premium_explanation || null,
-          benchmark_review_status: data.benchmark_review_status,
           ...priceContextFields,
       } as any);
       
