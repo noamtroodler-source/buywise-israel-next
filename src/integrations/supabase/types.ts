@@ -3033,26 +3033,35 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
+          image_role: string
           image_url: string
           phash: string
           property_id: string | null
           sha256: string
+          signal_strength: string
+          source_type: string | null
         }
         Insert: {
           created_at?: string | null
           id?: string
+          image_role?: string
           image_url: string
           phash: string
           property_id?: string | null
           sha256: string
+          signal_strength?: string
+          source_type?: string | null
         }
         Update: {
           created_at?: string | null
           id?: string
+          image_role?: string
           image_url?: string
           phash?: string
           property_id?: string | null
           sha256?: string
+          signal_strength?: string
+          source_type?: string | null
         }
         Relationships: [
           {
@@ -8075,6 +8084,20 @@ export type Database = {
           p_reason?: string
         }
         Returns: string
+      }
+      find_property_image_overlap: {
+        Args: {
+          p_exclude_property_id?: string
+          p_limit?: number
+          p_min_overlap?: number
+          p_sha256s: string[]
+        }
+        Returns: {
+          image_roles: string[]
+          overlap_count: number
+          property_id: string
+          reason_codes: string[]
+        }[]
       }
       find_similar_images: {
         Args: {
