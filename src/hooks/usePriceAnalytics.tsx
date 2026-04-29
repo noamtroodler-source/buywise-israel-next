@@ -244,7 +244,7 @@ export function usePriceAnalytics(days: number = 30) {
         (supabase.from('property_views').select('property_id, created_at') as any).gte('created_at', since),
         (supabase.from('price_context_events' as any).select('event_type, actor_type, property_id, created_at') as any).gte('created_at', since),
         (supabase.from('user_events').select('event_name, properties, created_at') as any)
-          .in('event_name', ['price_context_module_viewed', 'buyer_question_engaged', 'price_context_post_view_inquiry', 'price_context_calculation_opened', 'price_context_comparable_sales_viewed', 'price_context_trust_feedback_submitted'])
+          .in('event_name', ['price_context_module_viewed', 'buyer_question_engaged', 'price_context_post_view_inquiry', 'price_context_calculation_opened', 'price_context_details_opened', 'price_context_comparable_sales_viewed', 'price_context_trust_feedback_submitted'])
           .gte('created_at', since),
       ]);
 
@@ -264,7 +264,7 @@ export function usePriceAnalytics(days: number = 30) {
       const moduleViews = trackedPriceContextEvents.filter((event: any) => event.event_name === 'price_context_module_viewed').length;
       const buyerQuestionEngagements = trackedPriceContextEvents.filter((event: any) => event.event_name === 'buyer_question_engaged').length;
       const postViewInquiries = trackedPriceContextEvents.filter((event: any) => event.event_name === 'price_context_post_view_inquiry').length;
-      const detailsOpened = trackedPriceContextEvents.filter((event: any) => event.event_name === 'price_context_calculation_opened').length;
+      const detailsOpened = trackedPriceContextEvents.filter((event: any) => event.event_name === 'price_context_details_opened' || event.event_name === 'price_context_calculation_opened').length;
       const comparableViews = trackedPriceContextEvents.filter((event: any) => event.event_name === 'price_context_comparable_sales_viewed').length;
       const helpfulFeedback = trackedPriceContextEvents.filter((event: any) => event.event_name === 'price_context_trust_feedback_submitted' && event.properties?.helpful === true).length;
       const notHelpfulFeedback = trackedPriceContextEvents.filter((event: any) => event.event_name === 'price_context_trust_feedback_submitted' && event.properties?.helpful === false).length;
