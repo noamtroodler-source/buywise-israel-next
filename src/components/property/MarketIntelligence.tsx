@@ -552,6 +552,42 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
     return cards;
   }, [effectiveAvgPriceSqm, israeliRooms, neighborhoodAvgPriceSqm, priceContext.benchmarkRange, priceContext.confidenceLabel, priceContext.propertyClassLabel, property.city, property.neighborhood, property.size_sqm, propertyPricePerSqm, roomPrice?.avgPrice, roomPrice?.avgPriceSqm, verdictData.compsCount, verdictData.radiusUsedM]);
 
+  const benchmarkRanges: BenchmarkRange[] = useMemo(() => {
+    const ranges: BenchmarkRange[] = [];
+
+    if (priceContext.benchmarkRange && verdictData.compsCount > 0) {
+      ranges.push({
+        id: 'nearby_recorded_sales',
+        label: 'Nearby sales',
+        min: priceContext.benchmarkRange.min,
+        max: priceContext.benchmarkRange.max,
+        detail: `${verdictData.compsCount} sale${verdictData.compsCount > 1 ? 's' : ''}`,
+      });
+    }
+
+    if (neighborhoodAvgPriceSqm) {
+      ranges.push({
+        id: 'neighborhood_benchmark',
+        label: property.neighborhood || 'Neighborhood',
+        min: Math.round(neighborhoodAvgPriceSqm * 0.95),
+        max: Math.round(neighborhoodAvgPriceSqm * 1.05),
+        detail: 'Neighborhood context',
+      });
+    }
+
+    if (effectiveAvgPriceSqm) {
+      ranges.push({
+        id: 'city_benchmark',
+        label: property.city,
+        min: Math.round(effectiveAvgPriceSqm * 0.95),
+        max: Math.round(effectiveAvgPriceSqm * 1.05),
+        detail: roomPrice?.avgPriceSqm ? 'Room-specific city context' : 'City context',
+      });
+    }
+
+    return ranges;
+  }, [effectiveAvgPriceSqm, neighborhoodAvgPriceSqm, priceContext.benchmarkRange, property.city, property.neighborhood, roomPrice?.avgPriceSqm, verdictData.compsCount]);
+
   const priceContextTrackingPayload = useMemo(() => ({
     property_id: property.id,
     property_city: property.city,
