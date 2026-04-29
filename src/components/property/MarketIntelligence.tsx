@@ -17,7 +17,7 @@ import { useRoomSpecificCityPrice } from '@/hooks/useRoomSpecificCityPrice';
 import { useNeighborhoodAvgPrice } from '@/hooks/useNeighborhoodPrices';
 import { usePriceTier } from '@/hooks/usePriceTier';
 import type { PriceTier } from '@/hooks/usePriceTier';
-import { getPriceContext, type PriceContextResult, type PriceContextSpecMatchQuality } from '@/lib/priceContext';
+import { formatPriceContextValue, getPriceContext, type PriceContextResult, type PriceContextSpecMatchQuality } from '@/lib/priceContext';
 import { PRICE_CONTEXT_DISCLAIMER, PRICE_CONTEXT_SIZE_NOTE } from '@/lib/priceContextDisclaimer';
 
 const SESSION_KEY = 'analytics_session_id';
@@ -149,7 +149,7 @@ function MarketVerdictBadge({ compsCount, radiusUsedM, priceTier, priceContext }
   );
 }
 
-function BuyWiseTake({ priceContext, premiumExplanation, propertyPricePerSqm, compsCount, radiusUsedM, onTrackInteraction }: { priceContext: PriceContextResult; premiumExplanation?: string | null; propertyPricePerSqm: number | null; compsCount: number; radiusUsedM: number; onTrackInteraction?: (eventName: string, properties?: Record<string, unknown>) => void }) {
+function BuyWiseTake({ priceContext, premiumExplanation, propertyPricePerSqm, compsCount, radiusUsedM, sqmSource, ownershipType, onTrackInteraction }: { priceContext: PriceContextResult; premiumExplanation?: string | null; propertyPricePerSqm: number | null; compsCount: number; radiusUsedM: number; sqmSource?: string | null; ownershipType?: string | null; onTrackInteraction?: (eventName: string, properties?: Record<string, unknown>) => void }) {
   const [open, setOpen] = useState(false);
   const hasPremiumContext = priceContext.confirmedPremiumDrivers.length > 0 || priceContext.detectedPremiumDrivers.length > 0 || Boolean(premiumExplanation?.trim());
   const radiusLabel = radiusUsedM >= 1000 ? '1km' : `${radiusUsedM}m`;
@@ -165,7 +165,7 @@ function BuyWiseTake({ priceContext, premiumExplanation, propertyPricePerSqm, co
   };
 
   return (
-    <div className="rounded-xl border border-primary/15 bg-primary/5 p-4 space-y-4">
+    <div className="rounded-lg border border-primary/15 bg-primary/5 p-4 space-y-4">
       <div className="flex items-start gap-3">
         <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
           <BarChart3 className="h-4 w-4 text-primary" />
@@ -260,7 +260,7 @@ function BuyWiseTake({ priceContext, premiumExplanation, propertyPricePerSqm, co
         </div>
       )}
 
-      <Collapsible onOpenChange={(nextOpen) => nextOpen && onTrackInteraction?.('price_context_calculation_opened', { confidence_tier: priceContext.confidenceTier })}>
+      <Collapsible onOpenChange={(nextOpen) => nextOpen && onTrackInteraction?.('price_context_details_opened', { confidence_tier: priceContext.confidenceTier })}>
         <CollapsibleTrigger asChild>
           <Button variant="ghost" size="sm" className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground">
             <Calculator className="mr-1 h-3.5 w-3.5" /> How we calculated this
@@ -269,10 +269,21 @@ function BuyWiseTake({ priceContext, premiumExplanation, propertyPricePerSqm, co
         </CollapsibleTrigger>
         <CollapsibleContent className="pt-2">
           <div className="rounded-lg border border-border/70 bg-background/70 p-3 text-xs text-muted-foreground space-y-2">
-            <p>Comparable set: {compsCount > 0 ? `${compsCount} recorded sale${compsCount > 1 ? 's' : ''} within ${radiusLabel}` : 'local city or neighborhood benchmarks when listing-level comps are limited'}.</p>
+            <p>Comp set summary: {compsCount > 0 ? `${compsCount} recorded sale${compsCount > 1 ? 's' : ''} within ${radiusLabel}` : 'local city or neighborhood benchmarks when listing-level comps are limited'}.</p>
             <p>Property class: {priceContext.propertyClassLabel}. Standard resale, premium, new-build, garden, penthouse, and house/villa listings are treated cautiously because they do not trade the same way.</p>
-            <p>{PRICE_CONTEXT_SIZE_NOTE}</p>
-            {priceContext.percentageSuppressionReason && <p>{priceContext.percentageSuppressionReason}</p>}
+            <p>SQM source: {formatPriceContextValue(sqmSource)}. {PRICE_CONTEXT_SIZE_NOTE}</p>
+            <p>Ownership type: {formatPriceContextValue(ownershipType)}. Ownership structure can affect buyer due diligence and how closely recorded resale benchmarks apply.</p>
+            {priceContext.confidenceCaps.length > 0 && (
+              <div>
+                <p className="font-medium text-foreground">Limitations applied:</p>
+                <ul className="mt-1 space-y-1 pl-4">
+                  {priceContext.confidenceCaps.map((cap) => (
+                    <li key={cap.code} className="list-disc">{cap.label}: {cap.detail}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {priceContext.percentageSuppressionReason && <p>Display guardrail: {priceContext.percentageSuppressionReason}</p>}
             <p>{PRICE_CONTEXT_DISCLAIMER}</p>
           </div>
         </CollapsibleContent>
