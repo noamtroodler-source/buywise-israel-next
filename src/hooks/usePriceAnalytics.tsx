@@ -25,7 +25,12 @@ export interface PriceContextKpis {
   complete: number;
   incomplete: number;
   underReview: number;
+  rankingReady: number;
+  suppressed: number;
+  blockedFromBoost: number;
   completionRate: number;
+  rankingReadinessRate: number;
+  suppressionRate: number;
   highConfidence: number;
   inquiryConversionRate: number;
   confidenceDistribution: { tier: string; count: number; percentage: number }[];
@@ -48,7 +53,12 @@ const emptyPriceContext: PriceContextKpis = {
   complete: 0,
   incomplete: 0,
   underReview: 0,
+  rankingReady: 0,
+  suppressed: 0,
+  blockedFromBoost: 0,
   completionRate: 0,
+  rankingReadinessRate: 0,
+  suppressionRate: 0,
   highConfidence: 0,
   inquiryConversionRate: 0,
   confidenceDistribution: [],
@@ -63,7 +73,7 @@ export function usePriceAnalytics(days: number = 30) {
       const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
       const { data: properties } = await (supabase
         .from('properties')
-        .select('id, city, price, size_sqm, bedrooms, listing_status, price_context_badge_status, price_context_confidence_tier, benchmark_review_status, benchmark_review_reason') as any)
+        .select('id, city, price, size_sqm, bedrooms, listing_status, price_context_badge_status, price_context_confidence_tier, price_context_percentage_suppressed, benchmark_review_status, benchmark_review_reason') as any)
         .eq('listing_status', 'for_sale')
         .gt('price', 0);
 
@@ -155,11 +165,17 @@ export function usePriceAnalytics(days: number = 30) {
 
       const medianPrice = allPrices[Math.floor(allPrices.length / 2)] || 0;
 
-      const contextEligible = propertyRows.filter(p => Boolean(p.price_context_badge_status || p.price_context_confidence_tier));
       const complete = propertyRows.filter(p => p.price_context_badge_status === 'complete').length;
       const underReview = propertyRows.filter(p => p.benchmark_review_status === 'requested' || p.benchmark_review_status === 'under_review').length;
       const incomplete = propertyRows.filter(p => p.price_context_badge_status === 'incomplete' || p.price_context_badge_status === 'blocked').length;
       const highConfidence = propertyRows.filter(p => p.price_context_confidence_tier === 'strong_comparable_match' || p.price_context_confidence_tier === 'high_confidence').length;
+      const suppressed = propertyRows.filter(p => p.price_context_percentage_suppressed === true).length;
+      const blockedFromBoost = propertyRows.filter(p => p.price_context_badge_status === 'blocked' || p.benchmark_review_status === 'requested' || p.benchmark_review_status === 'under_review').length;
+      const rankingReady = propertyRows.filter(p => {
+        const blocked = p.price_context_badge_status === 'blocked' || p.benchmark_review_status === 'requested' || p.benchmark_review_status === 'under_review';
+        const confidenceReady = p.price_context_confidence_tier === 'strong_comparable_match' || p.price_context_confidence_tier === 'high_confidence' || p.price_context_confidence_tier === 'good_comparable_match';
+        return !blocked && p.price_context_badge_status === 'complete' && confidenceReady;
+      }).length;
 
       const confidenceCounts = propertyRows.reduce<Record<string, number>>((acc, p) => {
         const tier = p.price_context_confidence_tier || 'not_set';
@@ -202,7 +218,12 @@ export function usePriceAnalytics(days: number = 30) {
         complete,
         incomplete,
         underReview,
+        rankingReady,
+        suppressed,
+        blockedFromBoost,
         completionRate: propertyRows.length ? (complete / propertyRows.length) * 100 : 0,
+        rankingReadinessRate: propertyRows.length ? (rankingReady / propertyRows.length) * 100 : 0,
+        suppressionRate: propertyRows.length ? (suppressed / propertyRows.length) * 100 : 0,
         highConfidence,
         inquiryConversionRate: completeViews ? (completeInquiries / completeViews) * 100 : 0,
         confidenceDistribution,
