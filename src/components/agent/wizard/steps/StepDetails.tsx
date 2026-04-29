@@ -156,40 +156,6 @@ export function StepDetails() {
                 Include living area, not balconies or storage
               </p>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label>SQM Source *</Label>
-                <Select value={data.sqm_source} onValueChange={(value) => updateData({ sqm_source: value as typeof data.sqm_source })}>
-                  <SelectTrigger className="h-11 rounded-xl">
-                    <SelectValue placeholder="Select size basis" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {sqmSourceOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  Israeli sqm can mean Tabu, Arnona, plan, marketing, or net size.
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label>Ownership Type *</Label>
-                <Select value={data.ownership_type} onValueChange={(value) => updateData({ ownership_type: value as typeof data.ownership_type })}>
-                  <SelectTrigger className="h-11 rounded-xl">
-                    <SelectValue placeholder="Select ownership basis" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ownershipTypeOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  Ownership structure can affect comparability and buyer due diligence.
-                </p>
-              </div>
-            </div>
           </div>
         )}
 
