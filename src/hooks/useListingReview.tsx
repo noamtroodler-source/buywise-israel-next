@@ -499,6 +499,9 @@ export function useResolveBenchmarkReview() {
         updates.benchmark_review_status = 'under_review';
         updates.price_context_badge_status = 'blocked';
         updates.price_context_public_label = 'Market context under review';
+        updates.price_context_filter_eligible = false;
+        updates.price_context_placement_eligible = false;
+        updates.price_context_featured_eligible = false;
       } else {
         updates.benchmark_review_status = 'resolved';
         updates.benchmark_review_resolution = resolution;
@@ -514,6 +517,10 @@ export function useResolveBenchmarkReview() {
           updates.price_context_public_label = 'Not enough recorded data to benchmark reliably';
           updates.price_context_percentage_suppressed = true;
         }
+        const eligible = resolution === 'accepted' || resolution === 'data_corrected';
+        updates.price_context_filter_eligible = eligible;
+        updates.price_context_placement_eligible = eligible;
+        updates.price_context_featured_eligible = eligible;
       }
 
       const { error } = await supabase
