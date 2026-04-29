@@ -101,6 +101,10 @@ function formatPremiumDriver(driver: string) {
   return driver.replace(/[_/]+/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
+function uniqueStrings(values: string[]) {
+  return Array.from(new Set(values.filter(Boolean)));
+}
+
 function formatNisPerSqm(value: number | null | undefined) {
   if (!value) return '—';
   return `₪${Math.round(value).toLocaleString()}/sqm`;
@@ -202,6 +206,39 @@ function BenchmarkLadder({ askingPriceSqm, ranges }: { askingPriceSqm: number | 
           );
         })}
       </div>
+    </div>
+  );
+}
+
+function PremiumContextSummary({ priceContext, premiumExplanation }: { priceContext: PriceContextResult; premiumExplanation?: string | null }) {
+  const contextChips = uniqueStrings([
+    priceContext.propertyClassLabel !== 'Standard resale' ? priceContext.propertyClassLabel : '',
+    ...priceContext.confirmedPremiumDrivers.map(formatPremiumDriver),
+    ...priceContext.detectedPremiumDrivers.map(formatPremiumDriver),
+  ]).slice(0, 10);
+
+  if (contextChips.length === 0 && !premiumExplanation?.trim()) return null;
+
+  return (
+    <div className="rounded-lg border border-border/70 bg-background/70 p-3 space-y-3">
+      <div>
+        <p className="text-sm font-semibold text-foreground">Why this may differ</p>
+        <p className="text-xs text-muted-foreground">Recorded sales may not fully reflect property class, finish level, view, extras, or included rights.</p>
+      </div>
+      {contextChips.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {contextChips.map((chip) => (
+            <Badge key={chip} variant="outline" className="rounded-lg bg-primary/5 text-xs text-foreground">
+              {chip}
+            </Badge>
+          ))}
+        </div>
+      )}
+      {premiumExplanation?.trim() && (
+        <p className="border-l-2 border-primary/30 pl-3 text-sm text-muted-foreground">
+          {premiumExplanation}
+        </p>
+      )}
     </div>
   );
 }
