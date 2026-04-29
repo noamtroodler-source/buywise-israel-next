@@ -180,7 +180,7 @@ function MarketVerdictBadge({ compsCount, radiusUsedM, priceTier, priceContext }
   );
 }
 
-function BuyWiseTake({ priceContext, premiumExplanation, propertyPricePerSqm, compsCount, radiusUsedM, sqmSource, ownershipType, onTrackInteraction }: { priceContext: PriceContextResult; premiumExplanation?: string | null; propertyPricePerSqm: number | null; compsCount: number; radiusUsedM: number; sqmSource?: string | null; ownershipType?: string | null; onTrackInteraction?: (eventName: string, properties?: Record<string, unknown>) => void }) {
+function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, compsCount, radiusUsedM, sqmSource, ownershipType, onTrackInteraction }: { priceContext: PriceContextResult; premiumExplanation?: string | null; benchmarkCards: BenchmarkCard[]; compsCount: number; radiusUsedM: number; sqmSource?: string | null; ownershipType?: string | null; onTrackInteraction?: (eventName: string, properties?: Record<string, unknown>) => void }) {
   const [open, setOpen] = useState(false);
   const hasPremiumContext = priceContext.confirmedPremiumDrivers.length > 0 || priceContext.detectedPremiumDrivers.length > 0 || Boolean(premiumExplanation?.trim());
   const radiusLabel = radiusUsedM >= 1000 ? '1km' : `${radiusUsedM}m`;
@@ -210,21 +210,10 @@ function BuyWiseTake({ priceContext, premiumExplanation, propertyPricePerSqm, co
             <p className="text-xs text-muted-foreground">Recorded sales, local benchmark ranges, and property-specific context for International buyers.</p>
           </div>
           <p className="text-sm text-muted-foreground">{priceContext.buyWiseTake}</p>
-          <div className="mt-3 grid gap-2 sm:grid-cols-3">
-            <div className="rounded-lg border border-border/70 bg-background/70 p-3">
-              <p className="text-xs font-medium text-muted-foreground flex items-center gap-1"><Ruler className="h-3 w-3" /> Asking price / sqm</p>
-              <p className="text-sm font-semibold text-foreground">{formatNisPerSqm(propertyPricePerSqm)}</p>
-            </div>
-            <div className="rounded-lg border border-border/70 bg-background/70 p-3">
-              <p className="text-xs font-medium text-muted-foreground flex items-center gap-1"><TrendingUp className="h-3 w-3" /> Recorded local range</p>
-              <p className="text-sm font-semibold text-foreground">
-                {priceContext.benchmarkRange ? `${formatNisPerSqm(priceContext.benchmarkRange.min)}–${formatNisPerSqm(priceContext.benchmarkRange.max).replace('₪', '')}` : 'Directional only'}
-              </p>
-            </div>
-            <div className="rounded-lg border border-border/70 bg-background/70 p-3">
-              <p className="text-xs font-medium text-muted-foreground flex items-center gap-1"><ShieldCheck className="h-3 w-3" /> Comparable confidence</p>
-              <p className="text-sm font-semibold text-foreground">{priceContext.confidenceLabel}</p>
-            </div>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {benchmarkCards.map((card) => (
+              <BenchmarkCardTile key={card.id} card={card} />
+            ))}
           </div>
         </div>
       </div>
