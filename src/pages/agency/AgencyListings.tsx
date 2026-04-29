@@ -672,7 +672,7 @@ export default function AgencyListings() {
                       {sortedListings.map((listing) => {
                         const status = getAgencyListingDisplayStatus(listing);
                         const hasMissingQuickFields = listing.missing_quick_fields.length > 0;
-                        const canSubmitForReview = listing.verification_status === 'draft' || listing.verification_status === 'changes_requested';
+                        const canConfirmForReview = listing.safe_to_batch_approve && (listing.verification_status === 'draft' || listing.verification_status === 'changes_requested');
                         const isPendingReview = listing.verification_status === 'pending_review';
                         const isApproved = listing.verification_status === 'approved';
                         const isPublished = listing.is_published === true;
@@ -763,14 +763,14 @@ export default function AgencyListings() {
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center justify-center gap-1">
-                                {canSubmitForReview && (
+                                {canConfirmForReview && (
                                   <Button
                                     variant="ghost"
                                     size="sm"
                                     className="rounded-lg"
-                                    onClick={() => submitForReview.mutate(listing.id)}
-                                    disabled={submitForReview.isPending}
-                                    title="Submit for Review"
+                                    onClick={() => confirmAgencyListing.mutate({ propertyId: listing.id, agencyId: agency.id })}
+                                    disabled={confirmAgencyListing.isPending}
+                                    title="Confirm and send to BuyWise review"
                                   >
                                     <Send className="h-4 w-4" />
                                   </Button>
@@ -812,10 +812,10 @@ export default function AgencyListings() {
                                       </>
                                     ) : (
                                       <>
-                                        {canSubmitForReview && (
-                                          <DropdownMenuItem onClick={() => submitForReview.mutate(listing.id)} disabled={submitForReview.isPending}>
+                                        {canConfirmForReview && (
+                                          <DropdownMenuItem onClick={() => confirmAgencyListing.mutate({ propertyId: listing.id, agencyId: agency.id })} disabled={confirmAgencyListing.isPending}>
                                             <Send className="h-4 w-4 mr-2" />
-                                            Submit for review
+                                            Confirm accuracy
                                           </DropdownMenuItem>
                                         )}
                                         {isPendingReview && (
