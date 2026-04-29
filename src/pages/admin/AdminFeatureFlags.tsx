@@ -104,8 +104,6 @@ export function AdminFeatureFlags() {
           .from('properties')
           .update({
             price_context_filter_eligible: eligibleForFilter,
-            price_context_placement_eligible: eligibleForPlacement,
-            price_context_featured_eligible: eligibleForPlacement,
             price_context_display_mode: row.price_context_public_label ? 'soft' : 'hidden',
           } as any)
           .eq('id', row.id) as any);
