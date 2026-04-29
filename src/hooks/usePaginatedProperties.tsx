@@ -5,6 +5,8 @@ import { Property, PropertyFilters } from '@/types/database';
 import { isSavedLocationDest, getSavedLocationId, filterByDistance } from '@/lib/utils/commuteFilter';
 import { useSavedLocations } from '@/hooks/useSavedLocations';
 import { shuffleFeatured } from '@/lib/utils/shuffleFeatured';
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
+import { PRICE_CONTEXT_FLAGS } from '@/lib/featureFlags';
 
 const DEFAULT_PAGE_SIZE = 24;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -35,6 +37,7 @@ export function usePaginatedProperties(
   const [page, setPage] = useState(1);
   const [allProperties, setAllProperties] = useState<Property[]>([]);
   const { data: savedLocations = [] } = useSavedLocations();
+  const { data: buyerPriceContextFilterEnabled = true } = useFeatureFlag(PRICE_CONTEXT_FLAGS.buyerFilter, true);
 
   // Resolve saved location coords for distance filtering
   const isSavedDest = isSavedLocationDest(filters?.commute_destination);
@@ -47,7 +50,7 @@ export function usePaginatedProperties(
 
   // First, get the total count
   const { data: totalCount = 0 } = useQuery({
-    queryKey: ['properties', 'paginated-count', filters],
+    queryKey: ['properties', 'paginated-count', filters, buyerPriceContextFilterEnabled],
     queryFn: async () => {
       let query = supabase
         .from('properties')
@@ -64,7 +67,7 @@ export function usePaginatedProperties(
         query = query.in('city', cityNames);
       }
 
-      query = applyFilters(query, filters);
+      query = applyFilters(query, filters, buyerPriceContextFilterEnabled);
 
       const { count, error } = await query;
       if (error) throw error;
@@ -90,7 +93,7 @@ export function usePaginatedProperties(
 
   // Fetch current page of properties
   const { data: pageData, isLoading, isFetching } = useQuery({
-    queryKey: ['properties', 'paginated', filters, page, boostedIds],
+    queryKey: ['properties', 'paginated', filters, page, boostedIds, buyerPriceContextFilterEnabled],
     queryFn: async () => {
       const offset = (page - 1) * pageSize;
       
@@ -127,7 +130,7 @@ export function usePaginatedProperties(
         }
       }
 
-      query = applyFilters(query, filters);
+      query = applyFilters(query, filters, buyerPriceContextFilterEnabled);
       query = applySorting(query, filters);
       query = query.range(offset, offset + pageSize - 1);
 
@@ -141,7 +144,7 @@ export function usePaginatedProperties(
 
   // Fetch boosted properties (only on page 1)
   const { data: boostedProperties = [] } = useQuery({
-    queryKey: ['properties', 'search-boosted', boostedIds, filters],
+    queryKey: ['properties', 'search-boosted', boostedIds, filters, buyerPriceContextFilterEnabled],
     queryFn: async () => {
       if (!boostedIds.length) return [] as Property[];
       let query = supabase
@@ -158,7 +161,7 @@ export function usePaginatedProperties(
         .eq('is_published', true)
         .eq('verification_status', 'approved');
 
-      query = applyFilters(query, filters);
+      query = applyFilters(query, filters, buyerPriceContextFilterEnabled);
 
       const { data, error } = await query;
       if (error) return [] as Property[];
@@ -226,7 +229,7 @@ export function usePaginatedProperties(
   };
 }
 
-function applyFilters(query: any, filters?: PropertyFilters) {
+function applyFilters(query: any, filters?: PropertyFilters, buyerPriceContextFilterEnabled = false) {
   if (!filters) return query;
 
   if (filters.city) {
@@ -245,8 +248,11 @@ function applyFilters(query: any, filters?: PropertyFilters) {
   if (filters.listing_status) {
     query = query.eq('listing_status', filters.listing_status);
   }
-  if (filters.pricing_context_complete) {
-    query = query.eq('price_context_badge_status', 'complete');
+  if (filters.pricing_context_complete && buyerPriceContextFilterEnabled) {
+    query = query
+      .eq('price_context_filter_eligible', true)
+      .neq('benchmark_review_status', 'requested')
+      .neq('benchmark_review_status', 'under_review');
   }
   if (filters.min_price) {
     query = query.gte('price', filters.min_price);
