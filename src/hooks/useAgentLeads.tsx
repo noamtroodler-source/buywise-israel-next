@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import type { Database } from '@/integrations/supabase/types';
 
 export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'closed';
 
@@ -43,6 +44,8 @@ export interface Lead {
 }
 
 type LeadQualityFeedbackRow = NonNullable<Lead['quality_feedback']> & { inquiry_id: string };
+type LeadResponseEventInsert = Database['public']['Tables']['lead_response_events']['Insert'];
+type LeadResponseEventUpdate = Database['public']['Tables']['lead_response_events']['Update'];
 
 export function useAgentLeads(statusFilter?: LeadStatus | 'all') {
   const { user } = useAuth();
@@ -141,7 +144,7 @@ export function useUpsertLeadQualityFeedback() {
         || lead.property?.price_context_confidence_tier === 'strong_comparable_match'
         || lead.property?.price_context_percentage_suppressed === false;
 
-      const payload = {
+      const payload: LeadResponseEventInsert = {
         inquiry_id: lead.id,
         inquiry_type: 'property',
         agent_id: lead.agent_id,
@@ -158,7 +161,7 @@ export function useUpsertLeadQualityFeedback() {
       if (lead.quality_feedback?.id) {
         const { error } = await supabase
           .from('lead_response_events')
-          .update(payload as Record<string, unknown>)
+          .update(payload as LeadResponseEventUpdate)
           .eq('id', lead.quality_feedback.id);
         if (error) throw error;
         return;
@@ -166,7 +169,7 @@ export function useUpsertLeadQualityFeedback() {
 
       const { error } = await supabase
         .from('lead_response_events')
-        .insert(payload as Record<string, unknown>);
+        .insert(payload);
 
       if (error) throw error;
     },
