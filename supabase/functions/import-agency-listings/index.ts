@@ -4977,6 +4977,7 @@ async function handleApproveItem(body: any) {
   listing.ai_title = copy.title;
   listing.ai_english_description = copy.description;
   listing.description = copy.description;
+  const sourceIdentity = buildSourceIdentity("website", item.url);
 
   const { data: property, error: propErr } = await sb
     .from("properties")
@@ -5025,6 +5026,11 @@ async function handleApproveItem(body: any) {
       claimed_by_agency_id: agencyId,
       import_source: "website_scrape",
       source_url: item.url,
+      canonical_source_url: sourceIdentity.canonicalSourceUrl,
+      source_item_id: sourceIdentity.sourceItemId,
+      source_identity_key: sourceIdentity.sourceIdentityKey,
+      source_domain: sourceIdentity.sourceDomain,
+      source_identity_reason: sourceIdentity.sourceItemId ? "native_source_item_id" : "canonical_source_url",
     })
     .select("id")
     .single();
@@ -5043,7 +5049,24 @@ async function handleApproveItem(body: any) {
     status: "done",
     property_id: property.id,
     extracted_data: listing,
+    canonical_source_url: sourceIdentity.canonicalSourceUrl,
+    source_item_id: sourceIdentity.sourceItemId,
+    source_identity_key: sourceIdentity.sourceIdentityKey,
+    duplicate_decision: "manual_review_approved_created",
+    duplicate_reason_codes: ["approved_from_import_review"],
   }).eq("id", item_id);
+
+  await recordSourceObservation(sb, {
+    propertyId: property.id,
+    agencyId,
+    importJobId: item.job_id,
+    importJobItemId: item.id,
+    sourceType: "website",
+    sourceUrl: item.url,
+    extractedData: listing,
+    duplicateDecision: "manual_review_approved_created",
+    duplicateReasonCodes: ["approved_from_import_review"],
+  });
 
   return { property_id: property.id };
 }
