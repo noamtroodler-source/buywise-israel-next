@@ -241,6 +241,7 @@ function useMarketReview(property: PropertyForReview): MarketReviewData {
     avgComparison: gapPercent,
     compsCount: comparableComps.length,
     radiusUsedM: hasCoordinates ? 750 : 1000,
+    compDispersionPercent: compStats?.dispersionPercent ?? null,
     avgCompPriceSqm: compStats?.avgPriceSqm ?? null,
     benchmarkPriceSqm: benchmark?.averagePriceSqm ?? null,
     pricePerSqm,
