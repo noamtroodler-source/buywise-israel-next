@@ -24,7 +24,6 @@ export interface PriceContextKpis {
   totalListings: number;
   complete: number;
   incomplete: number;
-  underReview: number;
   rankingReady: number;
   suppressed: number;
   blockedFromBoost: number;
@@ -46,8 +45,6 @@ export interface PriceContextKpis {
   detailsOpenRate: number;
   helpfulFeedbackRate: number;
   premiumContextCompletionRate: number;
-  priceContextCompleteBadgeRate: number;
-  benchmarkReviewRequestRate: number;
   contextCompleteInquiryConversionRate: number;
   contextIncompleteInquiryConversionRate: number;
   avgLeadQualityRating: number;
@@ -64,7 +61,6 @@ export interface PriceContextKpis {
   adminCorrectionRate: number;
   correctionEvents: { eventType: string; count: number }[];
   confidenceDistribution: { tier: string; count: number; percentage: number }[];
-  reviewReasons: { reason: string; count: number }[];
   insufficientDataByCity: { city: string; count: number; percentage: number }[];
   recentEvents: { eventType: string; count: number }[];
   qualityIssues: { issue: string; count: number; percentage: number; severity: 'critical' | 'warning' | 'info' }[];
@@ -84,7 +80,6 @@ const emptyPriceContext: PriceContextKpis = {
   totalListings: 0,
   complete: 0,
   incomplete: 0,
-  underReview: 0,
   rankingReady: 0,
   suppressed: 0,
   blockedFromBoost: 0,
@@ -106,8 +101,6 @@ const emptyPriceContext: PriceContextKpis = {
   detailsOpenRate: 0,
   helpfulFeedbackRate: 0,
   premiumContextCompletionRate: 0,
-  priceContextCompleteBadgeRate: 0,
-  benchmarkReviewRequestRate: 0,
   contextCompleteInquiryConversionRate: 0,
   contextIncompleteInquiryConversionRate: 0,
   avgLeadQualityRating: 0,
@@ -124,7 +117,6 @@ const emptyPriceContext: PriceContextKpis = {
   adminCorrectionRate: 0,
   correctionEvents: [],
   confidenceDistribution: [],
-  reviewReasons: [],
   insufficientDataByCity: [],
   recentEvents: [],
   qualityIssues: [],
