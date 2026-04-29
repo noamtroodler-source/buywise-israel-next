@@ -1513,6 +1513,9 @@ async function recordSourceObservation(sb: any, params: {
   duplicateDecision?: string | null;
   duplicateReasonCodes?: string[];
   matchedPropertyId?: string | null;
+  duplicateDecisionBand?: string | null;
+  duplicateMatchScores?: Record<string, any> | null;
+  duplicateDecisionMetadata?: Record<string, any> | null;
 }) {
   if (!params.sourceUrl) return;
   const identity = buildSourceIdentity(params.sourceType, params.sourceUrl);
@@ -1537,6 +1540,9 @@ async function recordSourceObservation(sb: any, params: {
       matched_property_id: params.matchedPropertyId || null,
       confidence_score: params.confidenceScore ?? null,
       raw_extracted_data: params.extractedData || null,
+      duplicate_decision_band: params.duplicateDecisionBand || null,
+      duplicate_match_scores: params.duplicateMatchScores || {},
+      duplicate_decision_metadata: params.duplicateDecisionMetadata || {},
     };
     const existingQuery = sb
       .from("property_source_observations")
