@@ -110,11 +110,6 @@ function formatNisPerSqm(value: number | null | undefined) {
   return `₪${Math.round(value).toLocaleString()}/sqm`;
 }
 
-function formatNisAmount(value: number | null | undefined) {
-  if (!value) return '—';
-  return `₪${Math.round(value).toLocaleString()}`;
-}
-
 function formatNisPerSqmRange(min: number, max: number) {
   return `${formatNisPerSqm(min)}–${Math.round(max).toLocaleString()}/sqm`;
 }
@@ -175,15 +170,15 @@ function PremiumContextSummary({ priceContext, premiumExplanation }: { priceCont
   if (contextChips.length === 0 && !premiumExplanation?.trim()) return null;
 
   return (
-    <div className="rounded-lg border border-border/70 bg-background/70 p-3 space-y-3">
+    <div className="space-y-2">
       <div>
-        <p className="text-sm font-semibold text-foreground">Why this may differ</p>
-        <p className="text-xs text-muted-foreground">Recorded sales may not fully reflect property class, finish level, view, extras, or included rights.</p>
+        <p className="text-xs font-semibold text-foreground">Records may miss</p>
+        <p className="text-xs text-muted-foreground">Features that can make standard recorded-sale comps less direct.</p>
       </div>
       {contextChips.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {contextChips.map((chip) => (
-            <Badge key={chip} variant="outline" className="rounded-lg bg-primary/5 text-xs text-foreground">
+            <Badge key={chip} variant="outline" className="rounded-lg bg-background/80 text-xs text-foreground">
               {chip}
             </Badge>
           ))}
