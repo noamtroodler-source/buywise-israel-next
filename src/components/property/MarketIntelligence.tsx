@@ -205,10 +205,13 @@ function BuyWiseTake({ priceContext, premiumExplanation, propertyPricePerSqm, co
         <div className="rounded-lg border border-border/70 bg-background/70 p-3">
           <div className="mb-2 flex items-center gap-2">
             <CircleHelp className="h-4 w-4 text-primary" />
-            <p className="text-sm font-semibold text-foreground">Smart buyer questions</p>
+            <div>
+              <p className="text-sm font-semibold text-foreground">Questions worth asking</p>
+              <p className="text-xs text-muted-foreground">Based on this listing’s pricing context and property details</p>
+            </div>
           </div>
           <ul className="space-y-1.5 text-sm text-muted-foreground">
-            {priceContext.buyerQuestions.slice(0, 4).map((question) => (
+            {priceContext.buyerQuestions.map((question) => (
               <li key={question} className="flex gap-2">
                 <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
                 <span>{question}</span>
