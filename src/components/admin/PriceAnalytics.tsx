@@ -309,6 +309,29 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
             </div>
           )}
 
+          {(context?.qualityIssues || []).length > 0 && (
+            <div className="rounded-xl border border-border/50 bg-background p-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Price Context cleanup queue</p>
+                  <p className="text-xs text-muted-foreground">Real listing metadata gaps to fix before broad rollout</p>
+                </div>
+                <Badge variant="outline">{context?.qualityIssues.length} issue types</Badge>
+              </div>
+              <div className="space-y-2">
+                {(context?.qualityIssues || []).slice(0, 7).map((item) => (
+                  <div key={item.issue} className="flex items-center justify-between gap-3 rounded-lg bg-muted/20 p-3 text-sm">
+                    <div className="flex items-center gap-2">
+                      <span className={`h-2 w-2 rounded-full ${item.severity === 'critical' ? 'bg-destructive' : item.severity === 'warning' ? 'bg-primary' : 'bg-muted-foreground'}`} />
+                      <span className="font-medium text-foreground">{item.issue}</span>
+                    </div>
+                    <span className="text-muted-foreground">{item.count} · {item.percentage.toFixed(1)}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="rounded-xl border border-border/50 p-4">
             <div className="flex items-center justify-between gap-3">
               <div>
@@ -316,7 +339,7 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
                 <p className="text-xs text-muted-foreground">Live sale listings excluded from Price Context boosts</p>
               </div>
               <Button asChild variant="outline" size="sm">
-                <Link to="/admin/listing-review">
+                <Link to="/admin/review">
                   Review queue
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>

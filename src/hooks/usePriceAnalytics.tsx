@@ -67,6 +67,7 @@ export interface PriceContextKpis {
   reviewReasons: { reason: string; count: number }[];
   insufficientDataByCity: { city: string; count: number; percentage: number }[];
   recentEvents: { eventType: string; count: number }[];
+  qualityIssues: { issue: string; count: number; percentage: number; severity: 'critical' | 'warning' | 'info' }[];
 }
 
 export interface PriceAnalyticsData {
@@ -126,6 +127,7 @@ const emptyPriceContext: PriceContextKpis = {
   reviewReasons: [],
   insufficientDataByCity: [],
   recentEvents: [],
+  qualityIssues: [],
 };
 
 export function usePriceAnalytics(days: number = 30) {
@@ -135,7 +137,7 @@ export function usePriceAnalytics(days: number = 30) {
       const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
       const { data: properties } = await (supabase
         .from('properties')
-        .select('id, city, price, size_sqm, bedrooms, listing_status, price_context_badge_status, price_context_confidence_tier, price_context_percentage_suppressed, price_context_public_label, sqm_source, ownership_type, benchmark_review_status, benchmark_review_reason, premium_explanation, premium_drivers, submitted_at, reviewed_at, created_at') as any)
+        .select('id, city, price, size_sqm, bedrooms, listing_status, price_context_badge_status, price_context_confidence_tier, price_context_percentage_suppressed, price_context_public_label, sqm_source, ownership_type, benchmark_review_status, benchmark_review_reason, benchmark_review_requested_at, premium_explanation, premium_drivers, submitted_at, reviewed_at, created_at') as any)
         .eq('listing_status', 'for_sale')
         .gt('price', 0);
 
@@ -239,6 +241,25 @@ export function usePriceAnalytics(days: number = 30) {
       const unknownOwnership = propertyRows.filter(p => !p.ownership_type || p.ownership_type === 'unknown').length;
       const premiumContextComplete = propertyRows.filter(p => Boolean(p.premium_explanation) || (Array.isArray(p.premium_drivers) && p.premium_drivers.length > 0)).length;
       const benchmarkReviewRequested = propertyRows.filter(p => p.benchmark_review_status === 'requested' || p.benchmark_review_status === 'under_review' || p.benchmark_review_status === 'resolved').length;
+      const missingConfidenceTier = propertyRows.filter(p => !p.price_context_confidence_tier).length;
+      const missingPublicLabel = propertyRows.filter(p => !p.price_context_public_label).length;
+      const missingBadgeStatus = propertyRows.filter(p => !p.price_context_badge_status).length;
+      const staleReviewRequests = propertyRows.filter(p => {
+        if (p.benchmark_review_status !== 'requested' || !p.benchmark_review_requested_at) return false;
+        return Date.now() - new Date(p.benchmark_review_requested_at).getTime() > 7 * 24 * 60 * 60 * 1000;
+      }).length;
+      const qualityIssues = [
+        { issue: 'Missing confidence tier', count: missingConfidenceTier, severity: 'critical' as const },
+        { issue: 'Missing public label', count: missingPublicLabel, severity: 'critical' as const },
+        { issue: 'Missing badge status', count: missingBadgeStatus, severity: 'critical' as const },
+        { issue: 'Unknown SQM source', count: unknownSqmSource, severity: 'warning' as const },
+        { issue: 'Unknown ownership type', count: unknownOwnership, severity: 'warning' as const },
+        { issue: 'High-gap without premium explanation', count: highGapWithoutPremiumExplanation, severity: 'warning' as const },
+        { issue: 'Review requests older than 7 days', count: staleReviewRequests, severity: 'info' as const },
+      ]
+        .filter((issue) => issue.count > 0)
+        .map((issue) => ({ ...issue, percentage: propertyRows.length ? (issue.count / propertyRows.length) * 100 : 0 }))
+        .sort((a, b) => b.count - a.count);
       const publishedDurations = propertyRows
         .map(p => {
           const start = p.submitted_at || p.created_at;
@@ -381,6 +402,7 @@ export function usePriceAnalytics(days: number = 30) {
         reviewReasons: Object.entries(reviewReasonCounts).map(([reason, count]) => ({ reason, count })).sort((a, b) => b.count - a.count),
         insufficientDataByCity,
         recentEvents: Object.entries(eventCounts).map(([eventType, count]) => ({ eventType, count: Number(count) })).sort((a, b) => b.count - a.count),
+        qualityIssues,
       };
 
       return {
