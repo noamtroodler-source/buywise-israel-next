@@ -174,6 +174,13 @@ export function AdminLayout() {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <Link
+                to="/"
+                className="inline-flex items-center gap-2 rounded-md border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground shadow-sm transition-colors hover:bg-muted"
+              >
+                <Home className="h-4 w-4" />
+                Home
+              </Link>
               <AlertsBadge />
             </div>
           </div>
