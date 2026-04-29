@@ -208,10 +208,6 @@ export function computeStepErrors(data: PropertyWizardData, adjustedStep: number
       if (data.images.length < minPhotos) errors.push(`At least ${minPhotos} photos required (have ${data.images.length})`);
       break;
     }
-    case 4: { // Description
-      if (data.description.trim().length < 40) errors.push(`Add a short description before submitting (${data.description.trim().length}/40)`);
-      break;
-    }
   }
   return errors;
 }
@@ -240,8 +236,8 @@ export function computeStepRecommendations(data: PropertyWizardData, adjustedSte
       break;
     }
     case 4: {
-      if (data.description.trim().length >= 40 && data.description.trim().length < 150) {
-        recommendations.push(`Expand the description for buyer trust (${data.description.trim().length}/150)`);
+      if (data.description.trim().length < 150) {
+        recommendations.push(`Add or expand the description for buyer trust (${data.description.trim().length}/150)`);
       }
       if (data.highlights.length === 0) recommendations.push('Add a few buyer-friendly highlights');
       break;
