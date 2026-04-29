@@ -267,9 +267,8 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
     if (filters.available_now || filters.available_by) count++;
     if (filters.allows_pets?.length) count++;
     if (filters.commute_destination && filters.max_commute_minutes) count++;
-    if (showPriceContextFilter && filters.pricing_context_complete) count++;
     return count;
-  }, [filters, showPriceContextFilter]);
+  }, [filters]);
   
   // Use passed count from parent instead of separate query
   const countLoading = isCountLoading;
@@ -328,7 +327,6 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
       // Commute filter
       commute_destination: undefined,
       max_commute_minutes: undefined,
-      pricing_context_complete: undefined,
     });
   };
   
@@ -399,10 +397,9 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
       filters.allows_pets?.length ||
       filters.available_by ||
       filters.available_now ||
-      (showPriceContextFilter && filters.pricing_context_complete) ||
       (filters.commute_destination && filters.max_commute_minutes)
     );
-  }, [filters, showPriceContextFilter]);
+  }, [filters]);
 
   // Clear all filters except listing_status and sort_by
   const clearAllFilters = () => {
