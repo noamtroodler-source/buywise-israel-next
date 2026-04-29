@@ -3,7 +3,7 @@
 ## Goal
 Finish the Price Context implementation so it matches the brief end-to-end: buyer trust layer, agency correction/enrichment workflow, admin/data-quality controls, KPI measurement, and mature rollout hooks.
 
-Current status: Phases 15–19 are implemented: buyer trust layer, agency/admin review workflow, analytics/KPIs, and controlled rollout/ranking hooks are in place. Remaining work is Phase 20 QA, security, and memory cleanup.
+Current status: Phases 15–20 are implemented. The Price Context system now has the buyer trust layer, agency/admin review workflow, analytics/KPIs, controlled rollout hooks, and a QA/security pass.
 
 ```text
 Buyer sees safe Price Context
@@ -175,6 +175,8 @@ Prepare controlled rollout without making aggressive public changes too early.
 - Keep this admin-controlled until the system has enough real data.
 
 ## Phase 20: QA, security, and memory cleanup
+
+Status: Done — verified event-history RLS, rollout flags, review eligibility guardrails, honest no-data states, and public-language safety. Added an agency-admin event insert policy so agency-owned benchmark review requests can log immutable events without exposing event history publicly.
 
 ### QA checklist
 - Verify property pages across:
