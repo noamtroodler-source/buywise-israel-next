@@ -353,9 +353,9 @@ function PriceContextTrustFeedback({ priceContext, onTrackInteraction }: { price
   };
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-border/70 bg-background/70 p-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-3 rounded-lg border border-border bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <p className="text-sm font-semibold text-foreground">Was this price context helpful?</p>
+        <p className="text-sm font-medium text-foreground">Was this price context helpful?</p>
         <p className="text-xs text-muted-foreground">Your response helps improve buyer trust signals.</p>
       </div>
       <div className="flex items-center gap-2">
