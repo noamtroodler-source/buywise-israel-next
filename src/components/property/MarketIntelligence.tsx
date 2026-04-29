@@ -169,7 +169,7 @@ function BenchmarkCardTile({ card, onTrackInteraction }: { card: BenchmarkCard; 
   );
 }
 
-function BenchmarkLadder({ askingPriceSqm, ranges }: { askingPriceSqm: number | null; ranges: BenchmarkRange[] }) {
+function BenchmarkLadder({ askingPriceSqm, ranges, onTrackInteraction }: { askingPriceSqm: number | null; ranges: BenchmarkRange[]; onTrackInteraction?: (eventName: string, properties?: Record<string, unknown>) => void }) {
   if (!askingPriceSqm || ranges.length === 0) return null;
 
   const allValues = ranges.flatMap((range) => [range.min, range.max]).concat(askingPriceSqm);
@@ -179,7 +179,11 @@ function BenchmarkLadder({ askingPriceSqm, ranges }: { askingPriceSqm: number | 
   const markerLeft = clampPercent(((askingPriceSqm - minValue) / spread) * 100);
 
   return (
-    <div className="rounded-lg border border-border/70 bg-background/70 p-3 space-y-3">
+    <div
+      className="rounded-lg border border-border/70 bg-background/70 p-3 space-y-3"
+      onMouseEnter={() => onTrackInteraction?.('price_context_benchmark_ladder_viewed', { benchmark_layer_count: ranges.length, asking_price_sqm: askingPriceSqm })}
+      onFocus={() => onTrackInteraction?.('price_context_benchmark_ladder_viewed', { benchmark_layer_count: ranges.length, asking_price_sqm: askingPriceSqm })}
+    >
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-sm font-semibold text-foreground">Benchmark ladder</p>
@@ -198,7 +202,11 @@ function BenchmarkLadder({ askingPriceSqm, ranges }: { askingPriceSqm: number | 
               : 'Within this range';
 
           return (
-            <div key={range.id} className="space-y-1.5">
+            <div
+              key={range.id}
+              className="space-y-1.5 rounded-md p-1 transition-colors hover:bg-primary/5"
+              onClick={() => onTrackInteraction?.('price_context_benchmark_layer_clicked', { benchmark_layer: range.id, benchmark_label: range.label, source: 'ladder' })}
+            >
               <div className="flex items-center justify-between gap-3 text-xs">
                 <span className="font-medium text-foreground">{range.label}</span>
                 <span className="text-muted-foreground">{positionLabel}</span>
