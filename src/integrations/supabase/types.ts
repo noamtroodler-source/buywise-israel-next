@@ -3199,12 +3199,17 @@ export type Database = {
           job_id: string
           matched_property_id: string | null
           normalized_address_key: string | null
+          normalized_apartment_number: string | null
           normalized_city_key: string | null
+          normalized_entrance: string | null
+          normalized_floor_number: number | null
           project_id: string | null
           property_id: string | null
           source_identity_key: string | null
           source_item_id: string | null
           status: string
+          unit_identity_key: string | null
+          unit_identity_metadata: Json
           url: string
         }
         Insert: {
@@ -3223,12 +3228,17 @@ export type Database = {
           job_id: string
           matched_property_id?: string | null
           normalized_address_key?: string | null
+          normalized_apartment_number?: string | null
           normalized_city_key?: string | null
+          normalized_entrance?: string | null
+          normalized_floor_number?: number | null
           project_id?: string | null
           property_id?: string | null
           source_identity_key?: string | null
           source_item_id?: string | null
           status?: string
+          unit_identity_key?: string | null
+          unit_identity_metadata?: Json
           url: string
         }
         Update: {
@@ -3247,12 +3257,17 @@ export type Database = {
           job_id?: string
           matched_property_id?: string | null
           normalized_address_key?: string | null
+          normalized_apartment_number?: string | null
           normalized_city_key?: string | null
+          normalized_entrance?: string | null
+          normalized_floor_number?: number | null
           project_id?: string | null
           property_id?: string | null
           source_identity_key?: string | null
           source_item_id?: string | null
           status?: string
+          unit_identity_key?: string | null
+          unit_identity_metadata?: Json
           url?: string
         }
         Relationships: [
@@ -5676,7 +5691,10 @@ export type Database = {
           merged_source_urls: string[] | null
           neighborhood: string | null
           normalized_address_key: string | null
+          normalized_apartment_number: string | null
           normalized_city_key: string | null
+          normalized_entrance: string | null
+          normalized_floor_number: number | null
           normalized_house_number: string | null
           normalized_street_key: string | null
           original_price: number | null
@@ -5726,6 +5744,8 @@ export type Database = {
           title: string
           total_floors: number | null
           total_saves: number
+          unit_identity_key: string | null
+          unit_identity_metadata: Json
           updated_at: string
           vaad_bayit_monthly: number | null
           verification_status: Database["public"]["Enums"]["verification_status"]
@@ -5801,7 +5821,10 @@ export type Database = {
           merged_source_urls?: string[] | null
           neighborhood?: string | null
           normalized_address_key?: string | null
+          normalized_apartment_number?: string | null
           normalized_city_key?: string | null
+          normalized_entrance?: string | null
+          normalized_floor_number?: number | null
           normalized_house_number?: string | null
           normalized_street_key?: string | null
           original_price?: number | null
@@ -5851,6 +5874,8 @@ export type Database = {
           title: string
           total_floors?: number | null
           total_saves?: number
+          unit_identity_key?: string | null
+          unit_identity_metadata?: Json
           updated_at?: string
           vaad_bayit_monthly?: number | null
           verification_status?: Database["public"]["Enums"]["verification_status"]
@@ -5926,7 +5951,10 @@ export type Database = {
           merged_source_urls?: string[] | null
           neighborhood?: string | null
           normalized_address_key?: string | null
+          normalized_apartment_number?: string | null
           normalized_city_key?: string | null
+          normalized_entrance?: string | null
+          normalized_floor_number?: number | null
           normalized_house_number?: string | null
           normalized_street_key?: string | null
           original_price?: number | null
@@ -5976,6 +6004,8 @@ export type Database = {
           title?: string
           total_floors?: number | null
           total_saves?: number
+          unit_identity_key?: string | null
+          unit_identity_metadata?: Json
           updated_at?: string
           vaad_bayit_monthly?: number | null
           verification_status?: Database["public"]["Enums"]["verification_status"]
@@ -7813,6 +7843,15 @@ export type Database = {
         }
         Returns: string
       }
+      build_property_unit_identity_key: {
+        Args: {
+          p_apartment_number?: string
+          p_building_key: string
+          p_entrance?: string
+          p_floor_number?: number
+        }
+        Returns: string
+      }
       build_source_identity_key: {
         Args: {
           p_source_item_id?: string
@@ -7868,12 +7907,16 @@ export type Database = {
           p_size_sqm: number
         }
         Returns: {
+          duplicate_decision_band: string
+          duplicate_reason_codes: string[]
           existing_added_manually: boolean
           existing_agency_id: string
           existing_import_source: string
           existing_source_url: string
           property_id: string
           same_building_different_unit: boolean
+          same_building_score: number
+          same_unit_score: number
           similarity_score: number
         }[]
       }
@@ -7966,6 +8009,10 @@ export type Database = {
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
+      }
+      extract_address_unit_evidence: {
+        Args: { p_address: string }
+        Returns: Json
       }
       extract_building_house_number: {
         Args: { p_address: string }
@@ -8131,6 +8178,7 @@ export type Database = {
         Args: { p_source_type: string; p_source_url?: string }
         Returns: string
       }
+      normalize_unit_token: { Args: { p_value: string }; Returns: string }
       normalize_url: { Args: { p_url: string }; Returns: string }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
