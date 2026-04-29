@@ -16,7 +16,6 @@ import { usePriceTier } from '@/hooks/usePriceTier';
 import { cn } from '@/lib/utils';
 import type { PriceTier } from '@/hooks/usePriceTier';
 import { formatPriceContextValue, getPriceContext, type PriceContextResult, type PriceContextSpecMatchQuality } from '@/lib/priceContext';
-import { PRICE_CONTEXT_DISCLAIMER, PRICE_CONTEXT_SIZE_NOTE } from '@/lib/priceContextDisclaimer';
 
 const SESSION_KEY = 'analytics_session_id';
 const SESSION_EXPIRY_KEY = 'analytics_session_expiry';
