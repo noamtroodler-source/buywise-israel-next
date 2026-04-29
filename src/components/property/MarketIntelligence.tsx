@@ -10,7 +10,6 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { RecentNearbySales } from './RecentNearbySales';
 import { SpecBasedComps } from './SpecBasedComps';
-import { MarketDataContext } from '@/components/shared/MarketDataContext';
 import { useRoomSpecificCityPrice } from '@/hooks/useRoomSpecificCityPrice';
 import { useNeighborhoodAvgPrice } from '@/hooks/useNeighborhoodPrices';
 import { usePriceTier } from '@/hooks/usePriceTier';
@@ -667,9 +666,6 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
           ownershipType={property.ownership_type}
           onTrackInteraction={handlePriceContextInteraction}
         />
-
-        {/* Data context — help buyers understand data limitations */}
-        <MarketDataContext variant="compact" />
 
         {/* Explore city link */}
         <div className="flex justify-center pt-1">
