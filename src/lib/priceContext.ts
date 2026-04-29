@@ -50,6 +50,12 @@ export interface PriceContextSpecMatchMetadata {
   avgSizeDeltaPercent: number | null;
 }
 
+export interface PriceContextRecencyMetadata {
+  avgRecencyMonths: number | null;
+  newestRecencyMonths: number | null;
+  oldestRecencyMonths: number | null;
+}
+
 export interface PriceContextInput {
   avgComparison: number | null;
   compsCount: number;
@@ -216,6 +222,32 @@ export function computePriceContextSpecMatch<T extends { rooms?: number | null; 
           : avgSizeDeltaPercent <= 0.25
             ? 'directional'
             : 'weak',
+  };
+}
+
+export function computePriceContextCompRecency<T extends { sold_date?: string | null }>(
+  comps: T[],
+  asOf = new Date(),
+): PriceContextRecencyMetadata {
+  const recencies = comps
+    .map((comp) => {
+      if (!comp.sold_date) return null;
+      const soldDate = new Date(comp.sold_date);
+      if (Number.isNaN(soldDate.getTime())) return null;
+      const monthsOld = (asOf.getTime() - soldDate.getTime()) / (1000 * 60 * 60 * 24 * 30.4375);
+      return Math.max(0, monthsOld);
+    })
+    .filter((value): value is number => value != null);
+
+  if (recencies.length === 0) {
+    return { avgRecencyMonths: null, newestRecencyMonths: null, oldestRecencyMonths: null };
+  }
+
+  const avg = recencies.reduce((sum, value) => sum + value, 0) / recencies.length;
+  return {
+    avgRecencyMonths: Math.round(avg),
+    newestRecencyMonths: Math.round(Math.min(...recencies)),
+    oldestRecencyMonths: Math.round(Math.max(...recencies)),
   };
 }
 
