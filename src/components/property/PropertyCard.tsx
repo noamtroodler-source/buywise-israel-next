@@ -51,19 +51,45 @@ const PLACEHOLDER_IMAGE = 'https://images.unsplash.com/photo-1560448204-e02f11c3
 function AgencyLogoStack({
   primaryName,
   primaryLogoUrl,
+  primaryAgencyId,
   coAgents,
   onPrimaryClick,
 }: {
   primaryName: string;
   primaryLogoUrl: string;
+  primaryAgencyId?: string | null;
   coAgents: CoAgent[];
   onPrimaryClick: () => void;
 }) {
-  const visibleCoAgents = coAgents.slice(0, 2);
-  const remaining = Math.max(0, coAgents.length - visibleCoAgents.length);
+  const uniqueCoAgents = useMemo(() => {
+    const seen = new Set<string>();
+    const primaryNameKey = primaryName.trim().toLowerCase();
+    const primaryLogoKey = primaryLogoUrl.trim().toLowerCase();
+
+    return coAgents.filter((ca) => {
+      const agency = ca.agent?.agency;
+      const agencyName = agency?.name || ca.agent?.agency_name || '';
+      const agencyLogo = agency?.logo_url || '';
+      const agencyId = agency?.id || ca.agent?.agency_name || ca.id;
+      const normalizedName = agencyName.trim().toLowerCase();
+      const normalizedLogo = agencyLogo.trim().toLowerCase();
+
+      if (primaryAgencyId && agency?.id === primaryAgencyId) return false;
+      if (normalizedName && normalizedName === primaryNameKey) return false;
+      if (normalizedLogo && normalizedLogo === primaryLogoKey) return false;
+
+      const key = agency?.id || normalizedName || normalizedLogo || agencyId;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [coAgents, primaryAgencyId, primaryLogoUrl, primaryName]);
+
+  const visibleCoAgents = uniqueCoAgents.slice(0, 2);
+  const remaining = Math.max(0, uniqueCoAgents.length - visibleCoAgents.length);
   const allNames = [
     primaryName,
-    ...coAgents.map((ca) => ca.agent?.agency?.name || ca.agent?.agency_name).filter(Boolean) as string[],
+    ...uniqueCoAgents.map((ca) => ca.agent?.agency?.name || ca.agent?.agency_name).filter(Boolean) as string[],
   ];
 
   return (
@@ -513,6 +539,7 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                     <AgencyLogoStack
                       primaryName={property.agent.agency.name}
                       primaryLogoUrl={property.agent.agency.logo_url}
+                      primaryAgencyId={property.agent.agency.id}
                       coAgents={property.co_agents ?? []}
                       onPrimaryClick={() => {
                         if (property.agent?.agency) {
@@ -746,6 +773,7 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                       <AgencyLogoStack
                         primaryName={property.agent.agency.name}
                         primaryLogoUrl={property.agent.agency.logo_url}
+                        primaryAgencyId={property.agent.agency.id}
                         coAgents={property.co_agents ?? []}
                         onPrimaryClick={() => {
                           if (property.agent?.agency) {
