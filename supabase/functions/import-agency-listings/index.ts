@@ -1520,6 +1520,12 @@ async function recordSourceObservation(sb: any, params: {
   if (!params.sourceUrl) return;
   const identity = buildSourceIdentity(params.sourceType, params.sourceUrl);
   if (!identity.sourceIdentityKey) return;
+  const duplicateReasonCodes = normalizeDuplicateReasonCodes(
+    params.duplicateReasonCodes || [],
+    params.duplicateDecisionBand || params.duplicateDecision || null,
+    params.duplicateMatchScores || {},
+    params.duplicateDecisionMetadata || {},
+  );
   try {
     const observationPayload = {
       property_id: params.propertyId || null,
@@ -1536,7 +1542,7 @@ async function recordSourceObservation(sb: any, params: {
       last_scraped_at: new Date().toISOString(),
       observation_status: "active",
       duplicate_decision: params.duplicateDecision || null,
-      duplicate_reason_codes: params.duplicateReasonCodes || [],
+      duplicate_reason_codes: duplicateReasonCodes,
       matched_property_id: params.matchedPropertyId || null,
       confidence_score: params.confidenceScore ?? null,
       raw_extracted_data: params.extractedData || null,
@@ -1578,6 +1584,41 @@ function buildDuplicateDecisionAudit(match: any, action: string, extra: Record<s
     ...extra,
   };
   return { band, scores, metadata };
+}
+
+function normalizeDuplicateReasonCodes(
+  codes: Array<string | null | undefined>,
+  band?: string | null,
+  scores: Record<string, any> = {},
+  metadata: Record<string, any> = {},
+): string[] {
+  const normalized = new Set<string>();
+  const add = (code?: string | null) => {
+    const value = String(code || "").trim().toLowerCase().replace(/[^a-z0-9_]+/g, "_").replace(/^_+|_+$/g, "");
+    if (value) normalized.add(value);
+  };
+
+  codes.forEach(add);
+  if (band) add(`band_${band}`);
+  if (metadata?.action) add(`action_${metadata.action}`);
+
+  const sameBuildingScore = Number(scores?.same_building_score ?? scores?.sameBuildingScore ?? 0);
+  const sameUnitScore = Number(scores?.same_unit_score ?? scores?.sameUnitScore ?? 0);
+  const similarityScore = Number(scores?.similarity_score ?? scores?.similarityScore ?? 0);
+
+  if (sameBuildingScore >= 65) add("same_building_strong");
+  else if (sameBuildingScore > 0) add("same_building_weak");
+
+  if (sameUnitScore >= 75) add("same_unit_strong");
+  else if (sameUnitScore >= 45) add("same_unit_possible");
+  else if (sameUnitScore > 0) add("same_unit_weak");
+
+  if (similarityScore >= 70) add("overall_match_score_high");
+  else if (similarityScore >= 45) add("overall_match_score_possible");
+
+  if (metadata?.matched_property_id) add("matched_existing_property");
+  if (metadata?.same_building_different_unit) add("same_building_different_unit");
+  return [...normalized].sort();
 }
 
 function sanitizeDiscoveredUrl(raw: string, baseUrl?: string): { url: string | null; reason?: string } {
