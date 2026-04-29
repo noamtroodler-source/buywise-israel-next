@@ -134,7 +134,7 @@ function BenchmarkCardTile({ card, onTrackInteraction }: { card: BenchmarkCard; 
 
   return (
     <div
-      className="rounded-lg border border-border/70 bg-background/80 p-3 transition-colors hover:border-primary/30 hover:bg-primary/5"
+      className="rounded-lg border border-border bg-muted/20 p-3 transition-colors hover:border-border hover:bg-muted/35"
       onClick={() => onTrackInteraction?.('price_context_benchmark_layer_clicked', { benchmark_layer: card.id, benchmark_label: card.label })}
     >
       <div className="flex items-start justify-between gap-2">
@@ -177,14 +177,14 @@ function PremiumContextSummary({ priceContext, premiumExplanation }: { priceCont
       {contextChips.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {contextChips.map((chip) => (
-            <Badge key={chip} variant="outline" className="rounded-lg bg-background/80 text-xs text-foreground">
+            <Badge key={chip} variant="outline" className="rounded-lg bg-muted/20 text-xs text-foreground">
               {chip}
             </Badge>
           ))}
         </div>
       )}
       {premiumExplanation?.trim() && (
-        <p className="border-l-2 border-primary/30 pl-3 text-sm text-muted-foreground">
+        <p className="border-l-2 border-border pl-3 text-sm text-muted-foreground">
           {premiumExplanation}
         </p>
       )}
@@ -266,11 +266,8 @@ function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchma
     : 'Recorded sales and local benchmarks to help you understand the asking price.';
 
   return (
-    <div className="rounded-lg border border-primary/15 bg-primary/5 p-4 space-y-3">
+    <div className="space-y-4 border-y border-border py-5">
       <div className="flex items-start gap-3">
-        <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-          <BarChart3 className="h-4 w-4 text-primary" />
-        </div>
         <div className="min-w-0 flex-1">
           <div className="mb-2 space-y-1">
             <div className="flex flex-wrap items-center gap-2">
@@ -284,7 +281,7 @@ function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchma
               <BenchmarkCardTile key={card.id} card={card} onTrackInteraction={onTrackInteraction} />
             ))}
           </div>
-          <div className="mt-3 rounded-lg border border-primary/15 bg-background/70 px-3 py-2">
+          <div className="mt-3 rounded-lg border border-border bg-muted/20 px-3 py-2">
             <p className="text-sm leading-relaxed text-muted-foreground">
               <span className="font-semibold text-foreground">Buyer takeaway:</span> {buyerTakeaway}
             </p>
@@ -297,13 +294,13 @@ function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchma
 
       <Collapsible onOpenChange={(nextOpen) => nextOpen && onTrackInteraction?.('price_context_details_opened', { confidence_tier: priceContext.confidenceTier })}>
         <CollapsibleTrigger asChild>
-          <Button variant="ghost" size="sm" className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground">
+          <Button variant="ghost" size="sm" className="h-8 px-0 text-xs text-muted-foreground hover:bg-transparent hover:text-foreground">
             <Calculator className="mr-1 h-3.5 w-3.5" /> How we calculated this
             <ChevronDown className="ml-1 h-3.5 w-3.5" />
           </Button>
         </CollapsibleTrigger>
         <CollapsibleContent className="pt-2">
-          <div className="rounded-lg border border-border/70 bg-background/70 p-3 text-xs text-muted-foreground space-y-2">
+          <div className="rounded-lg border border-border bg-muted/20 p-3 text-xs text-muted-foreground space-y-2">
             <div>
               <p className="font-medium text-foreground">Benchmark layers used:</p>
               <ul className="mt-1 space-y-1 pl-4">
@@ -356,9 +353,9 @@ function PriceContextTrustFeedback({ priceContext, onTrackInteraction }: { price
   };
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-border/70 bg-background/70 p-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-3 rounded-lg border border-border bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <p className="text-sm font-semibold text-foreground">Was this price context helpful?</p>
+        <p className="text-sm font-medium text-foreground">Was this price context helpful?</p>
         <p className="text-xs text-muted-foreground">Your response helps improve buyer trust signals.</p>
       </div>
       <div className="flex items-center gap-2">
@@ -607,13 +604,13 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
         {/* Section Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-primary" />
+            <BarChart3 className="h-5 w-5 text-muted-foreground" />
             <h3 className="text-lg font-semibold text-foreground">BuyWise Price Context</h3>
           </div>
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-help">
-                <ShieldCheck className="h-3.5 w-3.5" />
+                <ShieldCheck className="h-3.5 w-3.5 text-muted-foreground" />
                 <span className="border-b border-dotted border-muted-foreground/30">
                   Government verified
                 </span>
