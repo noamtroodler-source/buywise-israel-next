@@ -3581,15 +3581,88 @@ async function processOneItem(
       }
     }
 
-    // 0a. Source URL dedup
+    // 0a. Source identity dedup/idempotency
     const normalizedItemUrl = normalizeUrl(item.url);
+    const incomingSourceType = job.source_type || detectSourceType(item.url);
+    const sourceIdentity = buildSourceIdentity(incomingSourceType, item.url);
+    await sb.from("import_job_items").update({
+      canonical_source_url: sourceIdentity.canonicalSourceUrl,
+      source_item_id: sourceIdentity.sourceItemId,
+      source_identity_key: sourceIdentity.sourceIdentityKey,
+      duplicate_checked_at: new Date().toISOString(),
+    }).eq("id", item.id);
+
+    if (sourceIdentity.sourceIdentityKey) {
+      const { data: existingByIdentity } = await sb
+        .from("properties")
+        .select("id, source_url, merged_source_urls")
+        .eq("source_identity_key", sourceIdentity.sourceIdentityKey)
+        .limit(1);
+      if (existingByIdentity && existingByIdentity.length > 0) {
+        const existing = existingByIdentity[0];
+        const mergedUrls: string[] = Array.isArray(existing.merged_source_urls)
+          ? [...existing.merged_source_urls]
+          : (existing.source_url ? [existing.source_url] : []);
+        for (const url of [item.url, normalizedItemUrl, sourceIdentity.canonicalSourceUrl]) {
+          if (url && !mergedUrls.includes(url)) mergedUrls.push(url);
+        }
+        await sb.from("properties").update({
+          merged_source_urls: mergedUrls,
+          source_last_checked_at: new Date().toISOString(),
+        }).eq("id", existing.id);
+        await recordSourceObservation(sb, {
+          propertyId: existing.id,
+          agencyId: job.agency_id,
+          importJobId: jobId,
+          importJobItemId: item.id,
+          sourceType: incomingSourceType,
+          sourceUrl: item.url,
+          duplicateDecision: "exact_source_match_update",
+          duplicateReasonCodes: [sourceIdentity.sourceItemId ? "same_source_item_id" : "same_canonical_source_url"],
+          matchedPropertyId: existing.id,
+        });
+        await sb.from("import_job_items")
+          .update({
+            status: "done",
+            property_id: existing.id,
+            matched_property_id: existing.id,
+            duplicate_decision: "exact_source_match_update",
+            duplicate_reason_codes: [sourceIdentity.sourceItemId ? "same_source_item_id" : "same_canonical_source_url"],
+            error_message: `Updated existing property ${existing.id} from exact source identity match`,
+            error_type: null,
+          })
+          .eq("id", item.id);
+        return { succeeded: true };
+      }
+    }
+
+    // Legacy URL dedup fallback for rows not yet backfilled with identity.
     const { data: existingByUrl } = await sb
-      .from("properties").select("id, source_url").in("source_url", [item.url, normalizedItemUrl]).limit(1);
+      .from("properties").select("id, source_url, merged_source_urls").in("source_url", [item.url, normalizedItemUrl]).limit(1);
     if (existingByUrl && existingByUrl.length > 0) {
+      await recordSourceObservation(sb, {
+        propertyId: existingByUrl[0].id,
+        agencyId: job.agency_id,
+        importJobId: jobId,
+        importJobItemId: item.id,
+        sourceType: incomingSourceType,
+        sourceUrl: item.url,
+        duplicateDecision: "exact_source_match_update",
+        duplicateReasonCodes: ["same_legacy_source_url"],
+        matchedPropertyId: existingByUrl[0].id,
+      });
       await sb.from("import_job_items")
-        .update({ status: "skipped", error_message: `Duplicate: URL already imported as property ${existingByUrl[0].id}`, error_type: "permanent" })
+        .update({
+          status: "done",
+          property_id: existingByUrl[0].id,
+          matched_property_id: existingByUrl[0].id,
+          duplicate_decision: "exact_source_match_update",
+          duplicate_reason_codes: ["same_legacy_source_url"],
+          error_message: `Updated existing property ${existingByUrl[0].id} from exact source URL match`,
+          error_type: null,
+        })
         .eq("id", item.id);
-      return { succeeded: false };
+      return { succeeded: true };
     }
 
     // 0b. In-job URL dedup
@@ -3598,7 +3671,14 @@ async function processOneItem(
       .eq("job_id", jobId).in("url", [item.url, normalizedItemUrl]).eq("status", "done").neq("id", item.id).limit(1);
     if (existingJobItem && existingJobItem.length > 0) {
       await sb.from("import_job_items")
-        .update({ status: "skipped", error_message: "Duplicate: same URL already processed in this job", error_type: "permanent" })
+        .update({
+          status: "skipped",
+          matched_property_id: existingJobItem[0].property_id || null,
+          duplicate_decision: "in_job_source_duplicate",
+          duplicate_reason_codes: ["same_url_same_job"],
+          error_message: "Duplicate: same URL already processed in this job",
+          error_type: "permanent",
+        })
         .eq("id", item.id);
       return { succeeded: false };
     }
