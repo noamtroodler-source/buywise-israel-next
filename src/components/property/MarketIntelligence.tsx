@@ -248,7 +248,7 @@ function MarketVerdictBadge({ compsCount, radiusUsedM, priceTier, priceContext }
   );
 }
 
-function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, compsCount, radiusUsedM, sqmSource, ownershipType, onTrackInteraction }: { priceContext: PriceContextResult; premiumExplanation?: string | null; benchmarkCards: BenchmarkCard[]; compsCount: number; radiusUsedM: number; sqmSource?: string | null; ownershipType?: string | null; onTrackInteraction?: (eventName: string, properties?: Record<string, unknown>) => void }) {
+function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchmarkRanges, propertyPricePerSqm, compsCount, radiusUsedM, sqmSource, ownershipType, onTrackInteraction }: { priceContext: PriceContextResult; premiumExplanation?: string | null; benchmarkCards: BenchmarkCard[]; benchmarkRanges: BenchmarkRange[]; propertyPricePerSqm: number | null; compsCount: number; radiusUsedM: number; sqmSource?: string | null; ownershipType?: string | null; onTrackInteraction?: (eventName: string, properties?: Record<string, unknown>) => void }) {
   const [open, setOpen] = useState(false);
   const hasPremiumContext = priceContext.confirmedPremiumDrivers.length > 0 || priceContext.detectedPremiumDrivers.length > 0 || Boolean(premiumExplanation?.trim());
   const radiusLabel = radiusUsedM >= 1000 ? '1km' : `${radiusUsedM}m`;
@@ -282,6 +282,9 @@ function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, compsCo
             {benchmarkCards.map((card) => (
               <BenchmarkCardTile key={card.id} card={card} />
             ))}
+          </div>
+          <div className="mt-3">
+            <BenchmarkLadder askingPriceSqm={propertyPricePerSqm} ranges={benchmarkRanges} />
           </div>
         </div>
       </div>
