@@ -3538,12 +3538,12 @@ FOR PROPERTIES — extract these fields:
   Examples: "Spacious 4-Bedroom Apartment in Arnona", "Renovated Penthouse in Neve Tzedek", "3-Bedroom Garden Apartment in Rehavia"
   If the page already has a good English title (not just an address, street name, or Hebrew text), keep it with Title Case.
   Do NOT just use the street address as the title. Do NOT return a Hebrew title.
-- description: Translate the property description into fluent, professional English for international buyers.
-  Keep all factual details (rooms, features, location highlights, renovation info, floor, views, parking, storage).
-  Rephrase marketing fluff into clear, compelling English. Make it informative and appealing.
-  If the description is already in good English, keep it as-is.
+- description: Extract the property facts needed for later BuyWise copywriting; do not preserve source wording.
+  Keep factual details (rooms, features, location highlights, renovation info, floor, views, parking, storage), but rewrite from scratch in original English.
+  Convert marketing fluff into clear, buyer-useful facts. Do not translate or paraphrase sentence-by-sentence.
+  If the source description is already in English, still rewrite it into fresh BuyWise wording instead of keeping it as-is.
   Do NOT include the agent's name, phone number, or any Hebrew text in the description.
-  Aim for 150-400 words. Write in paragraph form, not bullet points.
+  Aim for 70-140 words. Write in paragraph form, not bullet points.
 - In Israel, "rooms" (חדרים) = bedrooms + 1 living room. So 4 rooms = 3 bedrooms. Always subtract 1 for bedrooms.
 - Default currency is ILS (₪) unless explicitly stated otherwise.
 - Use the dictionary above for property types, not your own guess.
