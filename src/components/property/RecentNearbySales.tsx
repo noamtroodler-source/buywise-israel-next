@@ -216,7 +216,7 @@ interface RecentNearbySalesProps {
   /** When true, skip the verdict badge (parent renders it) */
   hideVerdict?: boolean;
   /** Callback to expose the computed average comparison to parent */
-  onVerdictComputed?: (avgComparison: number | null, compsCount: number, radiusUsedM: number, avgCompPriceSqm: number | null) => void;
+  onVerdictComputed?: (avgComparison: number | null, compsCount: number, radiusUsedM: number, avgCompPriceSqm: number | null, compDispersionPercent?: number | null) => void;
 }
 
 export function RecentNearbySales({
@@ -328,27 +328,29 @@ export function RecentNearbySales({
   };
 
   // Calculate average comparison across all comps for the verdict
-  const calculateAverageComparison = (): { avgComparison: number | null; avgCompPriceSqm: number | null } => {
-    if (!propertyPrice || !propertySizeSqm || !comps || comps.length === 0) return { avgComparison: null, avgCompPriceSqm: null };
+  const calculateAverageComparison = (): { avgComparison: number | null; avgCompPriceSqm: number | null; compDispersionPercent: number | null } => {
+    if (!propertyPrice || !propertySizeSqm || !comps || comps.length === 0) return { avgComparison: null, avgCompPriceSqm: null, compDispersionPercent: null };
     
     const listingPriceSqm = propertyPrice / propertySizeSqm;
     const validComps = comps.filter(c => c.price_per_sqm);
     const comparisons = validComps.map(c => ((listingPriceSqm - c.price_per_sqm!) / c.price_per_sqm!) * 100);
     
-    if (comparisons.length === 0) return { avgComparison: null, avgCompPriceSqm: null };
+    if (comparisons.length === 0) return { avgComparison: null, avgCompPriceSqm: null, compDispersionPercent: null };
     const avgComp = comparisons.reduce((a, b) => a + b, 0) / comparisons.length;
     const avgPsqm = validComps.reduce((a, c) => a + c.price_per_sqm!, 0) / validComps.length;
-    return { avgComparison: avgComp, avgCompPriceSqm: Math.round(avgPsqm) };
+    const variance = validComps.reduce((sum, c) => sum + Math.pow(c.price_per_sqm! - avgPsqm, 2), 0) / validComps.length;
+    const dispersion = avgPsqm > 0 ? Math.round((Math.sqrt(variance) / avgPsqm) * 100) : null;
+    return { avgComparison: avgComp, avgCompPriceSqm: Math.round(avgPsqm), compDispersionPercent: dispersion };
   };
 
-  const { avgComparison, avgCompPriceSqm } = calculateAverageComparison();
+  const { avgComparison, avgCompPriceSqm, compDispersionPercent } = calculateAverageComparison();
 
   // Expose verdict data to parent (must be before early returns)
   useEffect(() => {
     if (onVerdictComputed) {
-      onVerdictComputed(avgComparison, comps?.length ?? 0, radiusUsedM, avgCompPriceSqm);
+      onVerdictComputed(avgComparison, comps?.length ?? 0, radiusUsedM, avgCompPriceSqm, compDispersionPercent);
     }
-  }, [avgComparison, comps?.length, radiusUsedM, avgCompPriceSqm, onVerdictComputed]);
+  }, [avgComparison, comps?.length, radiusUsedM, avgCompPriceSqm, compDispersionPercent, onVerdictComputed]);
 
   // Show empty state if we don't have coordinates
   if (!latitude || !longitude) {

@@ -279,20 +279,21 @@ function BuyWiseTake({ priceContext, premiumExplanation, propertyPricePerSqm, co
 }
 
 export function MarketIntelligence({ property, cityData, trackingEnabled = true }: MarketIntelligenceProps) {
-  const [verdictData, setVerdictData] = useState<{ avgComparison: number | null; compsCount: number; radiusUsedM: number; avgCompPriceSqm: number | null }>({
+  const [verdictData, setVerdictData] = useState<{ avgComparison: number | null; compsCount: number; radiusUsedM: number; avgCompPriceSqm: number | null; compDispersionPercent: number | null }>({
     avgComparison: null,
     compsCount: 0,
     radiusUsedM: 500,
     avgCompPriceSqm: null,
+    compDispersionPercent: null,
   });
   const { user } = useAuth();
   const location = useLocation();
   const trackedViewKey = useRef<string | null>(null);
 
-  const handleVerdictComputed = useCallback((avgComparison: number | null, compsCount: number, radiusUsedM: number, avgCompPriceSqm: number | null) => {
+  const handleVerdictComputed = useCallback((avgComparison: number | null, compsCount: number, radiusUsedM: number, avgCompPriceSqm: number | null, compDispersionPercent: number | null = null) => {
     setVerdictData(prev => {
-      if (prev.avgComparison === avgComparison && prev.compsCount === compsCount && prev.radiusUsedM === radiusUsedM && prev.avgCompPriceSqm === avgCompPriceSqm) return prev;
-      return { avgComparison, compsCount, radiusUsedM, avgCompPriceSqm };
+      if (prev.avgComparison === avgComparison && prev.compsCount === compsCount && prev.radiusUsedM === radiusUsedM && prev.avgCompPriceSqm === avgCompPriceSqm && prev.compDispersionPercent === compDispersionPercent) return prev;
+      return { avgComparison, compsCount, radiusUsedM, avgCompPriceSqm, compDispersionPercent };
     });
   }, []);
 
@@ -331,6 +332,7 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
     avgComparison: verdictData.avgComparison,
     compsCount: verdictData.compsCount,
     radiusUsedM: verdictData.radiusUsedM,
+    compDispersionPercent: verdictData.compDispersionPercent,
     avgCompPriceSqm: verdictData.avgCompPriceSqm,
     benchmarkPriceSqm: tierAvgPriceSqm ?? neighborhoodAvgPriceSqm ?? effectiveAvgPriceSqm,
     pricePerSqm: propertyPricePerSqm,

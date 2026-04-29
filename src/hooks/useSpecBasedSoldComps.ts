@@ -114,6 +114,7 @@ export function computeSpecCompStats(comps: Array<{ price_per_sqm: number | null
   const avg = pricesPerSqm.reduce((a, b) => a + b, 0) / pricesPerSqm.length;
   const min = Math.min(...pricesPerSqm);
   const max = Math.max(...pricesPerSqm);
+  const variance = pricesPerSqm.reduce((sum, value) => sum + Math.pow(value - avg, 2), 0) / pricesPerSqm.length;
 
   let vsSubject: number | null = null;
   if (subjectPriceSqm && subjectPriceSqm > 0) {
@@ -125,6 +126,7 @@ export function computeSpecCompStats(comps: Array<{ price_per_sqm: number | null
     minPriceSqm: Math.round(min),
     maxPriceSqm: Math.round(max),
     count: validComps.length,
+    dispersionPercent: avg > 0 ? Math.round((Math.sqrt(variance) / avg) * 100) : null,
     vsSubjectPct: vsSubject ? Math.round(vsSubject) : null,
   };
 }
