@@ -4468,6 +4468,25 @@ async function processOneItem(
       sb,
     );
 
+    // ── ISRAEL-ONLY LOCATION GATE ──
+    // Some partner agencies have global inventory. BuyWise is Israel-only, so
+    // external listings must be safely skipped before city fallback, geocoding,
+    // duplicate matching, or property insert can accidentally create bad rows.
+    const outsideIsraelCheck = detectOutsideIsraelListing(
+      listing,
+      item.url,
+      `${structuredData?.og_title || ""}\n${structuredData?.og_description || ""}\n${markdown}\n${pageHtml}`,
+    );
+    if (outsideIsraelCheck.outside) {
+      await sb.from("import_job_items").update({
+        status: "skipped",
+        error_message: `Outside Israel listing skipped: ${outsideIsraelCheck.reason}`,
+        error_type: "permanent",
+        extracted_data: { ...sanitizedListing, outside_israel_reason: outsideIsraelCheck.reason },
+      }).eq("id", item.id);
+      return { succeeded: false };
+    }
+
     // ── CITY WHITELIST GATE ──
     const matchedCity = matchSupportedCity(listing.city);
     if (!matchedCity) {
