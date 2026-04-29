@@ -94,12 +94,6 @@ export function QuickFilterChips({ filters, onFiltersChange, listingType }: Quic
       ]
     : [
         {
-          id: 'pricing_context_complete',
-          label: 'Has Price Context',
-          apply: (f) => ({ ...f, pricing_context_complete: true }),
-          isActive: (f) => f.pricing_context_complete === true,
-        },
-        {
           id: 'under_2m',
           label: 'Under ₪2M',
           apply: (f) => ({ ...f, max_price: 2000000 }),
@@ -151,8 +145,6 @@ export function QuickFilterChips({ filters, onFiltersChange, listingType }: Quic
         newFilters.available_now = undefined;
       } else if (chip.id === 'pets_ok') {
         newFilters.allows_pets = undefined;
-      } else if (chip.id === 'pricing_context_complete') {
-        newFilters.pricing_context_complete = undefined;
       }
       onFiltersChange(newFilters);
     } else {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MapPin, DollarSign, LayoutGrid, Building2, SlidersHorizontal, Filter, X, Loader2, Bath, Car, Layers, Clock, CalendarCheck, Cat, Dog, PawPrint, Navigation, ShieldCheck } from 'lucide-react';
+import { MapPin, DollarSign, LayoutGrid, Building2, SlidersHorizontal, Filter, X, Loader2, Bath, Car, Layers, Clock, CalendarCheck, Cat, Dog, PawPrint, Navigation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -29,7 +29,6 @@ interface MobileFilterSheetProps {
   showSoldToggle?: boolean;
   isSoldView?: boolean;
   onSoldToggle?: (showSold: boolean) => void;
-  showPriceContextFilter?: boolean;
 }
 
 const PROPERTY_TYPES: { value: PropertyType; label: string }[] = [
@@ -91,7 +90,6 @@ export function MobileFilterSheet({
   showSoldToggle,
   isSoldView,
   onSoldToggle,
-  showPriceContextFilter = true,
 }: MobileFilterSheetProps) {
   const [citySearch, setCitySearch] = useState('');
   
@@ -131,7 +129,6 @@ export function MobileFilterSheet({
     filters.min_parking,
     filters.max_days_listed,
     filters.commute_destination && filters.max_commute_minutes,
-    showPriceContextFilter && filters.pricing_context_complete,
   ].filter(Boolean).length;
 
   return (
@@ -445,31 +442,6 @@ export function MobileFilterSheet({
                 ))}
               </div>
             </section>
-
-            {/* Commute Section */}
-            {listingType === 'for_sale' && showPriceContextFilter && (
-              <section className="space-y-3">
-                <h3 className="font-semibold flex items-center gap-2">
-                  <ShieldCheck className="h-4 w-4 text-primary" />
-                  Pricing Context
-                </h3>
-                <button
-                  className={cn(
-                    "flex w-full items-start gap-3 rounded-xl p-3 text-left transition-all",
-                    filters.pricing_context_complete
-                      ? "bg-primary/10 text-foreground border border-primary/30"
-                      : "bg-muted hover:bg-muted/80 border border-transparent"
-                  )}
-                  onClick={() => updateFilter('pricing_context_complete', filters.pricing_context_complete ? undefined : true)}
-                >
-                  <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                  <span>
-                    <span className="block text-sm font-semibold">Has Price Context</span>
-                    <span className="block text-xs text-muted-foreground">Show listings with buyer-facing BuyWise pricing context.</span>
-                  </span>
-                </button>
-              </section>
-            )}
 
             {/* Commute Section */}
             <section className="space-y-3">
