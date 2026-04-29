@@ -3,7 +3,7 @@
 ## Goal
 Finish the Price Context implementation so it matches the brief end-to-end: buyer trust layer, agency correction/enrichment workflow, admin/data-quality controls, KPI measurement, and mature rollout hooks.
 
-Current status: Phases 15–20 are implemented. The Price Context system now has the buyer trust layer, agency/admin review workflow, analytics/KPIs, controlled rollout hooks, and a QA/security pass.
+Current status: Phases 15–21 are implemented. The Price Context system now has the buyer trust layer, agency/admin review workflow, analytics/KPIs, controlled rollout hooks, a QA/security pass, admin rollout controls, metadata refresh tooling, and a data-quality cleanup monitor.
 
 ```text
 Buyer sees safe Price Context
@@ -197,6 +197,36 @@ Status: Done — verified event-history RLS, rollout flags, review eligibility g
 - Do not rely on localStorage/client flags for admin access.
 - Use existing Lovable Cloud RLS patterns for new or updated tables.
 - Do not edit generated backend client/type files manually.
+
+## Phase 21: Backfill, admin controls, and data-quality monitoring
+
+Status: Done — added admin-facing Price Context rollout controls, a safe metadata refresh action for existing sale listings, and a real-data cleanup queue inside Price Analytics.
+
+### Admin controls
+- Surface the four Price Context feature flags with clear risk labels:
+  - Broad buyer display.
+  - Buyer filter.
+  - Placement boost.
+  - Featured eligibility requirement.
+- Keep controls in the existing admin feature flag system so rollout changes do not require deploys.
+
+### Metadata refresh
+- Add an admin action to refresh derived Price Context eligibility metadata for existing sale listings:
+  - Filter eligibility.
+  - Placement eligibility.
+  - Featured eligibility.
+  - Soft/hidden display mode.
+- Preserve review guardrails so blocked or under-review listings do not receive enhanced visibility.
+
+### Data-quality monitor
+- Add a cleanup queue based only on persisted listing metadata:
+  - Missing confidence tier.
+  - Missing public label.
+  - Missing badge status.
+  - Unknown SQM source.
+  - Unknown ownership type.
+  - High-gap listings without premium explanation.
+  - Review requests older than 7 days.
 
 ## Technical implementation map
 
