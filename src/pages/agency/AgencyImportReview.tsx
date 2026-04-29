@@ -13,14 +13,48 @@ import { useMyAgency } from '@/hooks/useAgencyManagement';
 import {
   useImportJobItems,
   useImportJobs,
+  useResolveDuplicateReview,
 } from '@/hooks/useImportListings';
 import { useRealtimeImportProgress } from '@/hooks/useRealtimeImportProgress';
+
+const decisionLabels: Record<string, string> = {
+  exact_source_match: 'Source duplicate',
+  high_confidence_same_unit: 'Same unit likely',
+  possible_same_unit: 'Possible same unit',
+  same_building_likely_different_unit: 'Same building, different unit',
+  same_building_insufficient_unit_evidence: 'Same building, needs review',
+  no_match: 'No duplicate match',
+};
+
+const reasonLabels: Record<string, string> = {
+  same_building_key: 'Same building key',
+  same_building_strong: 'Strong building match',
+  same_unit_possible: 'Possible unit match',
+  same_unit_strong: 'Strong unit match',
+  same_floor: 'Same floor',
+  different_floor: 'Different floor',
+  same_apartment_number: 'Same apartment number',
+  different_apartment_number: 'Different apartment number',
+  missing_apartment_number: 'Missing apartment number',
+  incoming_missing_apartment_number: 'Incoming missing apartment number',
+  size_within_3_sqm: 'Size within 3 sqm',
+  size_within_7_sqm: 'Size within 7 sqm',
+  bedrooms_match: 'Bedrooms match',
+  price_within_3_percent: 'Price within 3%',
+  quarantined_for_duplicate_review: 'Held for duplicate review',
+};
+
+function labelize(value?: string | null) {
+  if (!value) return 'Unknown';
+  return reasonLabels[value] || decisionLabels[value] || value.replace(/^band_/, '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
 
 export default function AgencyImportReview() {
   const { jobId } = useParams<{ jobId: string }>();
   const { data: agency, isLoading: agencyLoading } = useMyAgency();
   const { data: jobs = [] } = useImportJobs(agency?.id);
   const { data: items = [], isLoading: itemsLoading } = useImportJobItems(jobId);
+  const resolveDuplicateReview = useResolveDuplicateReview();
   useRealtimeImportProgress(jobId);
 
   const job = jobs.find(j => j.id === jobId);
@@ -40,6 +74,7 @@ export default function AgencyImportReview() {
   const skippedCount = items.filter(i => i.status === 'skipped').length;
   const pendingCount = items.filter(i => ['pending', 'processing'].includes(i.status)).length;
   const failedItems = items.filter(i => i.status === 'failed');
+  const duplicateReviewItems = items.filter(i => i.status === 'needs_duplicate_review' || i.duplicate_review_required);
 
   return (
     <Layout>
@@ -89,6 +124,54 @@ export default function AgencyImportReview() {
               </CardContent>
             </Card>
           </div>
+
+          {duplicateReviewItems.length > 0 && (
+            <Card className="rounded-2xl border-[hsl(var(--warning))]/20 bg-[hsl(var(--warning))]/5">
+              <CardContent className="p-5 space-y-4">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-[hsl(var(--warning-foreground))] mt-0.5" />
+                  <div>
+                    <h2 className="font-semibold">{duplicateReviewItems.length} listing{duplicateReviewItems.length !== 1 ? 's' : ''} need duplicate review</h2>
+                    <p className="text-sm text-muted-foreground">These were held because the system found possible same-unit evidence.</p>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  {duplicateReviewItems.map(item => (
+                    <div key={item.id} className="rounded-xl border border-border bg-background p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 space-y-1">
+                          <p className="truncate font-mono text-xs text-muted-foreground">{item.url}</p>
+                          <div className="flex flex-wrap gap-2">
+                            <Badge variant="outline">{labelize(item.duplicate_decision_band)}</Badge>
+                            {item.matched_property_id && <Badge variant="secondary">Match: {item.matched_property_id.slice(0, 8)}</Badge>}
+                          </div>
+                        </div>
+                        <Button size="sm" variant="outline" asChild className="shrink-0 rounded-lg">
+                          <a href={item.url} target="_blank" rel="noreferrer"><ExternalLink className="h-3.5 w-3.5" /></a>
+                        </Button>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {(item.duplicate_reason_codes || []).slice(0, 8).map(code => (
+                          <Badge key={code} variant="secondary" className="text-xs">{labelize(code)}</Badge>
+                        ))}
+                      </div>
+                      <div className="grid gap-2 sm:grid-cols-3">
+                        <Button size="sm" className="rounded-lg" disabled={resolveDuplicateReview.isPending} onClick={() => resolveDuplicateReview.mutate({ itemId: item.id, resolution: 'approved_create_separate' })}>
+                          Create separate
+                        </Button>
+                        <Button size="sm" variant="outline" className="rounded-lg" disabled={resolveDuplicateReview.isPending} onClick={() => resolveDuplicateReview.mutate({ itemId: item.id, resolution: 'confirmed_same_building_different_unit' })}>
+                          Same building, different unit
+                        </Button>
+                        <Button size="sm" variant="ghost" className="rounded-lg" disabled={resolveDuplicateReview.isPending} onClick={() => resolveDuplicateReview.mutate({ itemId: item.id, resolution: 'needs_more_info' })}>
+                          Needs more info
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Primary CTA */}
           {doneCount > 0 && (
