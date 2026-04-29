@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { getPriceContextFeatureGuardrail } from '@/lib/priceContextGuardrails';
 
 export interface FeaturedListing {
   id: string;
@@ -80,6 +81,19 @@ export function useToggleFeaturedListing() {
       useFreeCredit?: boolean;
     }) => {
       if (action === 'activate') {
+        const { data: property, error: propertyError } = await supabase
+          .from('properties')
+          .select('listing_status, price_context_badge_status, benchmark_review_status')
+          .eq('id', propertyId)
+          .single();
+
+        if (propertyError) throw propertyError;
+
+        const guardrail = getPriceContextFeatureGuardrail(property ?? {});
+        if (!guardrail.eligible) {
+          throw new Error(guardrail.reason ?? 'This listing is not eligible for featured placement yet.');
+        }
+
         // Insert new featured listing
         const { error } = await supabase
           .from('featured_listings')

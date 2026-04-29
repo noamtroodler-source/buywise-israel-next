@@ -25,6 +25,7 @@ interface AddFeaturedModalProps<T> {
   renderItem: (item: T) => React.ReactNode;
   getItemId: (item: T) => string;
   getSearchableText: (item: T) => string;
+  isItemDisabled?: (item: T) => boolean;
   defaultExpiryDays?: number;
 }
 
@@ -38,6 +39,7 @@ export function AddFeaturedModal<T>({
   renderItem,
   getItemId,
   getSearchableText,
+  isItemDisabled,
   defaultExpiryDays = 7,
 }: AddFeaturedModalProps<T>) {
   const [search, setSearch] = useState('');
@@ -51,6 +53,7 @@ export function AddFeaturedModal<T>({
 
   const handleConfirm = () => {
     if (!selectedItem) return;
+    if (isItemDisabled?.(selectedItem)) return;
     const expires = noExpiry ? null : new Date(expiryDate);
     onSelect(selectedItem, expires);
     handleClose();
@@ -103,11 +106,13 @@ export function AddFeaturedModal<T>({
                 {filteredItems.map((item) => (
                   <div
                     key={getItemId(item)}
-                    onClick={() => setSelectedItem(item)}
-                    className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                      selectedItem && getItemId(selectedItem) === getItemId(item)
-                        ? 'border-primary bg-primary/5'
-                        : 'border-transparent hover:bg-muted'
+                    onClick={() => !isItemDisabled?.(item) && setSelectedItem(item)}
+                    className={`p-3 rounded-lg border transition-colors ${
+                      isItemDisabled?.(item)
+                        ? 'cursor-not-allowed opacity-60 border-transparent bg-muted/30'
+                        : selectedItem && getItemId(selectedItem) === getItemId(item)
+                          ? 'cursor-pointer border-primary bg-primary/5'
+                          : 'cursor-pointer border-transparent hover:bg-muted'
                     }`}
                   >
                     {renderItem(item)}
@@ -154,7 +159,7 @@ export function AddFeaturedModal<T>({
             <Button variant="outline" onClick={handleClose}>
               Cancel
             </Button>
-            <Button onClick={handleConfirm} disabled={!selectedItem}>
+            <Button onClick={handleConfirm} disabled={!selectedItem || (selectedItem ? isItemDisabled?.(selectedItem) : false)}>
               Add to Featured
             </Button>
           </div>
