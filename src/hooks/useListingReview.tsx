@@ -48,13 +48,6 @@ export interface PropertyForReview {
   premium_explanation: string | null;
   sqm_source: string | null;
   ownership_type: string | null;
-  benchmark_review_status: string | null;
-  benchmark_review_reason: string | null;
-  benchmark_review_notes: string | null;
-  benchmark_review_requested_at?: string | null;
-  benchmark_review_resolved_at?: string | null;
-  benchmark_review_admin_notes?: string | null;
-  benchmark_review_resolution?: string | null;
   price_context_property_class: string | null;
   price_context_confidence_score: number | null;
   price_context_confidence_tier: string | null;
@@ -153,13 +146,6 @@ export function useListingsForReview(status?: VerificationStatus) {
           premium_explanation,
           sqm_source,
           ownership_type,
-          benchmark_review_status,
-          benchmark_review_reason,
-          benchmark_review_notes,
-          benchmark_review_requested_at,
-          benchmark_review_resolved_at,
-          benchmark_review_admin_notes,
-          benchmark_review_resolution,
           price_context_property_class,
           price_context_confidence_score,
           price_context_confidence_tier,
@@ -200,54 +186,6 @@ export function useListingsForReview(status?: VerificationStatus) {
       const { data, error } = await query;
       if (error) throw error;
       return data as unknown as PropertyForReview[];
-    },
-  });
-}
-
-export function usePriceContextBlockers() {
-  return useQuery({
-    queryKey: ['priceContextBlockers'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('properties')
-        .select(`
-          id,
-          title,
-          city,
-          neighborhood,
-          price,
-          currency,
-          listing_status,
-          verification_status,
-          price_context_badge_status,
-          price_context_confidence_tier,
-          price_context_percentage_suppressed,
-          benchmark_review_status,
-          benchmark_review_reason,
-          benchmark_review_notes,
-          benchmark_review_requested_at,
-          benchmark_review_resolved_at,
-          benchmark_review_admin_notes,
-          benchmark_review_resolution,
-          created_at,
-          agent:agent_id (
-            id,
-            name,
-            agency_name
-          )
-        `)
-        .eq('listing_status', 'for_sale')
-        .eq('is_published', true)
-        .or('price_context_badge_status.eq.blocked,price_context_badge_status.eq.incomplete,benchmark_review_status.eq.requested,benchmark_review_status.eq.under_review')
-        .order('created_at', { ascending: false })
-        .limit(25);
-
-      if (error) throw error;
-      return (data ?? []) as unknown as Array<Pick<PropertyForReview,
-        'id' | 'title' | 'city' | 'neighborhood' | 'price' | 'currency' | 'listing_status' | 'verification_status' |
-        'price_context_badge_status' | 'price_context_confidence_tier' | 'price_context_percentage_suppressed' |
-        'benchmark_review_status' | 'benchmark_review_reason' | 'benchmark_review_notes' | 'created_at' | 'agent'
-      >>;
     },
   });
 }
