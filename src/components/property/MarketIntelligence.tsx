@@ -323,6 +323,9 @@ function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchma
           <div className="mt-3">
             <BenchmarkLadder askingPriceSqm={propertyPricePerSqm} ranges={benchmarkRanges} />
           </div>
+          <div className="mt-3">
+            <PremiumContextSummary priceContext={priceContext} premiumExplanation={premiumExplanation} />
+          </div>
         </div>
       </div>
 
