@@ -16,10 +16,11 @@ interface StepReviewProps {
 }
 
 export function StepReview({ onEditStep, stepOffset = 0 }: StepReviewProps) {
-  const { data, getAllErrors } = usePropertyWizard();
+  const { data, getAllErrors, getAllRecommendations } = usePropertyWizard();
   const [showPreview, setShowPreview] = useState(false);
 
   const allErrors = getAllErrors();
+  const recommendations = getAllRecommendations();
   const hasPremiumContext = data.premium_drivers.length > 0 || Boolean(data.premium_explanation);
 
   const formatPrice = (price: number) => {
@@ -73,7 +74,7 @@ export function StepReview({ onEditStep, stepOffset = 0 }: StepReviewProps) {
       </div>
 
       {/* Validation Summary */}
-      <ValidationSummary errors={allErrors} onGoToStep={onEditStep} stepOffset={stepOffset} />
+      <ValidationSummary errors={allErrors} recommendations={recommendations} onGoToStep={onEditStep} stepOffset={stepOffset} />
 
       <PropertyPreviewDialog open={showPreview} onOpenChange={setShowPreview} />
 
