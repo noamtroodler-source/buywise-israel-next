@@ -496,8 +496,8 @@ export default function AgencyListings() {
             {[
               { label: 'Total listings', value: stats.total, icon: Home },
               { label: 'Live', value: stats.active, icon: CheckCircle2 },
-              { label: 'To review', value: stats.needsReview, icon: Clock, highlight: stats.needsReview > 0 },
-              { label: 'Ready to submit', value: stats.ready, icon: Send, highlight: stats.ready > 0 },
+              { label: 'Needs quick review', value: stats.needsReview, icon: Clock, highlight: stats.needsReview > 0 },
+              { label: 'Ready to publish', value: stats.ready, icon: Send, highlight: stats.ready > 0 },
             ].map((stat, index) => (
               <motion.div key={stat.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
                 <Card className={cn('rounded-2xl border-primary/10', stat.highlight && 'bg-primary/5 border-primary/20')}>
