@@ -4411,6 +4411,7 @@ async function processOneItem(
     if (imageUrls.length > 0) dlog(`Downloaded ${imageUrls.length} allowed ${job.source_type || "website"} images for ${item.url}`);
 
     let crossSourceMatchId: string | null = null;
+    const imageOverlapMatch = await findBestImageOverlapMatch(sb, listing.image_hashes || []);
 
     // ── Intra-agency strict/price-led dedup ──
     // Keep same-building/multi-unit inventory, but block exact same-unit repeats
@@ -4724,6 +4725,64 @@ async function processOneItem(
       unit_identity_key: buildingIdentity.unitIdentityKey,
       unit_identity_metadata: buildingIdentity.unitIdentityMetadata,
     }).eq("id", item.id);
+
+    if (imageOverlapMatch?.property_id && !crossSourceMatchId) {
+      const overlapCount = Number(imageOverlapMatch.overlap_count || 0);
+      const overlapBand = overlapCount >= 3 ? "high_confidence_same_unit" : "possible_same_unit";
+      const audit = buildDuplicateDecisionAudit({
+        property_id: imageOverlapMatch.property_id,
+        similarity_score: overlapCount >= 3 ? 82 : 62,
+        same_building_score: 0,
+        same_unit_score: overlapCount >= 3 ? 78 : 58,
+        duplicate_decision_band: overlapBand,
+        duplicate_reason_codes: imageOverlapMatch.reason_codes || [],
+      }, overlapCount >= 3 ? "image_overlap_same_unit" : "quarantine_for_duplicate_review", {
+        image_overlap_count: overlapCount,
+        image_roles: imageOverlapMatch.image_roles || [],
+      });
+
+      if (overlapCount >= 3) {
+        await sb.from("import_job_items").update({
+          matched_property_id: imageOverlapMatch.property_id,
+          duplicate_decision: "image_overlap_high_confidence",
+          duplicate_decision_band: audit.band,
+          duplicate_match_scores: audit.scores,
+          duplicate_decision_metadata: audit.metadata,
+          duplicate_reason_codes: normalizeDuplicateReasonCodes(imageOverlapMatch.reason_codes || [], audit.band, audit.scores, audit.metadata),
+        }).eq("id", item.id);
+      } else {
+        await recordSourceObservation(sb, {
+          agencyId: job.agency_id,
+          importJobId: jobId,
+          importJobItemId: item.id,
+          sourceType: job.source_type || "website",
+          sourceUrl: item.url,
+          confidenceScore,
+          extractedData: sanitizedListing,
+          duplicateDecision: "image_overlap_needs_review",
+          duplicateReasonCodes: normalizeDuplicateReasonCodes(imageOverlapMatch.reason_codes || [], audit.band, audit.scores, audit.metadata),
+          matchedPropertyId: imageOverlapMatch.property_id,
+          duplicateDecisionBand: audit.band,
+          duplicateMatchScores: audit.scores,
+          duplicateDecisionMetadata: audit.metadata,
+        });
+        await sb.from("import_job_items").update({
+          status: "needs_duplicate_review",
+          error_message: `Image overlap with property ${imageOverlapMatch.property_id} (${overlapCount} matching images). Needs duplicate review before creation.`,
+          error_type: null,
+          matched_property_id: imageOverlapMatch.property_id,
+          duplicate_decision: "image_overlap_needs_review",
+          duplicate_decision_band: audit.band,
+          duplicate_match_scores: audit.scores,
+          duplicate_decision_metadata: { ...audit.metadata, quarantine_status: "pending_review" },
+          duplicate_reason_codes: normalizeDuplicateReasonCodes(imageOverlapMatch.reason_codes || [], audit.band, audit.scores, audit.metadata),
+          duplicate_review_required: true,
+          duplicate_review_status: "pending_review",
+          duplicate_review_recommended_action: "manual_duplicate_review",
+        }).eq("id", item.id);
+        return { succeeded: false };
+      }
+    }
 
     // ── CROSS-AGENCY MATCH → CO-LISTING (final gate before insert) ──
     // If this listing already exists from a DIFFERENT agency, don't insert a
