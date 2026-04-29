@@ -532,6 +532,66 @@ function matchSupportedCity(city: string | undefined | null): string | null {
   return null;
 }
 
+const ISRAEL_BOUNDS = { minLat: 29.45, maxLat: 33.35, minLng: 34.15, maxLng: 35.95 };
+
+const EXTERNAL_LOCATION_KEYS = new Set([
+  "cyprus", "larnaca", "limassol", "paphos", "nicosia", "greece", "athens",
+  "spain", "madrid", "barcelona", "portugal", "lisbon", "france", "paris",
+  "italy", "rome", "milan", "unitedkingdom", "uk", "england", "london",
+  "unitedstates", "usa", "newyork", "miami", "florida", "losangeles",
+  "dubai", "uae", "georgia", "tbilisi", "batumi", "hungary", "budapest",
+  "panama", "mexico", "thailand", "bangkok",
+]);
+
+function isCoordinateInIsrael(latitude: number | null | undefined, longitude: number | null | undefined): boolean {
+  if (latitude == null || longitude == null || !Number.isFinite(latitude) || !Number.isFinite(longitude)) return true;
+  return latitude >= ISRAEL_BOUNDS.minLat && latitude <= ISRAEL_BOUNDS.maxLat && longitude >= ISRAEL_BOUNDS.minLng && longitude <= ISRAEL_BOUNDS.maxLng;
+}
+
+function normalizedLocationTokens(value: string | null | undefined): string[] {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/&amp;/g, " and ")
+    .split(/[^a-zא-ת0-9]+/)
+    .filter(Boolean);
+}
+
+function detectOutsideIsraelListing(listing: Record<string, any>, url: string, pageText: string): { outside: boolean; reason: string } {
+  const cityKey = normalizeCityStr(String(listing.city || ""));
+  if (cityKey && EXTERNAL_LOCATION_KEYS.has(cityKey)) {
+    return { outside: true, reason: `outside Israel city/country detected: ${listing.city}` };
+  }
+
+  if (!isCoordinateInIsrael(listing._yad2_latitude ?? listing.latitude ?? null, listing._yad2_longitude ?? listing.longitude ?? null)) {
+    return { outside: true, reason: "coordinates outside Israel bounds" };
+  }
+
+  const locationText = `${listing.address || ""}\n${listing.title || ""}\n${listing.description || ""}`;
+  const locationTokens = normalizedLocationTokens(locationText);
+  const hasIsraeliCitySignal = SUPPORTED_CITIES.some((city) => locationText.toLowerCase().includes(city.toLowerCase()))
+    || Object.values(CITY_ALIASES).flat().some((alias) => /[\u0590-\u05FF]/.test(alias) && locationText.includes(alias));
+  const externalHits = locationTokens.filter((token) => EXTERNAL_LOCATION_KEYS.has(normalizeCityStr(token)));
+  if (!hasIsraeliCitySignal && externalHits.length > 0) {
+    return { outside: true, reason: `outside Israel location detected: ${externalHits[0]}` };
+  }
+
+  try {
+    const pathTokens = normalizedLocationTokens(decodeURIComponent(new URL(url).pathname));
+    const pathExternal = pathTokens.find((token) => EXTERNAL_LOCATION_KEYS.has(normalizeCityStr(token)));
+    if (pathExternal && !hasIsraeliCitySignal) {
+      return { outside: true, reason: `outside Israel URL location detected: ${pathExternal}` };
+    }
+  } catch { /* ignore malformed source URLs */ }
+
+  const text = pageText.slice(0, 30_000);
+  const structuredOutsideMatch = text.match(/(?:country|location|city|area|region)\s*[:\-–>]\s*(Cyprus|Larnaca|Limassol|Paphos|Nicosia|Greece|Athens|Dubai|UAE|London|United Kingdom|New York|Miami|Florida|Paris|Spain|Portugal)/i);
+  if (structuredOutsideMatch && !hasIsraeliCitySignal) {
+    return { outside: true, reason: `outside Israel structured location detected: ${structuredOutsideMatch[1]}` };
+  }
+
+  return { outside: false, reason: "" };
+}
+
 function inferCityFromDomain(url: string): string | null {
   try {
     const hostname = new URL(url).hostname.toLowerCase().replace(/\./g, "");
