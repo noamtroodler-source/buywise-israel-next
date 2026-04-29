@@ -47,7 +47,6 @@ function urlToPropertyFilters(u: MapUrlFilters): PropertyFilters {
     sort_by: u.sortBy as SortOption,
     commute_destination: (u.commuteDest as 'tel_aviv' | 'jerusalem') ?? undefined,
     max_commute_minutes: u.maxCommute ?? undefined,
-    pricing_context_complete: u.pricingContextComplete ?? undefined,
   };
 }
 
@@ -72,7 +71,6 @@ function propertyFiltersToUrlParams(f: PropertyFilters): Record<string, string |
     sort_by: f.sort_by ?? null,
     commute_dest: f.commute_destination ?? null,
     max_commute: f.max_commute_minutes ?? null,
-    pricing_context_complete: f.pricing_context_complete ? 'true' : null,
   };
 }
 
@@ -147,7 +145,7 @@ export default function MapSearchLayout() {
       property_type: null, property_types: null, min_bathrooms: null,
       min_size: null, max_size: null, min_floor: null, max_floor: null,
       min_parking: null, max_days_listed: null, features: null,
-      commute_dest: null, max_commute: null,
+      commute_dest: null, max_commute: null, pricing_context_complete: null,
     });
   }, [setMultipleFilters]);
 
