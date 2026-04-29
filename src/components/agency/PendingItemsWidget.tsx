@@ -1,13 +1,12 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { CheckCircle2, X, Mail, AlertTriangle, ImageIcon, UserMinus, BadgeCheck, Loader2 } from 'lucide-react';
+import { CheckCircle2, X, Mail, AlertTriangle, ImageIcon, UserMinus, BadgeCheck } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import {
   usePendingItems,
   useDismissPendingItems,
-  useSendAgentWelcomeEmails,
 } from '@/hooks/usePendingItems';
 
 interface PendingItemsWidgetProps {
@@ -22,7 +21,6 @@ interface PendingItemsWidgetProps {
 export function PendingItemsWidget({ agencyId }: PendingItemsWidgetProps) {
   const { data, isLoading } = usePendingItems(agencyId);
   const dismiss = useDismissPendingItems();
-  const sendEmails = useSendAgentWelcomeEmails();
   const { toast } = useToast();
 
   if (isLoading || !data) return null;
@@ -58,25 +56,7 @@ export function PendingItemsWidget({ agencyId }: PendingItemsWidgetProps) {
     });
   }
 
-  const showSendAgentEmails = false;
-
-  if (items.length === 0 && !showSendAgentEmails) return null;
-
-  const handleSend = async () => {
-    try {
-      const res = await sendEmails.mutateAsync(agencyId);
-      toast({
-        title: 'Welcome emails sent',
-        description: `${res.sent} of ${res.total} agent${res.total !== 1 ? 's' : ''} notified.`,
-      });
-    } catch (err: any) {
-      toast({
-        title: 'Could not send emails',
-        description: err?.message ?? 'Please try again.',
-        variant: 'destructive',
-      });
-    }
-  };
+  if (items.length === 0) return null;
 
   const handleDismiss = async () => {
     try {
