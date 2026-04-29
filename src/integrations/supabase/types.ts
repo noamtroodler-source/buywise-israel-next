@@ -3194,6 +3194,12 @@ export type Database = {
           duplicate_decision_metadata: Json
           duplicate_match_scores: Json
           duplicate_reason_codes: string[]
+          duplicate_review_notes: string | null
+          duplicate_review_recommended_action: string | null
+          duplicate_review_required: boolean
+          duplicate_review_status: string | null
+          duplicate_reviewed_at: string | null
+          duplicate_reviewed_by: string | null
           error_message: string | null
           error_type: string | null
           extracted_data: Json | null
@@ -3226,6 +3232,12 @@ export type Database = {
           duplicate_decision_metadata?: Json
           duplicate_match_scores?: Json
           duplicate_reason_codes?: string[]
+          duplicate_review_notes?: string | null
+          duplicate_review_recommended_action?: string | null
+          duplicate_review_required?: boolean
+          duplicate_review_status?: string | null
+          duplicate_reviewed_at?: string | null
+          duplicate_reviewed_by?: string | null
           error_message?: string | null
           error_type?: string | null
           extracted_data?: Json | null
@@ -3258,6 +3270,12 @@ export type Database = {
           duplicate_decision_metadata?: Json
           duplicate_match_scores?: Json
           duplicate_reason_codes?: string[]
+          duplicate_review_notes?: string | null
+          duplicate_review_recommended_action?: string | null
+          duplicate_review_required?: boolean
+          duplicate_review_status?: string | null
+          duplicate_reviewed_at?: string | null
+          duplicate_reviewed_by?: string | null
           error_message?: string | null
           error_type?: string | null
           extracted_data?: Json | null
@@ -8207,6 +8225,20 @@ export type Database = {
       }
       normalize_unit_token: { Args: { p_value: string }; Returns: string }
       normalize_url: { Args: { p_url: string }; Returns: string }
+      quarantine_import_job_item_duplicate_review: {
+        Args: {
+          p_duplicate_decision: string
+          p_duplicate_decision_band: string
+          p_duplicate_decision_metadata?: Json
+          p_duplicate_match_scores?: Json
+          p_duplicate_reason_codes?: string[]
+          p_error_message?: string
+          p_item_id: string
+          p_matched_property_id: string
+          p_recommended_action?: string
+        }
+        Returns: undefined
+      }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
         Returns: {
@@ -8253,6 +8285,15 @@ export type Database = {
             }
             Returns: string
           }
+      resolve_import_duplicate_review: {
+        Args: {
+          p_item_id: string
+          p_notes?: string
+          p_resolution: string
+          p_reviewed_by?: string
+        }
+        Returns: Json
+      }
       resolve_primary_dispute: {
         Args: {
           p_admin_notes?: string

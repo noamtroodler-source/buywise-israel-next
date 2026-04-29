@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import {
   ArrowLeft, Globe, Loader2, Download, CheckCircle2,
   XCircle, AlertCircle, FileText, RefreshCw, Trash2,
-  Info, MinusCircle, ShieldAlert, ToggleLeft, Lightbulb, ArrowLeftRight,
+  Info, ShieldAlert, ArrowLeftRight,
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -134,6 +134,7 @@ export default function AgencyImport() {
   const doneCount = jobItems.filter(i => i.status === 'done').length;
   const skippedCount = jobItems.filter(i => i.status === 'skipped').length;
   const failedCount = jobItems.filter(i => i.status === 'failed').length;
+  const duplicateReviewCount = jobItems.filter(i => i.status === 'needs_duplicate_review' || i.duplicate_review_required).length;
   const transientCount = jobItems.filter(i => i.status === 'failed' && i.error_type === 'transient').length;
   const permanentCount = jobItems.filter(i => i.status === 'failed' && i.error_type === 'permanent').length;
   const pendingCount = jobItems.filter(i => i.status === 'pending').length;
@@ -434,6 +435,15 @@ export default function AgencyImport() {
                         </span>
                       )}
                     </div>
+                  )}
+
+                  {duplicateReviewCount > 0 && (
+                    <Button variant="outline" asChild className="rounded-xl border-[hsl(var(--warning))]/30 text-[hsl(var(--warning-foreground))]">
+                      <Link to={`/agency/import/${currentJob.id}/review`}>
+                        <ShieldAlert className="h-4 w-4 mr-2" />
+                        Review possible duplicates ({duplicateReviewCount})
+                      </Link>
+                    </Button>
                   )}
 
                   {doneCount > 0 && (
