@@ -85,7 +85,7 @@ export function OnboardingMonitorSection({ agency }: Props) {
           .from('agency_provisioning_audit')
           .select('action, target_user_id, created_at')
           .eq('agency_id', agency.id)
-          .in('action', ['password_setup_completed', 'agency_handed_over', 'setup_link_resent'])
+          .in('action', ['password_setup_completed', 'agency_handed_over', 'setup_link_resent', 'portal_reset_for_official_onboarding'])
           .order('created_at', { ascending: false }),
         emails.length
           ? supabase
@@ -130,9 +130,11 @@ export function OnboardingMonitorSection({ agency }: Props) {
       if (!latestTokenByKey.has(key)) latestTokenByKey.set(key, token);
     }
 
+    const officialResetAt = data?.audit.find((entry) => entry.action === 'portal_reset_for_official_onboarding')?.created_at || null;
     const setupCompletedByUser = new Map<string, string>();
     for (const entry of data?.audit || []) {
       if (entry.action !== 'password_setup_completed' || !entry.target_user_id) continue;
+      if (officialResetAt && new Date(entry.created_at) < new Date(officialResetAt)) continue;
       if (!setupCompletedByUser.has(entry.target_user_id)) {
         setupCompletedByUser.set(entry.target_user_id, entry.created_at);
       }
