@@ -262,6 +262,7 @@ async function generateBuyWiseTitleAndDescription(listing: any, sourceText: stri
   const fallbackTitle = generateListingTitle(listing);
   const fallbackDescription = generateListingDescription(listing) || `${formatPropertyType(listing.property_type)} in ${listing.neighborhood || listing.city || "Israel"}.`;
   if (!lovableKey) return { title: fallbackTitle, description: fallbackDescription, aiGenerated: false };
+  const originalSourceDescription = typeof listing.description === "string" ? listing.description : "";
 
   const facts = {
     property_type: listing.property_type,
@@ -295,7 +296,7 @@ async function generateBuyWiseTitleAndDescription(listing: any, sourceText: stri
         messages: [
           {
             role: "system",
-            content: "You write BuyWise-quality English listing titles and descriptions for international buyers in Israel. Use only supplied facts/source text. Do not invent amenities, views, renovations, exact locations, agent names, phone numbers, or urgency. No Hebrew. Description should be concise, factual, polished, 45-110 words.",
+            content: "You write original BuyWise-quality English listing titles and descriptions for international buyers in Israel. Use source text only as factual input, never as copy to translate, paraphrase line-by-line, or imitate. Create fresh editorial copy in BuyWise's trusted-friend voice: clear, specific, buyer-oriented, and calm. Lead with the property's strongest verified facts, explain practical value, and mention limitations naturally when facts are sparse. Use only supplied facts/source text. Do not invent amenities, views, renovations, exact locations, agent names, phone numbers, scarcity, urgency, or claims like luxury/rare unless directly supported. No Hebrew. Avoid promotional clichés and generic filler. Description must be materially different from the source wording, concise, factual, polished, 55-95 words.",
           },
           {
             role: "user",
@@ -306,12 +307,12 @@ async function generateBuyWiseTitleAndDescription(listing: any, sourceText: stri
           type: "function",
           function: {
             name: "write_listing_copy",
-            description: "Return a fresh English title and BuyWise-quality description grounded only in the provided listing facts.",
+            description: "Return an original English title and BuyWise-quality description grounded only in the provided listing facts, not copied from source wording.",
             parameters: {
               type: "object",
               properties: {
                 title: { type: "string", description: "Clear English title, 35-80 characters." },
-                description: { type: "string", description: "Polished English listing description, 45-110 words, no unsupported claims." },
+                description: { type: "string", description: "Original polished English listing description, 55-95 words, materially different from source wording, no unsupported claims." },
               },
               required: ["title", "description"],
               additionalProperties: false,
