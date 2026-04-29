@@ -604,13 +604,13 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
         {/* Section Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-primary" />
+            <BarChart3 className="h-5 w-5 text-muted-foreground" />
             <h3 className="text-lg font-semibold text-foreground">BuyWise Price Context</h3>
           </div>
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-help">
-                <ShieldCheck className="h-3.5 w-3.5" />
+                <ShieldCheck className="h-3.5 w-3.5 text-muted-foreground" />
                 <span className="border-b border-dotted border-muted-foreground/30">
                   Government verified
                 </span>
