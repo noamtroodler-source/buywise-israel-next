@@ -6,7 +6,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { CheckCircle2, KeyRound, Loader2, Copy, Send, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
@@ -44,7 +43,6 @@ export function AgencyProfileSection({ agency }: Props) {
     cities_covered: (agency.cities_covered || []) as string[],
     logo_url: agency.logo_url || '',
   });
-  const [strategy, setStrategy] = useState(agency.agent_email_strategy);
   const [ownerName, setOwnerName] = useState('');
   const [provisionOpen, setProvisionOpen] = useState(false);
   const [credModal, setCredModal] = useState<{ email: string; password: string } | null>(null);
@@ -103,11 +101,6 @@ export function AgencyProfileSection({ agency }: Props) {
       logo_url: form.logo_url,
       cities_covered: form.cities_covered as any,
     });
-  }
-
-  async function handleStrategyChange(value: string) {
-    setStrategy(value as any);
-    await update.mutateAsync({ agent_email_strategy: value as any });
   }
 
   async function handleProvision() {
@@ -288,19 +281,10 @@ export function AgencyProfileSection({ agency }: Props) {
       </div>
 
       <div className="border-t pt-4">
-        <Label>Agent email strategy</Label>
-        <p className="text-xs text-muted-foreground mb-2">
-          When you hand the agency over, when should agent welcome emails go out?
+        <Label>Email handover</Label>
+        <p className="text-xs text-muted-foreground">
+          Handover always sends setup emails to the agency owner and all provisioned agents.
         </p>
-        <Select value={strategy} onValueChange={handleStrategyChange}>
-          <SelectTrigger className="max-w-md">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="send_all_now">Send to all agents immediately</SelectItem>
-            <SelectItem value="send_after_owner">Wait — owner triggers from their dashboard</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
 
       <Dialog open={provisionOpen} onOpenChange={setProvisionOpen}>
