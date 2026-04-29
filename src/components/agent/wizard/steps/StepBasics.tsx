@@ -242,13 +242,14 @@ export function StepBasics() {
               onInputChange={handleAddressInputChange}
               placeholder="Start typing: Rothschild 42, Tel Aviv..."
               supportedCities={supportedCityNames}
+              hasError={showAddressWarning || hasMissingStreetNumber}
             />
             {showAddressWarning ? (
-              <p className="text-xs text-primary font-medium">
+              <p className="text-xs text-destructive font-medium">
                 You must select an address from the dropdown suggestions
               </p>
             ) : hasMissingStreetNumber ? (
-              <p className="text-xs text-primary font-medium">
+              <p className="text-xs text-destructive font-medium">
                 Please select an address with a street number (e.g., Rothschild 42)
               </p>
             ) : (
