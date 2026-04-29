@@ -539,6 +539,7 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                     <AgencyLogoStack
                       primaryName={property.agent.agency.name}
                       primaryLogoUrl={property.agent.agency.logo_url}
+                      primaryAgencyId={property.agent.agency.id}
                       coAgents={property.co_agents ?? []}
                       onPrimaryClick={() => {
                         if (property.agent?.agency) {
@@ -772,6 +773,7 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                       <AgencyLogoStack
                         primaryName={property.agent.agency.name}
                         primaryLogoUrl={property.agent.agency.logo_url}
+                        primaryAgencyId={property.agent.agency.id}
                         coAgents={property.co_agents ?? []}
                         onPrimaryClick={() => {
                           if (property.agent?.agency) {
