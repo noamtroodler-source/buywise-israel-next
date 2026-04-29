@@ -428,13 +428,62 @@ export function useRejectListing() {
   });
 }
 
+export type BenchmarkReviewResolution = 'under_review' | 'accepted' | 'data_corrected' | 'confidence_softened';
+
+export function useResolveBenchmarkReview() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, resolution, notes }: { id: string; resolution: BenchmarkReviewResolution; notes?: string }) => {
+      const updates: Record<string, unknown> = {
+        benchmark_review_notes: notes || null,
+      };
+
+      if (resolution === 'under_review') {
+        updates.benchmark_review_status = 'under_review';
+        updates.price_context_badge_status = 'blocked';
+        updates.price_context_public_label = 'Market context under review';
+      } else {
+        updates.benchmark_review_status = 'resolved';
+        updates.benchmark_review_reason = null;
+        updates.price_context_badge_status = resolution === 'confidence_softened' ? 'incomplete' : 'complete';
+        if (resolution === 'confidence_softened') {
+          updates.price_context_confidence_tier = 'limited_comparable_match';
+          updates.price_context_public_label = 'Limited comparable match';
+          updates.price_context_percentage_suppressed = true;
+        }
+      }
+
+      const { error } = await supabase
+        .from('properties')
+        .update(updates as any)
+        .eq('id', id);
+
+      if (error) throw error;
+      await logPriceContextEvent(id, `benchmark_review_${resolution}`, notes);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['listingsForReview'] });
+      queryClient.invalidateQueries({ queryKey: ['reviewStats'] });
+      queryClient.invalidateQueries({ queryKey: ['priceContextEvents'] });
+      queryClient.invalidateQueries({ queryKey: ['agentProperties'] });
+      queryClient.invalidateQueries({ queryKey: ['agencyListingsManagement'] });
+      queryClient.invalidateQueries({ queryKey: ['properties'] });
+      toast.success('Benchmark review updated');
+    },
+    onError: (error) => {
+      toast.error('Failed to update benchmark review: ' + error.message);
+    },
+  });
+}
+
 export function useReviewStats() {
   return useQuery({
     queryKey: ['reviewStats'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('properties')
-        .select('verification_status');
+        .select('verification_status, benchmark_review_status');
 
       if (error) throw error;
 
@@ -444,12 +493,16 @@ export function useReviewStats() {
         changes_requested: 0,
         approved: 0,
         rejected: 0,
+        benchmark_review: 0,
       };
 
       data?.forEach((p) => {
         const status = p.verification_status as VerificationStatus;
         if (status in stats) {
           stats[status]++;
+        }
+        if (p.benchmark_review_status === 'requested' || p.benchmark_review_status === 'under_review') {
+          stats.benchmark_review++;
         }
       });
 
