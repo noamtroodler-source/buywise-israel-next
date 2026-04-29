@@ -430,6 +430,57 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
     property,
   });
 
+  const benchmarkCards: BenchmarkCard[] = useMemo(() => {
+    const cards: BenchmarkCard[] = [
+      {
+        id: 'asking_price_sqm',
+        label: 'Asking price / sqm',
+        value: formatNisPerSqm(propertyPricePerSqm),
+        detail: property.size_sqm ? 'Listing ask normalized by stated size.' : 'Size is missing, so price/sqm is unavailable.',
+        icon: Ruler,
+      },
+      {
+        id: 'nearby_recorded_sales',
+        label: 'Nearby recorded sales',
+        value: priceContext.benchmarkRange ? formatNisPerSqmRange(priceContext.benchmarkRange.min, priceContext.benchmarkRange.max) : 'Limited nearby evidence',
+        detail: verdictData.compsCount > 0
+          ? `${verdictData.compsCount} recorded sale${verdictData.compsCount > 1 ? 's' : ''} within ${verdictData.radiusUsedM >= 1000 ? '1km' : `${verdictData.radiusUsedM}m`}.`
+          : 'No listing-level nearby sale range is available yet.',
+        icon: MapPin,
+      },
+      {
+        id: 'neighborhood_benchmark',
+        label: property.neighborhood ? `${property.neighborhood} benchmark` : 'Neighborhood benchmark',
+        value: neighborhoodAvgPriceSqm ? formatNisPerSqmRange(neighborhoodAvgPriceSqm * 0.95, neighborhoodAvgPriceSqm * 1.05) : 'Directional only',
+        detail: neighborhoodAvgPriceSqm ? 'Neighborhood recorded-sale context, not a final valuation.' : 'Not enough neighborhood benchmark data is available.',
+        icon: Building2,
+      },
+      {
+        id: 'city_benchmark',
+        label: `${property.city} benchmark`,
+        value: effectiveAvgPriceSqm ? formatNisPerSqmRange(effectiveAvgPriceSqm * 0.95, effectiveAvgPriceSqm * 1.05) : 'No city benchmark yet',
+        detail: roomPrice?.avgPriceSqm ? `${property.city} ${israeliRooms ?? ''}-room recorded-sale context.` : 'Broader city-wide recorded-sale context.',
+        icon: Home,
+      },
+      {
+        id: 'same_room_benchmark',
+        label: israeliRooms ? `${property.city} ${israeliRooms}-room benchmark` : 'Same-room benchmark',
+        value: roomPrice?.avgPrice ? formatNisAmount(roomPrice.avgPrice) : 'Not available',
+        detail: roomPrice?.avgPrice ? 'Total-price reference for similar Israeli room count.' : 'Room-specific data is not available for this listing.',
+        icon: TrendingUp,
+      },
+      {
+        id: 'comparable_confidence',
+        label: 'Comparable confidence',
+        value: priceContext.confidenceLabel,
+        detail: priceContext.propertyClassLabel,
+        icon: ShieldCheck,
+      },
+    ];
+
+    return cards;
+  }, [effectiveAvgPriceSqm, israeliRooms, neighborhoodAvgPriceSqm, priceContext.benchmarkRange, priceContext.confidenceLabel, priceContext.propertyClassLabel, property.city, property.neighborhood, property.size_sqm, propertyPricePerSqm, roomPrice?.avgPrice, roomPrice?.avgPriceSqm, verdictData.compsCount, verdictData.radiusUsedM]);
+
   const priceContextTrackingPayload = useMemo(() => ({
     property_id: property.id,
     property_city: property.city,
