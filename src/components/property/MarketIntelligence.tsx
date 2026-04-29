@@ -79,6 +79,8 @@ interface MarketIntelligenceProps {
     price_context_badge_status?: string | null;
     created_at?: string;
     vaad_bayit_monthly?: number | null;
+    currency?: string | null;
+    source_rooms?: number | null;
     latitude: number | null;
     longitude: number | null;
   };
@@ -515,8 +517,8 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
             bedrooms={property.bedrooms}
             sizeSqm={property.size_sqm}
             price={property.price}
-            currency={(property as any).currency ?? 'ILS'}
-            sourceRooms={(property as any).source_rooms}
+            currency={property.currency ?? 'ILS'}
+            sourceRooms={property.source_rooms}
             subjectProperty={property}
             onVerdictComputed={handleVerdictComputed}
           />
