@@ -72,6 +72,7 @@ interface MarketIntelligenceProps {
     rental_4_room_max?: number | null;
     slug?: string;
   } | null | undefined;
+  trackingEnabled?: boolean;
 }
 
 function formatPremiumDriver(driver: string) {
@@ -257,7 +258,7 @@ function BuyWiseTake({ priceContext, premiumExplanation, propertyPricePerSqm, co
   );
 }
 
-export function MarketIntelligence({ property, cityData }: MarketIntelligenceProps) {
+export function MarketIntelligence({ property, cityData, trackingEnabled = true }: MarketIntelligenceProps) {
   const [verdictData, setVerdictData] = useState<{ avgComparison: number | null; compsCount: number; radiusUsedM: number; avgCompPriceSqm: number | null }>({
     avgComparison: null,
     compsCount: 0,
@@ -332,6 +333,7 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
   }), [property.id, property.city, property.listing_status, priceContext.publicLabel, priceContext.confidenceTier, priceContext.confidenceScore, priceContext.percentageSuppressed, priceContext.badgeStatus, priceContext.propertyClass, priceContext.buyerQuestions.length, priceContext.premiumDrivers.length, verdictData.compsCount, verdictData.radiusUsedM]);
 
   useEffect(() => {
+    if (!trackingEnabled) return;
     const viewKey = `${property.id}:${priceContext.confidenceTier}:${priceContext.publicLabel}:${verdictData.compsCount}:${verdictData.radiusUsedM}`;
     if (trackedViewKey.current === viewKey) return;
 
@@ -340,9 +342,10 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
       component: 'MarketIntelligence',
       properties: priceContextTrackingPayload,
     });
-  }, [property.id, priceContext.confidenceTier, priceContext.publicLabel, verdictData.compsCount, verdictData.radiusUsedM, trackEvent, priceContextTrackingPayload]);
+  }, [trackingEnabled, property.id, priceContext.confidenceTier, priceContext.publicLabel, verdictData.compsCount, verdictData.radiusUsedM, trackEvent, priceContextTrackingPayload]);
 
   const handlePriceContextInteraction = useCallback((eventName: string, properties?: Record<string, unknown>) => {
+    if (!trackingEnabled) return;
     trackEvent('click', eventName, 'engagement', {
       component: 'MarketIntelligence',
       properties: {
@@ -350,7 +353,7 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
         ...properties,
       },
     });
-  }, [trackEvent, priceContextTrackingPayload]);
+  }, [trackingEnabled, trackEvent, priceContextTrackingPayload]);
 
   return (
     <TooltipProvider>
