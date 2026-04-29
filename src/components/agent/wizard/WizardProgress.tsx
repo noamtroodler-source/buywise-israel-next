@@ -7,9 +7,13 @@ interface WizardProgressProps {
   onStepClick?: (step: number) => void;
   /** Map of step index → error count. Steps with errors show a warning indicator. */
   stepErrors?: Record<number, number>;
+  /** Highest step index allowed to show errors. Use currentStep - 1 for fresh wizards. */
+  maxErrorStepIndex?: number;
 }
 
-export function WizardProgress({ currentStep, steps, onStepClick, stepErrors }: WizardProgressProps) {
+export function WizardProgress({ currentStep, steps, onStepClick, stepErrors, maxErrorStepIndex = Number.POSITIVE_INFINITY }: WizardProgressProps) {
+  const currentStepErrors = currentStep <= maxErrorStepIndex ? (stepErrors?.[currentStep] ?? 0) : 0;
+
   return (
     <div className="mb-6">
       {/* Mobile: Simple step indicator */}
@@ -18,7 +22,7 @@ export function WizardProgress({ currentStep, steps, onStepClick, stepErrors }: 
           <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-semibold">
             {currentStep + 1}
           </div>
-          {stepErrors && stepErrors[currentStep] > 0 && (
+          {currentStepErrors > 0 && (
             <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-destructive" />
           )}
         </div>
@@ -40,7 +44,7 @@ export function WizardProgress({ currentStep, steps, onStepClick, stepErrors }: 
               const isCompleted = index < currentStep;
               const isCurrent = index === currentStep;
               const isUpcoming = index > currentStep;
-              const errorCount = stepErrors?.[index] ?? 0;
+              const errorCount = index <= maxErrorStepIndex ? (stepErrors?.[index] ?? 0) : 0;
               const hasErrors = errorCount > 0;
 
               return (
