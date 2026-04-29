@@ -1408,7 +1408,7 @@ async function recordSourceObservation(sb: any, params: {
   const identity = buildSourceIdentity(params.sourceType, params.sourceUrl);
   if (!identity.sourceIdentityKey) return;
   try {
-    await sb.from("property_source_observations").upsert({
+    const observationPayload = {
       property_id: params.propertyId || null,
       agency_id: params.agencyId || null,
       import_job_id: params.importJobId || null,
@@ -1427,7 +1427,20 @@ async function recordSourceObservation(sb: any, params: {
       matched_property_id: params.matchedPropertyId || null,
       confidence_score: params.confidenceScore ?? null,
       raw_extracted_data: params.extractedData || null,
-    }, { onConflict: "agency_id,source_identity_key" });
+    };
+    const existingQuery = sb
+      .from("property_source_observations")
+      .select("id")
+      .eq("source_identity_key", identity.sourceIdentityKey)
+      .limit(1);
+    if (params.agencyId) existingQuery.eq("agency_id", params.agencyId);
+    else existingQuery.is("agency_id", null);
+    const { data: existing } = await existingQuery;
+    if (existing && existing.length > 0) {
+      await sb.from("property_source_observations").update(observationPayload).eq("id", existing[0].id);
+    } else {
+      await sb.from("property_source_observations").insert(observationPayload);
+    }
   } catch (err) {
     console.warn("Failed to record source observation:", err);
   }
