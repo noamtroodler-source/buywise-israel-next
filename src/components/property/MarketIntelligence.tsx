@@ -123,6 +123,18 @@ interface BenchmarkCard {
   icon: ComponentType<{ className?: string }>;
 }
 
+interface BenchmarkRange {
+  id: string;
+  label: string;
+  min: number;
+  max: number;
+  detail: string;
+}
+
+function clampPercent(value: number) {
+  return Math.max(0, Math.min(100, value));
+}
+
 function BenchmarkCardTile({ card }: { card: BenchmarkCard }) {
   const Icon = card.icon;
 
@@ -134,6 +146,62 @@ function BenchmarkCardTile({ card }: { card: BenchmarkCard }) {
       </p>
       <p className="mt-1 text-sm font-semibold text-foreground">{card.value}</p>
       <p className="mt-1 text-[11px] leading-snug text-muted-foreground">{card.detail}</p>
+    </div>
+  );
+}
+
+function BenchmarkLadder({ askingPriceSqm, ranges }: { askingPriceSqm: number | null; ranges: BenchmarkRange[] }) {
+  if (!askingPriceSqm || ranges.length === 0) return null;
+
+  const allValues = ranges.flatMap((range) => [range.min, range.max]).concat(askingPriceSqm);
+  const minValue = Math.min(...allValues);
+  const maxValue = Math.max(...allValues);
+  const spread = Math.max(1, maxValue - minValue);
+  const markerLeft = clampPercent(((askingPriceSqm - minValue) / spread) * 100);
+
+  return (
+    <div className="rounded-lg border border-border/70 bg-background/70 p-3 space-y-3">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold text-foreground">Benchmark ladder</p>
+          <p className="text-xs text-muted-foreground">Where the asking price sits across available recorded-sale reference layers.</p>
+        </div>
+        <Badge variant="outline" className="w-fit bg-background/70 text-xs">Ask {formatNisPerSqm(askingPriceSqm)}</Badge>
+      </div>
+      <div className="space-y-3">
+        {ranges.map((range) => {
+          const left = clampPercent(((range.min - minValue) / spread) * 100);
+          const width = Math.max(3, clampPercent(((range.max - range.min) / spread) * 100));
+          const positionLabel = askingPriceSqm < range.min
+            ? 'Below this range'
+            : askingPriceSqm > range.max
+              ? 'Above this range'
+              : 'Within this range';
+
+          return (
+            <div key={range.id} className="space-y-1.5">
+              <div className="flex items-center justify-between gap-3 text-xs">
+                <span className="font-medium text-foreground">{range.label}</span>
+                <span className="text-muted-foreground">{positionLabel}</span>
+              </div>
+              <div className="relative h-6 rounded-md bg-muted/50">
+                <div
+                  className="absolute top-2 h-2 rounded-full bg-primary/25"
+                  style={{ left: `${left}%`, width: `${width}%` }}
+                />
+                <div
+                  className="absolute top-1 h-4 w-1.5 rounded-full bg-primary shadow-sm"
+                  style={{ left: `calc(${markerLeft}% - 3px)` }}
+                />
+              </div>
+              <div className="flex items-center justify-between gap-3 text-[11px] text-muted-foreground">
+                <span>{formatNisPerSqmRange(range.min, range.max)}</span>
+                <span>{range.detail}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
