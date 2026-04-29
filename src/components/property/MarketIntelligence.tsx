@@ -7,7 +7,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { RecentNearbySales } from './RecentNearbySales';
 import { SpecBasedComps } from './SpecBasedComps';
@@ -231,9 +230,11 @@ function MarketVerdictBadge({ compsCount, radiusUsedM, priceTier, priceContext }
     </Badge>
   );
 
-  const contextLine = priceTier && priceTier !== 'standard'
-    ? `Comparing against similar ${priceTier}-tier properties`
-    : priceContext.buyWiseTake;
+  const contextLine = priceContext.isLuxuryPremiumMode
+    ? null
+    : priceTier && priceTier !== 'standard'
+      ? `Comparing against similar ${priceTier}-tier properties`
+      : priceContext.buyWiseTake;
 
   return (
     <div className="space-y-1">
