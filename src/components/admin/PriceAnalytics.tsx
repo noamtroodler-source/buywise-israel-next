@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { DollarSign, TrendingUp, Home, Building } from 'lucide-react';
+import { DollarSign, TrendingUp, Home, Building, BadgeCheck, AlertTriangle, Gauge, MousePointerClick } from 'lucide-react';
 import { PriceAnalyticsData } from '@/hooks/usePriceAnalytics';
 import { 
   BarChart, Bar, XAxis, YAxis, ResponsiveContainer, 
@@ -43,6 +43,18 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
     return `₪${(price / 1000).toFixed(0)}K`;
   };
 
+  const formatLabel = (value: string) => value
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+
+  const context = data?.priceContext;
+  const contextCards = [
+    { label: 'Context Complete', value: `${(context?.completionRate || 0).toFixed(0)}%`, sub: `${context?.complete || 0} of ${context?.totalListings || 0} active listings`, icon: BadgeCheck },
+    { label: 'Under Review', value: (context?.underReview || 0).toLocaleString(), sub: 'Agent benchmark challenges', icon: AlertTriangle },
+    { label: 'High Confidence', value: (context?.highConfidence || 0).toLocaleString(), sub: 'Strong comparable matches', icon: Gauge },
+    { label: 'Complete Listing CVR', value: `${(context?.inquiryConversionRate || 0).toFixed(1)}%`, sub: 'Inquiries per view in range', icon: MousePointerClick },
+  ];
+
   return (
     <Card className="rounded-2xl border-border/50 overflow-hidden">
       <CardHeader className="pb-2 bg-gradient-to-r from-primary/5 to-transparent">
@@ -52,6 +64,69 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-4">
+        {/* Price Context KPIs */}
+        <div className="mb-6 space-y-4">
+          <div className="grid gap-3 md:grid-cols-4">
+            {contextCards.map((card) => (
+              <div key={card.label} className="rounded-xl border border-border/50 bg-muted/30 p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">{card.label}</p>
+                    <p className="mt-1 text-2xl font-bold text-foreground">{card.value}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{card.sub}</p>
+                  </div>
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                    <card.icon className="h-4 w-4 text-primary" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-3">
+            <div className="rounded-xl border border-border/50 p-4 lg:col-span-2">
+              <p className="text-sm font-semibold text-foreground">Confidence distribution</p>
+              <div className="mt-3 space-y-3">
+                {(context?.confidenceDistribution || []).slice(0, 5).map((item) => (
+                  <div key={item.tier} className="space-y-1">
+                    <div className="flex items-center justify-between gap-3 text-sm">
+                      <span className="truncate text-foreground">{formatLabel(item.tier)}</span>
+                      <span className="shrink-0 text-muted-foreground">{item.count} · {item.percentage.toFixed(0)}%</span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-muted">
+                      <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(item.percentage, 100)}%` }} />
+                    </div>
+                  </div>
+                ))}
+                {(context?.confidenceDistribution || []).length === 0 && (
+                  <p className="text-sm text-muted-foreground">No confidence data available</p>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-border/50 p-4">
+              <p className="text-sm font-semibold text-foreground">Review signals</p>
+              <div className="mt-3 space-y-3">
+                {(context?.reviewReasons || []).slice(0, 3).map((item) => (
+                  <div key={item.reason} className="flex items-center justify-between gap-3 text-sm">
+                    <span className="text-foreground">{formatLabel(item.reason)}</span>
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">{item.count}</span>
+                  </div>
+                ))}
+                {(context?.recentEvents || []).slice(0, 3).map((item) => (
+                  <div key={item.eventType} className="flex items-center justify-between gap-3 text-sm">
+                    <span className="text-muted-foreground">{formatLabel(item.eventType)}</span>
+                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">{item.count}</span>
+                  </div>
+                ))}
+                {(context?.reviewReasons || []).length === 0 && (context?.recentEvents || []).length === 0 && (
+                  <p className="text-sm text-muted-foreground">No review activity in this range</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Summary Stats */}
         <div className="grid grid-cols-3 gap-4 mb-6 pb-4 border-b border-border/50">
           <div className="text-center p-3 rounded-xl bg-primary/5">
