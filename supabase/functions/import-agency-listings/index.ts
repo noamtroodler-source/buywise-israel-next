@@ -325,6 +325,74 @@ async function generateBuyWiseTitleAndDescription(listing: any, sourceText: stri
   }
 }
 
+function hasHebrewText(value: unknown): boolean {
+  return typeof value === "string" && /[\u0590-\u05FF]/.test(value);
+}
+
+async function translateHebrewLocationFields(listing: any, sourceText: string, lovableKey: string, jobId?: string, sb?: any): Promise<void> {
+  if (!lovableKey) return;
+  const needsAddress = hasHebrewText(listing.address);
+  const needsNeighborhood = hasHebrewText(listing.neighborhood);
+  const needsCity = hasHebrewText(listing.city);
+  if (!needsAddress && !needsNeighborhood && !needsCity) return;
+
+  try {
+    const res = await fetchWithTimeout("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash-lite",
+        messages: [
+          {
+            role: "system",
+            content: "Translate Israeli real-estate location fields from Hebrew to concise English/transliterated display text. Preserve house/street numbers. For address, return only street + number + city/neighborhood when useful; remove postal codes, Israel, district/subdistrict/county, and duplicate city parts. Do not invent missing street names.",
+          },
+          {
+            role: "user",
+            content: JSON.stringify({
+              address: listing.address || null,
+              city: listing.city || null,
+              neighborhood: listing.neighborhood || null,
+              source_text: (sourceText || "").slice(0, 2500),
+            }),
+          },
+        ],
+        tools: [{
+          type: "function",
+          function: {
+            name: "translate_location_fields",
+            description: "Return English location fields only when Hebrew text was present.",
+            parameters: {
+              type: "object",
+              properties: {
+                address: { type: "string", description: "Concise English/transliterated address." },
+                city: { type: "string", description: "Supported city name in English." },
+                neighborhood: { type: "string", description: "English/transliterated neighborhood name." },
+              },
+              additionalProperties: false,
+            },
+          },
+        }],
+        tool_choice: { type: "function", function: { name: "translate_location_fields" } },
+      }),
+    }, 12_000);
+
+    if (!res.ok) return;
+    const data = await res.json();
+    const args = data.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+    if (!args) return;
+    if (sb && jobId) await trackCost(sb, jobId, "ai_tokens", Math.ceil((JSON.stringify(listing).length + String(args).length) / 4), "tokens");
+    const translated = JSON.parse(args);
+    for (const field of ["address", "city", "neighborhood"]) {
+      const value = typeof translated[field] === "string" ? translated[field].trim() : "";
+      if (value && !hasHebrewText(value)) listing[field] = value;
+    }
+    listing._location_translated_to_english = true;
+  } catch (err) {
+    console.warn("Location translation skipped:", err);
+  }
+}
+
 
 // ─── COST TRACKING ──────────────────────────────────────────────────────────
 async function trackCost(sb: any, jobId: string, resourceType: string, quantity: number, unit: string) {
