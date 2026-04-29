@@ -90,7 +90,7 @@ function LeadQualityCard({ lead }: { lead: Lead }) {
           <div className="flex flex-wrap items-center gap-2">
             <p className="font-semibold text-foreground truncate">{lead.property?.title || 'Property inquiry'}</p>
             <Badge variant={priceContextComplete ? 'default' : 'secondary'} className="text-xs">
-              {priceContextComplete ? 'Price Context complete' : 'Limited context'}
+              {priceContextComplete ? 'Strong context' : 'Limited context'}
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground">
