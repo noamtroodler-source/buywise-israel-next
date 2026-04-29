@@ -421,7 +421,6 @@ function AgencyWizardContent() {
                     review={marketFitReview}
                     confirmed={marketFitConfirmed}
                     onConfirmedChange={setMarketFitConfirmed}
-                    onEditDetails={() => setCurrentStep(2)}
                     onEditPremiumContext={() => setCurrentStep(3)}
                   />
                 )}

@@ -239,8 +239,6 @@ export function useAgencyListingsManagement(agencyId: string | undefined) {
           !p.neighborhood ? 'Neighborhood' : null,
           !Array.isArray(p.images) || p.images.length < 3 ? 'More photos' : null,
           !p.size_sqm && p.property_type !== 'land' ? 'Size' : null,
-          p.property_type !== 'land' && !p.sqm_source ? 'SQM source' : null,
-          p.property_type !== 'land' && !p.ownership_type ? 'Ownership type' : null,
           !p.bathrooms && p.property_type !== 'land' ? 'Bathrooms' : null,
           ['apartment', 'penthouse', 'mini_penthouse', 'duplex', 'garden_apartment'].includes(p.property_type) && (p.floor === null || p.floor === undefined) ? 'Floor' : null,
           !p.agent_id ? 'Agent' : null,

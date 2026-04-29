@@ -447,7 +447,6 @@ function WizardContent() {
                     review={marketFitReview}
                     confirmed={marketFitConfirmed}
                     onConfirmedChange={setMarketFitConfirmed}
-                    onEditDetails={() => setCurrentStep(1)}
                     onEditPremiumContext={() => setCurrentStep(2)}
                   />
                 )}

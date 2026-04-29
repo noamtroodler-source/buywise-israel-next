@@ -15,7 +15,6 @@ interface PriceContextSubmissionPreviewProps {
   review: MarketFitReviewResult;
   confirmed: boolean;
   onConfirmedChange: (checked: boolean) => void;
-  onEditDetails: () => void;
   onEditPremiumContext: () => void;
 }
 
@@ -34,7 +33,6 @@ export function PriceContextSubmissionPreview({
   review,
   confirmed,
   onConfirmedChange,
-  onEditDetails,
   onEditPremiumContext,
 }: PriceContextSubmissionPreviewProps) {
   const pricePerSqm = data.price && data.size_sqm ? Math.round(data.price / data.size_sqm) : null;
@@ -42,7 +40,6 @@ export function PriceContextSubmissionPreview({
     ? Math.round(((pricePerSqm - cityAveragePriceSqm) / cityAveragePriceSqm) * 100)
     : null;
   const priceContext = getWizardPriceContext(data, cityAveragePriceSqm);
-  const needsDetails = !data.sqm_source || !data.ownership_type;
   const needsPremiumContext = review.requiresContext || (cityGap !== null && cityGap >= 25 && !data.premium_explanation?.trim());
   const hasPremiumContext = priceContext.confirmedPremiumDrivers.length > 0 || priceContext.detectedPremiumDrivers.length > 0 || Boolean(data.premium_explanation?.trim());
 
@@ -155,17 +152,12 @@ export function PriceContextSubmissionPreview({
         </div>
 
         <div className="flex flex-wrap gap-2">
-          {needsDetails && (
-            <Button variant="outline" size="sm" onClick={onEditDetails} className="rounded-xl">
-              Add SQM / ownership details
-            </Button>
-          )}
           {needsPremiumContext && (
             <Button variant="outline" size="sm" onClick={onEditPremiumContext} className="rounded-xl">
               Add premium explanation
             </Button>
           )}
-          {!needsDetails && !needsPremiumContext && (
+          {!needsPremiumContext && (
             <Badge variant="outline" className="bg-background/80 text-foreground">
               <CheckCircle2 className="mr-1 h-3 w-3 text-primary" />
               Automatic buyer context ready

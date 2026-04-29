@@ -186,8 +186,6 @@ export function computeStepErrors(data: PropertyWizardData, adjustedStep: number
         if ((data.lot_size_sqm ?? 0) <= 0) errors.push('Lot size is required');
       } else {
         if ((data.size_sqm ?? 0) <= 0) errors.push('Size (sqm) is required');
-        if (!data.sqm_source) errors.push('SQM source is required');
-        if (!data.ownership_type) errors.push('Ownership type is required');
         const needsFloor = ['apartment', 'penthouse', 'mini_penthouse', 'duplex', 'garden_apartment'].includes(data.property_type);
         if (needsFloor && data.floor === undefined) errors.push('Floor number is required');
         if (needsFloor && data.total_floors === undefined) errors.push('Total floors is required');
