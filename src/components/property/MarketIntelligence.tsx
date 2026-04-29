@@ -139,22 +139,37 @@ function clampPercent(value: number) {
   return Math.max(0, Math.min(100, value));
 }
 
-function BenchmarkCardTile({ card }: { card: BenchmarkCard }) {
+function BenchmarkCardTile({ card, onTrackInteraction }: { card: BenchmarkCard; onTrackInteraction?: (eventName: string, properties?: Record<string, unknown>) => void }) {
   const Icon = card.icon;
 
   return (
-    <div className="rounded-lg border border-border/70 bg-background/70 p-3">
-      <p className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-        <Icon className="h-3 w-3" />
-        {card.label}
-      </p>
+    <div
+      className="rounded-lg border border-border/70 bg-background/70 p-3 transition-colors hover:border-primary/30 hover:bg-primary/5"
+      onClick={() => onTrackInteraction?.('price_context_benchmark_layer_clicked', { benchmark_layer: card.id, benchmark_label: card.label })}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+          <Icon className="h-3 w-3" />
+          {card.label}
+        </p>
+        <Tooltip onOpenChange={(open) => open && onTrackInteraction?.('price_context_benchmark_tooltip_opened', { benchmark_layer: card.id, benchmark_label: card.label })}>
+          <TooltipTrigger asChild>
+            <button type="button" className="rounded-sm text-muted-foreground hover:text-primary" aria-label={`About ${card.label}`} onClick={(event) => event.stopPropagation()}>
+              <Info className="h-3.5 w-3.5" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-xs">
+            <p className="text-xs">{card.detail}</p>
+          </TooltipContent>
+        </Tooltip>
+      </div>
       <p className="mt-1 text-sm font-semibold text-foreground">{card.value}</p>
       <p className="mt-1 text-[11px] leading-snug text-muted-foreground">{card.detail}</p>
     </div>
   );
 }
 
-function BenchmarkLadder({ askingPriceSqm, ranges }: { askingPriceSqm: number | null; ranges: BenchmarkRange[] }) {
+function BenchmarkLadder({ askingPriceSqm, ranges, onTrackInteraction }: { askingPriceSqm: number | null; ranges: BenchmarkRange[]; onTrackInteraction?: (eventName: string, properties?: Record<string, unknown>) => void }) {
   if (!askingPriceSqm || ranges.length === 0) return null;
 
   const allValues = ranges.flatMap((range) => [range.min, range.max]).concat(askingPriceSqm);
@@ -164,7 +179,11 @@ function BenchmarkLadder({ askingPriceSqm, ranges }: { askingPriceSqm: number | 
   const markerLeft = clampPercent(((askingPriceSqm - minValue) / spread) * 100);
 
   return (
-    <div className="rounded-lg border border-border/70 bg-background/70 p-3 space-y-3">
+    <div
+      className="rounded-lg border border-border/70 bg-background/70 p-3 space-y-3"
+      onMouseEnter={() => onTrackInteraction?.('price_context_benchmark_ladder_viewed', { benchmark_layer_count: ranges.length, asking_price_sqm: askingPriceSqm })}
+      onFocus={() => onTrackInteraction?.('price_context_benchmark_ladder_viewed', { benchmark_layer_count: ranges.length, asking_price_sqm: askingPriceSqm })}
+    >
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-sm font-semibold text-foreground">Benchmark ladder</p>
@@ -183,7 +202,11 @@ function BenchmarkLadder({ askingPriceSqm, ranges }: { askingPriceSqm: number | 
               : 'Within this range';
 
           return (
-            <div key={range.id} className="space-y-1.5">
+            <div
+              key={range.id}
+              className="space-y-1.5 rounded-md p-1 transition-colors hover:bg-primary/5"
+              onClick={() => onTrackInteraction?.('price_context_benchmark_layer_clicked', { benchmark_layer: range.id, benchmark_label: range.label, source: 'ladder' })}
+            >
               <div className="flex items-center justify-between gap-3 text-xs">
                 <span className="font-medium text-foreground">{range.label}</span>
                 <span className="text-muted-foreground">{positionLabel}</span>
@@ -308,6 +331,7 @@ function MarketVerdictBadge({ compsCount, radiusUsedM, priceTier, priceContext }
 
 function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchmarkRanges, propertyPricePerSqm, compsCount, radiusUsedM, sqmSource, ownershipType, onTrackInteraction }: { priceContext: PriceContextResult; premiumExplanation?: string | null; benchmarkCards: BenchmarkCard[]; benchmarkRanges: BenchmarkRange[]; propertyPricePerSqm: number | null; compsCount: number; radiusUsedM: number; sqmSource?: string | null; ownershipType?: string | null; onTrackInteraction?: (eventName: string, properties?: Record<string, unknown>) => void }) {
   const [open, setOpen] = useState(false);
+  const trackedLadderViewRef = useRef(false);
   const hasPremiumContext = priceContext.confirmedPremiumDrivers.length > 0 || priceContext.detectedPremiumDrivers.length > 0 || Boolean(premiumExplanation?.trim());
   const radiusLabel = radiusUsedM >= 1000 ? '1km' : `${radiusUsedM}m`;
   const layeredTake = buildLayeredBuyWiseTake(priceContext, propertyPricePerSqm, benchmarkRanges);
@@ -320,6 +344,14 @@ function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchma
         detected_driver_count: priceContext.detectedPremiumDrivers.length,
       });
     }
+  };
+
+  const handleLadderViewed = (eventName: string, properties?: Record<string, unknown>) => {
+    if (eventName === 'price_context_benchmark_ladder_viewed') {
+      if (trackedLadderViewRef.current) return;
+      trackedLadderViewRef.current = true;
+    }
+    onTrackInteraction?.(eventName, properties);
   };
 
   return (
@@ -339,11 +371,11 @@ function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchma
           <p className="text-sm text-muted-foreground">{layeredTake}</p>
           <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {benchmarkCards.map((card) => (
-              <BenchmarkCardTile key={card.id} card={card} />
+              <BenchmarkCardTile key={card.id} card={card} onTrackInteraction={onTrackInteraction} />
             ))}
           </div>
           <div className="mt-3">
-            <BenchmarkLadder askingPriceSqm={propertyPricePerSqm} ranges={benchmarkRanges} />
+            <BenchmarkLadder askingPriceSqm={propertyPricePerSqm} ranges={benchmarkRanges} onTrackInteraction={handleLadderViewed} />
           </div>
           <div className="mt-3">
             <PremiumContextSummary priceContext={priceContext} premiumExplanation={premiumExplanation} />
