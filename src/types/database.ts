@@ -226,6 +226,8 @@ export interface PropertyFilters {
   max_commute_minutes?: number;
   // Sourced listings filter
   sourced_only?: boolean;
+  // Buyer-facing Price Context filter
+  pricing_context_complete?: boolean;
 }
 
 export interface SearchAlert {

@@ -76,6 +76,9 @@ export default function Listings() {
     const sourcedOnly = searchParams.get('sourced_only');
     if (sourcedOnly === 'true') initialFilters.sourced_only = true;
 
+    const pricingContextComplete = searchParams.get('pricing_context_complete');
+    if (pricingContextComplete === 'true') initialFilters.pricing_context_complete = true;
+
     return initialFilters;
   });
 
@@ -91,6 +94,7 @@ export default function Listings() {
     const maxPrice = searchParams.get('max_price');
     const minRooms = searchParams.get('min_rooms');
     const sortBy = searchParams.get('sort') || undefined;
+    const pricingContextComplete = searchParams.get('pricing_context_complete') === 'true';
 
     setFilters((prev) => ({
       ...prev,
@@ -102,6 +106,7 @@ export default function Listings() {
       max_price: maxPrice ? Number(maxPrice) : undefined,
       min_rooms: minRooms ? Number(minRooms) : undefined,
       sort_by: sortBy as any,
+      pricing_context_complete: pricingContextComplete || undefined,
     }));
   }, [listingStatus, searchParams]);
 
@@ -188,6 +193,7 @@ export default function Listings() {
     if (updatedFilters.max_price) params.set('max_price', String(updatedFilters.max_price));
     if (updatedFilters.min_rooms) params.set('min_rooms', String(updatedFilters.min_rooms));
     if (updatedFilters.sort_by) params.set('sort', updatedFilters.sort_by);
+    if (updatedFilters.pricing_context_complete) params.set('pricing_context_complete', 'true');
     setSearchParams(params, { replace: true });
   };
 

@@ -82,6 +82,9 @@ export function usePropertyCount(filters?: PropertyFilters) {
       if (filters?.listing_status) {
         query = query.eq('listing_status', filters.listing_status);
       }
+      if (filters?.pricing_context_complete) {
+        query = query.eq('price_context_badge_status', 'complete');
+      }
       if (filters?.min_price) {
         query = query.gte('price', filters.min_price);
       }
@@ -203,6 +206,9 @@ export function useProperties(filters?: PropertyFilters) {
       }
       if (filters?.listing_status) {
         query = query.eq('listing_status', filters.listing_status);
+      }
+      if (filters?.pricing_context_complete) {
+        query = query.eq('price_context_badge_status', 'complete');
       }
       if (filters?.min_price) {
         query = query.gte('price', filters.min_price);

@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { ChevronDown, ChevronUp, HelpCircle, MapPin, DollarSign, LayoutGrid, Bath, Building2, SlidersHorizontal, ArrowUpDown, Bell, X, Search, Check, Sparkles, Car, Layers, ArrowRight, Calendar, Clock, Home, PawPrint, CalendarCheck, Cat, Dog, Loader2, RotateCcw, Navigation, Map as MapIcon } from 'lucide-react';
+import { ChevronDown, ChevronUp, HelpCircle, MapPin, DollarSign, LayoutGrid, Bath, Building2, SlidersHorizontal, ArrowUpDown, Bell, X, Search, Check, Sparkles, Car, Layers, ArrowRight, Calendar, Clock, Home, PawPrint, CalendarCheck, Cat, Dog, Loader2, RotateCcw, Navigation, Map as MapIcon, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PriceRangeSlider } from '@/components/filters/PriceRangeSlider';
@@ -267,6 +267,7 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
     if (filters.available_now || filters.available_by) count++;
     if (filters.allows_pets?.length) count++;
     if (filters.commute_destination && filters.max_commute_minutes) count++;
+    if (filters.pricing_context_complete) count++;
     return count;
   }, [filters]);
   
@@ -327,6 +328,7 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
       // Commute filter
       commute_destination: undefined,
       max_commute_minutes: undefined,
+      pricing_context_complete: undefined,
     });
   };
   
@@ -846,6 +848,17 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
             </Button>
           )}
 
+          {!isMobile && listingType === 'for_sale' && (
+            <Button
+              variant={filters.pricing_context_complete ? 'default' : 'outline'}
+              className="h-10 gap-2 rounded-xl"
+              onClick={() => updateFilter('pricing_context_complete', filters.pricing_context_complete ? undefined : true)}
+            >
+              <ShieldCheck className="h-4 w-4" />
+              <span>Pricing Context Complete</span>
+            </Button>
+          )}
+
           {/* Desktop: Sort & Create Alert pushed to the right */}
           {!isMobile && (
             <div className="flex items-center gap-2 ml-auto">
@@ -1017,6 +1030,30 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
                 ))}
               </div>
             </div>
+
+            {listingType === 'for_sale' && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-primary">
+                  <ShieldCheck className="h-4 w-4" />
+                  <h4 className="font-semibold">Pricing Context</h4>
+                </div>
+                <button
+                  className={cn(
+                    "flex w-full items-start gap-3 rounded-xl border p-3 text-left transition-all",
+                    filters.pricing_context_complete
+                      ? "border-primary bg-primary/10 text-foreground"
+                      : "border-border hover:bg-muted"
+                  )}
+                  onClick={() => updateFilter('pricing_context_complete', filters.pricing_context_complete ? undefined : true)}
+                >
+                  <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                  <span>
+                    <span className="block text-sm font-semibold">Pricing Context Complete</span>
+                    <span className="block text-xs text-muted-foreground">Show listings with complete BuyWise pricing context.</span>
+                  </span>
+                </button>
+              </div>
+            )}
 
             {/* Commute Filter */}
             <div className="space-y-3">
