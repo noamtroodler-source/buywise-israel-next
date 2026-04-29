@@ -50,7 +50,7 @@ import { useNeighborhoodAvgPrice } from '@/hooks/useNeighborhoodPrices';
 import { supabase } from '@/integrations/supabase/client';
 import { getIsraeliRoomCount } from '@/lib/israeliRoomCount';
 import { detectPremiumDrivers } from '@/lib/marketFit';
-import { formatPriceContextValue, getPriceContext, type PriceContextResult } from '@/lib/priceContext';
+import { formatPriceContextValue, getPriceContext, getPriceContextPropertyClass, selectPriceContextComps, type PriceContextResult } from '@/lib/priceContext';
 import { PropertyPreviewModal } from './PropertyPreviewModal';
 
 interface ListingReviewCardProps {
@@ -210,12 +210,15 @@ function useMarketReview(property: PropertyForReview): MarketReviewData {
     property.size_sqm,
     property.neighborhood,
     property.source_rooms,
+    property,
     { limit: 6, enabled: !hasCoordinates },
   );
 
   const pricePerSqm = property.price && property.size_sqm ? property.price / property.size_sqm : null;
   const pricePerSqft = pricePerSqm ? pricePerSqm / 10.7639 : null;
-  const comparableComps = hasCoordinates ? nearbyComps : specComps;
+  const subjectClass = getPriceContextPropertyClass(property);
+  const rawComparableComps = (hasCoordinates ? nearbyComps : specComps) as MarketReviewData['comparableComps'];
+  const { comps: comparableComps, metadata: compClassMetadata } = selectPriceContextComps(rawComparableComps, subjectClass, 6);
   const compsLoading = hasCoordinates ? nearbyLoading : specLoading;
   const compStats = computeSpecCompStats(comparableComps, pricePerSqm);
   const gapPercent = pricePerSqm && benchmark?.averagePriceSqm
@@ -242,6 +245,7 @@ function useMarketReview(property: PropertyForReview): MarketReviewData {
     compsCount: comparableComps.length,
     radiusUsedM: hasCoordinates ? 750 : 1000,
     compDispersionPercent: compStats?.dispersionPercent ?? null,
+    compClassMatch: compClassMetadata.classMatch,
     avgCompPriceSqm: compStats?.avgPriceSqm ?? null,
     benchmarkPriceSqm: benchmark?.averagePriceSqm ?? null,
     pricePerSqm,

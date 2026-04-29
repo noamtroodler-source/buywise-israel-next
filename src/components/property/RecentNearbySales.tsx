@@ -13,6 +13,7 @@ import { CarouselDots } from '@/components/shared/CarouselDots';
 import { format } from 'date-fns';
 import { useFormatPrice, useFormatPricePerArea, useAreaLabel } from '@/contexts/PreferencesContext';
 import { cn } from '@/lib/utils';
+import { getPriceContextPropertyClass, selectPriceContextComps, type PriceContextCompClassMatch, type PriceContextPropertyClass } from '@/lib/priceContext';
 
 // Types for sold comps
 interface SoldComp {
@@ -211,12 +212,13 @@ interface RecentNearbySalesProps {
   propertyRooms?: number;
   propertyPrice?: number;
   propertySizeSqm?: number;
+  subjectProperty?: Parameters<typeof getPriceContextPropertyClass>[0];
   /** When true, skip the section header (used when embedded in MarketIntelligence) */
   hideHeader?: boolean;
   /** When true, skip the verdict badge (parent renders it) */
   hideVerdict?: boolean;
   /** Callback to expose the computed average comparison to parent */
-  onVerdictComputed?: (avgComparison: number | null, compsCount: number, radiusUsedM: number, avgCompPriceSqm: number | null, compDispersionPercent?: number | null) => void;
+  onVerdictComputed?: (avgComparison: number | null, compsCount: number, radiusUsedM: number, avgCompPriceSqm: number | null, compDispersionPercent?: number | null, compClassMatch?: PriceContextCompClassMatch | null) => void;
 }
 
 export function RecentNearbySales({
@@ -226,6 +228,7 @@ export function RecentNearbySales({
   propertyRooms,
   propertyPrice,
   propertySizeSqm,
+  subjectProperty,
   hideHeader = false,
   hideVerdict = false,
   onVerdictComputed,
@@ -295,7 +298,9 @@ export function RecentNearbySales({
 
   // Decide which dataset to use
   const usedExpandedRadius = needs1km && (comps1km?.length ?? 0) > (comps500m?.length ?? 0);
-  const comps = usedExpandedRadius ? comps1km! : (comps500m ?? []);
+  const rawComps = usedExpandedRadius ? comps1km! : (comps500m ?? []);
+  const subjectClass: PriceContextPropertyClass = subjectProperty ? getPriceContextPropertyClass(subjectProperty) : 'standard_resale';
+  const { comps, metadata: compClassMetadata } = selectPriceContextComps(rawComps, subjectClass, 5);
   const isLoading = isLoading500m || (needs1km && isLoading1km);
   const error = error500m;
   const radiusUsedM = usedExpandedRadius ? 1000 : 500;
@@ -348,9 +353,9 @@ export function RecentNearbySales({
   // Expose verdict data to parent (must be before early returns)
   useEffect(() => {
     if (onVerdictComputed) {
-      onVerdictComputed(avgComparison, comps?.length ?? 0, radiusUsedM, avgCompPriceSqm, compDispersionPercent);
+      onVerdictComputed(avgComparison, comps?.length ?? 0, radiusUsedM, avgCompPriceSqm, compDispersionPercent, compClassMetadata.classMatch);
     }
-  }, [avgComparison, comps?.length, radiusUsedM, avgCompPriceSqm, compDispersionPercent, onVerdictComputed]);
+  }, [avgComparison, comps?.length, radiusUsedM, avgCompPriceSqm, compDispersionPercent, compClassMetadata.classMatch, onVerdictComputed]);
 
   // Show empty state if we don't have coordinates
   if (!latitude || !longitude) {

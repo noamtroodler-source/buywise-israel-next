@@ -14,6 +14,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { getPriceContextPropertyClass, selectPriceContextComps } from '@/lib/priceContext';
 
 export interface SpecBasedComp {
   id: string;
@@ -38,12 +39,13 @@ export function useSpecBasedSoldComps(
   sizeSqm: number | null | undefined,
   neighborhood?: string | null,
   sourceRooms?: number | null, // Israeli room count from source site
+  subjectProperty?: Parameters<typeof getPriceContextPropertyClass>[0] | null,
   options: UseSpecBasedSoldCompsOptions = {}
 ) {
   const { monthsBack = 18, limit = 6, enabled = true } = options;
 
   return useQuery({
-    queryKey: ['spec-based-sold-comps', city, bedrooms, sizeSqm, neighborhood, sourceRooms, monthsBack, limit],
+    queryKey: ['spec-based-sold-comps', city, bedrooms, sizeSqm, neighborhood, sourceRooms, subjectProperty?.property_type, subjectProperty?.condition, monthsBack, limit],
     queryFn: async (): Promise<SpecBasedComp[]> => {
       if (!city) return [];
 
@@ -92,11 +94,13 @@ export function useSpecBasedSoldComps(
           const cityWide = results.filter(
             (r) => !r.neighborhood?.toLowerCase().includes(neighborhood.toLowerCase())
           );
-          return [...sameNeighborhood.slice(0, 4), ...cityWide.slice(0, 2)].slice(0, limit);
+          const subjectClass = subjectProperty ? getPriceContextPropertyClass(subjectProperty) : 'standard_resale';
+          return selectPriceContextComps([...sameNeighborhood.slice(0, 4), ...cityWide.slice(0, 2)], subjectClass, limit).comps;
         }
       }
 
-      return results.slice(0, limit);
+      const subjectClass = subjectProperty ? getPriceContextPropertyClass(subjectProperty) : 'standard_resale';
+      return selectPriceContextComps(results, subjectClass, limit).comps;
     },
     enabled: enabled && !!city,
     staleTime: 10 * 60 * 1000,

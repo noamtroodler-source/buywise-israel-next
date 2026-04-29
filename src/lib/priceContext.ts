@@ -31,6 +31,15 @@ export type PriceContextPublicLabel =
   | 'Market context under review';
 
 export type PriceContextBadgeStatus = 'complete' | 'incomplete' | 'blocked';
+export type PriceContextCompClassMatch = 'same_class' | 'similar_class' | 'mixed_fallback' | 'no_comps';
+
+export interface PriceContextCompClassMetadata {
+  classMatch: PriceContextCompClassMatch;
+  subjectClass: PriceContextPropertyClass;
+  selectedCount: number;
+  sameClassCount: number;
+  fallbackUsed: boolean;
+}
 
 export interface PriceContextInput {
   avgComparison: number | null;
@@ -38,6 +47,7 @@ export interface PriceContextInput {
   radiusUsedM: number;
   compRecencyMonths?: number | null;
   compDispersionPercent?: number | null;
+  compClassMatch?: PriceContextCompClassMatch | null;
   roomMatchQuality?: 'strong' | 'directional' | 'weak' | null;
   sizeMatchQuality?: 'strong' | 'directional' | 'weak' | null;
   avgCompPriceSqm?: number | null;
@@ -116,6 +126,48 @@ export function getPriceContextPropertyClass(property: PriceContextInput['proper
   return 'standard_resale';
 }
 
+export function getCompPropertyClass(propertyType?: string | null): PriceContextPropertyClass {
+  const type = String(propertyType ?? '').toLowerCase();
+  if (type.includes('land')) return 'land';
+  if (type.includes('commercial')) return 'commercial';
+  if (type.includes('house') || type.includes('villa') || type.includes('cottage')) return 'house_villa_cottage';
+  if (type.includes('penthouse')) return 'penthouse';
+  if (type.includes('garden')) return 'garden_apartment';
+  if (type.includes('duplex')) return 'duplex_unique';
+  if (type.includes('new') || type.includes('project') || type.includes('kablan')) return 'new_build_project';
+  return 'standard_resale';
+}
+
+export function selectPriceContextComps<T extends { property_type?: string | null }>(
+  comps: T[],
+  subjectClass: PriceContextPropertyClass,
+  limit = 6,
+): { comps: T[]; metadata: PriceContextCompClassMetadata } {
+  const sameClass = comps.filter((comp) => getCompPropertyClass(comp.property_type) === subjectClass);
+  const standardFallbackAllowed = subjectClass === 'standard_resale';
+  const selected = sameClass.length >= 3 || !standardFallbackAllowed
+    ? sameClass.slice(0, limit)
+    : comps.slice(0, limit);
+  const fallbackUsed = selected.length > 0 && sameClass.length < 3;
+
+  return {
+    comps: selected,
+    metadata: {
+      subjectClass,
+      selectedCount: selected.length,
+      sameClassCount: sameClass.length,
+      fallbackUsed,
+      classMatch: selected.length === 0
+        ? 'no_comps'
+        : sameClass.length >= 3
+          ? 'same_class'
+          : fallbackUsed
+            ? 'mixed_fallback'
+            : 'similar_class',
+    },
+  };
+}
+
 function propertyClassLabel(propertyClass: PriceContextPropertyClass) {
   const labels: Record<PriceContextPropertyClass, string> = {
     standard_resale: 'Standard resale',
@@ -187,6 +239,11 @@ export function getPriceContext(input: PriceContextInput): PriceContextResult {
     else if (input.compDispersionPercent <= 35) { score -= 10; reasons.push('Comp prices have moderate spread'); }
     else { score -= 25; reasons.push('Wide comp dispersion caps confidence'); limitedCaps.push('wide_comp_dispersion'); }
   }
+
+  if (input.compClassMatch === 'same_class') reasons.push('Comparable pool is same-class');
+  else if (input.compClassMatch === 'similar_class') { score -= 18; reasons.push('Comparable pool is similar-class only'); limitedCaps.push('similar_class_comps'); }
+  else if (input.compClassMatch === 'mixed_fallback') { score -= 28; reasons.push('Mixed fallback comps used because same-class comps were sparse'); limitedCaps.push('mixed_fallback_comps'); }
+  else if (input.compClassMatch === 'no_comps') { score -= 35; reasons.push('No same-class comparable pool available'); limitedCaps.push('no_same_class_comps'); }
 
   if (input.roomMatchQuality === 'weak') { score -= 18; reasons.push('Room-count match is weak'); limitedCaps.push('weak_room_match'); }
   else if (input.roomMatchQuality === 'directional') { score -= 8; reasons.push('Room-count match is directional'); }
