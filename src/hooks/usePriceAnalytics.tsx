@@ -222,7 +222,6 @@ export function usePriceAnalytics(days: number = 30) {
       const medianPrice = allPrices[Math.floor(allPrices.length / 2)] || 0;
 
       const complete = propertyRows.filter(p => Boolean(p.price_context_public_label)).length;
-      const underReview = 0;
       const incomplete = propertyRows.filter(p => !p.price_context_public_label).length;
       const highConfidence = propertyRows.filter(p => p.price_context_confidence_tier === 'strong_comparable_match' || p.price_context_confidence_tier === 'high_confidence').length;
       const suppressed = propertyRows.filter(p => p.price_context_percentage_suppressed === true).length;
@@ -232,7 +231,6 @@ export function usePriceAnalytics(days: number = 30) {
       const unknownSqmSource = propertyRows.filter(p => !p.sqm_source || p.sqm_source === 'unknown').length;
       const unknownOwnership = propertyRows.filter(p => !p.ownership_type || p.ownership_type === 'unknown').length;
       const premiumContextComplete = propertyRows.filter(p => Boolean(p.premium_explanation) || (Array.isArray(p.premium_drivers) && p.premium_drivers.length > 0)).length;
-      const benchmarkReviewRequested = 0;
       const missingConfidenceTier = propertyRows.filter(p => !p.price_context_confidence_tier).length;
       const missingPublicLabel = propertyRows.filter(p => !p.price_context_public_label).length;
       const qualityIssues = [
@@ -272,8 +270,6 @@ export function usePriceAnalytics(days: number = 30) {
           percentage: propertyRows.length ? (count / propertyRows.length) * 100 : 0,
         }))
         .sort((a, b) => b.count - a.count);
-
-      const reviewReasonCounts: Record<string, number> = {};
 
       const insufficientDataByCityCounts = propertyRows.reduce<Record<string, number>>((acc, p) => {
         if (p.price_context_confidence_tier === 'insufficient_data') {
@@ -338,7 +334,6 @@ export function usePriceAnalytics(days: number = 30) {
         totalListings: propertyRows.length,
         complete,
         incomplete,
-        underReview,
         rankingReady,
         suppressed,
         blockedFromBoost,
@@ -360,8 +355,6 @@ export function usePriceAnalytics(days: number = 30) {
         detailsOpenRate: moduleViews ? (detailsOpened / moduleViews) * 100 : 0,
         helpfulFeedbackRate: helpfulFeedback + notHelpfulFeedback ? (helpfulFeedback / (helpfulFeedback + notHelpfulFeedback)) * 100 : 0,
         premiumContextCompletionRate: propertyRows.length ? (premiumContextComplete / propertyRows.length) * 100 : 0,
-        priceContextCompleteBadgeRate: propertyRows.length ? (complete / propertyRows.length) * 100 : 0,
-        benchmarkReviewRequestRate: propertyRows.length ? (benchmarkReviewRequested / propertyRows.length) * 100 : 0,
         contextCompleteInquiryConversionRate: completeViews ? (completeInquiries / completeViews) * 100 : 0,
         contextIncompleteInquiryConversionRate: incompleteViews ? (incompleteInquiries / incompleteViews) * 100 : 0,
         avgLeadQualityRating: ratedLeadRows.length ? ratedLeadRows.reduce((sum: number, row: any) => sum + Number(row.lead_quality_rating || 0), 0) / ratedLeadRows.length : 0,
@@ -378,7 +371,6 @@ export function usePriceAnalytics(days: number = 30) {
         adminCorrectionRate: propertyRows.length ? (correctionRows.length / propertyRows.length) * 100 : 0,
         correctionEvents: Object.entries(correctionCounts).map(([eventType, count]) => ({ eventType, count: Number(count) })).sort((a, b) => b.count - a.count),
         confidenceDistribution,
-        reviewReasons: Object.entries(reviewReasonCounts).map(([reason, count]) => ({ reason, count })).sort((a, b) => b.count - a.count),
         insufficientDataByCity,
         recentEvents: Object.entries(eventCounts).map(([eventType, count]) => ({ eventType, count: Number(count) })).sort((a, b) => b.count - a.count),
         qualityIssues,
