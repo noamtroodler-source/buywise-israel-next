@@ -3,7 +3,7 @@
 ## Goal
 Finish the Price Context implementation so it matches the brief end-to-end: buyer trust layer, agency correction/enrichment workflow, admin/data-quality controls, KPI measurement, and mature rollout hooks.
 
-Current status: the core safety engine is mostly in place: confidence tiers, public labels, suppression rules, buyer questions, premium-driver separation, lead-quality feedback, and admin confidence-cap diagnostics. The remaining work is mostly product workflow, measurement, and operational polish.
+Current status: Phases 15–19 are implemented: buyer trust layer, agency/admin review workflow, analytics/KPIs, and controlled rollout/ranking hooks are in place. Remaining work is Phase 20 QA, security, and memory cleanup.
 
 ```text
 Buyer sees safe Price Context

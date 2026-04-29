@@ -4,6 +4,8 @@ import { Property, PropertyFilters } from '@/types/database';
 import { isSavedLocationDest } from '@/lib/utils/commuteFilter';
 import { shuffleFeatured } from '@/lib/utils/shuffleFeatured';
 import { rankByPriceContext } from '@/lib/priceContextRanking';
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
+import { PRICE_CONTEXT_FLAGS } from '@/lib/featureFlags';
 
 /**
  * Helper: fetch featured property IDs from the featured_listings table.
@@ -46,8 +48,10 @@ async function fetchFeaturedProperties(
  * Used for "Show X results" in filter Apply buttons
  */
 export function usePropertyCount(filters?: PropertyFilters) {
+  const { data: buyerPriceContextFilterEnabled = true } = useFeatureFlag(PRICE_CONTEXT_FLAGS.buyerFilter, true);
+
   return useQuery({
-    queryKey: ['properties', 'count', filters],
+    queryKey: ['properties', 'count', filters, buyerPriceContextFilterEnabled],
     queryFn: async () => {
       let query = supabase
         .from('properties')
@@ -82,8 +86,8 @@ export function usePropertyCount(filters?: PropertyFilters) {
       if (filters?.listing_status) {
         query = query.eq('listing_status', filters.listing_status);
       }
-      if (filters?.pricing_context_complete) {
-        query = query.eq('price_context_badge_status', 'complete');
+      if (filters?.pricing_context_complete && buyerPriceContextFilterEnabled) {
+        query = query.eq('price_context_filter_eligible', true);
       }
       if (filters?.min_price) {
         query = query.gte('price', filters.min_price);
@@ -168,8 +172,11 @@ export function usePropertyCount(filters?: PropertyFilters) {
 }
 
 export function useProperties(filters?: PropertyFilters) {
+  const { data: enablePriceContextPlacementBoost = false } = useFeatureFlag(PRICE_CONTEXT_FLAGS.placementBoost, false);
+  const { data: buyerPriceContextFilterEnabled = true } = useFeatureFlag(PRICE_CONTEXT_FLAGS.buyerFilter, true);
+
   return useQuery({
-    queryKey: ['properties', filters],
+    queryKey: ['properties', filters, enablePriceContextPlacementBoost, buyerPriceContextFilterEnabled],
     queryFn: async () => {
       let query = supabase
         .from('properties')
@@ -207,8 +214,8 @@ export function useProperties(filters?: PropertyFilters) {
       if (filters?.listing_status) {
         query = query.eq('listing_status', filters.listing_status);
       }
-      if (filters?.pricing_context_complete) {
-        query = query.eq('price_context_badge_status', 'complete');
+      if (filters?.pricing_context_complete && buyerPriceContextFilterEnabled) {
+        query = query.eq('price_context_filter_eligible', true);
       }
       if (filters?.min_price) {
         query = query.gte('price', filters.min_price);
@@ -321,7 +328,7 @@ export function useProperties(filters?: PropertyFilters) {
 
       if (error) throw error;
       const properties = (data ?? []) as Property[];
-      return filters?.sort_by ? properties : rankByPriceContext(properties);
+      return filters?.sort_by ? properties : rankByPriceContext(properties, { enablePlacementBoost: enablePriceContextPlacementBoost });
     },
   });
 }

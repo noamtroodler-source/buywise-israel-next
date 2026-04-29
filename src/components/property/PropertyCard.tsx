@@ -20,6 +20,8 @@ import { useEventTracking } from '@/hooks/useEventTracking';
 import { useTouchSwipe } from '@/hooks/useTouchSwipe';
 import { useNeighborhoodIllustration } from '@/hooks/useNeighborhoodIllustration';
 import { cityHeroImages } from '@/lib/cityHeroImages';
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
+import { PRICE_CONTEXT_FLAGS } from '@/lib/featureFlags';
 
 interface PropertyCardProps {
   property: Property;
@@ -173,6 +175,7 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
   const [imageLoaded, setImageLoaded] = useState(true);
   const [imageError, setImageError] = useState(false);
   const { trackClick } = useEventTracking();
+  const { data: showBroadPriceContext = false } = useFeatureFlag(PRICE_CONTEXT_FLAGS.broadDisplay, false);
 
   // Track card click for analytics
   const handleCardClick = useCallback(() => {
@@ -234,6 +237,7 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
     Boolean((property as any).premium_explanation) ||
     ['feature_driven_premium', 'soft_prompt', 'context_required', 'review_required'].includes((property as any).market_fit_status)
   );
+  const showPriceContextSoftBadge = showBroadPriceContext && property.listing_status === 'for_sale' && property.price_context_badge_status === 'complete';
 
   const goToPrevImage = useCallback(() => {
     setImageLoaded(false);
@@ -521,10 +525,20 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                 {!hideTitle && property.title && (
                   <p className="text-sm font-medium text-foreground truncate leading-tight">{property.title}</p>
                 )}
-                {hasPremiumContext && (
+                {(hasPremiumContext || showPriceContextSoftBadge) && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {showPriceContextSoftBadge && (
+                      <div className="inline-flex w-fit items-center gap-1 rounded-lg border border-primary/15 bg-primary/5 px-2 py-1 text-xs font-medium text-primary">
+                        <ShieldCheck className="h-3 w-3" />
+                        Price Context
+                      </div>
+                    )}
+                    {hasPremiumContext && (
                   <div className="inline-flex w-fit items-center gap-1 rounded-lg border border-primary/15 bg-primary/5 px-2 py-1 text-xs font-medium text-primary">
                     <Sparkles className="h-3 w-3" />
                     Premium context
+                  </div>
+                    )}
                   </div>
                 )}
                 <p className="text-xs text-muted-foreground">
@@ -748,10 +762,20 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                   <p className="text-sm font-medium text-foreground truncate leading-tight">{property.title}</p>
                 )}
 
-                {hasPremiumContext && (
+                {(hasPremiumContext || showPriceContextSoftBadge) && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {showPriceContextSoftBadge && (
+                      <div className="inline-flex w-fit items-center gap-1 rounded-lg border border-primary/15 bg-primary/5 px-2 py-1 text-xs font-medium text-primary">
+                        <ShieldCheck className="h-3 w-3" />
+                        Price Context
+                      </div>
+                    )}
+                    {hasPremiumContext && (
                   <div className="inline-flex w-fit items-center gap-1 rounded-lg border border-primary/15 bg-primary/5 px-2 py-1 text-xs font-medium text-primary">
                     <Sparkles className="h-3 w-3" />
                     Premium context
+                  </div>
+                    )}
                   </div>
                 )}
 
