@@ -31,6 +31,15 @@ export type PriceContextPublicLabel =
   | 'Market context under review';
 
 export type PriceContextBadgeStatus = 'complete' | 'incomplete' | 'blocked';
+export type PriceContextCompClassMatch = 'same_class' | 'similar_class' | 'mixed_fallback' | 'no_comps';
+
+export interface PriceContextCompClassMetadata {
+  classMatch: PriceContextCompClassMatch;
+  subjectClass: PriceContextPropertyClass;
+  selectedCount: number;
+  sameClassCount: number;
+  fallbackUsed: boolean;
+}
 
 export interface PriceContextInput {
   avgComparison: number | null;
@@ -38,6 +47,7 @@ export interface PriceContextInput {
   radiusUsedM: number;
   compRecencyMonths?: number | null;
   compDispersionPercent?: number | null;
+  compClassMatch?: PriceContextCompClassMatch | null;
   roomMatchQuality?: 'strong' | 'directional' | 'weak' | null;
   sizeMatchQuality?: 'strong' | 'directional' | 'weak' | null;
   avgCompPriceSqm?: number | null;
@@ -114,6 +124,47 @@ export function getPriceContextPropertyClass(property: PriceContextInput['proper
     return 'premium_unique';
   }
   return 'standard_resale';
+}
+
+export function getCompPropertyClass(propertyType?: string | null): PriceContextPropertyClass {
+  const type = String(propertyType ?? '').toLowerCase();
+  if (type.includes('land')) return 'land';
+  if (type.includes('commercial')) return 'commercial';
+  if (type.includes('house') || type.includes('villa') || type.includes('cottage')) return 'house_villa_cottage';
+  if (type.includes('penthouse')) return 'penthouse';
+  if (type.includes('garden')) return 'garden_apartment';
+  if (type.includes('duplex')) return 'duplex_unique';
+  if (type.includes('new') || type.includes('project') || type.includes('kablan')) return 'new_build_project';
+  return 'standard_resale';
+}
+
+export function selectPriceContextComps<T extends { property_type?: string | null }>(
+  comps: T[],
+  subjectClass: PriceContextPropertyClass,
+  limit = 6,
+): { comps: T[]; metadata: PriceContextCompClassMetadata } {
+  const sameClass = comps.filter((comp) => getCompPropertyClass(comp.property_type) === subjectClass);
+  const standardFallbackAllowed = subjectClass === 'standard_resale';
+  const selected = sameClass.length >= 3 || !standardFallbackAllowed
+    ? sameClass.slice(0, limit)
+    : comps.slice(0, limit);
+
+  return {
+    comps: selected,
+    metadata: {
+      subjectClass,
+      selectedCount: selected.length,
+      sameClassCount: sameClass.length,
+      fallbackUsed: selected.length > 0 && sameClass.length < 3,
+      classMatch: selected.length === 0
+        ? 'no_comps'
+        : sameClass.length >= 3
+          ? 'same_class'
+          : standardFallbackAllowed
+            ? 'mixed_fallback'
+            : 'similar_class',
+    },
+  };
 }
 
 function propertyClassLabel(propertyClass: PriceContextPropertyClass) {
