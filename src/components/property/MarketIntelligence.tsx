@@ -497,6 +497,7 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
             propertyRooms={israeliRooms ?? undefined}
             propertyPrice={property.price}
             propertySizeSqm={property.size_sqm ?? undefined}
+            subjectProperty={property}
             hideHeader
             hideVerdict
             onVerdictComputed={handleVerdictComputed}
@@ -510,6 +511,7 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
             price={property.price}
             currency={(property as any).currency ?? 'ILS'}
             sourceRooms={(property as any).source_rooms}
+            subjectProperty={property}
           />
         )}
 
