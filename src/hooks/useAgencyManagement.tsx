@@ -335,7 +335,9 @@ export function useAgencyStats(agencyId: string | undefined) {
       const { data: properties } = await supabase
         .from('properties')
         .select('verification_status, views_count')
-        .in('agent_id', agentIds);
+        .in('agent_id', agentIds)
+        .eq('is_published', true)
+        .eq('verification_status', 'approved');
 
       const activeListings = properties?.filter(p => (p as any).verification_status === 'approved').length || 0;
       const pendingListings = properties?.filter(p => (p as any).verification_status === 'pending_review').length || 0;
