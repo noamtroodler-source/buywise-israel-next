@@ -23,7 +23,6 @@ import { AgencyNotificationBell } from '@/components/agency/AgencyNotificationBe
 import { AgencyPerformanceInsights } from '@/components/agency/AgencyPerformanceInsights';
 import { AgencyOnboardingProgress } from '@/components/agency/AgencyOnboardingProgress';
 import { NoPlanBanner } from '@/components/billing/NoPlanBanner';
-import { ImportWelcomeBanner } from '@/components/agency/ImportWelcomeBanner';
 import { PendingItemsWidget } from '@/components/agency/PendingItemsWidget';
 import { AgencyAnnouncements } from '@/components/agency/AgencyAnnouncements';
 import { AgencyTeamActivityFeed } from '@/components/agency/AgencyTeamActivityFeed';
@@ -159,11 +158,6 @@ export default function AgencyDashboard() {
 
           {/* Priority Lane — only show the most urgent banner */}
           <PendingItemsWidget agencyId={agency.id} />
-          <ImportWelcomeBanner
-            listingsCount={listings.length}
-            toReviewCount={toReviewCount}
-            readyToSubmitCount={readyToSubmitCount}
-          />
           <NoPlanBanner />
 
           {/* Onboarding (conditionally shows) */}
