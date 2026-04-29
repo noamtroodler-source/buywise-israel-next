@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo, useRef, type ComponentType } from 'react';
-import { BarChart3, ShieldCheck, Info, ArrowRight, ChevronDown, Calculator, Ruler, MapPin, Building2 } from 'lucide-react';
+import { BarChart3, ShieldCheck, Info, ArrowRight, ChevronDown, Calculator, Ruler, MapPin, Building2, Sparkles } from 'lucide-react';
 import { getIsraeliRoomCount } from '@/lib/israeliRoomCount';
 import { Link, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -134,12 +134,14 @@ function BenchmarkCardTile({ card, onTrackInteraction }: { card: BenchmarkCard; 
 
   return (
     <div
-      className="rounded-lg border border-border bg-muted/20 p-3 transition-colors hover:border-border hover:bg-muted/35"
+      className="group rounded-lg border border-primary/10 bg-gradient-to-br from-background to-primary/5 p-3 transition-colors hover:border-primary/25 hover:from-primary/5 hover:to-primary/10"
       onClick={() => onTrackInteraction?.('price_context_benchmark_layer_clicked', { benchmark_layer: card.id, benchmark_label: card.label })}
     >
       <div className="flex items-start justify-between gap-2">
-        <p className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-          <Icon className="h-3 w-3" />
+        <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors group-hover:bg-primary/15">
+            <Icon className="h-3.5 w-3.5" />
+          </span>
           {card.label}
         </p>
         <Tooltip onOpenChange={(open) => open && onTrackInteraction?.('price_context_benchmark_tooltip_opened', { benchmark_layer: card.id, benchmark_label: card.label })}>
@@ -153,7 +155,7 @@ function BenchmarkCardTile({ card, onTrackInteraction }: { card: BenchmarkCard; 
           </TooltipContent>
         </Tooltip>
       </div>
-      <p className="mt-1 text-base font-semibold text-foreground">{card.value}</p>
+      <p className="mt-2 text-lg font-semibold text-foreground">{card.value}</p>
       <p className="mt-1 text-[11px] leading-snug text-muted-foreground">{card.detail}</p>
     </div>
   );
@@ -177,7 +179,7 @@ function PremiumContextSummary({ priceContext, premiumExplanation }: { priceCont
       {contextChips.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {contextChips.map((chip) => (
-            <Badge key={chip} variant="outline" className="rounded-lg bg-muted/20 text-xs text-foreground">
+            <Badge key={chip} variant="outline" className="rounded-lg border-primary/15 bg-primary/5 text-xs text-foreground">
               {chip}
             </Badge>
           ))}
@@ -266,7 +268,7 @@ function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchma
     : 'Recorded sales and local benchmarks to help you understand the asking price.';
 
   return (
-    <div className="space-y-4 border-y border-border py-5">
+    <div className="space-y-4 rounded-xl border border-primary/10 bg-gradient-to-br from-background to-muted/20 p-4 shadow-sm">
       <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1">
           <div className="mb-2 space-y-1">
@@ -280,7 +282,10 @@ function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchma
               <BenchmarkCardTile key={card.id} card={card} onTrackInteraction={onTrackInteraction} />
             ))}
           </div>
-          <div className="mt-3 rounded-lg border border-border bg-muted/20 px-3 py-2">
+          <div className="mt-3 flex gap-3 rounded-lg border border-primary/15 bg-primary/5 px-3 py-3">
+            <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Sparkles className="h-3.5 w-3.5" />
+            </div>
             <p className="text-sm leading-relaxed text-muted-foreground">
               <span className="font-semibold text-foreground">Buyer takeaway:</span> {buyerTakeaway}
             </p>
@@ -293,13 +298,13 @@ function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchma
 
       <Collapsible onOpenChange={(nextOpen) => nextOpen && onTrackInteraction?.('price_context_details_opened', { confidence_tier: priceContext.confidenceTier })}>
         <CollapsibleTrigger asChild>
-          <Button variant="ghost" size="sm" className="h-8 px-0 text-xs text-muted-foreground hover:bg-transparent hover:text-foreground">
+          <Button variant="ghost" size="sm" className="h-8 px-1 text-xs text-muted-foreground hover:bg-primary/5 hover:text-primary">
             <Calculator className="mr-1 h-3.5 w-3.5" /> How we calculated this
             <ChevronDown className="ml-1 h-3.5 w-3.5" />
           </Button>
         </CollapsibleTrigger>
         <CollapsibleContent className="pt-2">
-          <div className="rounded-lg border border-border bg-muted/20 p-3 text-xs text-muted-foreground space-y-2">
+          <div className="rounded-lg border border-primary/10 bg-background/80 p-3 text-xs text-muted-foreground space-y-2">
             <div>
               <p className="font-medium text-foreground">Benchmark layers used:</p>
               <ul className="mt-1 space-y-1 pl-4">
@@ -554,7 +559,9 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
         {/* Section Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-muted-foreground" />
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <BarChart3 className="h-5 w-5" />
+            </span>
             <h3 className="text-lg font-semibold text-foreground">BuyWise Price Context</h3>
           </div>
           <Tooltip>
