@@ -25,6 +25,7 @@ interface AddressAutocompleteProps {
   className?: string;
   supportedCities?: string[];
   selectedCity?: string; // The city selected in the dropdown above - address must match
+  hasError?: boolean;
 }
 
 // Fallback to Nominatim when Google Maps is not available
@@ -100,6 +101,7 @@ function GoogleAddressAutocomplete({
   className,
   supportedCities,
   selectedCity,
+  hasError,
 }: AddressAutocompleteProps) {
   const [hasValidSelection, setHasValidSelection] = useState(!!value);
   const [selectedIndex, setSelectedIndex] = useState(-1);
@@ -268,6 +270,7 @@ function GoogleAddressAutocomplete({
           name="notASearchField"
           className={cn(
             'h-11 rounded-xl pr-10',
+            hasError && 'border-destructive bg-destructive/10 focus-visible:ring-destructive/30',
             hasCompleteAddressSelection && 'border-primary/50 bg-primary/5',
             hasValidSelection && !hasRequiredStreetNumber && 'border-destructive bg-destructive/10',
             className
@@ -276,6 +279,8 @@ function GoogleAddressAutocomplete({
         <div className="absolute right-3 top-1/2 -translate-y-1/2">
           {!ready ? (
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          ) : hasError ? (
+            <AlertCircle className="h-4 w-4 text-destructive" />
           ) : hasCompleteAddressSelection ? (
             <Check className="h-4 w-4 text-primary" />
           ) : hasValidSelection && !hasRequiredStreetNumber ? (
