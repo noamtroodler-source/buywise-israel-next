@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { getWizardPriceContext } from '@/lib/wizardPriceContext';
+import { PRICE_CONTEXT_DISCLAIMER, PRICE_CONTEXT_SIZE_NOTE } from '@/lib/priceContextDisclaimer';
 import type { MarketFitReviewResult } from '@/lib/marketFit';
 import type { PropertyWizardData } from './PropertyWizardContext';
 
@@ -147,9 +148,9 @@ export function PriceContextSubmissionPreview({
             <p className="flex items-center gap-1 font-medium text-foreground"><Calculator className="h-3.5 w-3.5 text-primary" /> How we calculated this</p>
             <p>Comparable set: local city benchmarks while listing-level comparable sales are finalized.</p>
             <p>Property class: {priceContext.propertyClassLabel}. Standard resale, premium, new-build, garden, penthouse, and house/villa listings are treated cautiously because they do not trade the same way.</p>
-            <p>Israeli property size can be Tabu, Arnona, contractor-plan, marketing, or net size. Buyers should confirm the size basis with the agent before relying on price/sqm comparisons.</p>
+            <p>{PRICE_CONTEXT_SIZE_NOTE}</p>
             {priceContext.percentageSuppressionReason && <p>{priceContext.percentageSuppressionReason}</p>}
-            <p>This is guidance from available recorded data, not an appraisal or exact fair-value estimate.</p>
+            <p>{PRICE_CONTEXT_DISCLAIMER}</p>
           </div>
         </div>
 
