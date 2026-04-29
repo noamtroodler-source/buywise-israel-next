@@ -5223,7 +5223,7 @@ async function handleApproveItem(body: any) {
     const coords = await geocodeWithRateLimit(listing.address, listing.city, listing.neighborhood);
     if (coords) { latitude = coords.lat; longitude = coords.lng; }
   }
-  const buildingIdentity = buildBuildingIdentity(listing.city, listing.address, latitude, longitude);
+  const buildingIdentity = buildListingIdentityEvidence(listing, latitude, longitude);
 
   const entryDate = listing.entry_date === "immediate" ? new Date().toISOString().split("T")[0] : listing.entry_date || null;
   const copy = await generateBuyWiseTitleAndDescription(listing, `${listing.title || ""}\n${listing.description || ""}`, Deno.env.get("LOVABLE_API_KEY") || "", undefined, sb);
@@ -5284,6 +5284,11 @@ async function handleApproveItem(body: any) {
       source_identity_key: sourceIdentity.sourceIdentityKey,
       source_domain: sourceIdentity.sourceDomain,
       source_identity_reason: sourceIdentity.sourceItemId ? "native_source_item_id" : "canonical_source_url",
+      normalized_floor_number: buildingIdentity.normalizedFloorNumber,
+      normalized_apartment_number: buildingIdentity.normalizedApartmentNumber,
+      normalized_entrance: buildingIdentity.normalizedEntrance,
+      unit_identity_key: buildingIdentity.unitIdentityKey,
+      unit_identity_metadata: buildingIdentity.unitIdentityMetadata,
     })
     .select("id")
     .single();
@@ -5309,7 +5314,15 @@ async function handleApproveItem(body: any) {
     normalized_address_key: buildingIdentity.normalizedAddressKey,
     geocode_key: buildingIdentity.geocodeKey,
     building_key: buildingIdentity.buildingKey,
+    normalized_floor_number: buildingIdentity.normalizedFloorNumber,
+    normalized_apartment_number: buildingIdentity.normalizedApartmentNumber,
+    normalized_entrance: buildingIdentity.normalizedEntrance,
+    unit_identity_key: buildingIdentity.unitIdentityKey,
+    unit_identity_metadata: buildingIdentity.unitIdentityMetadata,
     duplicate_decision: "manual_review_approved_created",
+    duplicate_decision_band: "manual_review_approved",
+    duplicate_match_scores: item.duplicate_match_scores || {},
+    duplicate_decision_metadata: { action: "manual_review_approved_create", prior_band: item.duplicate_decision_band || null, matched_property_id: item.matched_property_id || null },
     duplicate_reason_codes: ["approved_from_import_review"],
   }).eq("id", item_id);
 
@@ -5323,6 +5336,9 @@ async function handleApproveItem(body: any) {
     extractedData: listing,
     duplicateDecision: "manual_review_approved_created",
     duplicateReasonCodes: ["approved_from_import_review"],
+    duplicateDecisionBand: "manual_review_approved",
+    duplicateMatchScores: item.duplicate_match_scores || {},
+    duplicateDecisionMetadata: { action: "manual_review_approved_create", prior_band: item.duplicate_decision_band || null, matched_property_id: item.matched_property_id || null },
   });
 
   return { property_id: property.id };
