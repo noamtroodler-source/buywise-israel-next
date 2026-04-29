@@ -31,6 +31,15 @@ export interface ImportJobItem {
   error_type: string | null;
   extracted_data: Record<string, unknown> | null;
   confidence_score: number | null;
+  matched_property_id?: string | null;
+  duplicate_decision?: string | null;
+  duplicate_decision_band?: string | null;
+  duplicate_reason_codes?: string[] | null;
+  duplicate_match_scores?: Record<string, unknown> | null;
+  duplicate_review_required?: boolean | null;
+  duplicate_review_status?: string | null;
+  duplicate_review_recommended_action?: string | null;
+  duplicate_review_notes?: string | null;
   created_at: string;
 }
 
@@ -229,6 +238,29 @@ export function useApproveItem() {
     },
     onError: (err: Error) => {
       toast.error(`Approve failed: ${err.message}`);
+    },
+  });
+}
+
+export function useResolveDuplicateReview() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ itemId, resolution, notes }: { itemId: string; resolution: string; notes?: string }) => {
+      const { data, error } = await supabase.functions.invoke('import-agency-listings', {
+        body: { action: 'resolve_duplicate_review', item_id: itemId, resolution, notes: notes || null },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data as { item_id: string; resolution: string; next_status: string };
+    },
+    onSuccess: (data) => {
+      toast.success(data.next_status === 'pending' ? 'Item released for import' : 'Duplicate review updated');
+      queryClient.invalidateQueries({ queryKey: ['importJobItems'] });
+      queryClient.invalidateQueries({ queryKey: ['importJobs'] });
+    },
+    onError: (err: Error) => {
+      toast.error(`Review update failed: ${err.message}`);
     },
   });
 }
