@@ -8270,44 +8270,26 @@ export type Database = {
           read_ct: number
         }[]
       }
-      record_property_source_observation:
-        | {
-            Args: {
-              p_agency_id: string
-              p_confidence_score?: number
-              p_duplicate_decision?: string
-              p_duplicate_reason_codes?: string[]
-              p_import_job_id: string
-              p_import_job_item_id: string
-              p_matched_property_id?: string
-              p_property_id: string
-              p_raw_extracted_data?: Json
-              p_source_item_id?: string
-              p_source_type: string
-              p_source_url: string
-            }
-            Returns: string
-          }
-        | {
-            Args: {
-              p_agency_id: string
-              p_confidence_score?: number
-              p_duplicate_decision?: string
-              p_duplicate_decision_band?: string
-              p_duplicate_decision_metadata?: Json
-              p_duplicate_match_scores?: Json
-              p_duplicate_reason_codes?: string[]
-              p_import_job_id: string
-              p_import_job_item_id: string
-              p_matched_property_id?: string
-              p_property_id: string
-              p_raw_extracted_data?: Json
-              p_source_item_id?: string
-              p_source_type: string
-              p_source_url: string
-            }
-            Returns: string
-          }
+      record_property_source_observation: {
+        Args: {
+          p_agency_id: string
+          p_confidence_score?: number
+          p_duplicate_decision?: string
+          p_duplicate_decision_band?: string
+          p_duplicate_decision_metadata?: Json
+          p_duplicate_match_scores?: Json
+          p_duplicate_reason_codes?: string[]
+          p_import_job_id: string
+          p_import_job_item_id: string
+          p_matched_property_id?: string
+          p_property_id: string
+          p_raw_extracted_data?: Json
+          p_source_item_id?: string
+          p_source_type: string
+          p_source_url: string
+        }
+        Returns: string
+      }
       resolve_import_duplicate_review: {
         Args: {
           p_item_id: string
