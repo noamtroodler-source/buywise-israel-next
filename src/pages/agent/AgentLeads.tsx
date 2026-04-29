@@ -30,6 +30,7 @@ import { PropertyEngagementTable } from "@/components/agent/analytics/PropertyEn
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { useAgentLeads, useUpsertLeadQualityFeedback, type Lead } from "@/hooks/useAgentLeads";
+import type { InquiryAnalytics } from "@/hooks/useAgentInquiryAnalytics";
 
 type DateRange = '7d' | '30d' | '90d' | 'all';
 
@@ -40,7 +41,7 @@ const dateRangeLabels: Record<DateRange, string> = {
   'all': 'All time',
 };
 
-function exportAnalyticsToCSV(engagement: any[]) {
+function exportAnalyticsToCSV(engagement: InquiryAnalytics['propertyEngagement']) {
   const headers = ['Property Title', 'Views', 'Saves', 'WhatsApp Clicks', 'Email Clicks', 'Form Clicks'];
   const rows = engagement.map(e => [
     `"${(e.title || '').replace(/"/g, '""')}"`,
