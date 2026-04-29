@@ -37,14 +37,14 @@ export function useRequestBenchmarkReview() {
             price_context_filter_eligible: false,
             price_context_placement_eligible: false,
             price_context_featured_eligible: false,
-          } as any)
+          })
           .eq('id', propertyId),
         supabase.auth.getUser(),
       ]);
 
       if (updateError) throw updateError;
 
-      const { error: eventError } = await (supabase.from('price_context_events' as any) as any).insert({
+      const { error: eventError } = await supabase.from('price_context_events').insert({
         property_id: propertyId,
         event_type: 'benchmark_review_requested',
         actor_type: 'professional',

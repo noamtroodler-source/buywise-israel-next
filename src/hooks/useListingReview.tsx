@@ -272,9 +272,9 @@ export function usePriceContextEvents(propertyId: string) {
   return useQuery({
     queryKey: ['priceContextEvents', propertyId],
     queryFn: async () => {
-      const { data, error } = await (supabase
-        .from('price_context_events' as any)
-        .select('*') as any)
+      const { data, error } = await supabase
+        .from('price_context_events')
+        .select('*')
         .eq('property_id', propertyId)
         .order('created_at', { ascending: false })
         .limit(25);
@@ -289,9 +289,9 @@ export function usePriceContextEvents(propertyId: string) {
 async function logPriceContextEvent(propertyId: string, eventType: string, reason?: string) {
   try {
     const [{ data: propertyData }, { data: userData }] = await Promise.all([
-      (supabase
+      supabase
         .from('properties')
-        .select('price_context_confidence_score, price_context_confidence_tier, price_context_public_label, price_context_percentage_suppressed, price_context_badge_status, price_context_property_class, comp_pool_used, premium_drivers, premium_explanation') as any)
+        .select('price_context_confidence_score, price_context_confidence_tier, price_context_public_label, price_context_percentage_suppressed, price_context_badge_status, price_context_property_class, comp_pool_used, premium_drivers, premium_explanation')
         .eq('id', propertyId)
         .maybeSingle(),
       supabase.auth.getUser(),
@@ -299,7 +299,7 @@ async function logPriceContextEvent(propertyId: string, eventType: string, reaso
 
     const property = propertyData as Partial<PropertyForReview> | null;
 
-    const { error } = await (supabase.from('price_context_events' as any) as any).insert({
+    const { error } = await supabase.from('price_context_events').insert({
       property_id: propertyId,
       event_type: eventType,
       actor_type: 'admin',
@@ -525,7 +525,7 @@ export function useResolveBenchmarkReview() {
 
       const { error } = await supabase
         .from('properties')
-        .update(updates as any)
+        .update(updates)
         .eq('id', id);
 
       if (error) throw error;
