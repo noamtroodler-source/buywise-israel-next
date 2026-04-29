@@ -764,16 +764,35 @@ export default function AgencyListings() {
                             <TableCell>
                               <div className="flex items-center justify-center gap-1">
                                 {canConfirmForReview && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="rounded-lg"
-                                    onClick={() => confirmAgencyListing.mutate({ propertyId: listing.id, agencyId: agency.id })}
-                                    disabled={confirmAgencyListing.isPending}
-                                    title="Confirm and send to BuyWise review"
-                                  >
-                                    <Send className="h-4 w-4" />
-                                  </Button>
+                                  <TooltipProvider delayDuration={150}>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <span className="inline-flex">
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="rounded-lg text-primary hover:bg-primary/10 hover:text-primary"
+                                            onClick={() => confirmAgencyListing.mutate({ propertyId: listing.id, agencyId: agency.id })}
+                                            disabled={confirmAgencyListing.isPending}
+                                            aria-label="Confirm accuracy and send to BuyWise review"
+                                          >
+                                            <Send className="h-4 w-4" />
+                                          </Button>
+                                        </span>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="top" align="center" className="max-w-[240px] rounded-xl border-primary/15 bg-popover px-3 py-2 shadow-lg">
+                                        <div className="flex items-start gap-2">
+                                          <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                                            <Send className="h-3.5 w-3.5 text-primary" />
+                                          </span>
+                                          <div className="space-y-0.5">
+                                            <p className="text-xs font-semibold text-foreground">Send for BuyWise review</p>
+                                            <p className="text-[11px] leading-snug text-muted-foreground">Confirms your agency checked the listing accuracy before publication.</p>
+                                          </div>
+                                        </div>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
                                 )}
 
                                 {isApproved && (
@@ -812,12 +831,6 @@ export default function AgencyListings() {
                                       </>
                                     ) : (
                                       <>
-                                        {canConfirmForReview && (
-                                          <DropdownMenuItem onClick={() => confirmAgencyListing.mutate({ propertyId: listing.id, agencyId: agency.id })} disabled={confirmAgencyListing.isPending}>
-                                            <Send className="h-4 w-4 mr-2" />
-                                            Confirm accuracy
-                                          </DropdownMenuItem>
-                                        )}
                                         {isPendingReview && (
                                           <DropdownMenuItem disabled className="text-muted-foreground">
                                             <Clock className="h-4 w-4 mr-2" />
