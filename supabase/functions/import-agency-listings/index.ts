@@ -4773,8 +4773,9 @@ async function processOneItem(
         return { succeeded: false };
       }
 
-      if (match && decisionBand === "possible_same_unit") {
+      if (match && (decisionBand === "possible_same_unit" || decisionBand === "same_building_insufficient_unit_evidence")) {
         const audit = buildDuplicateDecisionAudit(match, "quarantine_for_duplicate_review");
+        const quarantineReasonCodes = normalizeDuplicateReasonCodes([...reasonCodes, "quarantined_for_duplicate_review"], audit.band, audit.scores, audit.metadata);
         await recordSourceObservation(sb, {
           agencyId: job.agency_id,
           importJobId: jobId,
@@ -4784,7 +4785,7 @@ async function processOneItem(
           confidenceScore,
           extractedData: sanitizedListing,
           duplicateDecision: "possible_same_unit_needs_review",
-          duplicateReasonCodes: normalizeDuplicateReasonCodes([...reasonCodes, "quarantined_for_duplicate_review"], audit.band, audit.scores, audit.metadata),
+          duplicateReasonCodes: quarantineReasonCodes,
           matchedPropertyId: match.property_id,
           duplicateDecisionBand: audit.band,
           duplicateMatchScores: audit.scores,
@@ -4792,21 +4793,24 @@ async function processOneItem(
         });
 
         await sb.from("import_job_items").update({
-          status: "needs_review",
+          status: "needs_duplicate_review",
           error_message: `Possible duplicate of property ${match.property_id} (building ${match.same_building_score}, unit ${match.same_unit_score}). Needs review before creation.`,
           error_type: null,
           matched_property_id: match.property_id,
           duplicate_decision: "possible_same_unit_needs_review",
           duplicate_decision_band: audit.band,
           duplicate_match_scores: audit.scores,
-          duplicate_decision_metadata: audit.metadata,
-          duplicate_reason_codes: normalizeDuplicateReasonCodes([...reasonCodes, "quarantined_for_duplicate_review"], audit.band, audit.scores, audit.metadata),
+          duplicate_decision_metadata: { ...audit.metadata, quarantine_status: "pending_review" },
+          duplicate_reason_codes: quarantineReasonCodes,
+          duplicate_review_required: true,
+          duplicate_review_status: "pending_review",
+          duplicate_review_recommended_action: "manual_duplicate_review",
         }).eq("id", item.id);
 
         return { succeeded: false };
       }
 
-      if (match && (decisionBand === "same_building_likely_different_unit" || decisionBand === "same_building_insufficient_unit_evidence")) {
+      if (match && decisionBand === "same_building_likely_different_unit") {
         const audit = buildDuplicateDecisionAudit(match, "allow_new_draft");
         await sb.from("import_job_items").update({
           matched_property_id: match.property_id,
@@ -5379,6 +5383,22 @@ async function handleApproveItem(body: any) {
   });
 
   return { property_id: property.id };
+}
+
+async function handleResolveDuplicateReview(body: any) {
+  const { item_id, resolution, notes } = body;
+  if (!item_id) throw new Error("item_id required");
+  if (!resolution) throw new Error("resolution required");
+
+  const sb = supabaseAdmin();
+  const { data, error } = await sb.rpc("resolve_import_duplicate_review", {
+    p_item_id: item_id,
+    p_resolution: resolution,
+    p_notes: notes || null,
+  });
+
+  if (error) throw new Error(`Failed to resolve duplicate review: ${error.message}`);
+  return data;
 }
 
 // ─── YAD2 ADAPTER ───────────────────────────────────────────────────────────
@@ -6968,6 +6988,7 @@ Deno.serve(async (req) => {
     else if (action === "retry_failed") result = await handleRetryFailed(body);
     else if (action === "retry_recoverable_skipped") result = await handleRetryRecoverableSkipped(body);
     else if (action === "approve_item") result = await handleApproveItem(body);
+    else if (action === "resolve_duplicate_review") result = await handleResolveDuplicateReview(body);
     else if (action === "resume_job") result = await handleResumeJob(body);
     else if (action === "quarantine_madlan_batch") result = await handleQuarantineMadlanBatch(body);
     else if (action === "check_existing") result = await handleCheckExisting(body);
