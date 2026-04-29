@@ -320,12 +320,6 @@ function formatDate(value: string | null | undefined) {
   return new Date(value).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
 }
 
-function formatEventDate(value: string | null | undefined) {
-  if (!value) return 'Unknown time';
-  const date = new Date(value);
-  return `${formatDistanceToNow(date, { addSuffix: true })} • ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
-}
-
 function formatSubmittedAt(value: string | null | undefined) {
   if (!value) return 'Submission time unavailable';
   const date = new Date(value);
@@ -874,14 +868,6 @@ function MarketPanel({ property, market }: { property: PropertyForReview; market
         </div>
         {property.premium_explanation && (
           <p className="mt-3 border-l-2 border-primary/30 pl-3 text-sm text-muted-foreground">{property.premium_explanation}</p>
-        )}
-        {market.warnings.length > 0 && (
-          <div className="mt-3 rounded-md border border-semantic-amber/40 bg-semantic-amber/10 p-3">
-            <p className="mb-1 text-sm font-medium text-foreground">Market review warnings</p>
-            <ul className="list-disc space-y-1 pl-4 text-sm text-muted-foreground">
-              {market.warnings.map((warning) => <li key={warning}>{warning}</li>)}
-            </ul>
-          </div>
         )}
       </div>
     </div>
