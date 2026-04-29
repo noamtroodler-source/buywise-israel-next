@@ -8191,6 +8191,15 @@ export type Database = {
         Args: { p_address: string }
         Returns: string
       }
+      normalize_duplicate_reason_codes: {
+        Args: {
+          p_codes?: string[]
+          p_decision_band?: string
+          p_metadata?: Json
+          p_scores?: Json
+        }
+        Returns: string[]
+      }
       normalize_israeli_text_key: { Args: { p_value: string }; Returns: string }
       normalize_listing_source_type: {
         Args: { p_source_type: string; p_source_url?: string }

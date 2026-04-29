@@ -1520,6 +1520,12 @@ async function recordSourceObservation(sb: any, params: {
   if (!params.sourceUrl) return;
   const identity = buildSourceIdentity(params.sourceType, params.sourceUrl);
   if (!identity.sourceIdentityKey) return;
+  const duplicateReasonCodes = normalizeDuplicateReasonCodes(
+    params.duplicateReasonCodes || [],
+    params.duplicateDecisionBand || params.duplicateDecision || null,
+    params.duplicateMatchScores || {},
+    params.duplicateDecisionMetadata || {},
+  );
   try {
     const observationPayload = {
       property_id: params.propertyId || null,
@@ -1536,7 +1542,7 @@ async function recordSourceObservation(sb: any, params: {
       last_scraped_at: new Date().toISOString(),
       observation_status: "active",
       duplicate_decision: params.duplicateDecision || null,
-      duplicate_reason_codes: params.duplicateReasonCodes || [],
+      duplicate_reason_codes: duplicateReasonCodes,
       matched_property_id: params.matchedPropertyId || null,
       confidence_score: params.confidenceScore ?? null,
       raw_extracted_data: params.extractedData || null,
@@ -1578,6 +1584,41 @@ function buildDuplicateDecisionAudit(match: any, action: string, extra: Record<s
     ...extra,
   };
   return { band, scores, metadata };
+}
+
+function normalizeDuplicateReasonCodes(
+  codes: Array<string | null | undefined>,
+  band?: string | null,
+  scores: Record<string, any> = {},
+  metadata: Record<string, any> = {},
+): string[] {
+  const normalized = new Set<string>();
+  const add = (code?: string | null) => {
+    const value = String(code || "").trim().toLowerCase().replace(/[^a-z0-9_]+/g, "_").replace(/^_+|_+$/g, "");
+    if (value) normalized.add(value);
+  };
+
+  codes.forEach(add);
+  if (band) add(`band_${band}`);
+  if (metadata?.action) add(`action_${metadata.action}`);
+
+  const sameBuildingScore = Number(scores?.same_building_score ?? scores?.sameBuildingScore ?? 0);
+  const sameUnitScore = Number(scores?.same_unit_score ?? scores?.sameUnitScore ?? 0);
+  const similarityScore = Number(scores?.similarity_score ?? scores?.similarityScore ?? 0);
+
+  if (sameBuildingScore >= 65) add("same_building_strong");
+  else if (sameBuildingScore > 0) add("same_building_weak");
+
+  if (sameUnitScore >= 75) add("same_unit_strong");
+  else if (sameUnitScore >= 45) add("same_unit_possible");
+  else if (sameUnitScore > 0) add("same_unit_weak");
+
+  if (similarityScore >= 70) add("overall_match_score_high");
+  else if (similarityScore >= 45) add("overall_match_score_possible");
+
+  if (metadata?.matched_property_id) add("matched_existing_property");
+  if (metadata?.same_building_different_unit) add("same_building_different_unit");
+  return [...normalized].sort();
 }
 
 function sanitizeDiscoveredUrl(raw: string, baseUrl?: string): { url: string | null; reason?: string } {
@@ -3772,7 +3813,7 @@ async function processOneItem(
           sourceType: incomingSourceType,
           sourceUrl: item.url,
           duplicateDecision: "exact_source_match_update",
-          duplicateReasonCodes: [sourceIdentity.sourceItemId ? "same_source_item_id" : "same_canonical_source_url"],
+          duplicateReasonCodes: normalizeDuplicateReasonCodes([sourceIdentity.sourceItemId ? "same_source_item_id" : "same_canonical_source_url"], "exact_source_match", { source_identity: 100 }, { action: "update_existing_property", matched_property_id: existing.id }),
           matchedPropertyId: existing.id,
           duplicateDecisionBand: "exact_source_match",
           duplicateMatchScores: { source_identity: 100 },
@@ -3787,7 +3828,7 @@ async function processOneItem(
             duplicate_decision_band: "exact_source_match",
             duplicate_match_scores: { source_identity: 100 },
             duplicate_decision_metadata: { action: "update_existing_property", matched_property_id: existing.id },
-            duplicate_reason_codes: [sourceIdentity.sourceItemId ? "same_source_item_id" : "same_canonical_source_url"],
+            duplicate_reason_codes: normalizeDuplicateReasonCodes([sourceIdentity.sourceItemId ? "same_source_item_id" : "same_canonical_source_url"], "exact_source_match", { source_identity: 100 }, { action: "update_existing_property", matched_property_id: existing.id }),
             error_message: `Updated existing property ${existing.id} from exact source identity match`,
             error_type: null,
           })
@@ -3808,7 +3849,7 @@ async function processOneItem(
         sourceType: incomingSourceType,
         sourceUrl: item.url,
         duplicateDecision: "exact_source_match_update",
-        duplicateReasonCodes: ["same_legacy_source_url"],
+        duplicateReasonCodes: normalizeDuplicateReasonCodes(["same_legacy_source_url"], "exact_source_match", { legacy_url: 100 }, { action: "update_existing_property", matched_property_id: existingByUrl[0].id }),
         matchedPropertyId: existingByUrl[0].id,
         duplicateDecisionBand: "exact_source_match",
         duplicateMatchScores: { legacy_url: 100 },
@@ -3823,7 +3864,7 @@ async function processOneItem(
           duplicate_decision_band: "exact_source_match",
           duplicate_match_scores: { legacy_url: 100 },
           duplicate_decision_metadata: { action: "update_existing_property", matched_property_id: existingByUrl[0].id },
-          duplicate_reason_codes: ["same_legacy_source_url"],
+          duplicate_reason_codes: normalizeDuplicateReasonCodes(["same_legacy_source_url"], "exact_source_match", { legacy_url: 100 }, { action: "update_existing_property", matched_property_id: existingByUrl[0].id }),
           error_message: `Updated existing property ${existingByUrl[0].id} from exact source URL match`,
           error_type: null,
         })
@@ -3844,7 +3885,7 @@ async function processOneItem(
           duplicate_decision_band: "in_job_source_duplicate",
           duplicate_match_scores: { source_identity: 100 },
           duplicate_decision_metadata: { action: "skip_duplicate_job_item", matched_property_id: existingJobItem[0].property_id || null },
-          duplicate_reason_codes: ["same_url_same_job"],
+          duplicate_reason_codes: normalizeDuplicateReasonCodes(["same_url_same_job"], "in_job_source_duplicate", { source_identity: 100 }, { action: "skip_duplicate_job_item", matched_property_id: existingJobItem[0].property_id || null }),
           error_message: "Duplicate: same URL already processed in this job",
           error_type: "permanent",
         })
@@ -4600,7 +4641,7 @@ async function processOneItem(
           confidenceScore,
           extractedData: sanitizedListing,
           duplicateDecision: "cross_source_enrichment",
-          duplicateReasonCodes: ["matched_existing_property", "source_priority_enrichment"],
+          duplicateReasonCodes: normalizeDuplicateReasonCodes(["matched_existing_property", "source_priority_enrichment"], "high_confidence_same_unit", { cross_source_match: 100 }, { action: "merge_enrich_existing_property", matched_property_id: crossSourceMatchId, incoming_source: incomingSource }),
           matchedPropertyId: crossSourceMatchId,
           duplicateDecisionBand: "high_confidence_same_unit",
           duplicateMatchScores: { cross_source_match: 100 },
@@ -4616,7 +4657,7 @@ async function processOneItem(
           duplicate_decision_band: "high_confidence_same_unit",
           duplicate_match_scores: { cross_source_match: 100 },
           duplicate_decision_metadata: { action: "merge_enrich_existing_property", matched_property_id: crossSourceMatchId, incoming_source: incomingSource },
-          duplicate_reason_codes: ["matched_existing_property", "source_priority_enrichment"],
+          duplicate_reason_codes: normalizeDuplicateReasonCodes(["matched_existing_property", "source_priority_enrichment"], "high_confidence_same_unit", { cross_source_match: 100 }, { action: "merge_enrich_existing_property", matched_property_id: crossSourceMatchId, incoming_source: incomingSource }),
           error_message: `Merged into existing property ${crossSourceMatchId} (cross-source enrichment, source=${incomingSource}, trust=${incomingRank})`,
         }).eq("id", item.id);
 
@@ -4707,7 +4748,7 @@ async function processOneItem(
           confidenceScore,
           extractedData: sanitizedListing,
           duplicateDecision: "high_confidence_cross_agency_colist",
-          duplicateReasonCodes: [...reasonCodes, "co_listing_created"],
+          duplicateReasonCodes: normalizeDuplicateReasonCodes([...reasonCodes, "co_listing_created"], audit.band, audit.scores, audit.metadata),
           matchedPropertyId: match.property_id,
           duplicateDecisionBand: audit.band,
           duplicateMatchScores: audit.scores,
@@ -4725,7 +4766,7 @@ async function processOneItem(
           duplicate_decision_band: audit.band,
           duplicate_match_scores: audit.scores,
           duplicate_decision_metadata: audit.metadata,
-          duplicate_reason_codes: [...reasonCodes, "co_listing_created"],
+          duplicate_reason_codes: normalizeDuplicateReasonCodes([...reasonCodes, "co_listing_created"], audit.band, audit.scores, audit.metadata),
         }).eq("id", item.id);
 
         dlog(`[Co-Listing] Added agency ${job.agency_id} as secondary on property ${match.property_id} (score ${match.similarity_score})`);
@@ -4743,7 +4784,7 @@ async function processOneItem(
           confidenceScore,
           extractedData: sanitizedListing,
           duplicateDecision: "possible_same_unit_needs_review",
-          duplicateReasonCodes: [...reasonCodes, "quarantined_for_duplicate_review"],
+          duplicateReasonCodes: normalizeDuplicateReasonCodes([...reasonCodes, "quarantined_for_duplicate_review"], audit.band, audit.scores, audit.metadata),
           matchedPropertyId: match.property_id,
           duplicateDecisionBand: audit.band,
           duplicateMatchScores: audit.scores,
@@ -4759,7 +4800,7 @@ async function processOneItem(
           duplicate_decision_band: audit.band,
           duplicate_match_scores: audit.scores,
           duplicate_decision_metadata: audit.metadata,
-          duplicate_reason_codes: [...reasonCodes, "quarantined_for_duplicate_review"],
+          duplicate_reason_codes: normalizeDuplicateReasonCodes([...reasonCodes, "quarantined_for_duplicate_review"], audit.band, audit.scores, audit.metadata),
         }).eq("id", item.id);
 
         return { succeeded: false };
@@ -4773,7 +4814,7 @@ async function processOneItem(
           duplicate_decision_band: audit.band,
           duplicate_match_scores: audit.scores,
           duplicate_decision_metadata: audit.metadata,
-          duplicate_reason_codes: reasonCodes,
+          duplicate_reason_codes: normalizeDuplicateReasonCodes(reasonCodes, audit.band, audit.scores, audit.metadata),
         }).eq("id", item.id);
       }
     }
@@ -4910,7 +4951,7 @@ async function processOneItem(
       confidenceScore,
       extractedData: sanitizedListing,
       duplicateDecision: "new_property_created",
-      duplicateReasonCodes: ["no_exact_source_match"],
+      duplicateReasonCodes: normalizeDuplicateReasonCodes(["no_exact_source_match"], "no_match", { exact_source_match: 0 }, { action: "create_new_property", property_id: property.id }),
       duplicateDecisionBand: "no_match",
       duplicateMatchScores: { exact_source_match: 0 },
       duplicateDecisionMetadata: { action: "create_new_property", property_id: property.id },
@@ -4923,7 +4964,7 @@ async function processOneItem(
       duplicate_decision_band: "no_match",
       duplicate_match_scores: { exact_source_match: 0 },
       duplicate_decision_metadata: { action: "create_new_property", property_id: property.id },
-      duplicate_reason_codes: ["no_exact_source_match"],
+      duplicate_reason_codes: normalizeDuplicateReasonCodes(["no_exact_source_match"], "no_match", { exact_source_match: 0 }, { action: "create_new_property", property_id: property.id }),
     }).eq("id", item.id);
     return { succeeded: true };
   } catch (err) {
@@ -5319,7 +5360,7 @@ async function handleApproveItem(body: any) {
     duplicate_decision_band: "manual_review_approved",
     duplicate_match_scores: item.duplicate_match_scores || {},
     duplicate_decision_metadata: { action: "manual_review_approved_create", prior_band: item.duplicate_decision_band || null, matched_property_id: item.matched_property_id || null },
-    duplicate_reason_codes: ["approved_from_import_review"],
+    duplicate_reason_codes: normalizeDuplicateReasonCodes(["approved_from_import_review"], "manual_review_approved", {}, { action: "manual_review_approved_create", prior_band: item.duplicate_decision_band || null, matched_property_id: item.matched_property_id || null }),
   }).eq("id", item_id);
 
   await recordSourceObservation(sb, {
@@ -5331,7 +5372,7 @@ async function handleApproveItem(body: any) {
     sourceUrl: item.url,
     extractedData: listing,
     duplicateDecision: "manual_review_approved_created",
-    duplicateReasonCodes: ["approved_from_import_review"],
+    duplicateReasonCodes: normalizeDuplicateReasonCodes(["approved_from_import_review"], "manual_review_approved", {}, { action: "manual_review_approved_create", prior_band: item.duplicate_decision_band || null, matched_property_id: item.matched_property_id || null }),
     duplicateDecisionBand: "manual_review_approved",
     duplicateMatchScores: item.duplicate_match_scores || {},
     duplicateDecisionMetadata: { action: "manual_review_approved_create", prior_band: item.duplicate_decision_band || null, matched_property_id: item.matched_property_id || null },
