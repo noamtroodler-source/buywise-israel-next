@@ -159,7 +159,11 @@ export default function AgencyDashboard() {
 
           {/* Priority Lane — only show the most urgent banner */}
           <PendingItemsWidget agencyId={agency.id} />
-          <ImportWelcomeBanner activeListings={stats?.activeListings || 0} />
+          <ImportWelcomeBanner
+            listingsCount={listings.length}
+            toReviewCount={toReviewCount}
+            readyToSubmitCount={readyToSubmitCount}
+          />
           <NoPlanBanner />
 
           {/* Onboarding (conditionally shows) */}
