@@ -329,6 +329,14 @@ function hasHebrewText(value: unknown): boolean {
   return typeof value === "string" && /[\u0590-\u05FF]/.test(value);
 }
 
+function hasExactStreetAddress(value: unknown): boolean {
+  if (typeof value !== "string") return false;
+  const address = value.trim();
+  if (!address || !/\d{1,5}/.test(address)) return false;
+  const withoutNumbers = address.replace(/\d+/g, " ").replace(/[,.#/-]/g, " ").replace(/\s+/g, " ").trim();
+  return /[A-Za-z\u0590-\u05FF]{2,}/.test(withoutNumbers);
+}
+
 async function translateHebrewLocationFields(listing: any, sourceText: string, lovableKey: string, jobId?: string, sb?: any): Promise<void> {
   if (!lovableKey) return;
   const needsAddress = hasHebrewText(listing.address);
