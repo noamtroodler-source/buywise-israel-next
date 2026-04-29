@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Loader2, ClipboardCheck, FileText, AlertCircle, CheckCircle, XCircle, Filter } from 'lucide-react';
+import { Loader2, ClipboardCheck, FileText, AlertCircle, CheckCircle, XCircle, Filter, BarChart3 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,13 +12,14 @@ import {
   useApproveListing,
   useRequestChanges,
   useRejectListing,
+  useResolveBenchmarkReview,
   VerificationStatus,
 } from '@/hooks/useListingReview';
 import { useAddFeaturedProperty } from '@/hooks/useHomepageFeatured';
 import { toast } from 'sonner';
 
 export default function AdminListingReview() {
-  const [activeTab, setActiveTab] = useState<VerificationStatus | 'all'>('pending_review');
+  const [activeTab, setActiveTab] = useState<VerificationStatus | 'all' | 'benchmark_review'>('pending_review');
   
   const { data: stats, isLoading: statsLoading } = useReviewStats();
   const { data: listings = [], isLoading: listingsLoading } = useListingsForReview(
@@ -28,10 +29,14 @@ export default function AdminListingReview() {
   const approveListing = useApproveListing();
   const requestChanges = useRequestChanges();
   const rejectListing = useRejectListing();
+  const resolveBenchmarkReview = useResolveBenchmarkReview();
   const addFeaturedProperty = useAddFeaturedProperty();
 
   const isLoading = statsLoading || listingsLoading;
-  const isMutating = approveListing.isPending || requestChanges.isPending || rejectListing.isPending;
+  const isMutating = approveListing.isPending || requestChanges.isPending || rejectListing.isPending || resolveBenchmarkReview.isPending;
+  const visibleListings = activeTab === 'benchmark_review'
+    ? listings.filter((listing) => listing.benchmark_review_status === 'requested' || listing.benchmark_review_status === 'under_review')
+    : listings;
 
   const handleApprove = (id: string, notes?: string, agentId?: string, propertyTitle?: string, featureThis?: boolean) => {
     const property = listings.find(p => p.id === id);
@@ -103,6 +108,13 @@ export default function AdminListingReview() {
       color: 'text-muted-foreground',
       bgColor: 'bg-muted',
     },
+    {
+      key: 'benchmark_review',
+      label: 'Benchmark Review',
+      icon: BarChart3,
+      color: 'text-primary',
+      bgColor: 'bg-primary/10',
+    },
   ];
 
   return (
@@ -130,7 +142,7 @@ export default function AdminListingReview() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             whileHover={{ scale: 1.02 }}
-            onClick={() => setActiveTab(stat.key as VerificationStatus)}
+            onClick={() => setActiveTab(stat.key as VerificationStatus | 'benchmark_review')}
             className="cursor-pointer"
           >
             <Card className={`${activeTab === stat.key ? 'ring-2 ring-primary' : ''} transition-all`}>
@@ -153,7 +165,7 @@ export default function AdminListingReview() {
       </div>
 
       {/* Listings Tabs */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as VerificationStatus | 'all')}>
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as VerificationStatus | 'all' | 'benchmark_review')}>
         <TabsList className="mb-4">
           <TabsTrigger value="pending_review" className="gap-2">
             <ClipboardCheck className="h-4 w-4" />
@@ -178,6 +190,11 @@ export default function AdminListingReview() {
             <Filter className="h-4 w-4" />
             All
           </TabsTrigger>
+          <TabsTrigger value="benchmark_review" className="gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Benchmark
+            {stats?.benchmark_review ? <Badge variant="secondary" className="ml-1">{stats.benchmark_review}</Badge> : null}
+          </TabsTrigger>
         </TabsList>
 
         {/* Listings Content */}
@@ -186,21 +203,23 @@ export default function AdminListingReview() {
             <div className="flex justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
-          ) : listings.length === 0 ? (
+          ) : visibleListings.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12 text-center">
                 <ClipboardCheck className="h-12 w-12 text-muted-foreground mb-4" />
                 <h3 className="text-lg font-medium mb-1">No listings to review</h3>
                 <p className="text-muted-foreground">
-                  {activeTab === 'pending_review' 
+                   {activeTab === 'pending_review' 
                     ? "Great job! You've reviewed all pending listings."
+                    : activeTab === 'benchmark_review'
+                      ? 'No open benchmark review requests.'
                     : `No listings with status "${activeTab.replace('_', ' ')}"`
                   }
                 </p>
               </CardContent>
             </Card>
           ) : (
-            listings.map((property) => (
+            visibleListings.map((property) => (
               <motion.div
                 key={property.id}
                 initial={{ opacity: 0, y: 10 }}
@@ -211,6 +230,7 @@ export default function AdminListingReview() {
                   onApprove={handleApprove}
                   onRequestChanges={handleRequestChanges}
                   onReject={handleReject}
+                  onBenchmarkReviewAction={(id, resolution, notes) => resolveBenchmarkReview.mutate({ id, resolution, notes })}
                   isLoading={isMutating}
                 />
               </motion.div>
