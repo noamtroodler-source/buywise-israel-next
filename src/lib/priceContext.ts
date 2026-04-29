@@ -1,4 +1,5 @@
 import { detectPremiumDrivers, type MarketFitPropertyInput } from './marketFit';
+import { buildPriceContextBuyerQuestions } from './priceContextQuestions';
 
 export type PriceContextPropertyClass =
   | 'standard_resale'
@@ -238,7 +239,7 @@ export function getPriceContext(input: PriceContextInput): PriceContextResult {
     && !reviewOpen
   );
 
-  const buyerQuestions = buildBuyerQuestions(property, propertyClass, gap, premiumDrivers);
+  const buyerQuestions = buildPriceContextBuyerQuestions(property, propertyClass, gap, premiumDrivers).map((item) => item.question);
   const base = input.avgCompPriceSqm ?? benchmarkPriceSqm ?? null;
   const benchmarkRange = base ? { min: Math.round(base * 0.95), max: Math.round(base * 1.05) } : null;
 
@@ -263,27 +264,4 @@ export function getPriceContext(input: PriceContextInput): PriceContextResult {
     badgeEligible,
     benchmarkRange,
   };
-}
-
-function buildBuyerQuestions(
-  property: PriceContextInput['property'],
-  propertyClass: PriceContextPropertyClass,
-  gap: number | null,
-  premiumDrivers: string[],
-) {
-  const questions = [
-    gap !== null && gap > 10 ? 'What explains the premium over nearby recorded sales?' : 'How does this asking price compare with recent interest from buyers?',
-    'Is the listed sqm based on Tabu, Arnona, contractor plans, or marketing size?',
-  ];
-
-  if ((property.parking ?? 0) > 0 || premiumDrivers.includes('parking')) questions.push('Is the parking registered, private, shared, robotic, or separate?');
-  if (property.has_storage || premiumDrivers.includes('storage')) questions.push('Is storage included and registered?');
-  if ((property.furniture_items?.length ?? 0) > 0 || property.furnished_status) questions.push('Which furniture, appliances, or extras are included in the price?');
-  if (premiumDrivers.some((driver) => driver.includes('renovation') || driver.includes('luxury'))) questions.push('When was the property renovated, and what work was included?');
-  if (propertyClass === 'beachfront_sea_view') questions.push('Is the sea view direct, partial, protected, or vulnerable to future construction?');
-  if (propertyClass === 'new_build_project') questions.push('For new-build: what is the delivery date, payment schedule, and included specification?');
-  questions.push('Does the building have Tama 38 or Pinui Binui implications?');
-  if ((property.features ?? []).includes('mamad') || (property.features ?? []).includes('mamad/safe_room')) questions.push('Is there a registered Mamad or only a shared shelter?');
-
-  return unique(questions).slice(0, 6);
 }
