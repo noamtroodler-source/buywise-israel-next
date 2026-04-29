@@ -184,6 +184,22 @@ function isGoodEnglishDescription(desc: string | undefined): boolean {
   return hebrewChars < sample.length * 0.2;
 }
 
+function isTooSimilarToSourceDescription(description: string | undefined, sourceDescription: string | undefined): boolean {
+  if (!description || !sourceDescription || sourceDescription.trim().length < 80) return false;
+  const normalize = (value: string) => value.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+  const generated = normalize(description);
+  const source = normalize(sourceDescription);
+  if (generated.length < 60 || source.length < 80) return false;
+  if (source.includes(generated) || generated.includes(source)) return true;
+
+  const generatedTokens = new Set(generated.split(" ").filter((token) => token.length > 4));
+  const sourceTokens = new Set(source.split(" ").filter((token) => token.length > 4));
+  if (generatedTokens.size < 12 || sourceTokens.size < 12) return false;
+  let overlap = 0;
+  for (const token of generatedTokens) if (sourceTokens.has(token)) overlap++;
+  return overlap / generatedTokens.size > 0.72;
+}
+
 function generateListingDescription(listing: any): string | null {
   // Build a basic English description from extracted fields
   const type = formatPropertyType(listing.property_type).toLowerCase();
