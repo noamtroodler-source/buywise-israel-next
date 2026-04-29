@@ -35,16 +35,27 @@ export interface PriceContextKpis {
   moduleViews: number;
   buyerQuestionEngagements: number;
   postViewInquiries: number;
+  savesAfterContextView: number;
   detailsOpened: number;
   comparableViews: number;
   helpfulFeedback: number;
   notHelpfulFeedback: number;
   questionEngagementRate: number;
   inquiryConversionRate: number;
+  saveAfterContextViewRate: number;
   detailsOpenRate: number;
   helpfulFeedbackRate: number;
+  premiumContextCompletionRate: number;
+  priceContextCompleteBadgeRate: number;
+  benchmarkReviewRequestRate: number;
+  contextCompleteInquiryConversionRate: number;
+  contextIncompleteInquiryConversionRate: number;
+  avgLeadQualityRating: number;
+  contextCompleteAvgLeadQualityRating: number;
+  avgTimeToPublishHours: number;
   highGapListings: number;
   highGapRate: number;
+  highGapWithoutPremiumExplanation: number;
   unknownSqmSource: number;
   unknownSqmSourceRate: number;
   unknownOwnership: number;
@@ -54,6 +65,7 @@ export interface PriceContextKpis {
   correctionEvents: { eventType: string; count: number }[];
   confidenceDistribution: { tier: string; count: number; percentage: number }[];
   reviewReasons: { reason: string; count: number }[];
+  insufficientDataByCity: { city: string; count: number; percentage: number }[];
   recentEvents: { eventType: string; count: number }[];
 }
 
@@ -82,16 +94,27 @@ const emptyPriceContext: PriceContextKpis = {
   moduleViews: 0,
   buyerQuestionEngagements: 0,
   postViewInquiries: 0,
+  savesAfterContextView: 0,
   detailsOpened: 0,
   comparableViews: 0,
   helpfulFeedback: 0,
   notHelpfulFeedback: 0,
   questionEngagementRate: 0,
   inquiryConversionRate: 0,
+  saveAfterContextViewRate: 0,
   detailsOpenRate: 0,
   helpfulFeedbackRate: 0,
+  premiumContextCompletionRate: 0,
+  priceContextCompleteBadgeRate: 0,
+  benchmarkReviewRequestRate: 0,
+  contextCompleteInquiryConversionRate: 0,
+  contextIncompleteInquiryConversionRate: 0,
+  avgLeadQualityRating: 0,
+  contextCompleteAvgLeadQualityRating: 0,
+  avgTimeToPublishHours: 0,
   highGapListings: 0,
   highGapRate: 0,
+  highGapWithoutPremiumExplanation: 0,
   unknownSqmSource: 0,
   unknownSqmSourceRate: 0,
   unknownOwnership: 0,
@@ -101,6 +124,7 @@ const emptyPriceContext: PriceContextKpis = {
   correctionEvents: [],
   confidenceDistribution: [],
   reviewReasons: [],
+  insufficientDataByCity: [],
   recentEvents: [],
 };
 
