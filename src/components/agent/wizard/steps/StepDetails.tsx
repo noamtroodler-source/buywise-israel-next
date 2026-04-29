@@ -5,25 +5,7 @@ import { usePropertyWizard } from '../PropertyWizardContext';
 import type { ReactNode } from 'react';
 import { Bed, Bath, Ruler, Building, Calendar, Car, LandPlot, Info, AlertCircle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-
-const sqmSourceOptions = [
-  { value: 'tabu', label: 'Tabu registered size', detail: 'Often the smallest official figure.' },
-  { value: 'arnona', label: 'Arnona size', detail: 'Municipal basis; may differ from Tabu.' },
-  { value: 'contractor_plan', label: 'Contractor / plan size', detail: 'Common for new-build and project units.' },
-  { value: 'marketing_gross', label: 'Marketing / gross size', detail: 'May include broader marketed area.' },
-  { value: 'net_internal', label: 'Net internal size', detail: 'Useful, but not always comparable.' },
-  { value: 'agent_estimate', label: 'Agent estimate', detail: 'Helpful fallback with lower confidence.' },
-  { value: 'unknown', label: 'Unknown', detail: 'Allowed, but lowers benchmark confidence.' },
-];
-
-const ownershipTypeOptions = [
-  { value: 'private_tabu', label: 'Tabu / private ownership' },
-  { value: 'minhal_leasehold', label: 'Minhal / ILA leasehold' },
-  { value: 'company_or_other', label: 'Company registration / other' },
-  { value: 'unknown', label: 'Unknown' },
-];
 
 function ReviewHint({ children, tone = 'required' }: { children: ReactNode; tone?: 'required' | 'recommended' }) {
   const isRequired = tone === 'required';
