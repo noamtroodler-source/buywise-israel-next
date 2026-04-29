@@ -272,7 +272,6 @@ function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchma
           <div className="mb-2 space-y-1">
             <div className="flex flex-wrap items-center gap-2">
               <p className="text-sm font-semibold text-foreground">BuyWise Price Context</p>
-              <Badge variant="secondary" className="text-xs">{priceContext.publicLabel}</Badge>
             </div>
             <p className="text-xs text-muted-foreground">{subtitle}</p>
           </div>
