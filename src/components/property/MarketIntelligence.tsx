@@ -18,6 +18,7 @@ import { useNeighborhoodAvgPrice } from '@/hooks/useNeighborhoodPrices';
 import { usePriceTier } from '@/hooks/usePriceTier';
 import type { PriceTier } from '@/hooks/usePriceTier';
 import { getPriceContext, type PriceContextResult } from '@/lib/priceContext';
+import { PRICE_CONTEXT_DISCLAIMER, PRICE_CONTEXT_SIZE_NOTE } from '@/lib/priceContextDisclaimer';
 
 const SESSION_KEY = 'analytics_session_id';
 const SESSION_EXPIRY_KEY = 'analytics_session_expiry';
@@ -268,9 +269,9 @@ function BuyWiseTake({ priceContext, premiumExplanation, propertyPricePerSqm, co
           <div className="rounded-lg border border-border/70 bg-background/70 p-3 text-xs text-muted-foreground space-y-2">
             <p>Comparable set: {compsCount > 0 ? `${compsCount} recorded sale${compsCount > 1 ? 's' : ''} within ${radiusLabel}` : 'local city or neighborhood benchmarks when listing-level comps are limited'}.</p>
             <p>Property class: {priceContext.propertyClassLabel}. Standard resale, premium, new-build, garden, penthouse, and house/villa listings are treated cautiously because they do not trade the same way.</p>
-            <p>Israeli property size can be Tabu, Arnona, contractor-plan, marketing, or net size. Buyers should confirm the size basis with the agent before relying on price/sqm comparisons.</p>
+            <p>{PRICE_CONTEXT_SIZE_NOTE}</p>
             {priceContext.percentageSuppressionReason && <p>{priceContext.percentageSuppressionReason}</p>}
-            <p>This is guidance from available recorded data, not an appraisal or exact fair-value estimate.</p>
+            <p>{PRICE_CONTEXT_DISCLAIMER}</p>
           </div>
         </CollapsibleContent>
       </Collapsible>
