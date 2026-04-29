@@ -130,7 +130,7 @@ const severityConfig: Record<ReviewSeverity, { icon: typeof CheckCircle2; classN
   pass: { icon: CheckCircle2, className: 'text-semantic-green', label: 'Pass' },
   note: { icon: Info, className: 'text-primary', label: 'Note' },
   warning: { icon: AlertTriangle, className: 'text-semantic-amber', label: 'Warning' },
-  critical: { icon: XCircle, className: 'text-semantic-red', label: 'Critical' },
+  critical: { icon: XCircle, className: 'text-semantic-red', label: 'Major review' },
 };
 
 const quickReasons = [
@@ -495,12 +495,12 @@ function summarizeAudit(checks: ReviewCheck[]) {
   const score = Math.max(0, Math.round(100 - criticalCount * 16 - warningCount * 7 - noteCount * 3));
 
   const status = criticalCount > 0
-    ? { label: 'Critical missing data', tone: 'critical' as const, description: 'Do not approve until core buyer-facing gaps are resolved.' }
+    ? { label: 'Needs major review', tone: 'critical' as const, description: 'Several important buyer-facing gaps need real review before approval.' }
     : score >= 85
-      ? { label: 'Ready to approve', tone: 'ready' as const, description: 'Core listing, photos, and market context look publishable.' }
+      ? { label: 'Ready to publish', tone: 'ready' as const, description: 'Core listing, photos, and market context look publishable.' }
       : score >= 70
-        ? { label: 'Review recommended', tone: 'review' as const, description: 'Mostly ready, but a few items deserve a closer look.' }
-        : { label: 'Needs changes', tone: 'warning' as const, description: 'The buyer-facing page may feel incomplete.' };
+        ? { label: 'Needs quick review', tone: 'review' as const, description: 'Mostly ready, but a few items deserve a closer look.' }
+        : { label: 'Needs quick review', tone: 'warning' as const, description: 'The buyer-facing page may feel incomplete.' };
 
   return { score, status, criticalCount, warningCount, noteCount };
 }
@@ -530,7 +530,7 @@ function QualityScorePanel({ summary }: { summary: ReturnType<typeof summarizeAu
       <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs">
         <div className="rounded-md bg-muted/60 p-2">
           <p className="font-semibold text-semantic-red">{summary.criticalCount}</p>
-          <p className="text-muted-foreground">critical</p>
+          <p className="text-muted-foreground">major</p>
         </div>
         <div className="rounded-md bg-muted/60 p-2">
           <p className="font-semibold text-semantic-amber">{summary.warningCount}</p>

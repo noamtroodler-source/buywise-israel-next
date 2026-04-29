@@ -6985,7 +6985,7 @@ async function handleQuarantineMadlanBatch(body: any) {
     await sb.from("properties").update({
       is_published: false,
       source_status: "quarantined_active_count_mismatch",
-      provisioning_audit_status: "critical",
+      provisioning_audit_status: "flagged",
       admin_notes: "Quarantined: Madlan import exceeded public active listing count and requires active-only reimport.",
       source_last_checked_at: new Date().toISOString(),
     }).in("id", batch);

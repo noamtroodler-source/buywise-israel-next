@@ -496,8 +496,8 @@ export default function AgencyListings() {
             {[
               { label: 'Total listings', value: stats.total, icon: Home },
               { label: 'Live', value: stats.active, icon: CheckCircle2 },
-              { label: 'To review', value: stats.needsReview, icon: Clock, highlight: stats.needsReview > 0 },
-              { label: 'Ready to submit', value: stats.ready, icon: Send, highlight: stats.ready > 0 },
+              { label: 'Needs quick review', value: stats.needsReview, icon: Clock, highlight: stats.needsReview > 0 },
+              { label: 'Ready to publish', value: stats.ready, icon: Send, highlight: stats.ready > 0 },
             ].map((stat, index) => (
               <motion.div key={stat.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
                 <Card className={cn('rounded-2xl border-primary/10', stat.highlight && 'bg-primary/5 border-primary/20')}>
@@ -750,7 +750,7 @@ export default function AgencyListings() {
                                         )}
                                       </div>
                                       {listing.has_critical_flags ? (
-                                        <p className="text-[11px] text-destructive">Critical issue needs review</p>
+                                        <p className="text-[11px] text-destructive">Needs major review</p>
                                       ) : hasMissingQuickFields ? (
                                         <p className="text-[11px] text-destructive font-medium truncate max-w-[240px]" title={listing.missing_quick_fields.join(', ')}>
                                           Missing: {listing.missing_quick_fields.slice(0, 2).join(', ')}{listing.missing_quick_fields.length > 2 ? '…' : ''}

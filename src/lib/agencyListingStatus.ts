@@ -24,14 +24,14 @@ export interface AgencyListingDisplayStatus {
 export const AGENCY_LISTING_STATUS_OPTIONS: AgencyListingDisplayStatus[] = [
   {
     key: 'to_review',
-    label: 'To review',
-    description: 'Required listing details still need attention before submission.',
+    label: 'Needs quick review',
+    description: 'Mostly complete, with one or two details to check before publishing.',
     badgeClassName: 'bg-muted text-muted-foreground border-border',
   },
   {
     key: 'ready_to_submit',
-    label: 'Ready to submit',
-    description: 'Core required details are complete and this can be sent to BuyWise review.',
+    label: 'Ready to publish',
+    description: 'Core required details are complete and this is ready for final approval.',
     badgeClassName: 'bg-primary/10 text-primary border-primary/25',
   },
   {
@@ -48,8 +48,8 @@ export const AGENCY_LISTING_STATUS_OPTIONS: AgencyListingDisplayStatus[] = [
   },
   {
     key: 'needs_fixes',
-    label: 'Needs fixes',
-    description: 'Changes are needed before this can go live.',
+    label: 'Needs major review',
+    description: 'Several important details need real review before this can go live.',
     badgeClassName: 'bg-destructive/10 text-destructive border-destructive/25',
   },
   {
