@@ -379,9 +379,9 @@ export default function AgencyListings() {
     }
   };
 
-  const allSelectedCanSubmit = selectedIds.size > 0 && [...selectedIds].every(id => {
+  const allSelectedCanConfirm = selectedIds.size > 0 && [...selectedIds].every(id => {
     const listing = listings.find(l => l.id === id);
-    return listing && (listing.verification_status === 'draft' || listing.verification_status === 'changes_requested');
+    return listing && listing.safe_to_batch_approve && (listing.verification_status === 'draft' || listing.verification_status === 'changes_requested');
   });
 
   const handleBulkDelete = () => {
@@ -393,16 +393,10 @@ export default function AgencyListings() {
     });
   };
 
-  const handleBulkSubmit = () => {
-    bulkSubmit.mutate([...selectedIds], {
-      onSuccess: () => setSelectedIds(new Set()),
-    });
-  };
-
   const safeSelectedIds = [...selectedIds].filter((id) => listings.find((l) => l.id === id)?.safe_to_batch_approve);
 
-  const handleBulkApproveSafe = () => {
-    bulkApproveListings.mutate({ propertyIds: safeSelectedIds, agencyId: agency.id }, {
+  const handleBulkConfirmSafe = () => {
+    bulkConfirmListings.mutate({ propertyIds: safeSelectedIds, agencyId: agency.id }, {
       onSuccess: () => setSelectedIds(new Set()),
     });
   };
