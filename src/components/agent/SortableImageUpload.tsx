@@ -1,8 +1,7 @@
 import { useCallback, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { X, Loader2, GripVertical, Star, ImagePlus, AlertTriangle, Sparkles } from 'lucide-react';
+import { X, Loader2, GripVertical, Star, ImagePlus, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { toast as sonnerToast } from 'sonner';
 import {
   DndContext,
   closestCenter,
@@ -23,6 +22,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { cn } from '@/lib/utils';
 import { RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { normalizePropertyPhoto, storageDisplayImageUrl } from '@/lib/imageQuality';
 
 interface SortableImageUploadProps {
   images: string[];
@@ -139,7 +139,6 @@ export function SortableImageUpload({
   minImages = 3,
 }: SortableImageUploadProps) {
   const [uploading, setUploading] = useState(false);
-  const [enhancingCount, setEnhancingCount] = useState(0);
   const [failedUploads, setFailedUploads] = useState<{ file: File; error: string }[]>([]);
   const { toast } = useToast();
 
@@ -155,13 +154,16 @@ export function SortableImageUpload({
   );
 
   const uploadImage = useCallback(async (file: File) => {
-    const fileExt = file.name.split('.').pop();
+    const normalizedFile = await normalizePropertyPhoto(file);
+    const fileExt = normalizedFile.name.split('.').pop();
     const fileName = `${crypto.randomUUID()}.${fileExt}`;
     const filePath = `property-images/${fileName}`;
 
     const { error: uploadError } = await supabase.storage
       .from('property-images')
-      .upload(filePath, file);
+      .upload(filePath, normalizedFile, {
+        contentType: normalizedFile.type,
+      });
 
     if (uploadError) throw uploadError;
 
@@ -169,33 +171,7 @@ export function SortableImageUpload({
       .from('property-images')
       .getPublicUrl(filePath);
 
-    return data.publicUrl;
-  }, []);
-
-  const enhanceUploadedImage = useCallback(async (publicUrl: string): Promise<string> => {
-    try {
-      const enhancePath = `property-images/enhanced-${crypto.randomUUID()}.png`;
-      const { data, error } = await supabase.functions.invoke('enhance-image', {
-        body: {
-          image_url: publicUrl,
-          bucket: 'property-images',
-          path: enhancePath,
-        },
-      });
-
-      if (error) {
-        console.error('Enhancement error:', error);
-        return publicUrl;
-      }
-
-      if (data?.success && data?.enhanced && data?.image_url) {
-        return data.image_url;
-      }
-      return publicUrl;
-    } catch (err) {
-      console.error('Enhancement failed:', err);
-      return publicUrl;
-    }
+    return storageDisplayImageUrl(data.publicUrl);
   }, []);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -256,32 +232,6 @@ export function SortableImageUpload({
       if (newUrls.length > 0) {
         const allImages = [...images, ...newUrls];
         onImagesChange(allImages);
-        setUploading(false);
-
-        // Enhance ALL newly uploaded images in parallel
-        setEnhancingCount(newUrls.length);
-        sonnerToast.info(`Enhancing ${newUrls.length} photo${newUrls.length > 1 ? 's' : ''} with AI...`, { duration: 5000 });
-
-        const enhanceResults = await Promise.allSettled(
-          newUrls.map(url => enhanceUploadedImage(url))
-        );
-
-        let enhancedCount = 0;
-        let updatedImages = [...allImages];
-        enhanceResults.forEach((result, idx) => {
-          if (result.status === 'fulfilled' && result.value !== newUrls[idx]) {
-            updatedImages = updatedImages.map(img =>
-              img === newUrls[idx] ? result.value : img
-            );
-            enhancedCount++;
-          }
-        });
-
-        if (enhancedCount > 0) {
-          onImagesChange(updatedImages);
-          sonnerToast.success(`${enhancedCount} photo${enhancedCount > 1 ? 's' : ''} enhanced with AI`);
-        }
-        setEnhancingCount(0);
       }
     } catch (error) {
       console.error('Upload error:', error);
@@ -292,7 +242,6 @@ export function SortableImageUpload({
       });
     } finally {
       setUploading(false);
-      setEnhancingCount(0);
       event.target.value = '';
     }
   };
@@ -417,14 +366,6 @@ export function SortableImageUpload({
               </li>
             ))}
           </ul>
-        </div>
-      )}
-
-      {/* Enhancement indicator */}
-      {enhancingCount > 0 && (
-        <div className="flex items-center justify-center gap-2 text-sm text-primary">
-          <Sparkles className="h-4 w-4 animate-pulse" />
-          <span>Enhancing {enhancingCount} image(s) with AI...</span>
         </div>
       )}
 
