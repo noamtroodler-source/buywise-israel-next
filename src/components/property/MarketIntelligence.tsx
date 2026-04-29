@@ -285,7 +285,8 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
     radiusUsedM: 500,
     avgCompPriceSqm: null,
   });
-  const { trackEvent } = useEventTracking();
+  const { user } = useAuth();
+  const location = useLocation();
   const trackedViewKey = useRef<string | null>(null);
 
   const handleVerdictComputed = useCallback((avgComparison: number | null, compsCount: number, radiusUsedM: number, avgCompPriceSqm: number | null) => {
@@ -358,22 +359,40 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
     if (trackedViewKey.current === viewKey) return;
 
     trackedViewKey.current = viewKey;
-    trackEvent('view', 'price_context_module_viewed', 'engagement', {
+    supabase.from('user_events').insert({
+      session_id: getOrCreateAnalyticsSessionId(),
+      user_id: user?.id || null,
+      user_role: user ? 'user' : 'anonymous',
+      event_type: 'view',
+      event_name: 'price_context_module_viewed',
+      event_category: 'engagement',
+      page_path: location.pathname,
       component: 'MarketIntelligence',
       properties: priceContextTrackingPayload,
+    }).then(({ error }) => {
+      if (error) console.debug('Price Context view tracking error:', error);
     });
-  }, [trackingEnabled, property.id, priceContext.confidenceTier, priceContext.publicLabel, verdictData.compsCount, verdictData.radiusUsedM, trackEvent, priceContextTrackingPayload]);
+  }, [trackingEnabled, property.id, priceContext.confidenceTier, priceContext.publicLabel, verdictData.compsCount, verdictData.radiusUsedM, user, location.pathname, priceContextTrackingPayload]);
 
   const handlePriceContextInteraction = useCallback((eventName: string, properties?: Record<string, unknown>) => {
     if (!trackingEnabled) return;
-    trackEvent('click', eventName, 'engagement', {
+    supabase.from('user_events').insert({
+      session_id: getOrCreateAnalyticsSessionId(),
+      user_id: user?.id || null,
+      user_role: user ? 'user' : 'anonymous',
+      event_type: 'click',
+      event_name: eventName,
+      event_category: 'engagement',
+      page_path: location.pathname,
       component: 'MarketIntelligence',
       properties: {
         ...priceContextTrackingPayload,
         ...properties,
       },
+    }).then(({ error }) => {
+      if (error) console.debug('Price Context interaction tracking error:', error);
     });
-  }, [trackingEnabled, trackEvent, priceContextTrackingPayload]);
+  }, [trackingEnabled, user, location.pathname, priceContextTrackingPayload]);
 
   return (
     <TooltipProvider>
