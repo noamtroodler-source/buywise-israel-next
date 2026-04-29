@@ -3190,6 +3190,9 @@ export type Database = {
           created_at: string
           duplicate_checked_at: string | null
           duplicate_decision: string | null
+          duplicate_decision_band: string | null
+          duplicate_decision_metadata: Json
+          duplicate_match_scores: Json
           duplicate_reason_codes: string[]
           error_message: string | null
           error_type: string | null
@@ -3199,12 +3202,17 @@ export type Database = {
           job_id: string
           matched_property_id: string | null
           normalized_address_key: string | null
+          normalized_apartment_number: string | null
           normalized_city_key: string | null
+          normalized_entrance: string | null
+          normalized_floor_number: number | null
           project_id: string | null
           property_id: string | null
           source_identity_key: string | null
           source_item_id: string | null
           status: string
+          unit_identity_key: string | null
+          unit_identity_metadata: Json
           url: string
         }
         Insert: {
@@ -3214,6 +3222,9 @@ export type Database = {
           created_at?: string
           duplicate_checked_at?: string | null
           duplicate_decision?: string | null
+          duplicate_decision_band?: string | null
+          duplicate_decision_metadata?: Json
+          duplicate_match_scores?: Json
           duplicate_reason_codes?: string[]
           error_message?: string | null
           error_type?: string | null
@@ -3223,12 +3234,17 @@ export type Database = {
           job_id: string
           matched_property_id?: string | null
           normalized_address_key?: string | null
+          normalized_apartment_number?: string | null
           normalized_city_key?: string | null
+          normalized_entrance?: string | null
+          normalized_floor_number?: number | null
           project_id?: string | null
           property_id?: string | null
           source_identity_key?: string | null
           source_item_id?: string | null
           status?: string
+          unit_identity_key?: string | null
+          unit_identity_metadata?: Json
           url: string
         }
         Update: {
@@ -3238,6 +3254,9 @@ export type Database = {
           created_at?: string
           duplicate_checked_at?: string | null
           duplicate_decision?: string | null
+          duplicate_decision_band?: string | null
+          duplicate_decision_metadata?: Json
+          duplicate_match_scores?: Json
           duplicate_reason_codes?: string[]
           error_message?: string | null
           error_type?: string | null
@@ -3247,12 +3266,17 @@ export type Database = {
           job_id?: string
           matched_property_id?: string | null
           normalized_address_key?: string | null
+          normalized_apartment_number?: string | null
           normalized_city_key?: string | null
+          normalized_entrance?: string | null
+          normalized_floor_number?: number | null
           project_id?: string | null
           property_id?: string | null
           source_identity_key?: string | null
           source_item_id?: string | null
           status?: string
+          unit_identity_key?: string | null
+          unit_identity_metadata?: Json
           url?: string
         }
         Relationships: [
@@ -5676,7 +5700,10 @@ export type Database = {
           merged_source_urls: string[] | null
           neighborhood: string | null
           normalized_address_key: string | null
+          normalized_apartment_number: string | null
           normalized_city_key: string | null
+          normalized_entrance: string | null
+          normalized_floor_number: number | null
           normalized_house_number: string | null
           normalized_street_key: string | null
           original_price: number | null
@@ -5726,6 +5753,8 @@ export type Database = {
           title: string
           total_floors: number | null
           total_saves: number
+          unit_identity_key: string | null
+          unit_identity_metadata: Json
           updated_at: string
           vaad_bayit_monthly: number | null
           verification_status: Database["public"]["Enums"]["verification_status"]
@@ -5801,7 +5830,10 @@ export type Database = {
           merged_source_urls?: string[] | null
           neighborhood?: string | null
           normalized_address_key?: string | null
+          normalized_apartment_number?: string | null
           normalized_city_key?: string | null
+          normalized_entrance?: string | null
+          normalized_floor_number?: number | null
           normalized_house_number?: string | null
           normalized_street_key?: string | null
           original_price?: number | null
@@ -5851,6 +5883,8 @@ export type Database = {
           title: string
           total_floors?: number | null
           total_saves?: number
+          unit_identity_key?: string | null
+          unit_identity_metadata?: Json
           updated_at?: string
           vaad_bayit_monthly?: number | null
           verification_status?: Database["public"]["Enums"]["verification_status"]
@@ -5926,7 +5960,10 @@ export type Database = {
           merged_source_urls?: string[] | null
           neighborhood?: string | null
           normalized_address_key?: string | null
+          normalized_apartment_number?: string | null
           normalized_city_key?: string | null
+          normalized_entrance?: string | null
+          normalized_floor_number?: number | null
           normalized_house_number?: string | null
           normalized_street_key?: string | null
           original_price?: number | null
@@ -5976,6 +6013,8 @@ export type Database = {
           title?: string
           total_floors?: number | null
           total_saves?: number
+          unit_identity_key?: string | null
+          unit_identity_metadata?: Json
           updated_at?: string
           vaad_bayit_monthly?: number | null
           verification_status?: Database["public"]["Enums"]["verification_status"]
@@ -6235,6 +6274,9 @@ export type Database = {
           confidence_score: number | null
           created_at: string
           duplicate_decision: string | null
+          duplicate_decision_band: string | null
+          duplicate_decision_metadata: Json
+          duplicate_match_scores: Json
           duplicate_reason_codes: string[]
           first_seen_at: string
           id: string
@@ -6259,6 +6301,9 @@ export type Database = {
           confidence_score?: number | null
           created_at?: string
           duplicate_decision?: string | null
+          duplicate_decision_band?: string | null
+          duplicate_decision_metadata?: Json
+          duplicate_match_scores?: Json
           duplicate_reason_codes?: string[]
           first_seen_at?: string
           id?: string
@@ -6283,6 +6328,9 @@ export type Database = {
           confidence_score?: number | null
           created_at?: string
           duplicate_decision?: string | null
+          duplicate_decision_band?: string | null
+          duplicate_decision_metadata?: Json
+          duplicate_match_scores?: Json
           duplicate_reason_codes?: string[]
           first_seen_at?: string
           id?: string
@@ -7813,6 +7861,15 @@ export type Database = {
         }
         Returns: string
       }
+      build_property_unit_identity_key: {
+        Args: {
+          p_apartment_number?: string
+          p_building_key: string
+          p_entrance?: string
+          p_floor_number?: number
+        }
+        Returns: string
+      }
       build_source_identity_key: {
         Args: {
           p_source_item_id?: string
@@ -7868,12 +7925,16 @@ export type Database = {
           p_size_sqm: number
         }
         Returns: {
+          duplicate_decision_band: string
+          duplicate_reason_codes: string[]
           existing_added_manually: boolean
           existing_agency_id: string
           existing_import_source: string
           existing_source_url: string
           property_id: string
           same_building_different_unit: boolean
+          same_building_score: number
+          same_unit_score: number
           similarity_score: number
         }[]
       }
@@ -7966,6 +8027,10 @@ export type Database = {
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
+      }
+      extract_address_unit_evidence: {
+        Args: { p_address: string }
+        Returns: Json
       }
       extract_building_house_number: {
         Args: { p_address: string }
@@ -8131,6 +8196,7 @@ export type Database = {
         Args: { p_source_type: string; p_source_url?: string }
         Returns: string
       }
+      normalize_unit_token: { Args: { p_value: string }; Returns: string }
       normalize_url: { Args: { p_url: string }; Returns: string }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
@@ -8140,23 +8206,44 @@ export type Database = {
           read_ct: number
         }[]
       }
-      record_property_source_observation: {
-        Args: {
-          p_agency_id: string
-          p_confidence_score?: number
-          p_duplicate_decision?: string
-          p_duplicate_reason_codes?: string[]
-          p_import_job_id: string
-          p_import_job_item_id: string
-          p_matched_property_id?: string
-          p_property_id: string
-          p_raw_extracted_data?: Json
-          p_source_item_id?: string
-          p_source_type: string
-          p_source_url: string
-        }
-        Returns: string
-      }
+      record_property_source_observation:
+        | {
+            Args: {
+              p_agency_id: string
+              p_confidence_score?: number
+              p_duplicate_decision?: string
+              p_duplicate_reason_codes?: string[]
+              p_import_job_id: string
+              p_import_job_item_id: string
+              p_matched_property_id?: string
+              p_property_id: string
+              p_raw_extracted_data?: Json
+              p_source_item_id?: string
+              p_source_type: string
+              p_source_url: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_agency_id: string
+              p_confidence_score?: number
+              p_duplicate_decision?: string
+              p_duplicate_decision_band?: string
+              p_duplicate_decision_metadata?: Json
+              p_duplicate_match_scores?: Json
+              p_duplicate_reason_codes?: string[]
+              p_import_job_id: string
+              p_import_job_item_id: string
+              p_matched_property_id?: string
+              p_property_id: string
+              p_raw_extracted_data?: Json
+              p_source_item_id?: string
+              p_source_type: string
+              p_source_url: string
+            }
+            Returns: string
+          }
       resolve_primary_dispute: {
         Args: {
           p_admin_notes?: string

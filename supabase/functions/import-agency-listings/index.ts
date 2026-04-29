@@ -1428,6 +1428,38 @@ function buildGeocodeKey(latitude: number | null | undefined, longitude: number 
   return `${Number(latitude).toFixed(4)},${Number(longitude).toFixed(4)}`;
 }
 
+function normalizeUnitToken(value: string | number | null | undefined): string | null {
+  if (value == null) return null;
+  const normalized = String(value)
+    .trim()
+    .toLowerCase()
+    .replace(/["״'׳`.,;:()[\]{}]/g, "")
+    .replace(/\s+/g, "");
+  return normalized || null;
+}
+
+function extractAddressUnitEvidence(...parts: Array<string | null | undefined>) {
+  const text = parts.filter(Boolean).join(" \n ");
+  const floorMatch = text.match(/(?:קומה|floor|fl\.?|ק['׳]?)\s*(-?\d{1,2})/i);
+  const apartmentMatch = text.match(/(?:דירה|דירת|apt\.?|apartment|unit|יחידה|#)\s*([0-9]{1,4}[א-תa-zA-Z]?)/i);
+  const entranceMatch = text.match(/(?:כניסה|entrance|entry)\s*([0-9א-תa-zA-Z]{1,3})/i);
+  return {
+    floorNumber: floorMatch ? Number(floorMatch[1]) : null,
+    apartmentNumber: normalizeUnitToken(apartmentMatch?.[1]),
+    entrance: normalizeUnitToken(entranceMatch?.[1]),
+  };
+}
+
+function buildUnitIdentityKey(buildingKey: string | null | undefined, floorNumber?: number | null, apartmentNumber?: string | null, entrance?: string | null): string | null {
+  if (!buildingKey) return null;
+  const normalizedApt = normalizeUnitToken(apartmentNumber);
+  const normalizedEntrance = normalizeUnitToken(entrance);
+  if (normalizedApt) return `${buildingKey}|apt:${normalizedApt}`;
+  if (floorNumber != null && normalizedEntrance) return `${buildingKey}|floor:${Math.floor(floorNumber)}|entrance:${normalizedEntrance}`;
+  if (floorNumber != null) return `${buildingKey}|floor:${Math.floor(floorNumber)}`;
+  return null;
+}
+
 function buildBuildingIdentity(city: string | null | undefined, address: string | null | undefined, latitude?: number | null, longitude?: number | null) {
   const normalizedCityKey = normalizeIsraeliTextKey(city);
   const normalizedAddressKey = normalizeBuildingAddressKey(address);
@@ -1444,6 +1476,31 @@ function buildBuildingIdentity(city: string | null | undefined, address: string 
   return { normalizedCityKey, normalizedAddressKey, geocodeKey, buildingKey };
 }
 
+function buildListingIdentityEvidence(listing: any, latitude?: number | null, longitude?: number | null) {
+  const building = buildBuildingIdentity(listing.city, listing.address, latitude, longitude);
+  const extractedUnit = extractAddressUnitEvidence(listing.address, listing.title, listing.description);
+  const floorNumber = listing.floor_number != null
+    ? Math.floor(Number(listing.floor_number))
+    : listing.floor != null
+    ? Math.floor(Number(listing.floor))
+    : extractedUnit.floorNumber;
+  const apartmentNumber = normalizeUnitToken(listing.apartment_number) || extractedUnit.apartmentNumber;
+  const entrance = normalizeUnitToken(listing.entrance) || extractedUnit.entrance;
+  return {
+    ...building,
+    normalizedFloorNumber: Number.isFinite(floorNumber as number) ? floorNumber : null,
+    normalizedApartmentNumber: apartmentNumber,
+    normalizedEntrance: entrance,
+    unitIdentityKey: buildUnitIdentityKey(building.buildingKey, Number.isFinite(floorNumber as number) ? floorNumber : null, apartmentNumber, entrance),
+    unitIdentityMetadata: {
+      has_floor: Number.isFinite(floorNumber as number),
+      has_apartment_number: !!apartmentNumber,
+      has_entrance: !!entrance,
+      extracted_from_text: extractedUnit,
+    },
+  };
+}
+
 async function recordSourceObservation(sb: any, params: {
   propertyId?: string | null;
   agencyId?: string | null;
@@ -1456,6 +1513,9 @@ async function recordSourceObservation(sb: any, params: {
   duplicateDecision?: string | null;
   duplicateReasonCodes?: string[];
   matchedPropertyId?: string | null;
+  duplicateDecisionBand?: string | null;
+  duplicateMatchScores?: Record<string, any> | null;
+  duplicateDecisionMetadata?: Record<string, any> | null;
 }) {
   if (!params.sourceUrl) return;
   const identity = buildSourceIdentity(params.sourceType, params.sourceUrl);
@@ -1480,6 +1540,9 @@ async function recordSourceObservation(sb: any, params: {
       matched_property_id: params.matchedPropertyId || null,
       confidence_score: params.confidenceScore ?? null,
       raw_extracted_data: params.extractedData || null,
+      duplicate_decision_band: params.duplicateDecisionBand || null,
+      duplicate_match_scores: params.duplicateMatchScores || {},
+      duplicate_decision_metadata: params.duplicateDecisionMetadata || {},
     };
     const existingQuery = sb
       .from("property_source_observations")
@@ -1497,6 +1560,24 @@ async function recordSourceObservation(sb: any, params: {
   } catch (err) {
     console.warn("Failed to record source observation:", err);
   }
+}
+
+function buildDuplicateDecisionAudit(match: any, action: string, extra: Record<string, any> = {}) {
+  const band = match?.duplicate_decision_band || action;
+  const scores = {
+    similarity_score: match?.similarity_score ?? null,
+    same_building_score: match?.same_building_score ?? null,
+    same_unit_score: match?.same_unit_score ?? null,
+  };
+  const metadata = {
+    action,
+    source: "import_agency_listings",
+    matched_property_id: match?.property_id ?? null,
+    same_building_different_unit: match?.same_building_different_unit ?? null,
+    evaluated_at: new Date().toISOString(),
+    ...extra,
+  };
+  return { band, scores, metadata };
 }
 
 function sanitizeDiscoveredUrl(raw: string, baseUrl?: string): { url: string | null; reason?: string } {
@@ -3693,6 +3774,9 @@ async function processOneItem(
           duplicateDecision: "exact_source_match_update",
           duplicateReasonCodes: [sourceIdentity.sourceItemId ? "same_source_item_id" : "same_canonical_source_url"],
           matchedPropertyId: existing.id,
+          duplicateDecisionBand: "exact_source_match",
+          duplicateMatchScores: { source_identity: 100 },
+          duplicateDecisionMetadata: { action: "update_existing_property", matched_property_id: existing.id },
         });
         await sb.from("import_job_items")
           .update({
@@ -3700,6 +3784,9 @@ async function processOneItem(
             property_id: existing.id,
             matched_property_id: existing.id,
             duplicate_decision: "exact_source_match_update",
+            duplicate_decision_band: "exact_source_match",
+            duplicate_match_scores: { source_identity: 100 },
+            duplicate_decision_metadata: { action: "update_existing_property", matched_property_id: existing.id },
             duplicate_reason_codes: [sourceIdentity.sourceItemId ? "same_source_item_id" : "same_canonical_source_url"],
             error_message: `Updated existing property ${existing.id} from exact source identity match`,
             error_type: null,
@@ -3723,6 +3810,9 @@ async function processOneItem(
         duplicateDecision: "exact_source_match_update",
         duplicateReasonCodes: ["same_legacy_source_url"],
         matchedPropertyId: existingByUrl[0].id,
+        duplicateDecisionBand: "exact_source_match",
+        duplicateMatchScores: { legacy_url: 100 },
+        duplicateDecisionMetadata: { action: "update_existing_property", matched_property_id: existingByUrl[0].id },
       });
       await sb.from("import_job_items")
         .update({
@@ -3730,6 +3820,9 @@ async function processOneItem(
           property_id: existingByUrl[0].id,
           matched_property_id: existingByUrl[0].id,
           duplicate_decision: "exact_source_match_update",
+          duplicate_decision_band: "exact_source_match",
+          duplicate_match_scores: { legacy_url: 100 },
+          duplicate_decision_metadata: { action: "update_existing_property", matched_property_id: existingByUrl[0].id },
           duplicate_reason_codes: ["same_legacy_source_url"],
           error_message: `Updated existing property ${existingByUrl[0].id} from exact source URL match`,
           error_type: null,
@@ -3748,6 +3841,9 @@ async function processOneItem(
           status: "skipped",
           matched_property_id: existingJobItem[0].property_id || null,
           duplicate_decision: "in_job_source_duplicate",
+          duplicate_decision_band: "in_job_source_duplicate",
+          duplicate_match_scores: { source_identity: 100 },
+          duplicate_decision_metadata: { action: "skip_duplicate_job_item", matched_property_id: existingJobItem[0].property_id || null },
           duplicate_reason_codes: ["same_url_same_job"],
           error_message: "Duplicate: same URL already processed in this job",
           error_type: "permanent",
@@ -4506,6 +4602,9 @@ async function processOneItem(
           duplicateDecision: "cross_source_enrichment",
           duplicateReasonCodes: ["matched_existing_property", "source_priority_enrichment"],
           matchedPropertyId: crossSourceMatchId,
+          duplicateDecisionBand: "high_confidence_same_unit",
+          duplicateMatchScores: { cross_source_match: 100 },
+          duplicateDecisionMetadata: { action: "merge_enrich_existing_property", matched_property_id: crossSourceMatchId, incoming_source: incomingSource },
         });
 
         // Mark this import item as merged (not a new property)
@@ -4514,6 +4613,9 @@ async function processOneItem(
           property_id: crossSourceMatchId,
           matched_property_id: crossSourceMatchId,
           duplicate_decision: "cross_source_enrichment",
+          duplicate_decision_band: "high_confidence_same_unit",
+          duplicate_match_scores: { cross_source_match: 100 },
+          duplicate_decision_metadata: { action: "merge_enrich_existing_property", matched_property_id: crossSourceMatchId, incoming_source: incomingSource },
           duplicate_reason_codes: ["matched_existing_property", "source_priority_enrichment"],
           error_message: `Merged into existing property ${crossSourceMatchId} (cross-source enrichment, source=${incomingSource}, trust=${incomingRank})`,
         }).eq("id", item.id);
@@ -4530,12 +4632,17 @@ async function processOneItem(
       const coords = await geocodeWithRateLimit(listing.address, listing.city, listing.neighborhood);
       if (coords) { latitude = coords.lat; longitude = coords.lng; }
     }
-    const buildingIdentity = buildBuildingIdentity(listing.city, listing.address, latitude, longitude);
+    const buildingIdentity = buildListingIdentityEvidence(listing, latitude, longitude);
     await sb.from("import_job_items").update({
       normalized_city_key: buildingIdentity.normalizedCityKey,
       normalized_address_key: buildingIdentity.normalizedAddressKey,
       geocode_key: buildingIdentity.geocodeKey,
       building_key: buildingIdentity.buildingKey,
+      normalized_floor_number: buildingIdentity.normalizedFloorNumber,
+      normalized_apartment_number: buildingIdentity.normalizedApartmentNumber,
+      normalized_entrance: buildingIdentity.normalizedEntrance,
+      unit_identity_key: buildingIdentity.unitIdentityKey,
+      unit_identity_metadata: buildingIdentity.unitIdentityMetadata,
     }).eq("id", item.id);
 
     // ── CROSS-AGENCY MATCH → CO-LISTING (final gate before insert) ──
@@ -4563,7 +4670,13 @@ async function processOneItem(
       });
 
       const match = crossAgencyMatch && crossAgencyMatch.length > 0 ? crossAgencyMatch[0] : null;
-      if (match && match.similarity_score >= 70 && !match.same_building_different_unit) {
+      const decisionBand = match?.duplicate_decision_band || null;
+      const reasonCodes = Array.isArray(match?.duplicate_reason_codes) && match.duplicate_reason_codes.length > 0
+        ? match.duplicate_reason_codes
+        : ["cross_agency_same_unit_score"];
+
+      if (match && decisionBand === "high_confidence_same_unit" && match.similarity_score >= 70 && !match.same_building_different_unit) {
+        const audit = buildDuplicateDecisionAudit(match, "co_list_existing_property");
         // Co-list: upsert the incoming agency as a secondary on the existing property.
         // UNIQUE(property_id, source_url) on property_co_agents de-dupes re-scrapes.
         await sb.from("property_co_agents").upsert(
@@ -4594,8 +4707,11 @@ async function processOneItem(
           confidenceScore,
           extractedData: sanitizedListing,
           duplicateDecision: "high_confidence_cross_agency_colist",
-          duplicateReasonCodes: ["cross_agency_same_unit_score", "co_listing_created"],
+          duplicateReasonCodes: [...reasonCodes, "co_listing_created"],
           matchedPropertyId: match.property_id,
+          duplicateDecisionBand: audit.band,
+          duplicateMatchScores: audit.scores,
+          duplicateDecisionMetadata: audit.metadata,
         });
 
         // Mark the import item as co_listed — distinct from skipped.
@@ -4606,11 +4722,59 @@ async function processOneItem(
           property_id: match.property_id,
           matched_property_id: match.property_id,
           duplicate_decision: "high_confidence_cross_agency_colist",
-          duplicate_reason_codes: ["cross_agency_same_unit_score", "co_listing_created"],
+          duplicate_decision_band: audit.band,
+          duplicate_match_scores: audit.scores,
+          duplicate_decision_metadata: audit.metadata,
+          duplicate_reason_codes: [...reasonCodes, "co_listing_created"],
         }).eq("id", item.id);
 
         dlog(`[Co-Listing] Added agency ${job.agency_id} as secondary on property ${match.property_id} (score ${match.similarity_score})`);
         return { succeeded: false };
+      }
+
+      if (match && decisionBand === "possible_same_unit") {
+        const audit = buildDuplicateDecisionAudit(match, "quarantine_for_duplicate_review");
+        await recordSourceObservation(sb, {
+          agencyId: job.agency_id,
+          importJobId: jobId,
+          importJobItemId: item.id,
+          sourceType: job.source_type || "website",
+          sourceUrl: item.url,
+          confidenceScore,
+          extractedData: sanitizedListing,
+          duplicateDecision: "possible_same_unit_needs_review",
+          duplicateReasonCodes: [...reasonCodes, "quarantined_for_duplicate_review"],
+          matchedPropertyId: match.property_id,
+          duplicateDecisionBand: audit.band,
+          duplicateMatchScores: audit.scores,
+          duplicateDecisionMetadata: audit.metadata,
+        });
+
+        await sb.from("import_job_items").update({
+          status: "needs_review",
+          error_message: `Possible duplicate of property ${match.property_id} (building ${match.same_building_score}, unit ${match.same_unit_score}). Needs review before creation.`,
+          error_type: null,
+          matched_property_id: match.property_id,
+          duplicate_decision: "possible_same_unit_needs_review",
+          duplicate_decision_band: audit.band,
+          duplicate_match_scores: audit.scores,
+          duplicate_decision_metadata: audit.metadata,
+          duplicate_reason_codes: [...reasonCodes, "quarantined_for_duplicate_review"],
+        }).eq("id", item.id);
+
+        return { succeeded: false };
+      }
+
+      if (match && (decisionBand === "same_building_likely_different_unit" || decisionBand === "same_building_insufficient_unit_evidence")) {
+        const audit = buildDuplicateDecisionAudit(match, "allow_new_draft");
+        await sb.from("import_job_items").update({
+          matched_property_id: match.property_id,
+          duplicate_decision: decisionBand,
+          duplicate_decision_band: audit.band,
+          duplicate_match_scores: audit.scores,
+          duplicate_decision_metadata: audit.metadata,
+          duplicate_reason_codes: reasonCodes,
+        }).eq("id", item.id);
       }
     }
 
@@ -4679,6 +4843,11 @@ async function processOneItem(
         source_identity_key: sourceIdentity.sourceIdentityKey,
         source_domain: sourceIdentity.sourceDomain,
         source_identity_reason: sourceIdentity.sourceItemId ? "native_source_item_id" : "canonical_source_url",
+        normalized_floor_number: buildingIdentity.normalizedFloorNumber,
+        normalized_apartment_number: buildingIdentity.normalizedApartmentNumber,
+        normalized_entrance: buildingIdentity.normalizedEntrance,
+        unit_identity_key: buildingIdentity.unitIdentityKey,
+        unit_identity_metadata: buildingIdentity.unitIdentityMetadata,
         data_quality_score: confidenceScore,
         location_confidence: listing.address?.length > 3 ? "exact" : listing.neighborhood ? "neighborhood" : "city",
         is_claimed: false,
@@ -4742,12 +4911,18 @@ async function processOneItem(
       extractedData: sanitizedListing,
       duplicateDecision: "new_property_created",
       duplicateReasonCodes: ["no_exact_source_match"],
+      duplicateDecisionBand: "no_match",
+      duplicateMatchScores: { exact_source_match: 0 },
+      duplicateDecisionMetadata: { action: "create_new_property", property_id: property.id },
     });
 
     await sb.from("import_job_items").update({
       status: "done",
       property_id: property.id,
       duplicate_decision: "new_property_created",
+      duplicate_decision_band: "no_match",
+      duplicate_match_scores: { exact_source_match: 0 },
+      duplicate_decision_metadata: { action: "create_new_property", property_id: property.id },
       duplicate_reason_codes: ["no_exact_source_match"],
     }).eq("id", item.id);
     return { succeeded: true };
@@ -5044,7 +5219,7 @@ async function handleApproveItem(body: any) {
     const coords = await geocodeWithRateLimit(listing.address, listing.city, listing.neighborhood);
     if (coords) { latitude = coords.lat; longitude = coords.lng; }
   }
-  const buildingIdentity = buildBuildingIdentity(listing.city, listing.address, latitude, longitude);
+  const buildingIdentity = buildListingIdentityEvidence(listing, latitude, longitude);
 
   const entryDate = listing.entry_date === "immediate" ? new Date().toISOString().split("T")[0] : listing.entry_date || null;
   const copy = await generateBuyWiseTitleAndDescription(listing, `${listing.title || ""}\n${listing.description || ""}`, Deno.env.get("LOVABLE_API_KEY") || "", undefined, sb);
@@ -5105,6 +5280,11 @@ async function handleApproveItem(body: any) {
       source_identity_key: sourceIdentity.sourceIdentityKey,
       source_domain: sourceIdentity.sourceDomain,
       source_identity_reason: sourceIdentity.sourceItemId ? "native_source_item_id" : "canonical_source_url",
+      normalized_floor_number: buildingIdentity.normalizedFloorNumber,
+      normalized_apartment_number: buildingIdentity.normalizedApartmentNumber,
+      normalized_entrance: buildingIdentity.normalizedEntrance,
+      unit_identity_key: buildingIdentity.unitIdentityKey,
+      unit_identity_metadata: buildingIdentity.unitIdentityMetadata,
     })
     .select("id")
     .single();
@@ -5130,7 +5310,15 @@ async function handleApproveItem(body: any) {
     normalized_address_key: buildingIdentity.normalizedAddressKey,
     geocode_key: buildingIdentity.geocodeKey,
     building_key: buildingIdentity.buildingKey,
+    normalized_floor_number: buildingIdentity.normalizedFloorNumber,
+    normalized_apartment_number: buildingIdentity.normalizedApartmentNumber,
+    normalized_entrance: buildingIdentity.normalizedEntrance,
+    unit_identity_key: buildingIdentity.unitIdentityKey,
+    unit_identity_metadata: buildingIdentity.unitIdentityMetadata,
     duplicate_decision: "manual_review_approved_created",
+    duplicate_decision_band: "manual_review_approved",
+    duplicate_match_scores: item.duplicate_match_scores || {},
+    duplicate_decision_metadata: { action: "manual_review_approved_create", prior_band: item.duplicate_decision_band || null, matched_property_id: item.matched_property_id || null },
     duplicate_reason_codes: ["approved_from_import_review"],
   }).eq("id", item_id);
 
@@ -5144,6 +5332,9 @@ async function handleApproveItem(body: any) {
     extractedData: listing,
     duplicateDecision: "manual_review_approved_created",
     duplicateReasonCodes: ["approved_from_import_review"],
+    duplicateDecisionBand: "manual_review_approved",
+    duplicateMatchScores: item.duplicate_match_scores || {},
+    duplicateDecisionMetadata: { action: "manual_review_approved_create", prior_band: item.duplicate_decision_band || null, matched_property_id: item.matched_property_id || null },
   });
 
   return { property_id: property.id };
