@@ -27,7 +27,6 @@ export interface Lead {
     lead_quality_reason: string | null;
     price_context_complete: boolean | null;
     price_context_confidence_tier: string | null;
-    price_context_badge_status: string | null;
     price_context_public_label: string | null;
   } | null;
   property: {
@@ -37,7 +36,6 @@ export interface Lead {
     price: number;
     images: string[] | null;
     price_context_confidence_tier: string | null;
-    price_context_badge_status: string | null;
     price_context_public_label: string | null;
     price_context_percentage_suppressed: boolean | null;
   } | null;
@@ -81,7 +79,7 @@ export function useAgentLeads(statusFilter?: LeadStatus | 'all') {
           contacted_at,
           is_read,
           created_at,
-          property:properties(id, title, city, price, images, price_context_confidence_tier, price_context_badge_status, price_context_public_label, price_context_percentage_suppressed)
+          property:properties(id, title, city, price, images, price_context_confidence_tier, price_context_public_label, price_context_percentage_suppressed)
         `)
         .eq('agent_id', agent.id)
         .order('created_at', { ascending: false });
@@ -102,7 +100,7 @@ export function useAgentLeads(statusFilter?: LeadStatus | 'all') {
 
       const { data: qualityEvents, error: qualityError } = await supabase
         .from('lead_response_events')
-        .select('id, inquiry_id, lead_quality_rating, buyer_preparedness, lead_quality_reason, price_context_complete, price_context_confidence_tier, price_context_badge_status, price_context_public_label, created_at')
+        .select('id, inquiry_id, lead_quality_rating, buyer_preparedness, lead_quality_reason, price_context_complete, price_context_confidence_tier, price_context_public_label, created_at')
         .in('inquiry_id', leadIds)
         .not('lead_quality_rating', 'is', null)
         .order('created_at', { ascending: false });
@@ -140,8 +138,7 @@ export function useUpsertLeadQualityFeedback() {
       buyerPreparedness: 'well_prepared' | 'some_context' | 'unclear' | 'unqualified';
       reason?: string;
     }) => {
-      const priceContextComplete = lead.property?.price_context_badge_status === 'complete'
-        || lead.property?.price_context_confidence_tier === 'strong_comparable_match'
+      const priceContextComplete = lead.property?.price_context_confidence_tier === 'strong_comparable_match'
         || lead.property?.price_context_percentage_suppressed === false;
 
       const payload: LeadResponseEventInsert = {
@@ -153,7 +150,6 @@ export function useUpsertLeadQualityFeedback() {
         lead_quality_reason: reason?.trim() || null,
         price_context_complete: priceContextComplete,
         price_context_confidence_tier: lead.property?.price_context_confidence_tier ?? null,
-        price_context_badge_status: lead.property?.price_context_badge_status ?? null,
         price_context_public_label: lead.property?.price_context_public_label ?? null,
         responded_at: new Date().toISOString(),
       };
