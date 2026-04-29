@@ -43,7 +43,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { PropertyThumbnail } from '@/components/shared/PropertyThumbnail';
-import { BenchmarkReviewResolution, PropertyForReview, PriceContextEvent, usePriceContextEvents } from '@/hooks/useListingReview';
+import { PropertyForReview, PriceContextEvent, usePriceContextEvents } from '@/hooks/useListingReview';
 import { useNearbySoldComps } from '@/hooks/useNearbySoldComps';
 import { computeSpecCompStats, useSpecBasedSoldComps } from '@/hooks/useSpecBasedSoldComps';
 import { useNeighborhoodAvgPrice } from '@/hooks/useNeighborhoodPrices';
@@ -58,7 +58,6 @@ interface ListingReviewCardProps {
   onApprove: (id: string, notes?: string, agentId?: string, propertyTitle?: string, featureThis?: boolean) => void;
   onRequestChanges: (id: string, reason: string, notes?: string, agentId?: string, propertyTitle?: string) => void;
   onReject: (id: string, reason: string, notes?: string, agentId?: string, propertyTitle?: string) => void;
-  onBenchmarkReviewAction: (id: string, resolution: BenchmarkReviewResolution, notes?: string) => void;
   isLoading?: boolean;
 }
 
