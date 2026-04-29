@@ -214,6 +214,44 @@ export default function AdminListingReview() {
           </TabsTrigger>
         </TabsList>
 
+        {activeTab === 'benchmark_review' && (
+          <Card className="mb-4">
+            <CardContent className="grid gap-3 p-4 md:grid-cols-4">
+              <Select value={benchmarkStatusFilter} onValueChange={setBenchmarkStatusFilter}>
+                <SelectTrigger><SelectValue placeholder="Review status" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="open">Requested + under review</SelectItem>
+                  <SelectItem value="requested">Requested</SelectItem>
+                  <SelectItem value="under_review">Under review</SelectItem>
+                  <SelectItem value="resolved">Resolved</SelectItem>
+                  <SelectItem value="all">All benchmark reviews</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={benchmarkConfidenceFilter} onValueChange={setBenchmarkConfidenceFilter}>
+                <SelectTrigger><SelectValue placeholder="Confidence tier" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All confidence tiers</SelectItem>
+                  {benchmarkConfidenceOptions.map((tier) => <SelectItem key={tier} value={tier}>{tier.replace(/_/g, ' ')}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Select value={benchmarkClassFilter} onValueChange={setBenchmarkClassFilter}>
+                <SelectTrigger><SelectValue placeholder="Property class" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All property classes</SelectItem>
+                  {benchmarkClassOptions.map((propertyClass) => <SelectItem key={propertyClass} value={propertyClass}>{propertyClass.replace(/_/g, ' ')}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Select value={benchmarkCityFilter} onValueChange={setBenchmarkCityFilter}>
+                <SelectTrigger><SelectValue placeholder="City / area" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All cities</SelectItem>
+                  {benchmarkCityOptions.map((city) => <SelectItem key={city} value={city}>{city}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Listings Content */}
         <div className="space-y-4">
           {isLoading ? (
