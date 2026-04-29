@@ -1,8 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { getPriceContextFeatureGuardrail } from '@/lib/priceContextGuardrails';
-import { fetchFeatureFlag, PRICE_CONTEXT_FLAGS } from '@/lib/featureFlags';
 
 export type SlotType = 'property_sale' | 'property_rent' | 'project_hero' | 'project_secondary';
 
@@ -27,8 +25,6 @@ export interface FeaturedPropertySlot extends FeaturedSlot {
     currency: string;
     images: string[] | null;
     listing_status: string;
-    price_context_badge_status: string | null;
-    benchmark_review_status: string | null;
     agent: {
       name: string;
     } | null;
@@ -61,7 +57,6 @@ export function useFeaturedPropertySlots(type: 'property_sale' | 'property_rent'
           *,
           property:properties!entity_id (
             id, title, city, neighborhood, price, currency, images, listing_status,
-            price_context_badge_status, benchmark_review_status,
             agent:agents!agent_id (name)
           )
         `)
@@ -116,7 +111,6 @@ export function useAvailablePropertiesForFeaturing(listingStatus: 'for_sale' | '
         .from('properties')
         .select(`
           id, title, city, neighborhood, price, currency, images, listing_status,
-          price_context_badge_status, benchmark_review_status,
           agent:agents!agent_id (name)
         `)
         .eq('is_published', true)
@@ -186,19 +180,13 @@ export function useAddFeaturedProperty() {
       slotType: 'property_sale' | 'property_rent'; 
       expiresAt: Date | null;
     }) => {
-      const { data: property, error: propertyError } = await supabase
+        const { data: property, error: propertyError } = await supabase
         .from('properties')
-        .select('listing_status, price_context_badge_status, benchmark_review_status, price_context_featured_eligible, price_context_placement_eligible')
+          .select('listing_status')
         .eq('id', propertyId)
         .single();
 
       if (propertyError) throw propertyError;
-
-      const requireCompleteContext = await fetchFeatureFlag(PRICE_CONTEXT_FLAGS.requireForFeatured, false);
-      const guardrail = getPriceContextFeatureGuardrail(property ?? {}, requireCompleteContext);
-      if (!guardrail.eligible) {
-        throw new Error(guardrail.reason ?? 'This listing is not eligible for featured placement yet.');
-      }
 
       // Get current max position for this slot type
       const { data: existingSlots } = await supabase
