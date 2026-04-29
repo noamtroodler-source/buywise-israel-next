@@ -3778,6 +3778,9 @@ async function processOneItem(
           duplicateDecision: "exact_source_match_update",
           duplicateReasonCodes: [sourceIdentity.sourceItemId ? "same_source_item_id" : "same_canonical_source_url"],
           matchedPropertyId: existing.id,
+          duplicateDecisionBand: "exact_source_match",
+          duplicateMatchScores: { source_identity: 100 },
+          duplicateDecisionMetadata: { action: "update_existing_property", matched_property_id: existing.id },
         });
         await sb.from("import_job_items")
           .update({
@@ -3785,6 +3788,9 @@ async function processOneItem(
             property_id: existing.id,
             matched_property_id: existing.id,
             duplicate_decision: "exact_source_match_update",
+            duplicate_decision_band: "exact_source_match",
+            duplicate_match_scores: { source_identity: 100 },
+            duplicate_decision_metadata: { action: "update_existing_property", matched_property_id: existing.id },
             duplicate_reason_codes: [sourceIdentity.sourceItemId ? "same_source_item_id" : "same_canonical_source_url"],
             error_message: `Updated existing property ${existing.id} from exact source identity match`,
             error_type: null,
@@ -3808,6 +3814,9 @@ async function processOneItem(
         duplicateDecision: "exact_source_match_update",
         duplicateReasonCodes: ["same_legacy_source_url"],
         matchedPropertyId: existingByUrl[0].id,
+        duplicateDecisionBand: "exact_source_match",
+        duplicateMatchScores: { legacy_url: 100 },
+        duplicateDecisionMetadata: { action: "update_existing_property", matched_property_id: existingByUrl[0].id },
       });
       await sb.from("import_job_items")
         .update({
@@ -3815,6 +3824,9 @@ async function processOneItem(
           property_id: existingByUrl[0].id,
           matched_property_id: existingByUrl[0].id,
           duplicate_decision: "exact_source_match_update",
+          duplicate_decision_band: "exact_source_match",
+          duplicate_match_scores: { legacy_url: 100 },
+          duplicate_decision_metadata: { action: "update_existing_property", matched_property_id: existingByUrl[0].id },
           duplicate_reason_codes: ["same_legacy_source_url"],
           error_message: `Updated existing property ${existingByUrl[0].id} from exact source URL match`,
           error_type: null,
@@ -3833,6 +3845,9 @@ async function processOneItem(
           status: "skipped",
           matched_property_id: existingJobItem[0].property_id || null,
           duplicate_decision: "in_job_source_duplicate",
+          duplicate_decision_band: "in_job_source_duplicate",
+          duplicate_match_scores: { source_identity: 100 },
+          duplicate_decision_metadata: { action: "skip_duplicate_job_item", matched_property_id: existingJobItem[0].property_id || null },
           duplicate_reason_codes: ["same_url_same_job"],
           error_message: "Duplicate: same URL already processed in this job",
           error_type: "permanent",
