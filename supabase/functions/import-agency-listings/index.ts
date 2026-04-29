@@ -1562,6 +1562,28 @@ async function recordSourceObservation(sb: any, params: {
   }
 }
 
+function buildDuplicateDecisionAudit(match: any, action: string, extra: Record<string, any> = {}) {
+  const band = match?.duplicate_decision_band || action;
+  const scores = {
+    similarity_score: match?.similarity_score ?? null,
+    same_building_score: match?.same_building_score ?? null,
+    same_unit_score: match?.same_unit_score ?? null,
+  };
+  const metadata = {
+    action,
+    source: "import_agency_listings",
+    matched_property_id: match?.property_id ?? null,
+    same_building_different_unit: match?.same_building_different_unit ?? null,
+    evaluated_at: new Date().toISOString(),
+    ...extra,
+  };
+  return { band, scores, metadata };
+}
+
+function sourceIdentityDecisionBand(reasonCodes: string[]) {
+  return reasonCodes.includes("same_url_same_job") ? "in_job_source_duplicate" : "exact_source_match";
+}
+
 function sanitizeDiscoveredUrl(raw: string, baseUrl?: string): { url: string | null; reason?: string } {
   if (!raw || typeof raw !== "string") return { url: null, reason: "empty_url" };
   let candidate = raw.trim().replace(/&amp;/g, "&");
