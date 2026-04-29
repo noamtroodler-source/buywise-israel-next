@@ -848,6 +848,17 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
             </Button>
           )}
 
+          {!isMobile && listingType === 'for_sale' && (
+            <Button
+              variant={filters.pricing_context_complete ? 'default' : 'outline'}
+              className="h-10 gap-2 rounded-xl"
+              onClick={() => updateFilter('pricing_context_complete', filters.pricing_context_complete ? undefined : true)}
+            >
+              <ShieldCheck className="h-4 w-4" />
+              <span>Pricing Context Complete</span>
+            </Button>
+          )}
+
           {/* Desktop: Sort & Create Alert pushed to the right */}
           {!isMobile && (
             <div className="flex items-center gap-2 ml-auto">
