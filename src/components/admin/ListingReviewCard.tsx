@@ -210,6 +210,7 @@ function useMarketReview(property: PropertyForReview): MarketReviewData {
     property.size_sqm,
     property.neighborhood,
     property.source_rooms,
+    property,
     { limit: 6, enabled: !hasCoordinates },
   );
 
