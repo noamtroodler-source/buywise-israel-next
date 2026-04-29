@@ -103,7 +103,7 @@ export function AgencyOnboardingProgress({
     {
       id: 'submit',
       label: 'Submit ready listings for review',
-      description: readyToSubmitCount > 0 ? `${readyToSubmitCount} listing${readyToSubmitCount === 1 ? '' : 's'} ready for BuyWise review` : 'Ready listings will appear here',
+      description: `${readyToSubmitCount} listing${readyToSubmitCount === 1 ? '' : 's'} ready for BuyWise review`,
       icon: Send,
       isComplete: readyToSubmitCount === 0 && listingsCount > 0 && toReviewCount === 0,
       link: '/agency/listings?status=ready_to_submit',
@@ -176,7 +176,7 @@ export function AgencyOnboardingProgress({
                   </div>
 
                   <Button type="button" variant="ghost" size="sm" className="rounded-lg shrink-0 text-xs">
-                    {item.action}
+                    {item.id === 'submit' && item.count !== undefined ? item.count : item.action}
                   </Button>
                 </Link>
               </motion.div>
