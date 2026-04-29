@@ -42,6 +42,8 @@ export interface Lead {
   } | null;
 }
 
+type LeadQualityFeedbackRow = NonNullable<Lead['quality_feedback']> & { inquiry_id: string };
+
 export function useAgentLeads(statusFilter?: LeadStatus | 'all') {
   const { user } = useAuth();
 
@@ -95,7 +97,8 @@ export function useAgentLeads(statusFilter?: LeadStatus | 'all') {
 
       if (leadIds.length === 0) return leads;
 
-      const { data: qualityEvents, error: qualityError } = await (supabase.from('lead_response_events' as any) as any)
+      const { data: qualityEvents, error: qualityError } = await supabase
+        .from('lead_response_events')
         .select('id, inquiry_id, lead_quality_rating, buyer_preparedness, lead_quality_reason, price_context_complete, price_context_confidence_tier, price_context_badge_status, price_context_public_label, created_at')
         .in('inquiry_id', leadIds)
         .not('lead_quality_rating', 'is', null)
@@ -104,7 +107,7 @@ export function useAgentLeads(statusFilter?: LeadStatus | 'all') {
       if (qualityError) throw qualityError;
 
       const feedbackByLead = new Map<string, Lead['quality_feedback']>();
-      (qualityEvents ?? []).forEach((event: any) => {
+      ((qualityEvents ?? []) as LeadQualityFeedbackRow[]).forEach((event) => {
         if (!feedbackByLead.has(event.inquiry_id)) {
           feedbackByLead.set(event.inquiry_id, event);
         }
@@ -153,15 +156,17 @@ export function useUpsertLeadQualityFeedback() {
       };
 
       if (lead.quality_feedback?.id) {
-        const { error } = await (supabase.from('lead_response_events' as any) as any)
-          .update(payload)
+        const { error } = await supabase
+          .from('lead_response_events')
+          .update(payload as Record<string, unknown>)
           .eq('id', lead.quality_feedback.id);
         if (error) throw error;
         return;
       }
 
-      const { error } = await (supabase.from('lead_response_events' as any) as any)
-        .insert(payload);
+      const { error } = await supabase
+        .from('lead_response_events')
+        .insert(payload as Record<string, unknown>);
 
       if (error) throw error;
     },
@@ -200,7 +205,7 @@ export function useUpdateLeadStatus() {
 
       const { error } = await supabase
         .from('property_inquiries')
-        .update(updateData as any)
+        .update(updateData)
         .eq('id', leadId);
 
       if (error) throw error;
