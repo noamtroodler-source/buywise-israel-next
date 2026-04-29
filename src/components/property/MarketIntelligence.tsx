@@ -194,6 +194,9 @@ function PremiumContextSummary({ priceContext, premiumExplanation }: { priceCont
 }
 
 function buildBuyerTakeaway(priceContext: PriceContextResult) {
+  if (priceContext.isLuxuryPremiumMode) {
+    return 'Treat this as luxury-property context. Public sales data is background only; ask which specific features, rights, and comparable luxury sales support the premium.';
+  }
   if (priceContext.publicLabel === 'Market context under review') {
     return 'This benchmark is under review, so use the current context as directional only.';
   }
@@ -213,15 +216,18 @@ function MarketVerdictBadge({ compsCount, radiusUsedM, priceTier, priceContext }
   const radiusLabel = radiusUsedM >= 1000 ? '1km' : '500m';
   const isPositive = priceContext.publicLabel === 'In line with available benchmarks';
   const isNeutral = priceContext.percentageSuppressed || priceContext.confidenceTier !== 'strong_comparable_match';
+  const badgeLabel = priceContext.isLuxuryPremiumMode
+    ? 'Premium property — standard comps may not apply'
+    : priceContext.displayGapPercent !== null
+      ? `${priceContext.displayGapPercent > 0 ? '+' : ''}${priceContext.displayGapPercent}% vs selected benchmarks`
+      : priceContext.publicLabel;
 
   const badge = (
     <Badge
       variant={isNeutral ? 'secondary' : undefined}
       className={isNeutral ? 'text-xs' : isPositive ? 'bg-semantic-green text-semantic-green-foreground border-semantic-green' : 'bg-semantic-amber text-semantic-amber-foreground border-semantic-amber'}
     >
-      {priceContext.displayGapPercent !== null
-        ? `${priceContext.displayGapPercent > 0 ? '+' : ''}${priceContext.displayGapPercent}% vs selected benchmarks`
-        : priceContext.publicLabel}
+      {badgeLabel}
     </Badge>
   );
 
@@ -254,6 +260,9 @@ function MarketVerdictBadge({ compsCount, radiusUsedM, priceTier, priceContext }
 function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchmarkRanges, compsCount, radiusUsedM, sqmSource, ownershipType, onTrackInteraction }: { priceContext: PriceContextResult; premiumExplanation?: string | null; benchmarkCards: BenchmarkCard[]; benchmarkRanges: BenchmarkRange[]; propertyPricePerSqm: number | null; compsCount: number; radiusUsedM: number; sqmSource?: string | null; ownershipType?: string | null; onTrackInteraction?: (eventName: string, properties?: Record<string, unknown>) => void }) {
   const radiusLabel = radiusUsedM >= 1000 ? '1km' : `${radiusUsedM}m`;
   const buyerTakeaway = buildBuyerTakeaway(priceContext);
+  const subtitle = priceContext.isLuxuryPremiumMode
+    ? 'Recorded sales and local benchmarks to give background only — luxury properties can trade far above standard ranges.'
+    : 'Recorded sales and local benchmarks to help you understand the asking price.';
 
   return (
     <div className="rounded-lg border border-primary/15 bg-primary/5 p-4 space-y-3">
@@ -267,7 +276,7 @@ function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchma
               <p className="text-sm font-semibold text-foreground">BuyWise Price Context</p>
               <Badge variant="secondary" className="text-xs">{priceContext.publicLabel}</Badge>
             </div>
-            <p className="text-xs text-muted-foreground">Recorded sales and local benchmarks to help you understand the asking price.</p>
+            <p className="text-xs text-muted-foreground">{subtitle}</p>
           </div>
           <div className="mt-3 grid gap-2 md:grid-cols-3">
             {benchmarkCards.map((card) => (
