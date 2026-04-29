@@ -4543,7 +4543,9 @@ async function processOneItem(
     }
 
     // ── VALIDATION (enhanced with city-specific outlier detection) ──
-    const { errors: propertyErrors, warnings: validationWarnings } = validatePropertyData(listing, importType);
+    const { errors: propertyErrors, warnings: validationWarnings } = validatePropertyData(listing, importType, {
+      allowApproximateAgencyLocation: isAgencyOwnWebsite,
+    });
     validationWarnings.push(...preValidationWarnings);
     if (propertyErrors.length > 0) {
       await sb.from("import_job_items").update({
