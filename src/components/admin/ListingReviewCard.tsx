@@ -874,13 +874,28 @@ function MarketPanel({ property, market, reviewed, onReviewedChange, onBenchmark
             <Badge variant="outline">{formatLabel(property.benchmark_review_status)}</Badge>
           </div>
           {property.benchmark_review_notes && <p className="mb-3 border-l-2 border-primary/30 pl-3 text-sm text-muted-foreground">{property.benchmark_review_notes}</p>}
+          {property.benchmark_review_requested_at && <p className="mb-3 text-xs text-muted-foreground">Requested {formatSubmittedAt(property.benchmark_review_requested_at)}</p>}
           <Textarea value={reviewNotes} onChange={(event) => setReviewNotes(event.target.value)} placeholder="Admin resolution notes…" rows={3} className="mb-3 bg-background" />
           <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
             <Button variant="outline" disabled={isLoading} onClick={() => onBenchmarkReviewAction('under_review', reviewNotes)}>Mark under review</Button>
             <Button variant="outline" disabled={isLoading} onClick={() => onBenchmarkReviewAction('accepted', reviewNotes)}>Accept benchmark</Button>
             <Button variant="outline" disabled={isLoading} onClick={() => onBenchmarkReviewAction('data_corrected', reviewNotes)}>Data corrected</Button>
             <Button variant="outline" disabled={isLoading} onClick={() => onBenchmarkReviewAction('confidence_softened', reviewNotes)}>Soften confidence</Button>
+            <Button variant="outline" disabled={isLoading} onClick={() => onBenchmarkReviewAction('more_data_needed', reviewNotes)}>More data needed</Button>
           </div>
+        </div>
+      )}
+
+      {!reviewOpen && property.benchmark_review_status === 'resolved' && (
+        <div className="rounded-lg border border-border bg-background p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h4 className="font-semibold text-foreground">Benchmark review resolved</h4>
+              <p className="text-sm text-muted-foreground">{formatLabel(property.benchmark_review_resolution)}{property.benchmark_review_resolved_at ? ` • ${formatSubmittedAt(property.benchmark_review_resolved_at)}` : ''}</p>
+            </div>
+            <Badge variant="outline">Resolved</Badge>
+          </div>
+          {property.benchmark_review_admin_notes && <p className="mt-3 border-l-2 border-primary/30 pl-3 text-sm text-muted-foreground">{property.benchmark_review_admin_notes}</p>}
         </div>
       )}
 
