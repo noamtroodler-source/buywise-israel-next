@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { ChevronDown, ChevronUp, HelpCircle, MapPin, DollarSign, LayoutGrid, Bath, Building2, SlidersHorizontal, ArrowUpDown, Bell, X, Search, Check, Sparkles, Car, Layers, ArrowRight, Calendar, Clock, Home, PawPrint, CalendarCheck, Cat, Dog, Loader2, RotateCcw, Navigation, Map as MapIcon, ShieldCheck } from 'lucide-react';
+import { ChevronDown, ChevronUp, HelpCircle, MapPin, DollarSign, LayoutGrid, Bath, Building2, SlidersHorizontal, ArrowUpDown, Bell, X, Search, Check, Sparkles, Car, Layers, ArrowRight, Calendar, Clock, Home, PawPrint, CalendarCheck, Cat, Dog, Loader2, RotateCcw, Navigation, Map as MapIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PriceRangeSlider } from '@/components/filters/PriceRangeSlider';
@@ -18,8 +18,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePreferences } from '@/contexts/PreferencesContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileFilterSheet } from '@/components/filters/MobileFilterSheet';
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
-import { PRICE_CONTEXT_FLAGS } from '@/lib/featureFlags';
 
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { findNearestCity } from '@/lib/utils/findNearestCity';
@@ -222,7 +220,6 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
   const navigate = useNavigate();
   const { currency, exchangeRate } = usePreferences();
   const isMobile = useIsMobile();
-  const { data: showPriceContextFilter = true } = useFeatureFlag(PRICE_CONTEXT_FLAGS.buyerFilter, true);
    
    const { getLocation, isLoading: geoLoading, coordinates, error: geoLocationError, isSupported: geoSupported } = useGeolocation();
    
