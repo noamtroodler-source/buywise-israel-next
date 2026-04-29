@@ -264,6 +264,8 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
     radiusUsedM: 500,
     avgCompPriceSqm: null,
   });
+  const { trackEvent } = useEventTracking();
+  const trackedViewKey = useRef<string | null>(null);
 
   const handleVerdictComputed = useCallback((avgComparison: number | null, compsCount: number, radiusUsedM: number, avgCompPriceSqm: number | null) => {
     setVerdictData(prev => {
@@ -312,6 +314,43 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
     pricePerSqm: propertyPricePerSqm,
     property,
   });
+
+  const priceContextTrackingPayload = {
+    property_id: property.id,
+    property_city: property.city,
+    listing_status: property.listing_status,
+    public_label: priceContext.publicLabel,
+    confidence_tier: priceContext.confidenceTier,
+    confidence_score: priceContext.confidenceScore,
+    percentage_suppressed: priceContext.percentageSuppressed,
+    badge_status: priceContext.badgeStatus,
+    property_class: priceContext.propertyClass,
+    buyer_question_count: priceContext.buyerQuestions.length,
+    premium_driver_count: priceContext.premiumDrivers.length,
+    comps_count: verdictData.compsCount,
+    radius_used_m: verdictData.radiusUsedM,
+  };
+
+  useEffect(() => {
+    const viewKey = `${property.id}:${priceContext.confidenceTier}:${priceContext.publicLabel}:${verdictData.compsCount}:${verdictData.radiusUsedM}`;
+    if (trackedViewKey.current === viewKey) return;
+
+    trackedViewKey.current = viewKey;
+    trackEvent('view', 'price_context_module_viewed', 'engagement', {
+      component: 'MarketIntelligence',
+      properties: priceContextTrackingPayload,
+    });
+  }, [property.id, priceContext.confidenceTier, priceContext.publicLabel, verdictData.compsCount, verdictData.radiusUsedM, trackEvent]);
+
+  const handlePriceContextInteraction = useCallback((eventName: string, properties?: Record<string, unknown>) => {
+    trackEvent('click', eventName, 'engagement', {
+      component: 'MarketIntelligence',
+      properties: {
+        ...priceContextTrackingPayload,
+        ...properties,
+      },
+    });
+  }, [trackEvent, property.id, property.city, property.listing_status, priceContext.publicLabel, priceContext.confidenceTier, priceContext.confidenceScore, priceContext.percentageSuppressed, priceContext.badgeStatus, priceContext.propertyClass, priceContext.buyerQuestions.length, priceContext.premiumDrivers.length, verdictData.compsCount, verdictData.radiusUsedM]);
 
   return (
     <TooltipProvider>
@@ -436,6 +475,7 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
           propertyPricePerSqm={propertyPricePerSqm}
           compsCount={verdictData.compsCount}
           radiusUsedM={verdictData.radiusUsedM}
+          onTrackInteraction={handlePriceContextInteraction}
         />
 
         {/* Data context — help buyers understand data limitations */}
