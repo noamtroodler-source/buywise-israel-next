@@ -125,31 +125,6 @@ export function PendingItemsWidget({ agencyId }: PendingItemsWidgetProps) {
               ))}
             </ul>
           )}
-
-          {showSendAgentEmails && (
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-3 rounded-xl bg-background border border-border/50">
-              <Mail className="h-4 w-4 text-primary flex-shrink-0" />
-              <p className="text-sm text-foreground flex-1">
-                {data.agentsPendingEmail} agent{data.agentsPendingEmail !== 1 ? 's are' : ' is'}{' '}
-                waiting for a welcome email.
-              </p>
-              <Button
-                size="sm"
-                onClick={handleSend}
-                disabled={sendEmails.isPending}
-                className="rounded-xl"
-              >
-                {sendEmails.isPending ? (
-                  <>
-                    <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                    Sending…
-                  </>
-                ) : (
-                  'Send welcome emails'
-                )}
-              </Button>
-            </div>
-          )}
         </CardContent>
       </Card>
     </motion.div>
