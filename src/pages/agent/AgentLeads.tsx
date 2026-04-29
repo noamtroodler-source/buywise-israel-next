@@ -42,14 +42,12 @@ const dateRangeLabels: Record<DateRange, string> = {
 };
 
 function exportAnalyticsToCSV(engagement: InquiryAnalytics['propertyEngagement']) {
-  const headers = ['Property Title', 'Views', 'Saves', 'WhatsApp Clicks', 'Email Clicks', 'Form Clicks'];
+  const headers = ['Property Title', 'Views', 'Saves', 'Clicks'];
   const rows = engagement.map(e => [
     `"${(e.title || '').replace(/"/g, '""')}"`,
     e.views || 0,
     e.saves || 0,
-    e.whatsappClicks || 0,
-    e.emailClicks || 0,
-    e.formClicks || 0,
+    e.clicks || 0,
   ]);
   const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
