@@ -657,18 +657,6 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
           priceContext={priceContext}
         />
 
-        {/* Divider with evidence count */}
-        <div className="flex items-center gap-3">
-          <Separator className="flex-1" />
-          <span className="text-xs text-muted-foreground whitespace-nowrap">
-            {verdictData.compsCount > 0 
-              ? `Based on ${verdictData.compsCount} verified sale${verdictData.compsCount > 1 ? 's' : ''} within ${verdictData.radiusUsedM >= 1000 ? '1km' : '500m'}`
-              : `Nearby sales within ${verdictData.radiusUsedM >= 1000 ? '1km' : '500m'}`
-            }
-          </span>
-          <Separator className="flex-1" />
-        </div>
-
         {/* Comps List — use spec-based when no coordinates (sourced listings with no address) */}
         {property.latitude && property.longitude ? (
           <RecentNearbySales
@@ -681,6 +669,7 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
             subjectProperty={property}
             hideHeader
             hideVerdict
+            calculationOnly
             onVerdictComputed={handleVerdictComputed}
             onCompsViewed={handleCompsViewed}
           />
@@ -694,6 +683,7 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
             currency={property.currency ?? 'ILS'}
             sourceRooms={property.source_rooms}
             subjectProperty={property}
+            calculationOnly
             onVerdictComputed={handleVerdictComputed}
             onCompsViewed={handleCompsViewed}
           />
