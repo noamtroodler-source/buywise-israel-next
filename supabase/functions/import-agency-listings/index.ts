@@ -2705,10 +2705,49 @@ async function computeImagePhash(imageUrl: string, propertyId: string | null, sb
   }
 }
 
-async function registerImageHashes(propertyId: string, imageUrls: string[], sb: any): Promise<string[]> {
-  // DISABLED: compute-image-hash crashes with magick.wasm URL error in edge runtime.
-  // Skip pHash registration until the WASM issue is resolved.
-  return [];
+function classifyImageRoleFromUrl(imageUrl: string): string {
+  const lower = imageUrl.toLowerCase();
+  if (/floor[-_\s]?plan|planim|taba|תשריט|תוכנית/.test(lower)) return "floorplan";
+  if (/logo|brand|watermark|agent|avatar|profile/.test(lower)) return "logo_or_branding";
+  if (/map|maps|location|streetview|street-view/.test(lower)) return "map_or_area";
+  if (/facade|building|exterior|outside|חזית|בניין/.test(lower)) return "exterior";
+  if (/living|kitchen|bedroom|bathroom|salon|interior|מטבח|סלון|חדר/.test(lower)) return "interior";
+  return "unknown";
+}
+
+async function registerImageHashes(propertyId: string, imageUrls: string[], sb: any, sha256s: string[] = []): Promise<string[]> {
+  const warnings: string[] = [];
+  const rows = imageUrls
+    .map((imageUrl, index) => ({
+      property_id: propertyId,
+      image_url: imageUrl,
+      sha256: sha256s[index],
+      phash: (sha256s[index] || "").slice(0, 16).padEnd(16, "0"),
+      image_role: classifyImageRoleFromUrl(imageUrl),
+      source_type: "imported_allowed_source",
+      signal_strength: "exact_sha256",
+    }))
+    .filter(row => row.sha256 && row.image_url && row.image_role !== "logo_or_branding" && row.image_role !== "map_or_area");
+
+  if (rows.length === 0) return warnings;
+  const { error } = await sb.from("image_hashes").upsert(rows, { onConflict: "image_url" });
+  if (error) warnings.push(error.message);
+  return warnings;
+}
+
+async function findBestImageOverlapMatch(sb: any, sha256s: string[]) {
+  const uniqueHashes = Array.from(new Set((sha256s || []).filter(Boolean)));
+  if (uniqueHashes.length < 2) return null;
+  const { data, error } = await sb.rpc("find_property_image_overlap", {
+    p_sha256s: uniqueHashes,
+    p_min_overlap: 2,
+    p_limit: 1,
+  });
+  if (error) {
+    console.warn("Image overlap lookup failed:", error.message);
+    return null;
+  }
+  return Array.isArray(data) && data.length > 0 ? data[0] : null;
 }
 
 async function parallelImageDownload(
