@@ -257,32 +257,11 @@ function MarketVerdictBadge({ compsCount, radiusUsedM, priceTier, priceContext }
 }
 
 function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchmarkRanges, propertyPricePerSqm, compsCount, radiusUsedM, sqmSource, ownershipType, onTrackInteraction }: { priceContext: PriceContextResult; premiumExplanation?: string | null; benchmarkCards: BenchmarkCard[]; benchmarkRanges: BenchmarkRange[]; propertyPricePerSqm: number | null; compsCount: number; radiusUsedM: number; sqmSource?: string | null; ownershipType?: string | null; onTrackInteraction?: (eventName: string, properties?: Record<string, unknown>) => void }) {
-  const [open, setOpen] = useState(false);
-  const trackedLadderViewRef = useRef(false);
-  const hasPremiumContext = priceContext.confirmedPremiumDrivers.length > 0 || priceContext.detectedPremiumDrivers.length > 0 || Boolean(premiumExplanation?.trim());
   const radiusLabel = radiusUsedM >= 1000 ? '1km' : `${radiusUsedM}m`;
   const layeredTake = buildLayeredBuyWiseTake(priceContext, propertyPricePerSqm, benchmarkRanges);
 
-  const handlePremiumOpenChange = (nextOpen: boolean) => {
-    setOpen(nextOpen);
-    if (nextOpen) {
-      onTrackInteraction?.('price_context_premium_context_opened', {
-        confirmed_driver_count: priceContext.confirmedPremiumDrivers.length,
-        detected_driver_count: priceContext.detectedPremiumDrivers.length,
-      });
-    }
-  };
-
-  const handleLadderViewed = (eventName: string, properties?: Record<string, unknown>) => {
-    if (eventName === 'price_context_benchmark_ladder_viewed') {
-      if (trackedLadderViewRef.current) return;
-      trackedLadderViewRef.current = true;
-    }
-    onTrackInteraction?.(eventName, properties);
-  };
-
   return (
-    <div className="rounded-lg border border-primary/15 bg-primary/5 p-4 space-y-4">
+    <div className="rounded-lg border border-primary/15 bg-primary/5 p-4 space-y-3">
       <div className="flex items-start gap-3">
         <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
           <BarChart3 className="h-4 w-4 text-primary" />
@@ -295,82 +274,17 @@ function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchma
             </div>
             <p className="text-xs text-muted-foreground">Recorded sales, local benchmark ranges, and property-specific context for International buyers.</p>
           </div>
-          <p className="text-sm text-muted-foreground">{layeredTake}</p>
-          <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          <p className="text-sm leading-relaxed text-muted-foreground">{layeredTake}</p>
+          <div className="mt-3 grid gap-2 md:grid-cols-3">
             {benchmarkCards.map((card) => (
               <BenchmarkCardTile key={card.id} card={card} onTrackInteraction={onTrackInteraction} />
             ))}
-          </div>
-          <div className="mt-3">
-            <BenchmarkLadder askingPriceSqm={propertyPricePerSqm} ranges={benchmarkRanges} onTrackInteraction={handleLadderViewed} />
           </div>
           <div className="mt-3">
             <PremiumContextSummary priceContext={priceContext} premiumExplanation={premiumExplanation} />
           </div>
         </div>
       </div>
-
-      {hasPremiumContext && (
-        <Collapsible open={open} onOpenChange={handlePremiumOpenChange}>
-          <CollapsibleTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-8 px-2 text-xs text-primary hover:text-primary">
-              What recorded sales may not capture
-              <ChevronDown className={`ml-1 h-3.5 w-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="pt-2 space-y-3">
-            {(priceContext.confirmedPremiumDrivers.length > 0 || priceContext.detectedPremiumDrivers.length > 0) && (
-              <div className="grid gap-3 sm:grid-cols-2">
-                {priceContext.confirmedPremiumDrivers.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-xs font-medium text-muted-foreground">Confirmed by agency</p>
-                    <div className="flex flex-wrap gap-2">
-                      {priceContext.confirmedPremiumDrivers.slice(0, 8).map((driver) => <Badge key={driver} variant="outline" className="rounded-lg bg-background/70">{formatPremiumDriver(driver)}</Badge>)}
-                    </div>
-                  </div>
-                )}
-                {priceContext.detectedPremiumDrivers.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-xs font-medium text-muted-foreground">Detected from listing</p>
-                    <div className="flex flex-wrap gap-2">
-                      {priceContext.detectedPremiumDrivers.slice(0, 8).map((driver) => <Badge key={driver} variant="outline" className="rounded-lg bg-background/70">{formatPremiumDriver(driver)}</Badge>)}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-            {premiumExplanation && (
-              <p className="text-sm text-muted-foreground border-l-2 border-primary/30 pl-3">
-                {premiumExplanation}
-              </p>
-            )}
-          </CollapsibleContent>
-        </Collapsible>
-      )}
-
-      {priceContext.buyerQuestions.length > 0 && (
-        <div className="rounded-lg border border-border/70 bg-background/70 p-3">
-          <div className="mb-2 flex items-center gap-2">
-            <CircleHelp className="h-4 w-4 text-primary" />
-            <div>
-              <p className="text-sm font-semibold text-foreground">Questions worth asking</p>
-              <p className="text-xs text-muted-foreground">Based on this listing’s pricing context and property details</p>
-            </div>
-          </div>
-          <ul className="space-y-1.5 text-sm text-muted-foreground">
-            {priceContext.buyerQuestions.map((question, index) => (
-              <li
-                key={question}
-                className="flex cursor-pointer gap-2 rounded-md px-1 py-0.5 transition-colors hover:bg-primary/5"
-                onClick={() => onTrackInteraction?.('buyer_question_engaged', { question, question_index: index + 1 })}
-              >
-                <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-                <span>{question}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
 
       <Collapsible onOpenChange={(nextOpen) => nextOpen && onTrackInteraction?.('price_context_details_opened', { confidence_tier: priceContext.confidenceTier })}>
         <CollapsibleTrigger asChild>
