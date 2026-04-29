@@ -295,6 +295,20 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
             </div>
           </div>
 
+          {(context?.insufficientDataByCity || []).length > 0 && (
+            <div className="rounded-xl border border-border/50 p-4">
+              <p className="text-sm font-semibold text-foreground">Insufficient-data rate by city</p>
+              <div className="mt-3 grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+                {(context?.insufficientDataByCity || []).slice(0, 9).map((item) => (
+                  <div key={item.city} className="flex items-center justify-between gap-3 rounded-lg bg-muted/20 p-3 text-sm">
+                    <span className="font-medium text-foreground">{item.city}</span>
+                    <span className="text-muted-foreground">{item.count} · {item.percentage.toFixed(1)}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="rounded-xl border border-border/50 p-4">
             <div className="flex items-center justify-between gap-3">
               <div>
