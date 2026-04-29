@@ -40,8 +40,8 @@ export function LeadQualityTab({ dateRange }: LeadQualityTabProps) {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Responses</p>
-                <p className="text-3xl font-bold">{metrics?.totalResponses || 0}</p>
+                <p className="text-sm text-muted-foreground">Rated Leads</p>
+                <p className="text-3xl font-bold">{metrics?.ratedLeadCount || 0}</p>
               </div>
               <MessageSquare className="h-8 w-8 text-primary/60" />
             </div>
@@ -52,8 +52,8 @@ export function LeadQualityTab({ dateRange }: LeadQualityTabProps) {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Avg Response Time</p>
-                <p className="text-3xl font-bold">{formatTime(metrics?.avgResponseTimeMinutes || 0)}</p>
+                <p className="text-sm text-muted-foreground">Avg Lead Quality</p>
+                <p className="text-3xl font-bold">{(metrics?.avgLeadQualityRating || 0).toFixed(1)}/5</p>
               </div>
               <Clock className="h-8 w-8 text-primary/60" />
             </div>
@@ -76,8 +76,8 @@ export function LeadQualityTab({ dateRange }: LeadQualityTabProps) {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Visits Scheduled</p>
-                <p className="text-3xl font-bold">{metrics?.visitScheduledCount || 0}</p>
+                <p className="text-sm text-muted-foreground">Context Complete</p>
+                <p className="text-3xl font-bold">{metrics?.priceContextCompleteRatedCount || 0}</p>
               </div>
               <CheckCircle className="h-8 w-8 text-green-500/60" />
             </div>
