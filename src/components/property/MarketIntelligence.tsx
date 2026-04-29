@@ -1,7 +1,9 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { BarChart3, ShieldCheck, Info, ArrowRight, ChevronDown, CircleHelp, CheckCircle2, Calculator, Ruler, TrendingUp } from 'lucide-react';
 import { getIsraeliRoomCount } from '@/lib/israeliRoomCount';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -16,6 +18,25 @@ import { useNeighborhoodAvgPrice } from '@/hooks/useNeighborhoodPrices';
 import { usePriceTier } from '@/hooks/usePriceTier';
 import type { PriceTier } from '@/hooks/usePriceTier';
 import { getPriceContext, type PriceContextResult } from '@/lib/priceContext';
+
+const SESSION_KEY = 'analytics_session_id';
+const SESSION_EXPIRY_KEY = 'analytics_session_expiry';
+const SESSION_DURATION = 30 * 60 * 1000;
+
+function getOrCreateAnalyticsSessionId() {
+  const existingSession = sessionStorage.getItem(SESSION_KEY);
+  const expiry = sessionStorage.getItem(SESSION_EXPIRY_KEY);
+
+  if (existingSession && expiry && Date.now() < parseInt(expiry)) {
+    sessionStorage.setItem(SESSION_EXPIRY_KEY, String(Date.now() + SESSION_DURATION));
+    return existingSession;
+  }
+
+  const newSession = `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+  sessionStorage.setItem(SESSION_KEY, newSession);
+  sessionStorage.setItem(SESSION_EXPIRY_KEY, String(Date.now() + SESSION_DURATION));
+  return newSession;
+}
 
 interface MarketIntelligenceProps {
   property: {
@@ -71,6 +92,7 @@ interface MarketIntelligenceProps {
     rental_4_room_max?: number | null;
     slug?: string;
   } | null | undefined;
+  trackingEnabled?: boolean;
 }
 
 function formatPremiumDriver(driver: string) {
@@ -124,10 +146,20 @@ function MarketVerdictBadge({ compsCount, radiusUsedM, priceTier, priceContext }
   );
 }
 
-function BuyWiseTake({ priceContext, premiumExplanation, propertyPricePerSqm, compsCount, radiusUsedM }: { priceContext: PriceContextResult; premiumExplanation?: string | null; propertyPricePerSqm: number | null; compsCount: number; radiusUsedM: number }) {
+function BuyWiseTake({ priceContext, premiumExplanation, propertyPricePerSqm, compsCount, radiusUsedM, onTrackInteraction }: { priceContext: PriceContextResult; premiumExplanation?: string | null; propertyPricePerSqm: number | null; compsCount: number; radiusUsedM: number; onTrackInteraction?: (eventName: string, properties?: Record<string, unknown>) => void }) {
   const [open, setOpen] = useState(false);
   const hasPremiumContext = priceContext.confirmedPremiumDrivers.length > 0 || priceContext.detectedPremiumDrivers.length > 0 || Boolean(premiumExplanation?.trim());
   const radiusLabel = radiusUsedM >= 1000 ? '1km' : `${radiusUsedM}m`;
+
+  const handlePremiumOpenChange = (nextOpen: boolean) => {
+    setOpen(nextOpen);
+    if (nextOpen) {
+      onTrackInteraction?.('price_context_premium_context_opened', {
+        confirmed_driver_count: priceContext.confirmedPremiumDrivers.length,
+        detected_driver_count: priceContext.detectedPremiumDrivers.length,
+      });
+    }
+  };
 
   return (
     <div className="rounded-xl border border-primary/15 bg-primary/5 p-4 space-y-4">
@@ -164,7 +196,7 @@ function BuyWiseTake({ priceContext, premiumExplanation, propertyPricePerSqm, co
       </div>
 
       {hasPremiumContext && (
-        <Collapsible open={open} onOpenChange={setOpen}>
+        <Collapsible open={open} onOpenChange={handlePremiumOpenChange}>
           <CollapsibleTrigger asChild>
             <Button variant="ghost" size="sm" className="h-8 px-2 text-xs text-primary hover:text-primary">
               What recorded sales may not capture
@@ -211,8 +243,12 @@ function BuyWiseTake({ priceContext, premiumExplanation, propertyPricePerSqm, co
             </div>
           </div>
           <ul className="space-y-1.5 text-sm text-muted-foreground">
-            {priceContext.buyerQuestions.map((question) => (
-              <li key={question} className="flex gap-2">
+            {priceContext.buyerQuestions.map((question, index) => (
+              <li
+                key={question}
+                className="flex cursor-pointer gap-2 rounded-md px-1 py-0.5 transition-colors hover:bg-primary/5"
+                onClick={() => onTrackInteraction?.('buyer_question_engaged', { question, question_index: index + 1 })}
+              >
                 <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
                 <span>{question}</span>
               </li>
@@ -221,7 +257,7 @@ function BuyWiseTake({ priceContext, premiumExplanation, propertyPricePerSqm, co
         </div>
       )}
 
-      <Collapsible>
+      <Collapsible onOpenChange={(nextOpen) => nextOpen && onTrackInteraction?.('price_context_calculation_opened', { confidence_tier: priceContext.confidenceTier })}>
         <CollapsibleTrigger asChild>
           <Button variant="ghost" size="sm" className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground">
             <Calculator className="mr-1 h-3.5 w-3.5" /> How we calculated this
@@ -242,13 +278,16 @@ function BuyWiseTake({ priceContext, premiumExplanation, propertyPricePerSqm, co
   );
 }
 
-export function MarketIntelligence({ property, cityData }: MarketIntelligenceProps) {
+export function MarketIntelligence({ property, cityData, trackingEnabled = true }: MarketIntelligenceProps) {
   const [verdictData, setVerdictData] = useState<{ avgComparison: number | null; compsCount: number; radiusUsedM: number; avgCompPriceSqm: number | null }>({
     avgComparison: null,
     compsCount: 0,
     radiusUsedM: 500,
     avgCompPriceSqm: null,
   });
+  const { user } = useAuth();
+  const location = useLocation();
+  const trackedViewKey = useRef<string | null>(null);
 
   const handleVerdictComputed = useCallback((avgComparison: number | null, compsCount: number, radiusUsedM: number, avgCompPriceSqm: number | null) => {
     setVerdictData(prev => {
@@ -298,6 +337,63 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
     property,
   });
 
+  const priceContextTrackingPayload = useMemo(() => ({
+    property_id: property.id,
+    property_city: property.city,
+    listing_status: property.listing_status,
+    public_label: priceContext.publicLabel,
+    confidence_tier: priceContext.confidenceTier,
+    confidence_score: priceContext.confidenceScore,
+    percentage_suppressed: priceContext.percentageSuppressed,
+    badge_status: priceContext.badgeStatus,
+    property_class: priceContext.propertyClass,
+    buyer_question_count: priceContext.buyerQuestions.length,
+    premium_driver_count: priceContext.premiumDrivers.length,
+    comps_count: verdictData.compsCount,
+    radius_used_m: verdictData.radiusUsedM,
+  }), [property.id, property.city, property.listing_status, priceContext.publicLabel, priceContext.confidenceTier, priceContext.confidenceScore, priceContext.percentageSuppressed, priceContext.badgeStatus, priceContext.propertyClass, priceContext.buyerQuestions.length, priceContext.premiumDrivers.length, verdictData.compsCount, verdictData.radiusUsedM]);
+
+  useEffect(() => {
+    if (!trackingEnabled) return;
+    const viewKey = `${property.id}:${priceContext.confidenceTier}:${priceContext.publicLabel}:${verdictData.compsCount}:${verdictData.radiusUsedM}`;
+    if (trackedViewKey.current === viewKey) return;
+
+    trackedViewKey.current = viewKey;
+    supabase.from('user_events').insert({
+      session_id: getOrCreateAnalyticsSessionId(),
+      user_id: user?.id || null,
+      user_role: user ? 'user' : 'anonymous',
+      event_type: 'view',
+      event_name: 'price_context_module_viewed',
+      event_category: 'engagement',
+      page_path: location.pathname,
+      component: 'MarketIntelligence',
+      properties: priceContextTrackingPayload,
+    }).then(({ error }) => {
+      if (error) console.debug('Price Context view tracking error:', error);
+    });
+  }, [trackingEnabled, property.id, priceContext.confidenceTier, priceContext.publicLabel, verdictData.compsCount, verdictData.radiusUsedM, user, location.pathname, priceContextTrackingPayload]);
+
+  const handlePriceContextInteraction = useCallback((eventName: string, properties?: Record<string, unknown>) => {
+    if (!trackingEnabled) return;
+    supabase.from('user_events').insert({
+      session_id: getOrCreateAnalyticsSessionId(),
+      user_id: user?.id || null,
+      user_role: user ? 'user' : 'anonymous',
+      event_type: 'click',
+      event_name: eventName,
+      event_category: 'engagement',
+      page_path: location.pathname,
+      component: 'MarketIntelligence',
+      properties: {
+        ...priceContextTrackingPayload,
+        ...properties,
+      },
+    }).then(({ error }) => {
+      if (error) console.debug('Price Context interaction tracking error:', error);
+    });
+  }, [trackingEnabled, user, location.pathname, priceContextTrackingPayload]);
+
   return (
     <TooltipProvider>
       <div className="space-y-5">
@@ -329,8 +425,8 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
         {priceTier && priceTier !== 'standard' && (
           <div className="flex items-center gap-2">
             <Badge className={priceTier === 'luxury'
-              ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800'
-              : 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800'
+              ? 'bg-semantic-amber text-semantic-amber-foreground border-semantic-amber'
+              : 'bg-primary/10 text-primary border-primary/20'
             }>
               {tierLabel}
             </Badge>
@@ -421,6 +517,7 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
           propertyPricePerSqm={propertyPricePerSqm}
           compsCount={verdictData.compsCount}
           radiusUsedM={verdictData.radiusUsedM}
+          onTrackInteraction={handlePriceContextInteraction}
         />
 
         {/* Data context — help buyers understand data limitations */}

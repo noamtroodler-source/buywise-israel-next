@@ -32,6 +32,10 @@ export interface PriceContextKpis {
   rankingReadinessRate: number;
   suppressionRate: number;
   highConfidence: number;
+  moduleViews: number;
+  buyerQuestionEngagements: number;
+  postViewInquiries: number;
+  questionEngagementRate: number;
   inquiryConversionRate: number;
   confidenceDistribution: { tier: string; count: number; percentage: number }[];
   reviewReasons: { reason: string; count: number }[];
@@ -60,6 +64,10 @@ const emptyPriceContext: PriceContextKpis = {
   rankingReadinessRate: 0,
   suppressionRate: 0,
   highConfidence: 0,
+  moduleViews: 0,
+  buyerQuestionEngagements: 0,
+  postViewInquiries: 0,
+  questionEngagementRate: 0,
   inquiryConversionRate: 0,
   confidenceDistribution: [],
   reviewReasons: [],
@@ -198,10 +206,13 @@ export function usePriceAnalytics(days: number = 30) {
         return acc;
       }, {});
 
-      const [{ data: inquiries }, { data: views }, { data: events }] = await Promise.all([
+      const [{ data: inquiries }, { data: views }, { data: events }, { data: userEvents }] = await Promise.all([
         (supabase.from('property_inquiries').select('property_id, created_at') as any).gte('created_at', since),
         (supabase.from('property_views').select('property_id, created_at') as any).gte('created_at', since),
         (supabase.from('price_context_events' as any).select('event_type, created_at') as any).gte('created_at', since),
+        (supabase.from('user_events').select('event_name, properties, created_at') as any)
+          .in('event_name', ['price_context_module_viewed', 'buyer_question_engaged', 'price_context_post_view_inquiry'])
+          .gte('created_at', since),
       ]);
 
       const completePropertyIds = new Set(propertyRows.filter(p => p.price_context_badge_status === 'complete').map(p => p.id));
@@ -212,6 +223,13 @@ export function usePriceAnalytics(days: number = 30) {
         acc[key] = (acc[key] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
+      const trackedPriceContextEvents = ((userEvents ?? []) as any[]).filter((event: any) => {
+        const propertyId = event.properties?.property_id;
+        return !propertyId || completePropertyIds.has(propertyId) || propertyRows.some(p => p.id === propertyId);
+      });
+      const moduleViews = trackedPriceContextEvents.filter((event: any) => event.event_name === 'price_context_module_viewed').length;
+      const buyerQuestionEngagements = trackedPriceContextEvents.filter((event: any) => event.event_name === 'buyer_question_engaged').length;
+      const postViewInquiries = trackedPriceContextEvents.filter((event: any) => event.event_name === 'price_context_post_view_inquiry').length;
 
       const priceContext: PriceContextKpis = {
         totalListings: propertyRows.length,
@@ -225,7 +243,11 @@ export function usePriceAnalytics(days: number = 30) {
         rankingReadinessRate: propertyRows.length ? (rankingReady / propertyRows.length) * 100 : 0,
         suppressionRate: propertyRows.length ? (suppressed / propertyRows.length) * 100 : 0,
         highConfidence,
-        inquiryConversionRate: completeViews ? (completeInquiries / completeViews) * 100 : 0,
+        moduleViews,
+        buyerQuestionEngagements,
+        postViewInquiries,
+        questionEngagementRate: moduleViews ? (buyerQuestionEngagements / moduleViews) * 100 : 0,
+        inquiryConversionRate: moduleViews ? (postViewInquiries / moduleViews) * 100 : completeViews ? (completeInquiries / completeViews) * 100 : 0,
         confidenceDistribution,
         reviewReasons: Object.entries(reviewReasonCounts).map(([reason, count]) => ({ reason, count })).sort((a, b) => b.count - a.count),
         recentEvents: Object.entries(eventCounts).map(([eventType, count]) => ({ eventType, count: Number(count) })).sort((a, b) => b.count - a.count),
