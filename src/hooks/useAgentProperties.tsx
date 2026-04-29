@@ -70,6 +70,8 @@ export interface CreatePropertyData {
       price_context_percentage_suppressed?: boolean | null;
       price_context_badge_status?: string | null;
       comp_pool_used?: string | null;
+      benchmark_review_reason?: string | null;
+      benchmark_review_notes?: string | null;
 }
 
 export function useAgentProfile() {
