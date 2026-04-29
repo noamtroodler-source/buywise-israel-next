@@ -81,6 +81,10 @@ export function getAgencyListingDisplayStatus(listing: AgencyListingStatusInput)
     return AGENCY_LISTING_STATUS_BY_KEY.pending_buywise_review;
   }
 
+  if (listing.agency_review_status === 'agency_confirmed') {
+    return AGENCY_LISTING_STATUS_BY_KEY.pending_buywise_review;
+  }
+
   if (
     listing.verification_status === 'changes_requested' ||
     listing.verification_status === 'rejected' ||
