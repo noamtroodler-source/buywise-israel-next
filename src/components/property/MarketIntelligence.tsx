@@ -310,6 +310,7 @@ function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchma
   const [open, setOpen] = useState(false);
   const hasPremiumContext = priceContext.confirmedPremiumDrivers.length > 0 || priceContext.detectedPremiumDrivers.length > 0 || Boolean(premiumExplanation?.trim());
   const radiusLabel = radiusUsedM >= 1000 ? '1km' : `${radiusUsedM}m`;
+  const layeredTake = buildLayeredBuyWiseTake(priceContext, propertyPricePerSqm, benchmarkRanges);
 
   const handlePremiumOpenChange = (nextOpen: boolean) => {
     setOpen(nextOpen);
@@ -335,7 +336,7 @@ function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchma
             </div>
             <p className="text-xs text-muted-foreground">Recorded sales, local benchmark ranges, and property-specific context for International buyers.</p>
           </div>
-          <p className="text-sm text-muted-foreground">{priceContext.buyWiseTake}</p>
+          <p className="text-sm text-muted-foreground">{layeredTake}</p>
           <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {benchmarkCards.map((card) => (
               <BenchmarkCardTile key={card.id} card={card} />
