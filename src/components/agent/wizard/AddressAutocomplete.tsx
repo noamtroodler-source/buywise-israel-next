@@ -358,6 +358,7 @@ function NominatimAddressAutocomplete({
   className,
   supportedCities,
   selectedCity,
+  hasError,
 }: AddressAutocompleteProps) {
   const [inputValue, setInputValue] = useState(value);
   const [suggestions, setSuggestions] = useState<NominatimResult[]>([]);
@@ -513,6 +514,7 @@ function NominatimAddressAutocomplete({
           name="notASearchField"
           className={cn(
             'h-11 rounded-xl pr-10',
+            hasError && 'border-destructive bg-destructive/10 focus-visible:ring-destructive/30',
             hasCompleteAddressSelection && 'border-primary/50 bg-primary/5',
             hasValidSelection && !hasRequiredStreetNumber && 'border-destructive bg-destructive/10',
             className
@@ -521,6 +523,8 @@ function NominatimAddressAutocomplete({
         <div className="absolute right-3 top-1/2 -translate-y-1/2">
           {isLoading ? (
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          ) : hasError ? (
+            <AlertCircle className="h-4 w-4 text-destructive" />
           ) : hasCompleteAddressSelection ? (
             <Check className="h-4 w-4 text-primary" />
           ) : hasValidSelection && !hasRequiredStreetNumber ? (
