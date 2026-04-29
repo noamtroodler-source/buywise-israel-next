@@ -239,6 +239,11 @@ export function getPriceContext(input: PriceContextInput): PriceContextResult {
     else { score -= 25; reasons.push('Wide comp dispersion caps confidence'); limitedCaps.push('wide_comp_dispersion'); }
   }
 
+  if (input.compClassMatch === 'same_class') reasons.push('Comparable pool is same-class');
+  else if (input.compClassMatch === 'similar_class') { score -= 18; reasons.push('Comparable pool is similar-class only'); limitedCaps.push('similar_class_comps'); }
+  else if (input.compClassMatch === 'mixed_fallback') { score -= 28; reasons.push('Mixed fallback comps used because same-class comps were sparse'); limitedCaps.push('mixed_fallback_comps'); }
+  else if (input.compClassMatch === 'no_comps') { score -= 35; reasons.push('No same-class comparable pool available'); limitedCaps.push('no_same_class_comps'); }
+
   if (input.roomMatchQuality === 'weak') { score -= 18; reasons.push('Room-count match is weak'); limitedCaps.push('weak_room_match'); }
   else if (input.roomMatchQuality === 'directional') { score -= 8; reasons.push('Room-count match is directional'); }
   else if (input.roomMatchQuality === 'strong') reasons.push('Room-count match is strong');
