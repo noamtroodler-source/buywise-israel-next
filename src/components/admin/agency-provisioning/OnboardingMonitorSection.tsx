@@ -166,7 +166,7 @@ export function OnboardingMonitorSection({ agency }: Props) {
         emailStatus: agent.email ? latestEmailByKey.get(`agent-welcome:${agent.email.toLowerCase()}`) || null : null,
         token: agent.user_id ? latestTokenByKey.get(`${agent.user_id}:agent_setup`) || null : null,
         passwordCompletedAt: agent.user_id ? setupCompletedByUser.get(agent.user_id) || null : null,
-        lastActiveAt: agent.last_active_at || profile?.last_active_at || null,
+        lastActiveAt: (agent as any).last_active_at || profile?.last_active_at || null,
       });
     }
 
