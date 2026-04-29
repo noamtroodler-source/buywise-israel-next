@@ -63,7 +63,6 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
       ['Context inquiry conversion rate', `${context.inquiryConversionRate.toFixed(1)}%`],
       ['Trust helpful rate', `${context.helpfulFeedbackRate.toFixed(1)}%`],
       ['Premium context completion rate', `${context.premiumContextCompletionRate.toFixed(1)}%`],
-      ['Benchmark review request rate', `${context.benchmarkReviewRequestRate.toFixed(1)}%`],
       ['Unknown sqm source rate', `${context.unknownSqmSourceRate.toFixed(1)}%`],
       ['Unknown ownership rate', `${context.unknownOwnershipRate.toFixed(1)}%`],
     ]);
@@ -71,7 +70,7 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
   const contextCards = [
     { label: 'Context Complete', value: `${(context?.completionRate || 0).toFixed(0)}%`, sub: `${context?.complete || 0} of ${context?.totalListings || 0} active listings`, icon: BadgeCheck },
     { label: 'Ranking Ready', value: `${(context?.rankingReadinessRate || 0).toFixed(0)}%`, sub: `${context?.rankingReady || 0} safe to prioritize`, icon: ShieldCheck },
-    { label: 'Under Review', value: (context?.underReview || 0).toLocaleString(), sub: 'Agent benchmark challenges', icon: AlertTriangle },
+    { label: 'Limited Context', value: (context?.incomplete || 0).toLocaleString(), sub: 'Listings missing public context', icon: AlertTriangle },
     { label: 'Price Context Views', value: (context?.moduleViews || 0).toLocaleString(), sub: `${context?.buyerQuestionEngagements || 0} question interactions`, icon: MousePointerClick },
   ];
 
@@ -146,7 +145,7 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
                 Boost safeguards
               </div>
               <p className="mt-2 text-2xl font-bold text-foreground">{(context?.blockedFromBoost || 0).toLocaleString()}</p>
-              <p className="text-xs text-muted-foreground">Blocked or under review listings excluded from Price Context boosts</p>
+              <p className="text-xs text-muted-foreground">Confidence-limited listings excluded from Price Context boosts</p>
             </div>
           </div>
 
@@ -193,11 +192,6 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
               <p className="text-xs font-medium text-muted-foreground">Premium context completion</p>
               <p className="mt-2 text-2xl font-bold text-foreground">{(context?.premiumContextCompletionRate || 0).toFixed(1)}%</p>
               <p className="text-xs text-muted-foreground">Listings with premium drivers or explanation</p>
-            </div>
-            <div className="rounded-xl border border-border/50 bg-background p-3">
-              <p className="text-xs font-medium text-muted-foreground">Review request rate</p>
-              <p className="mt-2 text-2xl font-bold text-foreground">{(context?.benchmarkReviewRequestRate || 0).toFixed(1)}%</p>
-              <p className="text-xs text-muted-foreground">Agency benchmark challenges per sale listing</p>
             </div>
             <div className="rounded-xl border border-border/50 bg-background p-3">
               <p className="text-xs font-medium text-muted-foreground">Lead quality rating</p>
