@@ -1031,6 +1031,30 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
               </div>
             </div>
 
+            {listingType === 'for_sale' && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-primary">
+                  <ShieldCheck className="h-4 w-4" />
+                  <h4 className="font-semibold">Pricing Context</h4>
+                </div>
+                <button
+                  className={cn(
+                    "flex w-full items-start gap-3 rounded-xl border p-3 text-left transition-all",
+                    filters.pricing_context_complete
+                      ? "border-primary bg-primary/10 text-foreground"
+                      : "border-border hover:bg-muted"
+                  )}
+                  onClick={() => updateFilter('pricing_context_complete', filters.pricing_context_complete ? undefined : true)}
+                >
+                  <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                  <span>
+                    <span className="block text-sm font-semibold">Pricing Context Complete</span>
+                    <span className="block text-xs text-muted-foreground">Show listings with complete BuyWise pricing context.</span>
+                  </span>
+                </button>
+              </div>
+            )}
+
             {/* Commute Filter */}
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-primary">
