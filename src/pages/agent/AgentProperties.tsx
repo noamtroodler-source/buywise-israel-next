@@ -719,14 +719,6 @@ export default function AgentProperties() {
                                       Renewal Due
                                     </Badge>
                                   )}
-                                  {listing.listing_status === 'for_sale' && (
-                                    <PriceContextBadge
-                                      status={listing.price_context_badge_status}
-                                      publicLabel={listing.price_context_public_label}
-                                      confidenceTier={listing.price_context_confidence_tier}
-                                      benchmarkReviewStatus={(listing as any).benchmark_review_status}
-                                    />
-                                  )}
                                 </div>
                               </TableCell>
                               <TableCell className="text-right font-medium">
@@ -817,16 +809,6 @@ export default function AgentProperties() {
                                           <Home className="h-4 w-4 mr-2" />
                                           Mark as Sold
                                         </DropdownMenuItem>
-                                      )}
-                                      {listing.listing_status === 'for_sale' && (
-                                        <BenchmarkReviewDialog
-                                          propertyId={listing.id}
-                                          propertyTitle={listing.title}
-                                          benchmarkReviewStatus={listing.benchmark_review_status}
-                                          existingReason={listing.benchmark_review_reason}
-                                          existingNotes={listing.benchmark_review_notes}
-                                          trigger={<DropdownMenuItem disabled={listing.benchmark_review_status === 'requested' || listing.benchmark_review_status === 'under_review'} onSelect={(e) => e.preventDefault()}><AlertTriangle className="h-4 w-4 mr-2" />{listing.benchmark_review_status === 'requested' || listing.benchmark_review_status === 'under_review' ? 'Context under review' : 'Request benchmark review'}</DropdownMenuItem>}
-                                        />
                                       )}
                                       {listing.listing_status === 'for_rent' && (
                                         <DropdownMenuItem onClick={() => updateStatus.mutate({ id: listing.id, listing_status: 'rented' })}>
