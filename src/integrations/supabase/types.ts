@@ -3409,48 +3409,72 @@ export type Database = {
       lead_response_events: {
         Row: {
           agent_id: string | null
+          buyer_preparedness: string | null
           created_at: string
           developer_id: string | null
           first_response_time_minutes: number | null
           id: string
           inquiry_id: string
           inquiry_type: string
+          lead_quality_rating: number | null
+          lead_quality_reason: string | null
           loss_reason: string | null
           notes: string | null
           outcome: string | null
+          price_context_badge_status: string | null
+          price_context_complete: boolean | null
+          price_context_confidence_tier: string | null
+          price_context_public_label: string | null
           responded_at: string | null
           response_length: number | null
           response_type: string | null
+          updated_at: string
         }
         Insert: {
           agent_id?: string | null
+          buyer_preparedness?: string | null
           created_at?: string
           developer_id?: string | null
           first_response_time_minutes?: number | null
           id?: string
           inquiry_id: string
           inquiry_type: string
+          lead_quality_rating?: number | null
+          lead_quality_reason?: string | null
           loss_reason?: string | null
           notes?: string | null
           outcome?: string | null
+          price_context_badge_status?: string | null
+          price_context_complete?: boolean | null
+          price_context_confidence_tier?: string | null
+          price_context_public_label?: string | null
           responded_at?: string | null
           response_length?: number | null
           response_type?: string | null
+          updated_at?: string
         }
         Update: {
           agent_id?: string | null
+          buyer_preparedness?: string | null
           created_at?: string
           developer_id?: string | null
           first_response_time_minutes?: number | null
           id?: string
           inquiry_id?: string
           inquiry_type?: string
+          lead_quality_rating?: number | null
+          lead_quality_reason?: string | null
           loss_reason?: string | null
           notes?: string | null
           outcome?: string | null
+          price_context_badge_status?: string | null
+          price_context_complete?: boolean | null
+          price_context_confidence_tier?: string | null
+          price_context_public_label?: string | null
           responded_at?: string | null
           response_length?: number | null
           response_type?: string | null
+          updated_at?: string
         }
         Relationships: []
       }

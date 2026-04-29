@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Layout } from "@/components/layout/Layout";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -18,6 +19,7 @@ import {
   Eye,
   Heart,
   Download,
+  Star,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -27,6 +29,8 @@ import { HourlyActivityChart } from "@/components/agent/analytics/HourlyActivity
 import { PropertyEngagementTable } from "@/components/agent/analytics/PropertyEngagementTable";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
+import { useAgentLeads, useUpsertLeadQualityFeedback, type Lead } from "@/hooks/useAgentLeads";
+import type { InquiryAnalytics } from "@/hooks/useAgentInquiryAnalytics";
 
 type DateRange = '7d' | '30d' | '90d' | 'all';
 
@@ -37,15 +41,13 @@ const dateRangeLabels: Record<DateRange, string> = {
   'all': 'All time',
 };
 
-function exportAnalyticsToCSV(engagement: any[]) {
-  const headers = ['Property Title', 'Views', 'Saves', 'WhatsApp Clicks', 'Email Clicks', 'Form Clicks'];
+function exportAnalyticsToCSV(engagement: InquiryAnalytics['propertyEngagement']) {
+  const headers = ['Property Title', 'Views', 'Saves', 'Clicks'];
   const rows = engagement.map(e => [
     `"${(e.title || '').replace(/"/g, '""')}"`,
     e.views || 0,
     e.saves || 0,
-    e.whatsappClicks || 0,
-    e.emailClicks || 0,
-    e.formClicks || 0,
+    e.clicks || 0,
   ]);
   const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -57,9 +59,88 @@ function exportAnalyticsToCSV(engagement: any[]) {
   URL.revokeObjectURL(url);
 }
 
+const preparednessLabels: Record<'well_prepared' | 'some_context' | 'unclear' | 'unqualified', string> = {
+  well_prepared: 'Well prepared',
+  some_context: 'Some context',
+  unclear: 'Unclear intent',
+  unqualified: 'Not qualified',
+};
+
+function LeadQualityCard({ lead }: { lead: Lead }) {
+  const [preparedness, setPreparedness] = useState<'well_prepared' | 'some_context' | 'unclear' | 'unqualified'>(
+    (lead.quality_feedback?.buyer_preparedness as 'well_prepared' | 'some_context' | 'unclear' | 'unqualified' | null) ?? 'some_context'
+  );
+  const qualityMutation = useUpsertLeadQualityFeedback();
+  const priceContextComplete = lead.property?.price_context_badge_status === 'complete'
+    || lead.property?.price_context_confidence_tier === 'strong_comparable_match'
+    || lead.property?.price_context_percentage_suppressed === false;
+
+  const handleRating = (rating: number) => {
+    qualityMutation.mutate({
+      lead,
+      rating,
+      buyerPreparedness: preparedness,
+    });
+  };
+
+  return (
+    <div className="rounded-xl border border-border/70 bg-background/70 p-4">
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div className="min-w-0 space-y-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="font-semibold text-foreground truncate">{lead.property?.title || 'Property inquiry'}</p>
+            <Badge variant={priceContextComplete ? 'default' : 'secondary'} className="text-xs">
+              {priceContextComplete ? 'Price Context complete' : 'Limited context'}
+            </Badge>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {lead.name || 'Buyer'} · {lead.inquiry_type} · {lead.property?.city || 'Unknown city'}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {lead.property?.price ? `₪${lead.property.price.toLocaleString()}` : 'Price unavailable'} · {lead.property?.price_context_public_label || 'No public price label'}
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-2 sm:min-w-[260px]">
+          <Select value={preparedness} onValueChange={(value) => setPreparedness(value as typeof preparedness)}>
+            <SelectTrigger className="h-9 rounded-lg">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(preparednessLabels).map(([value, label]) => (
+                <SelectItem key={value} value={value}>{label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <div className="flex items-center gap-1">
+            {[1, 2, 3, 4, 5].map((rating) => {
+              const active = (lead.quality_feedback?.lead_quality_rating ?? 0) >= rating;
+              return (
+                <Button
+                  key={rating}
+                  type="button"
+                  size="icon"
+                  variant={active ? 'default' : 'outline'}
+                  className="h-8 w-8 rounded-lg"
+                  disabled={qualityMutation.isPending}
+                  onClick={() => handleRating(rating)}
+                  aria-label={`Rate lead quality ${rating} out of 5`}
+                >
+                  <Star className="h-3.5 w-3.5" />
+                </Button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AgentLeads() {
   const [dateRange, setDateRange] = useState<DateRange>('30d');
   const { data: analytics, isLoading } = useAgentInquiryAnalytics(dateRange);
+  const { data: leads = [], isLoading: isLoadingLeads } = useAgentLeads('all');
 
   return (
     <Layout>
@@ -221,6 +302,27 @@ export default function AgentLeads() {
                 </>
               )}
             </div>
+
+            {/* Lead Quality Feedback */}
+            <Card className="rounded-2xl border-primary/10">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Star className="h-5 w-5 text-primary" />
+                  Lead quality feedback
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {isLoadingLeads ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3].map((i) => <Skeleton key={i} className="h-24 w-full rounded-xl" />)}
+                  </div>
+                ) : leads.length > 0 ? (
+                  leads.slice(0, 6).map((lead) => <LeadQualityCard key={lead.id} lead={lead} />)
+                ) : (
+                  <p className="py-6 text-center text-sm text-muted-foreground">No inquiries to rate yet.</p>
+                )}
+              </CardContent>
+            </Card>
 
             {/* Property Engagement Table */}
             {isLoading ? (

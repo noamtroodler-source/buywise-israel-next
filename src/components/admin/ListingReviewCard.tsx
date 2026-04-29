@@ -844,6 +844,24 @@ function MarketPanel({ property, market, reviewed, onReviewedChange, onBenchmark
             </div>
           </div>
         )}
+        {market.priceContext.confidenceCaps.length > 0 && (
+          <div className="mt-3 rounded-md border border-border bg-background/80 p-3">
+            <p className="text-sm font-medium text-foreground">Confidence cap audit</p>
+            <div className="mt-2 grid gap-2 md:grid-cols-2">
+              {market.priceContext.confidenceCaps.map((cap) => (
+                <div key={cap.code} className="rounded-md border border-border/70 bg-muted/30 p-3">
+                  <div className="mb-1 flex items-center justify-between gap-2">
+                    <p className="text-sm font-semibold text-foreground">{cap.label}</p>
+                    <Badge variant={cap.severity === 'critical' ? 'destructive' : 'secondary'} className="text-xs">
+                      {cap.severity}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground">{cap.detail}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {reviewOpen && (

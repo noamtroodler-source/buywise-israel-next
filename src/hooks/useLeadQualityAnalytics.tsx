@@ -8,6 +8,9 @@ interface LeadQualityMetrics {
   closedWonCount: number;
   closedLostCount: number;
   conversionRate: number;
+  ratedLeadCount: number;
+  avgLeadQualityRating: number;
+  priceContextCompleteRatedCount: number;
 }
 
 interface ResponseTimeDistribution {
@@ -54,6 +57,8 @@ export function useLeadQualityAnalytics(days: number = 30) {
       const responseTimes = data.filter(r => r.first_response_time_minutes !== null).map(r => r.first_response_time_minutes);
       const closedWon = data.filter(r => r.outcome === 'closed_won').length;
       const closedLost = data.filter(r => r.outcome === 'closed_lost').length;
+      const ratedLeads = data.filter(r => r.lead_quality_rating !== null && r.lead_quality_rating !== undefined);
+      const priceContextCompleteRated = ratedLeads.filter(r => r.price_context_complete === true).length;
 
       const metrics: LeadQualityMetrics = {
         totalResponses: data.length,
@@ -64,6 +69,11 @@ export function useLeadQualityAnalytics(days: number = 30) {
         closedWonCount: closedWon,
         closedLostCount: closedLost,
         conversionRate: data.length > 0 ? (closedWon / data.length) * 100 : 0,
+        ratedLeadCount: ratedLeads.length,
+        avgLeadQualityRating: ratedLeads.length > 0
+          ? ratedLeads.reduce((sum, r) => sum + (r.lead_quality_rating || 0), 0) / ratedLeads.length
+          : 0,
+        priceContextCompleteRatedCount: priceContextCompleteRated,
       };
 
       // Response time distribution
