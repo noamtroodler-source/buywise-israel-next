@@ -150,7 +150,7 @@ export default function AgencyDetail() {
                     <img 
                       src={agency.logo_url} 
                       alt={agency.name} 
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain object-center p-2"
                       onError={() => setLogoError(true)}
                     />
                   ) : (
@@ -320,7 +320,7 @@ export default function AgencyDetail() {
                     <Card className="hover:shadow-md transition-shadow">
                       <CardContent className="p-4 text-center">
                         <Avatar className="h-16 w-16 mx-auto mb-3">
-                          <AvatarImage src={agent.avatar_url || undefined} alt={agent.name} className="object-cover" />
+                          <AvatarImage src={agent.avatar_url || undefined} alt={agent.name} className="object-cover object-center" />
                           <AvatarFallback>{getInitials(agent.name)}</AvatarFallback>
                         </Avatar>
                         <div className="flex items-center justify-center gap-1 mb-1">

@@ -322,7 +322,7 @@ export default function AgencySettings() {
                             <img 
                               src={logoUrl} 
                               alt="Agency logo" 
-                              className="h-full w-full object-cover"
+                              className="h-full w-full object-contain object-center p-2"
                               onError={() => setLogoError(true)}
                             />
                           ) : (
