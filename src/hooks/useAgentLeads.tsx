@@ -44,6 +44,7 @@ export interface Lead {
 type LeadQualityFeedbackRow = NonNullable<Lead['quality_feedback']> & { inquiry_id: string };
 type LeadResponseEventInsert = Database['public']['Tables']['lead_response_events']['Insert'];
 type LeadResponseEventUpdate = Database['public']['Tables']['lead_response_events']['Update'];
+type PropertyInquiryUpdate = Database['public']['Tables']['property_inquiries']['Update'];
 
 export function useAgentLeads(statusFilter?: LeadStatus | 'all') {
   const { user } = useAuth();
@@ -194,7 +195,7 @@ export function useUpdateLeadStatus() {
       status: LeadStatus; 
       contactedAt?: string;
     }) => {
-      const updateData: Record<string, unknown> = { status };
+      const updateData: PropertyInquiryUpdate = { status };
       
       if (status === 'contacted' && !contactedAt) {
         updateData.contacted_at = new Date().toISOString();
