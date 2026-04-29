@@ -35,10 +35,11 @@ import {
   AgencyReviewStatus,
   useAgencyListingsManagement,
   useArchiveAgencyListing,
-  useBulkApproveAgencyListings,
+  useBulkConfirmAgencyListings,
+  useConfirmAgencyListing,
   useUnpublishAgencyListing,
 } from '@/hooks/useAgencyListings';
-import { useDeleteProperty, useSubmitForReview, useBulkDeleteProperties, useBulkSubmitForReview, useReassignProperty } from '@/hooks/useAgentProperties';
+import { useDeleteProperty, useBulkDeleteProperties, useReassignProperty } from '@/hooks/useAgentProperties';
 import { AgentReassignPopover } from '@/components/agency/AgentReassignPopover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useUpdatePropertyStatus, useDuplicateProperty } from '@/hooks/useAgentProfile';
@@ -251,15 +252,14 @@ export default function AgencyListings() {
   const { data: team = [] } = useAgencyTeam(agency?.id);
   const { data: listings = [], isLoading: listingsLoading } = useAgencyListingsManagement(agency?.id);
   const deleteProperty = useDeleteProperty();
-  const submitForReview = useSubmitForReview();
+  const confirmAgencyListing = useConfirmAgencyListing();
   const updateStatus = useUpdatePropertyStatus();
   const duplicateProperty = useDuplicateProperty();
   const bulkDelete = useBulkDeleteProperties();
-  const bulkSubmit = useBulkSubmitForReview();
   const reassignProperty = useReassignProperty();
   const archiveListing = useArchiveAgencyListing();
   const unpublishListing = useUnpublishAgencyListing();
-  const bulkApproveListings = useBulkApproveAgencyListings();
+  const bulkConfirmListings = useBulkConfirmAgencyListings();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | AgencyListingDisplayStatusKey>(() => (searchParams.get('status') as AgencyListingDisplayStatusKey) || 'all');
