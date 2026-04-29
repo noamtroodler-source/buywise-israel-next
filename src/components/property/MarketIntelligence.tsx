@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { BarChart3, ShieldCheck, Info, ArrowRight, ChevronDown, CircleHelp, CheckCircle2, Calculator, Ruler, TrendingUp, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { useState, useCallback, useEffect, useMemo, useRef, type ComponentType } from 'react';
+import { BarChart3, ShieldCheck, Info, ArrowRight, ChevronDown, CircleHelp, CheckCircle2, Calculator, Ruler, TrendingUp, ThumbsUp, ThumbsDown, MapPin, Building2, Home } from 'lucide-react';
 import { getIsraeliRoomCount } from '@/lib/israeliRoomCount';
 import { Link, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -106,6 +106,38 @@ function formatNisPerSqm(value: number | null | undefined) {
   return `₪${Math.round(value).toLocaleString()}/sqm`;
 }
 
+function formatNisAmount(value: number | null | undefined) {
+  if (!value) return '—';
+  return `₪${Math.round(value).toLocaleString()}`;
+}
+
+function formatNisPerSqmRange(min: number, max: number) {
+  return `${formatNisPerSqm(min)}–${Math.round(max).toLocaleString()}/sqm`;
+}
+
+interface BenchmarkCard {
+  id: string;
+  label: string;
+  value: string;
+  detail: string;
+  icon: ComponentType<{ className?: string }>;
+}
+
+function BenchmarkCardTile({ card }: { card: BenchmarkCard }) {
+  const Icon = card.icon;
+
+  return (
+    <div className="rounded-lg border border-border/70 bg-background/70 p-3">
+      <p className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+        <Icon className="h-3 w-3" />
+        {card.label}
+      </p>
+      <p className="mt-1 text-sm font-semibold text-foreground">{card.value}</p>
+      <p className="mt-1 text-[11px] leading-snug text-muted-foreground">{card.detail}</p>
+    </div>
+  );
+}
+
 function MarketVerdictBadge({ compsCount, radiusUsedM, priceTier, priceContext }: { compsCount: number; radiusUsedM: number; priceTier?: PriceTier | null; priceContext: PriceContextResult }) {
   const radiusLabel = radiusUsedM >= 1000 ? '1km' : '500m';
   const isPositive = priceContext.publicLabel === 'In line with available benchmarks';
@@ -148,7 +180,7 @@ function MarketVerdictBadge({ compsCount, radiusUsedM, priceTier, priceContext }
   );
 }
 
-function BuyWiseTake({ priceContext, premiumExplanation, propertyPricePerSqm, compsCount, radiusUsedM, sqmSource, ownershipType, onTrackInteraction }: { priceContext: PriceContextResult; premiumExplanation?: string | null; propertyPricePerSqm: number | null; compsCount: number; radiusUsedM: number; sqmSource?: string | null; ownershipType?: string | null; onTrackInteraction?: (eventName: string, properties?: Record<string, unknown>) => void }) {
+function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, compsCount, radiusUsedM, sqmSource, ownershipType, onTrackInteraction }: { priceContext: PriceContextResult; premiumExplanation?: string | null; benchmarkCards: BenchmarkCard[]; compsCount: number; radiusUsedM: number; sqmSource?: string | null; ownershipType?: string | null; onTrackInteraction?: (eventName: string, properties?: Record<string, unknown>) => void }) {
   const [open, setOpen] = useState(false);
   const hasPremiumContext = priceContext.confirmedPremiumDrivers.length > 0 || priceContext.detectedPremiumDrivers.length > 0 || Boolean(premiumExplanation?.trim());
   const radiusLabel = radiusUsedM >= 1000 ? '1km' : `${radiusUsedM}m`;
@@ -178,21 +210,10 @@ function BuyWiseTake({ priceContext, premiumExplanation, propertyPricePerSqm, co
             <p className="text-xs text-muted-foreground">Recorded sales, local benchmark ranges, and property-specific context for International buyers.</p>
           </div>
           <p className="text-sm text-muted-foreground">{priceContext.buyWiseTake}</p>
-          <div className="mt-3 grid gap-2 sm:grid-cols-3">
-            <div className="rounded-lg border border-border/70 bg-background/70 p-3">
-              <p className="text-xs font-medium text-muted-foreground flex items-center gap-1"><Ruler className="h-3 w-3" /> Asking price / sqm</p>
-              <p className="text-sm font-semibold text-foreground">{formatNisPerSqm(propertyPricePerSqm)}</p>
-            </div>
-            <div className="rounded-lg border border-border/70 bg-background/70 p-3">
-              <p className="text-xs font-medium text-muted-foreground flex items-center gap-1"><TrendingUp className="h-3 w-3" /> Recorded local range</p>
-              <p className="text-sm font-semibold text-foreground">
-                {priceContext.benchmarkRange ? `${formatNisPerSqm(priceContext.benchmarkRange.min)}–${formatNisPerSqm(priceContext.benchmarkRange.max).replace('₪', '')}` : 'Directional only'}
-              </p>
-            </div>
-            <div className="rounded-lg border border-border/70 bg-background/70 p-3">
-              <p className="text-xs font-medium text-muted-foreground flex items-center gap-1"><ShieldCheck className="h-3 w-3" /> Comparable confidence</p>
-              <p className="text-sm font-semibold text-foreground">{priceContext.confidenceLabel}</p>
-            </div>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {benchmarkCards.map((card) => (
+              <BenchmarkCardTile key={card.id} card={card} />
+            ))}
           </div>
         </div>
       </div>
@@ -409,6 +430,57 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
     property,
   });
 
+  const benchmarkCards: BenchmarkCard[] = useMemo(() => {
+    const cards: BenchmarkCard[] = [
+      {
+        id: 'asking_price_sqm',
+        label: 'Asking price / sqm',
+        value: formatNisPerSqm(propertyPricePerSqm),
+        detail: property.size_sqm ? 'Listing ask normalized by stated size.' : 'Size is missing, so price/sqm is unavailable.',
+        icon: Ruler,
+      },
+      {
+        id: 'nearby_recorded_sales',
+        label: 'Nearby recorded sales',
+        value: priceContext.benchmarkRange ? formatNisPerSqmRange(priceContext.benchmarkRange.min, priceContext.benchmarkRange.max) : 'Limited nearby evidence',
+        detail: verdictData.compsCount > 0
+          ? `${verdictData.compsCount} recorded sale${verdictData.compsCount > 1 ? 's' : ''} within ${verdictData.radiusUsedM >= 1000 ? '1km' : `${verdictData.radiusUsedM}m`}.`
+          : 'No listing-level nearby sale range is available yet.',
+        icon: MapPin,
+      },
+      {
+        id: 'neighborhood_benchmark',
+        label: property.neighborhood ? `${property.neighborhood} benchmark` : 'Neighborhood benchmark',
+        value: neighborhoodAvgPriceSqm ? formatNisPerSqmRange(neighborhoodAvgPriceSqm * 0.95, neighborhoodAvgPriceSqm * 1.05) : 'Directional only',
+        detail: neighborhoodAvgPriceSqm ? 'Neighborhood recorded-sale context, not a final valuation.' : 'Not enough neighborhood benchmark data is available.',
+        icon: Building2,
+      },
+      {
+        id: 'city_benchmark',
+        label: `${property.city} benchmark`,
+        value: effectiveAvgPriceSqm ? formatNisPerSqmRange(effectiveAvgPriceSqm * 0.95, effectiveAvgPriceSqm * 1.05) : 'No city benchmark yet',
+        detail: roomPrice?.avgPriceSqm ? `${property.city} ${israeliRooms ?? ''}-room recorded-sale context.` : 'Broader city-wide recorded-sale context.',
+        icon: Home,
+      },
+      {
+        id: 'same_room_benchmark',
+        label: israeliRooms ? `${property.city} ${israeliRooms}-room benchmark` : 'Same-room benchmark',
+        value: roomPrice?.avgPrice ? formatNisAmount(roomPrice.avgPrice) : 'Not available',
+        detail: roomPrice?.avgPrice ? 'Total-price reference for similar Israeli room count.' : 'Room-specific data is not available for this listing.',
+        icon: TrendingUp,
+      },
+      {
+        id: 'comparable_confidence',
+        label: 'Comparable confidence',
+        value: priceContext.confidenceLabel,
+        detail: priceContext.propertyClassLabel,
+        icon: ShieldCheck,
+      },
+    ];
+
+    return cards;
+  }, [effectiveAvgPriceSqm, israeliRooms, neighborhoodAvgPriceSqm, priceContext.benchmarkRange, priceContext.confidenceLabel, priceContext.propertyClassLabel, property.city, property.neighborhood, property.size_sqm, propertyPricePerSqm, roomPrice?.avgPrice, roomPrice?.avgPriceSqm, verdictData.compsCount, verdictData.radiusUsedM]);
+
   const priceContextTrackingPayload = useMemo(() => ({
     property_id: property.id,
     property_city: property.city,
@@ -576,7 +648,7 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
         <BuyWiseTake
           priceContext={priceContext}
           premiumExplanation={property.premium_explanation}
-          propertyPricePerSqm={propertyPricePerSqm}
+          benchmarkCards={benchmarkCards}
           compsCount={verdictData.compsCount}
           radiusUsedM={verdictData.radiusUsedM}
           sqmSource={property.sqm_source}
