@@ -572,9 +572,9 @@ export default function AgentRegisterWizard() {
               </h4>
               <ul className="space-y-2">
                 {[
-                  'Your application will be reviewed within 24-48 hours',
-                  "We'll verify your license number",
-                  'Once approved, you can start adding listings',
+                  'Your agency admin will review your request',
+                  'Your agency can approve you directly from Team Management',
+                  'Once your agency approves you, you can manage assigned listings',
                   "You'll receive an email notification when approved"
                 ].map((item, index) => (
                   <li key={index} className="flex items-start gap-2 text-sm text-muted-foreground">

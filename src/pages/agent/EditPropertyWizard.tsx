@@ -467,7 +467,7 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
                     <ShieldAlert className="h-4 w-4 text-primary" />
                     <AlertTitle className="text-foreground">Pending Verification</AlertTitle>
                     <AlertDescription className="text-muted-foreground">
-                      Your agent license is pending verification. You can save changes, but submissions are disabled until approved.
+                      Your agency admin needs to approve your agent account before submissions are enabled. You can still save changes.
                     </AlertDescription>
                   </Alert>
                 )}
@@ -529,7 +529,7 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
                             </TooltipTrigger>
                             {(!isAgentVerified || !canCreateListing) && (
                               <TooltipContent>
-                                {!isAgentVerified ? 'Agent verification required' : 'Listing limit reached — upgrade your plan'}
+                                {!isAgentVerified ? 'Agency approval required' : 'Listing limit reached — upgrade your plan'}
                               </TooltipContent>
                             )}
                           </Tooltip>

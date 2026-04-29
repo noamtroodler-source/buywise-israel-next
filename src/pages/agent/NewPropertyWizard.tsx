@@ -430,7 +430,7 @@ function WizardContent() {
                     <ShieldAlert className="h-4 w-4 text-primary" />
                     <AlertTitle className="text-foreground">Pending Verification</AlertTitle>
                     <AlertDescription className="text-muted-foreground">
-                      Your agent license is pending verification. You can save drafts, but submissions for review are disabled until your account is approved.
+                      Your agency admin needs to approve your agent account before submissions are enabled. You can still save drafts.
                     </AlertDescription>
                   </Alert>
                 )}
@@ -492,7 +492,7 @@ function WizardContent() {
                            </TooltipTrigger>
                            {(!isAgentVerified || !canCreateListing || (isOverLimit && !overageAccepted)) && (
                              <TooltipContent>
-                               {!isAgentVerified ? 'Agent verification required' : !canCreateListing ? 'Subscription required' : 'Accept overage charge to continue'}
+                               {!isAgentVerified ? 'Agency approval required' : !canCreateListing ? 'Subscription required' : 'Accept overage charge to continue'}
                              </TooltipContent>
                            )}
                          </Tooltip>
