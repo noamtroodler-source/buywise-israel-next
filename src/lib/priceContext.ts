@@ -27,10 +27,9 @@ export type PriceContextPublicLabel =
   | 'Large premium — context important'
   | 'Limited comparable match'
   | 'Premium property — standard comps may not apply'
-  | 'Not enough recorded data to benchmark reliably'
-  | 'Market context under review';
+  | 'Not enough recorded data to benchmark reliably';
 
-export type PriceContextBadgeStatus = 'complete' | 'incomplete' | 'blocked';
+export type PriceContextBadgeStatus = 'automatic';
 export type PriceContextCompClassMatch = 'same_class' | 'similar_class' | 'mixed_fallback' | 'no_comps';
 
 export interface PriceContextCompClassMetadata {
@@ -80,7 +79,6 @@ export interface PriceContextInput {
     size_sqm?: number | null;
     sqm_source?: string | null;
     ownership_type?: string | null;
-    benchmark_review_status?: string | null;
     premium_drivers?: string[] | null;
     premium_explanation?: string | null;
   };
@@ -330,7 +328,6 @@ export function getPriceContext(input: PriceContextInput): PriceContextResult {
   const confirmedPremiumDrivers = property.premium_drivers ?? [];
   const premiumDrivers = unique([...confirmedPremiumDrivers, ...detectedPremiumDrivers]);
   const hasPremiumContext = premiumDrivers.length > 0 || Boolean(property.premium_explanation?.trim());
-  const reviewOpen = property.benchmark_review_status === 'requested' || property.benchmark_review_status === 'under_review';
   const benchmarkGap = getInternalBenchmarkGap(pricePerSqm, benchmarkPriceSqm);
   const gap = avgComparison === null ? benchmarkGap : Math.round(avgComparison);
   const reasons: string[] = [];
@@ -375,15 +372,12 @@ export function getPriceContext(input: PriceContextInput): PriceContextResult {
   if (!property.sqm_source || property.sqm_source === 'unknown') { score -= 20; reasons.push('Unknown sqm source caps confidence'); limitedCaps.push('unknown_sqm_source'); }
   if (!property.ownership_type || property.ownership_type === 'unknown') { score -= 15; reasons.push('Unknown ownership type reduces comparability'); limitedCaps.push('unknown_ownership_type'); }
   if (isPremiumClass) { score -= 20; reasons.push('Premium/unique property class requires same-class caution'); }
-  if (reviewOpen) { score -= 40; reasons.push('Benchmark review is open'); }
-
   score = Math.max(0, Math.min(100, score));
   const hasStrongSpecMatch = (input.roomMatchQuality == null || input.roomMatchQuality === 'strong')
     && (input.sizeMatchQuality == null || input.sizeMatchQuality === 'strong');
 
   let confidenceTier: PriceContextConfidenceTier;
-  if (reviewOpen) confidenceTier = 'limited_comparable_match';
-  else if (compsCount === 0 && !benchmarkPriceSqm) confidenceTier = 'insufficient_data';
+  if (compsCount === 0 && !benchmarkPriceSqm) confidenceTier = 'insufficient_data';
   else if (isPremiumClass) confidenceTier = 'premium_unique_property';
   else if (limitedCaps.length > 0) confidenceTier = 'limited_comparable_match';
   else if (score >= 80 && compsCount >= 8 && radiusUsedM <= 600 && hasStrongSpecMatch) confidenceTier = 'strong_comparable_match';
@@ -399,15 +393,12 @@ export function getPriceContext(input: PriceContextInput): PriceContextResult {
 
   const mayShowPercentage = confidenceTier === 'strong_comparable_match'
     && propertyClass === 'standard_resale'
-    && !reviewOpen
     && gap !== null
     && gap <= 25;
 
   const percentageSuppressionReason = mayShowPercentage
     ? null
-    : reviewOpen
-      ? 'Market context is under review.'
-      : confidenceTier !== 'strong_comparable_match'
+    : confidenceTier !== 'strong_comparable_match'
         ? 'Comparable confidence is not strong enough for a public percentage.'
         : propertyClass !== 'standard_resale'
           ? 'Premium or unique property classes should not show a standard resale gap.'
@@ -416,17 +407,14 @@ export function getPriceContext(input: PriceContextInput): PriceContextResult {
             : 'Public percentage not available.';
 
   let publicLabel: PriceContextPublicLabel;
-  if (reviewOpen) publicLabel = 'Market context under review';
-  else if (confidenceTier === 'insufficient_data') publicLabel = 'Not enough recorded data to benchmark reliably';
+  if (confidenceTier === 'insufficient_data') publicLabel = 'Not enough recorded data to benchmark reliably';
   else if (confidenceTier === 'premium_unique_property') publicLabel = 'Premium property — standard comps may not apply';
   else if (confidenceTier === 'limited_comparable_match') publicLabel = 'Limited comparable match';
   else if (gap === null || gap <= 10) publicLabel = 'In line with available benchmarks';
   else if (gap <= 25) publicLabel = hasPremiumContext ? 'Premium features identified' : 'Moderate premium to recorded sales';
   else publicLabel = hasPremiumContext ? 'Premium features identified' : 'Large premium — context important';
 
-  const buyWiseTake = reviewOpen
-    ? 'This listing’s market context is being reviewed, so buyers should use the available details as directional guidance for now.'
-    : confidenceTier === 'insufficient_data'
+  const buyWiseTake = confidenceTier === 'insufficient_data'
       ? 'There is not enough reliable recorded-sale data to benchmark this listing at property level.'
       : confidenceTier === 'premium_unique_property'
         ? 'Standard recorded sales may not fully capture this property’s class, features, or premium drivers.'
@@ -446,7 +434,6 @@ export function getPriceContext(input: PriceContextInput): PriceContextResult {
     && property.ownership_type
     && propertyClass
     && (!needsPremiumExplanation || property.premium_explanation?.trim())
-    && !reviewOpen
   );
 
   const buyerQuestions = buildPriceContextBuyerQuestions(property, propertyClass, gap, premiumDrivers).map((item) => item.question);
@@ -473,7 +460,7 @@ export function getPriceContext(input: PriceContextInput): PriceContextResult {
     confidenceReasons: reasons,
     confidenceCaps,
     buyerQuestions,
-    badgeStatus: badgeEligible ? 'complete' : reviewOpen ? 'blocked' : 'incomplete',
+    badgeStatus: 'automatic',
     badgeEligible,
     benchmarkRange,
   };
