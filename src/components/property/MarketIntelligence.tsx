@@ -492,13 +492,12 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
     confidence_tier: priceContext.confidenceTier,
     confidence_score: priceContext.confidenceScore,
     percentage_suppressed: priceContext.percentageSuppressed,
-    badge_status: priceContext.badgeStatus,
     property_class: priceContext.propertyClass,
     buyer_question_count: priceContext.buyerQuestions.length,
     premium_driver_count: priceContext.premiumDrivers.length,
     comps_count: verdictData.compsCount,
     radius_used_m: verdictData.radiusUsedM,
-  }), [property.id, property.city, property.listing_status, priceContext.publicLabel, priceContext.confidenceTier, priceContext.confidenceScore, priceContext.percentageSuppressed, priceContext.badgeStatus, priceContext.propertyClass, priceContext.buyerQuestions.length, priceContext.premiumDrivers.length, verdictData.compsCount, verdictData.radiusUsedM]);
+  }), [property.id, property.city, property.listing_status, priceContext.publicLabel, priceContext.confidenceTier, priceContext.confidenceScore, priceContext.percentageSuppressed, priceContext.propertyClass, priceContext.buyerQuestions.length, priceContext.premiumDrivers.length, verdictData.compsCount, verdictData.radiusUsedM]);
 
   useEffect(() => {
     if (!trackingEnabled) return;
