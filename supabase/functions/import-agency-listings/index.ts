@@ -2780,6 +2780,13 @@ async function optimizeImage(
   }
 }
 
+function storageDisplayImageUrl(publicUrl: string, width = 1920, quality = 82): string {
+  if (!publicUrl.includes("/storage/v1/object/public/")) return publicUrl;
+  const transformed = publicUrl.replace("/storage/v1/object/public/", "/storage/v1/render/image/public/");
+  const separator = transformed.includes("?") ? "&" : "?";
+  return `${transformed}${separator}width=${width}&quality=${quality}&resize=contain`;
+}
+
 // ─── PHASH COMPUTATION (call compute-image-hash edge function) ──────────────
 
 async function computeImagePhash(imageUrl: string, propertyId: string | null, sb: any): Promise<{ sha256: string; phash: string; similar: any[] } | null> {
@@ -2923,9 +2930,9 @@ async function parallelImageDownload(
           const publicUrl = urlData?.publicUrl || null;
           if (!publicUrl) return null;
 
-          // DISABLED: enhanceImage and optimizeImage crash with magick.wasm URL error.
-          // Use the uploaded public URL directly until WASM issue is resolved.
-          const finalUrl = publicUrl;
+          // Cheap non-AI quality pass: serve through Storage image rendering for
+          // consistent width, lighter bytes, and browser-friendly compression.
+          const finalUrl = storageDisplayImageUrl(publicUrl);
 
           return { url: finalUrl, hash };
         }
