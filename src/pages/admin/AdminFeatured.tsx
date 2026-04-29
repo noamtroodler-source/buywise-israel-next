@@ -257,6 +257,7 @@ export default function AdminFeatured() {
         onSelect={handleAddProperty}
         getItemId={(p) => p.id}
         getSearchableText={(p) => `${p.title} ${p.city} ${p.neighborhood || ''}`}
+        isItemDisabled={(p) => !getPriceContextFeatureGuardrail(p).eligible}
         defaultExpiryDays={7}
         renderItem={(property) => {
           const guardrail = getPriceContextFeatureGuardrail(property);
