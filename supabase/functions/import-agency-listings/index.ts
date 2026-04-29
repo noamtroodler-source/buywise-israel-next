@@ -4781,8 +4781,8 @@ async function processOneItem(
           else dlog(`[Merge] Logged ${conflictRows.length} conflict(s) for property ${crossSourceMatchId}`);
         }
 
-        // Record this as a co-listing agent (different agency, same property)
-        if (agentId) {
+        // Record this as a co-listing agent only when the incoming agency is not already primary.
+        if (agentId && existing.primary_agency_id !== job.agency_id && existing.claimed_by_agency_id !== job.agency_id) {
           await sb.from("property_co_agents").upsert({
             property_id: crossSourceMatchId,
             agent_id: agentId,
@@ -4938,17 +4938,19 @@ async function processOneItem(
       if (match && decisionBand === "high_confidence_same_unit" && match.similarity_score >= 70 && !match.same_building_different_unit) {
         const audit = buildDuplicateDecisionAudit(match, "co_list_existing_property");
         // Co-list: upsert the incoming agency as a secondary on the existing property.
-        // UNIQUE(property_id, source_url) on property_co_agents de-dupes re-scrapes.
-        await sb.from("property_co_agents").upsert(
-          {
-            property_id: match.property_id,
-            agent_id: agentId,
-            agency_id: job.agency_id,
-            source_url: item.url,
-            source_type: job.source_type || "website",
-          },
-          { onConflict: "property_id,source_url", ignoreDuplicates: true }
-        );
+        // Do not create same-agency secondary rows; those make duplicate logos and false co-listing signals.
+        if (match.existing_agency !== job.agency_id) {
+          await sb.from("property_co_agents").upsert(
+            {
+              property_id: match.property_id,
+              agent_id: agentId,
+              agency_id: job.agency_id,
+              source_url: item.url,
+              source_type: job.source_type || "website",
+            },
+            { onConflict: "property_id,source_url", ignoreDuplicates: true }
+          );
+        }
 
         // Refresh existing primary's last_primary_refresh so stale-sweep
         // doesn't penalise a property that's actively represented by
