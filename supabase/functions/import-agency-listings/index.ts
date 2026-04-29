@@ -1391,6 +1391,59 @@ function detectSourceType(url: string | null | undefined): "yad2" | "madlan" | "
   return "website";
 }
 
+function normalizeIsraeliTextKey(value: string | null | undefined): string | null {
+  if (!value) return null;
+  let norm = value.trim().toLowerCase();
+  if (!norm) return null;
+  norm = norm
+    .replace(/["״'׳`.,;:()[\]{}]/g, " ")
+    .replace(/[-_/\\]+/g, " ")
+    .replace(/^(רחוב|רח|שדרות|שד|סמטת|סמטה|כיכר|ככר|street|st|avenue|ave|road|rd|boulevard|blvd|rechov|sderot)\s+/i, "")
+    .replace(/ך/g, "כ").replace(/ם/g, "מ").replace(/ן/g, "נ").replace(/ף/g, "פ").replace(/ץ/g, "צ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return norm || null;
+}
+
+function normalizeBuildingAddressKey(address: string | null | undefined): string | null {
+  if (!address) return null;
+  const stripped = address.replace(/(,?\s*)(דירה|דירת|קומה|כניסה|apt\.?|apartment|floor|unit|suite|ste\.?|#)\s*[\wא-ת-]*/gi, " ");
+  return normalizeIsraeliTextKey(stripped);
+}
+
+function extractBuildingHouseNumber(address: string | null | undefined): string | null {
+  const match = String(address || "").match(/(^|\D)(\d{1,4})([א-תa-zA-Z]?)(\D|$)/);
+  return match ? `${match[2]}${match[3] || ""}`.toLowerCase() : null;
+}
+
+function extractBuildingStreetKey(address: string | null | undefined): string | null {
+  const normalized = normalizeBuildingAddressKey(address);
+  if (!normalized) return null;
+  const street = normalized.replace(/(^|\s)\d{1,4}[א-תa-zA-Z]?(\s|$)/, " ").replace(/\s+/g, " ").trim();
+  return street || null;
+}
+
+function buildGeocodeKey(latitude: number | null | undefined, longitude: number | null | undefined): string | null {
+  if (latitude == null || longitude == null) return null;
+  return `${Number(latitude).toFixed(4)},${Number(longitude).toFixed(4)}`;
+}
+
+function buildBuildingIdentity(city: string | null | undefined, address: string | null | undefined, latitude?: number | null, longitude?: number | null) {
+  const normalizedCityKey = normalizeIsraeliTextKey(city);
+  const normalizedAddressKey = normalizeBuildingAddressKey(address);
+  const streetKey = extractBuildingStreetKey(address);
+  const houseNumber = extractBuildingHouseNumber(address);
+  const geocodeKey = buildGeocodeKey(latitude, longitude);
+  const buildingKey = normalizedCityKey && streetKey && houseNumber
+    ? `addr:${normalizedCityKey}|${streetKey}|${houseNumber}`
+    : normalizedCityKey && geocodeKey
+    ? `geo:${normalizedCityKey}|${geocodeKey}`
+    : normalizedCityKey && streetKey
+    ? `street:${normalizedCityKey}|${streetKey}`
+    : null;
+  return { normalizedCityKey, normalizedAddressKey, geocodeKey, buildingKey };
+}
+
 async function recordSourceObservation(sb: any, params: {
   propertyId?: string | null;
   agencyId?: string | null;
