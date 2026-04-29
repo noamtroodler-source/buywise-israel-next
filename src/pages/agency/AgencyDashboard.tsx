@@ -200,79 +200,54 @@ export default function AgencyDashboard() {
             ))}
           </div>
 
-          {/* Two-Column Layout: Performance + Announcements */}
-          <div className="grid lg:grid-cols-5 gap-6 lg:items-stretch">
-            {/* Left Column — wider */}
-            <div className="lg:col-span-3 flex flex-col">
-              {liveListingsCount > 0 ? (
-                <div className="bg-muted/30 rounded-2xl p-4 flex-1">
-                  <AgencyPerformanceInsights />
-                </div>
-              ) : (
-                <DashboardListingsPreview agencyId={agency.id} />
-              )}
+          {/* Main Dashboard Grid */}
+          <div className="grid lg:grid-cols-5 gap-6 lg:items-start">
+            <div className="lg:col-span-3 space-y-6">
+              {liveListingsCount > 0 && <AgencyPerformanceInsights />}
+              <DashboardListingsPreview agencyId={agency.id} />
             </div>
 
-            {/* Right Column — narrower, matching gray wrapper */}
-            <div className="lg:col-span-2 flex flex-col">
-              <div className="bg-muted/30 rounded-2xl p-4 flex-1 flex flex-col gap-4">
-                {/* Pending Join Requests (if any) */}
-                {pendingRequests > 0 && (
-                  <Card className="rounded-2xl border-primary/20 bg-primary/5">
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="p-2 rounded-xl bg-primary/10">
-                          <Users className="h-4 w-4 text-primary" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium">{pendingRequests} Join Request{pendingRequests !== 1 ? 's' : ''}</p>
-                          <p className="text-xs text-muted-foreground">Agents waiting for approval</p>
-                        </div>
+            <div className="lg:col-span-2 space-y-6">
+              {pendingRequests > 0 && (
+                <Card className="rounded-2xl border-primary/20 bg-primary/5">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="p-2 rounded-xl bg-primary/10">
+                        <Users className="h-4 w-4 text-primary" />
                       </div>
-                      <Button size="sm" asChild className="rounded-xl w-full">
-                        <Link to="/agency/team">
-                          Review Requests
-                        </Link>
-                      </Button>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Team Announcements — always show compact */}
-                <Card className="rounded-2xl border-border/50 flex-1 flex flex-col">
-                  <CardHeader className="pb-2 pt-4 px-4">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Megaphone className="h-4 w-4 text-primary" />
-                      Team Announcements
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent side="top" className="max-w-[220px] text-xs">
-                          Post internal updates visible to all agents in your agency
-                        </TooltipContent>
-                      </Tooltip>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="px-4 pb-4 flex-1">
-                    <AgencyAnnouncements agencyId={agency.id} compact />
+                      <div>
+                        <p className="text-sm font-medium">{pendingRequests} Join Request{pendingRequests !== 1 ? 's' : ''}</p>
+                        <p className="text-xs text-muted-foreground">Agents waiting for approval</p>
+                      </div>
+                    </div>
+                    <Button size="sm" asChild className="rounded-xl w-full">
+                      <Link to="/agency/team">Review Requests</Link>
+                    </Button>
                   </CardContent>
                 </Card>
-              </div>
-            </div>
-          </div>
+              )}
 
-          {/* Listings Preview + Activity Feed */}
-          <div className="grid lg:grid-cols-5 gap-6 lg:items-stretch">
-            <div className="lg:col-span-3 flex flex-col">
-              <div className="flex-1">
-                <DashboardListingsPreview agencyId={agency.id} />
-              </div>
-            </div>
-            <div className="lg:col-span-2 flex flex-col">
-              <div className="flex-1">
-                <AgencyTeamActivityFeed agencyId={agency.id} />
-              </div>
+              <Card className="rounded-2xl border-border/50">
+                <CardHeader className="pb-2 pt-4 px-4">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Megaphone className="h-4 w-4 text-primary" />
+                    Team Announcements
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-[220px] text-xs">
+                        Post internal updates visible to all agents in your agency
+                      </TooltipContent>
+                    </Tooltip>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-4 pb-4">
+                  <AgencyAnnouncements agencyId={agency.id} compact />
+                </CardContent>
+              </Card>
+
+              <AgencyTeamActivityFeed agencyId={agency.id} />
             </div>
           </div>
         </motion.div>
