@@ -71,8 +71,7 @@ function LeadQualityCard({ lead }: { lead: Lead }) {
     (lead.quality_feedback?.buyer_preparedness as 'well_prepared' | 'some_context' | 'unclear' | 'unqualified' | null) ?? 'some_context'
   );
   const qualityMutation = useUpsertLeadQualityFeedback();
-  const priceContextComplete = lead.property?.price_context_badge_status === 'complete'
-    || lead.property?.price_context_confidence_tier === 'strong_comparable_match'
+  const priceContextComplete = lead.property?.price_context_confidence_tier === 'strong_comparable_match'
     || lead.property?.price_context_percentage_suppressed === false;
 
   const handleRating = (rating: number) => {
