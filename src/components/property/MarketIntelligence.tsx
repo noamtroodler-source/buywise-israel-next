@@ -422,8 +422,21 @@ function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchma
         </CollapsibleTrigger>
         <CollapsibleContent className="pt-2">
           <div className="rounded-lg border border-border/70 bg-background/70 p-3 text-xs text-muted-foreground space-y-2">
+            <div>
+              <p className="font-medium text-foreground">Benchmark layers used:</p>
+              <ul className="mt-1 space-y-1 pl-4">
+                {benchmarkRanges.length > 0 ? benchmarkRanges.map((range) => (
+                  <li key={range.id} className="list-disc">
+                    {range.label}: {formatNisPerSqmRange(range.min, range.max)} — {range.detail}.
+                  </li>
+                )) : (
+                  <li className="list-disc">No reliable price/sqm benchmark layer is available yet for this listing.</li>
+                )}
+              </ul>
+            </div>
             <p>Comp set summary: {compsCount > 0 ? `${compsCount} recorded sale${compsCount > 1 ? 's' : ''} within ${radiusLabel}` : 'local city or neighborhood benchmarks when listing-level comps are limited'}.</p>
             <p>Property class: {priceContext.propertyClassLabel}. Standard resale, premium, new-build, garden, penthouse, and house/villa listings are treated cautiously because they do not trade the same way.</p>
+            <p>Benchmark interpretation: the ladder is a reference map across available recorded-sale layers, not an estimated fair value or appraisal.</p>
             <p>SQM source: {formatPriceContextValue(sqmSource)}. {PRICE_CONTEXT_SIZE_NOTE}</p>
             <p>Ownership type: {formatPriceContextValue(ownershipType)}. Ownership structure can affect buyer due diligence and how closely recorded resale benchmarks apply.</p>
             {priceContext.confidenceCaps.length > 0 && (
