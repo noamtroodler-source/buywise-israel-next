@@ -18,6 +18,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePreferences } from '@/contexts/PreferencesContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileFilterSheet } from '@/components/filters/MobileFilterSheet';
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
+import { PRICE_CONTEXT_FLAGS } from '@/lib/featureFlags';
 
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { findNearestCity } from '@/lib/utils/findNearestCity';
@@ -220,6 +222,7 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
   const navigate = useNavigate();
   const { currency, exchangeRate } = usePreferences();
   const isMobile = useIsMobile();
+  const { data: showPriceContextFilter = true } = useFeatureFlag(PRICE_CONTEXT_FLAGS.buyerFilter, true);
    
    const { getLocation, isLoading: geoLoading, coordinates, error: geoLocationError, isSupported: geoSupported } = useGeolocation();
    
@@ -267,9 +270,9 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
     if (filters.available_now || filters.available_by) count++;
     if (filters.allows_pets?.length) count++;
     if (filters.commute_destination && filters.max_commute_minutes) count++;
-    if (filters.pricing_context_complete) count++;
+    if (showPriceContextFilter && filters.pricing_context_complete) count++;
     return count;
-  }, [filters]);
+  }, [filters, showPriceContextFilter]);
   
   // Use passed count from parent instead of separate query
   const countLoading = isCountLoading;
@@ -399,9 +402,10 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
       filters.allows_pets?.length ||
       filters.available_by ||
       filters.available_now ||
+      (showPriceContextFilter && filters.pricing_context_complete) ||
       (filters.commute_destination && filters.max_commute_minutes)
     );
-  }, [filters]);
+  }, [filters, showPriceContextFilter]);
 
   // Clear all filters except listing_status and sort_by
   const clearAllFilters = () => {
