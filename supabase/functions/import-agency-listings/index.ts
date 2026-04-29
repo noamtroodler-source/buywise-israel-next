@@ -1580,10 +1580,6 @@ function buildDuplicateDecisionAudit(match: any, action: string, extra: Record<s
   return { band, scores, metadata };
 }
 
-function sourceIdentityDecisionBand(reasonCodes: string[]) {
-  return reasonCodes.includes("same_url_same_job") ? "in_job_source_duplicate" : "exact_source_match";
-}
-
 function sanitizeDiscoveredUrl(raw: string, baseUrl?: string): { url: string | null; reason?: string } {
   if (!raw || typeof raw !== "string") return { url: null, reason: "empty_url" };
   let candidate = raw.trim().replace(/&amp;/g, "&");
