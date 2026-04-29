@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Star, Home, Building, AlertTriangle, Plus, ShieldCheck } from 'lucide-react';
+import { Star, Home, Building, AlertTriangle, Plus } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -20,9 +20,6 @@ import {
 import { FeaturedPropertyCard } from '@/components/admin/FeaturedPropertyCard';
 import { FeaturedProjectSlot } from '@/components/admin/FeaturedProjectSlot';
 import { AddFeaturedModal } from '@/components/admin/AddFeaturedModal';
-import { getPriceContextFeatureGuardrail } from '@/lib/priceContextGuardrails';
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
-import { PRICE_CONTEXT_FLAGS } from '@/lib/featureFlags';
 
 type PropertyListingType = 'for_sale' | 'for_rent';
 type ProjectSlotTarget = { type: 'project_hero' | 'project_secondary'; position: number };
@@ -32,7 +29,6 @@ export default function AdminFeatured() {
   const [propertyModalOpen, setPropertyModalOpen] = useState(false);
   const [projectModalOpen, setProjectModalOpen] = useState(false);
   const [projectSlotTarget, setProjectSlotTarget] = useState<ProjectSlotTarget | null>(null);
-  const { data: requirePriceContextForFeatured = false } = useFeatureFlag(PRICE_CONTEXT_FLAGS.requireForFeatured, false);
 
   // Fetch data
   const { data: saleSlots, isLoading: saleLoading } = useFeaturedPropertySlots('property_sale');
@@ -60,11 +56,6 @@ export default function AdminFeatured() {
   const secondarySlots = projectSlots?.filter(s => s.slot_type === 'project_secondary') || [];
 
   const handleAddProperty = (property: any, expiresAt: Date | null) => {
-    const guardrail = getPriceContextFeatureGuardrail(property, requirePriceContextForFeatured);
-    if (!guardrail.eligible) {
-      return;
-    }
-
     addProperty.mutate({
       propertyId: property.id,
       slotType: propertyTab === 'for_sale' ? 'property_sale' : 'property_rent',
@@ -260,10 +251,8 @@ export default function AdminFeatured() {
         onSelect={handleAddProperty}
         getItemId={(p) => p.id}
         getSearchableText={(p) => `${p.title} ${p.city} ${p.neighborhood || ''}`}
-        isItemDisabled={(p) => !getPriceContextFeatureGuardrail(p, requirePriceContextForFeatured).eligible}
         defaultExpiryDays={7}
         renderItem={(property) => {
-          const guardrail = getPriceContextFeatureGuardrail(property, requirePriceContextForFeatured);
           return (
           <div className="flex gap-3">
             <div className="w-14 h-14 rounded bg-muted flex-shrink-0 overflow-hidden">
@@ -281,12 +270,6 @@ export default function AdminFeatured() {
               <p className="text-sm font-semibold text-primary">
                 {formatPrice(property.price, property.currency)}
               </p>
-              {propertyTab === 'for_sale' && (
-                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                  <ShieldCheck className="h-3 w-3 text-primary" />
-                  {guardrail.eligible ? 'Pricing Context Complete' : guardrail.reason}
-                </p>
-              )}
             </div>
           </div>
           );
