@@ -103,9 +103,7 @@ export default function AdminAgencyLifecycleIndex() {
                     </TableCell>
                     <TableCell className="text-right tabular-nums">{r.agent_count}</TableCell>
                     <TableCell className="text-right tabular-nums">{r.listing_count}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {r.agent_email_strategy === 'send_after_owner' ? 'After owner' : 'All now'}
-                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">Owner + agents</TableCell>
                     <TableCell className="text-xs text-muted-foreground">
                       {r.provisioned_at
                         ? formatDistanceToNow(new Date(r.provisioned_at), { addSuffix: true })
