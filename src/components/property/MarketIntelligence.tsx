@@ -251,9 +251,9 @@ function MarketVerdictBadge({ compsCount, radiusUsedM, priceTier, priceContext }
   );
 }
 
-function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchmarkRanges, propertyPricePerSqm, compsCount, radiusUsedM, sqmSource, ownershipType, onTrackInteraction }: { priceContext: PriceContextResult; premiumExplanation?: string | null; benchmarkCards: BenchmarkCard[]; benchmarkRanges: BenchmarkRange[]; propertyPricePerSqm: number | null; compsCount: number; radiusUsedM: number; sqmSource?: string | null; ownershipType?: string | null; onTrackInteraction?: (eventName: string, properties?: Record<string, unknown>) => void }) {
+function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchmarkRanges, compsCount, radiusUsedM, sqmSource, ownershipType, onTrackInteraction }: { priceContext: PriceContextResult; premiumExplanation?: string | null; benchmarkCards: BenchmarkCard[]; benchmarkRanges: BenchmarkRange[]; propertyPricePerSqm: number | null; compsCount: number; radiusUsedM: number; sqmSource?: string | null; ownershipType?: string | null; onTrackInteraction?: (eventName: string, properties?: Record<string, unknown>) => void }) {
   const radiusLabel = radiusUsedM >= 1000 ? '1km' : `${radiusUsedM}m`;
-  const layeredTake = buildLayeredBuyWiseTake(priceContext, propertyPricePerSqm, benchmarkRanges);
+  const buyerTakeaway = buildBuyerTakeaway(priceContext);
 
   return (
     <div className="rounded-lg border border-primary/15 bg-primary/5 p-4 space-y-3">
@@ -267,13 +267,17 @@ function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchma
               <p className="text-sm font-semibold text-foreground">BuyWise Price Context</p>
               <Badge variant="secondary" className="text-xs">{priceContext.publicLabel}</Badge>
             </div>
-            <p className="text-xs text-muted-foreground">Recorded sales, local benchmark ranges, and property-specific context for International buyers.</p>
+            <p className="text-xs text-muted-foreground">Recorded sales and local benchmarks to help you understand the asking price.</p>
           </div>
-          <p className="text-sm leading-relaxed text-muted-foreground">{layeredTake}</p>
           <div className="mt-3 grid gap-2 md:grid-cols-3">
             {benchmarkCards.map((card) => (
               <BenchmarkCardTile key={card.id} card={card} onTrackInteraction={onTrackInteraction} />
             ))}
+          </div>
+          <div className="mt-3 rounded-lg border border-primary/15 bg-background/70 px-3 py-2">
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              <span className="font-semibold text-foreground">Buyer takeaway:</span> {buyerTakeaway}
+            </p>
           </div>
           <div className="mt-3">
             <PremiumContextSummary priceContext={priceContext} premiumExplanation={premiumExplanation} />
