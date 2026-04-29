@@ -1391,6 +1391,59 @@ function detectSourceType(url: string | null | undefined): "yad2" | "madlan" | "
   return "website";
 }
 
+function normalizeIsraeliTextKey(value: string | null | undefined): string | null {
+  if (!value) return null;
+  let norm = value.trim().toLowerCase();
+  if (!norm) return null;
+  norm = norm
+    .replace(/["״'׳`.,;:()[\]{}]/g, " ")
+    .replace(/[-_/\\]+/g, " ")
+    .replace(/^(רחוב|רח|שדרות|שד|סמטת|סמטה|כיכר|ככר|street|st|avenue|ave|road|rd|boulevard|blvd|rechov|sderot)\s+/i, "")
+    .replace(/ך/g, "כ").replace(/ם/g, "מ").replace(/ן/g, "נ").replace(/ף/g, "פ").replace(/ץ/g, "צ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return norm || null;
+}
+
+function normalizeBuildingAddressKey(address: string | null | undefined): string | null {
+  if (!address) return null;
+  const stripped = address.replace(/(,?\s*)(דירה|דירת|קומה|כניסה|apt\.?|apartment|floor|unit|suite|ste\.?|#)\s*[\wא-ת-]*/gi, " ");
+  return normalizeIsraeliTextKey(stripped);
+}
+
+function extractBuildingHouseNumber(address: string | null | undefined): string | null {
+  const match = String(address || "").match(/(^|\D)(\d{1,4})([א-תa-zA-Z]?)(\D|$)/);
+  return match ? `${match[2]}${match[3] || ""}`.toLowerCase() : null;
+}
+
+function extractBuildingStreetKey(address: string | null | undefined): string | null {
+  const normalized = normalizeBuildingAddressKey(address);
+  if (!normalized) return null;
+  const street = normalized.replace(/(^|\s)\d{1,4}[א-תa-zA-Z]?(\s|$)/, " ").replace(/\s+/g, " ").trim();
+  return street || null;
+}
+
+function buildGeocodeKey(latitude: number | null | undefined, longitude: number | null | undefined): string | null {
+  if (latitude == null || longitude == null) return null;
+  return `${Number(latitude).toFixed(4)},${Number(longitude).toFixed(4)}`;
+}
+
+function buildBuildingIdentity(city: string | null | undefined, address: string | null | undefined, latitude?: number | null, longitude?: number | null) {
+  const normalizedCityKey = normalizeIsraeliTextKey(city);
+  const normalizedAddressKey = normalizeBuildingAddressKey(address);
+  const streetKey = extractBuildingStreetKey(address);
+  const houseNumber = extractBuildingHouseNumber(address);
+  const geocodeKey = buildGeocodeKey(latitude, longitude);
+  const buildingKey = normalizedCityKey && streetKey && houseNumber
+    ? `addr:${normalizedCityKey}|${streetKey}|${houseNumber}`
+    : normalizedCityKey && geocodeKey
+    ? `geo:${normalizedCityKey}|${geocodeKey}`
+    : normalizedCityKey && streetKey
+    ? `street:${normalizedCityKey}|${streetKey}`
+    : null;
+  return { normalizedCityKey, normalizedAddressKey, geocodeKey, buildingKey };
+}
+
 async function recordSourceObservation(sb: any, params: {
   propertyId?: string | null;
   agencyId?: string | null;
@@ -4477,6 +4530,13 @@ async function processOneItem(
       const coords = await geocodeWithRateLimit(listing.address, listing.city, listing.neighborhood);
       if (coords) { latitude = coords.lat; longitude = coords.lng; }
     }
+    const buildingIdentity = buildBuildingIdentity(listing.city, listing.address, latitude, longitude);
+    await sb.from("import_job_items").update({
+      normalized_city_key: buildingIdentity.normalizedCityKey,
+      normalized_address_key: buildingIdentity.normalizedAddressKey,
+      geocode_key: buildingIdentity.geocodeKey,
+      building_key: buildingIdentity.buildingKey,
+    }).eq("id", item.id);
 
     // ── CROSS-AGENCY MATCH → CO-LISTING (final gate before insert) ──
     // If this listing already exists from a DIFFERENT agency, don't insert a
@@ -4984,6 +5044,7 @@ async function handleApproveItem(body: any) {
     const coords = await geocodeWithRateLimit(listing.address, listing.city, listing.neighborhood);
     if (coords) { latitude = coords.lat; longitude = coords.lng; }
   }
+  const buildingIdentity = buildBuildingIdentity(listing.city, listing.address, latitude, longitude);
 
   const entryDate = listing.entry_date === "immediate" ? new Date().toISOString().split("T")[0] : listing.entry_date || null;
   const copy = await generateBuyWiseTitleAndDescription(listing, `${listing.title || ""}\n${listing.description || ""}`, Deno.env.get("LOVABLE_API_KEY") || "", undefined, sb);
@@ -5065,6 +5126,10 @@ async function handleApproveItem(body: any) {
     canonical_source_url: sourceIdentity.canonicalSourceUrl,
     source_item_id: sourceIdentity.sourceItemId,
     source_identity_key: sourceIdentity.sourceIdentityKey,
+    normalized_city_key: buildingIdentity.normalizedCityKey,
+    normalized_address_key: buildingIdentity.normalizedAddressKey,
+    geocode_key: buildingIdentity.geocodeKey,
+    building_key: buildingIdentity.buildingKey,
     duplicate_decision: "manual_review_approved_created",
     duplicate_reason_codes: ["approved_from_import_review"],
   }).eq("id", item_id);

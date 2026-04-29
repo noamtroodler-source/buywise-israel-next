@@ -3184,6 +3184,7 @@ export type Database = {
       }
       import_job_items: {
         Row: {
+          building_key: string | null
           canonical_source_url: string | null
           confidence_score: number | null
           created_at: string
@@ -3193,9 +3194,12 @@ export type Database = {
           error_message: string | null
           error_type: string | null
           extracted_data: Json | null
+          geocode_key: string | null
           id: string
           job_id: string
           matched_property_id: string | null
+          normalized_address_key: string | null
+          normalized_city_key: string | null
           project_id: string | null
           property_id: string | null
           source_identity_key: string | null
@@ -3204,6 +3208,7 @@ export type Database = {
           url: string
         }
         Insert: {
+          building_key?: string | null
           canonical_source_url?: string | null
           confidence_score?: number | null
           created_at?: string
@@ -3213,9 +3218,12 @@ export type Database = {
           error_message?: string | null
           error_type?: string | null
           extracted_data?: Json | null
+          geocode_key?: string | null
           id?: string
           job_id: string
           matched_property_id?: string | null
+          normalized_address_key?: string | null
+          normalized_city_key?: string | null
           project_id?: string | null
           property_id?: string | null
           source_identity_key?: string | null
@@ -3224,6 +3232,7 @@ export type Database = {
           url: string
         }
         Update: {
+          building_key?: string | null
           canonical_source_url?: string | null
           confidence_score?: number | null
           created_at?: string
@@ -3233,9 +3242,12 @@ export type Database = {
           error_message?: string | null
           error_type?: string | null
           extracted_data?: Json | null
+          geocode_key?: string | null
           id?: string
           job_id?: string
           matched_property_id?: string | null
+          normalized_address_key?: string | null
+          normalized_city_key?: string | null
           project_id?: string | null
           property_id?: string | null
           source_identity_key?: string | null
@@ -5612,6 +5624,9 @@ export type Database = {
           bedrooms: number | null
           boost_active_until: string | null
           boosted_by_agency_id: string | null
+          building_identity_metadata: Json
+          building_key: string | null
+          building_key_source: string | null
           canonical_source_url: string | null
           checks_required: boolean | null
           city: string
@@ -5632,6 +5647,7 @@ export type Database = {
           floor_number: number | null
           furnished_status: string | null
           furniture_items: string[] | null
+          geocode_key: string | null
           has_balcony: boolean | null
           has_elevator: boolean | null
           has_storage: boolean | null
@@ -5659,6 +5675,10 @@ export type Database = {
           market_fit_status: string | null
           merged_source_urls: string[] | null
           neighborhood: string | null
+          normalized_address_key: string | null
+          normalized_city_key: string | null
+          normalized_house_number: string | null
+          normalized_street_key: string | null
           original_price: number | null
           ownership_type: string | null
           parking: number | null
@@ -5729,6 +5749,9 @@ export type Database = {
           bedrooms?: number | null
           boost_active_until?: string | null
           boosted_by_agency_id?: string | null
+          building_identity_metadata?: Json
+          building_key?: string | null
+          building_key_source?: string | null
           canonical_source_url?: string | null
           checks_required?: boolean | null
           city: string
@@ -5749,6 +5772,7 @@ export type Database = {
           floor_number?: number | null
           furnished_status?: string | null
           furniture_items?: string[] | null
+          geocode_key?: string | null
           has_balcony?: boolean | null
           has_elevator?: boolean | null
           has_storage?: boolean | null
@@ -5776,6 +5800,10 @@ export type Database = {
           market_fit_status?: string | null
           merged_source_urls?: string[] | null
           neighborhood?: string | null
+          normalized_address_key?: string | null
+          normalized_city_key?: string | null
+          normalized_house_number?: string | null
+          normalized_street_key?: string | null
           original_price?: number | null
           ownership_type?: string | null
           parking?: number | null
@@ -5846,6 +5874,9 @@ export type Database = {
           bedrooms?: number | null
           boost_active_until?: string | null
           boosted_by_agency_id?: string | null
+          building_identity_metadata?: Json
+          building_key?: string | null
+          building_key_source?: string | null
           canonical_source_url?: string | null
           checks_required?: boolean | null
           city?: string
@@ -5866,6 +5897,7 @@ export type Database = {
           floor_number?: number | null
           furnished_status?: string | null
           furniture_items?: string[] | null
+          geocode_key?: string | null
           has_balcony?: boolean | null
           has_elevator?: boolean | null
           has_storage?: boolean | null
@@ -5893,6 +5925,10 @@ export type Database = {
           market_fit_status?: string | null
           merged_source_urls?: string[] | null
           neighborhood?: string | null
+          normalized_address_key?: string | null
+          normalized_city_key?: string | null
+          normalized_house_number?: string | null
+          normalized_street_key?: string | null
           original_price?: number | null
           ownership_type?: string | null
           parking?: number | null
@@ -7764,6 +7800,19 @@ export type Database = {
         Args: { p_conflict_id: string }
         Returns: Json
       }
+      build_geocode_key: {
+        Args: { p_latitude: number; p_longitude: number; p_precision?: number }
+        Returns: string
+      }
+      build_property_building_key: {
+        Args: {
+          p_address: string
+          p_city: string
+          p_latitude?: number
+          p_longitude?: number
+        }
+        Returns: string
+      }
       build_source_identity_key: {
         Args: {
           p_source_item_id?: string
@@ -7918,6 +7967,14 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      extract_building_house_number: {
+        Args: { p_address: string }
+        Returns: string
+      }
+      extract_building_street_key: {
+        Args: { p_address: string }
+        Returns: string
+      }
       file_colisting_report: {
         Args: {
           p_details?: string
@@ -8065,6 +8122,11 @@ export type Database = {
         }
         Returns: number
       }
+      normalize_building_address_key: {
+        Args: { p_address: string }
+        Returns: string
+      }
+      normalize_israeli_text_key: { Args: { p_value: string }; Returns: string }
       normalize_listing_source_type: {
         Args: { p_source_type: string; p_source_url?: string }
         Returns: string
