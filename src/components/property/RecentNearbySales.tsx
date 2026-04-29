@@ -508,15 +508,15 @@ export function RecentNearbySales({
               </Badge>
             ) : avgComparison > 10 && avgComparison <= 20 ? (
               <Badge className="bg-semantic-amber text-semantic-amber-foreground border-semantic-amber">
-                Above average for this area (+{avgComparison.toFixed(0)}%)
+                Premium to nearby recorded sales
               </Badge>
             ) : avgComparison > 20 ? (
               <Badge className="bg-semantic-amber text-semantic-amber-foreground border-semantic-amber">
-                Significantly above market (+{avgComparison.toFixed(0)}%)
+                Large premium — context important
               </Badge>
             ) : avgComparison < -5 ? (
               <Badge className="bg-semantic-green text-semantic-green-foreground border-semantic-green">
-                Below average — potential value ({avgComparison.toFixed(0)}%)
+                Below nearby recorded benchmarks
               </Badge>
             ) : null}
             <Tooltip>
