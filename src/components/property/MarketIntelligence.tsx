@@ -198,9 +198,6 @@ function buildBuyerTakeaway(priceContext: PriceContextResult) {
   if (priceContext.isLuxuryPremiumMode) {
     return 'Treat this as luxury-property context. Public sales data is background only; ask which specific features, rights, and comparable luxury sales support the premium.';
   }
-  if (priceContext.publicLabel === 'Market context under review') {
-    return 'This benchmark is under review, so use the current context as directional only.';
-  }
   if (priceContext.confidenceTier === 'insufficient_data') {
     return 'There is not enough recorded-sale data for a reliable benchmark, so ask for recent comparable examples.';
   }
