@@ -100,6 +100,25 @@ export function useInquiryTracking() {
 
       if (error) throw error;
 
+      supabase.from('user_events').insert({
+        session_id: sessionId,
+        user_id: user?.id || null,
+        user_role: user ? 'user' : 'anonymous',
+        event_type: 'submit',
+        event_name: 'price_context_post_view_inquiry',
+        event_category: 'conversion',
+        page_path: typeof window !== 'undefined' ? window.location.pathname : `/property/${params.propertyId}`,
+        component: 'PriceContext',
+        properties: {
+          property_id: params.propertyId,
+          agent_id: params.agentId,
+          inquiry_type: params.inquiryType,
+          has_buyer_context: Boolean(params.buyerContextSnapshot),
+        },
+      }).then(({ error: trackingError }) => {
+        if (trackingError) console.debug('Price Context conversion tracking error:', trackingError);
+      });
+
       // Send notification to agent (async, don't wait)
       sendInquiryNotification(params);
 
@@ -160,6 +179,25 @@ export async function trackInquiry(params: TrackInquiryParams & { userId?: strin
     await supabase
       .from('property_inquiries')
       .insert(insertData as any);
+
+    supabase.from('user_events').insert({
+      session_id: sessionId,
+      user_id: params.userId || null,
+      user_role: params.userId ? 'user' : 'anonymous',
+      event_type: 'submit',
+      event_name: 'price_context_post_view_inquiry',
+      event_category: 'conversion',
+      page_path: typeof window !== 'undefined' ? window.location.pathname : `/property/${params.propertyId}`,
+      component: 'PriceContext',
+      properties: {
+        property_id: params.propertyId,
+        agent_id: params.agentId,
+        inquiry_type: params.inquiryType,
+        has_buyer_context: Boolean(params.buyerContextSnapshot),
+      },
+    }).then(({ error: trackingError }) => {
+      if (trackingError) console.debug('Price Context conversion tracking error:', trackingError);
+    });
 
     // Send notification to agent (async, don't wait)
     sendInquiryNotification(params);

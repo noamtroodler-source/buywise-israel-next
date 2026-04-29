@@ -32,7 +32,20 @@ export interface PriceContextKpis {
   rankingReadinessRate: number;
   suppressionRate: number;
   highConfidence: number;
+  moduleViews: number;
+  buyerQuestionEngagements: number;
+  postViewInquiries: number;
+  questionEngagementRate: number;
   inquiryConversionRate: number;
+  highGapListings: number;
+  highGapRate: number;
+  unknownSqmSource: number;
+  unknownSqmSourceRate: number;
+  unknownOwnership: number;
+  unknownOwnershipRate: number;
+  adminCorrectionEvents: number;
+  adminCorrectionRate: number;
+  correctionEvents: { eventType: string; count: number }[];
   confidenceDistribution: { tier: string; count: number; percentage: number }[];
   reviewReasons: { reason: string; count: number }[];
   recentEvents: { eventType: string; count: number }[];
@@ -60,7 +73,20 @@ const emptyPriceContext: PriceContextKpis = {
   rankingReadinessRate: 0,
   suppressionRate: 0,
   highConfidence: 0,
+  moduleViews: 0,
+  buyerQuestionEngagements: 0,
+  postViewInquiries: 0,
+  questionEngagementRate: 0,
   inquiryConversionRate: 0,
+  highGapListings: 0,
+  highGapRate: 0,
+  unknownSqmSource: 0,
+  unknownSqmSourceRate: 0,
+  unknownOwnership: 0,
+  unknownOwnershipRate: 0,
+  adminCorrectionEvents: 0,
+  adminCorrectionRate: 0,
+  correctionEvents: [],
   confidenceDistribution: [],
   reviewReasons: [],
   recentEvents: [],
@@ -73,7 +99,7 @@ export function usePriceAnalytics(days: number = 30) {
       const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
       const { data: properties } = await (supabase
         .from('properties')
-        .select('id, city, price, size_sqm, bedrooms, listing_status, price_context_badge_status, price_context_confidence_tier, price_context_percentage_suppressed, benchmark_review_status, benchmark_review_reason') as any)
+        .select('id, city, price, size_sqm, bedrooms, listing_status, price_context_badge_status, price_context_confidence_tier, price_context_percentage_suppressed, price_context_public_label, sqm_source, ownership_type, benchmark_review_status, benchmark_review_reason') as any)
         .eq('listing_status', 'for_sale')
         .gt('price', 0);
 
@@ -171,6 +197,9 @@ export function usePriceAnalytics(days: number = 30) {
       const highConfidence = propertyRows.filter(p => p.price_context_confidence_tier === 'strong_comparable_match' || p.price_context_confidence_tier === 'high_confidence').length;
       const suppressed = propertyRows.filter(p => p.price_context_percentage_suppressed === true).length;
       const blockedFromBoost = propertyRows.filter(p => p.price_context_badge_status === 'blocked' || p.benchmark_review_status === 'requested' || p.benchmark_review_status === 'under_review').length;
+      const highGapListings = propertyRows.filter(p => p.price_context_public_label === 'Large premium — context important').length;
+      const unknownSqmSource = propertyRows.filter(p => !p.sqm_source || p.sqm_source === 'unknown').length;
+      const unknownOwnership = propertyRows.filter(p => !p.ownership_type || p.ownership_type === 'unknown').length;
       const rankingReady = propertyRows.filter(p => {
         const blocked = p.price_context_badge_status === 'blocked' || p.benchmark_review_status === 'requested' || p.benchmark_review_status === 'under_review';
         const confidenceReady = p.price_context_confidence_tier === 'strong_comparable_match' || p.price_context_confidence_tier === 'high_confidence' || p.price_context_confidence_tier === 'good_comparable_match';
@@ -198,17 +227,37 @@ export function usePriceAnalytics(days: number = 30) {
         return acc;
       }, {});
 
-      const [{ data: inquiries }, { data: views }, { data: events }] = await Promise.all([
+      const [{ data: inquiries }, { data: views }, { data: events }, { data: userEvents }] = await Promise.all([
         (supabase.from('property_inquiries').select('property_id, created_at') as any).gte('created_at', since),
         (supabase.from('property_views').select('property_id, created_at') as any).gte('created_at', since),
-        (supabase.from('price_context_events' as any).select('event_type, created_at') as any).gte('created_at', since),
+        (supabase.from('price_context_events' as any).select('event_type, actor_type, property_id, created_at') as any).gte('created_at', since),
+        (supabase.from('user_events').select('event_name, properties, created_at') as any)
+          .in('event_name', ['price_context_module_viewed', 'buyer_question_engaged', 'price_context_post_view_inquiry'])
+          .gte('created_at', since),
       ]);
 
       const completePropertyIds = new Set(propertyRows.filter(p => p.price_context_badge_status === 'complete').map(p => p.id));
+      const activePropertyIds = new Set(propertyRows.map(p => p.id));
       const completeViews = (views ?? []).filter((view: any) => completePropertyIds.has(view.property_id)).length;
       const completeInquiries = (inquiries ?? []).filter((inquiry: any) => completePropertyIds.has(inquiry.property_id)).length;
       const eventCounts = ((events ?? []) as any[]).reduce((acc: Record<string, number>, event: any) => {
         const key = event.event_type || 'unknown';
+        acc[key] = (acc[key] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      const trackedPriceContextEvents = ((userEvents ?? []) as any[]).filter((event: any) => {
+        const propertyId = event.properties?.property_id;
+        return !propertyId || completePropertyIds.has(propertyId) || activePropertyIds.has(propertyId);
+      });
+      const moduleViews = trackedPriceContextEvents.filter((event: any) => event.event_name === 'price_context_module_viewed').length;
+      const buyerQuestionEngagements = trackedPriceContextEvents.filter((event: any) => event.event_name === 'buyer_question_engaged').length;
+      const postViewInquiries = trackedPriceContextEvents.filter((event: any) => event.event_name === 'price_context_post_view_inquiry').length;
+      const correctionRows = ((events ?? []) as any[]).filter((event: any) => {
+        const eventType = String(event.event_type || '').toLowerCase();
+        return event.actor_type === 'admin' || eventType.includes('correct') || eventType.includes('resolved') || eventType.includes('override');
+      });
+      const correctionCounts = correctionRows.reduce((acc: Record<string, number>, event: any) => {
+        const key = event.event_type || 'admin_correction';
         acc[key] = (acc[key] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
@@ -225,7 +274,20 @@ export function usePriceAnalytics(days: number = 30) {
         rankingReadinessRate: propertyRows.length ? (rankingReady / propertyRows.length) * 100 : 0,
         suppressionRate: propertyRows.length ? (suppressed / propertyRows.length) * 100 : 0,
         highConfidence,
-        inquiryConversionRate: completeViews ? (completeInquiries / completeViews) * 100 : 0,
+        moduleViews,
+        buyerQuestionEngagements,
+        postViewInquiries,
+        questionEngagementRate: moduleViews ? (buyerQuestionEngagements / moduleViews) * 100 : 0,
+        inquiryConversionRate: moduleViews ? (postViewInquiries / moduleViews) * 100 : completeViews ? (completeInquiries / completeViews) * 100 : 0,
+        highGapListings,
+        highGapRate: propertyRows.length ? (highGapListings / propertyRows.length) * 100 : 0,
+        unknownSqmSource,
+        unknownSqmSourceRate: propertyRows.length ? (unknownSqmSource / propertyRows.length) * 100 : 0,
+        unknownOwnership,
+        unknownOwnershipRate: propertyRows.length ? (unknownOwnership / propertyRows.length) * 100 : 0,
+        adminCorrectionEvents: correctionRows.length,
+        adminCorrectionRate: propertyRows.length ? (correctionRows.length / propertyRows.length) * 100 : 0,
+        correctionEvents: Object.entries(correctionCounts).map(([eventType, count]) => ({ eventType, count: Number(count) })).sort((a, b) => b.count - a.count),
         confidenceDistribution,
         reviewReasons: Object.entries(reviewReasonCounts).map(([reason, count]) => ({ reason, count })).sort((a, b) => b.count - a.count),
         recentEvents: Object.entries(eventCounts).map(([eventType, count]) => ({ eventType, count: Number(count) })).sort((a, b) => b.count - a.count),
