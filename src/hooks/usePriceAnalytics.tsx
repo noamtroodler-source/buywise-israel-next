@@ -135,7 +135,7 @@ export function usePriceAnalytics(days: number = 30) {
       const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
       const { data: properties } = await (supabase
         .from('properties')
-        .select('id, city, price, size_sqm, bedrooms, listing_status, price_context_badge_status, price_context_confidence_tier, price_context_percentage_suppressed, price_context_public_label, sqm_source, ownership_type, benchmark_review_status, benchmark_review_reason') as any)
+        .select('id, city, price, size_sqm, bedrooms, listing_status, price_context_badge_status, price_context_confidence_tier, price_context_percentage_suppressed, price_context_public_label, sqm_source, ownership_type, benchmark_review_status, benchmark_review_reason, premium_explanation, premium_drivers, submitted_at, reviewed_at, created_at') as any)
         .eq('listing_status', 'for_sale')
         .gt('price', 0);
 
@@ -234,8 +234,20 @@ export function usePriceAnalytics(days: number = 30) {
       const suppressed = propertyRows.filter(p => p.price_context_percentage_suppressed === true).length;
       const blockedFromBoost = propertyRows.filter(p => p.price_context_badge_status === 'blocked' || p.benchmark_review_status === 'requested' || p.benchmark_review_status === 'under_review').length;
       const highGapListings = propertyRows.filter(p => p.price_context_public_label === 'Large premium — context important').length;
+      const highGapWithoutPremiumExplanation = propertyRows.filter(p => p.price_context_public_label === 'Large premium — context important' && !p.premium_explanation).length;
       const unknownSqmSource = propertyRows.filter(p => !p.sqm_source || p.sqm_source === 'unknown').length;
       const unknownOwnership = propertyRows.filter(p => !p.ownership_type || p.ownership_type === 'unknown').length;
+      const premiumContextComplete = propertyRows.filter(p => Boolean(p.premium_explanation) || (Array.isArray(p.premium_drivers) && p.premium_drivers.length > 0)).length;
+      const benchmarkReviewRequested = propertyRows.filter(p => p.benchmark_review_status === 'requested' || p.benchmark_review_status === 'under_review' || p.benchmark_review_status === 'resolved').length;
+      const publishedDurations = propertyRows
+        .map(p => {
+          const start = p.submitted_at || p.created_at;
+          const end = p.reviewed_at;
+          if (!start || !end) return null;
+          const hours = (new Date(end).getTime() - new Date(start).getTime()) / (1000 * 60 * 60);
+          return Number.isFinite(hours) && hours >= 0 ? hours : null;
+        })
+        .filter((hours): hours is number => hours != null);
       const rankingReady = propertyRows.filter(p => {
         const blocked = p.price_context_badge_status === 'blocked' || p.benchmark_review_status === 'requested' || p.benchmark_review_status === 'under_review';
         const confidenceReady = p.price_context_confidence_tier === 'strong_comparable_match' || p.price_context_confidence_tier === 'high_confidence' || p.price_context_confidence_tier === 'good_comparable_match';
@@ -259,6 +271,13 @@ export function usePriceAnalytics(days: number = 30) {
       const reviewReasonCounts = propertyRows.reduce<Record<string, number>>((acc, p) => {
         if (p.benchmark_review_reason) {
           acc[p.benchmark_review_reason] = (acc[p.benchmark_review_reason] || 0) + 1;
+        }
+        return acc;
+      }, {});
+
+      const insufficientDataByCityCounts = propertyRows.reduce<Record<string, number>>((acc, p) => {
+        if (p.price_context_confidence_tier === 'insufficient_data') {
+          acc[p.city] = (acc[p.city] || 0) + 1;
         }
         return acc;
       }, {});
