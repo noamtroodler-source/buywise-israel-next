@@ -304,6 +304,27 @@ export default function AgentLeads() {
               )}
             </div>
 
+            {/* Lead Quality Feedback */}
+            <Card className="rounded-2xl border-primary/10">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Star className="h-5 w-5 text-primary" />
+                  Lead quality feedback
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {isLoadingLeads ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3].map((i) => <Skeleton key={i} className="h-24 w-full rounded-xl" />)}
+                  </div>
+                ) : leads.length > 0 ? (
+                  leads.slice(0, 6).map((lead) => <LeadQualityCard key={lead.id} lead={lead} />)
+                ) : (
+                  <p className="py-6 text-center text-sm text-muted-foreground">No inquiries to rate yet.</p>
+                )}
+              </CardContent>
+            </Card>
+
             {/* Property Engagement Table */}
             {isLoading ? (
               <Card className="rounded-2xl border-primary/10">
