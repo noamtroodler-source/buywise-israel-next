@@ -40,7 +40,7 @@ const AgentWelcomeEmail = ({
           <Text style={text}>{greeting}</Text>
           <Text style={text}>
             <strong>{agencyName || 'Your agency'}</strong> has set you up
-            on {SITE_NAME}, the trusted platform connecting English-speaking
+            on {SITE_NAME}, the trusted platform connecting international
             buyers with Israeli real estate professionals.
           </Text>
           <Text style={text}>
@@ -108,7 +108,7 @@ const button: React.CSSProperties = {
   backgroundColor: '#0a66dc',
   color: '#ffffff',
   padding: '14px 28px',
-  borderRadius: '10px',
+  borderRadius: '8px',
   textDecoration: 'none',
   fontWeight: 600,
   fontSize: '15px',
