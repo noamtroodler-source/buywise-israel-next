@@ -4606,6 +4606,9 @@ async function processOneItem(
           duplicateDecision: "cross_source_enrichment",
           duplicateReasonCodes: ["matched_existing_property", "source_priority_enrichment"],
           matchedPropertyId: crossSourceMatchId,
+          duplicateDecisionBand: "high_confidence_same_unit",
+          duplicateMatchScores: { cross_source_match: 100 },
+          duplicateDecisionMetadata: { action: "merge_enrich_existing_property", matched_property_id: crossSourceMatchId, incoming_source: incomingSource },
         });
 
         // Mark this import item as merged (not a new property)
@@ -4614,6 +4617,9 @@ async function processOneItem(
           property_id: crossSourceMatchId,
           matched_property_id: crossSourceMatchId,
           duplicate_decision: "cross_source_enrichment",
+          duplicate_decision_band: "high_confidence_same_unit",
+          duplicate_match_scores: { cross_source_match: 100 },
+          duplicate_decision_metadata: { action: "merge_enrich_existing_property", matched_property_id: crossSourceMatchId, incoming_source: incomingSource },
           duplicate_reason_codes: ["matched_existing_property", "source_priority_enrichment"],
           error_message: `Merged into existing property ${crossSourceMatchId} (cross-source enrichment, source=${incomingSource}, trust=${incomingRank})`,
         }).eq("id", item.id);
@@ -4674,6 +4680,7 @@ async function processOneItem(
         : ["cross_agency_same_unit_score"];
 
       if (match && decisionBand === "high_confidence_same_unit" && match.similarity_score >= 70 && !match.same_building_different_unit) {
+        const audit = buildDuplicateDecisionAudit(match, "co_list_existing_property");
         // Co-list: upsert the incoming agency as a secondary on the existing property.
         // UNIQUE(property_id, source_url) on property_co_agents de-dupes re-scrapes.
         await sb.from("property_co_agents").upsert(
@@ -4706,6 +4713,9 @@ async function processOneItem(
           duplicateDecision: "high_confidence_cross_agency_colist",
           duplicateReasonCodes: [...reasonCodes, "co_listing_created"],
           matchedPropertyId: match.property_id,
+          duplicateDecisionBand: audit.band,
+          duplicateMatchScores: audit.scores,
+          duplicateDecisionMetadata: audit.metadata,
         });
 
         // Mark the import item as co_listed — distinct from skipped.
@@ -4716,6 +4726,9 @@ async function processOneItem(
           property_id: match.property_id,
           matched_property_id: match.property_id,
           duplicate_decision: "high_confidence_cross_agency_colist",
+          duplicate_decision_band: audit.band,
+          duplicate_match_scores: audit.scores,
+          duplicate_decision_metadata: audit.metadata,
           duplicate_reason_codes: [...reasonCodes, "co_listing_created"],
         }).eq("id", item.id);
 
@@ -4724,6 +4737,7 @@ async function processOneItem(
       }
 
       if (match && decisionBand === "possible_same_unit") {
+        const audit = buildDuplicateDecisionAudit(match, "quarantine_for_duplicate_review");
         await recordSourceObservation(sb, {
           agencyId: job.agency_id,
           importJobId: jobId,
@@ -4735,6 +4749,9 @@ async function processOneItem(
           duplicateDecision: "possible_same_unit_needs_review",
           duplicateReasonCodes: [...reasonCodes, "quarantined_for_duplicate_review"],
           matchedPropertyId: match.property_id,
+          duplicateDecisionBand: audit.band,
+          duplicateMatchScores: audit.scores,
+          duplicateDecisionMetadata: audit.metadata,
         });
 
         await sb.from("import_job_items").update({
@@ -4743,6 +4760,9 @@ async function processOneItem(
           error_type: null,
           matched_property_id: match.property_id,
           duplicate_decision: "possible_same_unit_needs_review",
+          duplicate_decision_band: audit.band,
+          duplicate_match_scores: audit.scores,
+          duplicate_decision_metadata: audit.metadata,
           duplicate_reason_codes: [...reasonCodes, "quarantined_for_duplicate_review"],
         }).eq("id", item.id);
 
@@ -4750,9 +4770,13 @@ async function processOneItem(
       }
 
       if (match && (decisionBand === "same_building_likely_different_unit" || decisionBand === "same_building_insufficient_unit_evidence")) {
+        const audit = buildDuplicateDecisionAudit(match, "allow_new_draft");
         await sb.from("import_job_items").update({
           matched_property_id: match.property_id,
           duplicate_decision: decisionBand,
+          duplicate_decision_band: audit.band,
+          duplicate_match_scores: audit.scores,
+          duplicate_decision_metadata: audit.metadata,
           duplicate_reason_codes: reasonCodes,
         }).eq("id", item.id);
       }
