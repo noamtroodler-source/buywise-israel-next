@@ -852,7 +852,7 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
             </Button>
           )}
 
-          {!isMobile && listingType === 'for_sale' && (
+          {!isMobile && listingType === 'for_sale' && showPriceContextFilter && (
             <Button
               variant={filters.pricing_context_complete ? 'default' : 'outline'}
               className="h-10 gap-2 rounded-xl"
@@ -1035,7 +1035,7 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
               </div>
             </div>
 
-            {listingType === 'for_sale' && (
+            {listingType === 'for_sale' && showPriceContextFilter && (
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-primary">
                   <ShieldCheck className="h-4 w-4" />
@@ -1464,6 +1464,7 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
         showSoldToggle={showSoldToggle}
         isSoldView={isSoldView}
         onSoldToggle={onSoldToggle}
+        showPriceContextFilter={showPriceContextFilter}
       />
     </TooltipProvider>
   );
