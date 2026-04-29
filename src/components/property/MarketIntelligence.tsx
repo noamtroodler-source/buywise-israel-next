@@ -243,6 +243,27 @@ function PremiumContextSummary({ priceContext, premiumExplanation }: { priceCont
   );
 }
 
+function buildLayeredBuyWiseTake(priceContext: PriceContextResult, askingPriceSqm: number | null, ranges: BenchmarkRange[]) {
+  if (priceContext.confidenceTier === 'insufficient_data' || !askingPriceSqm || ranges.length === 0) {
+    return `${priceContext.buyWiseTake} Use the available city, neighborhood, and listing details as directional context while verifying sqm source, ownership, and included features.`;
+  }
+
+  const strongestRange = ranges[0];
+  const relation = askingPriceSqm < strongestRange.min
+    ? `below the ${strongestRange.label.toLowerCase()} benchmark range`
+    : askingPriceSqm > strongestRange.max
+      ? `above the ${strongestRange.label.toLowerCase()} benchmark range`
+      : `within the ${strongestRange.label.toLowerCase()} benchmark range`;
+  const broaderContext = ranges.length > 1
+    ? ` We also compare it against ${ranges.slice(1).map((range) => range.label.toLowerCase()).join(' and ')} context so no single benchmark is treated as the full story.`
+    : '';
+  const premiumContext = priceContext.propertyClass !== 'standard_resale' || priceContext.premiumDrivers.length > 0
+    ? ` Because this is classified as ${priceContext.propertyClassLabel.toLowerCase()}, buyers should ask which features or included rights explain any premium.`
+    : ' Buyers should still verify the sqm source, ownership type, and included extras before relying on price/sqm comparisons.';
+
+  return `The asking price sits ${relation}.${broaderContext}${premiumContext}`;
+}
+
 function MarketVerdictBadge({ compsCount, radiusUsedM, priceTier, priceContext }: { compsCount: number; radiusUsedM: number; priceTier?: PriceTier | null; priceContext: PriceContextResult }) {
   const radiusLabel = radiusUsedM >= 1000 ? '1km' : '500m';
   const isPositive = priceContext.publicLabel === 'In line with available benchmarks';
