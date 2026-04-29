@@ -5,7 +5,7 @@ import {
   ArrowLeft, Loader2, Home, Plus, Search, Download, FileSpreadsheet,
   Eye, Clock, CheckCircle2, Building2,
   Edit, Trash2, Send, MoreHorizontal, Copy, Key, ArrowLeftRight, X,
-  ArrowUpDown, ArrowUp, ArrowDown, CheckCheck,
+  ArrowUpDown, ArrowUp, ArrowDown, Archive, CheckCheck,
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -589,11 +589,9 @@ export default function AgencyListings() {
                 <Select value={reviewFilter} onValueChange={(value) => setReviewFilter(value as any)}>
                   <SelectTrigger className="w-[170px] rounded-xl"><SelectValue placeholder="Review" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Reviews</SelectItem>
+                    <SelectItem value="all">All readiness</SelectItem>
                     <SelectItem value="almost_ready">Almost ready</SelectItem>
                     <SelectItem value="needs_work">Needs work</SelectItem>
-                    <SelectItem value="approved_live">Confirmed</SelectItem>
-                    <SelectItem value="archived_stale">Archived</SelectItem>
                   </SelectContent>
                 </Select>
                 <Select value={agentFilter} onValueChange={setAgentFilter}>
