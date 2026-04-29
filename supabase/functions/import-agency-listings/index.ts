@@ -4587,12 +4587,17 @@ async function processOneItem(
       const coords = await geocodeWithRateLimit(listing.address, listing.city, listing.neighborhood);
       if (coords) { latitude = coords.lat; longitude = coords.lng; }
     }
-    const buildingIdentity = buildBuildingIdentity(listing.city, listing.address, latitude, longitude);
+    const buildingIdentity = buildListingIdentityEvidence(listing, latitude, longitude);
     await sb.from("import_job_items").update({
       normalized_city_key: buildingIdentity.normalizedCityKey,
       normalized_address_key: buildingIdentity.normalizedAddressKey,
       geocode_key: buildingIdentity.geocodeKey,
       building_key: buildingIdentity.buildingKey,
+      normalized_floor_number: buildingIdentity.normalizedFloorNumber,
+      normalized_apartment_number: buildingIdentity.normalizedApartmentNumber,
+      normalized_entrance: buildingIdentity.normalizedEntrance,
+      unit_identity_key: buildingIdentity.unitIdentityKey,
+      unit_identity_metadata: buildingIdentity.unitIdentityMetadata,
     }).eq("id", item.id);
 
     // ── CROSS-AGENCY MATCH → CO-LISTING (final gate before insert) ──
@@ -4620,7 +4625,12 @@ async function processOneItem(
       });
 
       const match = crossAgencyMatch && crossAgencyMatch.length > 0 ? crossAgencyMatch[0] : null;
-      if (match && match.similarity_score >= 70 && !match.same_building_different_unit) {
+      const decisionBand = match?.duplicate_decision_band || null;
+      const reasonCodes = Array.isArray(match?.duplicate_reason_codes) && match.duplicate_reason_codes.length > 0
+        ? match.duplicate_reason_codes
+        : ["cross_agency_same_unit_score"];
+
+      if (match && decisionBand === "high_confidence_same_unit" && match.similarity_score >= 70 && !match.same_building_different_unit) {
         // Co-list: upsert the incoming agency as a secondary on the existing property.
         // UNIQUE(property_id, source_url) on property_co_agents de-dupes re-scrapes.
         await sb.from("property_co_agents").upsert(
@@ -4651,7 +4661,7 @@ async function processOneItem(
           confidenceScore,
           extractedData: sanitizedListing,
           duplicateDecision: "high_confidence_cross_agency_colist",
-          duplicateReasonCodes: ["cross_agency_same_unit_score", "co_listing_created"],
+          duplicateReasonCodes: [...reasonCodes, "co_listing_created"],
           matchedPropertyId: match.property_id,
         });
 
@@ -4663,11 +4673,45 @@ async function processOneItem(
           property_id: match.property_id,
           matched_property_id: match.property_id,
           duplicate_decision: "high_confidence_cross_agency_colist",
-          duplicate_reason_codes: ["cross_agency_same_unit_score", "co_listing_created"],
+          duplicate_reason_codes: [...reasonCodes, "co_listing_created"],
         }).eq("id", item.id);
 
         dlog(`[Co-Listing] Added agency ${job.agency_id} as secondary on property ${match.property_id} (score ${match.similarity_score})`);
         return { succeeded: false };
+      }
+
+      if (match && decisionBand === "possible_same_unit") {
+        await recordSourceObservation(sb, {
+          agencyId: job.agency_id,
+          importJobId: jobId,
+          importJobItemId: item.id,
+          sourceType: job.source_type || "website",
+          sourceUrl: item.url,
+          confidenceScore,
+          extractedData: sanitizedListing,
+          duplicateDecision: "possible_same_unit_needs_review",
+          duplicateReasonCodes: [...reasonCodes, "quarantined_for_duplicate_review"],
+          matchedPropertyId: match.property_id,
+        });
+
+        await sb.from("import_job_items").update({
+          status: "needs_review",
+          error_message: `Possible duplicate of property ${match.property_id} (building ${match.same_building_score}, unit ${match.same_unit_score}). Needs review before creation.`,
+          error_type: null,
+          matched_property_id: match.property_id,
+          duplicate_decision: "possible_same_unit_needs_review",
+          duplicate_reason_codes: [...reasonCodes, "quarantined_for_duplicate_review"],
+        }).eq("id", item.id);
+
+        return { succeeded: false };
+      }
+
+      if (match && (decisionBand === "same_building_likely_different_unit" || decisionBand === "same_building_insufficient_unit_evidence")) {
+        await sb.from("import_job_items").update({
+          matched_property_id: match.property_id,
+          duplicate_decision: decisionBand,
+          duplicate_reason_codes: reasonCodes,
+        }).eq("id", item.id);
       }
     }
 
@@ -4736,6 +4780,11 @@ async function processOneItem(
         source_identity_key: sourceIdentity.sourceIdentityKey,
         source_domain: sourceIdentity.sourceDomain,
         source_identity_reason: sourceIdentity.sourceItemId ? "native_source_item_id" : "canonical_source_url",
+        normalized_floor_number: buildingIdentity.normalizedFloorNumber,
+        normalized_apartment_number: buildingIdentity.normalizedApartmentNumber,
+        normalized_entrance: buildingIdentity.normalizedEntrance,
+        unit_identity_key: buildingIdentity.unitIdentityKey,
+        unit_identity_metadata: buildingIdentity.unitIdentityMetadata,
         data_quality_score: confidenceScore,
         location_confidence: listing.address?.length > 3 ? "exact" : listing.neighborhood ? "neighborhood" : "city",
         is_claimed: false,
