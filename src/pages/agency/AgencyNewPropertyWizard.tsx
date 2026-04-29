@@ -203,7 +203,6 @@ function AgencyWizardContent() {
     featured_highlight: data.featured_highlight || null,
     premium_drivers: data.premium_drivers,
     premium_explanation: data.premium_explanation || null,
-    benchmark_review_status: data.benchmark_review_status,
     market_fit_status: marketFitReview.level,
     market_fit_review_reason: marketFitReview.reviewReason,
     market_fit_confirmed_at: submitForReview && marketFitReview.requiresConfirmation ? new Date().toISOString() : null,
