@@ -101,7 +101,7 @@ export function SpecBasedComps({
   bedrooms,
   sizeSqm,
   price,
-  currency = 'ILS',
+  currency: _currency = 'ILS',
   sourceRooms,
   subjectProperty,
   onVerdictComputed,
