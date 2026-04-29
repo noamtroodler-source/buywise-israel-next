@@ -415,7 +415,7 @@ export default function AgencyDetail() {
                   {activeListings
                     .filter((p: any) => listingRoleFilter === 'all' || p._role === 'primary')
                     .map((property: any) => (
-                      <PropertyCard key={property.id} property={property} showCategoryBadge hideFeaturedBadge maxBadges={2} />
+                      <PropertyCard key={property.id} property={property} hideFeaturedBadge maxBadges={2} />
                     ))}
                 </div>
               </>
@@ -453,7 +453,7 @@ export default function AgencyDetail() {
                 {pastListings
                   .filter((p: any) => listingRoleFilter === 'all' || p._role === 'primary')
                   .map((property: any) => (
-                    <PropertyCard key={property.id} property={property} showCategoryBadge hideFeaturedBadge maxBadges={2} />
+                    <PropertyCard key={property.id} property={property} hideFeaturedBadge maxBadges={2} />
                   ))}
               </div>
             ) : (
