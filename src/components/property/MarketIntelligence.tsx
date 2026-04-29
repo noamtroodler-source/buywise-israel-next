@@ -172,7 +172,7 @@ function PremiumContextSummary({ priceContext, premiumExplanation }: { priceCont
   return (
     <div className="space-y-2">
       <div>
-        <p className="text-xs font-semibold text-foreground">Records may miss</p>
+        <p className="text-xs font-semibold text-foreground">What standard comps may miss</p>
         <p className="text-xs text-muted-foreground">Features that can make standard recorded-sale comps less direct.</p>
       </div>
       {contextChips.length > 0 && (
@@ -193,25 +193,20 @@ function PremiumContextSummary({ priceContext, premiumExplanation }: { priceCont
   );
 }
 
-function buildLayeredBuyWiseTake(priceContext: PriceContextResult, askingPriceSqm: number | null, ranges: BenchmarkRange[]) {
-  if (priceContext.confidenceTier === 'insufficient_data' || !askingPriceSqm || ranges.length === 0) {
-    return `${priceContext.buyWiseTake} Use the available city, neighborhood, and listing details as directional context while verifying sqm source, ownership, and included features.`;
+function buildBuyerTakeaway(priceContext: PriceContextResult) {
+  if (priceContext.publicLabel === 'Market context under review') {
+    return 'This benchmark is under review, so use the current context as directional only.';
   }
-
-  const strongestRange = ranges[0];
-  const relation = askingPriceSqm < strongestRange.min
-    ? `below the ${strongestRange.label.toLowerCase()} benchmark range`
-    : askingPriceSqm > strongestRange.max
-      ? `above the ${strongestRange.label.toLowerCase()} benchmark range`
-      : `within the ${strongestRange.label.toLowerCase()} benchmark range`;
-  const broaderContext = ranges.length > 1
-    ? ` We also compare it against ${ranges.slice(1).map((range) => range.label.toLowerCase()).join(' and ')} context so no single benchmark is treated as the full story.`
-    : '';
-  const premiumContext = priceContext.propertyClass !== 'standard_resale' || priceContext.premiumDrivers.length > 0
-    ? ` Because this is classified as ${priceContext.propertyClassLabel.toLowerCase()}, buyers should ask which features or included rights explain any premium.`
-    : ' Buyers should still verify the sqm source, ownership type, and included extras before relying on price/sqm comparisons.';
-
-  return `The asking price sits ${relation}.${broaderContext}${premiumContext}`;
+  if (priceContext.confidenceTier === 'insufficient_data') {
+    return 'There is not enough recorded-sale data for a reliable benchmark, so ask for recent comparable examples.';
+  }
+  if (priceContext.confidenceTier === 'limited_comparable_match') {
+    return 'Use this as directional pricing context only; comparable matches are limited.';
+  }
+  if (priceContext.confidenceTier === 'premium_unique_property' || priceContext.propertyClass !== 'standard_resale' || priceContext.premiumDrivers.length > 0) {
+    return 'Treat this as premium-property context; ask which features or rights explain the difference.';
+  }
+  return 'The asking price appears broadly aligned with available recorded-sale context, but key property details still matter.';
 }
 
 function MarketVerdictBadge({ compsCount, radiusUsedM, priceTier, priceContext }: { compsCount: number; radiusUsedM: number; priceTier?: PriceTier | null; priceContext: PriceContextResult }) {
@@ -256,9 +251,9 @@ function MarketVerdictBadge({ compsCount, radiusUsedM, priceTier, priceContext }
   );
 }
 
-function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchmarkRanges, propertyPricePerSqm, compsCount, radiusUsedM, sqmSource, ownershipType, onTrackInteraction }: { priceContext: PriceContextResult; premiumExplanation?: string | null; benchmarkCards: BenchmarkCard[]; benchmarkRanges: BenchmarkRange[]; propertyPricePerSqm: number | null; compsCount: number; radiusUsedM: number; sqmSource?: string | null; ownershipType?: string | null; onTrackInteraction?: (eventName: string, properties?: Record<string, unknown>) => void }) {
+function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchmarkRanges, compsCount, radiusUsedM, sqmSource, ownershipType, onTrackInteraction }: { priceContext: PriceContextResult; premiumExplanation?: string | null; benchmarkCards: BenchmarkCard[]; benchmarkRanges: BenchmarkRange[]; propertyPricePerSqm: number | null; compsCount: number; radiusUsedM: number; sqmSource?: string | null; ownershipType?: string | null; onTrackInteraction?: (eventName: string, properties?: Record<string, unknown>) => void }) {
   const radiusLabel = radiusUsedM >= 1000 ? '1km' : `${radiusUsedM}m`;
-  const layeredTake = buildLayeredBuyWiseTake(priceContext, propertyPricePerSqm, benchmarkRanges);
+  const buyerTakeaway = buildBuyerTakeaway(priceContext);
 
   return (
     <div className="rounded-lg border border-primary/15 bg-primary/5 p-4 space-y-3">
@@ -272,13 +267,17 @@ function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchma
               <p className="text-sm font-semibold text-foreground">BuyWise Price Context</p>
               <Badge variant="secondary" className="text-xs">{priceContext.publicLabel}</Badge>
             </div>
-            <p className="text-xs text-muted-foreground">Recorded sales, local benchmark ranges, and property-specific context for International buyers.</p>
+            <p className="text-xs text-muted-foreground">Recorded sales and local benchmarks to help you understand the asking price.</p>
           </div>
-          <p className="text-sm leading-relaxed text-muted-foreground">{layeredTake}</p>
           <div className="mt-3 grid gap-2 md:grid-cols-3">
             {benchmarkCards.map((card) => (
               <BenchmarkCardTile key={card.id} card={card} onTrackInteraction={onTrackInteraction} />
             ))}
+          </div>
+          <div className="mt-3 rounded-lg border border-primary/15 bg-background/70 px-3 py-2">
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              <span className="font-semibold text-foreground">Buyer takeaway:</span> {buyerTakeaway}
+            </p>
           </div>
           <div className="mt-3">
             <PremiumContextSummary priceContext={priceContext} premiumExplanation={premiumExplanation} />
@@ -309,7 +308,7 @@ function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchma
             </div>
             <p>Comp set summary: {compsCount > 0 ? `${compsCount} recorded sale${compsCount > 1 ? 's' : ''} within ${radiusLabel}` : 'local city or neighborhood benchmarks when listing-level comps are limited'}.</p>
             <p>Property class: {priceContext.propertyClassLabel}. Standard resale, premium, new-build, garden, penthouse, and house/villa listings are treated cautiously because they do not trade the same way.</p>
-            <p>Benchmark interpretation: the ladder is a reference map across available recorded-sale layers, not an estimated fair value or appraisal.</p>
+            <p>Benchmark interpretation: these layers provide context across available recorded-sale references; they are not an estimated fair value or appraisal.</p>
             <p>SQM source: {formatPriceContextValue(sqmSource)}. {PRICE_CONTEXT_SIZE_NOTE}</p>
             <p>Ownership type: {formatPriceContextValue(ownershipType)}. Ownership structure can affect buyer due diligence and how closely recorded resale benchmarks apply.</p>
             {priceContext.confidenceCaps.length > 0 && (
@@ -472,7 +471,7 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
       {
         id: 'nearby_recorded_sales',
         label: 'Nearby recorded sales',
-        value: priceContext.benchmarkRange ? formatNisPerSqmRange(priceContext.benchmarkRange.min, priceContext.benchmarkRange.max) : 'Limited nearby evidence',
+        value: priceContext.benchmarkRange && verdictData.compsCount > 0 ? formatNisPerSqmRange(priceContext.benchmarkRange.min, priceContext.benchmarkRange.max) : 'Limited nearby evidence',
         detail: verdictData.compsCount > 0
           ? `${verdictData.compsCount} recorded sale${verdictData.compsCount > 1 ? 's' : ''} within ${verdictData.radiusUsedM >= 1000 ? '1km' : `${verdictData.radiusUsedM}m`}.`
           : 'No listing-level nearby sale range is available yet.',
@@ -480,7 +479,7 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
       },
       {
         id: 'broader_area_benchmark',
-        label: 'Broader area',
+        label: neighborhoodAvgPriceSqm ? 'Area benchmark' : 'Area benchmark · directional',
         value: broaderAreaValue,
         detail: broaderAreaDetail,
         icon: Building2,
