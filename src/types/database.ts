@@ -118,8 +118,6 @@ export interface Property {
     price_context_percentage_suppressed?: boolean | null;
     price_context_display_mode?: 'soft' | 'full' | 'hidden' | null;
     price_context_filter_eligible?: boolean | null;
-    price_context_placement_eligible?: boolean | null;
-    price_context_featured_eligible?: boolean | null;
     comp_pool_used?: string | null;
    created_at: string;
   updated_at: string;
