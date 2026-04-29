@@ -4303,6 +4303,11 @@ async function processOneItem(
 
         const patch: Record<string, any> = {
           merged_source_urls: mergedUrls,
+          canonical_source_url: sourceIdentity.canonicalSourceUrl,
+          source_item_id: sourceIdentity.sourceItemId,
+          source_identity_key: sourceIdentity.sourceIdentityKey,
+          source_domain: sourceIdentity.sourceDomain,
+          source_identity_reason: "cross_source_enrichment",
           source_last_checked_at: new Date().toISOString(),
         };
         const visibleFactFields = new Set<string>(Array.isArray(listing._visible_fact_fields) ? listing._visible_fact_fields : []);
@@ -4423,10 +4428,27 @@ async function processOneItem(
           }, { onConflict: "property_id,source_url", ignoreDuplicates: true });
         }
 
+        await recordSourceObservation(sb, {
+          propertyId: crossSourceMatchId,
+          agencyId: job.agency_id,
+          importJobId: jobId,
+          importJobItemId: item.id,
+          sourceType: incomingSource,
+          sourceUrl: item.url,
+          confidenceScore,
+          extractedData: sanitizedListing,
+          duplicateDecision: "cross_source_enrichment",
+          duplicateReasonCodes: ["matched_existing_property", "source_priority_enrichment"],
+          matchedPropertyId: crossSourceMatchId,
+        });
+
         // Mark this import item as merged (not a new property)
         await sb.from("import_job_items").update({
           status: "done",
           property_id: crossSourceMatchId,
+          matched_property_id: crossSourceMatchId,
+          duplicate_decision: "cross_source_enrichment",
+          duplicate_reason_codes: ["matched_existing_property", "source_priority_enrichment"],
           error_message: `Merged into existing property ${crossSourceMatchId} (cross-source enrichment, source=${incomingSource}, trust=${incomingRank})`,
         }).eq("id", item.id);
 
