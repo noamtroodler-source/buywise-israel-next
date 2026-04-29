@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { DollarSign, TrendingUp, Home, Building, BadgeCheck, AlertTriangle, Gauge, MousePointerClick, ShieldCheck, EyeOff, ArrowRight, Ruler, FileWarning, Wrench } from 'lucide-react';
 import { PriceAnalyticsData } from '@/hooks/usePriceAnalytics';
 import { usePriceContextBlockers } from '@/hooks/useListingReview';
+import { exportToCSV } from '@/lib/csvExport';
 import { 
   BarChart, Bar, XAxis, YAxis, ResponsiveContainer, 
   Tooltip, Cell, PieChart, Pie 
@@ -54,6 +55,23 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 
   const context = data?.priceContext;
+  const hasContextData = Boolean(context && (context.totalListings > 0 || context.moduleViews > 0));
+  const exportPriceContextCsv = () => {
+    if (!context) return;
+    exportToCSV('price-context-kpis.csv', ['Metric', 'Value'], [
+      ['Context complete rate', `${context.completionRate.toFixed(1)}%`],
+      ['Module views', String(context.moduleViews)],
+      ['Details open rate', `${context.detailsOpenRate.toFixed(1)}%`],
+      ['Comparable views', String(context.comparableViews)],
+      ['Saves after context view', String(context.savesAfterContextView)],
+      ['Context inquiry conversion rate', `${context.inquiryConversionRate.toFixed(1)}%`],
+      ['Trust helpful rate', `${context.helpfulFeedbackRate.toFixed(1)}%`],
+      ['Premium context completion rate', `${context.premiumContextCompletionRate.toFixed(1)}%`],
+      ['Benchmark review request rate', `${context.benchmarkReviewRequestRate.toFixed(1)}%`],
+      ['Unknown sqm source rate', `${context.unknownSqmSourceRate.toFixed(1)}%`],
+      ['Unknown ownership rate', `${context.unknownOwnershipRate.toFixed(1)}%`],
+    ]);
+  };
   const contextCards = [
     { label: 'Context Complete', value: `${(context?.completionRate || 0).toFixed(0)}%`, sub: `${context?.complete || 0} of ${context?.totalListings || 0} active listings`, icon: BadgeCheck },
     { label: 'Ranking Ready', value: `${(context?.rankingReadinessRate || 0).toFixed(0)}%`, sub: `${context?.rankingReady || 0} safe to prioritize`, icon: ShieldCheck },
@@ -63,6 +81,7 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
 
   const healthCards = [
     { label: 'High-gap listings', value: (context?.highGapListings || 0).toLocaleString(), sub: `${(context?.highGapRate || 0).toFixed(0)}% of active sale listings`, icon: FileWarning },
+    { label: 'High-gap missing context', value: (context?.highGapWithoutPremiumExplanation || 0).toLocaleString(), sub: 'Need premium explanation before buyer trust improves', icon: AlertTriangle },
     { label: 'Unknown sqm source', value: `${(context?.unknownSqmSourceRate || 0).toFixed(0)}%`, sub: `${context?.unknownSqmSource || 0} listings need size-source cleanup`, icon: Ruler },
     { label: 'Unknown ownership', value: `${(context?.unknownOwnershipRate || 0).toFixed(0)}%`, sub: `${context?.unknownOwnership || 0} listings need ownership context`, icon: ShieldCheck },
     { label: 'Admin corrections', value: (context?.adminCorrectionEvents || 0).toLocaleString(), sub: `${(context?.adminCorrectionRate || 0).toFixed(1)} per 100 active listings`, icon: Wrench },
@@ -81,6 +100,18 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
       <CardContent className="pt-4">
         {/* Price Context KPIs */}
         <div className="mb-6 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/50 bg-muted/20 p-4">
+            <div>
+              <p className="text-sm font-semibold text-foreground">Price Context KPI dashboard</p>
+              <p className="text-xs text-muted-foreground">Real listing, inquiry, save, lead-quality, and event data for the selected period.</p>
+            </div>
+            <Button variant="outline" size="sm" onClick={exportPriceContextCsv} disabled={!hasContextData}>Export CSV</Button>
+          </div>
+          {!hasContextData && (
+            <div className="rounded-xl border border-border/50 bg-background p-4 text-sm text-muted-foreground">
+              Not enough Price Context data yet. Metrics will populate after live listings receive module views, saves, inquiries, or review events.
+            </div>
+          )}
           <div className="grid gap-3 md:grid-cols-4">
             {contextCards.map((card) => (
               <div key={card.label} className="rounded-xl border border-border/50 bg-muted/30 p-3">
@@ -147,6 +178,11 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
               <p className="text-xs text-muted-foreground">Tracked inquiry actions after Price Context exposure</p>
             </div>
             <div className="rounded-xl border border-border/50 bg-background p-3">
+              <p className="text-xs font-medium text-muted-foreground">Saves after context</p>
+              <p className="mt-2 text-2xl font-bold text-foreground">{(context?.saveAfterContextViewRate || 0).toFixed(1)}%</p>
+              <p className="text-xs text-muted-foreground">{context?.savesAfterContextView || 0} saved listings in this period</p>
+            </div>
+            <div className="rounded-xl border border-border/50 bg-background p-3">
               <p className="text-xs font-medium text-muted-foreground">Context-to-inquiry CVR</p>
               <p className="mt-2 text-2xl font-bold text-foreground">{(context?.inquiryConversionRate || 0).toFixed(1)}%</p>
               <p className="text-xs text-muted-foreground">Inquiries per Price Context module view</p>
@@ -155,6 +191,29 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
               <p className="text-xs font-medium text-muted-foreground">Buyer trust feedback</p>
               <p className="mt-2 text-2xl font-bold text-foreground">{(context?.helpfulFeedbackRate || 0).toFixed(1)}%</p>
               <p className="text-xs text-muted-foreground">{context?.helpfulFeedback || 0} helpful · {context?.notHelpfulFeedback || 0} not yet</p>
+            </div>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-4">
+            <div className="rounded-xl border border-border/50 bg-background p-3">
+              <p className="text-xs font-medium text-muted-foreground">Premium context completion</p>
+              <p className="mt-2 text-2xl font-bold text-foreground">{(context?.premiumContextCompletionRate || 0).toFixed(1)}%</p>
+              <p className="text-xs text-muted-foreground">Listings with premium drivers or explanation</p>
+            </div>
+            <div className="rounded-xl border border-border/50 bg-background p-3">
+              <p className="text-xs font-medium text-muted-foreground">Review request rate</p>
+              <p className="mt-2 text-2xl font-bold text-foreground">{(context?.benchmarkReviewRequestRate || 0).toFixed(1)}%</p>
+              <p className="text-xs text-muted-foreground">Agency benchmark challenges per sale listing</p>
+            </div>
+            <div className="rounded-xl border border-border/50 bg-background p-3">
+              <p className="text-xs font-medium text-muted-foreground">Lead quality rating</p>
+              <p className="mt-2 text-2xl font-bold text-foreground">{(context?.contextCompleteAvgLeadQualityRating || 0).toFixed(1)}</p>
+              <p className="text-xs text-muted-foreground">Context-complete average vs {(context?.avgLeadQualityRating || 0).toFixed(1)} overall</p>
+            </div>
+            <div className="rounded-xl border border-border/50 bg-background p-3">
+              <p className="text-xs font-medium text-muted-foreground">Time to publish</p>
+              <p className="mt-2 text-2xl font-bold text-foreground">{(context?.avgTimeToPublishHours || 0).toFixed(0)}h</p>
+              <p className="text-xs text-muted-foreground">Average from submission to review where timestamps exist</p>
             </div>
           </div>
 
@@ -235,6 +294,20 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
               </div>
             </div>
           </div>
+
+          {(context?.insufficientDataByCity || []).length > 0 && (
+            <div className="rounded-xl border border-border/50 p-4">
+              <p className="text-sm font-semibold text-foreground">Insufficient-data rate by city</p>
+              <div className="mt-3 grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+                {(context?.insufficientDataByCity || []).slice(0, 9).map((item) => (
+                  <div key={item.city} className="flex items-center justify-between gap-3 rounded-lg bg-muted/20 p-3 text-sm">
+                    <span className="font-medium text-foreground">{item.city}</span>
+                    <span className="text-muted-foreground">{item.count} · {item.percentage.toFixed(1)}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="rounded-xl border border-border/50 p-4">
             <div className="flex items-center justify-between gap-3">
