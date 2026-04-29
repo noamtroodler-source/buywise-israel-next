@@ -36,6 +36,7 @@ import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { differenceInDays, parseISO, format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { PriceContextBadge } from '@/components/property/PriceContextBadge';
+import { BenchmarkReviewDialog } from '@/components/property/BenchmarkReviewDialog';
 
 const statusConfig = {
   draft: { label: 'Draft', color: 'bg-muted text-muted-foreground' },
@@ -507,6 +508,7 @@ export default function AgentProperties() {
                                     status={listing.price_context_badge_status}
                                     publicLabel={listing.price_context_public_label}
                                     confidenceTier={listing.price_context_confidence_tier}
+                                    benchmarkReviewStatus={(listing as any).benchmark_review_status}
                                   />
                                 )}
                               </div>
@@ -596,6 +598,13 @@ export default function AgentProperties() {
                                       <Key className="h-4 w-4 mr-2" />
                                       Mark as Rented
                                     </DropdownMenuItem>
+                                  )}
+                                  {listing.listing_status === 'for_sale' && (
+                                    <BenchmarkReviewDialog
+                                      propertyId={listing.id}
+                                      propertyTitle={listing.title}
+                                      trigger={<DropdownMenuItem onSelect={(e) => e.preventDefault()}><AlertTriangle className="h-4 w-4 mr-2" />Request benchmark review</DropdownMenuItem>}
+                                    />
                                   )}
                                   <DropdownMenuItem onClick={() => archiveListing.mutate({ propertyId: listing.id, agencyId: (listing as any).primary_agency_id })}>
                                     <Archive className="h-4 w-4 mr-2" />
@@ -732,6 +741,7 @@ export default function AgentProperties() {
                                       status={listing.price_context_badge_status}
                                       publicLabel={listing.price_context_public_label}
                                       confidenceTier={listing.price_context_confidence_tier}
+                                      benchmarkReviewStatus={(listing as any).benchmark_review_status}
                                     />
                                   )}
                                 </div>
@@ -824,6 +834,13 @@ export default function AgentProperties() {
                                           <Home className="h-4 w-4 mr-2" />
                                           Mark as Sold
                                         </DropdownMenuItem>
+                                      )}
+                                      {listing.listing_status === 'for_sale' && (
+                                        <BenchmarkReviewDialog
+                                          propertyId={listing.id}
+                                          propertyTitle={listing.title}
+                                          trigger={<DropdownMenuItem onSelect={(e) => e.preventDefault()}><AlertTriangle className="h-4 w-4 mr-2" />Request benchmark review</DropdownMenuItem>}
+                                        />
                                       )}
                                       {listing.listing_status === 'for_rent' && (
                                         <DropdownMenuItem onClick={() => updateStatus.mutate({ id: listing.id, listing_status: 'rented' })}>

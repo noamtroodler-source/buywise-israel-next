@@ -7,15 +7,19 @@ interface PriceContextBadgeProps {
   status?: string | null;
   publicLabel?: string | null;
   confidenceTier?: string | null;
+  benchmarkReviewStatus?: string | null;
   className?: string;
 }
 
-export function PriceContextBadge({ status, publicLabel, confidenceTier, className }: PriceContextBadgeProps) {
+export function PriceContextBadge({ status, publicLabel, confidenceTier, benchmarkReviewStatus, className }: PriceContextBadgeProps) {
+  const reviewOpen = benchmarkReviewStatus === 'requested' || benchmarkReviewStatus === 'under_review';
   const isComplete = status === 'complete';
-  const isBlocked = status === 'blocked';
+  const isBlocked = status === 'blocked' || reviewOpen;
   const Icon = isComplete ? CheckCircle2 : isBlocked ? AlertTriangle : HelpCircle;
-  const label = isComplete ? 'Price Context complete' : isBlocked ? 'Context under review' : 'Needs price context';
-  const detail = publicLabel
+  const label = isBlocked ? 'Context under review' : isComplete ? 'Price Context complete' : 'Needs price context';
+  const detail = reviewOpen
+    ? 'A benchmark review has been requested. Buyer-facing context will stay cautious until it is resolved.'
+    : publicLabel
     ? `${publicLabel}${confidenceTier ? ` • ${confidenceTier.replace(/_/g, ' ')}` : ''}`
     : isComplete
       ? 'Buyer-facing pricing context is ready.'

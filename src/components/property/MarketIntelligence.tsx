@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { BarChart3, ShieldCheck, Info, ArrowRight, Sparkles, ChevronDown, CircleHelp, CheckCircle2 } from 'lucide-react';
+import { BarChart3, ShieldCheck, Info, ArrowRight, ChevronDown, CircleHelp, CheckCircle2, Calculator, Ruler, TrendingUp } from 'lucide-react';
 import { getIsraeliRoomCount } from '@/lib/israeliRoomCount';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
@@ -77,6 +77,11 @@ function formatPremiumDriver(driver: string) {
   return driver.replace(/[_/]+/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
+function formatNisPerSqm(value: number | null | undefined) {
+  if (!value) return '—';
+  return `₪${Math.round(value).toLocaleString()}/sqm`;
+}
+
 function MarketVerdictBadge({ compsCount, radiusUsedM, priceTier, priceContext }: { compsCount: number; radiusUsedM: number; priceTier?: PriceTier | null; priceContext: PriceContextResult }) {
   const radiusLabel = radiusUsedM >= 1000 ? '1km' : '500m';
   const isPositive = priceContext.publicLabel === 'In line with available benchmarks';
@@ -119,30 +124,40 @@ function MarketVerdictBadge({ compsCount, radiusUsedM, priceTier, priceContext }
   );
 }
 
-function BuyWiseTake({ priceContext, premiumExplanation }: { priceContext: PriceContextResult; premiumExplanation?: string | null }) {
+function BuyWiseTake({ priceContext, premiumExplanation, propertyPricePerSqm, compsCount, radiusUsedM }: { priceContext: PriceContextResult; premiumExplanation?: string | null; propertyPricePerSqm: number | null; compsCount: number; radiusUsedM: number }) {
   const [open, setOpen] = useState(false);
-  const hasPremiumContext = priceContext.premiumDrivers.length > 0 || Boolean(premiumExplanation?.trim());
+  const hasPremiumContext = priceContext.confirmedPremiumDrivers.length > 0 || priceContext.detectedPremiumDrivers.length > 0 || Boolean(premiumExplanation?.trim());
+  const radiusLabel = radiusUsedM >= 1000 ? '1km' : `${radiusUsedM}m`;
 
   return (
     <div className="rounded-xl border border-primary/15 bg-primary/5 p-4 space-y-4">
       <div className="flex items-start gap-3">
         <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-          <Sparkles className="h-4 w-4 text-primary" />
+          <BarChart3 className="h-4 w-4 text-primary" />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2 mb-1">
-            <p className="text-sm font-semibold text-foreground">BuyWise Take</p>
-            <Badge variant="secondary" className="text-xs">{priceContext.confidenceLabel}</Badge>
+          <div className="mb-2 space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-sm font-semibold text-foreground">BuyWise Price Context</p>
+              <Badge variant="secondary" className="text-xs">{priceContext.publicLabel}</Badge>
+            </div>
+            <p className="text-xs text-muted-foreground">Recorded sales, local benchmark ranges, and property-specific context for International buyers.</p>
           </div>
           <p className="text-sm text-muted-foreground">{priceContext.buyWiseTake}</p>
-          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          <div className="mt-3 grid gap-2 sm:grid-cols-3">
             <div className="rounded-lg border border-border/70 bg-background/70 p-3">
-              <p className="text-xs font-medium text-muted-foreground">Property class</p>
-              <p className="text-sm font-semibold text-foreground">{priceContext.propertyClassLabel}</p>
+              <p className="text-xs font-medium text-muted-foreground flex items-center gap-1"><Ruler className="h-3 w-3" /> Asking price / sqm</p>
+              <p className="text-sm font-semibold text-foreground">{formatNisPerSqm(propertyPricePerSqm)}</p>
             </div>
             <div className="rounded-lg border border-border/70 bg-background/70 p-3">
-              <p className="text-xs font-medium text-muted-foreground">Public context</p>
-              <p className="text-sm font-semibold text-foreground">{priceContext.publicLabel}</p>
+              <p className="text-xs font-medium text-muted-foreground flex items-center gap-1"><TrendingUp className="h-3 w-3" /> Recorded local range</p>
+              <p className="text-sm font-semibold text-foreground">
+                {priceContext.benchmarkRange ? `${formatNisPerSqm(priceContext.benchmarkRange.min)}–${formatNisPerSqm(priceContext.benchmarkRange.max).replace('₪', '')}` : 'Directional only'}
+              </p>
+            </div>
+            <div className="rounded-lg border border-border/70 bg-background/70 p-3">
+              <p className="text-xs font-medium text-muted-foreground flex items-center gap-1"><ShieldCheck className="h-3 w-3" /> Comparable confidence</p>
+              <p className="text-sm font-semibold text-foreground">{priceContext.confidenceLabel}</p>
             </div>
           </div>
         </div>
@@ -157,13 +172,24 @@ function BuyWiseTake({ priceContext, premiumExplanation }: { priceContext: Price
             </Button>
           </CollapsibleTrigger>
           <CollapsibleContent className="pt-2 space-y-3">
-            {priceContext.premiumDrivers.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {priceContext.premiumDrivers.slice(0, 8).map((driver) => (
-                  <Badge key={driver} variant="outline" className="rounded-lg bg-background/70">
-                    {formatPremiumDriver(driver)}
-                  </Badge>
-                ))}
+            {(priceContext.confirmedPremiumDrivers.length > 0 || priceContext.detectedPremiumDrivers.length > 0) && (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {priceContext.confirmedPremiumDrivers.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground">Confirmed by agency</p>
+                    <div className="flex flex-wrap gap-2">
+                      {priceContext.confirmedPremiumDrivers.slice(0, 8).map((driver) => <Badge key={driver} variant="outline" className="rounded-lg bg-background/70">{formatPremiumDriver(driver)}</Badge>)}
+                    </div>
+                  </div>
+                )}
+                {priceContext.detectedPremiumDrivers.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground">Detected from listing</p>
+                    <div className="flex flex-wrap gap-2">
+                      {priceContext.detectedPremiumDrivers.slice(0, 8).map((driver) => <Badge key={driver} variant="outline" className="rounded-lg bg-background/70">{formatPremiumDriver(driver)}</Badge>)}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             {premiumExplanation && (
@@ -191,6 +217,24 @@ function BuyWiseTake({ priceContext, premiumExplanation }: { priceContext: Price
           </ul>
         </div>
       )}
+
+      <Collapsible>
+        <CollapsibleTrigger asChild>
+          <Button variant="ghost" size="sm" className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground">
+            <Calculator className="mr-1 h-3.5 w-3.5" /> How we calculated this
+            <ChevronDown className="ml-1 h-3.5 w-3.5" />
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="pt-2">
+          <div className="rounded-lg border border-border/70 bg-background/70 p-3 text-xs text-muted-foreground space-y-2">
+            <p>Comparable set: {compsCount > 0 ? `${compsCount} recorded sale${compsCount > 1 ? 's' : ''} within ${radiusLabel}` : 'local city or neighborhood benchmarks when listing-level comps are limited'}.</p>
+            <p>Property class: {priceContext.propertyClassLabel}. Standard resale, premium, new-build, garden, penthouse, and house/villa listings are treated cautiously because they do not trade the same way.</p>
+            <p>Israeli property size can be Tabu, Arnona, contractor-plan, marketing, or net size. Buyers should confirm the size basis with the agent before relying on price/sqm comparisons.</p>
+            {priceContext.percentageSuppressionReason && <p>{priceContext.percentageSuppressionReason}</p>}
+            <p>This is guidance from available recorded data, not an appraisal or exact fair-value estimate.</p>
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
     </div>
   );
 }
@@ -258,7 +302,7 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5 text-primary" />
-            <h3 className="text-lg font-semibold text-foreground">Price Context</h3>
+            <h3 className="text-lg font-semibold text-foreground">BuyWise Price Context</h3>
           </div>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -371,6 +415,9 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
         <BuyWiseTake
           priceContext={priceContext}
           premiumExplanation={property.premium_explanation}
+          propertyPricePerSqm={propertyPricePerSqm}
+          compsCount={verdictData.compsCount}
+          radiusUsedM={verdictData.radiusUsedM}
         />
 
         {/* Data context — help buyers understand data limitations */}

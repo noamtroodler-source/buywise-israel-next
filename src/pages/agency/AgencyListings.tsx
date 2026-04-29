@@ -49,6 +49,7 @@ import { exportToCSV } from '@/lib/csvExport';
 import { AgencyListingsSkeleton } from '@/components/agency/skeletons/AgencyPageSkeletons';
 import { EnhancedEmptyState } from '@/components/shared/EnhancedEmptyState';
 import { PriceContextBadge } from '@/components/property/PriceContextBadge';
+import { BenchmarkReviewDialog } from '@/components/property/BenchmarkReviewDialog';
 
 const IMPORTED_BANNER_KEY = 'agency_imported_drafts_banner_dismissed';
 const LAUNCH_REVIEW_GUIDANCE_KEY = 'agency_launch_review_guidance_dismissed';
@@ -792,6 +793,7 @@ export default function AgencyListings() {
                                     status={listing.price_context_badge_status}
                                     publicLabel={listing.price_context_public_label}
                                     confidenceTier={listing.price_context_confidence_tier}
+                                    benchmarkReviewStatus={listing.benchmark_review_status}
                                   />
                                 )}
                               </div>
@@ -870,6 +872,13 @@ export default function AgencyListings() {
                                         <Home className="h-4 w-4 mr-2" />
                                         Mark as Sold
                                       </DropdownMenuItem>
+                                    )}
+                                    {listing.listing_status === 'for_sale' && (
+                                      <BenchmarkReviewDialog
+                                        propertyId={listing.id}
+                                        propertyTitle={listing.title}
+                                        trigger={<DropdownMenuItem onSelect={(e) => e.preventDefault()}><AlertTriangle className="h-4 w-4 mr-2" />Request benchmark review</DropdownMenuItem>}
+                                      />
                                     )}
                                     {listing.listing_status === 'for_rent' && (
                                       <DropdownMenuItem onClick={() => updateStatus.mutate({ id: listing.id, listing_status: 'rented' })}>
