@@ -153,7 +153,8 @@ const text: React.CSSProperties = {
   margin: '0 0 16px',
 }
 const summaryBox: React.CSSProperties = {
-  backgroundColor: '#eff6ff',
+  backgroundColor: '#f8fafc',
+  border: '1px solid #dbeafe',
   borderRadius: '10px',
   padding: '18px 20px',
   margin: '20px 0',
@@ -175,7 +176,7 @@ const button: React.CSSProperties = {
   backgroundColor: '#0a66dc',
   color: '#ffffff',
   padding: '14px 28px',
-  borderRadius: '10px',
+  borderRadius: '8px',
   textDecoration: 'none',
   fontWeight: 600,
   fontSize: '15px',
