@@ -7577,6 +7577,10 @@ export type Database = {
         }
         Returns: Json
       }
+      approve_agency_join_request: {
+        Args: { p_agency_id: string; p_agent_id: string; p_request_id: string }
+        Returns: undefined
+      }
       approve_agency_listing: {
         Args: { p_notes?: string; p_property_id: string }
         Returns: boolean

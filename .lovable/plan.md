@@ -1,260 +1,341 @@
-# Phased plan: remove manual Market Intelligence review infrastructure
+# Plan: simplify agency launch, listing statuses, wizard validation, and agent approval
 
 ## Goal
+Make the agency experience feel guided and lightweight: agencies should know exactly what to do after approval, understand each listing’s state in plain English, submit listings without over-fixing optional details, and manage their own agents by default.
 
-Move BuyWise Price Context / Market Intelligence from a manual review workflow to an automatic, confidence-based system.
+## 1. Unify agency-facing listing statuses
 
-The final model should be:
+### What will change
+Create one shared agency-facing status mapper for listings, while keeping the existing database statuses untouched.
 
-```text
-Listing data + recorded sales + local benchmarks
-        ↓
-Automatic Price Context engine
-        ↓
-Buyer-facing guidance with confidence, limitations, and premium/luxury caution
-```
-
-Not:
+Agency UI labels will become:
 
 ```text
-Agent submits listing
-        ↓
-Price Context marked incomplete / under review
-        ↓
-Admin resolves benchmark review
-        ↓
-Listing becomes eligible
+To review
+Ready to submit
+Pending BuyWise review
+Live
+Needs fixes
+Archived
 ```
 
-## Phase 1 — Remove buyer-facing and pro-facing review UI, keep database untouched
+### Mapping logic
+Use a combination of existing fields:
 
-Purpose: clean the product without risky schema changes.
+- `verification_status`
+- `is_published`
+- `agency_review_status`
+- hard blocker count from listing quality/completeness
+- archived state
 
-### Remove from listing pages
-- Remove any remaining “Market context under review” logic.
-- Remove “Price Context complete,” “Needs price context,” and “Context under review” badge behavior.
-- Keep the actual Market Intelligence section.
-- Keep Premium/Luxury mode.
-- Keep limited-data and disclaimer copy.
-
-### Remove from agent / agency workflows
-- Remove “request benchmark review” buttons/dialogs.
-- Delete or disconnect `BenchmarkReviewDialog`.
-- Delete or disconnect `useBenchmarkReview`.
-- Remove review request fields from listing creation/edit flows:
-  - `benchmark_review_status`
-  - `benchmark_review_reason`
-  - `benchmark_review_notes`
-  - `benchmark_review_requested_at`
-  - `benchmark_review_resolved_at`
-  - `benchmark_review_admin_notes`
-  - `benchmark_review_resolution`
-
-### Keep useful wizard inputs
-Keep fields that help the automatic engine produce better buyer guidance:
-- `sqm_source`
-- `ownership_type`
-- `premium_drivers`
-- `premium_explanation`
-
-### Replace wizard messaging
-Where the wizard currently implies Price Context needs approval/review, replace it with lightweight copy like:
-
-> BuyWise will generate buyer-facing price context automatically from available recorded sales, listing details, and local benchmarks.
-
-## Phase 2 — Simplify admin review and analytics
-
-Purpose: remove the operational workflow while preserving useful admin visibility.
-
-### Admin listing review
-- Remove the Price Context benchmark review queue from admin review screens.
-- If the admin review page also handles general listing quality, keep the page but remove only the Market Intelligence review parts.
-- If the page exists only for Price Context review, remove the route and page.
-
-### Admin cards and dashboards
-Remove review workflow concepts from:
-- Listing review cards
-- Price analytics cards
-- Feature flag / rollout screens if they were only managing Price Context review
-
-Replace “review workflow” analytics with automatic-quality analytics:
-- Strong context
-- Limited context
-- Insufficient data
-- Premium/luxury context
-- Percentage suppressed
-- Buyer interactions with the module
-
-## Phase 3 — Decouple rankings, featured listings, and filters from review status
-
-Purpose: prevent hidden product behavior from depending on old manual approval fields.
-
-### Remove old eligibility logic
-Stop using:
-- `price_context_badge_status`
-- `benchmark_review_status`
-- `price_context_filter_eligible`
-- `price_context_placement_eligible`
-- `price_context_featured_eligible`
-
-### Keep ranking quality signals
-Featured/listing ranking can still use automatic signals:
-- `price_context_confidence_tier`
-- `price_context_percentage_suppressed`
-- `price_context_property_class`
-- listing status
-- featured status
-- freshness / existing ranking rules
-
-### Expected result
-Listings should not be penalized because a manual review was never requested or resolved. If the data is limited, the buyer-facing module simply says it is limited.
-
-## Phase 4 — Clean app code types and dead components
-
-Purpose: remove leftover code after the product behavior is stable.
-
-### Delete or retire dead files
-Likely candidates:
-- `src/hooks/useBenchmarkReview.tsx`
-- `src/components/property/BenchmarkReviewDialog.tsx`
-- `src/components/property/PriceContextBadge.tsx` if no longer used
-
-### Simplify engine types
-In `src/lib/priceContext.ts`:
-- Remove manual review status handling.
-- Remove `blocked` / `incomplete` as product states if they only existed for review workflow.
-- Keep confidence tiers and premium/luxury classifications.
-
-### Simplify helper files
-Update or remove:
-- `src/lib/priceContextGuardrails.ts`
-- `src/lib/priceContextRanking.ts`
-- `src/lib/wizardPriceContext.ts`
-
-The goal is to make the code read as: automatic confidence system, not approval workflow.
-
-## Phase 5 — Database cleanup migration, only after code no longer uses the fields
-
-Purpose: remove unused schema safely.
-
-This should be last, after the app has run without depending on the old fields.
-
-### Drop old review columns from `properties`
-Candidates to remove:
-- `benchmark_review_status`
-- `benchmark_review_reason`
-- `benchmark_review_notes`
-- `benchmark_review_requested_at`
-- `benchmark_review_resolved_at`
-- `benchmark_review_admin_notes`
-- `benchmark_review_resolution`
-- `price_context_badge_status`
-- `price_context_filter_eligible`
-- `price_context_placement_eligible`
-- `price_context_featured_eligible`
-
-### Drop old indexes
-Remove indexes tied to the old columns, such as:
-- `idx_properties_price_context_badge_status`
-- `idx_properties_benchmark_review_status`
-- `idx_properties_price_context_filter_eligible`
-- `idx_properties_price_context_placement_eligible`
-
-### Decide what to do with `price_context_events`
-Options:
-1. Keep it if it still stores useful analytics for module impressions/interactions.
-2. Remove only event types tied to manual review.
-3. Drop the table later if all useful analytics now live in `user_events`.
-
-Recommended: keep it temporarily unless it is clearly unused.
-
-## Phase 6 — QA checklist
-
-After each phase, verify:
-
-### Listing page
-- Market Intelligence renders on normal listings.
-- Premium/luxury listings show the cautious premium mode.
-- Listings with limited comps show limited-data copy, not “under review.”
-- No duplicate tags or review badges appear.
-
-### Agent / agency portals
-- New listing wizard still submits.
-- Edit listing wizard still saves.
-- Agents/agencies no longer see benchmark review requests.
-- Helpful fields like size source, ownership type, and premium explanation still work.
-
-### Admin
-- Admin listing workflows still work if unrelated to Price Context.
-- No broken admin routes or empty review queues.
-- Analytics no longer count “complete / incomplete / under review” as operational states.
-
-### Marketplace behavior
-- Featured listings still load.
-- Homepage listings still load.
-- Property search still loads.
-- No listing disappears just because old review fields are null/false.
-
-## Recommended execution order
-
-I recommend implementing this in three actual work batches:
-
-### Batch A — UI and workflow removal
-Covers Phases 1 and 2.
-
-This gives the immediate product cleanup.
-
-### Batch B — ranking/type/code cleanup
-Covers Phases 3 and 4.
-
-This removes hidden dependencies and dead code.
-
-### Batch C — database cleanup
-Covers Phase 5 only after Batch A/B are verified.
-
-This avoids breaking code that still references old fields.
-
-## Technical files likely involved
-
-High-confidence files from the audit:
+Proposed logic:
 
 ```text
-src/hooks/useBenchmarkReview.tsx
-src/components/property/BenchmarkReviewDialog.tsx
-src/components/property/PriceContextBadge.tsx
-src/components/property/MarketIntelligence.tsx
-src/lib/priceContext.ts
-src/lib/priceContextRanking.ts
-src/lib/priceContextGuardrails.ts
-src/lib/wizardPriceContext.ts
-src/hooks/useListingReview.tsx
-src/components/admin/ListingReviewCard.tsx
-src/pages/admin/AdminListingReview.tsx
-src/hooks/usePriceAnalytics.tsx
-src/components/admin/PriceAnalytics.tsx
-src/pages/agent/NewPropertyWizard.tsx
-src/pages/agent/EditPropertyWizard.tsx
-src/pages/agency/AgencyNewPropertyWizard.tsx
-src/pages/agency/AgencyEditPropertyWizard.tsx
-src/components/agent/wizard/PropertyWizardContext.tsx
-src/components/agent/wizard/PriceContextSubmissionPreview.tsx
-src/hooks/useFeaturedListings.ts
-src/hooks/useHomepageFeatured.tsx
-src/hooks/useProperties.tsx
-src/hooks/usePaginatedProperties.tsx
-src/App.tsx
+archived_stale -> Archived
+approved + published -> Live
+pending_review -> Pending BuyWise review
+changes_requested / rejected -> Needs fixes
+draft + hard blockers -> To review
+draft + no hard blockers -> Ready to submit
+needs_edit + hard blockers -> Needs fixes / To review depending severity
 ```
 
-Database cleanup later:
+### UI updates
+Update agency-facing places that currently show raw/internal status labels:
+
+- Agency listings table
+- Agency listings filters
+- Dashboard recent listings preview
+- CSV export status column
+- Launch/checklist links that filter listings
+
+The listing table will show one primary status badge. Internal raw details can remain in a tooltip or advanced detail line, e.g.:
 
 ```text
-properties benchmark_review_* columns
-properties price_context_badge_status
-properties price_context_*_eligible columns
-old indexes for those fields
-possibly manual-review event types in price_context_events
+Live
+Advanced: verification=approved, agency=approved_live
 ```
 
-## Recommendation
+### Why
+Agents should not have to understand internal workflow states. A single status line makes the listing queue easier to act on.
 
-Start with Batch A. That removes the visible and operational complexity while leaving the database alone. Once Batch A is stable, do Batch B. Only then do Batch C database cleanup.
+---
+
+## 2. Add a guided agency launch checklist
+
+### What will change
+Replace/upgrade the current lightweight “Complete Your Profile” widget into a stronger “Launch your BuyWise presence” checklist for newly approved agencies.
+
+This will appear prominently on the agency dashboard, especially when the agency has not completed launch milestones yet.
+
+### Checklist items
+Recommended launch checklist:
+
+1. **Complete agency profile**
+   - logo
+   - description
+   - phone/website/socials
+   - service areas
+   - specializations
+   - links to `/agency/settings`
+
+2. **Invite your team**
+   - create/copy invite codes
+   - approve pending join requests
+   - links to `/agency/team`
+
+3. **Add or import inventory**
+   - create listing manually
+   - import from website/source
+   - links to `/agency/properties/new` and `/agency/import`
+
+4. **Fix listings that need required info**
+   - count listings in “To review” / hard-blocked state
+   - link to filtered agency listings page
+
+5. **Submit ready listings for BuyWise review**
+   - count “Ready to submit” listings
+   - link to filtered agency listings page
+
+6. **Get first listing live**
+   - completion when at least one listing is live
+   - link to agency listings/public page
+
+### UI behavior
+- Show it expanded for not-yet-launched agencies.
+- Allow collapse once progress is underway.
+- Hide or minimize after launch completion.
+- Keep it action-oriented: every row should have a direct button/link.
+
+### Technical approach
+Use existing agency/team/listing data where possible:
+
+- `useMyAgency`
+- `useAgencyTeam`
+- `useAgencyJoinRequests`
+- `useAgencyListingsManagement`
+- `useAgencyStats`
+
+No new database table is required for the first version unless we want to persist dismiss/collapse state later.
+
+### Why
+This turns the first login from “empty admin dashboard” into a guided launch program.
+
+---
+
+## 3. Separate hard blockers vs trust boosters in the property wizard
+
+### What will change
+Refactor wizard validation so missing information is separated into two groups:
+
+```text
+Must fix to submit
+Recommended for buyer trust
+```
+
+Only “Must fix” items will disable submission. “Recommended” items will show soft guidance but still allow submit.
+
+### Hard blockers
+Use these to block submission:
+
+- assigned/active agent for agency-created listings
+- price
+- city
+- neighborhood
+- valid address with map pin
+- property type
+- size or lot size, depending property type
+- sqm source for non-land properties
+- ownership type for non-land properties
+- floor/total floors for apartment-like property types if currently required
+- rental-specific required fields for rental listings
+- minimum photos
+- basic description, but reduce from “long polished description” to a lighter requirement if needed
+
+### Trust boosters
+Move these to recommendations instead of blockers:
+
+- long/richer description
+- premium explanation/context when it is informational rather than required for suspicious pricing
+- extra amenities/features
+- featured highlight
+- parking/vaad bayit/year built where not essential
+- stronger photo coverage beyond the minimum
+- additional buyer-trust details
+
+### UI updates
+Update:
+
+- `PropertyWizardContext` validation helpers
+- `ValidationSummary`
+- `StepReview`
+- new/edit agent wizard submission buttons
+- new/edit agency wizard submission buttons
+- progress error badges so hard blockers are visually distinct from recommendations
+
+Review screen will show:
+
+```text
+Must fix before submitting
+- Add sqm source
+- Upload 2 more photos
+
+Recommended for buyer trust
+- Add a stronger description
+- Add premium explanation
+- Add more amenities
+
+You can submit now and improve these later.
+```
+
+### Button behavior
+- Disable submit only when hard blockers exist.
+- Keep soft warnings visible when only trust boosters remain.
+- Preserve other true blockers like listing limit, active agent requirement, duplicate hard-blocks, and price-context confirmation when the system explicitly requires confirmation.
+
+### Why
+Imported listings often need cleanup. This lets agencies submit a first batch faster without making every optional improvement feel like a blocker.
+
+---
+
+## 4. Let agencies own normal agent approval by default
+
+### Current state
+The app already has several pieces in place:
+
+- Agents join via agency invite/code.
+- Agency admins can approve/reject join requests in Team Management.
+- Agent records have `status`, `approved_at`, and `approved_by` fields.
+- Some listing submission flows require `agent.status === 'active'`.
+
+The missing piece is making agency approval the normal activation path instead of implying separate platform-admin verification is required for every agent.
+
+### What will change
+When an agency admin approves a join request:
+
+- link the agent to the agency
+- set the agent as active, unless flagged/suspended
+- set approval tracking fields
+- notify the agent
+- refresh team/listing permissions
+
+Proposed normal approval update:
+
+```text
+agents.agency_id = agency.id
+agents.status = 'active'
+agents.is_verified = true, if current UI depends on it
+agents.approved_at = now()
+agents.approved_by = current agency admin user id
+agency_join_requests.status = 'approved'
+agency_join_requests.reviewed_at = now()
+agency_join_requests.reviewed_by = current agency admin user id
+```
+
+### Guardrails
+Keep platform-admin oversight for edge cases:
+
+- suspicious activity
+- suspended/flagged accounts
+- compliance checks
+- disputed agency membership
+- future “BuyWise verified professional” badge, if needed
+
+Do not weaken permissions:
+
+- agency admin can only approve requests for their own agency
+- invite codes remain agency-scoped
+- seat limits still apply
+- RLS/backend permissions remain the source of truth
+- no client-side role shortcuts
+
+### UI/copy updates
+Update agent registration and team-management copy from:
+
+```text
+Once approved by BuyWise...
+Agent verification required...
+```
+
+to agency-owned wording:
+
+```text
+Your agency admin will review your request.
+Once your agency approves you, you can manage assigned listings.
+```
+
+For platform-admin screens, keep the admin verification capability as an exception workflow, not the default story.
+
+### Database work
+Likely no schema change is needed because approval fields already exist. If current RLS prevents agency admins from updating status/approval fields safely, add a secure backend function/RPC for agency-owned approval rather than doing broad client updates.
+
+---
+
+## Implementation phases
+
+### Phase 1: Shared status and validation foundation
+- Add agency-facing listing status mapper.
+- Add hard-blocker vs trust-booster validation helpers.
+- Update submit gating to use hard blockers only.
+
+### Phase 2: Agency listings UI cleanup
+- Replace raw status and review badges with one primary human status.
+- Update filters to use the six simple labels.
+- Keep advanced/internal status in tooltip/details.
+- Update dashboard recent listings preview and CSV export.
+
+### Phase 3: Launch checklist
+- Replace/upgrade current agency onboarding card.
+- Add actionable checklist rows with counts and deep links.
+- Connect checklist counts to the new status mapper.
+
+### Phase 4: Agency-owned agent approval
+- Update approval mutation to activate approved invited agents.
+- Preserve seat-limit and security checks.
+- Update registration/team/wizard copy around agent activation.
+- Keep platform admin verification available for exceptions.
+
+### Phase 5: QA pass
+- Verify new agency first-login dashboard.
+- Verify listing status labels across agency dashboard/listings/export.
+- Verify imported listings with missing fields show blockers vs recommendations correctly.
+- Verify submit button enables when only trust boosters remain.
+- Verify agency-approved agents can submit listings after approval.
+- Verify suspended/pending/non-approved agents remain blocked.
+
+---
+
+## Files likely to change
+
+- `src/lib/agencyListingStatus.ts` or similar new shared mapper
+- `src/components/agent/wizard/PropertyWizardContext.tsx`
+- `src/components/agent/wizard/steps/ValidationSummary.tsx`
+- `src/components/agent/wizard/steps/StepReview.tsx`
+- `src/pages/agent/NewPropertyWizard.tsx`
+- `src/pages/agent/EditPropertyWizard.tsx`
+- `src/pages/agency/AgencyNewPropertyWizard.tsx`
+- `src/pages/agency/AgencyEditPropertyWizard.tsx`
+- `src/pages/agency/AgencyListings.tsx`
+- `src/components/agency/DashboardListingsPreview.tsx`
+- `src/components/agency/AgencyOnboardingProgress.tsx` or a replacement launch checklist component
+- `src/pages/agency/AgencyDashboard.tsx`
+- `src/hooks/useAgencyListings.tsx`
+- `src/hooks/useAgencyManagement.tsx`
+- `src/pages/agency/AgencyTeam.tsx`
+- `src/pages/agent/AgentRegisterWizard.tsx`
+
+Possibly a backend function/migration only if existing permissions do not safely allow agency-owned activation.
+
+---
+
+## Recommended copy direction
+
+Use simple, encouraging language:
+
+- “Ready to submit” instead of “draft with no missing fields”
+- “Needs fixes” instead of “changes_requested” or “needs_edit”
+- “Must fix to submit” instead of “errors”
+- “Recommended for buyer trust” instead of “warnings”
+- “Launch your BuyWise presence” instead of “Complete your profile”
+
+This keeps the portal feeling like a guided partner workflow, not a compliance/admin tool.

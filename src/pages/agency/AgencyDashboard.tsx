@@ -28,6 +28,8 @@ import { PendingItemsWidget } from '@/components/agency/PendingItemsWidget';
 import { AgencyAnnouncements } from '@/components/agency/AgencyAnnouncements';
 import { AgencyTeamActivityFeed } from '@/components/agency/AgencyTeamActivityFeed';
 import { DashboardListingsPreview } from '@/components/agency/DashboardListingsPreview';
+import { useAgencyListingsManagement } from '@/hooks/useAgencyListings';
+import { getAgencyListingDisplayStatus } from '@/lib/agencyListingStatus';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useBlogQuotaCheck } from '@/hooks/useBlogQuota';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -38,6 +40,7 @@ export default function AgencyDashboard() {
   const { data: team = [] } = useAgencyTeam(agency?.id);
   const { data: joinRequests = [] } = useAgencyJoinRequests(agency?.id);
   const { data: stats } = useAgencyStats(agency?.id);
+  const { data: listings = [] } = useAgencyListingsManagement(agency?.id);
   const { data: announcements = [] } = useAgencyAnnouncements(agency?.id);
   const { data: featuredListings = [] } = useFeaturedListings(agency?.id);
   const { data: blogPosts = [] } = useMyBlogPosts('agency', agency?.id);
@@ -71,6 +74,9 @@ export default function AgencyDashboard() {
   }
 
   const pendingRequests = joinRequests.length;
+  const toReviewCount = listings.filter((listing) => getAgencyListingDisplayStatus(listing).key === 'to_review').length;
+  const readyToSubmitCount = listings.filter((listing) => getAgencyListingDisplayStatus(listing).key === 'ready_to_submit').length;
+  const liveListingsCount = listings.filter((listing) => getAgencyListingDisplayStatus(listing).key === 'live').length;
 
   // Quick action navigation items
   const quickActions = [
@@ -157,7 +163,15 @@ export default function AgencyDashboard() {
           <NoPlanBanner />
 
           {/* Onboarding (conditionally shows) */}
-          <AgencyOnboardingProgress agency={agency} teamCount={team.length} listingsCount={stats?.activeListings} />
+          <AgencyOnboardingProgress
+            agency={agency}
+            teamCount={team.length}
+            pendingRequests={pendingRequests}
+            listingsCount={listings.length}
+            liveListingsCount={liveListingsCount}
+            toReviewCount={toReviewCount}
+            readyToSubmitCount={readyToSubmitCount}
+          />
 
           {/* Quick Actions Grid */}
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">

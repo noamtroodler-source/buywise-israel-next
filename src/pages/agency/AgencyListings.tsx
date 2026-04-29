@@ -1,11 +1,11 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Loader2, Home, Plus, Search, Download, FileSpreadsheet,
-  Eye, Clock, CheckCircle2, Building2, Heart, MessageSquare,
+  Eye, Clock, CheckCircle2, Building2,
   Edit, Trash2, Send, MoreHorizontal, Copy, Key, ArrowLeftRight, X,
-  ArrowUpDown, ArrowUp, ArrowDown, AlertTriangle, Archive, CheckCheck,
+  ArrowUpDown, ArrowUp, ArrowDown, Archive, CheckCheck,
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,7 +36,6 @@ import {
   useAgencyListingsManagement,
   useArchiveAgencyListing,
   useBulkApproveAgencyListings,
-  useMarkAgencyListingNeedsEdit,
   useUnpublishAgencyListing,
 } from '@/hooks/useAgencyListings';
 import { useDeleteProperty, useSubmitForReview, useBulkDeleteProperties, useBulkSubmitForReview, useReassignProperty } from '@/hooks/useAgentProperties';
@@ -48,6 +47,7 @@ import { cn } from '@/lib/utils';
 import { exportToCSV } from '@/lib/csvExport';
 import { AgencyListingsSkeleton } from '@/components/agency/skeletons/AgencyPageSkeletons';
 import { EnhancedEmptyState } from '@/components/shared/EnhancedEmptyState';
+import { AGENCY_LISTING_STATUS_OPTIONS, AgencyListingDisplayStatusKey, getAgencyListingDisplayStatus } from '@/lib/agencyListingStatus';
 
 const IMPORTED_BANNER_KEY = 'agency_imported_drafts_banner_dismissed';
 const LAUNCH_REVIEW_GUIDANCE_KEY = 'agency_launch_review_guidance_dismissed';
@@ -87,21 +87,6 @@ function ImportedDraftsGuidance({ listings }: { listings: any[] }) {
     </motion.div>
   );
 }
-
-const statusConfig = {
-  draft: { label: 'Draft', color: 'bg-muted text-muted-foreground' },
-  pending_review: { label: 'Pending', color: 'bg-yellow-500/10 text-yellow-600' },
-  approved: { label: 'Active', color: 'bg-green-500/10 text-green-600' },
-  changes_requested: { label: 'Changes', color: 'bg-orange-500/10 text-orange-600' },
-  rejected: { label: 'Rejected', color: 'bg-red-500/10 text-red-600' },
-};
-
-const reviewConfig: Record<AgencyReviewStatus, { label: string; color: string; icon: typeof Clock }> = {
-  needs_review: { label: 'Confirm', color: 'bg-yellow-500/10 text-yellow-700 border-yellow-500/20', icon: Clock },
-  approved_live: { label: 'Confirmed', color: 'bg-green-500/10 text-green-700 border-green-500/20', icon: CheckCircle2 },
-  needs_edit: { label: 'Quick edit', color: 'bg-orange-500/10 text-orange-700 border-orange-500/20', icon: AlertTriangle },
-  archived_stale: { label: 'Archived', color: 'bg-muted text-muted-foreground border-border', icon: Archive },
-};
 
 type ReviewWorkBucket = 'almost_ready' | 'needs_work';
 
@@ -261,6 +246,7 @@ function SortableHeader({
 
 export default function AgencyListings() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { data: agency, isLoading: agencyLoading } = useMyAgency();
   const { data: team = [] } = useAgencyTeam(agency?.id);
   const { data: listings = [], isLoading: listingsLoading } = useAgencyListingsManagement(agency?.id);
@@ -276,7 +262,7 @@ export default function AgencyListings() {
   const bulkApproveListings = useBulkApproveAgencyListings();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | AgencyListingDisplayStatusKey>(() => (searchParams.get('status') as AgencyListingDisplayStatusKey) || 'all');
   const [agentFilter, setAgentFilter] = useState<string>('all');
   const [cityFilter, setCityFilter] = useState<string>('all');
   const [roleFilter, setRoleFilter] = useState<'all' | 'primary' | 'co_listed'>('all');
@@ -326,7 +312,7 @@ export default function AgencyListings() {
         listing.city?.toLowerCase().includes(query);
       if (!matchesSearch) return false;
     }
-    if (statusFilter !== 'all' && listing.verification_status !== statusFilter) return false;
+    if (statusFilter !== 'all' && getAgencyListingDisplayStatus(listing).key !== statusFilter) return false;
     if (agentFilter !== 'all' && listing.agent_id !== agentFilter) return false;
     if (cityFilter !== 'all' && listing.city !== cityFilter) return false;
     if (roleFilter !== 'all' && listing.role !== roleFilter) return false;
@@ -348,12 +334,12 @@ export default function AgencyListings() {
 
   const stats = {
     total: listings.length,
-    active: listings.filter(l => l.verification_status === 'approved').length,
-    pending: listings.filter(l => l.verification_status === 'pending_review').length,
-    needsReview: listings.filter(l => l.agency_review_status === 'needs_review').length,
-    ready: listings.filter(l => getReviewBucket(l) === 'almost_ready').length,
-    quickFix: listings.filter(l => getReviewBucket(l) === 'needs_work').length,
-    archived: listings.filter(l => l.agency_review_status === 'archived_stale').length,
+    active: listings.filter(l => getAgencyListingDisplayStatus(l).key === 'live').length,
+    pending: listings.filter(l => getAgencyListingDisplayStatus(l).key === 'pending_buywise_review').length,
+    needsReview: listings.filter(l => getAgencyListingDisplayStatus(l).key === 'to_review').length,
+    ready: listings.filter(l => getAgencyListingDisplayStatus(l).key === 'ready_to_submit').length,
+    quickFix: listings.filter(l => getAgencyListingDisplayStatus(l).key === 'needs_fixes').length,
+    archived: listings.filter(l => getAgencyListingDisplayStatus(l).key === 'archived').length,
     totalViews: listings.reduce((sum, l) => sum + (l.views_count || 0), 0),
   };
 
@@ -471,7 +457,7 @@ export default function AgencyListings() {
                     String(l.price ?? ''),
                     l.currency || 'ILS',
                     l.property_type || '',
-                    l.verification_status || '',
+                    getAgencyListingDisplayStatus(l).label,
                     (l.agent_id && agentMap[l.agent_id]) || '',
                     String(l.views_count ?? 0),
                     String(l.total_saves ?? 0),
@@ -508,10 +494,10 @@ export default function AgencyListings() {
           {/* Stats Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: 'Total Listings', value: stats.total, icon: Home },
-              { label: 'Active', value: stats.active, icon: CheckCircle2 },
-              { label: 'Need Confirmation', value: stats.needsReview, icon: Clock, highlight: stats.needsReview > 0 },
-              { label: 'Total Views', value: stats.totalViews, icon: Eye },
+              { label: 'Total listings', value: stats.total, icon: Home },
+              { label: 'Live', value: stats.active, icon: CheckCircle2 },
+              { label: 'To review', value: stats.needsReview, icon: Clock, highlight: stats.needsReview > 0 },
+              { label: 'Ready to submit', value: stats.ready, icon: Send, highlight: stats.ready > 0 },
             ].map((stat, index) => (
               <motion.div key={stat.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
                 <Card className={cn('rounded-2xl border-primary/10', stat.highlight && 'bg-primary/5 border-primary/20')}>
@@ -591,24 +577,21 @@ export default function AgencyListings() {
                     className="pl-10 rounded-xl"
                   />
                 </div>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as 'all' | AgencyListingDisplayStatusKey)}>
                   <SelectTrigger className="w-[140px] rounded-xl"><SelectValue placeholder="Status" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Statuses</SelectItem>
-                    <SelectItem value="approved">Active</SelectItem>
-                    <SelectItem value="pending_review">Pending</SelectItem>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="changes_requested">Changes</SelectItem>
+                    <SelectItem value="all">All statuses</SelectItem>
+                    {AGENCY_LISTING_STATUS_OPTIONS.map((status) => (
+                      <SelectItem key={status.key} value={status.key}>{status.label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <Select value={reviewFilter} onValueChange={(value) => setReviewFilter(value as any)}>
                   <SelectTrigger className="w-[170px] rounded-xl"><SelectValue placeholder="Review" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Reviews</SelectItem>
+                    <SelectItem value="all">All readiness</SelectItem>
                     <SelectItem value="almost_ready">Almost ready</SelectItem>
                     <SelectItem value="needs_work">Needs work</SelectItem>
-                    <SelectItem value="approved_live">Confirmed</SelectItem>
-                    <SelectItem value="archived_stale">Archived</SelectItem>
                   </SelectContent>
                 </Select>
                 <Select value={agentFilter} onValueChange={setAgentFilter}>
@@ -682,8 +665,7 @@ export default function AgencyListings() {
                             </Tooltip>
                           </TooltipProvider>
                         </TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead><SortableHeader label="Review" sortKey="review" activeSort={sort} onSort={handleSort} /></TableHead>
+                        <TableHead><SortableHeader label="Status" sortKey="review" activeSort={sort} onSort={handleSort} /></TableHead>
                         <TableHead className="text-center">Actions</TableHead>
                         <TableHead className="text-right"><SortableHeader label="Price" sortKey="price" activeSort={sort} onSort={handleSort} align="right" /></TableHead>
                         <TableHead className="text-center"><SortableHeader label="Views" sortKey="views" activeSort={sort} onSort={handleSort} /></TableHead>
@@ -694,15 +676,8 @@ export default function AgencyListings() {
                     </TableHeader>
                     <TableBody>
                       {sortedListings.map((listing) => {
-                        const status = statusConfig[listing.verification_status as keyof typeof statusConfig] || statusConfig.draft;
+                        const status = getAgencyListingDisplayStatus(listing);
                         const hasMissingQuickFields = listing.missing_quick_fields.length > 0;
-                        const displayReviewStatus: AgencyReviewStatus =
-                          listing.agency_review_status === 'needs_review' && hasMissingQuickFields
-                            ? 'needs_edit'
-                            : listing.agency_review_status as AgencyReviewStatus;
-                        const review = reviewConfig[displayReviewStatus] || reviewConfig.needs_review;
-                        const ReviewIcon = review.icon;
-                        const isDraft = listing.verification_status === 'draft';
                         const canSubmitForReview = listing.verification_status === 'draft' || listing.verification_status === 'changes_requested';
                         const isPendingReview = listing.verification_status === 'pending_review';
                         const isApproved = listing.verification_status === 'approved';
@@ -760,33 +735,37 @@ export default function AgencyListings() {
                               />
                             </TableCell>
                             <TableCell>
-                              <div className="flex items-center gap-1.5">
-                                <Badge variant="outline" className={cn('text-xs', status.color)}>
-                                  {status.label}
-                                </Badge>
-                                {(listing as any).import_source && (
-                                  <Badge variant="secondary" className="text-xs bg-primary/10 text-primary border-primary/20">
-                                    Imported
-                                  </Badge>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="space-y-1.5 min-w-[160px]">
-                                <Badge variant="outline" className={cn('text-xs gap-1', review.color)}>
-                                  <ReviewIcon className="h-3 w-3" />
-                                  {review.label}
-                                </Badge>
-                                {listing.has_critical_flags ? (
-                                  <p className="text-[11px] text-destructive">Critical issue needs review</p>
-                                ) : hasMissingQuickFields ? (
-                                  <p className="text-[11px] text-destructive font-medium truncate max-w-[240px]" title={listing.missing_quick_fields.join(', ')}>
-                                    Missing: {listing.missing_quick_fields.slice(0, 2).join(', ')}{listing.missing_quick_fields.length > 2 ? '…' : ''}
-                                  </p>
-                                ) : (
-                                  <p className="text-[11px] text-muted-foreground">Core fields look ready</p>
-                                )}
-                              </div>
+                              <TooltipProvider delayDuration={300}>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="space-y-1.5 min-w-[180px] cursor-help">
+                                      <div className="flex items-center gap-1.5">
+                                        <Badge variant="outline" className={cn('text-xs', status.badgeClassName)}>
+                                          {status.label}
+                                        </Badge>
+                                        {(listing as any).import_source && (
+                                          <Badge variant="secondary" className="text-xs bg-primary/10 text-primary border-primary/20">
+                                            Imported
+                                          </Badge>
+                                        )}
+                                      </div>
+                                      {listing.has_critical_flags ? (
+                                        <p className="text-[11px] text-destructive">Critical issue needs review</p>
+                                      ) : hasMissingQuickFields ? (
+                                        <p className="text-[11px] text-destructive font-medium truncate max-w-[240px]" title={listing.missing_quick_fields.join(', ')}>
+                                          Missing: {listing.missing_quick_fields.slice(0, 2).join(', ')}{listing.missing_quick_fields.length > 2 ? '…' : ''}
+                                        </p>
+                                      ) : (
+                                        <p className="text-[11px] text-muted-foreground">Core fields look ready</p>
+                                      )}
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top" className="max-w-[260px] text-xs">
+                                    <p className="font-medium">{status.description}</p>
+                                    <p className="mt-1 text-muted-foreground">Advanced: verification={listing.verification_status}, agency={listing.agency_review_status}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center justify-center gap-1">

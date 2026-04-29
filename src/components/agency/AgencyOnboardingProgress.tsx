@@ -1,9 +1,7 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  CheckCircle2, Circle, ChevronDown, ChevronUp,
-  Image, FileText, Phone, Globe, MapPin, Briefcase, Users, Home, Share2
+import { motion } from 'framer-motion';
+import {
+  CheckCircle2, Circle, Image, Users, Home, UploadCloud, Send, Wrench
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,7 +14,9 @@ interface ChecklistItem {
   description: string;
   icon: React.ElementType;
   isComplete: boolean;
-  link?: string;
+  link: string;
+  action: string;
+  count?: number;
 }
 
 interface AgencyOnboardingProgressProps {
@@ -34,84 +34,91 @@ interface AgencyOnboardingProgressProps {
     } | null;
   };
   teamCount: number;
+  pendingRequests?: number;
   listingsCount?: number;
+  liveListingsCount?: number;
+  toReviewCount?: number;
+  readyToSubmitCount?: number;
 }
 
-export function AgencyOnboardingProgress({ agency, teamCount, listingsCount = 0 }: AgencyOnboardingProgressProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+export function AgencyOnboardingProgress({
+  agency,
+  teamCount,
+  pendingRequests = 0,
+  listingsCount = 0,
+  liveListingsCount = 0,
+  toReviewCount = 0,
+  readyToSubmitCount = 0,
+}: AgencyOnboardingProgressProps) {
+  const profileComplete = Boolean(
+    agency.logo_url &&
+    (agency.description?.length || 0) >= 150 &&
+    agency.phone &&
+    agency.website &&
+    (agency.cities_covered?.length || 0) >= 3 &&
+    (agency.specializations?.length || 0) >= 1 &&
+    (agency.social_links?.linkedin || agency.social_links?.instagram || agency.social_links?.facebook)
+  );
 
   const checklistItems: ChecklistItem[] = [
     {
-      id: 'logo',
-      label: 'Upload agency logo',
-      description: 'Add a professional logo to build trust',
+      id: 'profile',
+      label: 'Complete agency profile',
+      description: 'Logo, description, contact info, service areas, and specializations',
       icon: Image,
-      isComplete: !!agency.logo_url,
-      link: '/agency/settings#agency-logo',
-    },
-    {
-      id: 'description',
-      label: 'Add description (150+ chars)',
-      description: 'Tell clients about your agency',
-      icon: FileText,
-      isComplete: (agency.description?.length || 0) >= 150,
-      link: '/agency/settings#agency-description',
-    },
-    {
-      id: 'phone',
-      label: 'Add contact phone',
-      description: 'Let clients reach you directly',
-      icon: Phone,
-      isComplete: !!agency.phone,
-      link: '/agency/settings#agency-phone',
-    },
-    {
-      id: 'website',
-      label: 'Add website',
-      description: 'Link to your company website',
-      icon: Globe,
-      isComplete: !!agency.website,
-      link: '/agency/settings#agency-website',
-    },
-    {
-      id: 'socials',
-      label: 'Add social links',
-      description: 'Connect LinkedIn, Instagram, or Facebook',
-      icon: Share2,
-      isComplete: !!(agency.social_links?.linkedin || agency.social_links?.instagram || agency.social_links?.facebook),
-      link: '/agency/settings#social-links',
-    },
-    {
-      id: 'cities',
-      label: 'Select service areas (3+)',
-      description: 'Show where you operate',
-      icon: MapPin,
-      isComplete: (agency.cities_covered?.length || 0) >= 3,
-      link: '/agency/settings#service-areas',
-    },
-    {
-      id: 'specializations',
-      label: 'Choose specializations',
-      description: 'Highlight your expertise',
-      icon: Briefcase,
-      isComplete: (agency.specializations?.length || 0) >= 1,
-      link: '/agency/settings#agency-specializations',
+      isComplete: profileComplete,
+      link: '/agency/settings',
+      action: 'Open settings',
     },
     {
       id: 'team',
-      label: 'Add additional team member',
-      description: 'Invite someone to join your agency',
+      label: 'Invite your team',
+      description: pendingRequests > 0 ? `${pendingRequests} join request${pendingRequests === 1 ? '' : 's'} waiting` : 'Send invite links and approve agents',
       icon: Users,
       isComplete: teamCount >= 2,
       link: '/agency/team',
+      action: pendingRequests > 0 ? 'Review requests' : 'Manage team',
+      count: pendingRequests || teamCount,
     },
     {
-      id: 'listing',
-      label: 'First listing published',
-      description: 'Get your first property live',
+      id: 'inventory',
+      label: 'Add or import inventory',
+      description: 'Create listings manually or import existing inventory',
+      icon: UploadCloud,
+      isComplete: listingsCount > 0,
+      link: '/agency/import',
+      action: listingsCount > 0 ? 'View inventory' : 'Import listings',
+      count: listingsCount,
+    },
+    {
+      id: 'fix',
+      label: 'Fix listings needing required info',
+      description: toReviewCount > 0 ? `${toReviewCount} listing${toReviewCount === 1 ? '' : 's'} need core details` : 'Required fields are handled',
+      icon: Wrench,
+      isComplete: listingsCount > 0 && toReviewCount === 0,
+      link: '/agency/listings?status=to_review',
+      action: 'Review listings',
+      count: toReviewCount,
+    },
+    {
+      id: 'submit',
+      label: 'Submit ready listings for review',
+      description: readyToSubmitCount > 0 ? `${readyToSubmitCount} listing${readyToSubmitCount === 1 ? '' : 's'} ready for BuyWise review` : 'Ready listings will appear here',
+      icon: Send,
+      isComplete: readyToSubmitCount === 0 && listingsCount > 0 && toReviewCount === 0,
+      link: '/agency/listings?status=ready_to_submit',
+      action: 'Submit batch',
+      count: readyToSubmitCount,
+    },
+    {
+      id: 'live',
+      label: 'Get first listing live',
+      description: liveListingsCount > 0 ? 'Your first live listing completes launch' : 'Listings go live after BuyWise review',
       icon: Home,
-      isComplete: listingsCount >= 1,
-      link: '/agency/properties/new',
+      isComplete: liveListingsCount >= 1,
+      link: '/agency/listings?status=live',
+      action: 'View live listings',
+      count: liveListingsCount,
     },
   ];
 
@@ -125,100 +132,58 @@ export function AgencyOnboardingProgress({ agency, teamCount, listingsCount = 0 
   return (
     <Card className="rounded-2xl border-primary/20 bg-gradient-to-br from-primary/5 to-transparent overflow-hidden">
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <CardTitle className="text-lg">Complete Your Profile</CardTitle>
-            <span className="text-sm text-muted-foreground">
-              {completedCount}/{checklistItems.length} steps
-            </span>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <CardTitle className="text-lg">Launch your BuyWise presence</CardTitle>
+            <p className="text-sm text-muted-foreground">{completedCount}/{checklistItems.length} launch steps complete</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="rounded-lg"
-            >
-              {isExpanded ? (
-                <ChevronUp className="h-4 w-4" />
-              ) : (
-                <ChevronDown className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
+          <Progress value={completionPercentage} className="h-2 sm:w-48" />
         </div>
-        <Progress value={completionPercentage} className="h-2" />
       </CardHeader>
 
-      <AnimatePresence>
-        {isExpanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <CardContent className="pt-2 pb-4">
-              <div className="grid gap-2">
-                {checklistItems.map((item) => {
-                  const content = (
-                    <>
-                      <div className={cn(
-                        "flex-shrink-0",
-                        item.isComplete ? "text-primary" : "text-muted-foreground"
-                      )}>
-                        {item.isComplete ? (
-                          <CheckCircle2 className="h-5 w-5" />
-                        ) : (
-                          <Circle className="h-5 w-5" />
-                        )}
-                      </div>
-                      
-                      <div className="flex-1 min-w-0">
-                        <p className={cn(
-                          "font-medium text-sm",
-                          item.isComplete && "line-through text-muted-foreground"
-                        )}>
-                          {item.label}
-                        </p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {item.description}
-                        </p>
-                      </div>
-
-                      {!item.isComplete && item.link && (
-                        <item.icon className="h-4 w-4 flex-shrink-0 text-primary" />
-                      )}
-                    </>
-                  );
-
-                  const rowClass = cn(
-                    "flex items-center gap-3 p-3 rounded-xl transition-colors",
+      <CardContent className="pt-2 pb-4">
+        <div className="grid gap-2 md:grid-cols-2">
+          {checklistItems.map((item, index) => {
+            const Icon = item.icon;
+            return (
+              <motion.div
+                key={item.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.03 }}
+              >
+                <Link
+                  to={item.link}
+                  className={cn(
+                    'flex items-center gap-3 p-3 rounded-xl border transition-colors h-full',
                     item.isComplete
-                      ? "bg-primary/5"
-                      : "bg-muted/30 hover:bg-muted/50",
-                    !item.isComplete && item.link && "cursor-pointer"
-                  );
+                      ? 'bg-primary/5 border-primary/15'
+                      : 'bg-background/80 border-border/60 hover:bg-background hover:border-primary/25'
+                  )}
+                >
+                  <div className={cn('flex-shrink-0', item.isComplete ? 'text-primary' : 'text-muted-foreground')}>
+                    {item.isComplete ? <CheckCircle2 className="h-5 w-5" /> : <Circle className="h-5 w-5" />}
+                  </div>
 
-                  if (!item.isComplete && item.link) {
-                    return (
-                      <Link key={item.id} to={item.link} className={rowClass}>
-                        {content}
-                      </Link>
-                    );
-                  }
-
-                  return (
-                    <div key={item.id} className={rowClass}>
-                      {content}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <Icon className="h-4 w-4 text-primary" />
+                      <p className={cn('font-medium text-sm truncate', item.isComplete && 'text-muted-foreground')}>
+                        {item.label}
+                      </p>
                     </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                    <p className="text-xs text-muted-foreground truncate mt-0.5">{item.description}</p>
+                  </div>
+
+                  <Button type="button" variant="ghost" size="sm" className="rounded-lg shrink-0 text-xs">
+                    {item.action}
+                  </Button>
+                </Link>
+              </motion.div>
+            );
+          })}
+        </div>
+      </CardContent>
     </Card>
   );
 }

@@ -36,6 +36,9 @@ export interface AgencyListing {
   bedrooms?: number | null;
   bathrooms?: number | null;
   size_sqm?: number | null;
+  sqm_source?: string | null;
+  ownership_type?: string | null;
+  description?: string | null;
   floor?: number | null;
   total_floors?: number | null;
   data_quality_score?: number | null;
@@ -97,7 +100,7 @@ export function useAgencyListingsManagement(agencyId: string | undefined) {
           views_count, total_saves, images, agent_id,
           primary_agency_id, import_source, merged_source_urls,
           source_url, source_last_checked_at, neighborhood,
-          bedrooms, bathrooms, size_sqm, floor, total_floors,
+          bedrooms, bathrooms, size_sqm, sqm_source, ownership_type, description, floor, total_floors,
           data_quality_score,
           price_context_confidence_tier, price_context_public_label,
           boost_active_until, boosted_by_agency_id,
@@ -130,7 +133,7 @@ export function useAgencyListingsManagement(agencyId: string | undefined) {
             views_count, total_saves, images, agent_id,
             primary_agency_id, import_source, merged_source_urls,
             source_url, source_last_checked_at, neighborhood,
-            bedrooms, bathrooms, size_sqm, floor, total_floors,
+            bedrooms, bathrooms, size_sqm, sqm_source, ownership_type, description, floor, total_floors,
             data_quality_score,
             price_context_confidence_tier, price_context_public_label,
             created_at, updated_at
@@ -235,9 +238,12 @@ export function useAgencyListingsManagement(agencyId: string | undefined) {
           !p.property_type ? 'Property type' : null,
           !p.neighborhood ? 'Neighborhood' : null,
           !Array.isArray(p.images) || p.images.length < 3 ? 'More photos' : null,
-          !p.size_sqm ? 'Size' : null,
-          !p.bathrooms ? 'Bathrooms' : null,
-          p.floor === null || p.floor === undefined ? 'Floor' : null,
+          !p.size_sqm && p.property_type !== 'land' ? 'Size' : null,
+          p.property_type !== 'land' && !p.sqm_source ? 'SQM source' : null,
+          p.property_type !== 'land' && !p.ownership_type ? 'Ownership type' : null,
+          (p.description?.trim()?.length ?? 0) < 40 ? 'Short description' : null,
+          !p.bathrooms && p.property_type !== 'land' ? 'Bathrooms' : null,
+          ['apartment', 'penthouse', 'mini_penthouse', 'duplex', 'garden_apartment'].includes(p.property_type) && (p.floor === null || p.floor === undefined) ? 'Floor' : null,
           !p.agent_id ? 'Agent' : null,
         ].filter(Boolean) as string[];
         const hasCriticalFlags = qualityFlags.some((flag) => flag.severity === 'critical');
@@ -255,7 +261,7 @@ export function useAgencyListingsManagement(agencyId: string | undefined) {
           quality_flags: qualityFlags,
           missing_quick_fields: missingQuickFields,
           has_critical_flags: hasCriticalFlags,
-          safe_to_batch_approve: !hasCriticalFlags && !!p.price && !!p.city && !!p.property_type && !!p.agent_id,
+          safe_to_batch_approve: !hasCriticalFlags && missingQuickFields.length === 0,
         };
       }) as AgencyListing[];
     },
