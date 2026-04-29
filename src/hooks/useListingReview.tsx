@@ -53,7 +53,6 @@ export interface PropertyForReview {
   price_context_confidence_tier: string | null;
   price_context_public_label: string | null;
   price_context_percentage_suppressed: boolean | null;
-  price_context_badge_status: string | null;
   comp_pool_used: string | null;
   market_fit_status: string | null;
   market_fit_review_reason: string | null;
@@ -151,7 +150,6 @@ export function useListingsForReview(status?: VerificationStatus) {
           price_context_confidence_tier,
           price_context_public_label,
           price_context_percentage_suppressed,
-          price_context_badge_status,
           comp_pool_used,
           market_fit_status,
           market_fit_review_reason,
@@ -229,7 +227,7 @@ async function logPriceContextEvent(propertyId: string, eventType: string, reaso
     const [{ data: propertyData }, { data: userData }] = await Promise.all([
       supabase
         .from('properties')
-        .select('price_context_confidence_score, price_context_confidence_tier, price_context_public_label, price_context_percentage_suppressed, price_context_badge_status, price_context_property_class, comp_pool_used, premium_drivers, premium_explanation')
+        .select('price_context_confidence_score, price_context_confidence_tier, price_context_public_label, price_context_percentage_suppressed, price_context_property_class, comp_pool_used, premium_drivers, premium_explanation')
         .eq('id', propertyId)
         .maybeSingle(),
       supabase.auth.getUser(),
@@ -247,7 +245,6 @@ async function logPriceContextEvent(propertyId: string, eventType: string, reaso
       confidence_tier: property?.price_context_confidence_tier ?? null,
       comp_pool_snapshot: {
         source: property?.comp_pool_used ?? null,
-        badge_status: property?.price_context_badge_status ?? null,
         property_class: property?.price_context_property_class ?? null,
         confidence_score: property?.price_context_confidence_score ?? null,
       },
