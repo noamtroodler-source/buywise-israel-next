@@ -135,61 +135,59 @@ Deno.serve(async (req) => {
     }
 
     let agentsEmailed = 0;
-    const strategy = agency.agent_email_strategy || "send_all_now";
+    const strategy = "send_all_now";
 
-    if (strategy === "send_all_now") {
-      for (const agent of agentRows as any[]) {
-        if (!agent.email || agent.welcome_email_sent_at) continue;
-        const isOwnerAgent =
-          (ownerEmailKey && normalizeEmail(agent.email) === ownerEmailKey) ||
-          (agency.admin_user_id && agent.user_id === agency.admin_user_id);
-        if (isOwnerAgent) {
-          await admin
-            .from("agents")
-            .update({ welcome_email_sent_at: new Date().toISOString() })
-            .eq("id", agent.id);
-          continue;
+    for (const agent of agentRows as any[]) {
+      if (!agent.email || agent.welcome_email_sent_at) continue;
+      const isOwnerAgent =
+        (ownerEmailKey && normalizeEmail(agent.email) === ownerEmailKey) ||
+        (agency.admin_user_id && agent.user_id === agency.admin_user_id);
+      if (isOwnerAgent) {
+        await admin
+          .from("agents")
+          .update({ welcome_email_sent_at: new Date().toISOString() })
+          .eq("id", agent.id);
+        continue;
+      }
+
+      let setupUrl = `${APP_URL}/agent`;
+      if (agent.user_id) {
+        const { data: t } = await admin
+          .from("password_setup_tokens")
+          .select("token, used_at")
+          .eq("user_id", agent.user_id)
+          .eq("purpose", "agent_setup")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (t && !t.used_at) {
+          setupUrl = `${APP_URL}/auth/setup-password?token=${t.token}`;
         }
+      }
 
-        let setupUrl = `${APP_URL}/agent`;
-        if (agent.user_id) {
-          const { data: t } = await admin
-            .from("password_setup_tokens")
-            .select("token, used_at")
-            .eq("user_id", agent.user_id)
-            .eq("purpose", "agent_setup")
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .maybeSingle();
-          if (t && !t.used_at) {
-            setupUrl = `${APP_URL}/auth/setup-password?token=${t.token}`;
-          }
-        }
-
-        const { error: aErr } = await admin.functions.invoke(
-          "send-transactional-email",
-          {
-            body: {
-              templateName: "agent-welcome",
-              recipientEmail: agent.email,
-              idempotencyKey: `agent-welcome-${agent.id}`,
-              templateData: {
-                agentName: agent.name,
-                agencyName: agency.name,
-                setupUrl,
-              },
+      const { error: aErr } = await admin.functions.invoke(
+        "send-transactional-email",
+        {
+          body: {
+            templateName: "agent-welcome",
+            recipientEmail: agent.email,
+            idempotencyKey: `agent-welcome-${agent.id}`,
+            templateData: {
+              agentName: agent.name,
+              agencyName: agency.name,
+              setupUrl,
             },
-          }
-        );
-        if (!aErr) {
-          await admin
-            .from("agents")
-            .update({ welcome_email_sent_at: new Date().toISOString() })
-            .eq("id", agent.id);
-          agentsEmailed++;
-        } else {
-          console.error("Agent email send failed", { agentId: agent.id, aErr });
+          },
         }
+      );
+      if (!aErr) {
+        await admin
+          .from("agents")
+          .update({ welcome_email_sent_at: new Date().toISOString() })
+          .eq("id", agent.id);
+        agentsEmailed++;
+      } else {
+        console.error("Agent email send failed", { agentId: agent.id, aErr });
       }
     }
 
