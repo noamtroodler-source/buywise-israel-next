@@ -196,6 +196,50 @@ export function useListingsForReview(status?: VerificationStatus) {
   });
 }
 
+export function usePriceContextBlockers() {
+  return useQuery({
+    queryKey: ['priceContextBlockers'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('properties')
+        .select(`
+          id,
+          title,
+          city,
+          neighborhood,
+          price,
+          currency,
+          listing_status,
+          verification_status,
+          price_context_badge_status,
+          price_context_confidence_tier,
+          price_context_percentage_suppressed,
+          benchmark_review_status,
+          benchmark_review_reason,
+          benchmark_review_notes,
+          created_at,
+          agent:agent_id (
+            id,
+            name,
+            agency_name
+          )
+        `)
+        .eq('listing_status', 'for_sale')
+        .eq('is_published', true)
+        .or('price_context_badge_status.eq.blocked,price_context_badge_status.eq.incomplete,benchmark_review_status.eq.requested,benchmark_review_status.eq.under_review')
+        .order('created_at', { ascending: false })
+        .limit(25);
+
+      if (error) throw error;
+      return (data ?? []) as unknown as Array<Pick<PropertyForReview,
+        'id' | 'title' | 'city' | 'neighborhood' | 'price' | 'currency' | 'listing_status' | 'verification_status' |
+        'price_context_badge_status' | 'price_context_confidence_tier' | 'price_context_percentage_suppressed' |
+        'benchmark_review_status' | 'benchmark_review_reason' | 'benchmark_review_notes' | 'created_at' | 'agent'
+      >>;
+    },
+  });
+}
+
 export function usePendingReviewCount() {
   return useQuery({
     queryKey: ['pendingReviewCount'],
