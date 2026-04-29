@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { ReactNode } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -10,7 +11,7 @@ import { BENCHMARK_REVIEW_REASONS, useRequestBenchmarkReview } from '@/hooks/use
 interface BenchmarkReviewDialogProps {
   propertyId: string;
   propertyTitle?: string | null;
-  trigger?: React.ReactNode;
+  trigger?: ReactNode;
 }
 
 export function BenchmarkReviewDialog({ propertyId, propertyTitle, trigger }: BenchmarkReviewDialogProps) {
