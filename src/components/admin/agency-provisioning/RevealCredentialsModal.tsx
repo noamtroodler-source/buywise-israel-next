@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Loader2, Eye, EyeOff, Copy, ShieldCheck, KeyRound } from 'lucide-react';
+import { Loader2, Eye, EyeOff, Copy, ShieldCheck, KeyRound, Mail } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,7 +25,7 @@ export function RevealCredentialsModal({ open, onOpenChange, userId, subjectLabe
   const [step, setStep] = useState<'reauth' | 'shown'>('reauth');
   const [password, setPassword] = useState('');
   const [showPwd, setShowPwd] = useState(false);
-  const [credential, setCredential] = useState<{ email: string | null; password: string } | null>(null);
+  const [credential, setCredential] = useState<{ email: string | null; password: string | null; unavailableReason?: string } | null>(null);
 
   const reauth = useReauthAdmin();
   const reveal = useRevealCredentials();
@@ -48,7 +48,7 @@ export function RevealCredentialsModal({ open, onOpenChange, userId, subjectLabe
     try {
       await reauth.mutateAsync(password);
       const cred = await reveal.mutateAsync({ userId });
-      setCredential({ email: cred.email, password: cred.password });
+      setCredential({ email: cred.email, password: cred.password, unavailableReason: cred.unavailableReason });
       setStep('shown');
     } catch (err: any) {
       toast.error(err?.message || 'Re-authentication failed');
@@ -105,8 +105,9 @@ export function RevealCredentialsModal({ open, onOpenChange, userId, subjectLabe
                 Provisional credential
               </DialogTitle>
               <DialogDescription>
-                Share this with the account holder via a secure channel. The reveal is now in
-                the audit log.
+                {credential?.unavailableReason
+                  ? 'This account already existed, so there is no provisional password to reveal.'
+                  : 'Share this with the account holder via a secure channel. The reveal is now in the audit log.'}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-3 py-4">
@@ -121,23 +122,32 @@ export function RevealCredentialsModal({ open, onOpenChange, userId, subjectLabe
                   </div>
                 </div>
               )}
-              <div>
-                <Label className="text-xs text-muted-foreground">Password</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    readOnly
-                    type={showPwd ? 'text' : 'password'}
-                    value={credential?.password ?? ''}
-                    className="font-mono text-sm"
-                  />
-                  <Button type="button" size="icon" variant="outline" onClick={() => setShowPwd((v) => !v)}>
-                    {showPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
-                  <Button type="button" size="icon" variant="outline" onClick={() => copy(credential?.password ?? '', 'Password')}>
-                    <Copy className="h-4 w-4" />
-                  </Button>
+              {credential?.password ? (
+                <div>
+                  <Label className="text-xs text-muted-foreground">Password</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      readOnly
+                      type={showPwd ? 'text' : 'password'}
+                      value={credential.password}
+                      className="font-mono text-sm"
+                    />
+                    <Button type="button" size="icon" variant="outline" onClick={() => setShowPwd((v) => !v)}>
+                      {showPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                    <Button type="button" size="icon" variant="outline" onClick={() => copy(credential.password!, 'Password')}>
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="rounded-lg border bg-muted/30 p-3 text-sm text-muted-foreground">
+                  <div className="flex items-start gap-2">
+                    <Mail className="mt-0.5 h-4 w-4 text-primary" />
+                    <p>Use “Resend setup link” instead. The user can set or reset their own password from that link.</p>
+                  </div>
+                </div>
+              )}
             </div>
             <DialogFooter>
               <Button onClick={() => handleClose(false)}>Done</Button>

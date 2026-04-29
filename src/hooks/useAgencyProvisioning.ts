@@ -458,9 +458,9 @@ export function useRevealCredentials() {
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error || 'Failed');
       return data.credential as {
-        id: string; userId: string; agencyId: string; role: string;
-        email: string | null; fullName: string | null; password: string;
-        createdAt: string; deliveredAt: string | null;
+        id: string | null; userId: string; agencyId: string | null; role: string | null;
+        email: string | null; fullName: string | null; password: string | null;
+        createdAt: string | null; deliveredAt: string | null; unavailableReason?: string;
       };
     },
     onError: (e: any) => toast.error(e?.message || 'Failed to reveal credentials'),
