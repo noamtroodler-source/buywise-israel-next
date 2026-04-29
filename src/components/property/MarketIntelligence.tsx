@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo, useRef, type ComponentType } from 'react';
-import { BarChart3, ShieldCheck, Info, ArrowRight, ChevronDown, CircleHelp, CheckCircle2, Calculator, Ruler, TrendingUp, ThumbsUp, ThumbsDown, MapPin, Building2, Home } from 'lucide-react';
+import { BarChart3, ShieldCheck, Info, ArrowRight, ChevronDown, Calculator, Ruler, ThumbsUp, ThumbsDown, MapPin, Building2 } from 'lucide-react';
 import { getIsraeliRoomCount } from '@/lib/israeliRoomCount';
 import { Link, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -110,11 +110,6 @@ function formatNisPerSqm(value: number | null | undefined) {
   return `₪${Math.round(value).toLocaleString()}/sqm`;
 }
 
-function formatNisAmount(value: number | null | undefined) {
-  if (!value) return '—';
-  return `₪${Math.round(value).toLocaleString()}`;
-}
-
 function formatNisPerSqmRange(min: number, max: number) {
   return `${formatNisPerSqm(min)}–${Math.round(max).toLocaleString()}/sqm`;
 }
@@ -135,16 +130,12 @@ interface BenchmarkRange {
   detail: string;
 }
 
-function clampPercent(value: number) {
-  return Math.max(0, Math.min(100, value));
-}
-
 function BenchmarkCardTile({ card, onTrackInteraction }: { card: BenchmarkCard; onTrackInteraction?: (eventName: string, properties?: Record<string, unknown>) => void }) {
   const Icon = card.icon;
 
   return (
     <div
-      className="rounded-lg border border-border/70 bg-background/70 p-3 transition-colors hover:border-primary/30 hover:bg-primary/5"
+      className="rounded-lg border border-border/70 bg-background/80 p-3 transition-colors hover:border-primary/30 hover:bg-primary/5"
       onClick={() => onTrackInteraction?.('price_context_benchmark_layer_clicked', { benchmark_layer: card.id, benchmark_label: card.label })}
     >
       <div className="flex items-start justify-between gap-2">
@@ -163,72 +154,8 @@ function BenchmarkCardTile({ card, onTrackInteraction }: { card: BenchmarkCard; 
           </TooltipContent>
         </Tooltip>
       </div>
-      <p className="mt-1 text-sm font-semibold text-foreground">{card.value}</p>
+      <p className="mt-1 text-base font-semibold text-foreground">{card.value}</p>
       <p className="mt-1 text-[11px] leading-snug text-muted-foreground">{card.detail}</p>
-    </div>
-  );
-}
-
-function BenchmarkLadder({ askingPriceSqm, ranges, onTrackInteraction }: { askingPriceSqm: number | null; ranges: BenchmarkRange[]; onTrackInteraction?: (eventName: string, properties?: Record<string, unknown>) => void }) {
-  if (!askingPriceSqm || ranges.length === 0) return null;
-
-  const allValues = ranges.flatMap((range) => [range.min, range.max]).concat(askingPriceSqm);
-  const minValue = Math.min(...allValues);
-  const maxValue = Math.max(...allValues);
-  const spread = Math.max(1, maxValue - minValue);
-  const markerLeft = clampPercent(((askingPriceSqm - minValue) / spread) * 100);
-
-  return (
-    <div
-      className="rounded-lg border border-border/70 bg-background/70 p-3 space-y-3"
-      onMouseEnter={() => onTrackInteraction?.('price_context_benchmark_ladder_viewed', { benchmark_layer_count: ranges.length, asking_price_sqm: askingPriceSqm })}
-      onFocus={() => onTrackInteraction?.('price_context_benchmark_ladder_viewed', { benchmark_layer_count: ranges.length, asking_price_sqm: askingPriceSqm })}
-    >
-      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-sm font-semibold text-foreground">Benchmark ladder</p>
-          <p className="text-xs text-muted-foreground">Where the asking price sits across available recorded-sale reference layers.</p>
-        </div>
-        <Badge variant="outline" className="w-fit bg-background/70 text-xs">Ask {formatNisPerSqm(askingPriceSqm)}</Badge>
-      </div>
-      <div className="space-y-3">
-        {ranges.map((range) => {
-          const left = clampPercent(((range.min - minValue) / spread) * 100);
-          const width = Math.max(3, clampPercent(((range.max - range.min) / spread) * 100));
-          const positionLabel = askingPriceSqm < range.min
-            ? 'Below this range'
-            : askingPriceSqm > range.max
-              ? 'Above this range'
-              : 'Within this range';
-
-          return (
-            <div
-              key={range.id}
-              className="space-y-1.5 rounded-md p-1 transition-colors hover:bg-primary/5"
-              onClick={() => onTrackInteraction?.('price_context_benchmark_layer_clicked', { benchmark_layer: range.id, benchmark_label: range.label, source: 'ladder' })}
-            >
-              <div className="flex items-center justify-between gap-3 text-xs">
-                <span className="font-medium text-foreground">{range.label}</span>
-                <span className="text-muted-foreground">{positionLabel}</span>
-              </div>
-              <div className="relative h-6 rounded-md bg-muted/50">
-                <div
-                  className="absolute top-2 h-2 rounded-full bg-primary/25"
-                  style={{ left: `${left}%`, width: `${width}%` }}
-                />
-                <div
-                  className="absolute top-1 h-4 w-1.5 rounded-full bg-primary shadow-sm"
-                  style={{ left: `calc(${markerLeft}% - 3px)` }}
-                />
-              </div>
-              <div className="flex items-center justify-between gap-3 text-[11px] text-muted-foreground">
-                <span>{formatNisPerSqmRange(range.min, range.max)}</span>
-                <span>{range.detail}</span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
     </div>
   );
 }
@@ -243,15 +170,15 @@ function PremiumContextSummary({ priceContext, premiumExplanation }: { priceCont
   if (contextChips.length === 0 && !premiumExplanation?.trim()) return null;
 
   return (
-    <div className="rounded-lg border border-border/70 bg-background/70 p-3 space-y-3">
+    <div className="space-y-2">
       <div>
-        <p className="text-sm font-semibold text-foreground">Why this may differ</p>
-        <p className="text-xs text-muted-foreground">Recorded sales may not fully reflect property class, finish level, view, extras, or included rights.</p>
+        <p className="text-xs font-semibold text-foreground">Records may miss</p>
+        <p className="text-xs text-muted-foreground">Features that can make standard recorded-sale comps less direct.</p>
       </div>
       {contextChips.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {contextChips.map((chip) => (
-            <Badge key={chip} variant="outline" className="rounded-lg bg-primary/5 text-xs text-foreground">
+            <Badge key={chip} variant="outline" className="rounded-lg bg-background/80 text-xs text-foreground">
               {chip}
             </Badge>
           ))}
@@ -330,32 +257,11 @@ function MarketVerdictBadge({ compsCount, radiusUsedM, priceTier, priceContext }
 }
 
 function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchmarkRanges, propertyPricePerSqm, compsCount, radiusUsedM, sqmSource, ownershipType, onTrackInteraction }: { priceContext: PriceContextResult; premiumExplanation?: string | null; benchmarkCards: BenchmarkCard[]; benchmarkRanges: BenchmarkRange[]; propertyPricePerSqm: number | null; compsCount: number; radiusUsedM: number; sqmSource?: string | null; ownershipType?: string | null; onTrackInteraction?: (eventName: string, properties?: Record<string, unknown>) => void }) {
-  const [open, setOpen] = useState(false);
-  const trackedLadderViewRef = useRef(false);
-  const hasPremiumContext = priceContext.confirmedPremiumDrivers.length > 0 || priceContext.detectedPremiumDrivers.length > 0 || Boolean(premiumExplanation?.trim());
   const radiusLabel = radiusUsedM >= 1000 ? '1km' : `${radiusUsedM}m`;
   const layeredTake = buildLayeredBuyWiseTake(priceContext, propertyPricePerSqm, benchmarkRanges);
 
-  const handlePremiumOpenChange = (nextOpen: boolean) => {
-    setOpen(nextOpen);
-    if (nextOpen) {
-      onTrackInteraction?.('price_context_premium_context_opened', {
-        confirmed_driver_count: priceContext.confirmedPremiumDrivers.length,
-        detected_driver_count: priceContext.detectedPremiumDrivers.length,
-      });
-    }
-  };
-
-  const handleLadderViewed = (eventName: string, properties?: Record<string, unknown>) => {
-    if (eventName === 'price_context_benchmark_ladder_viewed') {
-      if (trackedLadderViewRef.current) return;
-      trackedLadderViewRef.current = true;
-    }
-    onTrackInteraction?.(eventName, properties);
-  };
-
   return (
-    <div className="rounded-lg border border-primary/15 bg-primary/5 p-4 space-y-4">
+    <div className="rounded-lg border border-primary/15 bg-primary/5 p-4 space-y-3">
       <div className="flex items-start gap-3">
         <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
           <BarChart3 className="h-4 w-4 text-primary" />
@@ -368,82 +274,17 @@ function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchma
             </div>
             <p className="text-xs text-muted-foreground">Recorded sales, local benchmark ranges, and property-specific context for International buyers.</p>
           </div>
-          <p className="text-sm text-muted-foreground">{layeredTake}</p>
-          <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          <p className="text-sm leading-relaxed text-muted-foreground">{layeredTake}</p>
+          <div className="mt-3 grid gap-2 md:grid-cols-3">
             {benchmarkCards.map((card) => (
               <BenchmarkCardTile key={card.id} card={card} onTrackInteraction={onTrackInteraction} />
             ))}
-          </div>
-          <div className="mt-3">
-            <BenchmarkLadder askingPriceSqm={propertyPricePerSqm} ranges={benchmarkRanges} onTrackInteraction={handleLadderViewed} />
           </div>
           <div className="mt-3">
             <PremiumContextSummary priceContext={priceContext} premiumExplanation={premiumExplanation} />
           </div>
         </div>
       </div>
-
-      {hasPremiumContext && (
-        <Collapsible open={open} onOpenChange={handlePremiumOpenChange}>
-          <CollapsibleTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-8 px-2 text-xs text-primary hover:text-primary">
-              What recorded sales may not capture
-              <ChevronDown className={`ml-1 h-3.5 w-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="pt-2 space-y-3">
-            {(priceContext.confirmedPremiumDrivers.length > 0 || priceContext.detectedPremiumDrivers.length > 0) && (
-              <div className="grid gap-3 sm:grid-cols-2">
-                {priceContext.confirmedPremiumDrivers.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-xs font-medium text-muted-foreground">Confirmed by agency</p>
-                    <div className="flex flex-wrap gap-2">
-                      {priceContext.confirmedPremiumDrivers.slice(0, 8).map((driver) => <Badge key={driver} variant="outline" className="rounded-lg bg-background/70">{formatPremiumDriver(driver)}</Badge>)}
-                    </div>
-                  </div>
-                )}
-                {priceContext.detectedPremiumDrivers.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-xs font-medium text-muted-foreground">Detected from listing</p>
-                    <div className="flex flex-wrap gap-2">
-                      {priceContext.detectedPremiumDrivers.slice(0, 8).map((driver) => <Badge key={driver} variant="outline" className="rounded-lg bg-background/70">{formatPremiumDriver(driver)}</Badge>)}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-            {premiumExplanation && (
-              <p className="text-sm text-muted-foreground border-l-2 border-primary/30 pl-3">
-                {premiumExplanation}
-              </p>
-            )}
-          </CollapsibleContent>
-        </Collapsible>
-      )}
-
-      {priceContext.buyerQuestions.length > 0 && (
-        <div className="rounded-lg border border-border/70 bg-background/70 p-3">
-          <div className="mb-2 flex items-center gap-2">
-            <CircleHelp className="h-4 w-4 text-primary" />
-            <div>
-              <p className="text-sm font-semibold text-foreground">Questions worth asking</p>
-              <p className="text-xs text-muted-foreground">Based on this listing’s pricing context and property details</p>
-            </div>
-          </div>
-          <ul className="space-y-1.5 text-sm text-muted-foreground">
-            {priceContext.buyerQuestions.map((question, index) => (
-              <li
-                key={question}
-                className="flex cursor-pointer gap-2 rounded-md px-1 py-0.5 transition-colors hover:bg-primary/5"
-                onClick={() => onTrackInteraction?.('buyer_question_engaged', { question, question_index: index + 1 })}
-              >
-                <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-                <span>{question}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
 
       <Collapsible onOpenChange={(nextOpen) => nextOpen && onTrackInteraction?.('price_context_details_opened', { confidence_tier: priceContext.confidenceTier })}>
         <CollapsibleTrigger asChild>
@@ -609,10 +450,21 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
   });
 
   const benchmarkCards: BenchmarkCard[] = useMemo(() => {
+    const broaderAreaValue = neighborhoodAvgPriceSqm
+      ? formatNisPerSqmRange(neighborhoodAvgPriceSqm * 0.95, neighborhoodAvgPriceSqm * 1.05)
+      : effectiveAvgPriceSqm
+        ? formatNisPerSqmRange(effectiveAvgPriceSqm * 0.95, effectiveAvgPriceSqm * 1.05)
+        : 'Directional only';
+    const broaderAreaDetail = neighborhoodAvgPriceSqm
+      ? `${property.neighborhood || property.city} recorded-sale context.`
+      : effectiveAvgPriceSqm
+        ? `Broader ${property.city} recorded-sale context.`
+        : 'Not enough area benchmark data is available.';
+
     const cards: BenchmarkCard[] = [
       {
         id: 'asking_price_sqm',
-        label: 'Asking price / sqm',
+        label: 'This listing',
         value: formatNisPerSqm(propertyPricePerSqm),
         detail: property.size_sqm ? 'Listing ask normalized by stated size.' : 'Size is missing, so price/sqm is unavailable.',
         icon: Ruler,
@@ -627,37 +479,16 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
         icon: MapPin,
       },
       {
-        id: 'neighborhood_benchmark',
-        label: property.neighborhood ? `${property.neighborhood} benchmark` : 'Neighborhood benchmark',
-        value: neighborhoodAvgPriceSqm ? formatNisPerSqmRange(neighborhoodAvgPriceSqm * 0.95, neighborhoodAvgPriceSqm * 1.05) : 'Directional only',
-        detail: neighborhoodAvgPriceSqm ? 'Neighborhood recorded-sale context, not a final valuation.' : 'Not enough neighborhood benchmark data is available.',
+        id: 'broader_area_benchmark',
+        label: 'Broader area',
+        value: broaderAreaValue,
+        detail: broaderAreaDetail,
         icon: Building2,
-      },
-      {
-        id: 'city_benchmark',
-        label: `${property.city} benchmark`,
-        value: effectiveAvgPriceSqm ? formatNisPerSqmRange(effectiveAvgPriceSqm * 0.95, effectiveAvgPriceSqm * 1.05) : 'No city benchmark yet',
-        detail: roomPrice?.avgPriceSqm ? `${property.city} ${israeliRooms ?? ''}-room recorded-sale context.` : 'Broader city-wide recorded-sale context.',
-        icon: Home,
-      },
-      {
-        id: 'same_room_benchmark',
-        label: israeliRooms ? `${property.city} ${israeliRooms}-room benchmark` : 'Same-room benchmark',
-        value: roomPrice?.avgPrice ? formatNisAmount(roomPrice.avgPrice) : 'Not available',
-        detail: roomPrice?.avgPrice ? 'Total-price reference for similar Israeli room count.' : 'Room-specific data is not available for this listing.',
-        icon: TrendingUp,
-      },
-      {
-        id: 'comparable_confidence',
-        label: 'Comparable confidence',
-        value: priceContext.confidenceLabel,
-        detail: priceContext.propertyClassLabel,
-        icon: ShieldCheck,
       },
     ];
 
     return cards;
-  }, [effectiveAvgPriceSqm, israeliRooms, neighborhoodAvgPriceSqm, priceContext.benchmarkRange, priceContext.confidenceLabel, priceContext.propertyClassLabel, property.city, property.neighborhood, property.size_sqm, propertyPricePerSqm, roomPrice?.avgPrice, roomPrice?.avgPriceSqm, verdictData.compsCount, verdictData.radiusUsedM]);
+  }, [effectiveAvgPriceSqm, neighborhoodAvgPriceSqm, priceContext.benchmarkRange, property.city, property.neighborhood, property.size_sqm, propertyPricePerSqm, verdictData.compsCount, verdictData.radiusUsedM]);
 
   const benchmarkRanges: BenchmarkRange[] = useMemo(() => {
     const ranges: BenchmarkRange[] = [];
