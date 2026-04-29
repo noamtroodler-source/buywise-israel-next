@@ -24,6 +24,8 @@ import {
 import { format } from 'date-fns';
 import { FeaturedFAQ } from './FeaturedFAQ';
 import { getPriceContextFeatureGuardrail } from '@/lib/priceContextGuardrails';
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
+import { PRICE_CONTEXT_FLAGS } from '@/lib/featureFlags';
 
 const FEATURED_PRICE_ILS = 299;
 
@@ -35,6 +37,7 @@ export function FeaturedListingsManager({ agencyId }: FeaturedListingsManagerPro
   const { data: listings = [], isLoading: listingsLoading } = useAgencyListingsManagement(agencyId);
   const { data: featuredListings = [], isLoading: featuredLoading } = useFeaturedListings(agencyId);
   const { data: foundingStatus } = useFoundingPartnerStatus(agencyId);
+  const { data: requirePriceContextForFeatured = false } = useFeatureFlag(PRICE_CONTEXT_FLAGS.requireForFeatured, false);
   const toggleMutation = useToggleFeaturedListing();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -181,7 +184,7 @@ export function FeaturedListingsManager({ agencyId }: FeaturedListingsManagerPro
               {filteredListings.map((listing) => {
                 const featured = featuredMap.get(listing.id);
                 const isFeatured = !!featured;
-                const guardrail = getPriceContextFeatureGuardrail(listing);
+                const guardrail = getPriceContextFeatureGuardrail(listing, requirePriceContextForFeatured);
                 const isFeatureBlocked = !isFeatured && !guardrail.eligible;
 
                 return (
