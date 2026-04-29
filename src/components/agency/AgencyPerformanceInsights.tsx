@@ -60,6 +60,12 @@ export function AgencyPerformanceInsights() {
   const { data: team = [] } = useAgencyTeam(agency?.id);
 
   const agentIds = team.map(member => member.id);
+  const liveListingsQuery = () => supabase
+    .from('properties')
+    .select('id')
+    .in('agent_id', agentIds)
+    .eq('is_published', true)
+    .eq('verification_status', 'approved');
 
   const thisWeekStart = startOfWeek(new Date(), { weekStartsOn: 0 });
   const thisWeekEnd = endOfWeek(new Date(), { weekStartsOn: 0 });
@@ -70,18 +76,15 @@ export function AgencyPerformanceInsights() {
     queryKey: ['agency-views-this-week', agency?.id],
     queryFn: async () => {
       if (agentIds.length === 0) return 0;
-      const { data: properties } = await supabase
-        .from('properties')
-        .select('id')
-        .in('agent_id', agentIds);
+      const { data: properties } = await liveListingsQuery();
       if (!properties?.length) return 0;
       const propertyIds = properties.map(p => p.id);
       const { count } = await supabase
         .from('property_views')
         .select('*', { count: 'exact', head: true })
         .in('property_id', propertyIds)
-        .gte('created_at', format(thisWeekStart, 'yyyy-MM-dd'))
-        .lte('created_at', format(thisWeekEnd, 'yyyy-MM-dd'));
+        .gte('viewed_at', format(thisWeekStart, 'yyyy-MM-dd'))
+        .lte('viewed_at', format(thisWeekEnd, 'yyyy-MM-dd'));
       return count ?? 0;
     },
     enabled: !!agency?.id && agentIds.length > 0,
@@ -91,18 +94,15 @@ export function AgencyPerformanceInsights() {
     queryKey: ['agency-views-last-week', agency?.id],
     queryFn: async () => {
       if (agentIds.length === 0) return 0;
-      const { data: properties } = await supabase
-        .from('properties')
-        .select('id')
-        .in('agent_id', agentIds);
+      const { data: properties } = await liveListingsQuery();
       if (!properties?.length) return 0;
       const propertyIds = properties.map(p => p.id);
       const { count } = await supabase
         .from('property_views')
         .select('*', { count: 'exact', head: true })
         .in('property_id', propertyIds)
-        .gte('created_at', format(lastWeekStart, 'yyyy-MM-dd'))
-        .lte('created_at', format(lastWeekEnd, 'yyyy-MM-dd'));
+        .gte('viewed_at', format(lastWeekStart, 'yyyy-MM-dd'))
+        .lte('viewed_at', format(lastWeekEnd, 'yyyy-MM-dd'));
       return count ?? 0;
     },
     enabled: !!agency?.id && agentIds.length > 0,
@@ -112,10 +112,15 @@ export function AgencyPerformanceInsights() {
     queryKey: ['agency-inquiries-this-week', agency?.id],
     queryFn: async () => {
       if (!agency?.id) return 0;
+      if (agentIds.length === 0) return 0;
+      const { data: properties } = await liveListingsQuery();
+      if (!properties?.length) return 0;
+      const propertyIds = properties.map(p => p.id);
       const { count } = await supabase
         .from('property_inquiries')
         .select('*', { count: 'exact', head: true })
         .eq('agency_id', agency.id)
+        .in('property_id', propertyIds)
         .gte('created_at', format(thisWeekStart, 'yyyy-MM-dd'))
         .lte('created_at', format(thisWeekEnd, 'yyyy-MM-dd'));
       return count ?? 0;
@@ -127,10 +132,15 @@ export function AgencyPerformanceInsights() {
     queryKey: ['agency-inquiries-last-week', agency?.id],
     queryFn: async () => {
       if (!agency?.id) return 0;
+      if (agentIds.length === 0) return 0;
+      const { data: properties } = await liveListingsQuery();
+      if (!properties?.length) return 0;
+      const propertyIds = properties.map(p => p.id);
       const { count } = await supabase
         .from('property_inquiries')
         .select('*', { count: 'exact', head: true })
         .eq('agency_id', agency.id)
+        .in('property_id', propertyIds)
         .gte('created_at', format(lastWeekStart, 'yyyy-MM-dd'))
         .lte('created_at', format(lastWeekEnd, 'yyyy-MM-dd'));
       return count ?? 0;

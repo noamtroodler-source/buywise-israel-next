@@ -77,11 +77,32 @@ export function useAgencyAnalytics(dateRange: DateRangeFilter = 'all') {
       const { data: properties, error: propertiesError } = await supabase
         .from('properties')
         .select('id, agent_id, views_count, verification_status')
-        .in('agent_id', agentIds);
+        .in('agent_id', agentIds)
+        .eq('is_published', true)
+        .eq('verification_status', 'approved');
 
       if (propertiesError) throw propertiesError;
 
       const propertyIds = properties?.map(p => p.id) || [];
+
+      if (propertyIds.length === 0) {
+        return {
+          totalViews: 0,
+          totalSaves: 0,
+          totalInquiries: 0,
+          conversionRate: 0,
+          agentPerformance: agents?.map(agent => ({
+            agentId: agent.id,
+            agentName: agent.name,
+            avatarUrl: agent.avatar_url,
+            views: 0,
+            saves: 0,
+            inquiries: 0,
+            activeListings: 0,
+          })) || [],
+          inquiriesByType: { whatsapp: 0, email: 0, form: 0 },
+        };
+      }
 
       // Fetch favorites with optional date filter
       let favoritesQuery = supabase
@@ -100,7 +121,8 @@ export function useAgencyAnalytics(dateRange: DateRangeFilter = 'all') {
       let inquiriesQuery = supabase
         .from('property_inquiries')
         .select('property_id, agent_id, inquiry_type, created_at')
-        .in('agent_id', agentIds);
+        .in('agent_id', agentIds)
+        .in('property_id', propertyIds);
       
       if (dateFilter) {
         inquiriesQuery = inquiriesQuery.gte('created_at', dateFilter);
