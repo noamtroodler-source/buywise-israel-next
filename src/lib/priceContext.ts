@@ -41,6 +41,15 @@ export interface PriceContextCompClassMetadata {
   fallbackUsed: boolean;
 }
 
+export type PriceContextSpecMatchQuality = 'strong' | 'directional' | 'weak';
+
+export interface PriceContextSpecMatchMetadata {
+  roomMatchQuality: PriceContextSpecMatchQuality | null;
+  sizeMatchQuality: PriceContextSpecMatchQuality | null;
+  avgRoomDelta: number | null;
+  avgSizeDeltaPercent: number | null;
+}
+
 export interface PriceContextInput {
   avgComparison: number | null;
   compsCount: number;
@@ -48,8 +57,8 @@ export interface PriceContextInput {
   compRecencyMonths?: number | null;
   compDispersionPercent?: number | null;
   compClassMatch?: PriceContextCompClassMatch | null;
-  roomMatchQuality?: 'strong' | 'directional' | 'weak' | null;
-  sizeMatchQuality?: 'strong' | 'directional' | 'weak' | null;
+  roomMatchQuality?: PriceContextSpecMatchQuality | null;
+  sizeMatchQuality?: PriceContextSpecMatchQuality | null;
   avgCompPriceSqm?: number | null;
   benchmarkPriceSqm?: number | null;
   pricePerSqm?: number | null;
@@ -165,6 +174,48 @@ export function selectPriceContextComps<T extends { property_type?: string | nul
             ? 'mixed_fallback'
             : 'similar_class',
     },
+  };
+}
+
+export function computePriceContextSpecMatch<T extends { rooms?: number | null; size_sqm?: number | null }>(
+  comps: T[],
+  subjectRooms?: number | null,
+  subjectSizeSqm?: number | null,
+): PriceContextSpecMatchMetadata {
+  const validRoomComps = comps.filter((comp) => comp.rooms != null);
+  const avgRoomDelta = subjectRooms != null && validRoomComps.length > 0
+    ? validRoomComps.reduce((sum, comp) => sum + Math.abs((comp.rooms ?? subjectRooms) - subjectRooms), 0) / validRoomComps.length
+    : null;
+
+  const validSizeComps = comps.filter((comp) => comp.size_sqm != null && comp.size_sqm > 0);
+  const avgCompSize = validSizeComps.length > 0
+    ? validSizeComps.reduce((sum, comp) => sum + (comp.size_sqm ?? 0), 0) / validSizeComps.length
+    : null;
+  const avgSizeDeltaPercent = subjectSizeSqm && subjectSizeSqm > 0 && avgCompSize
+    ? Math.abs(avgCompSize - subjectSizeSqm) / subjectSizeSqm
+    : null;
+
+  return {
+    avgRoomDelta: avgRoomDelta == null ? null : Number(avgRoomDelta.toFixed(2)),
+    avgSizeDeltaPercent: avgSizeDeltaPercent == null ? null : Math.round(avgSizeDeltaPercent * 100),
+    roomMatchQuality: subjectRooms == null
+      ? null
+      : avgRoomDelta == null
+        ? 'weak'
+        : avgRoomDelta <= 0.5
+          ? 'strong'
+          : avgRoomDelta <= 1
+            ? 'directional'
+            : 'weak',
+    sizeMatchQuality: !subjectSizeSqm
+      ? null
+      : avgSizeDeltaPercent == null
+        ? 'weak'
+        : avgSizeDeltaPercent <= 0.1
+          ? 'strong'
+          : avgSizeDeltaPercent <= 0.25
+            ? 'directional'
+            : 'weak',
   };
 }
 
