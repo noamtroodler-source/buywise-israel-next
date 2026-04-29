@@ -296,6 +296,26 @@ function getGapBand(gap: number | null) {
   return 'Extreme mismatch to selected benchmarks';
 }
 
+function confidenceCapDetail(code: string, input: PriceContextInput, compsCount: number, radiusUsedM: number): PriceContextConfidenceCap {
+  const details: Record<string, Omit<PriceContextConfidenceCap, 'code'>> = {
+    fewer_than_5_comps: { label: 'Sparse comp count', detail: `Only ${compsCount} comparable sale${compsCount === 1 ? '' : 's'} selected; strong confidence requires a deeper pool.`, severity: 'critical' },
+    no_listing_level_comps: { label: 'No listing-level comps', detail: 'No comparable recorded sales were available for this listing-level benchmark.', severity: 'critical' },
+    wide_radius: { label: 'Wide search radius', detail: `Comparable search expanded to ${radiusUsedM}m, which weakens precision in dense markets.`, severity: 'warning' },
+    stale_comps: { label: 'Stale transactions', detail: `Average comp age is ${input.compRecencyMonths} months; newer sales are needed for strong confidence.`, severity: 'warning' },
+    wide_comp_dispersion: { label: 'Wide price dispersion', detail: `Selected comps vary by about ${input.compDispersionPercent}%, so the average may hide meaningful differences.`, severity: 'critical' },
+    similar_class_comps: { label: 'Similar-class only', detail: 'The comparable pool is not strictly same-class, so class differences may affect pricing.', severity: 'warning' },
+    mixed_fallback_comps: { label: 'Mixed fallback pool', detail: 'Same-class comps were sparse, so fallback comps were used for directional context only.', severity: 'critical' },
+    no_same_class_comps: { label: 'No same-class pool', detail: 'No reliable same-class comparable pool was available for this property class.', severity: 'critical' },
+    weak_room_match: { label: 'Weak room match', detail: 'Selected comps do not closely match the listing’s Israeli room count.', severity: 'warning' },
+    weak_size_match: { label: 'Weak size match', detail: 'Selected comps do not closely match the listing size, reducing price/sqm reliability.', severity: 'warning' },
+    missing_size_or_price_per_sqm: { label: 'Missing size or price/sqm', detail: 'Listing size or price/sqm is missing, so property-level benchmarking is incomplete.', severity: 'critical' },
+    unknown_sqm_source: { label: 'Unknown sqm source', detail: 'The sqm source is unknown, which makes recorded-sale comparisons less reliable.', severity: 'warning' },
+    unknown_ownership_type: { label: 'Unknown ownership type', detail: 'Ownership type is unknown, reducing comparability across Israeli property records.', severity: 'warning' },
+  };
+
+  return { code, ...(details[code] ?? { label: formatPriceContextValue(code), detail: 'This factor limits comparable confidence.', severity: 'warning' }) };
+}
+
 export function getPriceContext(input: PriceContextInput): PriceContextResult {
   const { avgComparison, compsCount, radiusUsedM, benchmarkPriceSqm, pricePerSqm, property } = input;
   const propertyClass = getPriceContextPropertyClass(property);
@@ -418,6 +438,7 @@ export function getPriceContext(input: PriceContextInput): PriceContextResult {
   const buyerQuestions = buildPriceContextBuyerQuestions(property, propertyClass, gap, premiumDrivers).map((item) => item.question);
   const base = input.avgCompPriceSqm ?? benchmarkPriceSqm ?? null;
   const benchmarkRange = base ? { min: Math.round(base * 0.95), max: Math.round(base * 1.05) } : null;
+  const confidenceCaps = unique(limitedCaps).map((code) => confidenceCapDetail(code, input, compsCount, radiusUsedM));
 
   return {
     propertyClass,
@@ -435,6 +456,7 @@ export function getPriceContext(input: PriceContextInput): PriceContextResult {
     detectedPremiumDrivers,
     confirmedPremiumDrivers,
     confidenceReasons: reasons,
+    confidenceCaps,
     buyerQuestions,
     badgeStatus: badgeEligible ? 'complete' : reviewOpen ? 'blocked' : 'incomplete',
     badgeEligible,
