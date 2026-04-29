@@ -386,7 +386,7 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
 
   // Price tier classification (replaces old isPremiumSegment hack)
   const propertyPricePerSqm = property.size_sqm ? Math.round(property.price / property.size_sqm) : null;
-  const { tier: priceTier, tierLabel, tierAvgPriceSqm } = usePriceTier(
+  const { tier: priceTier, tierAvgPriceSqm } = usePriceTier(
     property.city,
     israeliRooms,
     propertyPricePerSqm
@@ -581,28 +581,6 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
             </TooltipContent>
           </Tooltip>
         </div>
-
-        {/* Tier Badge */}
-        {priceTier && priceTier !== 'standard' && (
-          <div className="flex items-center gap-2">
-            <Badge className={priceTier === 'luxury'
-              ? 'bg-semantic-amber text-semantic-amber-foreground border-semantic-amber'
-              : 'bg-primary/10 text-primary border-primary/20'
-            }>
-              {tierLabel}
-            </Badge>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-              </TooltipTrigger>
-              <TooltipContent side="right" className="max-w-xs">
-                <p className="text-xs">
-                  Price tier based on {priceTier === 'luxury' ? 'top' : 'middle'} third of government-recorded sale prices in {property.city} for similar room counts over the past 2 years.
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-        )}
 
         {/* Hero Verdict Badge */}
         <MarketVerdictBadge 
