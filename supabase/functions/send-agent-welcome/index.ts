@@ -21,7 +21,8 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || FALLBACK_ANON_KEY;
+    const configuredAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || "";
+    const anonKey = isJwt(configuredAnonKey) ? configuredAnonKey : FALLBACK_ANON_KEY;
     const admin = createClient(supabaseUrl, serviceKey);
 
     const authHeader = req.headers.get("Authorization") ?? "";
@@ -108,6 +109,10 @@ function json(data: Record<string, unknown>, status = 200) {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
+}
+
+function isJwt(value: string): boolean {
+  return value.split(".").length === 3;
 }
 
 async function sendTransactionalEmail(
