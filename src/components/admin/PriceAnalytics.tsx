@@ -339,7 +339,7 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
                 <p className="text-xs text-muted-foreground">Live sale listings excluded from Price Context boosts</p>
               </div>
               <Button asChild variant="outline" size="sm">
-                <Link to="/admin/listing-review">
+                <Link to="/admin/review">
                   Review queue
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
