@@ -29,6 +29,7 @@ interface MobileFilterSheetProps {
   showSoldToggle?: boolean;
   isSoldView?: boolean;
   onSoldToggle?: (showSold: boolean) => void;
+  showPriceContextFilter?: boolean;
 }
 
 const PROPERTY_TYPES: { value: PropertyType; label: string }[] = [
@@ -90,6 +91,7 @@ export function MobileFilterSheet({
   showSoldToggle,
   isSoldView,
   onSoldToggle,
+  showPriceContextFilter = true,
 }: MobileFilterSheetProps) {
   const [citySearch, setCitySearch] = useState('');
   
@@ -129,7 +131,7 @@ export function MobileFilterSheet({
     filters.min_parking,
     filters.max_days_listed,
     filters.commute_destination && filters.max_commute_minutes,
-    filters.pricing_context_complete,
+    showPriceContextFilter && filters.pricing_context_complete,
   ].filter(Boolean).length;
 
   return (
@@ -445,7 +447,7 @@ export function MobileFilterSheet({
             </section>
 
             {/* Commute Section */}
-            {listingType === 'for_sale' && (
+            {listingType === 'for_sale' && showPriceContextFilter && (
               <section className="space-y-3">
                 <h3 className="font-semibold flex items-center gap-2">
                   <ShieldCheck className="h-4 w-4 text-primary" />
