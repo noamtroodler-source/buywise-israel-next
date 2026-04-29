@@ -479,7 +479,6 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
                     review={marketFitReview}
                     confirmed={marketFitConfirmed}
                     onConfirmedChange={setMarketFitConfirmed}
-                    onEditDetails={() => setCurrentStep(1)}
                     onEditPremiumContext={() => setCurrentStep(2)}
                   />
                 )}
