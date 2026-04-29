@@ -42,6 +42,9 @@ export interface AgencyListing {
   price_context_confidence_tier?: string | null;
   price_context_public_label?: string | null;
   price_context_badge_status?: string | null;
+  benchmark_review_status?: string | null;
+  benchmark_review_reason?: string | null;
+  benchmark_review_notes?: string | null;
   agency_review_status: AgencyReviewStatus;
   agency_reviewed_at: string | null;
   agency_review_notes: string | null;
@@ -101,6 +104,7 @@ export function useAgencyListingsManagement(agencyId: string | undefined) {
           bedrooms, bathrooms, size_sqm, floor, total_floors,
           data_quality_score,
           price_context_confidence_tier, price_context_public_label, price_context_badge_status,
+          benchmark_review_status, benchmark_review_reason, benchmark_review_notes,
           boost_active_until, boosted_by_agency_id,
           created_at, updated_at
         `)
@@ -134,6 +138,7 @@ export function useAgencyListingsManagement(agencyId: string | undefined) {
             bedrooms, bathrooms, size_sqm, floor, total_floors,
             data_quality_score,
             price_context_confidence_tier, price_context_public_label, price_context_badge_status,
+            benchmark_review_status, benchmark_review_reason, benchmark_review_notes,
             created_at, updated_at
           `)
           .in('id', coListedIds)
