@@ -221,6 +221,8 @@ interface RecentNearbySalesProps {
   hideHeader?: boolean;
   /** When true, skip the verdict badge (parent renders it) */
   hideVerdict?: boolean;
+  /** When true, only compute benchmark metadata for the parent and render no visible comps UI. */
+  calculationOnly?: boolean;
   /** Callback to expose the computed average comparison to parent */
   onVerdictComputed?: (avgComparison: number | null, compsCount: number, radiusUsedM: number, avgCompPriceSqm: number | null, compDispersionPercent?: number | null, compClassMatch?: PriceContextCompClassMatch | null, roomMatchQuality?: PriceContextSpecMatchQuality | null, sizeMatchQuality?: PriceContextSpecMatchQuality | null, compRecencyMonths?: number | null) => void;
   onCompsViewed?: (payload: { compsCount: number; radiusUsedM: number; source: 'nearby_sales' }) => void;
@@ -236,6 +238,7 @@ export function RecentNearbySales({
   subjectProperty,
   hideHeader = false,
   hideVerdict = false,
+  calculationOnly = false,
   onVerdictComputed,
   onCompsViewed,
 }: RecentNearbySalesProps) {
@@ -370,6 +373,8 @@ export function RecentNearbySales({
       onCompsViewed?.({ compsCount: comps.length, radiusUsedM, source: 'nearby_sales' });
     }
   }, [isLoading, comps.length, radiusUsedM, onCompsViewed]);
+
+  if (calculationOnly) return null;
 
   // Show empty state if we don't have coordinates
   if (!latitude || !longitude) {
