@@ -1132,7 +1132,7 @@ function FeedbackDialog({
   );
 }
 
-export function ListingReviewCard({ property, onApprove, onRequestChanges, onReject, onBenchmarkReviewAction, isLoading }: ListingReviewCardProps) {
+export function ListingReviewCard({ property, onApprove, onRequestChanges, onReject, isLoading }: ListingReviewCardProps) {
   const [showChangesDialog, setShowChangesDialog] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
@@ -1283,7 +1283,6 @@ export function ListingReviewCard({ property, onApprove, onRequestChanges, onRej
                   market={market}
                   reviewed={marketReviewed}
                   onReviewedChange={setMarketReviewed}
-                  onBenchmarkReviewAction={(resolution, notes) => onBenchmarkReviewAction(property.id, resolution, notes)}
                   isLoading={isLoading}
                 />
               </TabsContent>
