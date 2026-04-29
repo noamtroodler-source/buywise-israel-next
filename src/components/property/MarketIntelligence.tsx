@@ -280,21 +280,22 @@ function BuyWiseTake({ priceContext, premiumExplanation, propertyPricePerSqm, co
 }
 
 export function MarketIntelligence({ property, cityData, trackingEnabled = true }: MarketIntelligenceProps) {
-  const [verdictData, setVerdictData] = useState<{ avgComparison: number | null; compsCount: number; radiusUsedM: number; avgCompPriceSqm: number | null; compDispersionPercent: number | null }>({
+  const [verdictData, setVerdictData] = useState<{ avgComparison: number | null; compsCount: number; radiusUsedM: number; avgCompPriceSqm: number | null; compDispersionPercent: number | null; compClassMatch: 'same_class' | 'similar_class' | 'mixed_fallback' | 'no_comps' | null }>({
     avgComparison: null,
     compsCount: 0,
     radiusUsedM: 500,
     avgCompPriceSqm: null,
     compDispersionPercent: null,
+    compClassMatch: null,
   });
   const { user } = useAuth();
   const location = useLocation();
   const trackedViewKey = useRef<string | null>(null);
 
-  const handleVerdictComputed = useCallback((avgComparison: number | null, compsCount: number, radiusUsedM: number, avgCompPriceSqm: number | null, compDispersionPercent: number | null = null) => {
+  const handleVerdictComputed = useCallback((avgComparison: number | null, compsCount: number, radiusUsedM: number, avgCompPriceSqm: number | null, compDispersionPercent: number | null = null, compClassMatch: 'same_class' | 'similar_class' | 'mixed_fallback' | 'no_comps' | null = null) => {
     setVerdictData(prev => {
-      if (prev.avgComparison === avgComparison && prev.compsCount === compsCount && prev.radiusUsedM === radiusUsedM && prev.avgCompPriceSqm === avgCompPriceSqm && prev.compDispersionPercent === compDispersionPercent) return prev;
-      return { avgComparison, compsCount, radiusUsedM, avgCompPriceSqm, compDispersionPercent };
+      if (prev.avgComparison === avgComparison && prev.compsCount === compsCount && prev.radiusUsedM === radiusUsedM && prev.avgCompPriceSqm === avgCompPriceSqm && prev.compDispersionPercent === compDispersionPercent && prev.compClassMatch === compClassMatch) return prev;
+      return { avgComparison, compsCount, radiusUsedM, avgCompPriceSqm, compDispersionPercent, compClassMatch };
     });
   }, []);
 
@@ -334,6 +335,7 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
     compsCount: verdictData.compsCount,
     radiusUsedM: verdictData.radiusUsedM,
     compDispersionPercent: verdictData.compDispersionPercent,
+    compClassMatch: verdictData.compClassMatch,
     avgCompPriceSqm: verdictData.avgCompPriceSqm,
     benchmarkPriceSqm: tierAvgPriceSqm ?? neighborhoodAvgPriceSqm ?? effectiveAvgPriceSqm,
     pricePerSqm: propertyPricePerSqm,
