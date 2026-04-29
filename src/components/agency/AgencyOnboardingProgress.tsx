@@ -36,6 +36,7 @@ interface AgencyOnboardingProgressProps {
   teamCount: number;
   pendingRequests?: number;
   listingsCount?: number;
+  liveListingsCount?: number;
   toReviewCount?: number;
   readyToSubmitCount?: number;
 }
@@ -45,6 +46,7 @@ export function AgencyOnboardingProgress({
   teamCount,
   pendingRequests = 0,
   listingsCount = 0,
+  liveListingsCount = 0,
   toReviewCount = 0,
   readyToSubmitCount = 0,
 }: AgencyOnboardingProgressProps) {
@@ -111,12 +113,12 @@ export function AgencyOnboardingProgress({
     {
       id: 'live',
       label: 'Get first listing live',
-      description: listingsCount > 0 ? 'Your first live listing completes launch' : 'Listings go live after BuyWise review',
+      description: liveListingsCount > 0 ? 'Your first live listing completes launch' : 'Listings go live after BuyWise review',
       icon: Home,
-      isComplete: listingsCount >= 1,
+      isComplete: liveListingsCount >= 1,
       link: '/agency/listings?status=live',
       action: 'View live listings',
-      count: listingsCount,
+      count: liveListingsCount,
     },
   ];
 

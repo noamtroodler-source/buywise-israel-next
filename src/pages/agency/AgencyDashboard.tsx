@@ -167,7 +167,8 @@ export default function AgencyDashboard() {
             agency={agency}
             teamCount={team.length}
             pendingRequests={pendingRequests}
-            listingsCount={liveListingsCount}
+            listingsCount={listings.length}
+            liveListingsCount={liveListingsCount}
             toReviewCount={toReviewCount}
             readyToSubmitCount={readyToSubmitCount}
           />
