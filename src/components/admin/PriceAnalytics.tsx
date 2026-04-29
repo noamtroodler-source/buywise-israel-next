@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { DollarSign, TrendingUp, Home, Building, BadgeCheck, AlertTriangle, Gauge, MousePointerClick, ShieldCheck, EyeOff, ArrowRight, Ruler, FileWarning, Wrench } from 'lucide-react';
 import { PriceAnalyticsData } from '@/hooks/usePriceAnalytics';
 import { usePriceContextBlockers } from '@/hooks/useListingReview';
+import { exportToCSV } from '@/lib/csvExport';
 import { 
   BarChart, Bar, XAxis, YAxis, ResponsiveContainer, 
   Tooltip, Cell, PieChart, Pie 
@@ -54,6 +55,23 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 
   const context = data?.priceContext;
+  const hasContextData = Boolean(context && (context.totalListings > 0 || context.moduleViews > 0));
+  const exportPriceContextCsv = () => {
+    if (!context) return;
+    exportToCSV('price-context-kpis.csv', ['Metric', 'Value'], [
+      ['Context complete rate', `${context.completionRate.toFixed(1)}%`],
+      ['Module views', String(context.moduleViews)],
+      ['Details open rate', `${context.detailsOpenRate.toFixed(1)}%`],
+      ['Comparable views', String(context.comparableViews)],
+      ['Saves after context view', String(context.savesAfterContextView)],
+      ['Context inquiry conversion rate', `${context.inquiryConversionRate.toFixed(1)}%`],
+      ['Trust helpful rate', `${context.helpfulFeedbackRate.toFixed(1)}%`],
+      ['Premium context completion rate', `${context.premiumContextCompletionRate.toFixed(1)}%`],
+      ['Benchmark review request rate', `${context.benchmarkReviewRequestRate.toFixed(1)}%`],
+      ['Unknown sqm source rate', `${context.unknownSqmSourceRate.toFixed(1)}%`],
+      ['Unknown ownership rate', `${context.unknownOwnershipRate.toFixed(1)}%`],
+    ]);
+  };
   const contextCards = [
     { label: 'Context Complete', value: `${(context?.completionRate || 0).toFixed(0)}%`, sub: `${context?.complete || 0} of ${context?.totalListings || 0} active listings`, icon: BadgeCheck },
     { label: 'Ranking Ready', value: `${(context?.rankingReadinessRate || 0).toFixed(0)}%`, sub: `${context?.rankingReady || 0} safe to prioritize`, icon: ShieldCheck },
@@ -81,6 +99,18 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
       <CardContent className="pt-4">
         {/* Price Context KPIs */}
         <div className="mb-6 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/50 bg-muted/20 p-4">
+            <div>
+              <p className="text-sm font-semibold text-foreground">Price Context KPI dashboard</p>
+              <p className="text-xs text-muted-foreground">Real listing, inquiry, save, lead-quality, and event data for the selected period.</p>
+            </div>
+            <Button variant="outline" size="sm" onClick={exportPriceContextCsv} disabled={!hasContextData}>Export CSV</Button>
+          </div>
+          {!hasContextData && (
+            <div className="rounded-xl border border-border/50 bg-background p-4 text-sm text-muted-foreground">
+              Not enough Price Context data yet. Metrics will populate after live listings receive module views, saves, inquiries, or review events.
+            </div>
+          )}
           <div className="grid gap-3 md:grid-cols-4">
             {contextCards.map((card) => (
               <div key={card.label} className="rounded-xl border border-border/50 bg-muted/30 p-3">
