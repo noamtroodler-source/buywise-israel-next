@@ -603,10 +603,10 @@ export default function AgentProperties() {
                                     <BenchmarkReviewDialog
                                       propertyId={listing.id}
                                       propertyTitle={listing.title}
-                                        benchmarkReviewStatus={(listing as any).benchmark_review_status}
-                                        existingReason={(listing as any).benchmark_review_reason}
-                                        existingNotes={(listing as any).benchmark_review_notes}
-                                        trigger={<DropdownMenuItem disabled={(listing as any).benchmark_review_status === 'requested' || (listing as any).benchmark_review_status === 'under_review'} onSelect={(e) => e.preventDefault()}><AlertTriangle className="h-4 w-4 mr-2" />{(listing as any).benchmark_review_status === 'requested' || (listing as any).benchmark_review_status === 'under_review' ? 'Context under review' : 'Request benchmark review'}</DropdownMenuItem>}
+                                        benchmarkReviewStatus={listing.benchmark_review_status}
+                                        existingReason={listing.benchmark_review_reason}
+                                        existingNotes={listing.benchmark_review_notes}
+                                        trigger={<DropdownMenuItem disabled={listing.benchmark_review_status === 'requested' || listing.benchmark_review_status === 'under_review'} onSelect={(e) => e.preventDefault()}><AlertTriangle className="h-4 w-4 mr-2" />{listing.benchmark_review_status === 'requested' || listing.benchmark_review_status === 'under_review' ? 'Context under review' : 'Request benchmark review'}</DropdownMenuItem>}
                                     />
                                   )}
                                   <DropdownMenuItem onClick={() => archiveListing.mutate({ propertyId: listing.id, agencyId: (listing as any).primary_agency_id })}>
@@ -842,10 +842,10 @@ export default function AgentProperties() {
                                         <BenchmarkReviewDialog
                                           propertyId={listing.id}
                                           propertyTitle={listing.title}
-                                          benchmarkReviewStatus={(listing as any).benchmark_review_status}
-                                          existingReason={(listing as any).benchmark_review_reason}
-                                          existingNotes={(listing as any).benchmark_review_notes}
-                                          trigger={<DropdownMenuItem disabled={(listing as any).benchmark_review_status === 'requested' || (listing as any).benchmark_review_status === 'under_review'} onSelect={(e) => e.preventDefault()}><AlertTriangle className="h-4 w-4 mr-2" />{(listing as any).benchmark_review_status === 'requested' || (listing as any).benchmark_review_status === 'under_review' ? 'Context under review' : 'Request benchmark review'}</DropdownMenuItem>}
+                                          benchmarkReviewStatus={listing.benchmark_review_status}
+                                          existingReason={listing.benchmark_review_reason}
+                                          existingNotes={listing.benchmark_review_notes}
+                                          trigger={<DropdownMenuItem disabled={listing.benchmark_review_status === 'requested' || listing.benchmark_review_status === 'under_review'} onSelect={(e) => e.preventDefault()}><AlertTriangle className="h-4 w-4 mr-2" />{listing.benchmark_review_status === 'requested' || listing.benchmark_review_status === 'under_review' ? 'Context under review' : 'Request benchmark review'}</DropdownMenuItem>}
                                         />
                                       )}
                                       {listing.listing_status === 'for_rent' && (
