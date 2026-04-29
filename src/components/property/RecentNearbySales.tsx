@@ -28,6 +28,15 @@ interface SoldComp {
   is_same_building: boolean;
 }
 
+function getComparablePositionLabel(comparison: number, areaLabel: string) {
+  if (Math.abs(comparison) <= 2) return `Similar price ${areaLabel}`;
+  if (comparison > 25) return 'Large premium to this sale';
+  if (comparison > 12) return 'Premium to this sale';
+  if (comparison > 0) return 'Slightly above this sale';
+  if (comparison < -12) return 'Below this sale';
+  return 'Slightly below this sale';
+}
+
 // Desktop comps list with "Show more" functionality
 function DesktopCompsList({
   comps,
@@ -147,12 +156,7 @@ function DesktopCompsList({
                             : "bg-semantic-green text-semantic-green-foreground hover:bg-semantic-green/90"
                     )}
                   >
-                    {Math.abs(comparison) <= 2
-                      ? `Similar price ${areaLabels.perArea}`
-                      : comparison > 0 
-                        ? `Listing is ${comparison.toFixed(0)}% above this sale`
-                        : `Listing is ${Math.abs(comparison).toFixed(0)}% below this sale`
-                    }
+                    {getComparablePositionLabel(comparison, areaLabels.perArea)}
                   </Badge>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-xs">
@@ -600,12 +604,7 @@ export function RecentNearbySales({
                                         : "bg-semantic-green text-semantic-green-foreground"
                                 )}
                               >
-                                {Math.abs(comparison) <= 2
-                                  ? `Similar price ${areaLabels.perArea}`
-                                  : comparison > 0 
-                                    ? `Listing is ${comparison.toFixed(0)}% above this sale`
-                                    : `Listing is ${Math.abs(comparison).toFixed(0)}% below this sale`
-                                }
+                                  {getComparablePositionLabel(comparison, areaLabels.perArea)}
                               </Badge>
                             </div>
                           )}
