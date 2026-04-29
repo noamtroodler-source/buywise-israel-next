@@ -29,7 +29,6 @@ export type PriceContextPublicLabel =
   | 'Premium property — standard comps may not apply'
   | 'Not enough recorded data to benchmark reliably';
 
-export type PriceContextBadgeStatus = 'automatic';
 export type PriceContextCompClassMatch = 'same_class' | 'similar_class' | 'mixed_fallback' | 'no_comps';
 
 export interface PriceContextCompClassMetadata {
@@ -103,7 +102,6 @@ export interface PriceContextResult {
   confidenceReasons: string[];
   confidenceCaps: PriceContextConfidenceCap[];
   buyerQuestions: string[];
-  badgeStatus: PriceContextBadgeStatus;
   badgeEligible: boolean;
   benchmarkRange: { min: number; max: number } | null;
 }
@@ -460,7 +458,6 @@ export function getPriceContext(input: PriceContextInput): PriceContextResult {
     confidenceReasons: reasons,
     confidenceCaps,
     buyerQuestions,
-    badgeStatus: 'automatic',
     badgeEligible,
     benchmarkRange,
   };

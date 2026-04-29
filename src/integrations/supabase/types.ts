@@ -5582,13 +5582,6 @@ export type Database = {
           bank_guarantee_required: boolean | null
           bathrooms: number | null
           bedrooms: number | null
-          benchmark_review_admin_notes: string | null
-          benchmark_review_notes: string | null
-          benchmark_review_reason: string | null
-          benchmark_review_requested_at: string | null
-          benchmark_review_resolution: string | null
-          benchmark_review_resolved_at: string | null
-          benchmark_review_status: string
           boost_active_until: string | null
           boosted_by_agency_id: string | null
           checks_required: boolean | null
@@ -5644,12 +5637,9 @@ export type Database = {
           premium_drivers: string[]
           premium_explanation: string | null
           price: number
-          price_context_badge_status: string
           price_context_confidence_score: number | null
           price_context_confidence_tier: string | null
           price_context_display_mode: string
-          price_context_featured_eligible: boolean
-          price_context_filter_eligible: boolean
           price_context_percentage_suppressed: boolean
           price_context_placement_eligible: boolean
           price_context_property_class: string | null
@@ -5703,13 +5693,6 @@ export type Database = {
           bank_guarantee_required?: boolean | null
           bathrooms?: number | null
           bedrooms?: number | null
-          benchmark_review_admin_notes?: string | null
-          benchmark_review_notes?: string | null
-          benchmark_review_reason?: string | null
-          benchmark_review_requested_at?: string | null
-          benchmark_review_resolution?: string | null
-          benchmark_review_resolved_at?: string | null
-          benchmark_review_status?: string
           boost_active_until?: string | null
           boosted_by_agency_id?: string | null
           checks_required?: boolean | null
@@ -5765,12 +5748,9 @@ export type Database = {
           premium_drivers?: string[]
           premium_explanation?: string | null
           price: number
-          price_context_badge_status?: string
           price_context_confidence_score?: number | null
           price_context_confidence_tier?: string | null
           price_context_display_mode?: string
-          price_context_featured_eligible?: boolean
-          price_context_filter_eligible?: boolean
           price_context_percentage_suppressed?: boolean
           price_context_placement_eligible?: boolean
           price_context_property_class?: string | null
@@ -5824,13 +5804,6 @@ export type Database = {
           bank_guarantee_required?: boolean | null
           bathrooms?: number | null
           bedrooms?: number | null
-          benchmark_review_admin_notes?: string | null
-          benchmark_review_notes?: string | null
-          benchmark_review_reason?: string | null
-          benchmark_review_requested_at?: string | null
-          benchmark_review_resolution?: string | null
-          benchmark_review_resolved_at?: string | null
-          benchmark_review_status?: string
           boost_active_until?: string | null
           boosted_by_agency_id?: string | null
           checks_required?: boolean | null
@@ -5886,12 +5859,9 @@ export type Database = {
           premium_drivers?: string[]
           premium_explanation?: string | null
           price?: number
-          price_context_badge_status?: string
           price_context_confidence_score?: number | null
           price_context_confidence_tier?: string | null
           price_context_display_mode?: string
-          price_context_featured_eligible?: boolean
-          price_context_filter_eligible?: boolean
           price_context_percentage_suppressed?: boolean
           price_context_placement_eligible?: boolean
           price_context_property_class?: string | null
