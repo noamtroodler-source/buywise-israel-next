@@ -24,7 +24,7 @@ export function SupplyChapter({ dateRange }: SupplyChapterProps) {
   const { data: agentData, isLoading: agentLoading } = useAgentPerformance(dateRange);
   const { data: growthData, isLoading: growthLoading } = useGrowthMetrics(dateRange === 7 ? 7 : dateRange === 30 ? 30 : 30);
   const { data: trendData, isLoading: trendLoading } = useCumulativeGrowth(dateRange);
-  const { data: priceData, isLoading: priceLoading } = usePriceAnalytics();
+  const { data: priceData, isLoading: priceLoading } = usePriceAnalytics(dateRange);
 
   return (
     <div className="space-y-6">

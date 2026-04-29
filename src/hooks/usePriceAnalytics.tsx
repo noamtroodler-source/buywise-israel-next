@@ -20,6 +20,19 @@ export interface BedroomDistribution {
   percentage: number;
 }
 
+export interface PriceContextKpis {
+  totalListings: number;
+  complete: number;
+  incomplete: number;
+  underReview: number;
+  completionRate: number;
+  highConfidence: number;
+  inquiryConversionRate: number;
+  confidenceDistribution: { tier: string; count: number; percentage: number }[];
+  reviewReasons: { reason: string; count: number }[];
+  recentEvents: { eventType: string; count: number }[];
+}
+
 export interface PriceAnalyticsData {
   cityPrices: CityPriceData[];
   priceRanges: PriceRangeData[];
@@ -27,15 +40,30 @@ export interface PriceAnalyticsData {
   avgPlatformPrice: number;
   avgPlatformPriceSqm: number;
   medianPrice: number;
+  priceContext: PriceContextKpis;
 }
 
-export function usePriceAnalytics() {
+const emptyPriceContext: PriceContextKpis = {
+  totalListings: 0,
+  complete: 0,
+  incomplete: 0,
+  underReview: 0,
+  completionRate: 0,
+  highConfidence: 0,
+  inquiryConversionRate: 0,
+  confidenceDistribution: [],
+  reviewReasons: [],
+  recentEvents: [],
+};
+
+export function usePriceAnalytics(days: number = 30) {
   return useQuery({
-    queryKey: ['price-analytics'],
+    queryKey: ['price-analytics', days],
     queryFn: async (): Promise<PriceAnalyticsData> => {
-      const { data: properties } = await supabase
+      const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+      const { data: properties } = await (supabase
         .from('properties')
-        .select('city, price, size_sqm, bedrooms, listing_status')
+        .select('id, city, price, size_sqm, bedrooms, listing_status, price_context_badge_status, price_context_confidence_tier, benchmark_review_status, benchmark_review_reason') as any)
         .eq('listing_status', 'for_sale')
         .gt('price', 0);
 
@@ -47,13 +75,16 @@ export function usePriceAnalytics() {
           avgPlatformPrice: 0,
           avgPlatformPriceSqm: 0,
           medianPrice: 0,
+          priceContext: emptyPriceContext,
         };
       }
+
+      const propertyRows = properties as Array<any>;
 
       // City-level price data
       const cityData: Record<string, { prices: number[]; sizes: number[] }> = {};
       
-      properties.forEach(p => {
+      propertyRows.forEach(p => {
         if (!cityData[p.city]) {
           cityData[p.city] = { prices: [], sizes: [] };
         }
@@ -85,17 +116,17 @@ export function usePriceAnalytics() {
       ];
 
       const priceRangeCounts = priceRangesConfig.map(range => {
-        const count = properties.filter(p => p.price >= range.min && p.price < range.max).length;
+        const count = propertyRows.filter(p => p.price >= range.min && p.price < range.max).length;
         return {
           range: range.label,
           count,
-          percentage: (count / properties.length) * 100,
+          percentage: (count / propertyRows.length) * 100,
         };
       });
 
       // Bedroom distribution
       const bedroomCounts: Record<string, number> = {};
-      properties.forEach(p => {
+      propertyRows.forEach(p => {
         const bedrooms = p.bedrooms || 0;
         const label = bedrooms >= 5 ? '5+' : bedrooms.toString();
         bedroomCounts[label] = (bedroomCounts[label] || 0) + 1;
@@ -105,7 +136,7 @@ export function usePriceAnalytics() {
         .map(([bedrooms, count]) => ({
           bedrooms: bedrooms === '0' ? 'Studio' : `${bedrooms} BR`,
           count,
-          percentage: (count / properties.length) * 100,
+          percentage: (count / propertyRows.length) * 100,
         }))
         .sort((a, b) => {
           const aNum = a.bedrooms === 'Studio' ? 0 : parseInt(a.bedrooms);
@@ -114,15 +145,70 @@ export function usePriceAnalytics() {
         });
 
       // Platform averages
-      const allPrices = properties.map(p => p.price).sort((a, b) => a - b);
+      const allPrices = propertyRows.map(p => p.price).sort((a, b) => a - b);
       const avgPlatformPrice = allPrices.reduce((a, b) => a + b, 0) / allPrices.length;
       
-      const pricesWithSize = properties.filter(p => p.size_sqm && p.size_sqm > 0);
+      const pricesWithSize = propertyRows.filter(p => p.size_sqm && p.size_sqm > 0);
       const avgPlatformPriceSqm = pricesWithSize.length > 0
         ? pricesWithSize.reduce((sum, p) => sum + (p.price / p.size_sqm!), 0) / pricesWithSize.length
         : 0;
 
       const medianPrice = allPrices[Math.floor(allPrices.length / 2)] || 0;
+
+      const contextEligible = propertyRows.filter(p => Boolean(p.price_context_badge_status || p.price_context_confidence_tier));
+      const complete = propertyRows.filter(p => p.price_context_badge_status === 'complete').length;
+      const underReview = propertyRows.filter(p => p.benchmark_review_status === 'requested' || p.benchmark_review_status === 'under_review').length;
+      const incomplete = propertyRows.filter(p => p.price_context_badge_status === 'incomplete' || p.price_context_badge_status === 'blocked').length;
+      const highConfidence = propertyRows.filter(p => p.price_context_confidence_tier === 'strong_comparable_match' || p.price_context_confidence_tier === 'high_confidence').length;
+
+      const confidenceCounts = propertyRows.reduce<Record<string, number>>((acc, p) => {
+        const tier = p.price_context_confidence_tier || 'not_set';
+        acc[tier] = (acc[tier] || 0) + 1;
+        return acc;
+      }, {});
+
+      const confidenceDistribution = Object.entries(confidenceCounts)
+        .map(([tier, count]) => ({
+          tier,
+          count,
+          percentage: propertyRows.length ? (count / propertyRows.length) * 100 : 0,
+        }))
+        .sort((a, b) => b.count - a.count);
+
+      const reviewReasonCounts = propertyRows.reduce<Record<string, number>>((acc, p) => {
+        if (p.benchmark_review_reason) {
+          acc[p.benchmark_review_reason] = (acc[p.benchmark_review_reason] || 0) + 1;
+        }
+        return acc;
+      }, {});
+
+      const [{ data: inquiries }, { data: views }, { data: events }] = await Promise.all([
+        (supabase.from('property_inquiries').select('property_id, created_at') as any).gte('created_at', since),
+        (supabase.from('property_views').select('property_id, created_at') as any).gte('created_at', since),
+        (supabase.from('price_context_events' as any).select('event_type, created_at') as any).gte('created_at', since),
+      ]);
+
+      const completePropertyIds = new Set(propertyRows.filter(p => p.price_context_badge_status === 'complete').map(p => p.id));
+      const completeViews = (views ?? []).filter((view: any) => completePropertyIds.has(view.property_id)).length;
+      const completeInquiries = (inquiries ?? []).filter((inquiry: any) => completePropertyIds.has(inquiry.property_id)).length;
+      const eventCounts = ((events ?? []) as any[]).reduce((acc: Record<string, number>, event: any) => {
+        const key = event.event_type || 'unknown';
+        acc[key] = (acc[key] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      const priceContext: PriceContextKpis = {
+        totalListings: propertyRows.length,
+        complete,
+        incomplete,
+        underReview,
+        completionRate: propertyRows.length ? (complete / propertyRows.length) * 100 : 0,
+        highConfidence,
+        inquiryConversionRate: completeViews ? (completeInquiries / completeViews) * 100 : 0,
+        confidenceDistribution,
+        reviewReasons: Object.entries(reviewReasonCounts).map(([reason, count]) => ({ reason, count })).sort((a, b) => b.count - a.count),
+        recentEvents: Object.entries(eventCounts).map(([eventType, count]) => ({ eventType, count: Number(count) })).sort((a, b) => b.count - a.count),
+      };
 
       return {
         cityPrices,
@@ -131,6 +217,7 @@ export function usePriceAnalytics() {
         avgPlatformPrice,
         avgPlatformPriceSqm,
         medianPrice,
+        priceContext,
       };
     },
   });
