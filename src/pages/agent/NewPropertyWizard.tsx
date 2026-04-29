@@ -81,6 +81,7 @@ function WizardContent() {
   const [duplicateResult, setDuplicateResult] = useState<DuplicateCheckResult | null>(null);
   const [isActingOnDuplicate, setIsActingOnDuplicate] = useState(false);
   const [marketFitConfirmed, setMarketFitConfirmed] = useState(false);
+  const [highestVisitedStep, setHighestVisitedStep] = useState(0);
   const hasCheckedDraft = useRef(false);
 
   const isAgentVerified = agentProfile?.status === 'active';
@@ -108,6 +109,10 @@ function WizardContent() {
   useEffect(() => {
     setMarketFitConfirmed(false);
   }, [marketFitReview.reviewReason]);
+
+  useEffect(() => {
+    setHighestVisitedStep((prev) => Math.max(prev, currentStep));
+  }, [currentStep]);
 
   const autoSave = useAutoSave<PropertyWizardData, WizardMetadata>({
     data,
@@ -400,7 +405,7 @@ function WizardContent() {
 
             {/* Progress */}
             <motion.div variants={itemVariants}>
-              <WizardProgress currentStep={currentStep} steps={steps} onStepClick={setCurrentStep} stepErrors={stepErrors} />
+              <WizardProgress currentStep={currentStep} steps={steps} onStepClick={setCurrentStep} stepErrors={stepErrors} maxErrorStepIndex={Math.max(0, highestVisitedStep - 1)} />
             </motion.div>
 
             {/* Step Content */}
