@@ -26,6 +26,7 @@ interface SpecBasedCompsProps {
   currency?: string;
   sourceRooms?: number | null; // Israeli room count from scraping
   subjectProperty?: Parameters<typeof useSpecBasedSoldComps>[5];
+  onVerdictComputed?: Parameters<typeof import('./RecentNearbySales').RecentNearbySales>[0]['onVerdictComputed'];
   className?: string;
 }
 
@@ -101,6 +102,7 @@ export function SpecBasedComps({
   currency = 'ILS',
   sourceRooms,
   subjectProperty,
+  onVerdictComputed,
   className,
 }: SpecBasedCompsProps) {
   const { data: comps = [], isLoading } = useSpecBasedSoldComps(
@@ -114,6 +116,11 @@ export function SpecBasedComps({
 
   const subjectPriceSqm = price && sizeSqm && sizeSqm > 0 ? price / sizeSqm : null;
   const stats = computeSpecCompStats(comps, subjectPriceSqm);
+
+  if (onVerdictComputed && stats) {
+    // Keep no-address listings wired into the parent Price Context verdict.
+    onVerdictComputed(stats.vsSubjectPct, stats.count, 1000, stats.avgPriceSqm, stats.dispersionPercent, null, null, null);
+  }
 
   const locationLabel = neighborhood ? `${neighborhood}, ${city}` : city;
 
