@@ -56,6 +56,13 @@ export interface PriceContextRecencyMetadata {
   oldestRecencyMonths: number | null;
 }
 
+export interface PriceContextConfidenceCap {
+  code: string;
+  label: string;
+  detail: string;
+  severity: 'warning' | 'critical';
+}
+
 export interface PriceContextInput {
   avgComparison: number | null;
   compsCount: number;
@@ -95,6 +102,7 @@ export interface PriceContextResult {
   detectedPremiumDrivers: string[];
   confirmedPremiumDrivers: string[];
   confidenceReasons: string[];
+  confidenceCaps: PriceContextConfidenceCap[];
   buyerQuestions: string[];
   badgeStatus: PriceContextBadgeStatus;
   badgeEligible: boolean;
