@@ -931,7 +931,11 @@ function normalizeCompactAgencyPrice(
   return warnings;
 }
 
-function validatePropertyData(listing: Record<string, any>, importType: string = "resale"): { errors: string[]; warnings: string[] } {
+function validatePropertyData(
+  listing: Record<string, any>,
+  importType: string = "resale",
+  options: { allowApproximateAgencyLocation?: boolean } = {},
+): { errors: string[]; warnings: string[] } {
   const errors: string[] = [];
   const warnings: string[] = [];
   const currentYear = new Date().getFullYear();
@@ -977,7 +981,10 @@ function validatePropertyData(listing: Record<string, any>, importType: string =
     errors.push(`invalid listing_status '${listing.listing_status}'`);
   }
 
-  if (!hasExactStreetAddress(listing.address)) {
+  if (!hasExactStreetAddress(listing.address) && options.allowApproximateAgencyLocation) {
+    warnings.push("agency listing missing exact street number — imported as flagged draft with approximate location");
+    listing.provisioning_audit_status = "flagged";
+  } else if (!hasExactStreetAddress(listing.address)) {
     errors.push("exact street address with street number required");
   }
 
