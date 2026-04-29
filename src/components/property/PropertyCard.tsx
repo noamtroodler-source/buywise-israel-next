@@ -237,7 +237,7 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
     Boolean((property as any).premium_explanation) ||
     ['feature_driven_premium', 'soft_prompt', 'context_required', 'review_required'].includes((property as any).market_fit_status)
   );
-  const showPriceContextSoftBadge = showBroadPriceContext && property.listing_status === 'for_sale' && property.price_context_badge_status === 'complete';
+  const showPriceContextSoftBadge = showBroadPriceContext && property.listing_status === 'for_sale' && Boolean(property.price_context_public_label);
 
   const goToPrevImage = useCallback(() => {
     setImageLoaded(false);
