@@ -450,10 +450,21 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
   });
 
   const benchmarkCards: BenchmarkCard[] = useMemo(() => {
+    const broaderAreaValue = neighborhoodAvgPriceSqm
+      ? formatNisPerSqmRange(neighborhoodAvgPriceSqm * 0.95, neighborhoodAvgPriceSqm * 1.05)
+      : effectiveAvgPriceSqm
+        ? formatNisPerSqmRange(effectiveAvgPriceSqm * 0.95, effectiveAvgPriceSqm * 1.05)
+        : 'Directional only';
+    const broaderAreaDetail = neighborhoodAvgPriceSqm
+      ? `${property.neighborhood || property.city} recorded-sale context.`
+      : effectiveAvgPriceSqm
+        ? `Broader ${property.city} recorded-sale context.`
+        : 'Not enough area benchmark data is available.';
+
     const cards: BenchmarkCard[] = [
       {
         id: 'asking_price_sqm',
-        label: 'Asking price / sqm',
+        label: 'This listing',
         value: formatNisPerSqm(propertyPricePerSqm),
         detail: property.size_sqm ? 'Listing ask normalized by stated size.' : 'Size is missing, so price/sqm is unavailable.',
         icon: Ruler,
@@ -468,37 +479,16 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
         icon: MapPin,
       },
       {
-        id: 'neighborhood_benchmark',
-        label: property.neighborhood ? `${property.neighborhood} benchmark` : 'Neighborhood benchmark',
-        value: neighborhoodAvgPriceSqm ? formatNisPerSqmRange(neighborhoodAvgPriceSqm * 0.95, neighborhoodAvgPriceSqm * 1.05) : 'Directional only',
-        detail: neighborhoodAvgPriceSqm ? 'Neighborhood recorded-sale context, not a final valuation.' : 'Not enough neighborhood benchmark data is available.',
+        id: 'broader_area_benchmark',
+        label: 'Broader area',
+        value: broaderAreaValue,
+        detail: broaderAreaDetail,
         icon: Building2,
-      },
-      {
-        id: 'city_benchmark',
-        label: `${property.city} benchmark`,
-        value: effectiveAvgPriceSqm ? formatNisPerSqmRange(effectiveAvgPriceSqm * 0.95, effectiveAvgPriceSqm * 1.05) : 'No city benchmark yet',
-        detail: roomPrice?.avgPriceSqm ? `${property.city} ${israeliRooms ?? ''}-room recorded-sale context.` : 'Broader city-wide recorded-sale context.',
-        icon: Home,
-      },
-      {
-        id: 'same_room_benchmark',
-        label: israeliRooms ? `${property.city} ${israeliRooms}-room benchmark` : 'Same-room benchmark',
-        value: roomPrice?.avgPrice ? formatNisAmount(roomPrice.avgPrice) : 'Not available',
-        detail: roomPrice?.avgPrice ? 'Total-price reference for similar Israeli room count.' : 'Room-specific data is not available for this listing.',
-        icon: TrendingUp,
-      },
-      {
-        id: 'comparable_confidence',
-        label: 'Comparable confidence',
-        value: priceContext.confidenceLabel,
-        detail: priceContext.propertyClassLabel,
-        icon: ShieldCheck,
       },
     ];
 
     return cards;
-  }, [effectiveAvgPriceSqm, israeliRooms, neighborhoodAvgPriceSqm, priceContext.benchmarkRange, priceContext.confidenceLabel, priceContext.propertyClassLabel, property.city, property.neighborhood, property.size_sqm, propertyPricePerSqm, roomPrice?.avgPrice, roomPrice?.avgPriceSqm, verdictData.compsCount, verdictData.radiusUsedM]);
+  }, [effectiveAvgPriceSqm, neighborhoodAvgPriceSqm, priceContext.benchmarkRange, property.city, property.neighborhood, property.size_sqm, propertyPricePerSqm, verdictData.compsCount, verdictData.radiusUsedM]);
 
   const benchmarkRanges: BenchmarkRange[] = useMemo(() => {
     const ranges: BenchmarkRange[] = [];
