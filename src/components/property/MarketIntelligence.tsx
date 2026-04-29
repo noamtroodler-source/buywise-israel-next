@@ -287,6 +287,21 @@ function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchma
   const radiusLabel = radiusUsedM >= 1000 ? '1km' : `${radiusUsedM}m`;
   const buyerTakeaway = buildBuyerTakeaway(priceContext);
   const confidence = buildPriceConfidence(priceContext);
+  const confidenceNotes = [
+    compsCount > 0
+      ? `${compsCount} recorded sale${compsCount > 1 ? 's' : ''} checked within ${radiusLabel}.`
+      : 'No close listing-level recorded sales were available, so this leans on local benchmarks.',
+    priceContext.propertyClass !== 'standard_resale'
+      ? `${priceContext.propertyClassLabel} listings are harder to compare directly.`
+      : null,
+    ...priceContext.confidenceCaps.slice(0, 2).map((cap) => cap.detail),
+    !sqmSource || sqmSource === 'unknown'
+      ? 'Property size source is unknown, so price/sqm should be verified with the agent.'
+      : null,
+    !ownershipType || ownershipType === 'unknown'
+      ? 'Ownership type should be confirmed during due diligence.'
+      : null,
+  ].filter(Boolean).slice(0, 4) as string[];
   const subtitle = priceContext.isLuxuryPremiumMode
     ? 'Recorded sales and local benchmarks to give background only — luxury properties can trade far above standard ranges.'
     : 'Recorded sales and local benchmarks to help you understand the asking price.';
@@ -330,41 +345,25 @@ function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchma
       <Collapsible onOpenChange={(nextOpen) => nextOpen && onTrackInteraction?.('price_context_details_opened', { confidence_tier: priceContext.confidenceTier })}>
         <CollapsibleTrigger asChild>
           <Button variant="ghost" size="sm" className="h-8 px-1 text-xs text-muted-foreground hover:bg-primary/5 hover:text-primary">
-            <Calculator className="mr-1 h-3.5 w-3.5" /> How we calculated this
+            <Calculator className="mr-1 h-3.5 w-3.5" /> Confidence notes
             <ChevronDown className="ml-1 h-3.5 w-3.5" />
           </Button>
         </CollapsibleTrigger>
         <CollapsibleContent className="pt-2">
-          <div className="rounded-lg border border-primary/10 bg-background/80 p-3 text-xs text-muted-foreground space-y-2">
-            <div>
-              <p className="font-medium text-foreground">Benchmark layers used:</p>
-              <ul className="mt-1 space-y-1 pl-4">
-                {benchmarkRanges.length > 0 ? benchmarkRanges.map((range) => (
-                  <li key={range.id} className="list-disc">
-                    {range.label}: {formatNisPerSqmRange(range.min, range.max)} — {range.detail}.
-                  </li>
-                )) : (
-                  <li className="list-disc">No reliable price/sqm benchmark layer is available yet for this listing.</li>
-                )}
-              </ul>
-            </div>
-            <p>Comp set summary: {compsCount > 0 ? `${compsCount} recorded sale${compsCount > 1 ? 's' : ''} within ${radiusLabel}` : 'local city or neighborhood benchmarks when listing-level comps are limited'}.</p>
-            <p>Property class: {priceContext.propertyClassLabel}. Standard resale, premium, new-build, garden, penthouse, and house/villa listings are treated cautiously because they do not trade the same way.</p>
-            <p>Benchmark interpretation: these layers provide context across available recorded-sale references; they are not an estimated fair value or appraisal.</p>
-            <p>SQM source: {formatPriceContextValue(sqmSource)}. {PRICE_CONTEXT_SIZE_NOTE}</p>
-            <p>Ownership type: {formatPriceContextValue(ownershipType)}. Ownership structure can affect buyer due diligence and how closely recorded resale benchmarks apply.</p>
-            {priceContext.confidenceCaps.length > 0 && (
-              <div>
-                <p className="font-medium text-foreground">Limitations applied:</p>
-                <ul className="mt-1 space-y-1 pl-4">
-                  {priceContext.confidenceCaps.map((cap) => (
-                    <li key={cap.code} className="list-disc">{cap.label}: {cap.detail}</li>
-                  ))}
-                </ul>
-              </div>
+          <div className="rounded-lg border border-primary/10 bg-background/80 p-3 text-xs text-muted-foreground space-y-3">
+            <ul className="space-y-1.5 pl-4">
+              {confidenceNotes.map((note) => (
+                <li key={note} className="list-disc">{note}</li>
+              ))}
+            </ul>
+            {benchmarkRanges.length > 0 && (
+              <p>
+                Benchmarks used: {benchmarkRanges.map((range) => `${range.label} ${formatNisPerSqmRange(range.min, range.max)}`).join(' · ')}.
+              </p>
             )}
-            {priceContext.percentageSuppressionReason && <p>Display guardrail: {priceContext.percentageSuppressionReason}</p>}
-            <p>{PRICE_CONTEXT_DISCLAIMER}</p>
+            <p className="border-t border-border/40 pt-2">
+              This is guidance from recorded sales and listing details, not an appraisal or exact fair-value estimate.
+            </p>
           </div>
         </CollapsibleContent>
       </Collapsible>
