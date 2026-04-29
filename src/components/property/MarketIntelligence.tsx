@@ -7,7 +7,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { RecentNearbySales } from './RecentNearbySales';
 import { SpecBasedComps } from './SpecBasedComps';
@@ -194,6 +193,9 @@ function PremiumContextSummary({ priceContext, premiumExplanation }: { priceCont
 }
 
 function buildBuyerTakeaway(priceContext: PriceContextResult) {
+  if (priceContext.isLuxuryPremiumMode) {
+    return 'Treat this as luxury-property context. Public sales data is background only; ask which specific features, rights, and comparable luxury sales support the premium.';
+  }
   if (priceContext.publicLabel === 'Market context under review') {
     return 'This benchmark is under review, so use the current context as directional only.';
   }
@@ -213,21 +215,26 @@ function MarketVerdictBadge({ compsCount, radiusUsedM, priceTier, priceContext }
   const radiusLabel = radiusUsedM >= 1000 ? '1km' : '500m';
   const isPositive = priceContext.publicLabel === 'In line with available benchmarks';
   const isNeutral = priceContext.percentageSuppressed || priceContext.confidenceTier !== 'strong_comparable_match';
+  const badgeLabel = priceContext.isLuxuryPremiumMode
+    ? 'Premium property — standard comps may not apply'
+    : priceContext.displayGapPercent !== null
+      ? `${priceContext.displayGapPercent > 0 ? '+' : ''}${priceContext.displayGapPercent}% vs selected benchmarks`
+      : priceContext.publicLabel;
 
   const badge = (
     <Badge
       variant={isNeutral ? 'secondary' : undefined}
       className={isNeutral ? 'text-xs' : isPositive ? 'bg-semantic-green text-semantic-green-foreground border-semantic-green' : 'bg-semantic-amber text-semantic-amber-foreground border-semantic-amber'}
     >
-      {priceContext.displayGapPercent !== null
-        ? `${priceContext.displayGapPercent > 0 ? '+' : ''}${priceContext.displayGapPercent}% vs selected benchmarks`
-        : priceContext.publicLabel}
+      {badgeLabel}
     </Badge>
   );
 
-  const contextLine = priceTier && priceTier !== 'standard'
-    ? `Comparing against similar ${priceTier}-tier properties`
-    : priceContext.buyWiseTake;
+  const contextLine = priceContext.isLuxuryPremiumMode
+    ? null
+    : priceTier && priceTier !== 'standard'
+      ? `Comparing against similar ${priceTier}-tier properties`
+      : priceContext.buyWiseTake;
 
   return (
     <div className="space-y-1">
@@ -254,6 +261,9 @@ function MarketVerdictBadge({ compsCount, radiusUsedM, priceTier, priceContext }
 function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchmarkRanges, compsCount, radiusUsedM, sqmSource, ownershipType, onTrackInteraction }: { priceContext: PriceContextResult; premiumExplanation?: string | null; benchmarkCards: BenchmarkCard[]; benchmarkRanges: BenchmarkRange[]; propertyPricePerSqm: number | null; compsCount: number; radiusUsedM: number; sqmSource?: string | null; ownershipType?: string | null; onTrackInteraction?: (eventName: string, properties?: Record<string, unknown>) => void }) {
   const radiusLabel = radiusUsedM >= 1000 ? '1km' : `${radiusUsedM}m`;
   const buyerTakeaway = buildBuyerTakeaway(priceContext);
+  const subtitle = priceContext.isLuxuryPremiumMode
+    ? 'Recorded sales and local benchmarks to give background only — luxury properties can trade far above standard ranges.'
+    : 'Recorded sales and local benchmarks to help you understand the asking price.';
 
   return (
     <div className="rounded-lg border border-primary/15 bg-primary/5 p-4 space-y-3">
@@ -267,7 +277,7 @@ function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchma
               <p className="text-sm font-semibold text-foreground">BuyWise Price Context</p>
               <Badge variant="secondary" className="text-xs">{priceContext.publicLabel}</Badge>
             </div>
-            <p className="text-xs text-muted-foreground">Recorded sales and local benchmarks to help you understand the asking price.</p>
+            <p className="text-xs text-muted-foreground">{subtitle}</p>
           </div>
           <div className="mt-3 grid gap-2 md:grid-cols-3">
             {benchmarkCards.map((card) => (
@@ -470,24 +480,26 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
       },
       {
         id: 'nearby_recorded_sales',
-        label: 'Nearby recorded sales',
+        label: priceContext.isLuxuryPremiumMode ? 'Nearby sales context' : 'Nearby recorded sales',
         value: priceContext.benchmarkRange && verdictData.compsCount > 0 ? formatNisPerSqmRange(priceContext.benchmarkRange.min, priceContext.benchmarkRange.max) : 'Limited nearby evidence',
         detail: verdictData.compsCount > 0
-          ? `${verdictData.compsCount} recorded sale${verdictData.compsCount > 1 ? 's' : ''} within ${verdictData.radiusUsedM >= 1000 ? '1km' : `${verdictData.radiusUsedM}m`}.`
+          ? priceContext.isLuxuryPremiumMode
+            ? `${verdictData.compsCount} standard recorded sale${verdictData.compsCount > 1 ? 's' : ''} within ${verdictData.radiusUsedM >= 1000 ? '1km' : `${verdictData.radiusUsedM}m`}; background only for luxury evaluation.`
+            : `${verdictData.compsCount} recorded sale${verdictData.compsCount > 1 ? 's' : ''} within ${verdictData.radiusUsedM >= 1000 ? '1km' : `${verdictData.radiusUsedM}m`}.`
           : 'No listing-level nearby sale range is available yet.',
         icon: MapPin,
       },
       {
         id: 'broader_area_benchmark',
-        label: neighborhoodAvgPriceSqm ? 'Area benchmark' : 'Area benchmark · directional',
+        label: priceContext.isLuxuryPremiumMode ? 'Area benchmark' : neighborhoodAvgPriceSqm ? 'Area benchmark' : 'Area benchmark · directional',
         value: broaderAreaValue,
-        detail: broaderAreaDetail,
+        detail: priceContext.isLuxuryPremiumMode ? `${broaderAreaDetail} Standard recorded-sale context, not a luxury valuation.` : broaderAreaDetail,
         icon: Building2,
       },
     ];
 
     return cards;
-  }, [effectiveAvgPriceSqm, neighborhoodAvgPriceSqm, priceContext.benchmarkRange, property.city, property.neighborhood, property.size_sqm, propertyPricePerSqm, verdictData.compsCount, verdictData.radiusUsedM]);
+  }, [effectiveAvgPriceSqm, neighborhoodAvgPriceSqm, priceContext.benchmarkRange, priceContext.isLuxuryPremiumMode, property.city, property.neighborhood, property.size_sqm, propertyPricePerSqm, verdictData.compsCount, verdictData.radiusUsedM]);
 
   const benchmarkRanges: BenchmarkRange[] = useMemo(() => {
     const ranges: BenchmarkRange[] = [];
@@ -646,18 +658,6 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
           priceContext={priceContext}
         />
 
-        {/* Divider with evidence count */}
-        <div className="flex items-center gap-3">
-          <Separator className="flex-1" />
-          <span className="text-xs text-muted-foreground whitespace-nowrap">
-            {verdictData.compsCount > 0 
-              ? `Based on ${verdictData.compsCount} verified sale${verdictData.compsCount > 1 ? 's' : ''} within ${verdictData.radiusUsedM >= 1000 ? '1km' : '500m'}`
-              : `Nearby sales within ${verdictData.radiusUsedM >= 1000 ? '1km' : '500m'}`
-            }
-          </span>
-          <Separator className="flex-1" />
-        </div>
-
         {/* Comps List — use spec-based when no coordinates (sourced listings with no address) */}
         {property.latitude && property.longitude ? (
           <RecentNearbySales
@@ -670,6 +670,7 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
             subjectProperty={property}
             hideHeader
             hideVerdict
+            calculationOnly
             onVerdictComputed={handleVerdictComputed}
             onCompsViewed={handleCompsViewed}
           />
@@ -683,6 +684,7 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
             currency={property.currency ?? 'ILS'}
             sourceRooms={property.source_rooms}
             subjectProperty={property}
+            calculationOnly
             onVerdictComputed={handleVerdictComputed}
             onCompsViewed={handleCompsViewed}
           />

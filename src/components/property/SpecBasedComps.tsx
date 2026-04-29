@@ -43,6 +43,7 @@ interface SpecBasedCompsProps {
   subjectProperty?: Parameters<typeof useSpecBasedSoldComps>[5];
   onVerdictComputed?: (avgComparison: number | null, compsCount: number, radiusUsedM: number, avgCompPriceSqm: number | null, compDispersionPercent?: number | null, compClassMatch?: PriceContextCompClassMatch | null, roomMatchQuality?: PriceContextSpecMatchQuality | null, sizeMatchQuality?: PriceContextSpecMatchQuality | null, compRecencyMonths?: number | null) => void;
   onCompsViewed?: (payload: { compsCount: number; radiusUsedM: number; source: 'spec_based_sales' }) => void;
+  calculationOnly?: boolean;
   className?: string;
 }
 
@@ -119,6 +120,7 @@ export function SpecBasedComps({
   subjectProperty,
   onVerdictComputed,
   onCompsViewed,
+  calculationOnly = false,
   className,
 }: SpecBasedCompsProps) {
   const { data: comps = [], isLoading } = useSpecBasedSoldComps(
@@ -146,6 +148,8 @@ export function SpecBasedComps({
   }, [isLoading, comps.length, onCompsViewed]);
 
   const locationLabel = neighborhood ? `${neighborhood}, ${city}` : city;
+
+  if (calculationOnly) return null;
 
   if (isLoading) {
     return (
