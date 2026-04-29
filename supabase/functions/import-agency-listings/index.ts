@@ -329,6 +329,14 @@ function hasHebrewText(value: unknown): boolean {
   return typeof value === "string" && /[\u0590-\u05FF]/.test(value);
 }
 
+function hasExactStreetAddress(value: unknown): boolean {
+  if (typeof value !== "string") return false;
+  const address = value.trim();
+  if (!address || !/\d{1,5}/.test(address)) return false;
+  const withoutNumbers = address.replace(/\d+/g, " ").replace(/[,.#/-]/g, " ").replace(/\s+/g, " ").trim();
+  return /[A-Za-z\u0590-\u05FF]{2,}/.test(withoutNumbers);
+}
+
 async function translateHebrewLocationFields(listing: any, sourceText: string, lovableKey: string, jobId?: string, sb?: any): Promise<void> {
   if (!lovableKey) return;
   const needsAddress = hasHebrewText(listing.address);
@@ -887,6 +895,10 @@ function validatePropertyData(listing: Record<string, any>, importType: string =
   }
   if (listing.listing_status && !VALID_LISTING_STATUSES.includes(listing.listing_status)) {
     errors.push(`invalid listing_status '${listing.listing_status}'`);
+  }
+
+  if (!hasExactStreetAddress(listing.address)) {
+    errors.push("exact street address with street number required");
   }
 
   // Numeric sanity
@@ -6640,6 +6652,18 @@ async function runMadlanAgencyDiscoverJob(params: {
           );
           city = listing.city || city;
           address = listing.address || address;
+
+          if (!hasExactStreetAddress(address)) {
+            await sb.from("import_job_items").insert({
+              job_id: jobId,
+              url: listingUrl,
+              status: "skipped",
+              error_message: "Exact street address with street number required",
+              error_type: "permanent",
+              extracted_data: { ...listing, validation_errors: ["exact street address with street number required"] },
+            });
+            continue;
+          }
 
           const copy = await generateBuyWiseTitleAndDescription(
             listing,
