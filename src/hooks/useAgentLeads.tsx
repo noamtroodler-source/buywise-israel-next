@@ -19,12 +19,26 @@ export interface Lead {
   contacted_at: string | null;
   is_read: boolean;
   created_at: string;
+  quality_feedback?: {
+    id: string;
+    lead_quality_rating: number | null;
+    buyer_preparedness: string | null;
+    lead_quality_reason: string | null;
+    price_context_complete: boolean | null;
+    price_context_confidence_tier: string | null;
+    price_context_badge_status: string | null;
+    price_context_public_label: string | null;
+  } | null;
   property: {
     id: string;
     title: string;
     city: string;
     price: number;
     images: string[] | null;
+    price_context_confidence_tier: string | null;
+    price_context_badge_status: string | null;
+    price_context_public_label: string | null;
+    price_context_percentage_suppressed: boolean | null;
   } | null;
 }
 
@@ -62,7 +76,7 @@ export function useAgentLeads(statusFilter?: LeadStatus | 'all') {
           contacted_at,
           is_read,
           created_at,
-          property:properties(id, title, city, price, images)
+          property:properties(id, title, city, price, images, price_context_confidence_tier, price_context_badge_status, price_context_public_label, price_context_percentage_suppressed)
         `)
         .eq('agent_id', agent.id)
         .order('created_at', { ascending: false });
@@ -75,9 +89,91 @@ export function useAgentLeads(statusFilter?: LeadStatus | 'all') {
       const { data, error } = await query;
 
       if (error) throw error;
-      return data as Lead[];
+
+      const leads = (data ?? []) as Lead[];
+      const leadIds = leads.map((lead) => lead.id);
+
+      if (leadIds.length === 0) return leads;
+
+      const { data: qualityEvents, error: qualityError } = await (supabase.from('lead_response_events' as any) as any)
+        .select('id, inquiry_id, lead_quality_rating, buyer_preparedness, lead_quality_reason, price_context_complete, price_context_confidence_tier, price_context_badge_status, price_context_public_label, created_at')
+        .in('inquiry_id', leadIds)
+        .not('lead_quality_rating', 'is', null)
+        .order('created_at', { ascending: false });
+
+      if (qualityError) throw qualityError;
+
+      const feedbackByLead = new Map<string, Lead['quality_feedback']>();
+      (qualityEvents ?? []).forEach((event: any) => {
+        if (!feedbackByLead.has(event.inquiry_id)) {
+          feedbackByLead.set(event.inquiry_id, event);
+        }
+      });
+
+      return leads.map((lead) => ({
+        ...lead,
+        quality_feedback: feedbackByLead.get(lead.id) ?? null,
+      }));
     },
     enabled: !!user?.id,
+  });
+}
+
+export function useUpsertLeadQualityFeedback() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      lead,
+      rating,
+      buyerPreparedness,
+      reason,
+    }: {
+      lead: Lead;
+      rating: number;
+      buyerPreparedness: 'well_prepared' | 'some_context' | 'unclear' | 'unqualified';
+      reason?: string;
+    }) => {
+      const priceContextComplete = lead.property?.price_context_badge_status === 'complete'
+        || lead.property?.price_context_confidence_tier === 'strong_comparable_match'
+        || lead.property?.price_context_percentage_suppressed === false;
+
+      const payload = {
+        inquiry_id: lead.id,
+        inquiry_type: 'property',
+        agent_id: lead.agent_id,
+        lead_quality_rating: rating,
+        buyer_preparedness: buyerPreparedness,
+        lead_quality_reason: reason?.trim() || null,
+        price_context_complete: priceContextComplete,
+        price_context_confidence_tier: lead.property?.price_context_confidence_tier ?? null,
+        price_context_badge_status: lead.property?.price_context_badge_status ?? null,
+        price_context_public_label: lead.property?.price_context_public_label ?? null,
+        responded_at: new Date().toISOString(),
+      };
+
+      if (lead.quality_feedback?.id) {
+        const { error } = await (supabase.from('lead_response_events' as any) as any)
+          .update(payload)
+          .eq('id', lead.quality_feedback.id);
+        if (error) throw error;
+        return;
+      }
+
+      const { error } = await (supabase.from('lead_response_events' as any) as any)
+        .insert(payload);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agent-leads'] });
+      queryClient.invalidateQueries({ queryKey: ['lead-quality-analytics'] });
+      toast.success('Lead quality saved');
+    },
+    onError: (error) => {
+      console.error('Failed to save lead quality:', error);
+      toast.error('Failed to save lead quality');
+    },
   });
 }
 
