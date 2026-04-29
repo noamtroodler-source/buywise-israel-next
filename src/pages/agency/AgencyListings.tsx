@@ -831,12 +831,6 @@ export default function AgencyListings() {
                                       </>
                                     ) : (
                                       <>
-                                        {canConfirmForReview && (
-                                          <DropdownMenuItem onClick={() => confirmAgencyListing.mutate({ propertyId: listing.id, agencyId: agency.id })} disabled={confirmAgencyListing.isPending}>
-                                            <Send className="h-4 w-4 mr-2" />
-                                            Confirm accuracy
-                                          </DropdownMenuItem>
-                                        )}
                                         {isPendingReview && (
                                           <DropdownMenuItem disabled className="text-muted-foreground">
                                             <Clock className="h-4 w-4 mr-2" />
