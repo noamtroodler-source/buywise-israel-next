@@ -386,7 +386,7 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
 
   // Price tier classification (replaces old isPremiumSegment hack)
   const propertyPricePerSqm = property.size_sqm ? Math.round(property.price / property.size_sqm) : null;
-  const { tier: priceTier, tierLabel, tierAvgPriceSqm } = usePriceTier(
+  const { tier: priceTier, tierAvgPriceSqm } = usePriceTier(
     property.city,
     israeliRooms,
     propertyPricePerSqm
