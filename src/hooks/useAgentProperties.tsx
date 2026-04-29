@@ -59,7 +59,6 @@ export interface CreatePropertyData {
     premium_explanation?: string | null;
      sqm_source?: string | null;
      ownership_type?: string | null;
-     benchmark_review_status?: string | null;
     market_fit_status?: string | null;
      market_fit_confirmed_at?: string | null;
      market_fit_review_reason?: string | null;
@@ -68,10 +67,7 @@ export interface CreatePropertyData {
       price_context_confidence_tier?: string | null;
       price_context_public_label?: string | null;
       price_context_percentage_suppressed?: boolean | null;
-      price_context_badge_status?: string | null;
       comp_pool_used?: string | null;
-      benchmark_review_reason?: string | null;
-      benchmark_review_notes?: string | null;
 }
 
 export function useAgentProfile() {
