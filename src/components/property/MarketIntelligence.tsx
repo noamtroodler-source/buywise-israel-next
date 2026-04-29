@@ -1,7 +1,9 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { BarChart3, ShieldCheck, Info, ArrowRight, ChevronDown, CircleHelp, CheckCircle2, Calculator, Ruler, TrendingUp } from 'lucide-react';
 import { getIsraeliRoomCount } from '@/lib/israeliRoomCount';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -16,7 +18,25 @@ import { useNeighborhoodAvgPrice } from '@/hooks/useNeighborhoodPrices';
 import { usePriceTier } from '@/hooks/usePriceTier';
 import type { PriceTier } from '@/hooks/usePriceTier';
 import { getPriceContext, type PriceContextResult } from '@/lib/priceContext';
-import { useEventTracking } from '@/hooks/useEventTracking';
+
+const SESSION_KEY = 'analytics_session_id';
+const SESSION_EXPIRY_KEY = 'analytics_session_expiry';
+const SESSION_DURATION = 30 * 60 * 1000;
+
+function getOrCreateAnalyticsSessionId() {
+  const existingSession = sessionStorage.getItem(SESSION_KEY);
+  const expiry = sessionStorage.getItem(SESSION_EXPIRY_KEY);
+
+  if (existingSession && expiry && Date.now() < parseInt(expiry)) {
+    sessionStorage.setItem(SESSION_EXPIRY_KEY, String(Date.now() + SESSION_DURATION));
+    return existingSession;
+  }
+
+  const newSession = `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+  sessionStorage.setItem(SESSION_KEY, newSession);
+  sessionStorage.setItem(SESSION_EXPIRY_KEY, String(Date.now() + SESSION_DURATION));
+  return newSession;
+}
 
 interface MarketIntelligenceProps {
   property: {
