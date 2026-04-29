@@ -249,10 +249,7 @@ function applyFilters(query: any, filters?: PropertyFilters, buyerPriceContextFi
     query = query.eq('listing_status', filters.listing_status);
   }
   if (filters.pricing_context_complete && buyerPriceContextFilterEnabled) {
-    query = query
-      .eq('price_context_filter_eligible', true)
-      .neq('benchmark_review_status', 'requested')
-      .neq('benchmark_review_status', 'under_review');
+    query = query.eq('price_context_filter_eligible', true);
   }
   if (filters.min_price) {
     query = query.gte('price', filters.min_price);
