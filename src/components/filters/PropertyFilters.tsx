@@ -267,6 +267,7 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
     if (filters.available_now || filters.available_by) count++;
     if (filters.allows_pets?.length) count++;
     if (filters.commute_destination && filters.max_commute_minutes) count++;
+    if (filters.pricing_context_complete) count++;
     return count;
   }, [filters]);
   
@@ -327,6 +328,7 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
       // Commute filter
       commute_destination: undefined,
       max_commute_minutes: undefined,
+      pricing_context_complete: undefined,
     });
   };
   
