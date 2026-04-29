@@ -294,13 +294,13 @@ function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchma
 
       <Collapsible onOpenChange={(nextOpen) => nextOpen && onTrackInteraction?.('price_context_details_opened', { confidence_tier: priceContext.confidenceTier })}>
         <CollapsibleTrigger asChild>
-          <Button variant="ghost" size="sm" className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground">
+          <Button variant="ghost" size="sm" className="h-8 px-0 text-xs text-muted-foreground hover:bg-transparent hover:text-foreground">
             <Calculator className="mr-1 h-3.5 w-3.5" /> How we calculated this
             <ChevronDown className="ml-1 h-3.5 w-3.5" />
           </Button>
         </CollapsibleTrigger>
         <CollapsibleContent className="pt-2">
-          <div className="rounded-lg border border-border/70 bg-background/70 p-3 text-xs text-muted-foreground space-y-2">
+          <div className="rounded-lg border border-border bg-muted/20 p-3 text-xs text-muted-foreground space-y-2">
             <div>
               <p className="font-medium text-foreground">Benchmark layers used:</p>
               <ul className="mt-1 space-y-1 pl-4">
