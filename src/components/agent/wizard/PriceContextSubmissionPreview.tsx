@@ -52,7 +52,7 @@ export function PriceContextSubmissionPreview({
       <AlertTitle className="text-foreground">Price Context preview</AlertTitle>
       <AlertDescription className="space-y-4 text-muted-foreground">
         <p>
-          This mirrors the buyer-facing Price Context module, including grouped premium context and the public disclaimer language.
+          BuyWise will generate buyer-facing price context automatically from available recorded sales, listing details, and local benchmarks.
         </p>
         <div className="rounded-xl border border-primary/15 bg-background/80 p-4 space-y-4">
           <div className="flex items-start gap-3">
@@ -168,7 +168,7 @@ export function PriceContextSubmissionPreview({
           {!needsDetails && !needsPremiumContext && (
             <Badge variant="outline" className="bg-background/80 text-foreground">
               <CheckCircle2 className="mr-1 h-3 w-3 text-primary" />
-              {priceContext.badgeEligible ? 'Pricing Context Complete' : 'Buyer-safe context is complete'}
+              Automatic buyer context ready
             </Badge>
           )}
         </div>
@@ -183,7 +183,7 @@ export function PriceContextSubmissionPreview({
             <Checkbox checked={confirmed} onCheckedChange={(checked) => onConfirmedChange(Boolean(checked))} />
             <span className="flex gap-2">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-semantic-amber" />
-              I confirm the asking price and understand admins may review the pricing context before publishing.
+              I confirm the asking price and understand BuyWise will present it with automatic, cautious buyer context.
             </span>
           </label>
         )}

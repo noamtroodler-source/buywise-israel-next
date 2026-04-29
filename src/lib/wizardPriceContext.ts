@@ -25,7 +25,6 @@ export function getWizardPriceContextPersistence(data: PropertyWizardData, cityA
       price_context_confidence_tier: null,
       price_context_public_label: null,
       price_context_percentage_suppressed: null,
-      price_context_badge_status: null,
       comp_pool_used: null,
     };
   }
@@ -37,7 +36,6 @@ export function getWizardPriceContextPersistence(data: PropertyWizardData, cityA
     price_context_confidence_tier: context.confidenceTier,
     price_context_public_label: context.publicLabel,
     price_context_percentage_suppressed: context.percentageSuppressed,
-    price_context_badge_status: context.badgeStatus,
     comp_pool_used: cityAveragePriceSqm ? 'city_benchmark_wizard_preview' : 'wizard_preview_insufficient_data',
   };
 }

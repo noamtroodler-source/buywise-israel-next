@@ -59,7 +59,6 @@ export interface PropertyWizardData {
   premium_drivers: string[];
   premium_explanation: string;
   premium_context_touched: boolean;
-  benchmark_review_status: string;
    
     // Edit mode: the saved/published price for comparison
     savedPrice?: number;
@@ -147,7 +146,6 @@ export const defaultPropertyData: PropertyWizardData = {
     premium_drivers: [],
     premium_explanation: '',
     premium_context_touched: false,
-     benchmark_review_status: 'none',
   images: [],
   description: '',
   highlights: [],

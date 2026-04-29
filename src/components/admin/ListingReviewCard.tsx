@@ -804,8 +804,8 @@ function MarketPanel({ property, market, reviewed, onReviewedChange, onBenchmark
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h4 className="font-semibold text-foreground">Price Context diagnostics</h4>
-              <Badge className={toneBadgeClass(market.priceContext.badgeEligible ? 'ready' : market.priceContext.badgeStatus === 'blocked' ? 'warning' : 'review')}>
-                {market.priceContext.badgeEligible ? 'Badge eligible' : formatPriceContextValue(market.priceContext.badgeStatus)}
+              <Badge className={toneBadgeClass(market.priceContext.badgeEligible ? 'ready' : 'review')}>
+                {market.priceContext.badgeEligible ? 'Context ready' : 'Automatic context'}
               </Badge>
             </div>
             <p className="mt-1 text-xs text-muted-foreground">Internal raw gaps stay here; buyers see the safer public label.</p>
