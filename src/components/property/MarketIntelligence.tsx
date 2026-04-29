@@ -101,6 +101,10 @@ function formatPremiumDriver(driver: string) {
   return driver.replace(/[_/]+/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
+function uniqueStrings(values: string[]) {
+  return Array.from(new Set(values.filter(Boolean)));
+}
+
 function formatNisPerSqm(value: number | null | undefined) {
   if (!value) return '—';
   return `₪${Math.round(value).toLocaleString()}/sqm`;
@@ -123,6 +127,18 @@ interface BenchmarkCard {
   icon: ComponentType<{ className?: string }>;
 }
 
+interface BenchmarkRange {
+  id: string;
+  label: string;
+  min: number;
+  max: number;
+  detail: string;
+}
+
+function clampPercent(value: number) {
+  return Math.max(0, Math.min(100, value));
+}
+
 function BenchmarkCardTile({ card }: { card: BenchmarkCard }) {
   const Icon = card.icon;
 
@@ -134,6 +150,95 @@ function BenchmarkCardTile({ card }: { card: BenchmarkCard }) {
       </p>
       <p className="mt-1 text-sm font-semibold text-foreground">{card.value}</p>
       <p className="mt-1 text-[11px] leading-snug text-muted-foreground">{card.detail}</p>
+    </div>
+  );
+}
+
+function BenchmarkLadder({ askingPriceSqm, ranges }: { askingPriceSqm: number | null; ranges: BenchmarkRange[] }) {
+  if (!askingPriceSqm || ranges.length === 0) return null;
+
+  const allValues = ranges.flatMap((range) => [range.min, range.max]).concat(askingPriceSqm);
+  const minValue = Math.min(...allValues);
+  const maxValue = Math.max(...allValues);
+  const spread = Math.max(1, maxValue - minValue);
+  const markerLeft = clampPercent(((askingPriceSqm - minValue) / spread) * 100);
+
+  return (
+    <div className="rounded-lg border border-border/70 bg-background/70 p-3 space-y-3">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold text-foreground">Benchmark ladder</p>
+          <p className="text-xs text-muted-foreground">Where the asking price sits across available recorded-sale reference layers.</p>
+        </div>
+        <Badge variant="outline" className="w-fit bg-background/70 text-xs">Ask {formatNisPerSqm(askingPriceSqm)}</Badge>
+      </div>
+      <div className="space-y-3">
+        {ranges.map((range) => {
+          const left = clampPercent(((range.min - minValue) / spread) * 100);
+          const width = Math.max(3, clampPercent(((range.max - range.min) / spread) * 100));
+          const positionLabel = askingPriceSqm < range.min
+            ? 'Below this range'
+            : askingPriceSqm > range.max
+              ? 'Above this range'
+              : 'Within this range';
+
+          return (
+            <div key={range.id} className="space-y-1.5">
+              <div className="flex items-center justify-between gap-3 text-xs">
+                <span className="font-medium text-foreground">{range.label}</span>
+                <span className="text-muted-foreground">{positionLabel}</span>
+              </div>
+              <div className="relative h-6 rounded-md bg-muted/50">
+                <div
+                  className="absolute top-2 h-2 rounded-full bg-primary/25"
+                  style={{ left: `${left}%`, width: `${width}%` }}
+                />
+                <div
+                  className="absolute top-1 h-4 w-1.5 rounded-full bg-primary shadow-sm"
+                  style={{ left: `calc(${markerLeft}% - 3px)` }}
+                />
+              </div>
+              <div className="flex items-center justify-between gap-3 text-[11px] text-muted-foreground">
+                <span>{formatNisPerSqmRange(range.min, range.max)}</span>
+                <span>{range.detail}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function PremiumContextSummary({ priceContext, premiumExplanation }: { priceContext: PriceContextResult; premiumExplanation?: string | null }) {
+  const contextChips = uniqueStrings([
+    priceContext.propertyClassLabel !== 'Standard resale' ? priceContext.propertyClassLabel : '',
+    ...priceContext.confirmedPremiumDrivers.map(formatPremiumDriver),
+    ...priceContext.detectedPremiumDrivers.map(formatPremiumDriver),
+  ]).slice(0, 10);
+
+  if (contextChips.length === 0 && !premiumExplanation?.trim()) return null;
+
+  return (
+    <div className="rounded-lg border border-border/70 bg-background/70 p-3 space-y-3">
+      <div>
+        <p className="text-sm font-semibold text-foreground">Why this may differ</p>
+        <p className="text-xs text-muted-foreground">Recorded sales may not fully reflect property class, finish level, view, extras, or included rights.</p>
+      </div>
+      {contextChips.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {contextChips.map((chip) => (
+            <Badge key={chip} variant="outline" className="rounded-lg bg-primary/5 text-xs text-foreground">
+              {chip}
+            </Badge>
+          ))}
+        </div>
+      )}
+      {premiumExplanation?.trim() && (
+        <p className="border-l-2 border-primary/30 pl-3 text-sm text-muted-foreground">
+          {premiumExplanation}
+        </p>
+      )}
     </div>
   );
 }
@@ -180,7 +285,7 @@ function MarketVerdictBadge({ compsCount, radiusUsedM, priceTier, priceContext }
   );
 }
 
-function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, compsCount, radiusUsedM, sqmSource, ownershipType, onTrackInteraction }: { priceContext: PriceContextResult; premiumExplanation?: string | null; benchmarkCards: BenchmarkCard[]; compsCount: number; radiusUsedM: number; sqmSource?: string | null; ownershipType?: string | null; onTrackInteraction?: (eventName: string, properties?: Record<string, unknown>) => void }) {
+function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchmarkRanges, propertyPricePerSqm, compsCount, radiusUsedM, sqmSource, ownershipType, onTrackInteraction }: { priceContext: PriceContextResult; premiumExplanation?: string | null; benchmarkCards: BenchmarkCard[]; benchmarkRanges: BenchmarkRange[]; propertyPricePerSqm: number | null; compsCount: number; radiusUsedM: number; sqmSource?: string | null; ownershipType?: string | null; onTrackInteraction?: (eventName: string, properties?: Record<string, unknown>) => void }) {
   const [open, setOpen] = useState(false);
   const hasPremiumContext = priceContext.confirmedPremiumDrivers.length > 0 || priceContext.detectedPremiumDrivers.length > 0 || Boolean(premiumExplanation?.trim());
   const radiusLabel = radiusUsedM >= 1000 ? '1km' : `${radiusUsedM}m`;
@@ -214,6 +319,12 @@ function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, compsCo
             {benchmarkCards.map((card) => (
               <BenchmarkCardTile key={card.id} card={card} />
             ))}
+          </div>
+          <div className="mt-3">
+            <BenchmarkLadder askingPriceSqm={propertyPricePerSqm} ranges={benchmarkRanges} />
+          </div>
+          <div className="mt-3">
+            <PremiumContextSummary priceContext={priceContext} premiumExplanation={premiumExplanation} />
           </div>
         </div>
       </div>
@@ -481,6 +592,42 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
     return cards;
   }, [effectiveAvgPriceSqm, israeliRooms, neighborhoodAvgPriceSqm, priceContext.benchmarkRange, priceContext.confidenceLabel, priceContext.propertyClassLabel, property.city, property.neighborhood, property.size_sqm, propertyPricePerSqm, roomPrice?.avgPrice, roomPrice?.avgPriceSqm, verdictData.compsCount, verdictData.radiusUsedM]);
 
+  const benchmarkRanges: BenchmarkRange[] = useMemo(() => {
+    const ranges: BenchmarkRange[] = [];
+
+    if (priceContext.benchmarkRange && verdictData.compsCount > 0) {
+      ranges.push({
+        id: 'nearby_recorded_sales',
+        label: 'Nearby sales',
+        min: priceContext.benchmarkRange.min,
+        max: priceContext.benchmarkRange.max,
+        detail: `${verdictData.compsCount} sale${verdictData.compsCount > 1 ? 's' : ''}`,
+      });
+    }
+
+    if (neighborhoodAvgPriceSqm) {
+      ranges.push({
+        id: 'neighborhood_benchmark',
+        label: property.neighborhood || 'Neighborhood',
+        min: Math.round(neighborhoodAvgPriceSqm * 0.95),
+        max: Math.round(neighborhoodAvgPriceSqm * 1.05),
+        detail: 'Neighborhood context',
+      });
+    }
+
+    if (effectiveAvgPriceSqm) {
+      ranges.push({
+        id: 'city_benchmark',
+        label: property.city,
+        min: Math.round(effectiveAvgPriceSqm * 0.95),
+        max: Math.round(effectiveAvgPriceSqm * 1.05),
+        detail: roomPrice?.avgPriceSqm ? 'Room-specific city context' : 'City context',
+      });
+    }
+
+    return ranges;
+  }, [effectiveAvgPriceSqm, neighborhoodAvgPriceSqm, priceContext.benchmarkRange, property.city, property.neighborhood, roomPrice?.avgPriceSqm, verdictData.compsCount]);
+
   const priceContextTrackingPayload = useMemo(() => ({
     property_id: property.id,
     property_city: property.city,
@@ -649,6 +796,8 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
           priceContext={priceContext}
           premiumExplanation={property.premium_explanation}
           benchmarkCards={benchmarkCards}
+          benchmarkRanges={benchmarkRanges}
+          propertyPricePerSqm={propertyPricePerSqm}
           compsCount={verdictData.compsCount}
           radiusUsedM={verdictData.radiusUsedM}
           sqmSource={property.sqm_source}
