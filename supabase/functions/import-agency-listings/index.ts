@@ -1428,6 +1428,38 @@ function buildGeocodeKey(latitude: number | null | undefined, longitude: number 
   return `${Number(latitude).toFixed(4)},${Number(longitude).toFixed(4)}`;
 }
 
+function normalizeUnitToken(value: string | number | null | undefined): string | null {
+  if (value == null) return null;
+  const normalized = String(value)
+    .trim()
+    .toLowerCase()
+    .replace(/["״'׳`.,;:()[\]{}]/g, "")
+    .replace(/\s+/g, "");
+  return normalized || null;
+}
+
+function extractAddressUnitEvidence(...parts: Array<string | null | undefined>) {
+  const text = parts.filter(Boolean).join(" \n ");
+  const floorMatch = text.match(/(?:קומה|floor|fl\.?|ק['׳]?)\s*(-?\d{1,2})/i);
+  const apartmentMatch = text.match(/(?:דירה|דירת|apt\.?|apartment|unit|יחידה|#)\s*([0-9]{1,4}[א-תa-zA-Z]?)/i);
+  const entranceMatch = text.match(/(?:כניסה|entrance|entry)\s*([0-9א-תa-zA-Z]{1,3})/i);
+  return {
+    floorNumber: floorMatch ? Number(floorMatch[1]) : null,
+    apartmentNumber: normalizeUnitToken(apartmentMatch?.[1]),
+    entrance: normalizeUnitToken(entranceMatch?.[1]),
+  };
+}
+
+function buildUnitIdentityKey(buildingKey: string | null | undefined, floorNumber?: number | null, apartmentNumber?: string | null, entrance?: string | null): string | null {
+  if (!buildingKey) return null;
+  const normalizedApt = normalizeUnitToken(apartmentNumber);
+  const normalizedEntrance = normalizeUnitToken(entrance);
+  if (normalizedApt) return `${buildingKey}|apt:${normalizedApt}`;
+  if (floorNumber != null && normalizedEntrance) return `${buildingKey}|floor:${Math.floor(floorNumber)}|entrance:${normalizedEntrance}`;
+  if (floorNumber != null) return `${buildingKey}|floor:${Math.floor(floorNumber)}`;
+  return null;
+}
+
 function buildBuildingIdentity(city: string | null | undefined, address: string | null | undefined, latitude?: number | null, longitude?: number | null) {
   const normalizedCityKey = normalizeIsraeliTextKey(city);
   const normalizedAddressKey = normalizeBuildingAddressKey(address);
@@ -1442,6 +1474,31 @@ function buildBuildingIdentity(city: string | null | undefined, address: string 
     ? `street:${normalizedCityKey}|${streetKey}`
     : null;
   return { normalizedCityKey, normalizedAddressKey, geocodeKey, buildingKey };
+}
+
+function buildListingIdentityEvidence(listing: any, latitude?: number | null, longitude?: number | null) {
+  const building = buildBuildingIdentity(listing.city, listing.address, latitude, longitude);
+  const extractedUnit = extractAddressUnitEvidence(listing.address, listing.title, listing.description);
+  const floorNumber = listing.floor_number != null
+    ? Math.floor(Number(listing.floor_number))
+    : listing.floor != null
+    ? Math.floor(Number(listing.floor))
+    : extractedUnit.floorNumber;
+  const apartmentNumber = normalizeUnitToken(listing.apartment_number) || extractedUnit.apartmentNumber;
+  const entrance = normalizeUnitToken(listing.entrance) || extractedUnit.entrance;
+  return {
+    ...building,
+    normalizedFloorNumber: Number.isFinite(floorNumber as number) ? floorNumber : null,
+    normalizedApartmentNumber: apartmentNumber,
+    normalizedEntrance: entrance,
+    unitIdentityKey: buildUnitIdentityKey(building.buildingKey, Number.isFinite(floorNumber as number) ? floorNumber : null, apartmentNumber, entrance),
+    unitIdentityMetadata: {
+      has_floor: Number.isFinite(floorNumber as number),
+      has_apartment_number: !!apartmentNumber,
+      has_entrance: !!entrance,
+      extracted_from_text: extractedUnit,
+    },
+  };
 }
 
 async function recordSourceObservation(sb: any, params: {
