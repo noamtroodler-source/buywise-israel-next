@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo, useRef, type ComponentType } from 'react';
-import { BarChart3, ShieldCheck, Info, ArrowRight, ChevronDown, Calculator, Ruler, MapPin, Building2 } from 'lucide-react';
+import { BarChart3, ShieldCheck, Info, ArrowRight, ChevronDown, Calculator, Ruler, MapPin, Building2, Sparkles } from 'lucide-react';
 import { getIsraeliRoomCount } from '@/lib/israeliRoomCount';
 import { Link, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
