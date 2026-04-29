@@ -47,6 +47,7 @@ function urlToPropertyFilters(u: MapUrlFilters): PropertyFilters {
     sort_by: u.sortBy as SortOption,
     commute_destination: (u.commuteDest as 'tel_aviv' | 'jerusalem') ?? undefined,
     max_commute_minutes: u.maxCommute ?? undefined,
+    pricing_context_complete: u.pricingContextComplete ?? undefined,
   };
 }
 
@@ -71,6 +72,7 @@ function propertyFiltersToUrlParams(f: PropertyFilters): Record<string, string |
     sort_by: f.sort_by ?? null,
     commute_dest: f.commute_destination ?? null,
     max_commute: f.max_commute_minutes ?? null,
+    pricing_context_complete: f.pricing_context_complete ? 'true' : null,
   };
 }
 
