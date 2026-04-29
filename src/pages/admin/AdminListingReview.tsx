@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Loader2, ClipboardCheck, FileText, AlertCircle, CheckCircle, XCircle, Filter, BarChart3 } from 'lucide-react';
+import { Loader2, ClipboardCheck, FileText, AlertCircle, CheckCircle, XCircle, Filter } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,47 +13,27 @@ import {
   useApproveListing,
   useRequestChanges,
   useRejectListing,
-  useResolveBenchmarkReview,
   VerificationStatus,
 } from '@/hooks/useListingReview';
 import { useAddFeaturedProperty } from '@/hooks/useHomepageFeatured';
 import { toast } from 'sonner';
 
 export default function AdminListingReview() {
-  const [activeTab, setActiveTab] = useState<VerificationStatus | 'all' | 'benchmark_review'>('pending_review');
-  const [benchmarkStatusFilter, setBenchmarkStatusFilter] = useState('open');
-  const [benchmarkConfidenceFilter, setBenchmarkConfidenceFilter] = useState('all');
-  const [benchmarkClassFilter, setBenchmarkClassFilter] = useState('all');
-  const [benchmarkCityFilter, setBenchmarkCityFilter] = useState('all');
+  const [activeTab, setActiveTab] = useState<VerificationStatus | 'all'>('pending_review');
   
   const { data: stats, isLoading: statsLoading } = useReviewStats();
   const { data: listings = [], isLoading: listingsLoading } = useListingsForReview(
-    activeTab === 'all' || activeTab === 'benchmark_review' ? undefined : activeTab
+    activeTab === 'all' ? undefined : activeTab
   );
 
   const approveListing = useApproveListing();
   const requestChanges = useRequestChanges();
   const rejectListing = useRejectListing();
-  const resolveBenchmarkReview = useResolveBenchmarkReview();
   const addFeaturedProperty = useAddFeaturedProperty();
 
   const isLoading = statsLoading || listingsLoading;
-  const isMutating = approveListing.isPending || requestChanges.isPending || rejectListing.isPending || resolveBenchmarkReview.isPending;
-  const benchmarkListings = listings.filter((listing) => listing.benchmark_review_status && listing.benchmark_review_status !== 'none');
-  const benchmarkConfidenceOptions = Array.from(new Set(benchmarkListings.map((listing) => listing.price_context_confidence_tier).filter(Boolean))).sort();
-  const benchmarkClassOptions = Array.from(new Set(benchmarkListings.map((listing) => listing.price_context_property_class).filter(Boolean))).sort();
-  const benchmarkCityOptions = Array.from(new Set(benchmarkListings.map((listing) => listing.city).filter(Boolean))).sort();
-  const visibleListings = activeTab === 'benchmark_review'
-    ? benchmarkListings.filter((listing) => {
-      const statusMatch = benchmarkStatusFilter === 'all'
-        || (benchmarkStatusFilter === 'open' && (listing.benchmark_review_status === 'requested' || listing.benchmark_review_status === 'under_review'))
-        || listing.benchmark_review_status === benchmarkStatusFilter;
-      const confidenceMatch = benchmarkConfidenceFilter === 'all' || listing.price_context_confidence_tier === benchmarkConfidenceFilter;
-      const classMatch = benchmarkClassFilter === 'all' || listing.price_context_property_class === benchmarkClassFilter;
-      const cityMatch = benchmarkCityFilter === 'all' || listing.city === benchmarkCityFilter;
-      return statusMatch && confidenceMatch && classMatch && cityMatch;
-    })
-    : listings;
+  const isMutating = approveListing.isPending || requestChanges.isPending || rejectListing.isPending;
+  const visibleListings = listings;
 
   const handleApprove = (id: string, notes?: string, agentId?: string, propertyTitle?: string, featureThis?: boolean) => {
     const property = listings.find(p => p.id === id);
