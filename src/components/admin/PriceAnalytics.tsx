@@ -15,10 +15,10 @@ interface PriceAnalyticsProps {
 // BuyWise brand-compliant palette (blue tones only)
 const COLORS = [
   'hsl(var(--primary))',
-  'hsl(213, 70%, 55%)',
-  'hsl(213, 60%, 65%)',
-  'hsl(213, 50%, 75%)',
-  'hsl(213, 40%, 85%)',
+  'hsl(var(--accent))',
+  'hsl(var(--secondary))',
+  'hsl(var(--muted))',
+  'hsl(var(--border))',
   'hsl(var(--muted-foreground))',
 ];
 
