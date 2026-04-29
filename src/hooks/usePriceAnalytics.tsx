@@ -191,11 +191,11 @@ export function usePriceAnalytics(days: number = 30) {
       const completePropertyIds = new Set(propertyRows.filter(p => p.price_context_badge_status === 'complete').map(p => p.id));
       const completeViews = (views ?? []).filter((view: any) => completePropertyIds.has(view.property_id)).length;
       const completeInquiries = (inquiries ?? []).filter((inquiry: any) => completePropertyIds.has(inquiry.property_id)).length;
-      const eventCounts = (events ?? []).reduce<Record<string, number>>((acc: Record<string, number>, event: any) => {
+      const eventCounts = ((events ?? []) as any[]).reduce((acc: Record<string, number>, event: any) => {
         const key = event.event_type || 'unknown';
         acc[key] = (acc[key] || 0) + 1;
         return acc;
-      }, {});
+      }, {} as Record<string, number>);
 
       const priceContext: PriceContextKpis = {
         totalListings: propertyRows.length,
@@ -207,7 +207,7 @@ export function usePriceAnalytics(days: number = 30) {
         inquiryConversionRate: completeViews ? (completeInquiries / completeViews) * 100 : 0,
         confidenceDistribution,
         reviewReasons: Object.entries(reviewReasonCounts).map(([reason, count]) => ({ reason, count })).sort((a, b) => b.count - a.count),
-        recentEvents: Object.entries(eventCounts).map(([eventType, count]) => ({ eventType, count })).sort((a, b) => b.count - a.count),
+        recentEvents: Object.entries(eventCounts).map(([eventType, count]) => ({ eventType, count: Number(count) })).sort((a, b) => b.count - a.count),
       };
 
       return {
