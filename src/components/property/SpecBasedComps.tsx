@@ -25,6 +25,7 @@ interface SpecBasedCompsProps {
   price?: number;
   currency?: string;
   sourceRooms?: number | null; // Israeli room count from scraping
+  subjectProperty?: Parameters<typeof useSpecBasedSoldComps>[5];
   className?: string;
 }
 
@@ -99,6 +100,7 @@ export function SpecBasedComps({
   price,
   currency = 'ILS',
   sourceRooms,
+  subjectProperty,
   className,
 }: SpecBasedCompsProps) {
   const { data: comps = [], isLoading } = useSpecBasedSoldComps(
@@ -106,7 +108,8 @@ export function SpecBasedComps({
     bedrooms,
     sizeSqm,
     neighborhood,
-    sourceRooms
+    sourceRooms,
+    subjectProperty
   );
 
   const subjectPriceSqm = price && sizeSqm && sizeSqm > 0 ? price / sizeSqm : null;
