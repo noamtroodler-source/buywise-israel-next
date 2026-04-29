@@ -48,19 +48,11 @@ export interface PropertyForReview {
   premium_explanation: string | null;
   sqm_source: string | null;
   ownership_type: string | null;
-  benchmark_review_status: string | null;
-  benchmark_review_reason: string | null;
-  benchmark_review_notes: string | null;
-  benchmark_review_requested_at?: string | null;
-  benchmark_review_resolved_at?: string | null;
-  benchmark_review_admin_notes?: string | null;
-  benchmark_review_resolution?: string | null;
   price_context_property_class: string | null;
   price_context_confidence_score: number | null;
   price_context_confidence_tier: string | null;
   price_context_public_label: string | null;
   price_context_percentage_suppressed: boolean | null;
-  price_context_badge_status: string | null;
   comp_pool_used: string | null;
   market_fit_status: string | null;
   market_fit_review_reason: string | null;
@@ -153,19 +145,11 @@ export function useListingsForReview(status?: VerificationStatus) {
           premium_explanation,
           sqm_source,
           ownership_type,
-          benchmark_review_status,
-          benchmark_review_reason,
-          benchmark_review_notes,
-          benchmark_review_requested_at,
-          benchmark_review_resolved_at,
-          benchmark_review_admin_notes,
-          benchmark_review_resolution,
           price_context_property_class,
           price_context_confidence_score,
           price_context_confidence_tier,
           price_context_public_label,
           price_context_percentage_suppressed,
-          price_context_badge_status,
           comp_pool_used,
           market_fit_status,
           market_fit_review_reason,
@@ -200,54 +184,6 @@ export function useListingsForReview(status?: VerificationStatus) {
       const { data, error } = await query;
       if (error) throw error;
       return data as unknown as PropertyForReview[];
-    },
-  });
-}
-
-export function usePriceContextBlockers() {
-  return useQuery({
-    queryKey: ['priceContextBlockers'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('properties')
-        .select(`
-          id,
-          title,
-          city,
-          neighborhood,
-          price,
-          currency,
-          listing_status,
-          verification_status,
-          price_context_badge_status,
-          price_context_confidence_tier,
-          price_context_percentage_suppressed,
-          benchmark_review_status,
-          benchmark_review_reason,
-          benchmark_review_notes,
-          benchmark_review_requested_at,
-          benchmark_review_resolved_at,
-          benchmark_review_admin_notes,
-          benchmark_review_resolution,
-          created_at,
-          agent:agent_id (
-            id,
-            name,
-            agency_name
-          )
-        `)
-        .eq('listing_status', 'for_sale')
-        .eq('is_published', true)
-        .or('price_context_badge_status.eq.blocked,price_context_badge_status.eq.incomplete,benchmark_review_status.eq.requested,benchmark_review_status.eq.under_review')
-        .order('created_at', { ascending: false })
-        .limit(25);
-
-      if (error) throw error;
-      return (data ?? []) as unknown as Array<Pick<PropertyForReview,
-        'id' | 'title' | 'city' | 'neighborhood' | 'price' | 'currency' | 'listing_status' | 'verification_status' |
-        'price_context_badge_status' | 'price_context_confidence_tier' | 'price_context_percentage_suppressed' |
-        'benchmark_review_status' | 'benchmark_review_reason' | 'benchmark_review_notes' | 'created_at' | 'agent'
-      >>;
     },
   });
 }
@@ -291,7 +227,7 @@ async function logPriceContextEvent(propertyId: string, eventType: string, reaso
     const [{ data: propertyData }, { data: userData }] = await Promise.all([
       supabase
         .from('properties')
-        .select('price_context_confidence_score, price_context_confidence_tier, price_context_public_label, price_context_percentage_suppressed, price_context_badge_status, price_context_property_class, comp_pool_used, premium_drivers, premium_explanation')
+        .select('price_context_confidence_score, price_context_confidence_tier, price_context_public_label, price_context_percentage_suppressed, price_context_property_class, comp_pool_used, premium_drivers, premium_explanation')
         .eq('id', propertyId)
         .maybeSingle(),
       supabase.auth.getUser(),
@@ -309,7 +245,6 @@ async function logPriceContextEvent(propertyId: string, eventType: string, reaso
       confidence_tier: property?.price_context_confidence_tier ?? null,
       comp_pool_snapshot: {
         source: property?.comp_pool_used ?? null,
-        badge_status: property?.price_context_badge_status ?? null,
         property_class: property?.price_context_property_class ?? null,
         confidence_score: property?.price_context_confidence_score ?? null,
       },
@@ -484,75 +419,13 @@ export function useRejectListing() {
   });
 }
 
-export type BenchmarkReviewResolution = 'under_review' | 'accepted' | 'data_corrected' | 'confidence_softened' | 'more_data_needed';
-
-export function useResolveBenchmarkReview() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ id, resolution, notes }: { id: string; resolution: BenchmarkReviewResolution; notes?: string }) => {
-      const updates: Record<string, unknown> = {
-        benchmark_review_admin_notes: notes || null,
-      };
-
-      if (resolution === 'under_review') {
-        updates.benchmark_review_status = 'under_review';
-        updates.price_context_badge_status = 'blocked';
-        updates.price_context_public_label = 'Market context under review';
-        updates.price_context_filter_eligible = false;
-        updates.price_context_placement_eligible = false;
-        updates.price_context_featured_eligible = false;
-      } else {
-        updates.benchmark_review_status = 'resolved';
-        updates.benchmark_review_resolution = resolution;
-        updates.benchmark_review_resolved_at = new Date().toISOString();
-        updates.price_context_badge_status = resolution === 'confidence_softened' || resolution === 'more_data_needed' ? 'incomplete' : 'complete';
-        if (resolution === 'confidence_softened') {
-          updates.price_context_confidence_tier = 'limited_comparable_match';
-          updates.price_context_public_label = 'Limited comparable match';
-          updates.price_context_percentage_suppressed = true;
-        }
-        if (resolution === 'more_data_needed') {
-          updates.price_context_confidence_tier = 'insufficient_data';
-          updates.price_context_public_label = 'Not enough recorded data to benchmark reliably';
-          updates.price_context_percentage_suppressed = true;
-        }
-        const eligible = resolution === 'accepted' || resolution === 'data_corrected';
-        updates.price_context_filter_eligible = eligible;
-        updates.price_context_placement_eligible = eligible;
-        updates.price_context_featured_eligible = eligible;
-      }
-
-      const { error } = await supabase
-        .from('properties')
-        .update(updates)
-        .eq('id', id);
-
-      if (error) throw error;
-      await logPriceContextEvent(id, `benchmark_review_${resolution}`, notes);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['listingsForReview'] });
-      queryClient.invalidateQueries({ queryKey: ['reviewStats'] });
-      queryClient.invalidateQueries({ queryKey: ['priceContextEvents'] });
-      queryClient.invalidateQueries({ queryKey: ['agentProperties'] });
-      queryClient.invalidateQueries({ queryKey: ['agencyListingsManagement'] });
-      queryClient.invalidateQueries({ queryKey: ['properties'] });
-      toast.success('Benchmark review updated');
-    },
-    onError: (error) => {
-      toast.error('Failed to update benchmark review: ' + error.message);
-    },
-  });
-}
-
 export function useReviewStats() {
   return useQuery({
     queryKey: ['reviewStats'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('properties')
-        .select('verification_status, benchmark_review_status');
+        .select('verification_status');
 
       if (error) throw error;
 
@@ -562,16 +435,12 @@ export function useReviewStats() {
         changes_requested: 0,
         approved: 0,
         rejected: 0,
-        benchmark_review: 0,
       };
 
       data?.forEach((p) => {
         const status = p.verification_status as VerificationStatus;
         if (status in stats) {
           stats[status]++;
-        }
-        if (p.benchmark_review_status === 'requested' || p.benchmark_review_status === 'under_review') {
-          stats.benchmark_review++;
         }
       });
 

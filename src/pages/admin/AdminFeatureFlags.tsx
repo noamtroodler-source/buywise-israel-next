@@ -82,7 +82,7 @@ export function AdminFeatureFlags() {
     mutationFn: async () => {
       const { data, error } = await (supabase
         .from('properties')
-        .select('id, listing_status, price_context_badge_status, price_context_confidence_tier, benchmark_review_status, price_context_public_label') as any)
+        .select('id, listing_status, price_context_confidence_tier, price_context_public_label') as any)
         .eq('listing_status', 'for_sale')
         .limit(500);
 
@@ -91,27 +91,20 @@ export function AdminFeatureFlags() {
       const rows = (data ?? []) as Array<{
         id: string;
         listing_status: string | null;
-        price_context_badge_status: string | null;
         price_context_confidence_tier: string | null;
-        benchmark_review_status: string | null;
         price_context_public_label: string | null;
       }>;
 
       const safeConfidence = new Set(['strong_comparable_match', 'high_confidence', 'good_comparable_match']);
       const updates = rows.map((row) => {
-        const underReview = row.benchmark_review_status === 'requested' || row.benchmark_review_status === 'under_review';
-        const complete = row.price_context_badge_status === 'complete';
-        const blocked = row.price_context_badge_status === 'blocked' || underReview;
-        const eligibleForFilter = complete && !underReview;
+        const eligibleForFilter = Boolean(row.price_context_public_label);
         const eligibleForPlacement = eligibleForFilter && safeConfidence.has(row.price_context_confidence_tier || '');
 
         return (supabase
           .from('properties')
           .update({
             price_context_filter_eligible: eligibleForFilter,
-            price_context_placement_eligible: eligibleForPlacement,
-            price_context_featured_eligible: eligibleForPlacement,
-            price_context_display_mode: blocked || !row.price_context_public_label ? 'hidden' : 'soft',
+            price_context_display_mode: row.price_context_public_label ? 'soft' : 'hidden',
           } as any)
           .eq('id', row.id) as any);
       });

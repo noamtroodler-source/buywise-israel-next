@@ -70,11 +70,9 @@ interface MarketIntelligenceProps {
     market_fit_status?: string | null;
     sqm_source?: string | null;
     ownership_type?: string | null;
-    benchmark_review_status?: string | null;
     price_context_public_label?: string | null;
     price_context_confidence_tier?: string | null;
     price_context_percentage_suppressed?: boolean | null;
-    price_context_badge_status?: string | null;
     created_at?: string;
     vaad_bayit_monthly?: number | null;
     currency?: string | null;

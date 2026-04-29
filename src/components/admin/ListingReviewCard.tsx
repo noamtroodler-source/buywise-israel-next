@@ -43,7 +43,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { PropertyThumbnail } from '@/components/shared/PropertyThumbnail';
-import { BenchmarkReviewResolution, PropertyForReview, PriceContextEvent, usePriceContextEvents } from '@/hooks/useListingReview';
+import { PropertyForReview, PriceContextEvent, usePriceContextEvents } from '@/hooks/useListingReview';
 import { useNearbySoldComps } from '@/hooks/useNearbySoldComps';
 import { computeSpecCompStats, useSpecBasedSoldComps } from '@/hooks/useSpecBasedSoldComps';
 import { useNeighborhoodAvgPrice } from '@/hooks/useNeighborhoodPrices';
@@ -58,7 +58,6 @@ interface ListingReviewCardProps {
   onApprove: (id: string, notes?: string, agentId?: string, propertyTitle?: string, featureThis?: boolean) => void;
   onRequestChanges: (id: string, reason: string, notes?: string, agentId?: string, propertyTitle?: string) => void;
   onReject: (id: string, reason: string, notes?: string, agentId?: string, propertyTitle?: string) => void;
-  onBenchmarkReviewAction: (id: string, resolution: BenchmarkReviewResolution, notes?: string) => void;
   isLoading?: boolean;
 }
 
@@ -786,10 +785,8 @@ function PriceContextHistoryPanel({ events, isLoading }: { events: PriceContextE
   );
 }
 
-function MarketPanel({ property, market, reviewed, onReviewedChange, onBenchmarkReviewAction, isLoading }: { property: PropertyForReview; market: MarketReviewData; reviewed: boolean; onReviewedChange: (reviewed: boolean) => void; onBenchmarkReviewAction: (resolution: BenchmarkReviewResolution, notes?: string) => void; isLoading?: boolean }) {
+function MarketPanel({ property, market, reviewed, onReviewedChange, isLoading }: { property: PropertyForReview; market: MarketReviewData; reviewed: boolean; onReviewedChange: (reviewed: boolean) => void; isLoading?: boolean }) {
   const { data: events = [], isLoading: eventsLoading } = usePriceContextEvents(property.id);
-  const [reviewNotes, setReviewNotes] = useState(property.benchmark_review_notes ?? '');
-  const reviewOpen = property.benchmark_review_status === 'requested' || property.benchmark_review_status === 'under_review';
 
   return (
     <div className="space-y-4">
@@ -863,46 +860,6 @@ function MarketPanel({ property, market, reviewed, onReviewedChange, onBenchmark
           </div>
         )}
       </div>
-
-      {reviewOpen && (
-        <div className="rounded-lg border border-semantic-amber/40 bg-semantic-amber/10 p-4">
-          <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h4 className="font-semibold text-foreground">Benchmark review request</h4>
-              <p className="text-sm text-muted-foreground">{property.benchmark_review_reason || 'No structured reason provided.'}</p>
-            </div>
-            <Badge variant="outline">{formatLabel(property.benchmark_review_status)}</Badge>
-          </div>
-          {property.benchmark_review_notes && <p className="mb-3 border-l-2 border-primary/30 pl-3 text-sm text-muted-foreground">{property.benchmark_review_notes}</p>}
-          {property.benchmark_review_requested_at && <p className="mb-3 text-xs text-muted-foreground">Requested {formatSubmittedAt(property.benchmark_review_requested_at)}</p>}
-          <div className="mb-3 grid gap-2 text-xs text-muted-foreground md:grid-cols-3">
-            <span>Comp pool: <strong className="text-foreground">{market.comparableComps.length} selected</strong></span>
-            <span>Source: <strong className="text-foreground">{market.hasCoordinates ? 'Nearby sold comps' : 'Spec-matched sold comps'}</strong></span>
-            <span>Benchmark: <strong className="text-foreground">{market.benchmark?.label ?? 'No benchmark available'}</strong></span>
-          </div>
-          <Textarea value={reviewNotes} onChange={(event) => setReviewNotes(event.target.value)} placeholder="Admin resolution notes…" rows={3} className="mb-3 bg-background" />
-          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
-            <Button variant="outline" disabled={isLoading} onClick={() => onBenchmarkReviewAction('under_review', reviewNotes)}>Mark under review</Button>
-            <Button variant="outline" disabled={isLoading} onClick={() => onBenchmarkReviewAction('accepted', reviewNotes)}>Accept benchmark</Button>
-            <Button variant="outline" disabled={isLoading} onClick={() => onBenchmarkReviewAction('data_corrected', reviewNotes)}>Data corrected</Button>
-            <Button variant="outline" disabled={isLoading} onClick={() => onBenchmarkReviewAction('confidence_softened', reviewNotes)}>Soften confidence</Button>
-            <Button variant="outline" disabled={isLoading} onClick={() => onBenchmarkReviewAction('more_data_needed', reviewNotes)}>More data needed</Button>
-          </div>
-        </div>
-      )}
-
-      {!reviewOpen && property.benchmark_review_status === 'resolved' && (
-        <div className="rounded-lg border border-border bg-background p-4">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h4 className="font-semibold text-foreground">Benchmark review resolved</h4>
-              <p className="text-sm text-muted-foreground">{formatLabel(property.benchmark_review_resolution)}{property.benchmark_review_resolved_at ? ` • ${formatSubmittedAt(property.benchmark_review_resolved_at)}` : ''}</p>
-            </div>
-            <Badge variant="outline">Resolved</Badge>
-          </div>
-          {property.benchmark_review_admin_notes && <p className="mt-3 border-l-2 border-primary/30 pl-3 text-sm text-muted-foreground">{property.benchmark_review_admin_notes}</p>}
-        </div>
-      )}
 
       <div className="rounded-lg border border-border bg-background p-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -1175,7 +1132,7 @@ function FeedbackDialog({
   );
 }
 
-export function ListingReviewCard({ property, onApprove, onRequestChanges, onReject, onBenchmarkReviewAction, isLoading }: ListingReviewCardProps) {
+export function ListingReviewCard({ property, onApprove, onRequestChanges, onReject, isLoading }: ListingReviewCardProps) {
   const [showChangesDialog, setShowChangesDialog] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
@@ -1326,7 +1283,6 @@ export function ListingReviewCard({ property, onApprove, onRequestChanges, onRej
                   market={market}
                   reviewed={marketReviewed}
                   onReviewedChange={setMarketReviewed}
-                  onBenchmarkReviewAction={(resolution, notes) => onBenchmarkReviewAction(property.id, resolution, notes)}
                   isLoading={isLoading}
                 />
               </TabsContent>

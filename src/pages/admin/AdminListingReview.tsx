@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Loader2, ClipboardCheck, FileText, AlertCircle, CheckCircle, XCircle, Filter, BarChart3 } from 'lucide-react';
+import { Loader2, ClipboardCheck, FileText, AlertCircle, CheckCircle, XCircle, Filter } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ListingReviewCard } from '@/components/admin/ListingReviewCard';
 import {
   useListingsForReview,
@@ -13,47 +12,27 @@ import {
   useApproveListing,
   useRequestChanges,
   useRejectListing,
-  useResolveBenchmarkReview,
   VerificationStatus,
 } from '@/hooks/useListingReview';
 import { useAddFeaturedProperty } from '@/hooks/useHomepageFeatured';
 import { toast } from 'sonner';
 
 export default function AdminListingReview() {
-  const [activeTab, setActiveTab] = useState<VerificationStatus | 'all' | 'benchmark_review'>('pending_review');
-  const [benchmarkStatusFilter, setBenchmarkStatusFilter] = useState('open');
-  const [benchmarkConfidenceFilter, setBenchmarkConfidenceFilter] = useState('all');
-  const [benchmarkClassFilter, setBenchmarkClassFilter] = useState('all');
-  const [benchmarkCityFilter, setBenchmarkCityFilter] = useState('all');
+  const [activeTab, setActiveTab] = useState<VerificationStatus | 'all'>('pending_review');
   
   const { data: stats, isLoading: statsLoading } = useReviewStats();
   const { data: listings = [], isLoading: listingsLoading } = useListingsForReview(
-    activeTab === 'all' || activeTab === 'benchmark_review' ? undefined : activeTab
+    activeTab === 'all' ? undefined : activeTab
   );
 
   const approveListing = useApproveListing();
   const requestChanges = useRequestChanges();
   const rejectListing = useRejectListing();
-  const resolveBenchmarkReview = useResolveBenchmarkReview();
   const addFeaturedProperty = useAddFeaturedProperty();
 
   const isLoading = statsLoading || listingsLoading;
-  const isMutating = approveListing.isPending || requestChanges.isPending || rejectListing.isPending || resolveBenchmarkReview.isPending;
-  const benchmarkListings = listings.filter((listing) => listing.benchmark_review_status && listing.benchmark_review_status !== 'none');
-  const benchmarkConfidenceOptions = Array.from(new Set(benchmarkListings.map((listing) => listing.price_context_confidence_tier).filter(Boolean))).sort();
-  const benchmarkClassOptions = Array.from(new Set(benchmarkListings.map((listing) => listing.price_context_property_class).filter(Boolean))).sort();
-  const benchmarkCityOptions = Array.from(new Set(benchmarkListings.map((listing) => listing.city).filter(Boolean))).sort();
-  const visibleListings = activeTab === 'benchmark_review'
-    ? benchmarkListings.filter((listing) => {
-      const statusMatch = benchmarkStatusFilter === 'all'
-        || (benchmarkStatusFilter === 'open' && (listing.benchmark_review_status === 'requested' || listing.benchmark_review_status === 'under_review'))
-        || listing.benchmark_review_status === benchmarkStatusFilter;
-      const confidenceMatch = benchmarkConfidenceFilter === 'all' || listing.price_context_confidence_tier === benchmarkConfidenceFilter;
-      const classMatch = benchmarkClassFilter === 'all' || listing.price_context_property_class === benchmarkClassFilter;
-      const cityMatch = benchmarkCityFilter === 'all' || listing.city === benchmarkCityFilter;
-      return statusMatch && confidenceMatch && classMatch && cityMatch;
-    })
-    : listings;
+  const isMutating = approveListing.isPending || requestChanges.isPending || rejectListing.isPending;
+  const visibleListings = listings;
 
   const handleApprove = (id: string, notes?: string, agentId?: string, propertyTitle?: string, featureThis?: boolean) => {
     const property = listings.find(p => p.id === id);
@@ -125,13 +104,6 @@ export default function AdminListingReview() {
       color: 'text-muted-foreground',
       bgColor: 'bg-muted',
     },
-    {
-      key: 'benchmark_review',
-      label: 'Benchmark Review',
-      icon: BarChart3,
-      color: 'text-primary',
-      bgColor: 'bg-primary/10',
-    },
   ];
 
   return (
@@ -159,7 +131,7 @@ export default function AdminListingReview() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             whileHover={{ scale: 1.02 }}
-            onClick={() => setActiveTab(stat.key as VerificationStatus | 'benchmark_review')}
+            onClick={() => setActiveTab(stat.key as VerificationStatus)}
             className="cursor-pointer"
           >
             <Card className={`${activeTab === stat.key ? 'ring-2 ring-primary' : ''} transition-all`}>
@@ -182,7 +154,7 @@ export default function AdminListingReview() {
       </div>
 
       {/* Listings Tabs */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as VerificationStatus | 'all' | 'benchmark_review')}>
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as VerificationStatus | 'all')}>
         <TabsList className="mb-4">
           <TabsTrigger value="pending_review" className="gap-2">
             <ClipboardCheck className="h-4 w-4" />
@@ -207,50 +179,7 @@ export default function AdminListingReview() {
             <Filter className="h-4 w-4" />
             All
           </TabsTrigger>
-          <TabsTrigger value="benchmark_review" className="gap-2">
-            <BarChart3 className="h-4 w-4" />
-            Benchmark
-            {stats?.benchmark_review ? <Badge variant="secondary" className="ml-1">{stats.benchmark_review}</Badge> : null}
-          </TabsTrigger>
         </TabsList>
-
-        {activeTab === 'benchmark_review' && (
-          <Card className="mb-4">
-            <CardContent className="grid gap-3 p-4 md:grid-cols-4">
-              <Select value={benchmarkStatusFilter} onValueChange={setBenchmarkStatusFilter}>
-                <SelectTrigger><SelectValue placeholder="Review status" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="open">Requested + under review</SelectItem>
-                  <SelectItem value="requested">Requested</SelectItem>
-                  <SelectItem value="under_review">Under review</SelectItem>
-                  <SelectItem value="resolved">Resolved</SelectItem>
-                  <SelectItem value="all">All benchmark reviews</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={benchmarkConfidenceFilter} onValueChange={setBenchmarkConfidenceFilter}>
-                <SelectTrigger><SelectValue placeholder="Confidence tier" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All confidence tiers</SelectItem>
-                  {benchmarkConfidenceOptions.map((tier) => <SelectItem key={tier} value={tier}>{tier.replace(/_/g, ' ')}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              <Select value={benchmarkClassFilter} onValueChange={setBenchmarkClassFilter}>
-                <SelectTrigger><SelectValue placeholder="Property class" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All property classes</SelectItem>
-                  {benchmarkClassOptions.map((propertyClass) => <SelectItem key={propertyClass} value={propertyClass}>{propertyClass.replace(/_/g, ' ')}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              <Select value={benchmarkCityFilter} onValueChange={setBenchmarkCityFilter}>
-                <SelectTrigger><SelectValue placeholder="City / area" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All cities</SelectItem>
-                  {benchmarkCityOptions.map((city) => <SelectItem key={city} value={city}>{city}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Listings Content */}
         <div className="space-y-4">
@@ -266,8 +195,6 @@ export default function AdminListingReview() {
                 <p className="text-muted-foreground">
                    {activeTab === 'pending_review' 
                     ? "Great job! You've reviewed all pending listings."
-                    : activeTab === 'benchmark_review'
-                      ? 'No open benchmark review requests.'
                     : `No listings with status "${activeTab.replace('_', ' ')}"`
                   }
                 </p>
@@ -285,7 +212,6 @@ export default function AdminListingReview() {
                   onApprove={handleApprove}
                   onRequestChanges={handleRequestChanges}
                   onReject={handleReject}
-                  onBenchmarkReviewAction={(id, resolution, notes) => resolveBenchmarkReview.mutate({ id, resolution, notes })}
                   isLoading={isMutating}
                 />
               </motion.div>

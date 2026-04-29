@@ -1,11 +1,9 @@
-import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { DollarSign, TrendingUp, Home, Building, BadgeCheck, AlertTriangle, Gauge, MousePointerClick, ShieldCheck, EyeOff, ArrowRight, Ruler, FileWarning, Wrench } from 'lucide-react';
+import { DollarSign, TrendingUp, Home, Building, BadgeCheck, AlertTriangle, Gauge, MousePointerClick, ShieldCheck, EyeOff, Ruler, FileWarning, Wrench } from 'lucide-react';
 import { PriceAnalyticsData } from '@/hooks/usePriceAnalytics';
-import { usePriceContextBlockers } from '@/hooks/useListingReview';
 import { exportToCSV } from '@/lib/csvExport';
 import { 
   BarChart, Bar, XAxis, YAxis, ResponsiveContainer, 
@@ -28,8 +26,6 @@ const COLORS = [
 ];
 
 export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
-  const { data: blockers = [], isLoading: blockersLoading } = usePriceContextBlockers();
-
   if (isLoading) {
     return (
       <Card className="rounded-2xl border-border/50">
@@ -67,7 +63,6 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
       ['Context inquiry conversion rate', `${context.inquiryConversionRate.toFixed(1)}%`],
       ['Trust helpful rate', `${context.helpfulFeedbackRate.toFixed(1)}%`],
       ['Premium context completion rate', `${context.premiumContextCompletionRate.toFixed(1)}%`],
-      ['Benchmark review request rate', `${context.benchmarkReviewRequestRate.toFixed(1)}%`],
       ['Unknown sqm source rate', `${context.unknownSqmSourceRate.toFixed(1)}%`],
       ['Unknown ownership rate', `${context.unknownOwnershipRate.toFixed(1)}%`],
     ]);
@@ -75,7 +70,7 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
   const contextCards = [
     { label: 'Context Complete', value: `${(context?.completionRate || 0).toFixed(0)}%`, sub: `${context?.complete || 0} of ${context?.totalListings || 0} active listings`, icon: BadgeCheck },
     { label: 'Ranking Ready', value: `${(context?.rankingReadinessRate || 0).toFixed(0)}%`, sub: `${context?.rankingReady || 0} safe to prioritize`, icon: ShieldCheck },
-    { label: 'Under Review', value: (context?.underReview || 0).toLocaleString(), sub: 'Agent benchmark challenges', icon: AlertTriangle },
+    { label: 'Limited Context', value: (context?.incomplete || 0).toLocaleString(), sub: 'Listings missing public context', icon: AlertTriangle },
     { label: 'Price Context Views', value: (context?.moduleViews || 0).toLocaleString(), sub: `${context?.buyerQuestionEngagements || 0} question interactions`, icon: MousePointerClick },
   ];
 
@@ -86,8 +81,6 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
     { label: 'Unknown ownership', value: `${(context?.unknownOwnershipRate || 0).toFixed(0)}%`, sub: `${context?.unknownOwnership || 0} listings need ownership context`, icon: ShieldCheck },
     { label: 'Admin corrections', value: (context?.adminCorrectionEvents || 0).toLocaleString(), sub: `${(context?.adminCorrectionRate || 0).toFixed(1)} per 100 active listings`, icon: Wrench },
   ];
-
-  const formatPriceCompact = (price: number, currency?: string | null) => `${currency || '₪'}${price.toLocaleString()}`;
 
   return (
     <Card className="rounded-2xl border-border/50 overflow-hidden">
@@ -152,7 +145,7 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
                 Boost safeguards
               </div>
               <p className="mt-2 text-2xl font-bold text-foreground">{(context?.blockedFromBoost || 0).toLocaleString()}</p>
-              <p className="text-xs text-muted-foreground">Blocked or under review listings excluded from Price Context boosts</p>
+              <p className="text-xs text-muted-foreground">Confidence-limited listings excluded from Price Context boosts</p>
             </div>
           </div>
 
@@ -199,11 +192,6 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
               <p className="text-xs font-medium text-muted-foreground">Premium context completion</p>
               <p className="mt-2 text-2xl font-bold text-foreground">{(context?.premiumContextCompletionRate || 0).toFixed(1)}%</p>
               <p className="text-xs text-muted-foreground">Listings with premium drivers or explanation</p>
-            </div>
-            <div className="rounded-xl border border-border/50 bg-background p-3">
-              <p className="text-xs font-medium text-muted-foreground">Review request rate</p>
-              <p className="mt-2 text-2xl font-bold text-foreground">{(context?.benchmarkReviewRequestRate || 0).toFixed(1)}%</p>
-              <p className="text-xs text-muted-foreground">Agency benchmark challenges per sale listing</p>
             </div>
             <div className="rounded-xl border border-border/50 bg-background p-3">
               <p className="text-xs font-medium text-muted-foreground">Lead quality rating</p>
@@ -274,22 +262,16 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
             </div>
 
             <div className="rounded-xl border border-border/50 p-4">
-              <p className="text-sm font-semibold text-foreground">Review signals</p>
+              <p className="text-sm font-semibold text-foreground">Activity signals</p>
               <div className="mt-3 space-y-3">
-                {(context?.reviewReasons || []).slice(0, 3).map((item) => (
-                  <div key={item.reason} className="flex items-center justify-between gap-3 text-sm">
-                    <span className="text-foreground">{formatLabel(item.reason)}</span>
-                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">{item.count}</span>
-                  </div>
-                ))}
                 {(context?.recentEvents || []).slice(0, 3).map((item) => (
                   <div key={item.eventType} className="flex items-center justify-between gap-3 text-sm">
                     <span className="text-muted-foreground">{formatLabel(item.eventType)}</span>
                     <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">{item.count}</span>
                   </div>
                 ))}
-                {(context?.reviewReasons || []).length === 0 && (context?.recentEvents || []).length === 0 && (
-                  <p className="text-sm text-muted-foreground">No review activity in this range</p>
+                {(context?.recentEvents || []).length === 0 && (
+                  <p className="text-sm text-muted-foreground">No Price Context activity in this range</p>
                 )}
               </div>
             </div>
@@ -332,44 +314,6 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
             </div>
           )}
 
-          <div className="rounded-xl border border-border/50 p-4">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold text-foreground">Ranking blocker queue</p>
-                <p className="text-xs text-muted-foreground">Live sale listings excluded from Price Context boosts</p>
-              </div>
-              <Button asChild variant="outline" size="sm">
-                <Link to="/admin/review">
-                  Review queue
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-            </div>
-            <div className="mt-3 space-y-2">
-              {blockersLoading ? (
-                <Skeleton className="h-20 w-full" />
-              ) : blockers.length > 0 ? (
-                blockers.slice(0, 5).map((listing) => (
-                  <div key={listing.id} className="flex items-center justify-between gap-3 rounded-lg border border-border/50 bg-muted/20 p-3">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-foreground">{listing.title}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {[listing.neighborhood, listing.city].filter(Boolean).join(', ')} · {formatPriceCompact(listing.price, listing.currency)}
-                      </p>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-2">
-                      <Badge variant="outline">{formatLabel(listing.price_context_badge_status || 'missing_context')}</Badge>
-                      {(listing.benchmark_review_status === 'requested' || listing.benchmark_review_status === 'under_review') && (
-                        <Badge className="bg-primary/10 text-primary hover:bg-primary/10">{formatLabel(listing.benchmark_review_status)}</Badge>
-                      )}
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="rounded-lg bg-muted/20 p-3 text-sm text-muted-foreground">No active Price Context ranking blockers.</p>
-              )}
-            </div>
-          </div>
         </div>
 
         {/* Summary Stats */}
