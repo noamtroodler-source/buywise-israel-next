@@ -287,6 +287,7 @@ function MarketVerdictBadge({ compsCount, radiusUsedM, priceTier, priceContext }
 function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchmarkRanges, compsCount, radiusUsedM, sqmSource, ownershipType, onTrackInteraction }: { priceContext: PriceContextResult; premiumExplanation?: string | null; benchmarkCards: BenchmarkCard[]; benchmarkRanges: BenchmarkRange[]; propertyPricePerSqm: number | null; compsCount: number; radiusUsedM: number; sqmSource?: string | null; ownershipType?: string | null; onTrackInteraction?: (eventName: string, properties?: Record<string, unknown>) => void }) {
   const radiusLabel = radiusUsedM >= 1000 ? '1km' : `${radiusUsedM}m`;
   const buyerTakeaway = buildBuyerTakeaway(priceContext);
+  const confidence = buildPriceConfidence(priceContext);
   const subtitle = priceContext.isLuxuryPremiumMode
     ? 'Recorded sales and local benchmarks to give background only — luxury properties can trade far above standard ranges.'
     : 'Recorded sales and local benchmarks to help you understand the asking price.';
@@ -297,9 +298,16 @@ function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchma
         <div className="min-w-0 flex-1">
           <div className="mb-2 space-y-1">
             <div className="flex flex-wrap items-center gap-2">
-              <p className="text-sm font-semibold text-foreground">BuyWise Price Context</p>
+              <p className="text-sm font-semibold text-foreground">BuyWise Price Confidence</p>
+              <Badge variant="outline" className={cn('rounded-lg text-xs font-semibold', confidence.tone)}>
+                {confidence.label}
+              </Badge>
             </div>
             <p className="text-xs text-muted-foreground">{subtitle}</p>
+          </div>
+          <div className="rounded-lg border border-primary/15 bg-primary/5 px-3 py-3">
+            <p className="text-base font-semibold text-foreground">{priceContext.publicLabel}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{confidence.summary}</p>
           </div>
           <div className="mt-3 grid gap-2 md:grid-cols-3">
             {benchmarkCards.map((card) => (
