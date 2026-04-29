@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { BarChart3, ShieldCheck, Info, ArrowRight, ChevronDown, CircleHelp, CheckCircle2, Calculator, Ruler, TrendingUp, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { useState, useCallback, useEffect, useMemo, useRef, type ComponentType } from 'react';
+import { BarChart3, ShieldCheck, Info, ArrowRight, ChevronDown, CircleHelp, CheckCircle2, Calculator, Ruler, TrendingUp, ThumbsUp, ThumbsDown, MapPin, Building2, Home } from 'lucide-react';
 import { getIsraeliRoomCount } from '@/lib/israeliRoomCount';
 import { Link, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -104,6 +104,38 @@ function formatPremiumDriver(driver: string) {
 function formatNisPerSqm(value: number | null | undefined) {
   if (!value) return '—';
   return `₪${Math.round(value).toLocaleString()}/sqm`;
+}
+
+function formatNisAmount(value: number | null | undefined) {
+  if (!value) return '—';
+  return `₪${Math.round(value).toLocaleString()}`;
+}
+
+function formatNisPerSqmRange(min: number, max: number) {
+  return `${formatNisPerSqm(min)}–${Math.round(max).toLocaleString()}/sqm`;
+}
+
+interface BenchmarkCard {
+  id: string;
+  label: string;
+  value: string;
+  detail: string;
+  icon: ComponentType<{ className?: string }>;
+}
+
+function BenchmarkCardTile({ card }: { card: BenchmarkCard }) {
+  const Icon = card.icon;
+
+  return (
+    <div className="rounded-lg border border-border/70 bg-background/70 p-3">
+      <p className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+        <Icon className="h-3 w-3" />
+        {card.label}
+      </p>
+      <p className="mt-1 text-sm font-semibold text-foreground">{card.value}</p>
+      <p className="mt-1 text-[11px] leading-snug text-muted-foreground">{card.detail}</p>
+    </div>
+  );
 }
 
 function MarketVerdictBadge({ compsCount, radiusUsedM, priceTier, priceContext }: { compsCount: number; radiusUsedM: number; priceTier?: PriceTier | null; priceContext: PriceContextResult }) {
