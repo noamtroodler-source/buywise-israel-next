@@ -204,10 +204,13 @@ export default function AgencyDashboard() {
           <div className="grid lg:grid-cols-5 gap-6 lg:items-stretch">
             {/* Left Column — wider */}
             <div className="lg:col-span-3 flex flex-col">
-              {/* Performance Insights — subtle bg wrap */}
-              <div className="bg-muted/30 rounded-2xl p-4 flex-1">
-                <AgencyPerformanceInsights />
-              </div>
+              {liveListingsCount > 0 ? (
+                <div className="bg-muted/30 rounded-2xl p-4 flex-1">
+                  <AgencyPerformanceInsights />
+                </div>
+              ) : (
+                <DashboardListingsPreview agencyId={agency.id} />
+              )}
             </div>
 
             {/* Right Column — narrower, matching gray wrapper */}

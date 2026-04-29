@@ -63,7 +63,7 @@ export function AgencyPerformanceInsights() {
   const liveListingsQuery = () => supabase
     .from('properties')
     .select('id')
-    .in('agent_id', agentIds)
+    .eq('primary_agency_id', agency?.id)
     .eq('is_published', true)
     .eq('verification_status', 'approved');
 
@@ -75,7 +75,7 @@ export function AgencyPerformanceInsights() {
   const { data: thisWeekViews = 0 } = useQuery({
     queryKey: ['agency-views-this-week', agency?.id],
     queryFn: async () => {
-      if (agentIds.length === 0) return 0;
+      if (!agency?.id) return 0;
       const { data: properties } = await liveListingsQuery();
       if (!properties?.length) return 0;
       const propertyIds = properties.map(p => p.id);
@@ -87,13 +87,13 @@ export function AgencyPerformanceInsights() {
         .lte('viewed_at', format(thisWeekEnd, 'yyyy-MM-dd'));
       return count ?? 0;
     },
-    enabled: !!agency?.id && agentIds.length > 0,
+    enabled: !!agency?.id,
   });
 
   const { data: lastWeekViews = 0 } = useQuery({
     queryKey: ['agency-views-last-week', agency?.id],
     queryFn: async () => {
-      if (agentIds.length === 0) return 0;
+      if (!agency?.id) return 0;
       const { data: properties } = await liveListingsQuery();
       if (!properties?.length) return 0;
       const propertyIds = properties.map(p => p.id);
@@ -105,7 +105,7 @@ export function AgencyPerformanceInsights() {
         .lte('viewed_at', format(lastWeekEnd, 'yyyy-MM-dd'));
       return count ?? 0;
     },
-    enabled: !!agency?.id && agentIds.length > 0,
+    enabled: !!agency?.id,
   });
 
   const { data: thisWeekInquiries = 0 } = useQuery({
