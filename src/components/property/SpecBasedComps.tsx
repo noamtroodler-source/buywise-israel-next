@@ -19,6 +19,19 @@ import { useFormatPrice, useFormatPricePerArea } from '@/contexts/PreferencesCon
 import { useSpecBasedSoldComps, computeSpecCompStats, SpecBasedComp } from '@/hooks/useSpecBasedSoldComps';
 import { computePriceContextCompRecency, computePriceContextSpecMatch, type PriceContextCompClassMatch, type PriceContextSpecMatchQuality } from '@/lib/priceContext';
 
+function getDirectionalComparisonLabel(value: number) {
+  if (Math.abs(value) <= 5) return 'Similar benchmark';
+  if (value > 20) return 'Meaningfully lower than this listing';
+  if (value > 5) return 'Lower than this listing';
+  if (value < -20) return 'Meaningfully higher than this listing';
+  return 'Higher than this listing';
+}
+
+function getSummaryComparisonLabel(value: number) {
+  if (Math.abs(value) <= 10) return 'broadly in line with';
+  return value > 0 ? 'below' : 'above';
+}
+
 interface SpecBasedCompsProps {
   city: string;
   neighborhood?: string | null;
@@ -80,8 +93,7 @@ function CompRow({ comp, subjectPriceSqm }: { comp: SpecBasedComp; subjectPriceS
               ) : (
                 <Minus className="w-3 h-3 mr-0.5" />
               )}
-              {Math.abs(Math.round(vsSubject))}%{' '}
-              {vsSubject > 0 ? 'cheaper' : vsSubject < 0 ? 'pricier' : 'similar'}
+              {getDirectionalComparisonLabel(vsSubject)}
             </Badge>
           )}
         </div>
@@ -211,8 +223,7 @@ export function SpecBasedComps({
             : <Minus className="w-4 h-4 flex-shrink-0" />}
           <span>
             This listing is asking{' '}
-            <strong>{Math.abs(stats.vsSubjectPct ?? 0)}%{' '}
-            {(stats.vsSubjectPct ?? 0) > 0 ? 'below' : (stats.vsSubjectPct ?? 0) < 0 ? 'above' : 'in line with'}</strong>{' '}
+            <strong>{getSummaryComparisonLabel(stats.vsSubjectPct ?? 0)}</strong>{' '}
             recent comparable sales.
           </span>
         </div>

@@ -28,6 +28,15 @@ interface SoldComp {
   is_same_building: boolean;
 }
 
+function getComparablePositionLabel(comparison: number, areaLabel: string) {
+  if (Math.abs(comparison) <= 2) return `Similar price ${areaLabel}`;
+  if (comparison > 25) return 'Large premium to this sale';
+  if (comparison > 12) return 'Premium to this sale';
+  if (comparison > 0) return 'Slightly above this sale';
+  if (comparison < -12) return 'Below this sale';
+  return 'Slightly below this sale';
+}
+
 // Desktop comps list with "Show more" functionality
 function DesktopCompsList({
   comps,
@@ -147,12 +156,7 @@ function DesktopCompsList({
                             : "bg-semantic-green text-semantic-green-foreground hover:bg-semantic-green/90"
                     )}
                   >
-                    {Math.abs(comparison) <= 2
-                      ? `Similar price ${areaLabels.perArea}`
-                      : comparison > 0 
-                        ? `Listing is ${comparison.toFixed(0)}% above this sale`
-                        : `Listing is ${Math.abs(comparison).toFixed(0)}% below this sale`
-                    }
+                    {getComparablePositionLabel(comparison, areaLabels.perArea)}
                   </Badge>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-xs">
@@ -504,15 +508,15 @@ export function RecentNearbySales({
               </Badge>
             ) : avgComparison > 10 && avgComparison <= 20 ? (
               <Badge className="bg-semantic-amber text-semantic-amber-foreground border-semantic-amber">
-                Above average for this area (+{avgComparison.toFixed(0)}%)
+                Premium to nearby recorded sales
               </Badge>
             ) : avgComparison > 20 ? (
               <Badge className="bg-semantic-amber text-semantic-amber-foreground border-semantic-amber">
-                Significantly above market (+{avgComparison.toFixed(0)}%)
+                Large premium — context important
               </Badge>
             ) : avgComparison < -5 ? (
               <Badge className="bg-semantic-green text-semantic-green-foreground border-semantic-green">
-                Below average — potential value ({avgComparison.toFixed(0)}%)
+                Below nearby recorded benchmarks
               </Badge>
             ) : null}
             <Tooltip>
@@ -600,12 +604,7 @@ export function RecentNearbySales({
                                         : "bg-semantic-green text-semantic-green-foreground"
                                 )}
                               >
-                                {Math.abs(comparison) <= 2
-                                  ? `Similar price ${areaLabels.perArea}`
-                                  : comparison > 0 
-                                    ? `Listing is ${comparison.toFixed(0)}% above this sale`
-                                    : `Listing is ${Math.abs(comparison).toFixed(0)}% below this sale`
-                                }
+                                  {getComparablePositionLabel(comparison, areaLabels.perArea)}
                               </Badge>
                             </div>
                           )}
