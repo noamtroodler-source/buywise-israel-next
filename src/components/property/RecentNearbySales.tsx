@@ -219,6 +219,7 @@ interface RecentNearbySalesProps {
   hideVerdict?: boolean;
   /** Callback to expose the computed average comparison to parent */
   onVerdictComputed?: (avgComparison: number | null, compsCount: number, radiusUsedM: number, avgCompPriceSqm: number | null, compDispersionPercent?: number | null, compClassMatch?: PriceContextCompClassMatch | null, roomMatchQuality?: PriceContextSpecMatchQuality | null, sizeMatchQuality?: PriceContextSpecMatchQuality | null, compRecencyMonths?: number | null) => void;
+  onCompsViewed?: (payload: { compsCount: number; radiusUsedM: number; source: 'nearby_sales' }) => void;
 }
 
 export function RecentNearbySales({
@@ -232,6 +233,7 @@ export function RecentNearbySales({
   hideHeader = false,
   hideVerdict = false,
   onVerdictComputed,
+  onCompsViewed,
 }: RecentNearbySalesProps) {
   const formatPrice = useFormatPrice();
   const formatPricePerAreaFn = useFormatPricePerArea();
@@ -358,6 +360,12 @@ export function RecentNearbySales({
       onVerdictComputed(avgComparison, comps?.length ?? 0, radiusUsedM, avgCompPriceSqm, compDispersionPercent, compClassMetadata.classMatch, specMatchMetadata.roomMatchQuality, specMatchMetadata.sizeMatchQuality, recencyMetadata.avgRecencyMonths);
     }
   }, [avgComparison, comps?.length, radiusUsedM, avgCompPriceSqm, compDispersionPercent, compClassMetadata.classMatch, specMatchMetadata.roomMatchQuality, specMatchMetadata.sizeMatchQuality, recencyMetadata.avgRecencyMonths, onVerdictComputed]);
+
+  useEffect(() => {
+    if (!isLoading && comps.length > 0) {
+      onCompsViewed?.({ compsCount: comps.length, radiusUsedM, source: 'nearby_sales' });
+    }
+  }, [isLoading, comps.length, radiusUsedM, onCompsViewed]);
 
   // Show empty state if we don't have coordinates
   if (!latitude || !longitude) {
