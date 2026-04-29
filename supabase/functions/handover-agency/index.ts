@@ -17,7 +17,8 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || FALLBACK_ANON_KEY;
+    const configuredAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || "";
+    const anonKey = isJwt(configuredAnonKey) ? configuredAnonKey : FALLBACK_ANON_KEY;
     const admin = createClient(supabaseUrl, serviceKey);
 
     // ---- Auth: require admin ----
@@ -226,6 +227,10 @@ function json(data: Record<string, unknown>, status = 200) {
 
 function normalizeEmail(email?: string | null): string {
   return (email ?? "").trim().toLowerCase();
+}
+
+function isJwt(value: string): boolean {
+  return value.split(".").length === 3;
 }
 
 async function sendTransactionalEmail(
