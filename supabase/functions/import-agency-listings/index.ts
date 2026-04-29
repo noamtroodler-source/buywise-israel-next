@@ -4622,13 +4622,21 @@ async function processOneItem(
           fieldSourceMap["features"] = incomingFieldSource("features");
         }
 
-        // Images: first successful source wins. Later matched sources enrich facts/features only,
-        // avoiding duplicated/overlapping galleries across agency/Madlan/Yad2.
+        // Images: agency-owned website photos are canonical. Madlan is fallback only
+        // when the matched listing has no images; Yad2 never contributes images.
         if (imageUrls.length > 0) {
           const existingImages = Array.isArray(existing.images) ? existing.images as string[] : [];
-          if (existingImages.length === 0 && incomingSource !== "yad2") {
+          const existingImageSource = fieldSourceMap["images"] || existing.import_source || null;
+          const agencyWebsiteCanReplaceFallback = incomingSource === "website_scrape"
+            && existingImages.length > 0
+            && existingImageSource !== "website_scrape"
+            && existingImageSource !== "website_scrape_parser";
+          if (incomingSource === "website_scrape" && (existingImages.length === 0 || agencyWebsiteCanReplaceFallback)) {
             patch.images = imageUrls;
-            fieldSourceMap["images"] = incomingSource === "madlan" ? "madlan_fallback" : incomingSource;
+            fieldSourceMap["images"] = "website_scrape";
+          } else if (incomingSource === "madlan" && existingImages.length === 0) {
+            patch.images = imageUrls;
+            fieldSourceMap["images"] = "madlan_fallback";
           }
         }
 
@@ -4641,6 +4649,11 @@ async function processOneItem(
         }
 
         await sb.from("properties").update(patch).eq("id", crossSourceMatchId);
+
+        if (patch.images && imageUrls.length > 0) {
+          const phashWarnings = await registerImageHashes(crossSourceMatchId, imageUrls, sb, listing.image_hashes || []);
+          if (phashWarnings.length > 0) dlog(`pHash warnings for merged property ${crossSourceMatchId}:`, phashWarnings);
+        }
 
         // Log any conflicts detected
         if (conflictsToLog.length > 0) {
