@@ -194,18 +194,47 @@ function PremiumContextSummary({ priceContext, premiumExplanation }: { priceCont
 
 function buildBuyerTakeaway(priceContext: PriceContextResult) {
   if (priceContext.isLuxuryPremiumMode) {
-    return 'Treat this as luxury-property context. Public sales data is background only; ask which specific features, rights, and comparable luxury sales support the premium.';
+    return 'This looks like a luxury-context listing, so treat public sales data as background and ask which specific features, rights, and comparable luxury sales support the premium.';
   }
   if (priceContext.confidenceTier === 'insufficient_data') {
-    return 'There is not enough recorded-sale data for a reliable benchmark, so ask for recent comparable examples.';
+    return 'The evidence is too thin for a reliable pricing read, so ask the agent for recent comparable sales before treating the ask as validated.';
   }
   if (priceContext.confidenceTier === 'limited_comparable_match') {
-    return 'Use this as directional pricing context only; comparable matches are limited.';
+    return 'Use this as directional context only; the closest recorded sales are limited, so the next step is confirming better comps and property-specific drivers.';
   }
   if (priceContext.confidenceTier === 'premium_unique_property' || priceContext.propertyClass !== 'standard_resale' || priceContext.premiumDrivers.length > 0) {
-    return 'Treat this as premium-property context; ask which features or rights explain the difference.';
+    return 'This appears to need premium-property context, so ask what features, rights, view, parking, or project factors explain the gap from standard comps.';
   }
-  return 'The asking price appears broadly aligned with available recorded-sale context, but key property details still matter.';
+  return 'The asking price appears broadly supported by available recorded-sale context, but still verify size, condition, and included extras before making an offer.';
+}
+
+function buildPriceConfidence(priceContext: PriceContextResult) {
+  if (priceContext.isLuxuryPremiumMode || priceContext.confidenceTier === 'premium_unique_property') {
+    return {
+      label: 'Premium context',
+      summary: 'Standard comps only tell part of the story here.',
+      tone: 'border-primary/20 bg-primary/5 text-primary',
+    };
+  }
+  if (priceContext.confidenceTier === 'insufficient_data') {
+    return {
+      label: 'Low evidence',
+      summary: 'There is not enough recorded-sale support yet.',
+      tone: 'border-muted bg-muted/50 text-muted-foreground',
+    };
+  }
+  if (priceContext.confidenceTier === 'limited_comparable_match' || priceContext.confidenceTier === 'directional_benchmark') {
+    return {
+      label: 'Directional read',
+      summary: 'Useful context, but not a tight valuation signal.',
+      tone: 'border-primary/15 bg-primary/5 text-primary',
+    };
+  }
+  return {
+    label: 'Supported by comps',
+    summary: 'The available evidence gives a stronger pricing signal.',
+    tone: 'border-primary/20 bg-primary/5 text-primary',
+  };
 }
 
 function MarketVerdictBadge({ compsCount, radiusUsedM, priceTier, priceContext }: { compsCount: number; radiusUsedM: number; priceTier?: PriceTier | null; priceContext: PriceContextResult }) {
