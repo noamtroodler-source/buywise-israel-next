@@ -58,7 +58,7 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
     { label: 'Context Complete', value: `${(context?.completionRate || 0).toFixed(0)}%`, sub: `${context?.complete || 0} of ${context?.totalListings || 0} active listings`, icon: BadgeCheck },
     { label: 'Ranking Ready', value: `${(context?.rankingReadinessRate || 0).toFixed(0)}%`, sub: `${context?.rankingReady || 0} safe to prioritize`, icon: ShieldCheck },
     { label: 'Under Review', value: (context?.underReview || 0).toLocaleString(), sub: 'Agent benchmark challenges', icon: AlertTriangle },
-    { label: 'Complete Listing CVR', value: `${(context?.inquiryConversionRate || 0).toFixed(1)}%`, sub: 'Inquiries per view in range', icon: MousePointerClick },
+    { label: 'Price Context Views', value: (context?.moduleViews || 0).toLocaleString(), sub: `${context?.buyerQuestionEngagements || 0} question interactions`, icon: MousePointerClick },
   ];
 
   const formatPriceCompact = (price: number, currency?: string | null) => `${currency || '₪'}${price.toLocaleString()}`;
@@ -115,6 +115,24 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
               </div>
               <p className="mt-2 text-2xl font-bold text-foreground">{(context?.blockedFromBoost || 0).toLocaleString()}</p>
               <p className="text-xs text-muted-foreground">Blocked or under review listings excluded from Price Context boosts</p>
+            </div>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-3">
+            <div className="rounded-xl border border-border/50 bg-background p-3">
+              <p className="text-xs font-medium text-muted-foreground">Buyer question engagement</p>
+              <p className="mt-2 text-2xl font-bold text-foreground">{(context?.questionEngagementRate || 0).toFixed(1)}%</p>
+              <p className="text-xs text-muted-foreground">Question clicks per Price Context view</p>
+            </div>
+            <div className="rounded-xl border border-border/50 bg-background p-3">
+              <p className="text-xs font-medium text-muted-foreground">Post-context inquiries</p>
+              <p className="mt-2 text-2xl font-bold text-foreground">{(context?.postViewInquiries || 0).toLocaleString()}</p>
+              <p className="text-xs text-muted-foreground">Tracked inquiry actions after Price Context exposure</p>
+            </div>
+            <div className="rounded-xl border border-border/50 bg-background p-3">
+              <p className="text-xs font-medium text-muted-foreground">Context-to-inquiry CVR</p>
+              <p className="mt-2 text-2xl font-bold text-foreground">{(context?.inquiryConversionRate || 0).toFixed(1)}%</p>
+              <p className="text-xs text-muted-foreground">Inquiries per Price Context module view</p>
             </div>
           </div>
 
