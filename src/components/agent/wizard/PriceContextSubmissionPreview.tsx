@@ -1,8 +1,9 @@
-import { Sparkles, ShieldCheck, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, BarChart3, Calculator, CheckCircle2, ChevronDown, CircleHelp, Ruler, ShieldCheck, TrendingUp } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { getWizardPriceContext } from '@/lib/wizardPriceContext';
 import type { MarketFitReviewResult } from '@/lib/marketFit';
 import type { PropertyWizardData } from './PropertyWizardContext';
@@ -15,6 +16,15 @@ interface PriceContextSubmissionPreviewProps {
   onConfirmedChange: (checked: boolean) => void;
   onEditDetails: () => void;
   onEditPremiumContext: () => void;
+}
+
+function formatPremiumDriver(driver: string) {
+  return driver.replace(/[_/]+/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function formatNisPerSqm(value: number | null | undefined) {
+  if (!value) return '—';
+  return `₪${Math.round(value).toLocaleString()}/sqm`;
 }
 
 export function PriceContextSubmissionPreview({
@@ -33,29 +43,116 @@ export function PriceContextSubmissionPreview({
   const priceContext = getWizardPriceContext(data, cityAveragePriceSqm);
   const needsDetails = !data.sqm_source || !data.ownership_type;
   const needsPremiumContext = review.requiresContext || (cityGap !== null && cityGap >= 25 && !data.premium_explanation?.trim());
+  const hasPremiumContext = priceContext.confirmedPremiumDrivers.length > 0 || priceContext.detectedPremiumDrivers.length > 0 || Boolean(data.premium_explanation?.trim());
 
   return (
     <Alert variant="default" className="bg-primary/5 border-primary/20">
-      <Sparkles className="h-4 w-4 text-primary" />
+      <BarChart3 className="h-4 w-4 text-primary" />
       <AlertTitle className="text-foreground">Price Context preview</AlertTitle>
       <AlertDescription className="space-y-4 text-muted-foreground">
         <p>
-          Buyers will see context-first pricing language, not a harsh raw percentage, unless the benchmark match is strong and the gap is modest.
+          This mirrors the buyer-facing Price Context module, including grouped premium context and the public disclaimer language.
         </p>
-        <div className="grid gap-2 sm:grid-cols-3">
-          <div className="rounded-lg border border-border bg-background/80 p-3">
-            <p className="text-xs font-medium text-muted-foreground">Buyer label</p>
-            <p className="text-sm font-semibold text-foreground">{priceContext.publicLabel}</p>
+        <div className="rounded-xl border border-primary/15 bg-background/80 p-4 space-y-4">
+          <div className="flex items-start gap-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+              <BarChart3 className="h-4 w-4 text-primary" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="mb-2 space-y-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-sm font-semibold text-foreground">BuyWise Price Context</p>
+                  <Badge variant="secondary" className="text-xs">{priceContext.publicLabel}</Badge>
+                </div>
+                <p className="text-xs text-muted-foreground">Recorded sales, local benchmark ranges, and property-specific context for International buyers.</p>
+              </div>
+              <p className="text-sm text-muted-foreground">{priceContext.buyWiseTake}</p>
+            </div>
           </div>
-          <div className="rounded-lg border border-border bg-background/80 p-3">
-            <p className="text-xs font-medium text-muted-foreground">Confidence</p>
-            <p className="text-sm font-semibold text-foreground">{priceContext.confidenceLabel}</p>
+
+          <div className="grid gap-2 sm:grid-cols-3">
+            <div className="rounded-lg border border-border/70 bg-background/70 p-3">
+              <p className="flex items-center gap-1 text-xs font-medium text-muted-foreground"><Ruler className="h-3 w-3" /> Asking price / sqm</p>
+              <p className="text-sm font-semibold text-foreground">{formatNisPerSqm(pricePerSqm)}</p>
+            </div>
+            <div className="rounded-lg border border-border/70 bg-background/70 p-3">
+              <p className="flex items-center gap-1 text-xs font-medium text-muted-foreground"><TrendingUp className="h-3 w-3" /> Recorded local range</p>
+              <p className="text-sm font-semibold text-foreground">
+                {priceContext.benchmarkRange ? `${formatNisPerSqm(priceContext.benchmarkRange.min)}–${formatNisPerSqm(priceContext.benchmarkRange.max).replace('₪', '')}` : 'Directional only'}
+              </p>
+            </div>
+            <div className="rounded-lg border border-border/70 bg-background/70 p-3">
+              <p className="flex items-center gap-1 text-xs font-medium text-muted-foreground"><ShieldCheck className="h-3 w-3" /> Comparable confidence</p>
+              <p className="text-sm font-semibold text-foreground">{priceContext.confidenceLabel}</p>
+            </div>
           </div>
-          <div className="rounded-lg border border-border bg-background/80 p-3">
-            <p className="text-xs font-medium text-muted-foreground">Badge status</p>
-            <p className="text-sm font-semibold text-foreground">{priceContext.badgeEligible ? 'Pricing Context Complete' : 'Needs context'}</p>
+
+          {hasPremiumContext && (
+            <Collapsible defaultOpen>
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 px-2 text-xs text-primary hover:text-primary">
+                  What recorded sales may not capture
+                  <ChevronDown className="ml-1 h-3.5 w-3.5" />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-2 space-y-3">
+                {(priceContext.confirmedPremiumDrivers.length > 0 || priceContext.detectedPremiumDrivers.length > 0) && (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {priceContext.confirmedPremiumDrivers.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-xs font-medium text-muted-foreground">Confirmed by agency</p>
+                        <div className="flex flex-wrap gap-2">
+                          {priceContext.confirmedPremiumDrivers.slice(0, 8).map((driver) => <Badge key={driver} variant="outline" className="rounded-lg bg-background/70">{formatPremiumDriver(driver)}</Badge>)}
+                        </div>
+                      </div>
+                    )}
+                    {priceContext.detectedPremiumDrivers.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-xs font-medium text-muted-foreground">Detected from listing</p>
+                        <div className="flex flex-wrap gap-2">
+                          {priceContext.detectedPremiumDrivers.slice(0, 8).map((driver) => <Badge key={driver} variant="outline" className="rounded-lg bg-background/70">{formatPremiumDriver(driver)}</Badge>)}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {data.premium_explanation && (
+                  <p className="border-l-2 border-primary/30 pl-3 text-sm text-muted-foreground">{data.premium_explanation}</p>
+                )}
+              </CollapsibleContent>
+            </Collapsible>
+          )}
+
+          {priceContext.buyerQuestions.length > 0 && (
+            <div className="rounded-lg border border-border/70 bg-background/70 p-3">
+              <div className="mb-2 flex items-center gap-2">
+                <CircleHelp className="h-4 w-4 text-primary" />
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Questions worth asking</p>
+                  <p className="text-xs text-muted-foreground">Based on this listing’s pricing context and property details</p>
+                </div>
+              </div>
+              <ul className="space-y-1.5 text-sm text-muted-foreground">
+                {priceContext.buyerQuestions.map((question) => (
+                  <li key={question} className="flex gap-2">
+                    <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                    <span>{question}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <div className="rounded-lg border border-border/70 bg-background/70 p-3 text-xs text-muted-foreground space-y-2">
+            <p className="flex items-center gap-1 font-medium text-foreground"><Calculator className="h-3.5 w-3.5 text-primary" /> How we calculated this</p>
+            <p>Comparable set: local city benchmarks while listing-level comparable sales are finalized.</p>
+            <p>Property class: {priceContext.propertyClassLabel}. Standard resale, premium, new-build, garden, penthouse, and house/villa listings are treated cautiously because they do not trade the same way.</p>
+            <p>Israeli property size can be Tabu, Arnona, contractor-plan, marketing, or net size. Buyers should confirm the size basis with the agent before relying on price/sqm comparisons.</p>
+            {priceContext.percentageSuppressionReason && <p>{priceContext.percentageSuppressionReason}</p>}
+            <p>This is guidance from available recorded data, not an appraisal or exact fair-value estimate.</p>
           </div>
         </div>
+
         <div className="flex flex-wrap gap-2">
           {needsDetails && (
             <Button variant="outline" size="sm" onClick={onEditDetails} className="rounded-xl">
@@ -70,7 +167,7 @@ export function PriceContextSubmissionPreview({
           {!needsDetails && !needsPremiumContext && (
             <Badge variant="outline" className="bg-background/80 text-foreground">
               <CheckCircle2 className="mr-1 h-3 w-3 text-primary" />
-              Buyer-safe context is complete
+              {priceContext.badgeEligible ? 'Pricing Context Complete' : 'Buyer-safe context is complete'}
             </Badge>
           )}
         </div>
