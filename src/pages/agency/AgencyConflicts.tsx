@@ -17,10 +17,10 @@ import { AgencyBlocklistPanel } from '@/components/agency/AgencyBlocklistPanel';
 import { formatDistanceToNow } from 'date-fns';
 
 const SOURCE_LABEL: Record<string, string> = {
-  yad2: 'Imported value',
-  madlan: 'Imported value',
-  website_scrape: 'Website',
-  website: 'Website',
+  yad2: 'Import',
+  madlan: 'Import',
+  website_scrape: 'Import',
+  website: 'Import',
 };
 
 const SOURCE_TONE: Record<string, string> = {
