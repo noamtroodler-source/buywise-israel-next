@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 const APP_URL = "https://buywiseisrael.com";
-const FALLBACK_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIUzI1NiIsInJlZiI6ImV2ZXFoeXF4ZGliamF5bGlhenhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYyODAwNDMsImV4cCI6MjA4MTg1NjA0M30.Jj193wal4FT9oyYZpHa04VitNjnGb0Nt0eq34XDOJSQ";
+const FALLBACK_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2ZXFoeXF4ZGliamF5bGlhenhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYyODAwNDMsImV4cCI6MjA4MTg1NjA0M30.Jj193wal4FT9oyYZpHa04VitNjnGb0Nt0eq34XDOJSQ";
 
 // Sends welcome emails to all unsent agents in an agency.
 // Used by the owner dashboard "Send welcome emails to my agents" button
