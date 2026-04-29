@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { BarChart3, ShieldCheck, Info, ArrowRight, ChevronDown, CircleHelp, CheckCircle2, Calculator, Ruler, TrendingUp } from 'lucide-react';
 import { getIsraeliRoomCount } from '@/lib/israeliRoomCount';
 import { Link } from 'react-router-dom';
@@ -16,6 +16,7 @@ import { useNeighborhoodAvgPrice } from '@/hooks/useNeighborhoodPrices';
 import { usePriceTier } from '@/hooks/usePriceTier';
 import type { PriceTier } from '@/hooks/usePriceTier';
 import { getPriceContext, type PriceContextResult } from '@/lib/priceContext';
+import { useEventTracking } from '@/hooks/useEventTracking';
 
 interface MarketIntelligenceProps {
   property: {
@@ -124,10 +125,20 @@ function MarketVerdictBadge({ compsCount, radiusUsedM, priceTier, priceContext }
   );
 }
 
-function BuyWiseTake({ priceContext, premiumExplanation, propertyPricePerSqm, compsCount, radiusUsedM }: { priceContext: PriceContextResult; premiumExplanation?: string | null; propertyPricePerSqm: number | null; compsCount: number; radiusUsedM: number }) {
+function BuyWiseTake({ priceContext, premiumExplanation, propertyPricePerSqm, compsCount, radiusUsedM, onTrackInteraction }: { priceContext: PriceContextResult; premiumExplanation?: string | null; propertyPricePerSqm: number | null; compsCount: number; radiusUsedM: number; onTrackInteraction?: (eventName: string, properties?: Record<string, unknown>) => void }) {
   const [open, setOpen] = useState(false);
   const hasPremiumContext = priceContext.confirmedPremiumDrivers.length > 0 || priceContext.detectedPremiumDrivers.length > 0 || Boolean(premiumExplanation?.trim());
   const radiusLabel = radiusUsedM >= 1000 ? '1km' : `${radiusUsedM}m`;
+
+  const handlePremiumOpenChange = (nextOpen: boolean) => {
+    setOpen(nextOpen);
+    if (nextOpen) {
+      onTrackInteraction?.('price_context_premium_context_opened', {
+        confirmed_driver_count: priceContext.confirmedPremiumDrivers.length,
+        detected_driver_count: priceContext.detectedPremiumDrivers.length,
+      });
+    }
+  };
 
   return (
     <div className="rounded-xl border border-primary/15 bg-primary/5 p-4 space-y-4">
@@ -164,7 +175,7 @@ function BuyWiseTake({ priceContext, premiumExplanation, propertyPricePerSqm, co
       </div>
 
       {hasPremiumContext && (
-        <Collapsible open={open} onOpenChange={setOpen}>
+        <Collapsible open={open} onOpenChange={handlePremiumOpenChange}>
           <CollapsibleTrigger asChild>
             <Button variant="ghost" size="sm" className="h-8 px-2 text-xs text-primary hover:text-primary">
               What recorded sales may not capture
@@ -211,8 +222,12 @@ function BuyWiseTake({ priceContext, premiumExplanation, propertyPricePerSqm, co
             </div>
           </div>
           <ul className="space-y-1.5 text-sm text-muted-foreground">
-            {priceContext.buyerQuestions.map((question) => (
-              <li key={question} className="flex gap-2">
+            {priceContext.buyerQuestions.map((question, index) => (
+              <li
+                key={question}
+                className="flex cursor-pointer gap-2 rounded-md px-1 py-0.5 transition-colors hover:bg-primary/5"
+                onClick={() => onTrackInteraction?.('buyer_question_engaged', { question, question_index: index + 1 })}
+              >
                 <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
                 <span>{question}</span>
               </li>
@@ -221,7 +236,7 @@ function BuyWiseTake({ priceContext, premiumExplanation, propertyPricePerSqm, co
         </div>
       )}
 
-      <Collapsible>
+      <Collapsible onOpenChange={(nextOpen) => nextOpen && onTrackInteraction?.('price_context_calculation_opened', { confidence_tier: priceContext.confidenceTier })}>
         <CollapsibleTrigger asChild>
           <Button variant="ghost" size="sm" className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground">
             <Calculator className="mr-1 h-3.5 w-3.5" /> How we calculated this
