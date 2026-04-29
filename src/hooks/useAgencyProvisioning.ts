@@ -41,7 +41,7 @@ export type ProvisioningAgent = {
   enrichment_source?: string | null;
 };
 
-const IN_PROGRESS_STATUSES = ['draft', 'provisioning', 'quality_review', 'ready_for_handover'] as const;
+const PROVISIONING_VISIBLE_STATUSES = ['draft', 'provisioning', 'quality_review', 'ready_for_handover', 'handed_over'] as const;
 
 export function useProvisioningAgencies() {
   return useQuery({
@@ -50,7 +50,7 @@ export function useProvisioningAgencies() {
       const { data, error } = await supabase
         .from('agencies')
         .select('id, name, slug, email, phone, logo_url, description, cities_covered, website, office_address, social_links, admin_user_id, management_status, agent_email_strategy, provisioned_at, created_at')
-        .in('management_status', IN_PROGRESS_STATUSES)
+        .in('management_status', PROVISIONING_VISIBLE_STATUSES)
         .order('created_at', { ascending: false });
       if (error) throw error;
       return (data || []) as ProvisioningAgency[];

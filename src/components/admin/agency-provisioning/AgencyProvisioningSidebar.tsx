@@ -12,7 +12,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Plus, Building2, Trash2 } from 'lucide-react';
+import { Plus, Building2, Trash2, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ProvisioningAgency } from '@/hooks/useAgencyProvisioning';
 
@@ -42,12 +42,15 @@ const STATUS_VARIANT: Record<string, 'outline' | 'secondary' | 'default'> = {
 };
 
 export function AgencyProvisioningSidebar({ agencies, selectedId, onSelect, onCreate, onDelete, deletingId }: Props) {
+  const inProgressAgencies = agencies.filter(a => a.management_status !== 'handed_over');
+  const onboardingAgencies = agencies.filter(a => a.management_status === 'handed_over');
+
   return (
     <div className="border rounded-lg bg-card">
       <div className="p-3 border-b flex items-center justify-between">
         <div>
           <h3 className="font-semibold text-sm">In progress</h3>
-          <p className="text-xs text-muted-foreground">{agencies.length} agencies</p>
+          <p className="text-xs text-muted-foreground">{inProgressAgencies.length} agencies</p>
         </div>
         <Button size="sm" variant="outline" onClick={onCreate}>
           <Plus className="h-4 w-4" />
@@ -55,13 +58,13 @@ export function AgencyProvisioningSidebar({ agencies, selectedId, onSelect, onCr
       </div>
       <ScrollArea className="h-[calc(100vh-20rem)]">
         <div className="p-2 space-y-1">
-          {agencies.length === 0 && (
+          {inProgressAgencies.length === 0 && (
             <div className="text-center text-sm text-muted-foreground p-6">
               <Building2 className="h-8 w-8 mx-auto mb-2 opacity-40" />
               No agencies in progress.
             </div>
           )}
-          {agencies.map(a => (
+          {inProgressAgencies.map(a => (
             <div
               key={a.id}
               className={cn(
@@ -118,6 +121,36 @@ export function AgencyProvisioningSidebar({ agencies, selectedId, onSelect, onCr
               </AlertDialog>
             </div>
           ))}
+          {onboardingAgencies.length > 0 && (
+            <div className="pt-3 mt-3 border-t">
+              <div className="px-2 pb-2">
+                <h3 className="font-semibold text-sm">Pending handover / Onboarding</h3>
+                <p className="text-xs text-muted-foreground">{onboardingAgencies.length} agencies</p>
+              </div>
+              <div className="space-y-1">
+                {onboardingAgencies.map(a => (
+                  <button
+                    key={a.id}
+                    onClick={() => onSelect(a.id)}
+                    className={cn(
+                      'w-full rounded-md p-2 text-left transition-colors',
+                      selectedId === a.id ? 'bg-primary/10 text-primary' : 'hover:bg-muted'
+                    )}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-medium text-sm truncate">{a.name}</span>
+                      <Badge variant="secondary" className="text-[10px] flex-shrink-0 gap-1">
+                        <Send className="h-3 w-3" /> Onboarding
+                      </Badge>
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1 truncate">
+                      Welcome emails sent · monitor setup
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </ScrollArea>
     </div>
