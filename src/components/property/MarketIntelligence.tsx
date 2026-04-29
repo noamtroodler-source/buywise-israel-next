@@ -134,7 +134,7 @@ function BenchmarkCardTile({ card, onTrackInteraction }: { card: BenchmarkCard; 
 
   return (
     <div
-      className="rounded-lg border border-border/70 bg-background/80 p-3 transition-colors hover:border-primary/30 hover:bg-primary/5"
+      className="rounded-lg border border-border bg-muted/20 p-3 transition-colors hover:border-border hover:bg-muted/35"
       onClick={() => onTrackInteraction?.('price_context_benchmark_layer_clicked', { benchmark_layer: card.id, benchmark_label: card.label })}
     >
       <div className="flex items-start justify-between gap-2">
@@ -177,14 +177,14 @@ function PremiumContextSummary({ priceContext, premiumExplanation }: { priceCont
       {contextChips.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {contextChips.map((chip) => (
-            <Badge key={chip} variant="outline" className="rounded-lg bg-background/80 text-xs text-foreground">
+            <Badge key={chip} variant="outline" className="rounded-lg bg-muted/20 text-xs text-foreground">
               {chip}
             </Badge>
           ))}
         </div>
       )}
       {premiumExplanation?.trim() && (
-        <p className="border-l-2 border-primary/30 pl-3 text-sm text-muted-foreground">
+        <p className="border-l-2 border-border pl-3 text-sm text-muted-foreground">
           {premiumExplanation}
         </p>
       )}
