@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { DollarSign, TrendingUp, Home, Building, BadgeCheck, AlertTriangle, Gauge, MousePointerClick } from 'lucide-react';
+import { DollarSign, TrendingUp, Home, Building, BadgeCheck, AlertTriangle, Gauge, MousePointerClick, ShieldCheck, EyeOff } from 'lucide-react';
 import { PriceAnalyticsData } from '@/hooks/usePriceAnalytics';
 import { 
   BarChart, Bar, XAxis, YAxis, ResponsiveContainer, 
@@ -50,8 +50,8 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
   const context = data?.priceContext;
   const contextCards = [
     { label: 'Context Complete', value: `${(context?.completionRate || 0).toFixed(0)}%`, sub: `${context?.complete || 0} of ${context?.totalListings || 0} active listings`, icon: BadgeCheck },
+    { label: 'Ranking Ready', value: `${(context?.rankingReadinessRate || 0).toFixed(0)}%`, sub: `${context?.rankingReady || 0} safe to prioritize`, icon: ShieldCheck },
     { label: 'Under Review', value: (context?.underReview || 0).toLocaleString(), sub: 'Agent benchmark challenges', icon: AlertTriangle },
-    { label: 'High Confidence', value: (context?.highConfidence || 0).toLocaleString(), sub: 'Strong comparable matches', icon: Gauge },
     { label: 'Complete Listing CVR', value: `${(context?.inquiryConversionRate || 0).toFixed(1)}%`, sub: 'Inquiries per view in range', icon: MousePointerClick },
   ];
 
@@ -81,6 +81,33 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
                 </div>
               </div>
             ))}
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-3">
+            <div className="rounded-xl border border-border/50 bg-background p-3">
+              <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                <Gauge className="h-4 w-4 text-primary" />
+                High-confidence inventory
+              </div>
+              <p className="mt-2 text-2xl font-bold text-foreground">{(context?.highConfidence || 0).toLocaleString()}</p>
+              <p className="text-xs text-muted-foreground">Eligible for stronger buyer-facing context when complete</p>
+            </div>
+            <div className="rounded-xl border border-border/50 bg-background p-3">
+              <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                <EyeOff className="h-4 w-4 text-primary" />
+                Percentages suppressed
+              </div>
+              <p className="mt-2 text-2xl font-bold text-foreground">{(context?.suppressionRate || 0).toFixed(0)}%</p>
+              <p className="text-xs text-muted-foreground">{context?.suppressed || 0} listings keep raw gaps internal</p>
+            </div>
+            <div className="rounded-xl border border-border/50 bg-background p-3">
+              <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                <AlertTriangle className="h-4 w-4 text-primary" />
+                Boost safeguards
+              </div>
+              <p className="mt-2 text-2xl font-bold text-foreground">{(context?.blockedFromBoost || 0).toLocaleString()}</p>
+              <p className="text-xs text-muted-foreground">Blocked or under review listings excluded from Price Context boosts</p>
+            </div>
           </div>
 
           <div className="grid gap-4 lg:grid-cols-3">
