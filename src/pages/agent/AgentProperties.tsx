@@ -35,8 +35,6 @@ import { STALE_THRESHOLD_DAYS, useUpdatePropertyStatus } from '@/hooks/useAgentP
 import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { differenceInDays, parseISO, format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { PriceContextBadge } from '@/components/property/PriceContextBadge';
-import { BenchmarkReviewDialog } from '@/components/property/BenchmarkReviewDialog';
 
 const statusConfig = {
   draft: { label: 'Draft', color: 'bg-muted text-muted-foreground' },
@@ -503,14 +501,6 @@ export default function AgentProperties() {
                                     Renewal
                                   </Badge>
                                 )}
-                                {listing.listing_status === 'for_sale' && (
-                                  <PriceContextBadge
-                                    status={listing.price_context_badge_status}
-                                    publicLabel={listing.price_context_public_label}
-                                    confidenceTier={listing.price_context_confidence_tier}
-                                    benchmarkReviewStatus={(listing as any).benchmark_review_status}
-                                  />
-                                )}
                               </div>
                               {isChangesRequested && (listing as any).rejection_reason && (
                                 <p className="text-xs text-orange-600 mt-1 line-clamp-1">
@@ -598,16 +588,6 @@ export default function AgentProperties() {
                                       <Key className="h-4 w-4 mr-2" />
                                       Mark as Rented
                                     </DropdownMenuItem>
-                                  )}
-                                  {listing.listing_status === 'for_sale' && (
-                                    <BenchmarkReviewDialog
-                                      propertyId={listing.id}
-                                      propertyTitle={listing.title}
-                                        benchmarkReviewStatus={listing.benchmark_review_status}
-                                        existingReason={listing.benchmark_review_reason}
-                                        existingNotes={listing.benchmark_review_notes}
-                                        trigger={<DropdownMenuItem disabled={listing.benchmark_review_status === 'requested' || listing.benchmark_review_status === 'under_review'} onSelect={(e) => e.preventDefault()}><AlertTriangle className="h-4 w-4 mr-2" />{listing.benchmark_review_status === 'requested' || listing.benchmark_review_status === 'under_review' ? 'Context under review' : 'Request benchmark review'}</DropdownMenuItem>}
-                                    />
                                   )}
                                   <DropdownMenuItem onClick={() => archiveListing.mutate({ propertyId: listing.id, agencyId: (listing as any).primary_agency_id })}>
                                     <Archive className="h-4 w-4 mr-2" />
