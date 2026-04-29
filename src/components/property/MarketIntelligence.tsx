@@ -603,6 +603,8 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
           propertyPricePerSqm={propertyPricePerSqm}
           compsCount={verdictData.compsCount}
           radiusUsedM={verdictData.radiusUsedM}
+          sqmSource={property.sqm_source}
+          ownershipType={property.ownership_type}
           onTrackInteraction={handlePriceContextInteraction}
         />
 
