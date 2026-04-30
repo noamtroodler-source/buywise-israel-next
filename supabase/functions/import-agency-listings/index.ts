@@ -4000,7 +4000,14 @@ async function processOneItem(
   domainCity: string | null = null, importType: string = "resale"
 ): Promise<{ succeeded: boolean }> {
   try {
-    await sb.from("import_job_items").update({ status: "processing" }).eq("id", item.id);
+    const { data: claimedItem, error: claimErr } = await sb
+      .from("import_job_items")
+      .update({ status: "processing" })
+      .eq("id", item.id)
+      .eq("status", "pending")
+      .select("id")
+      .maybeSingle();
+    if (claimErr || !claimedItem) return { succeeded: false };
 
     // 0a-pre. Cross-agency URL blocklist check (normalized comparison)
     // If this agency was previously confirmed NOT to own this URL, skip immediately.
@@ -5390,6 +5397,7 @@ async function handleProcessBatch(body: any) {
   _lastGeoTime = 0;
   _geoQueue = Promise.resolve();
   _batchImageUrlCounts.clear();
+  _batchImageHashCounts.clear();
 
   let currentConcurrency = 2;
   const MAX_CONCURRENCY = 2;
