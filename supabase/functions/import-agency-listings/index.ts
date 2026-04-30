@@ -3069,6 +3069,7 @@ async function preCheckUrl(url: string): Promise<{ ok: boolean; skipReason: stri
 function extractImagesFromHtml(html: string, pageUrl: string): string[] {
   const images: string[] = [];
   const seen = new Set<string>();
+  let match: RegExpExecArray | null;
 
   const addCandidate = (rawUrl: string | null | undefined) => {
     if (!rawUrl || rawUrl.length < 10) return;
@@ -3099,7 +3100,6 @@ function extractImagesFromHtml(html: string, pageUrl: string): string[] {
 
   // Match <img> tags with src attributes
   const imgRegex = /<img\s[^>]*src\s*=\s*["']([^"']+)["'][^>]*>/gi;
-  let match: RegExpExecArray | null;
   while ((match = imgRegex.exec(html)) !== null) {
     const src = match[0];
     const url = match[1];
