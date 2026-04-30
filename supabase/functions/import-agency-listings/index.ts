@@ -3141,8 +3141,14 @@ function extractDescriptionLineFacts(text: string): Record<string, any> {
     const b = parseInt(beds[1], 10);
     if (Number.isFinite(b) && b >= 0 && b < 12) out.bedrooms = b;
   }
-  const sqm = t.match(/(\d{2,4})\s*(?:sqm|sq\.?m|m²|m2|square meters?)\b/);
-  if (sqm) out.size_sqm = parseInt(sqm[1], 10);
+  // Capture sqm BUT exclude balcony/terrace/garden/storage sizes which describe
+  // sub-areas of the apartment, not the apartment itself (e.g. "35 sqm sun balcony").
+  const sqm = t.match(/(\d{2,4})\s*(?:sqm|sq\.?m|m²|m2|square meters?)\b(?!\s*(?:sun\s+)?(?:balcony|terrace|patio|garden|storage|machsan|storeroom|mamad))/);
+  if (sqm) {
+    const v = parseInt(sqm[1], 10);
+    // Apartments/houses are realistically 15–2000 sqm. Reject obvious noise.
+    if (Number.isFinite(v) && v >= 15 && v <= 2000) out.size_sqm = v;
+  }
 
   if (/\bfor\s+rent\b|\blong[-\s]?term\s+rental\b|\brental\b/.test(t)) out.listing_status = "for_rent";
   else if (/\bfor\s+sale\b|\bquick\s+sale\b|\basking\b|\bprice\b|\bmil\b|\bm\b/.test(t)) out.listing_status = "for_sale";
