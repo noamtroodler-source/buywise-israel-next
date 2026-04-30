@@ -4802,6 +4802,36 @@ async function processOneItem(
       extracted_data: { ...listingWithImageDiagnostics, confidence_score: confidenceScore, validation_warnings: validationWarnings },
     }).eq("id", item.id);
 
+    // ── AGENCY WEBSITE QUALITY GATE ──
+    // Wix/blog-style agency sites (e.g. ashkelonproperties.com) often expose
+    // /post/ pages that look like listings but lack price/structure/photos.
+    // Skip those instead of letting them slip in as flagged junk rows.
+    if (isAgencyOwnWebsite) {
+      const quality = evaluateAgencyListingQuality(listing, imageUrls.length);
+      if (!quality.ok) {
+        const reasonLabel =
+          quality.reasons.includes("missing_price") && quality.reasons.includes("missing_usable_image")
+            ? "Weak agency listing facts: missing price and usable image"
+            : quality.reasons.includes("missing_price")
+              ? "Weak agency listing facts: missing price"
+              : quality.reasons.includes("missing_usable_image")
+                ? "No usable property image found on agency page"
+                : "Weak agency listing facts: missing property structure";
+        await sb.from("import_job_items").update({
+          status: "skipped",
+          error_message: reasonLabel,
+          error_type: "permanent",
+          extracted_data: {
+            ...listingWithImageDiagnostics,
+            confidence_score: confidenceScore,
+            validation_warnings: [...validationWarnings, ...quality.reasons.map((r) => `quality_gate_${r}`)],
+            agency_quality_gate: { ok: false, reasons: quality.reasons, image_count: imageUrls.length },
+          },
+        }).eq("id", item.id);
+        return { succeeded: false };
+      }
+    }
+
     let crossSourceMatchId: string | null = null;
     const imageOverlapMatch = await findBestImageOverlapMatch(sb, listing.image_hashes || []);
 
