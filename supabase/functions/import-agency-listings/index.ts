@@ -3066,6 +3066,133 @@ async function preCheckUrl(url: string): Promise<{ ok: boolean; skipReason: stri
 
 // ─── HTML IMAGE EXTRACTION ──────────────────────────────────────────────────
 
+// Centralized junk-image filter shared by all extractors.
+// Rejects logos, chat widgets, system error images, tracking pixels, related-post thumbnails, etc.
+function isJunkImageUrl(lower: string): boolean {
+  if (!lower) return true;
+  if (lower.includes("logo") || lower.includes("icon") || lower.includes("avatar") ||
+      lower.includes("agent") || lower.includes("team") || lower.includes("favicon") ||
+      lower.includes("pixel") || lower.includes("tracking") || lower.includes("badge") ||
+      lower.includes("flag") || lower.includes("social") ||
+      lower.includes("googlemap") || lower.includes("maps.googleapis")) return true;
+  // Wix / Wix-related system & widget assets and trackers
+  if (lower.includes("yandex-metrica") || lower.includes("wixapps.net/common/img") ||
+      lower.includes("error-img") || lower.includes("error_img") ||
+      lower.includes("static.parastorage") || lower.includes("/wix-engage") ||
+      lower.includes("chat-widget") || lower.includes("chatwidget") ||
+      lower.includes("/widget/") || lower.includes("comments-widget") ||
+      lower.includes("dummy") || lower.includes("placeholder") ||
+      lower.includes("/sprite") || lower.includes("/share-button")) return true;
+  // Stand-alone "map" only when used as map tile, not /media/.
+  if (/[/_-]map[._-]/.test(lower) && !lower.includes("/media/")) return true;
+  return false;
+}
+
+// Parse compact agency description-line prices/facts.
+// Examples handled:
+//   "Asking 1.65 or best offer" -> 1,650,000
+//   "4 rooms for sale only 1.9 mil" -> 1,900,000
+//   "770,000" -> 770,000
+//   "asking 7m" -> 7,000,000
+function parseCompactAgencyPrice(text: string): number | null {
+  if (!text) return null;
+  const t = text.toLowerCase();
+  // 770,000 / 1,650,000 style
+  const grouped = t.match(/(?:asking|price|only|just|for)?\s*(?:₪|nis)?\s*([1-9]\d{0,2}(?:,\d{3}){1,3})(?!\s*(?:rooms?|sqm|m²|m2|חדר))/);
+  if (grouped) {
+    const n = parseInt(grouped[1].replace(/,/g, ""), 10);
+    if (n >= 250_000 && n <= 200_000_000) return n;
+  }
+  // "1.65 mil" / "1.9m" / "asking 7m" / "asking 1.65"
+  const compact = t.match(/(?:asking|price|only|just|for)\s*(?:₪|nis)?\s*([0-9](?:[.,][0-9]{1,2})?)\s*(m|mil|million|מיליון)?/);
+  if (compact) {
+    const num = parseFloat(compact[1].replace(",", "."));
+    const unit = compact[2];
+    if (Number.isFinite(num)) {
+      // No unit but bare digit like "1.65" or "7" → treat as millions when in plausible apartment range
+      const millions = unit ? num : (num >= 0.3 && num <= 50 ? num : NaN);
+      if (Number.isFinite(millions)) {
+        const n = Math.round(millions * 1_000_000);
+        if (n >= 250_000 && n <= 200_000_000) return n;
+      }
+    }
+  }
+  return null;
+}
+
+// Extract simple description-line facts that the AI extractor often misses
+// on minimal Wix/blog-style agency pages.
+function extractDescriptionLineFacts(text: string): Record<string, any> {
+  const out: Record<string, any> = {};
+  if (!text) return out;
+  const t = text.toLowerCase();
+  const features = new Set<string>();
+
+  const rooms = t.match(/(\d+(?:\.5)?)\s*(?:-?\s*)?rooms?\b/);
+  if (rooms) {
+    const r = parseFloat(rooms[1]);
+    if (Number.isFinite(r) && r > 0 && r < 15) {
+      out.source_rooms = r;
+      out.bedrooms = Math.max(0, Math.floor(r) - 1);
+    }
+  }
+  const beds = t.match(/(\d+)\s*bedrooms?\b/);
+  if (beds) {
+    const b = parseInt(beds[1], 10);
+    if (Number.isFinite(b) && b >= 0 && b < 12) out.bedrooms = b;
+  }
+  const sqm = t.match(/(\d{2,4})\s*(?:sqm|sq\.?m|m²|m2|square meters?)\b/);
+  if (sqm) out.size_sqm = parseInt(sqm[1], 10);
+
+  if (/\bfor\s+rent\b|\blong[-\s]?term\s+rental\b|\brental\b/.test(t)) out.listing_status = "for_rent";
+  else if (/\bfor\s+sale\b|\bquick\s+sale\b|\basking\b|\bprice\b|\bmil\b|\bm\b/.test(t)) out.listing_status = "for_sale";
+
+  if (/\bpenthouse\b/.test(t)) out.property_type = "penthouse";
+  else if (/\bduplex\b/.test(t)) out.property_type = "duplex";
+  else if (/\bgarden\s+apartment\b/.test(t)) out.property_type = "garden_apartment";
+  else if (/\bstudio\b/.test(t)) out.property_type = "apartment";
+  else if (/\bhouse\b|\bvilla\b|\bcottage\b/.test(t)) out.property_type = "house";
+
+  if (/\bsea\s+view\b|view\s+to\s+the\s+sea/.test(t)) features.add("sea_view");
+  if (/\bbeach(?:front|side)?\b|opposite\s+(?:the\s+)?beach|near\s+(?:the\s+)?beach|minutes?\s+from\s+(?:the\s+)?beach/.test(t)) features.add("sea_view");
+  if (/\bparking\b|underground\s+parking/.test(t)) features.add("parking");
+  if (/\bmachsan\b|\bstorage\b|\bstoreroom\b/.test(t)) features.add("storage");
+  if (/\bbalcony\b|\bterrace\b/.test(t)) features.add("balcony");
+  if (/\bgarden\b/.test(t)) features.add("garden");
+  if (/\bpool\b/.test(t)) features.add("pool");
+  if (/\belevator\b|\blift\b/.test(t)) features.add("elevator");
+  if (/\bmamad\b|safe\s+room/.test(t)) features.add("mamad");
+
+  const price = parseCompactAgencyPrice(text);
+  if (price) out.price = price;
+
+  if (features.size > 0) out.features = Array.from(features);
+  return out;
+}
+
+// Hard quality gate for agency-owned website pages (Wix/blog-style sites
+// like ashkelonproperties.com tend to expose blog posts that look like
+// listings but lack price/structure/photos). A page must clear at least one
+// "structure" signal AND have either a real price or a usable image.
+function evaluateAgencyListingQuality(listing: Record<string, any>, imageCount: number): { ok: boolean; reasons: string[] } {
+  const reasons: string[] = [];
+  const hasPrice = typeof listing.price === "number" && listing.price >= 250_000;
+  const hasStructure = (listing.bedrooms != null && listing.bedrooms >= 0)
+    || (listing.source_rooms != null && listing.source_rooms > 0)
+    || (listing.size_sqm != null && listing.size_sqm > 0)
+    || !!listing.property_type;
+  const hasImage = imageCount > 0;
+
+  if (!hasStructure) reasons.push("missing_property_structure");
+  if (!hasPrice && !hasImage) reasons.push("missing_price_and_image");
+  if (!hasPrice) reasons.push("missing_price");
+  if (!hasImage) reasons.push("missing_usable_image");
+
+  // Pass criteria: structure + at least one of price/image
+  const ok = hasStructure && (hasPrice || hasImage) && hasPrice; // require price for agency website imports
+  return { ok, reasons };
+}
+
 function extractImagesFromHtml(html: string, pageUrl: string): string[] {
   const images: string[] = [];
   const seen = new Set<string>();
