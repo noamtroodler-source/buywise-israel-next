@@ -4652,6 +4652,13 @@ async function processOneItem(
     listing.image_hashes = [];
     imageUrls = await collectAllowedSourceImages(job.source_type, listing, structuredData, pageHtml, item.url, sb, jobId);
     if (imageUrls.length > 0) dlog(`Downloaded ${imageUrls.length} allowed ${job.source_type || "website"} images for ${item.url}`);
+    const listingWithImageDiagnostics = { ...listing };
+    delete listingWithImageDiagnostics.image_urls;
+    delete listingWithImageDiagnostics.structured_images;
+    delete listingWithImageDiagnostics._source_markdown;
+    await sb.from("import_job_items").update({
+      extracted_data: { ...listingWithImageDiagnostics, confidence_score: confidenceScore, validation_warnings: validationWarnings },
+    }).eq("id", item.id);
 
     let crossSourceMatchId: string | null = null;
     const imageOverlapMatch = await findBestImageOverlapMatch(sb, listing.image_hashes || []);
