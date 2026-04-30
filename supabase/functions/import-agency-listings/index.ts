@@ -4175,7 +4175,12 @@ async function processOneItem(
       scrapeRes = await fetchWithTimeout("https://api.firecrawl.dev/v1/scrape", {
         method: "POST",
         headers: { Authorization: `Bearer ${firecrawlKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ url: item.url, formats: ["markdown", "links", "html"], onlyMainContent: true }),
+        body: JSON.stringify({
+          url: item.url,
+          formats: ["markdown", "links", "html"],
+          onlyMainContent: !isAgencyOwnWebsite,
+          waitFor: isAgencyOwnWebsite ? 3000 : undefined,
+        }),
       }, 30_000);
     }
 
@@ -4450,6 +4455,9 @@ async function processOneItem(
     }
     if (cmsExtracted) {
       listing._cms_extracted = cmsExtracted;
+    }
+    if (isAgencyOwnWebsite) {
+      listing._source_markdown = markdown;
     }
 
     // Store raw extraction (strip any photo URLs for legal compliance)
