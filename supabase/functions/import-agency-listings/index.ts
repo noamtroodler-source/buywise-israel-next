@@ -4617,9 +4617,13 @@ async function processOneItem(
     }
 
     // Store confidence score + warnings
+    const listingForDiagnostics = { ...listing };
+    delete listingForDiagnostics.image_urls;
+    delete listingForDiagnostics.structured_images;
+    delete listingForDiagnostics._source_markdown;
     await sb.from("import_job_items").update({
       confidence_score: confidenceScore,
-      extracted_data: { ...listing, confidence_score: confidenceScore, validation_warnings: validationWarnings },
+      extracted_data: { ...listingForDiagnostics, confidence_score: confidenceScore, validation_warnings: validationWarnings },
     }).eq("id", item.id);
 
     // Below 40: skip with low confidence, except trusted agency-owned listing URLs.
@@ -4630,7 +4634,7 @@ async function processOneItem(
       confidenceScore = Math.max(confidenceScore, 40);
       await sb.from("import_job_items").update({
         confidence_score: confidenceScore,
-        extracted_data: { ...listing, confidence_score: confidenceScore, validation_warnings: validationWarnings },
+        extracted_data: { ...listingForDiagnostics, confidence_score: confidenceScore, validation_warnings: validationWarnings },
       }).eq("id", item.id);
     }
 
