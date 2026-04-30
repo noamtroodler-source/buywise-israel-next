@@ -145,8 +145,14 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
       if (text.includes('nan') || text.includes('malformed')) return 'Malformed URL';
       if (item.error_type === 'transient' || text.includes('aborted') || text.includes('timeout') || text.includes('network') || text.includes('rate') || text.includes('scrape failed') || text.includes('captcha')) return 'Retry needed';
       if (text.includes('not a listing')) return 'Not a listing';
+      if (text.includes('project') || text.includes('development')) return 'New development';
       if (text.includes('sold') || text.includes('rented')) return 'Sold / rented';
+      if (text.includes('short-term')) return 'Short-term rental';
+      if (text.includes('outside israel')) return 'Outside Israel';
       if (text.includes('city not supported')) return 'Unsupported city';
+      if (text.includes('weak agency listing facts')) return 'Weak agency facts';
+      if (text.includes('no usable property image')) return 'No usable image';
+      if (text.includes('held - wix listing gate')) return 'Held for fix';
       if (text.includes('validation failed')) return 'Validation failed';
       if (text.includes('low confidence')) return 'Low confidence';
       if (text.includes('duplicate')) return 'Exact duplicate URL';
@@ -347,6 +353,11 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
                   {currentJobDiagnostics?.image_failures != null && <Badge variant="outline">Image issues {String(currentJobDiagnostics.image_failures)}</Badge>}
                   {currentJobDiagnostics?.inserted != null && <Badge variant="outline">Inserted {String(currentJobDiagnostics.inserted)}</Badge>}
                 </div>
+                {currentJob.source_type !== 'madlan' && currentJob.source_type !== 'yad2' && (currentJob.total_urls || 0) > 60 && currentJob.status !== 'completed' && (
+                  <div className="mt-2 rounded-lg border border-[hsl(var(--warning))]/30 bg-[hsl(var(--warning))]/5 p-2 text-xs text-[hsl(var(--warning-foreground))]">
+                    <strong>Heads up:</strong> {currentJob.total_urls} candidates queued from this agency website. That's higher than typical for a single agency. Process a small batch first and verify quality before running the full job.
+                  </div>
+                )}
               </div>
               <Badge variant="outline" className={cn(
                 isCompleted && 'bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]',
