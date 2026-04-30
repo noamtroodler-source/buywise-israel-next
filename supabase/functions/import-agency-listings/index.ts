@@ -3996,7 +3996,7 @@ async function extractFromWordPress(url: string, _firecrawlKey: string): Promise
 
         if (fieldCount >= 3) {
           dlog(`WordPress adapter: extracted ${fieldCount} fields from REST API`);
-          return result;
+          return clampPropertyNumerics(result);
         }
       } catch { /* try next endpoint */ }
     }
@@ -4087,7 +4087,7 @@ function extractFromWixState(html: string): Record<string, any> | null {
 
       if (fieldCount >= 3) {
         dlog(`Wix adapter: extracted ${fieldCount} fields from embedded state`);
-        return result;
+        return clampPropertyNumerics(result);
       }
     }
     return null;
