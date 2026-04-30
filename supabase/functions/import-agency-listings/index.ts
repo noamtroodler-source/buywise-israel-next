@@ -4777,18 +4777,9 @@ async function processOneItem(
       extracted_data: { ...listingForDiagnostics, confidence_score: confidenceScore, validation_warnings: validationWarnings },
     }).eq("id", item.id);
 
-    // Below 40: skip with low confidence, except trusted agency-owned listing URLs.
-    // Those should import as draft/needs-review rather than disappearing.
-    if (confidenceScore < 40 && isStrongAgencyListing) {
-      validationWarnings.push(`agency_site_low_confidence_imported_${confidenceScore}`);
-      listing.provisioning_audit_status = "flagged";
-      confidenceScore = Math.max(confidenceScore, 40);
-      await sb.from("import_job_items").update({
-        confidence_score: confidenceScore,
-        extracted_data: { ...listingForDiagnostics, confidence_score: confidenceScore, validation_warnings: validationWarnings },
-      }).eq("id", item.id);
-    }
-
+    // Agency website pages must fail closed: a strong-looking URL is no longer
+    // enough to import a low-confidence row. We previously imported these as
+    // "flagged", which produced large numbers of empty Wix/blog rows.
     if (confidenceScore < 40) {
       await sb.from("import_job_items").update({
         status: "skipped",
