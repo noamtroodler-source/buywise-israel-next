@@ -5297,12 +5297,24 @@ async function processOneItem(
 
     if (propErr) {
       if (propErr.code === "23505") {
-        const { data: existingAfterRace } = await sb
-          .from("properties")
-          .select("id")
-          .or(`source_identity_key.eq.${sourceIdentity.sourceIdentityKey},and(claimed_by_agency_id.eq.${job.agency_id},canonical_source_url.eq.${sourceIdentity.canonicalSourceUrl})`)
-          .limit(1)
-          .maybeSingle();
+        let existingAfterRace: { id: string } | null = null;
+        if (sourceIdentity.sourceIdentityKey) {
+          const { data } = await sb
+            .from("properties")
+            .select("id")
+            .eq("source_identity_key", sourceIdentity.sourceIdentityKey)
+            .maybeSingle();
+          existingAfterRace = data;
+        }
+        if (!existingAfterRace?.id && job.agency_id && sourceIdentity.canonicalSourceUrl) {
+          const { data } = await sb
+            .from("properties")
+            .select("id")
+            .eq("claimed_by_agency_id", job.agency_id)
+            .eq("canonical_source_url", sourceIdentity.canonicalSourceUrl)
+            .maybeSingle();
+          existingAfterRace = data;
+        }
 
         if (existingAfterRace?.id) {
           await sb.from("import_job_items").update({
