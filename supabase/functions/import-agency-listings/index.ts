@@ -5296,6 +5296,31 @@ async function processOneItem(
       .single();
 
     if (propErr) {
+      if (propErr.code === "23505") {
+        const { data: existingAfterRace } = await sb
+          .from("properties")
+          .select("id")
+          .or(`source_identity_key.eq.${sourceIdentity.sourceIdentityKey},and(claimed_by_agency_id.eq.${job.agency_id},canonical_source_url.eq.${sourceIdentity.canonicalSourceUrl})`)
+          .limit(1)
+          .maybeSingle();
+
+        if (existingAfterRace?.id) {
+          await sb.from("import_job_items").update({
+            status: "done",
+            property_id: existingAfterRace.id,
+            matched_property_id: existingAfterRace.id,
+            duplicate_decision: "exact_source_match_update",
+            duplicate_decision_band: "exact_source_match",
+            duplicate_match_scores: { source_identity: 100 },
+            duplicate_decision_metadata: { action: "database_unique_guard", matched_property_id: existingAfterRace.id },
+            duplicate_reason_codes: normalizeDuplicateReasonCodes(["database_unique_source_guard"], "exact_source_match", { source_identity: 100 }, { action: "database_unique_guard", matched_property_id: existingAfterRace.id }),
+            error_message: `Matched existing property ${existingAfterRace.id} from database unique guard`,
+            error_type: null,
+          }).eq("id", item.id);
+          return { succeeded: true };
+        }
+      }
+
       console.error("Property insert error:", propErr);
       await sb.from("import_job_items").update({ status: "failed", error_message: `Insert failed: ${propErr.message}`, error_type: "transient" }).eq("id", item.id);
       return { succeeded: false };
