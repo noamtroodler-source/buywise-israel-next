@@ -3495,6 +3495,18 @@ function extractAgencyVisibleFacts(html: string, markdown: string): Record<strin
 
 function enrichListingFromVisibleFacts(listing: Record<string, any>, html: string, markdown: string): Record<string, any> {
   const facts = extractAgencyVisibleFacts(html, markdown);
+  // Also pull facts from the visible description line (handles Wix/blog-style
+  // sites where the only structured content is one English sentence).
+  const descLine = extractAgencyDescriptionLine(markdown, html) || "";
+  const descFacts = extractDescriptionLineFacts(`${descLine}\n${markdown.slice(0, 1500)}`);
+  for (const [k, v] of Object.entries(descFacts)) {
+    if (v == null) continue;
+    if (k === "features") {
+      facts.features = Array.from(new Set([...(Array.isArray(facts.features) ? facts.features : []), ...(v as string[])]));
+    } else if (facts[k] == null || facts[k] === "" || facts[k] === 0) {
+      facts[k] = v;
+    }
+  }
   const merged = { ...listing };
   const appliedFields = new Set<string>(Array.isArray(merged._visible_fact_fields) ? merged._visible_fact_fields : []);
   for (const [key, value] of Object.entries(facts)) {
