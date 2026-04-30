@@ -3189,6 +3189,17 @@ function textFromHtmlFragment(fragment: string): string {
   return decodeHtmlEntities(fragment.replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<style[\s\S]*?<\/style>/gi, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim());
 }
 
+function extractAgencyDescriptionLine(markdown: string, html: string): string | null {
+  const candidates = `${markdown}\n${textFromHtmlFragment(html)}`
+    .split(/\n|(?<=\.)\s+(?=[A-Z])/)
+    .map(line => cleanFactValue(line))
+    .filter(line => line.length >= 35 && line.length <= 700)
+    .filter(line => !/^(top of page|bottom of page|חיפוש|search|call now|contact|share|home|menu)$/i.test(line))
+    .filter(line => !/^https?:\/\//i.test(line))
+    .filter(line => !/\.(jpg|jpeg|png|webp)(\?|$)/i.test(line));
+  return candidates.find(line => /(room|bedroom|apartment|penthouse|villa|beach|marina|sea|parking|sqm|m2|m²|מחסן|חדר|דירה)/i.test(line)) || candidates[0] || null;
+}
+
 function extractAgencyHtmlFallback(html: string, markdown: string, url: string): Record<string, any> | null {
   const result: Record<string, any> = { listing_category: "property" };
   const combined = `${decodeURIComponent(url)}\n${markdown}\n${textFromHtmlFragment(html).slice(0, 6000)}`;
@@ -3197,8 +3208,10 @@ function extractAgencyHtmlFallback(html: string, markdown: string, url: string):
   const title = h1 ? textFromHtmlFragment(h1[1]) : titleTag ? textFromHtmlFragment(titleTag[1]).split("|")[0].trim() : "";
   if (title) result.title = title;
   const mainMatch = html.match(/<(?:main|article|div)[^>]*(?:property|estate|content|entry-content)[^>]*>([\s\S]{200,6000}?)<\/(?:main|article|div)>/i);
-  const desc = mainMatch ? textFromHtmlFragment(mainMatch[1]) : markdown.replace(/\s+/g, " ").trim();
+  const descLine = extractAgencyDescriptionLine(markdown, html);
+  const desc = descLine || (mainMatch ? textFromHtmlFragment(mainMatch[1]) : markdown.replace(/\s+/g, " ").trim());
   if (desc && desc.length > 40) result.description = desc.slice(0, 2000);
+  if (descLine) result._description_source = "agency_visible_description_line";
   const priceMatch = combined.match(/(?:₪|ש["״]?ח|nis)\s*([\d,.]{4,})|([\d,.]{4,})\s*(?:₪|ש["״]?ח|nis)/i);
   if (priceMatch) {
     const price = parseFloat(String(priceMatch[1] || priceMatch[2]).replace(/[^\d.]/g, ""));
