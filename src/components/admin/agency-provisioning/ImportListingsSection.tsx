@@ -353,6 +353,11 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
                   {currentJobDiagnostics?.image_failures != null && <Badge variant="outline">Image issues {String(currentJobDiagnostics.image_failures)}</Badge>}
                   {currentJobDiagnostics?.inserted != null && <Badge variant="outline">Inserted {String(currentJobDiagnostics.inserted)}</Badge>}
                 </div>
+                {currentJob.source_type !== 'madlan' && currentJob.source_type !== 'yad2' && (currentJob.total_urls || 0) > 60 && currentJob.status !== 'completed' && (
+                  <div className="mt-2 rounded-lg border border-[hsl(var(--warning))]/30 bg-[hsl(var(--warning))]/5 p-2 text-xs text-[hsl(var(--warning-foreground))]">
+                    <strong>Heads up:</strong> {currentJob.total_urls} candidates queued from this agency website. That's higher than typical for a single agency. Process a small batch first and verify quality before running the full job.
+                  </div>
+                )}
               </div>
               <Badge variant="outline" className={cn(
                 isCompleted && 'bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]',
