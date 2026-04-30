@@ -3201,7 +3201,7 @@ function extractImagesFromHtml(html: string, pageUrl: string): string[] {
   const addCandidate = (rawUrl: string | null | undefined) => {
     if (!rawUrl || rawUrl.length < 10) return;
     const decoded = decodeHtmlEntities(rawUrl).replace(/\\u002F/g, "/").replace(/\\\//g, "/");
-    const firstUrl = decoded.split(",")[0]?.trim().split(/\s+/)[0] || decoded.trim();
+    const firstUrl = pickFirstUrlFromSrcset(decoded);
     const lower = firstUrl.toLowerCase();
     if (isJunkImageUrl(lower)) return;
     let absolute = firstUrl;
