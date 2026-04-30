@@ -3533,7 +3533,7 @@ async function collectAgencyOwnedImages(listing: any, structuredData: any, pageH
   if (candidateImages.length < 3 && listing._source_markdown) candidateImages.push(...extractImagesFromMarkdown(listing._source_markdown, itemUrl));
   const uniqueImages = [...new Set(candidateImages.map(img => {
     if (!img || typeof img !== "string") return "";
-    const first = img.split(",")[0]?.trim().split(/\s+/)[0] || img;
+    const first = pickFirstUrlFromSrcset(img);
     if (first.startsWith("//")) return `https:${first}`;
     if (first.startsWith("/")) {
       try { return new URL(first, itemUrl).toString(); } catch { return ""; }
