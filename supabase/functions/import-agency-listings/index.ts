@@ -3386,6 +3386,7 @@ async function collectAgencyOwnedImages(listing: any, structuredData: any, pageH
   if (listing.image_urls && Array.isArray(listing.image_urls)) candidateImages.push(...flattenImageCandidates(listing.image_urls));
   if (structuredData?.structured_images?.length) candidateImages.push(...structuredData.structured_images);
   if (candidateImages.length < 3 && pageHtml) candidateImages.push(...extractImagesFromHtml(pageHtml, itemUrl));
+  if (candidateImages.length < 3 && listing._source_markdown) candidateImages.push(...extractImagesFromMarkdown(listing._source_markdown, itemUrl));
   const uniqueImages = [...new Set(candidateImages.map(img => {
     if (!img || typeof img !== "string") return "";
     const first = img.split(",")[0]?.trim().split(/\s+/)[0] || img;
@@ -3396,9 +3397,20 @@ async function collectAgencyOwnedImages(listing: any, structuredData: any, pageH
     return first;
   }).filter(u => u && u.startsWith("http")))];
   if (uniqueImages.length === 0) return [];
+  listing._image_diagnostics = {
+    ...(listing._image_diagnostics || {}),
+    candidate_count: candidateImages.length,
+    unique_candidate_count: uniqueImages.length,
+    source_policy: "agency_owned_website",
+  };
   const downloaded = await parallelImageDownload(uniqueImages, sb, "property-images", jobId);
   listing.image_hashes = Array.from(new Set(downloaded.hashes || []));
   const downloadedUrls = Array.from(new Set(downloaded.urls || []));
+  listing._image_diagnostics = {
+    ...(listing._image_diagnostics || {}),
+    downloaded_count: downloadedUrls.length,
+    rejected_count: Math.max(0, uniqueImages.length - downloadedUrls.length),
+  };
   return await rankImportedCoverPhotos(downloadedUrls, listing);
 }
 
