@@ -3193,6 +3193,22 @@ function evaluateAgencyListingQuality(listing: Record<string, any>, imageCount: 
   return { ok, reasons };
 }
 
+// Safely extracts the first URL from a srcset-style string WITHOUT breaking
+// URLs that legitimately contain commas (e.g. Wix media URLs like
+// ".../v1/fill/w_608,h_810,al_c/photo.jpg"). True srcset entries are
+// separated by ", " followed by another URL — we only split on that pattern.
+function pickFirstUrlFromSrcset(input: string): string {
+  const trimmed = (input || "").trim();
+  if (!trimmed) return "";
+  // If the whole string is a single URL (no spaces), return as-is — Wix-safe.
+  if (!/\s/.test(trimmed)) return trimmed;
+  // Match srcset separator: comma + whitespace + (http/https/// or relative URL start)
+  const srcsetSep = /,\s+(?=(?:https?:|\/\/|\/|data:|[a-zA-Z0-9_\-./]+\s+\d+[wx]))/;
+  const firstEntry = trimmed.split(srcsetSep)[0].trim();
+  // A srcset entry is "URL descriptor" (e.g. "https://... 2x"); take the URL part.
+  return firstEntry.split(/\s+/)[0] || firstEntry;
+}
+
 function extractImagesFromHtml(html: string, pageUrl: string): string[] {
   const images: string[] = [];
   const seen = new Set<string>();
