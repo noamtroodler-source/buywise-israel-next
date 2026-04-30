@@ -3543,7 +3543,7 @@ function extractAgencyVisibleFacts(html: string, markdown: string): Record<strin
     else if (features.has("sea_view")) result.featured_highlight = "Sea View";
     else if (features.has("parking") && result.parking >= 2) result.featured_highlight = `${result.parking} Parking Spaces`;
   }
-  return result;
+  return clampPropertyNumerics(result);
 }
 
 function enrichListingFromVisibleFacts(listing: Record<string, any>, html: string, markdown: string): Record<string, any> {
