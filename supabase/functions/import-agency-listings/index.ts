@@ -4332,6 +4332,9 @@ async function processOneItem(
                   bank_guarantee_required: { type: "boolean" },
                   checks_required: { type: "boolean" },
                   photo_count: { type: "number" },
+                  ...(includeImagesInExtraction ? {
+                    image_urls: { type: "array", items: { type: "string" }, description: "Agency-owned listing image URLs visible on this source page only" },
+                  } : {}),
                 },
                 required: ["listing_category"],
                 additionalProperties: false,
