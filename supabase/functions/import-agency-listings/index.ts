@@ -3076,11 +3076,7 @@ function extractImagesFromHtml(html: string, pageUrl: string): string[] {
     const decoded = decodeHtmlEntities(rawUrl).replace(/\\u002F/g, "/").replace(/\\\//g, "/");
     const firstUrl = decoded.split(",")[0]?.trim().split(/\s+/)[0] || decoded.trim();
     const lower = firstUrl.toLowerCase();
-    if (lower.includes("logo") || lower.includes("icon") || lower.includes("avatar") ||
-        lower.includes("agent") || lower.includes("team") || lower.includes("favicon") ||
-        lower.includes("pixel") || lower.includes("tracking") || lower.includes("badge") ||
-        lower.includes("flag") || lower.includes("social") || lower.includes("map") ||
-        lower.includes("googlemap") || lower.includes("maps.googleapis")) return;
+    if (isJunkImageUrl(lower)) return;
     let absolute = firstUrl;
     try {
       if (firstUrl.startsWith("//")) absolute = `https:${firstUrl}`;
@@ -3106,11 +3102,7 @@ function extractImagesFromHtml(html: string, pageUrl: string): string[] {
     // Skip tiny icons, logos, tracking pixels, agent photos
     if (!url || url.length < 10) continue;
     const lower = url.toLowerCase();
-    if (lower.includes("logo") || lower.includes("icon") || lower.includes("avatar") ||
-        lower.includes("agent") || lower.includes("team") || lower.includes("favicon") ||
-        lower.includes("pixel") || lower.includes("tracking") || lower.includes("badge") ||
-        lower.includes("flag") || lower.includes("social") || lower.includes("map") ||
-        lower.includes("googlemap") || lower.includes("maps.googleapis")) continue;
+    if (isJunkImageUrl(lower)) continue;
     // Check for width/height attributes suggesting small images
     const widthMatch = src.match(/width\s*=\s*["']?(\d+)/i);
     if (widthMatch && parseInt(widthMatch[1]) < 80) continue;
