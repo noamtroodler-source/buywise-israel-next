@@ -3072,7 +3072,8 @@ function extractImagesFromHtml(html: string, pageUrl: string): string[] {
 
   const addCandidate = (rawUrl: string | null | undefined) => {
     if (!rawUrl || rawUrl.length < 10) return;
-    const firstUrl = rawUrl.split(",")[0]?.trim().split(/\s+/)[0] || rawUrl.trim();
+    const decoded = decodeHtmlEntities(rawUrl).replace(/\\u002F/g, "/").replace(/\\\//g, "/");
+    const firstUrl = decoded.split(",")[0]?.trim().split(/\s+/)[0] || decoded.trim();
     const lower = firstUrl.toLowerCase();
     if (lower.includes("logo") || lower.includes("icon") || lower.includes("avatar") ||
         lower.includes("agent") || lower.includes("team") || lower.includes("favicon") ||
@@ -3091,6 +3092,10 @@ function extractImagesFromHtml(html: string, pageUrl: string): string[] {
       images.push(absolute);
     }
   };
+
+  // Match direct Wix/media URLs that can be embedded in JSON state or inline styles.
+  const mediaRegex = /https?:\/\/(?:static\.)?wixstatic\.com\/media\/[^\s"'<>\)\\]+/gi;
+  while ((match = mediaRegex.exec(html)) !== null) addCandidate(match[0]);
 
   // Match <img> tags with src attributes
   const imgRegex = /<img\s[^>]*src\s*=\s*["']([^"']+)["'][^>]*>/gi;
@@ -3121,6 +3126,13 @@ function extractImagesFromHtml(html: string, pageUrl: string): string[] {
   }
 
   return images;
+}
+
+function extractImagesFromMarkdown(markdown: string, pageUrl: string): string[] {
+  const htmlLike = (markdown || "")
+    .replace(/!\[[^\]]*\]\(([^\s\)]+)[^\)]*\)/g, '<img src="$1">')
+    .replace(/(https?:\/\/(?:static\.)?wixstatic\.com\/media\/[^\s)]+)/g, '<img src="$1">');
+  return extractImagesFromHtml(htmlLike, pageUrl);
 }
 
 function canonicalImageKey(rawUrl: string): string {
