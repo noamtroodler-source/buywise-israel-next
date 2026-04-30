@@ -3069,10 +3069,12 @@ async function preCheckUrl(url: string): Promise<{ ok: boolean; skipReason: stri
 function extractImagesFromHtml(html: string, pageUrl: string): string[] {
   const images: string[] = [];
   const seen = new Set<string>();
+  let match: RegExpExecArray | null;
 
   const addCandidate = (rawUrl: string | null | undefined) => {
     if (!rawUrl || rawUrl.length < 10) return;
-    const firstUrl = rawUrl.split(",")[0]?.trim().split(/\s+/)[0] || rawUrl.trim();
+    const decoded = decodeHtmlEntities(rawUrl).replace(/\\u002F/g, "/").replace(/\\\//g, "/");
+    const firstUrl = decoded.split(",")[0]?.trim().split(/\s+/)[0] || decoded.trim();
     const lower = firstUrl.toLowerCase();
     if (lower.includes("logo") || lower.includes("icon") || lower.includes("avatar") ||
         lower.includes("agent") || lower.includes("team") || lower.includes("favicon") ||
@@ -3092,9 +3094,12 @@ function extractImagesFromHtml(html: string, pageUrl: string): string[] {
     }
   };
 
+  // Match direct Wix/media URLs that can be embedded in JSON state or inline styles.
+  const mediaRegex = /https?:\/\/(?:static\.)?wixstatic\.com\/media\/[^\s"'<>\)\\]+/gi;
+  while ((match = mediaRegex.exec(html)) !== null) addCandidate(match[0]);
+
   // Match <img> tags with src attributes
   const imgRegex = /<img\s[^>]*src\s*=\s*["']([^"']+)["'][^>]*>/gi;
-  let match: RegExpExecArray | null;
   while ((match = imgRegex.exec(html)) !== null) {
     const src = match[0];
     const url = match[1];
@@ -3121,6 +3126,13 @@ function extractImagesFromHtml(html: string, pageUrl: string): string[] {
   }
 
   return images;
+}
+
+function extractImagesFromMarkdown(markdown: string, pageUrl: string): string[] {
+  const htmlLike = (markdown || "")
+    .replace(/!\[[^\]]*\]\(([^\s\)]+)[^\)]*\)/g, '<img src="$1">')
+    .replace(/(https?:\/\/(?:static\.)?wixstatic\.com\/media\/[^\s)]+)/g, '<img src="$1">');
+  return extractImagesFromHtml(htmlLike, pageUrl);
 }
 
 function canonicalImageKey(rawUrl: string): string {
@@ -3177,6 +3189,17 @@ function textFromHtmlFragment(fragment: string): string {
   return decodeHtmlEntities(fragment.replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<style[\s\S]*?<\/style>/gi, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim());
 }
 
+function extractAgencyDescriptionLine(markdown: string, html: string): string | null {
+  const candidates = `${markdown}\n${textFromHtmlFragment(html)}`
+    .split(/\n|(?<=\.)\s+(?=[A-Z])/)
+    .map(line => cleanFactValue(line))
+    .filter(line => line.length >= 35 && line.length <= 700)
+    .filter(line => !/^(top of page|bottom of page|חיפוש|search|call now|contact|share|home|menu)$/i.test(line))
+    .filter(line => !/^https?:\/\//i.test(line))
+    .filter(line => !/\.(jpg|jpeg|png|webp)(\?|$)/i.test(line));
+  return candidates.find(line => /(room|bedroom|apartment|penthouse|villa|beach|marina|sea|parking|sqm|m2|m²|מחסן|חדר|דירה)/i.test(line)) || candidates[0] || null;
+}
+
 function extractAgencyHtmlFallback(html: string, markdown: string, url: string): Record<string, any> | null {
   const result: Record<string, any> = { listing_category: "property" };
   const combined = `${decodeURIComponent(url)}\n${markdown}\n${textFromHtmlFragment(html).slice(0, 6000)}`;
@@ -3185,8 +3208,10 @@ function extractAgencyHtmlFallback(html: string, markdown: string, url: string):
   const title = h1 ? textFromHtmlFragment(h1[1]) : titleTag ? textFromHtmlFragment(titleTag[1]).split("|")[0].trim() : "";
   if (title) result.title = title;
   const mainMatch = html.match(/<(?:main|article|div)[^>]*(?:property|estate|content|entry-content)[^>]*>([\s\S]{200,6000}?)<\/(?:main|article|div)>/i);
-  const desc = mainMatch ? textFromHtmlFragment(mainMatch[1]) : markdown.replace(/\s+/g, " ").trim();
+  const descLine = extractAgencyDescriptionLine(markdown, html);
+  const desc = descLine || (mainMatch ? textFromHtmlFragment(mainMatch[1]) : markdown.replace(/\s+/g, " ").trim());
   if (desc && desc.length > 40) result.description = desc.slice(0, 2000);
+  if (descLine) result._description_source = "agency_visible_description_line";
   const priceMatch = combined.match(/(?:₪|ש["״]?ח|nis)\s*([\d,.]{4,})|([\d,.]{4,})\s*(?:₪|ש["״]?ח|nis)/i);
   if (priceMatch) {
     const price = parseFloat(String(priceMatch[1] || priceMatch[2]).replace(/[^\d.]/g, ""));
@@ -3374,6 +3399,7 @@ async function collectAgencyOwnedImages(listing: any, structuredData: any, pageH
   if (listing.image_urls && Array.isArray(listing.image_urls)) candidateImages.push(...flattenImageCandidates(listing.image_urls));
   if (structuredData?.structured_images?.length) candidateImages.push(...structuredData.structured_images);
   if (candidateImages.length < 3 && pageHtml) candidateImages.push(...extractImagesFromHtml(pageHtml, itemUrl));
+  if (candidateImages.length < 3 && listing._source_markdown) candidateImages.push(...extractImagesFromMarkdown(listing._source_markdown, itemUrl));
   const uniqueImages = [...new Set(candidateImages.map(img => {
     if (!img || typeof img !== "string") return "";
     const first = img.split(",")[0]?.trim().split(/\s+/)[0] || img;
@@ -3384,9 +3410,20 @@ async function collectAgencyOwnedImages(listing: any, structuredData: any, pageH
     return first;
   }).filter(u => u && u.startsWith("http")))];
   if (uniqueImages.length === 0) return [];
+  listing._image_diagnostics = {
+    ...(listing._image_diagnostics || {}),
+    candidate_count: candidateImages.length,
+    unique_candidate_count: uniqueImages.length,
+    source_policy: "agency_owned_website",
+  };
   const downloaded = await parallelImageDownload(uniqueImages, sb, "property-images", jobId);
   listing.image_hashes = Array.from(new Set(downloaded.hashes || []));
   const downloadedUrls = Array.from(new Set(downloaded.urls || []));
+  listing._image_diagnostics = {
+    ...(listing._image_diagnostics || {}),
+    downloaded_count: downloadedUrls.length,
+    rejected_count: Math.max(0, uniqueImages.length - downloadedUrls.length),
+  };
   return await rankImportedCoverPhotos(downloadedUrls, listing);
 }
 
@@ -3963,7 +4000,14 @@ async function processOneItem(
   domainCity: string | null = null, importType: string = "resale"
 ): Promise<{ succeeded: boolean }> {
   try {
-    await sb.from("import_job_items").update({ status: "processing" }).eq("id", item.id);
+    const { data: claimedItem, error: claimErr } = await sb
+      .from("import_job_items")
+      .update({ status: "processing" })
+      .eq("id", item.id)
+      .eq("status", "pending")
+      .select("id")
+      .maybeSingle();
+    if (claimErr || !claimedItem) return { succeeded: false };
 
     // 0a-pre. Cross-agency URL blocklist check (normalized comparison)
     // If this agency was previously confirmed NOT to own this URL, skip immediately.
@@ -4151,7 +4195,12 @@ async function processOneItem(
       scrapeRes = await fetchWithTimeout("https://api.firecrawl.dev/v1/scrape", {
         method: "POST",
         headers: { Authorization: `Bearer ${firecrawlKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ url: item.url, formats: ["markdown", "links", "html"], onlyMainContent: true }),
+        body: JSON.stringify({
+          url: item.url,
+          formats: ["markdown", "links", "html"],
+          onlyMainContent: !isAgencyOwnWebsite,
+          waitFor: isAgencyOwnWebsite ? 3000 : undefined,
+        }),
       }, 30_000);
     }
 
@@ -4320,6 +4369,9 @@ async function processOneItem(
                   bank_guarantee_required: { type: "boolean" },
                   checks_required: { type: "boolean" },
                   photo_count: { type: "number" },
+                  ...(includeImagesInExtraction ? {
+                    image_urls: { type: "array", items: { type: "string" }, description: "Agency-owned listing image URLs visible on this source page only" },
+                  } : {}),
                 },
                 required: ["listing_category"],
                 additionalProperties: false,
@@ -4424,11 +4476,15 @@ async function processOneItem(
     if (cmsExtracted) {
       listing._cms_extracted = cmsExtracted;
     }
+    if (isAgencyOwnWebsite) {
+      listing._source_markdown = markdown;
+    }
 
     // Store raw extraction (strip any photo URLs for legal compliance)
     const sanitizedListing = { ...listing };
     delete sanitizedListing.image_urls;
     delete sanitizedListing.structured_images;
+    delete sanitizedListing._source_markdown;
     await sb.from("import_job_items").update({ extracted_data: sanitizedListing }).eq("id", item.id);
 
     const category = listing.listing_category || (listing.is_listing_page === false ? "not_listing" : "property");
@@ -4581,9 +4637,13 @@ async function processOneItem(
     }
 
     // Store confidence score + warnings
+    const listingForDiagnostics = { ...listing };
+    delete listingForDiagnostics.image_urls;
+    delete listingForDiagnostics.structured_images;
+    delete listingForDiagnostics._source_markdown;
     await sb.from("import_job_items").update({
       confidence_score: confidenceScore,
-      extracted_data: { ...listing, confidence_score: confidenceScore, validation_warnings: validationWarnings },
+      extracted_data: { ...listingForDiagnostics, confidence_score: confidenceScore, validation_warnings: validationWarnings },
     }).eq("id", item.id);
 
     // Below 40: skip with low confidence, except trusted agency-owned listing URLs.
@@ -4594,7 +4654,7 @@ async function processOneItem(
       confidenceScore = Math.max(confidenceScore, 40);
       await sb.from("import_job_items").update({
         confidence_score: confidenceScore,
-        extracted_data: { ...listing, confidence_score: confidenceScore, validation_warnings: validationWarnings },
+        extracted_data: { ...listingForDiagnostics, confidence_score: confidenceScore, validation_warnings: validationWarnings },
       }).eq("id", item.id);
     }
 
@@ -4612,6 +4672,13 @@ async function processOneItem(
     listing.image_hashes = [];
     imageUrls = await collectAllowedSourceImages(job.source_type, listing, structuredData, pageHtml, item.url, sb, jobId);
     if (imageUrls.length > 0) dlog(`Downloaded ${imageUrls.length} allowed ${job.source_type || "website"} images for ${item.url}`);
+    const listingWithImageDiagnostics = { ...listing };
+    delete listingWithImageDiagnostics.image_urls;
+    delete listingWithImageDiagnostics.structured_images;
+    delete listingWithImageDiagnostics._source_markdown;
+    await sb.from("import_job_items").update({
+      extracted_data: { ...listingWithImageDiagnostics, confidence_score: confidenceScore, validation_warnings: validationWarnings },
+    }).eq("id", item.id);
 
     let crossSourceMatchId: string | null = null;
     const imageOverlapMatch = await findBestImageOverlapMatch(sb, listing.image_hashes || []);
@@ -5330,6 +5397,7 @@ async function handleProcessBatch(body: any) {
   _lastGeoTime = 0;
   _geoQueue = Promise.resolve();
   _batchImageUrlCounts.clear();
+  _batchImageHashCounts.clear();
 
   let currentConcurrency = 2;
   const MAX_CONCURRENCY = 2;
