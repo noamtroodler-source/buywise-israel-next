@@ -3575,7 +3575,7 @@ function enrichListingFromVisibleFacts(listing: Record<string, any>, html: strin
   if (merged.storage_count && !merged.additional_rooms) { merged.additional_rooms = Number(merged.storage_count); appliedFields.add("additional_rooms"); }
   if (Array.isArray(merged.features)) merged.features = Array.from(new Set(merged.features.map((f: string) => normalizeFeatureKey(f) || f).filter(Boolean)));
   if (appliedFields.size > 0) merged._visible_fact_fields = Array.from(appliedFields);
-  return merged;
+  return clampPropertyNumerics(merged);
 }
 
 async function collectAgencyOwnedImages(listing: any, structuredData: any, pageHtml: string, itemUrl: string, sb: any, jobId: string): Promise<string[]> {
