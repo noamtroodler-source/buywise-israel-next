@@ -3120,6 +3120,37 @@ function parseCompactAgencyPrice(text: string): number | null {
   return null;
 }
 
+// Sanity-clamp numeric property fields. Catches the class of bug where the
+// price (e.g. 1,350,000) leaks into bedrooms, or a balcony size leaks into
+// size_sqm. Mutates and returns the same object for ergonomic chaining.
+function clampPropertyNumerics<T extends Record<string, any>>(obj: T): T {
+  if (obj && obj.bedrooms != null) {
+    const b = Number(obj.bedrooms);
+    if (!Number.isFinite(b) || b < 0 || b > 12) {
+      delete (obj as any).bedrooms;
+    } else {
+      (obj as any).bedrooms = Math.floor(b);
+    }
+  }
+  if (obj && obj.source_rooms != null) {
+    const r = Number(obj.source_rooms);
+    if (!Number.isFinite(r) || r < 0 || r > 15) delete (obj as any).source_rooms;
+  }
+  if (obj && obj.size_sqm != null) {
+    const s = Number(obj.size_sqm);
+    if (!Number.isFinite(s) || s < 15 || s > 2000) {
+      delete (obj as any).size_sqm;
+    } else {
+      (obj as any).size_sqm = Math.round(s);
+    }
+  }
+  if (obj && obj.bathrooms != null) {
+    const bt = Number(obj.bathrooms);
+    if (!Number.isFinite(bt) || bt < 0 || bt > 12) delete (obj as any).bathrooms;
+  }
+  return obj;
+}
+
 // Extract simple description-line facts that the AI extractor often misses
 // on minimal Wix/blog-style agency pages.
 function extractDescriptionLineFacts(text: string): Record<string, any> {
