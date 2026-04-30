@@ -3120,6 +3120,37 @@ function parseCompactAgencyPrice(text: string): number | null {
   return null;
 }
 
+// Sanity-clamp numeric property fields. Catches the class of bug where the
+// price (e.g. 1,350,000) leaks into bedrooms, or a balcony size leaks into
+// size_sqm. Mutates and returns the same object for ergonomic chaining.
+function clampPropertyNumerics<T extends Record<string, any>>(obj: T): T {
+  if (obj && obj.bedrooms != null) {
+    const b = Number(obj.bedrooms);
+    if (!Number.isFinite(b) || b < 0 || b > 12) {
+      delete (obj as any).bedrooms;
+    } else {
+      (obj as any).bedrooms = Math.floor(b);
+    }
+  }
+  if (obj && obj.source_rooms != null) {
+    const r = Number(obj.source_rooms);
+    if (!Number.isFinite(r) || r < 0 || r > 15) delete (obj as any).source_rooms;
+  }
+  if (obj && obj.size_sqm != null) {
+    const s = Number(obj.size_sqm);
+    if (!Number.isFinite(s) || s < 15 || s > 2000) {
+      delete (obj as any).size_sqm;
+    } else {
+      (obj as any).size_sqm = Math.round(s);
+    }
+  }
+  if (obj && obj.bathrooms != null) {
+    const bt = Number(obj.bathrooms);
+    if (!Number.isFinite(bt) || bt < 0 || bt > 12) delete (obj as any).bathrooms;
+  }
+  return obj;
+}
+
 // Extract simple description-line facts that the AI extractor often misses
 // on minimal Wix/blog-style agency pages.
 function extractDescriptionLineFacts(text: string): Record<string, any> {
@@ -3141,8 +3172,14 @@ function extractDescriptionLineFacts(text: string): Record<string, any> {
     const b = parseInt(beds[1], 10);
     if (Number.isFinite(b) && b >= 0 && b < 12) out.bedrooms = b;
   }
-  const sqm = t.match(/(\d{2,4})\s*(?:sqm|sq\.?m|m²|m2|square meters?)\b/);
-  if (sqm) out.size_sqm = parseInt(sqm[1], 10);
+  // Capture sqm BUT exclude balcony/terrace/garden/storage sizes which describe
+  // sub-areas of the apartment, not the apartment itself (e.g. "35 sqm sun balcony").
+  const sqm = t.match(/(\d{2,4})\s*(?:sqm|sq\.?m|m²|m2|square meters?)\b(?!\s*(?:sun\s+)?(?:balcony|terrace|patio|garden|storage|machsan|storeroom|mamad))/);
+  if (sqm) {
+    const v = parseInt(sqm[1], 10);
+    // Apartments/houses are realistically 15–2000 sqm. Reject obvious noise.
+    if (Number.isFinite(v) && v >= 15 && v <= 2000) out.size_sqm = v;
+  }
 
   if (/\bfor\s+rent\b|\blong[-\s]?term\s+rental\b|\brental\b/.test(t)) out.listing_status = "for_rent";
   else if (/\bfor\s+sale\b|\bquick\s+sale\b|\basking\b|\bprice\b|\bmil\b|\bm\b/.test(t)) out.listing_status = "for_sale";
@@ -3506,7 +3543,7 @@ function extractAgencyVisibleFacts(html: string, markdown: string): Record<strin
     else if (features.has("sea_view")) result.featured_highlight = "Sea View";
     else if (features.has("parking") && result.parking >= 2) result.featured_highlight = `${result.parking} Parking Spaces`;
   }
-  return result;
+  return clampPropertyNumerics(result);
 }
 
 function enrichListingFromVisibleFacts(listing: Record<string, any>, html: string, markdown: string): Record<string, any> {
@@ -3538,7 +3575,7 @@ function enrichListingFromVisibleFacts(listing: Record<string, any>, html: strin
   if (merged.storage_count && !merged.additional_rooms) { merged.additional_rooms = Number(merged.storage_count); appliedFields.add("additional_rooms"); }
   if (Array.isArray(merged.features)) merged.features = Array.from(new Set(merged.features.map((f: string) => normalizeFeatureKey(f) || f).filter(Boolean)));
   if (appliedFields.size > 0) merged._visible_fact_fields = Array.from(appliedFields);
-  return merged;
+  return clampPropertyNumerics(merged);
 }
 
 async function collectAgencyOwnedImages(listing: any, structuredData: any, pageHtml: string, itemUrl: string, sb: any, jobId: string): Promise<string[]> {
@@ -3959,7 +3996,7 @@ async function extractFromWordPress(url: string, _firecrawlKey: string): Promise
 
         if (fieldCount >= 3) {
           dlog(`WordPress adapter: extracted ${fieldCount} fields from REST API`);
-          return result;
+          return clampPropertyNumerics(result);
         }
       } catch { /* try next endpoint */ }
     }
@@ -4050,7 +4087,7 @@ function extractFromWixState(html: string): Record<string, any> | null {
 
       if (fieldCount >= 3) {
         dlog(`Wix adapter: extracted ${fieldCount} fields from embedded state`);
-        return result;
+        return clampPropertyNumerics(result);
       }
     }
     return null;
