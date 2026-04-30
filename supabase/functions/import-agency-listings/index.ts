@@ -4464,6 +4464,7 @@ async function processOneItem(
     const sanitizedListing = { ...listing };
     delete sanitizedListing.image_urls;
     delete sanitizedListing.structured_images;
+    delete sanitizedListing._source_markdown;
     await sb.from("import_job_items").update({ extracted_data: sanitizedListing }).eq("id", item.id);
 
     const category = listing.listing_category || (listing.is_listing_page === false ? "not_listing" : "property");
