@@ -1,117 +1,213 @@
-## Goal
+## Plan: make the Ashkelon Properties import safe before trying again
 
-Make the agency import behave predictably for Ashkelon Properties and similar agency websites:
+### What is actually going wrong
 
-- The queued count should reflect real active listing pages, not stale jobs or duplicated discovery results.
-- The import should not create duplicate property rows from the same source URL.
-- Real agency-site photos should import when the agency owns the source website.
-- AI/Street View fallback imagery should not be confused with actual listing photos during provisioning.
-- Short agency description lines should be extracted and used to populate useful listing descriptions/facts.
+The current issue is not only duplicate handling anymore. The importer is still treating weak Ashkelon Properties `/post/...` pages as valid property listings too aggressively.
 
-## Scope of the fix
+Current database check shows:
 
-### 1. Clean up the stale import state for this agency
+- Latest Ashkelon website job queued 105 URLs from 174 raw discovered URLs.
+- 24 properties have already been created from that run.
+- All 24 are flagged for review.
+- 18 of 24 have no real images.
+- 17 of 24 have weak address/location data.
+- Many pending URLs are still waiting, so if processing continues it will likely create more bad rows.
 
-- Mark the old 99-item `ready/pending` job for Ashkelon Properties as cancelled/obsolete so it no longer appears as the current job.
-- Keep the completed historical jobs visible as “Previous jobs,” but prevent old ready jobs from being treated as actionable.
-- Adjust the provisioning UI if needed so the “current job” prioritizes the newest active job and ignores obsolete/cancelled ones.
+The screenshot is therefore accurate: the pipeline is importing too many partial records before proving they are real, usable active listings.
 
-### 2. Add exact-source duplicate protection
+---
 
-- Before inserting a new property from an agency website, check whether a property already exists for the same agency and the same canonical source URL.
-- If it exists, update/enrich that existing property instead of inserting a new row.
-- Add a database-level safety net where appropriate, likely a partial unique index for active imported rows by agency/source identity, so this cannot silently regress.
-- Keep legitimate multi-unit same-building inventory allowed; this specific guard is for exact same source URL / same source identity repeats.
+## Phase 1 — Immediate containment
 
-### 3. Improve agency website discovery counts
+1. Stop the current Ashkelon Properties job from processing further.
+2. Mark any remaining pending/processing items in that job as skipped or paused-for-review.
+3. Remove the bad Ashkelon Properties records created by the latest broken import run.
+4. Preserve enough job/item diagnostic data to compare before/after.
 
-- Tighten discovery for Wix/agency sites so category/index pages and stale pages do not inflate the queue.
-- Prefer deterministic listing URL patterns for `ashkelonproperties.com/post/...` and exclude known non-listing pages, sold/rented pages, short-term/vacation rental pages, and project/development pages earlier.
-- Ensure repeated discovery runs subtract already-known source URLs so “new URLs” reflects what is actually new.
+Goal: prevent more junk rows from being created while we fix the parser.
 
-### 4. Fix real photo extraction for agency-owned websites
+---
 
-- Change agency-owned website scraping from `onlyMainContent: true` to a fuller scrape path where image/gallery markup is preserved.
-- Expand HTML/markdown extraction to catch Wix image formats, including `static.wixstatic.com/media/...`, `srcset`, lazy-loaded attributes, Open Graph images, and JSON/embedded state where available.
-- Add `image_urls` to the AI extraction schema only for agency-owned websites, since the current prompt asks for images but the schema blocks that field.
-- Continue to block Yad2 media storage and keep the zero-storage third-party policy intact.
-- Keep image filters for logos/placeholders, but tune them so real Wix listing photos are not accidentally discarded.
+## Phase 2 — Add an Ashkelon/Wix-specific listing gate
 
-### 5. Separate listing photos from fallback imagery
+Ashkelon Properties is a Wix/blog-style site where active listings live under `/post/...`, but not every `/post/...` is a clean listing. We need a stricter rule before insertion.
 
-- Treat `images` as actual listing photos only.
-- Treat `street_view_url` / AI-enhanced exterior images as contextual fallback imagery, not imported property photos.
-- In the provisioning table, show “no agency photo imported” separately from “fallback street view exists,” so it is not alarming or misleading.
-- Avoid generating/enhancing Street View during the initial agency import review unless explicitly needed later.
+For agency-owned website imports, especially `ashkelonproperties.com`, a page should only be imported if it passes a hard validation gate:
 
-### 6. Pull and use Ashkelon description lines
+### Required signals
+A page must have at least two of these:
 
-- Add a stronger agency-site text extractor for Wix pages that captures the visible short description line/body text from the listing page.
-- Use that text to fill extracted facts: rooms, sqm, beach/marina/sea-view language, parking, gym, storage/machsan, furnished, air conditioning, etc.
-- Feed the captured source text into the BuyWise description generator, while keeping the final wording original and factual.
-- If only a short description exists, produce a concise trusted-friend description instead of over-inventing details.
+- Real asking price detected from visible text, including compact formats like `1.65`, `1.9 mil`, `770,000`, `7m`, etc.
+- Real property structure detected: room count, bedroom count, sqm, garden apartment, penthouse, studio, house, duplex, etc.
+- Real transaction intent: `for sale`, `quick sale`, `asking`, `long term rental`, `rental`, etc.
+- Real location/neighborhood clue beyond just `Ashkelon`.
+- A usable property photo from the main page content.
 
-### 7. Add import diagnostics for review
+### Hard reject signals
+Skip pages if they are:
 
-- Store lightweight diagnostics per import item, such as:
-  - discovered image candidate count,
-  - downloaded image count,
-  - image rejection reasons,
-  - description source used,
-  - duplicate decision.
-- Surface enough of this in admin/provisioning review so we can tell whether a listing has “no source images found,” “images found but rejected,” or “download failed.”
+- Blog/news/comment pages with no property facts.
+- New development/project pages.
+- Sold/rented/short-term rental pages.
+- Pages whose only image is a Wix/system/error/chat/placeholder image.
+- Pages where price is unknown or parsed as `0` unless the page has unusually strong listing facts and is intentionally imported as review-only.
 
-### 8. Repair current Ashkelon Properties data safely
+Goal: discovery can still find many URLs, but only validated pages can create properties.
 
-After code/database guards are in place:
+---
 
-- Identify duplicate rows by exact `source_url` for this agency.
-- Keep the best row per source URL, preferring the row with higher data quality, images, richer facts, or newer successful extraction.
-- Merge useful fields from duplicates into the keeper where safe.
-- Mark/delete duplicate rows only after preserving source observations/history.
-- Re-run or backfill photo/description extraction for the retained Ashkelon listings.
-- Leave all imported listings as draft/needs-review until manually approved.
+## Phase 3 — Fix image extraction for Wix pages
 
-## Technical details
+The current screenshot shows placeholder/error/cartoon images and many missing photos. The fetched sample page proves real images exist in the page markdown/HTML, but the importer is not consistently choosing them.
 
-Primary code area:
+I will update the image collection logic to:
 
-- `supabase/functions/import-agency-listings/index.ts`
+1. Extract real Wix media URLs from visible markdown and HTML.
+2. Prefer main content/property images over related-post thumbnails.
+3. Exclude obvious non-property/system images, including:
+   - `error-img.png`
+   - chat/widget assets
+   - tiny tracking/background images
+   - logos/icons
+   - unrelated related-post thumbnails where possible
+4. Use the first valid large image as the cover image.
+5. Keep the existing zero-storage/compliance rules: only agency-owned website images may be stored; no third-party media storage.
 
-Likely changes:
+Goal: Ashkelon listings should no longer show blank or system/error images when the site has real photos.
 
-- Discovery:
-  - improve URL canonicalization and already-known URL subtraction,
-  - ignore obsolete jobs in the active-job flow,
-  - tighten agency URL filtering.
+---
 
-- Scraping/extraction:
-  - use fuller HTML scrape for agency-owned websites,
-  - add `image_urls` to the extraction tool schema when `includeImagesInExtraction` is true,
-  - improve `extractImagesFromHtml`, `extractStructuredData`, and Wix-specific extraction.
+## Phase 4 — Improve description-line extraction
 
-- Images:
-  - improve `collectAgencyOwnedImages`, `parallelImageDownload`, and rejection diagnostics,
-  - keep `images` separate from `street_view_url`,
-  - prevent Street View/AI-enhanced fallback from appearing as a real source photo in provisioning.
+Ashkelon Properties has minimal structured data, but the visible description line contains useful facts. I will add a focused parser for these English description lines.
 
-- Dedup:
-  - add exact source URL/source identity checks before insert,
-  - possibly add a partial unique index on source identity for active imported properties,
-  - update existing exact-source rows rather than insert duplicates.
+Examples it should handle:
 
-- Data cleanup:
-  - migration or admin repair script to cancel/obsolete stale jobs,
-  - dedupe Ashkelon Properties rows by source URL,
-  - backfill photos/descriptions for retained rows.
+- `3 rooms (2 bedrooms) right opposite Delilah beach for quick sale. Includes machsan and underground parking. Asking 1.65 or best offer.`
+- `4 rooms for sale only 1.9 mil`
+- `1 room studio 2 minutes from beach`
+- `5 room bargain with sea view`
 
-## Validation checklist
+Fields to extract when present:
 
-- Ashkelon Properties no longer shows the stale 99 queued job as the active import.
-- Discovery returns roughly the real active site listing count, not inflated duplicates.
-- Re-running import does not create a second property row for the same source URL.
-- Imported agency-owned listings get real Wix/static source photos where available.
-- Listings without source photos are clearly labeled as missing source photos, not silently replaced by AI/Street View.
-- Description lines from the source page populate meaningful listing descriptions/facts.
-- Existing zero-storage and third-party media rules remain respected for non-owned sources like Yad2.
-- Current duplicate Ashkelon rows are cleaned up safely and retained listings remain draft/needs-review.
+- price in NIS
+- Israeli room count
+- bedrooms using the Israeli standard conversion
+- property type
+- neighborhood/location phrase
+- parking
+- storage/machsan
+- sea view
+- beach proximity
+- garden/penthouse/studio/house signals
+- listing status: sale vs long-term rental
+
+Goal: listings imported from short descriptions should be meaningfully populated instead of only showing `Ashkelon`.
+
+---
+
+## Phase 5 — Make low-quality imports fail closed, not import as junk
+
+Right now, strong-looking agency URLs can override low confidence and import as flagged. That was meant to avoid losing real agency listings, but for Ashkelon it is creating bad records.
+
+I will change this behavior for agency-owned websites:
+
+- Strong URL alone is not enough to import.
+- If the page has weak facts, no valid price, weak location, and no valid image, it must be skipped or held as an import job item, not inserted into `properties`.
+- `properties` rows should only be created after the page clears minimum quality.
+- Failed/held items should include a clear reason like `Weak Ashkelon listing facts`, `No usable property image`, or `Price missing from minimal agency page`.
+
+Goal: the quality table should show fewer, better properties instead of many major-review junk rows.
+
+---
+
+## Phase 6 — Add better admin visibility before processing
+
+I will adjust the admin import UI so this type of issue is obvious before import:
+
+1. Discovery summary should distinguish:
+   - raw URLs discovered
+   - URLs queued as likely listings
+   - URLs rejected by the pre-gate
+   - already-imported URLs
+2. For agency website jobs, show a warning if queued count is much higher than expected or if many URLs are blog-style `/post/...` pages.
+3. Add clearer reason buckets for skipped items, especially:
+   - not a property page
+   - sold/rented
+   - weak listing facts
+   - missing usable images
+   - project/development
+4. Prevent “Process all” from blindly running if a site-specific gate reports suspicious discovery quality.
+
+Goal: if a site returns 99/105 candidates when we expect about 35, the UI should warn us before records are created.
+
+---
+
+## Phase 7 — Fresh reimport and verification
+
+After the code fix:
+
+1. Delete the latest bad Ashkelon Properties rows again.
+2. Start a clean discovery from the agency website.
+3. Review the discovered/queued/skipped counts before processing.
+4. Process a small batch first, not the whole job.
+5. Verify:
+   - count is much closer to the real active listing count
+   - rows have real titles
+   - rows have prices where shown on source page
+   - rows have real agency-site images
+   - location is better than just `Ashkelon` where the description provides clues
+   - no placeholder/cartoon/error images appear
+6. If the first batch looks clean, process the rest.
+
+---
+
+## Technical changes
+
+### Edge function
+Update `supabase/functions/import-agency-listings/index.ts`:
+
+- Add a Wix/Ashkelon page-content gate.
+- Add description-line parsing helpers.
+- Tighten agency-owned website low-confidence handling.
+- Improve Wix image extraction and filtering.
+- Add clearer `import_job_items.error_message` values for rejected pages.
+- Keep CORS and in-code auth behavior as-is.
+
+### Admin UI
+Update:
+
+- `src/components/admin/agency-provisioning/ImportListingsSection.tsx`
+- possibly `src/components/admin/agency-provisioning/ListingsQualitySection.tsx`
+- possibly `src/hooks/useImportListings.tsx`
+
+Changes:
+
+- Surface discovery diagnostics more clearly.
+- Add suspicious-discovery warnings.
+- Improve skipped reason buckets.
+
+### Database cleanup
+Use a targeted migration/query sequence for Ashkelon Properties only:
+
+- Stop/pause the active bad job.
+- Delete properties created from the broken latest job.
+- Clean related image hashes/source observations/job item links safely.
+- Keep or archive diagnostics so we can compare the fixed run.
+
+No broad platform data deletion.
+
+---
+
+## Success criteria
+
+This is done only when:
+
+- Ashkelon Properties no longer imports 99/105 weak candidates as listings.
+- Bad rows from the current broken run are removed.
+- Fresh import creates only validated active listings.
+- Missing-photo listings are skipped unless there is a conscious review-only exception.
+- Real Wix property photos are used when available.
+- Description text populates price/rooms/features/location when source text provides it.
+- The admin UI makes it clear why pages were skipped or held.
+
