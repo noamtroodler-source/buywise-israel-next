@@ -88,7 +88,8 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
     ? undefined
     : activeJobId
       ? jobs.find(j => j.id === activeJobId)
-      : jobs.find(j => ['discovering', 'ready', 'processing'].includes(j.status)) || jobs[0];
+      : jobs.find(j => ['discovering', 'ready', 'processing'].includes(j.status))
+        || jobs.find(j => !['cancelled', 'obsolete'].includes(j.status));
 
   const currentJobSourceLabel = getJobSourceLabel(currentJob?.source_type);
   const currentJobImportTypeLabel = getImportTypeLabel(currentJob?.import_type);
@@ -522,7 +523,7 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
             )}
 
             {/* Job history */}
-            {jobs.length > 1 && (
+            {jobs.filter(j => j.id !== currentJob?.id).length > 0 && (
               <div className="border-t pt-4 mt-4">
                 <p className="text-xs font-medium text-muted-foreground mb-2">Previous jobs</p>
                 <div className="space-y-1">
