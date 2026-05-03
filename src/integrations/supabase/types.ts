@@ -796,7 +796,7 @@ export type Database = {
           bio: string | null
           completeness_score: number
           created_at: string
-          email: string
+          email: string | null
           email_verified_at: string | null
           enrichment_source: string | null
           facebook_url: string | null
@@ -836,7 +836,7 @@ export type Database = {
           bio?: string | null
           completeness_score?: number
           created_at?: string
-          email: string
+          email?: string | null
           email_verified_at?: string | null
           enrichment_source?: string | null
           facebook_url?: string | null
@@ -876,7 +876,7 @@ export type Database = {
           bio?: string | null
           completeness_score?: number
           created_at?: string
-          email?: string
+          email?: string | null
           email_verified_at?: string | null
           enrichment_source?: string | null
           facebook_url?: string | null

@@ -1,0 +1,1 @@
+ALTER TABLE public.agents ALTER COLUMN email DROP NOT NULL;
