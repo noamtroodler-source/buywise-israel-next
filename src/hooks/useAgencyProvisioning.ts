@@ -652,18 +652,42 @@ export function useEnrichAgencyFromPayload() {
 
       const { data: existingAgents } = await (supabase as any)
         .from('agents')
-        .select('email')
+        .select('email, phone, license_number, name')
         .eq('agency_id', agencyId);
       const existingEmails = new Set(
         (existingAgents || []).map((a: any) => (a.email || '').toLowerCase()).filter(Boolean)
       );
+      const existingLicenses = new Set(
+        (existingAgents || []).map((a: any) => (a.license_number || '').trim()).filter(Boolean)
+      );
+      const existingPhones = new Set(
+        (existingAgents || []).map((a: any) => (a.phone || '').replace(/\D/g, '')).filter(Boolean)
+      );
+      const existingNames = new Set(
+        (existingAgents || []).map((a: any) => (a.name || '').trim().toLowerCase()).filter(Boolean)
+      );
 
       let inserted = 0;
       let skipped = 0;
+      // Dedupe within the incoming payload too (e.g. shared placeholder email)
+      const seenLicenses = new Set<string>();
+      const seenPhones = new Set<string>();
+      const seenNames = new Set<string>();
+
       for (const a of payload.agents || []) {
         if (!a.name) { skipped++; continue; }
         const emailLower = (a.email || '').toLowerCase();
-        if (emailLower && existingEmails.has(emailLower)) { skipped++; continue; }
+        const license = (a.license_number || '').trim();
+        const phoneDigits = (a.phone || '').replace(/\D/g, '');
+        const nameLower = a.name.trim().toLowerCase();
+
+        // Dedup priority: license > phone > name (email is unreliable — multiple agents
+        // often share an owner's email in research data). Skip only on a strong match.
+        const isDup =
+          (license && (existingLicenses.has(license) || seenLicenses.has(license))) ||
+          (!license && phoneDigits && (existingPhones.has(phoneDigits) || seenPhones.has(phoneDigits))) ||
+          (!license && !phoneDigits && (existingNames.has(nameLower) || seenNames.has(nameLower)));
+        if (isDup) { skipped++; continue; }
 
         const fields: Array<[string, boolean]> = [
           ['name', !!a.name],
