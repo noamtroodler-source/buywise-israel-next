@@ -725,6 +725,9 @@ export function useEnrichAgencyFromPayload() {
         } else {
           inserted++;
           if (emailLower) existingEmails.add(emailLower);
+          if (license) seenLicenses.add(license);
+          if (phoneDigits) seenPhones.add(phoneDigits);
+          seenNames.add(nameLower);
         }
       }
 
