@@ -2206,6 +2206,33 @@ async function handleDiscover(body: any) {
     dlog(`Non-listing filter: removed ${nonListingRemoved}, ${allUrls.length} remaining`);
   }
 
+  // ── Non-Israel (Greece/Cyprus/etc.) URL slug filter ──
+  // Some Israeli agencies (e.g., Cityzen) list both Israel and overseas (Greece) on the
+  // same /property/* URL pattern. Reject those at the URL stage so we never spend AI
+  // tokens on them. Matches both Latin and Hebrew tokens in the decoded path.
+  const NON_ISRAEL_SLUG_TOKENS = [
+    // Latin tokens
+    "ierissos", "chalkidiki", "halkidiki", "faliro", "paliouri", "athens", "greece",
+    "thessaloniki", "kassandra", "sithonia", "pefkohori", "nea-moudania", "sani",
+    "cyprus", "larnaca", "limassol", "paphos", "nicosia", "dubai", "tbilisi", "batumi",
+    // Hebrew tokens (already URL-decoded)
+    "יוון", "יווני", "חלקידיקי", "חלדקיקי", "פאלרוס", "פאליורי", "ierissos",
+    "סלוניקי", "אתונה", "קסנדרה", "סיתוניה", "קפריסין", "לרנקה", "דובאי",
+  ];
+  const beforeNonIsrael = allUrls.length;
+  const filteredIsrael = allUrls.filter(url => {
+    try {
+      const decoded = decodeURIComponent(url).toLowerCase();
+      return !NON_ISRAEL_SLUG_TOKENS.some(tok => decoded.includes(tok.toLowerCase()));
+    } catch { return true; }
+  });
+  if (filteredIsrael.length < beforeNonIsrael) {
+    const removed = beforeNonIsrael - filteredIsrael.length;
+    allUrls.length = 0;
+    allUrls.push(...filteredIsrael);
+    dlog(`Non-Israel slug filter: removed ${removed} overseas URLs (Greece/Cyprus/etc.)`);
+  }
+
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
