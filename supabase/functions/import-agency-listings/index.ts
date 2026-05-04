@@ -6954,14 +6954,31 @@ async function runMadlanAgencyDiscoverJob(params: {
       return;
     }
 
-    // Translate city names to Hebrew for Madlan Apify actor
-    const hebrewCities = cities.map((c: string) => toHebrewCity(c));
-    const cityStr = hebrewCities.join(", ");
+    // Translate city names to Hebrew for Madlan Apify actor.
+    // IMPORTANT: The swerve~madlan-scraper actor expects a SINGLE city per run.
+    // Joining all cities with commas (e.g. 16 small cities) causes the actor to
+    // return 0 results because Madlan can't resolve the joined string as a place.
+    // Strategy: iterate per-city, capped at the first 5 cities to keep runtime
+    // reasonable. We rely on the office/agent URL filter to constrain results.
+    const MAX_MADLAN_CITIES = 5;
+    const hebrewCities = cities
+      .slice(0, MAX_MADLAN_CITIES)
+      .map((c: string) => toHebrewCity(c))
+      .filter((c: string) => !!c && c.trim().length > 0);
+    if (hebrewCities.length === 0) {
+      const failReason = "No translatable Hebrew city names found for Madlan scrape";
+      console.warn(`[Madlan/Apify] ${failReason}`);
+      await sb.from("import_jobs").update({ status: "failed", failure_reason: failReason }).eq("id", jobId);
+      await sb.from("agency_sources")
+        .update({ last_failure_reason: failReason })
+        .eq("agency_id", agencyId).eq("source_type", "madlan");
+      return;
+    }
     const dealTypes = effectiveImportType === "both"
       ? ["buy", "rent"]
       : [effectiveImportType === "rental" ? "rent" : "buy"];
 
-    dlog(`[Madlan/Apify] Scraping cities: ${cityStr} (from: ${cities.join(", ")}), dealTypes: ${dealTypes.join(",")}`);
+    dlog(`[Madlan/Apify] Iterating ${hebrewCities.length} cities (capped from ${cities.length}): ${hebrewCities.join(" | ")}, dealTypes: ${dealTypes.join(",")}`);
 
     // Get existing source_urls for dedup
     const { data: existingProps } = await sb
@@ -6993,51 +7010,62 @@ async function runMadlanAgencyDiscoverJob(params: {
     const allDiscoveredUrls: string[] = [];
 
     for (const dealType of dealTypes) {
-      dlog(`[Madlan/Apify] Running actor for ${cityStr} / ${dealType}`);
+      const dealExpected = dealType === "rent" ? activeGate.rentCount : activeGate.saleCount;
 
-      // Call Apify actor synchronously (returns dataset items directly)
-      // Timeout: 120s for the sync call
-          const dealExpected = dealType === "rent" ? activeGate.rentCount : activeGate.saleCount;
-          const actorInput = {
-        city: cityStr,
-        dealType,
-            officeUrl: websiteUrl,
-            agentOfficeUrl: websiteUrl,
-            maxItems: dealExpected > 0 ? Math.min(Math.max(dealExpected + 5, 10), 60) : 60,
-      };
+      for (const heCity of hebrewCities) {
+        dlog(`[Madlan/Apify] Running actor for city="${heCity}" / ${dealType}`);
 
-      let items: any[] = [];
-      try {
-        const res = await fetch(
-          `https://api.apify.com/v2/acts/swerve~madlan-scraper/run-sync-get-dataset-items?token=${APIFY_API_KEY}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(actorInput),
-            signal: AbortSignal.timeout(180_000), // 3 min timeout
+        // Attempt 1: scoped by office URL (preferred — filters to this agency)
+        // Attempt 2 (fallback): drop the office filter so the actor can return
+        // anything in the city. We then rely on isMadlanItemLiveAndAgencyScoped
+        // to filter by agency name. This catches cases where the actor's office
+        // filter combined with a small/edge-case city returns 0.
+        const baseInput: Record<string, any> = {
+          city: heCity,
+          dealType,
+          maxItems: dealExpected > 0 ? Math.min(Math.max(dealExpected + 5, 10), 60) : 60,
+        };
+        const attempts = [
+          { ...baseInput, officeUrl: websiteUrl, agentOfficeUrl: websiteUrl, _label: "office-scoped" },
+          { ...baseInput, _label: "city-only-fallback" },
+        ];
+
+        let items: any[] = [];
+        for (const actorInput of attempts) {
+          const label = actorInput._label;
+          delete actorInput._label;
+          try {
+            const res = await fetch(
+              `https://api.apify.com/v2/acts/swerve~madlan-scraper/run-sync-get-dataset-items?token=${APIFY_API_KEY}`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(actorInput),
+                signal: AbortSignal.timeout(180_000),
+              }
+            );
+            if (!res.ok) {
+              const errText = await res.text();
+              console.error(`[Madlan/Apify] Actor failed (${res.status}) [${label}] city=${heCity}/${dealType}: ${errText.slice(0, 300)}`);
+              continue;
+            }
+            const data = await res.json();
+            dlog(`[Madlan/Apify] [${label}] city=${heCity}/${dealType} returned ${Array.isArray(data) ? data.length : 0} items`);
+            if (Array.isArray(data) && data.length > 0) { items = data; break; }
+          } catch (e) {
+            console.error(`[Madlan/Apify] Actor call error [${label}] city=${heCity}:`, e);
           }
-        );
-
-        if (!res.ok) {
-          const errText = await res.text();
-          console.error(`[Madlan/Apify] Actor failed (${res.status}): ${errText.slice(0, 300)}`);
-          continue;
         }
 
-        items = await res.json();
-        dlog(`[Madlan/Apify] Actor returned ${items.length} items for ${cityStr}/${dealType}`);
-      } catch (e) {
-        console.error(`[Madlan/Apify] Actor call error:`, e);
-        continue;
-      }
+        if (items.length === 0) continue;
 
-      totalDiscovered += items.length;
+        totalDiscovered += items.length;
 
-      if (dealExpected > 0 && items.length > Math.max(dealExpected + 10, Math.ceil(dealExpected * 1.5))) {
-        totalRejectedInactive += items.length;
-        console.warn(`[Madlan/ActiveGate] Blocked ${dealType}: public active=${dealExpected}, actor returned=${items.length}`);
-        continue;
-      }
+        if (dealExpected > 0 && items.length > Math.max(dealExpected + 10, Math.ceil(dealExpected * 1.5))) {
+          totalRejectedInactive += items.length;
+          console.warn(`[Madlan/ActiveGate] Blocked ${dealType}@${heCity}: public active=${dealExpected}, actor returned=${items.length}`);
+          continue;
+        }
 
       // Process each item
       for (const madlanItem of items) {
@@ -7290,11 +7318,12 @@ async function runMadlanAgencyDiscoverJob(params: {
         }
       }
 
-      // Update heartbeat between deal types
-      await sb.from("import_jobs").update({
-        last_heartbeat: new Date().toISOString(),
-      }).eq("id", jobId);
-    }
+        // Heartbeat between (city, dealType) iterations
+        await sb.from("import_jobs").update({
+          last_heartbeat: new Date().toISOString(),
+        }).eq("id", jobId);
+      } // end city loop
+    } // end dealType loop
 
     if (expectedActive > 0 && totalNew > Math.max(expectedActive + 10, Math.ceil(expectedActive * 1.5))) {
       const reason = { source: "madlan", blocked: true, reason: "active_count_mismatch", expected_active: expectedActive, discovered: totalDiscovered, new: totalNew, rejected_inactive: totalRejectedInactive };
@@ -7318,7 +7347,7 @@ async function runMadlanAgencyDiscoverJob(params: {
     // Update agency source
     await sb.from("agency_sources")
       .update({
-        last_failure_reason: totalDiscovered === 0 ? "Apify actor returned 0 results" : null,
+        last_failure_reason: totalDiscovered === 0 ? `Apify actor returned 0 results across ${hebrewCities.length} cities (tried both office-scoped and city-only fallback). Office URL may not be indexed on Madlan, or agency has no live listings on Madlan.` : null,
         last_sync_listings_found: totalDiscovered,
         last_synced_at: new Date().toISOString(),
       })
