@@ -7347,7 +7347,7 @@ async function runMadlanAgencyDiscoverJob(params: {
     // Update agency source
     await sb.from("agency_sources")
       .update({
-        last_failure_reason: totalDiscovered === 0 ? "Apify actor returned 0 results" : null,
+        last_failure_reason: totalDiscovered === 0 ? `Apify actor returned 0 results across ${hebrewCities.length} cities (tried both office-scoped and city-only fallback). Office URL may not be indexed on Madlan, or agency has no live listings on Madlan.` : null,
         last_sync_listings_found: totalDiscovered,
         last_synced_at: new Date().toISOString(),
       })
