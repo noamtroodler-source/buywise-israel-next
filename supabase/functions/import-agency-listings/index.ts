@@ -7047,15 +7047,19 @@ async function runMadlanAgencyDiscoverJob(params: {
           maxItems: dealExpected > 0 ? Math.min(Math.max(dealExpected + 5, 10), 60) : 60,
         };
         const attempts = [
-          { ...baseInput, officeUrl: websiteUrl, agentOfficeUrl: websiteUrl, _label: "office-scoped" },
-          { ...baseInput, _label: "city-only-fallback" },
+          { ...baseInput, officeUrl: websiteUrl, agentOfficeUrl: websiteUrl, _label: "tier1-office-scoped" },
+          { startUrls: [{ url: websiteUrl }], dealType, maxItems: baseInput.maxItems, _label: "tier2-start-urls" },
+          { ...baseInput, _label: "tier1-city-only-fallback" },
         ];
 
         let items: any[] = [];
+        let chosenLabel = "";
+        let lastRunId: string | null = null;
         for (const actorInput of attempts) {
-          const label = actorInput._label;
-          delete actorInput._label;
+          const label = (actorInput as any)._label;
+          delete (actorInput as any)._label;
           try {
+            console.log(`[Madlan/Apify] [${label}] city=${heCity}/${dealType} input=${JSON.stringify(actorInput).slice(0, 250)}`);
             const res = await fetch(
               `https://api.apify.com/v2/acts/swerve~madlan-scraper/run-sync-get-dataset-items?token=${APIFY_API_KEY}`,
               {
@@ -7065,18 +7069,31 @@ async function runMadlanAgencyDiscoverJob(params: {
                 signal: AbortSignal.timeout(180_000),
               }
             );
+            const runIdHeader = res.headers.get("x-apify-run-id") || res.headers.get("X-Apify-Run-Id");
+            if (runIdHeader) lastRunId = runIdHeader;
             if (!res.ok) {
               const errText = await res.text();
               console.error(`[Madlan/Apify] Actor failed (${res.status}) [${label}] city=${heCity}/${dealType}: ${errText.slice(0, 300)}`);
               continue;
             }
             const data = await res.json();
-            dlog(`[Madlan/Apify] [${label}] city=${heCity}/${dealType} returned ${Array.isArray(data) ? data.length : 0} items`);
-            if (Array.isArray(data) && data.length > 0) { items = data; break; }
+            const count = Array.isArray(data) ? data.length : 0;
+            console.log(`[Madlan/Apify] [${label}] city=${heCity}/${dealType} returned ${count} raw items (runId=${lastRunId || "n/a"})`);
+            if (count > 0) {
+              items = data;
+              chosenLabel = label;
+              break;
+            }
           } catch (e) {
             console.error(`[Madlan/Apify] Actor call error [${label}] city=${heCity}:`, e);
           }
         }
+
+        if (items.length === 0) continue;
+
+        // Diagnostic: count how many would pass agency-scope filter BEFORE the loop below
+        const wouldPass = items.filter((it: any) => isMadlanItemLiveAndAgencyScoped(it, agency?.name, websiteUrl)).length;
+        console.log(`[Madlan/Apify] [${chosenLabel}] city=${heCity}/${dealType}: ${items.length} raw, ${wouldPass} pass agency-scope filter (agency="${agency?.name}")`);
 
         if (items.length === 0) continue;
 
