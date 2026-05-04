@@ -7010,51 +7010,62 @@ async function runMadlanAgencyDiscoverJob(params: {
     const allDiscoveredUrls: string[] = [];
 
     for (const dealType of dealTypes) {
-      dlog(`[Madlan/Apify] Running actor for ${cityStr} / ${dealType}`);
+      const dealExpected = dealType === "rent" ? activeGate.rentCount : activeGate.saleCount;
 
-      // Call Apify actor synchronously (returns dataset items directly)
-      // Timeout: 120s for the sync call
-          const dealExpected = dealType === "rent" ? activeGate.rentCount : activeGate.saleCount;
-          const actorInput = {
-        city: cityStr,
-        dealType,
-            officeUrl: websiteUrl,
-            agentOfficeUrl: websiteUrl,
-            maxItems: dealExpected > 0 ? Math.min(Math.max(dealExpected + 5, 10), 60) : 60,
-      };
+      for (const heCity of hebrewCities) {
+        dlog(`[Madlan/Apify] Running actor for city="${heCity}" / ${dealType}`);
 
-      let items: any[] = [];
-      try {
-        const res = await fetch(
-          `https://api.apify.com/v2/acts/swerve~madlan-scraper/run-sync-get-dataset-items?token=${APIFY_API_KEY}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(actorInput),
-            signal: AbortSignal.timeout(180_000), // 3 min timeout
+        // Attempt 1: scoped by office URL (preferred — filters to this agency)
+        // Attempt 2 (fallback): drop the office filter so the actor can return
+        // anything in the city. We then rely on isMadlanItemLiveAndAgencyScoped
+        // to filter by agency name. This catches cases where the actor's office
+        // filter combined with a small/edge-case city returns 0.
+        const baseInput: Record<string, any> = {
+          city: heCity,
+          dealType,
+          maxItems: dealExpected > 0 ? Math.min(Math.max(dealExpected + 5, 10), 60) : 60,
+        };
+        const attempts = [
+          { ...baseInput, officeUrl: websiteUrl, agentOfficeUrl: websiteUrl, _label: "office-scoped" },
+          { ...baseInput, _label: "city-only-fallback" },
+        ];
+
+        let items: any[] = [];
+        for (const actorInput of attempts) {
+          const label = actorInput._label;
+          delete actorInput._label;
+          try {
+            const res = await fetch(
+              `https://api.apify.com/v2/acts/swerve~madlan-scraper/run-sync-get-dataset-items?token=${APIFY_API_KEY}`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(actorInput),
+                signal: AbortSignal.timeout(180_000),
+              }
+            );
+            if (!res.ok) {
+              const errText = await res.text();
+              console.error(`[Madlan/Apify] Actor failed (${res.status}) [${label}] city=${heCity}/${dealType}: ${errText.slice(0, 300)}`);
+              continue;
+            }
+            const data = await res.json();
+            dlog(`[Madlan/Apify] [${label}] city=${heCity}/${dealType} returned ${Array.isArray(data) ? data.length : 0} items`);
+            if (Array.isArray(data) && data.length > 0) { items = data; break; }
+          } catch (e) {
+            console.error(`[Madlan/Apify] Actor call error [${label}] city=${heCity}:`, e);
           }
-        );
-
-        if (!res.ok) {
-          const errText = await res.text();
-          console.error(`[Madlan/Apify] Actor failed (${res.status}): ${errText.slice(0, 300)}`);
-          continue;
         }
 
-        items = await res.json();
-        dlog(`[Madlan/Apify] Actor returned ${items.length} items for ${cityStr}/${dealType}`);
-      } catch (e) {
-        console.error(`[Madlan/Apify] Actor call error:`, e);
-        continue;
-      }
+        if (items.length === 0) continue;
 
-      totalDiscovered += items.length;
+        totalDiscovered += items.length;
 
-      if (dealExpected > 0 && items.length > Math.max(dealExpected + 10, Math.ceil(dealExpected * 1.5))) {
-        totalRejectedInactive += items.length;
-        console.warn(`[Madlan/ActiveGate] Blocked ${dealType}: public active=${dealExpected}, actor returned=${items.length}`);
-        continue;
-      }
+        if (dealExpected > 0 && items.length > Math.max(dealExpected + 10, Math.ceil(dealExpected * 1.5))) {
+          totalRejectedInactive += items.length;
+          console.warn(`[Madlan/ActiveGate] Blocked ${dealType}@${heCity}: public active=${dealExpected}, actor returned=${items.length}`);
+          continue;
+        }
 
       // Process each item
       for (const madlanItem of items) {
