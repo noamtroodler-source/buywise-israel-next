@@ -7318,11 +7318,12 @@ async function runMadlanAgencyDiscoverJob(params: {
         }
       }
 
-      // Update heartbeat between deal types
-      await sb.from("import_jobs").update({
-        last_heartbeat: new Date().toISOString(),
-      }).eq("id", jobId);
-    }
+        // Heartbeat between (city, dealType) iterations
+        await sb.from("import_jobs").update({
+          last_heartbeat: new Date().toISOString(),
+        }).eq("id", jobId);
+      } // end city loop
+    } // end dealType loop
 
     if (expectedActive > 0 && totalNew > Math.max(expectedActive + 10, Math.ceil(expectedActive * 1.5))) {
       const reason = { source: "madlan", blocked: true, reason: "active_count_mismatch", expected_active: expectedActive, discovered: totalDiscovered, new: totalNew, rejected_inactive: totalRejectedInactive };
