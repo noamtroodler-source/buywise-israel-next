@@ -6954,14 +6954,31 @@ async function runMadlanAgencyDiscoverJob(params: {
       return;
     }
 
-    // Translate city names to Hebrew for Madlan Apify actor
-    const hebrewCities = cities.map((c: string) => toHebrewCity(c));
-    const cityStr = hebrewCities.join(", ");
+    // Translate city names to Hebrew for Madlan Apify actor.
+    // IMPORTANT: The swerve~madlan-scraper actor expects a SINGLE city per run.
+    // Joining all cities with commas (e.g. 16 small cities) causes the actor to
+    // return 0 results because Madlan can't resolve the joined string as a place.
+    // Strategy: iterate per-city, capped at the first 5 cities to keep runtime
+    // reasonable. We rely on the office/agent URL filter to constrain results.
+    const MAX_MADLAN_CITIES = 5;
+    const hebrewCities = cities
+      .slice(0, MAX_MADLAN_CITIES)
+      .map((c: string) => toHebrewCity(c))
+      .filter((c: string) => !!c && c.trim().length > 0);
+    if (hebrewCities.length === 0) {
+      const failReason = "No translatable Hebrew city names found for Madlan scrape";
+      console.warn(`[Madlan/Apify] ${failReason}`);
+      await sb.from("import_jobs").update({ status: "failed", failure_reason: failReason }).eq("id", jobId);
+      await sb.from("agency_sources")
+        .update({ last_failure_reason: failReason })
+        .eq("agency_id", agencyId).eq("source_type", "madlan");
+      return;
+    }
     const dealTypes = effectiveImportType === "both"
       ? ["buy", "rent"]
       : [effectiveImportType === "rental" ? "rent" : "buy"];
 
-    dlog(`[Madlan/Apify] Scraping cities: ${cityStr} (from: ${cities.join(", ")}), dealTypes: ${dealTypes.join(",")}`);
+    dlog(`[Madlan/Apify] Iterating ${hebrewCities.length} cities (capped from ${cities.length}): ${hebrewCities.join(" | ")}, dealTypes: ${dealTypes.join(",")}`);
 
     // Get existing source_urls for dedup
     const { data: existingProps } = await sb
