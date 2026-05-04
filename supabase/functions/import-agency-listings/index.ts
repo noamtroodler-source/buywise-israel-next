@@ -6884,11 +6884,32 @@ function isMadlanItemLiveAndAgencyScoped(item: any, agencyName?: string | null, 
   if (/sold|rented|inactive|archived|expired|history|transaction|נמכר|הושכר/.test(statusText)) return false;
   const url = String(item.url || "");
   if (url && !/madlan\.co\.il/i.test(url)) return false;
-  const ownerText = `${item.agencyName || ""} ${item.officeName || ""} ${item.agentName || ""} ${item.brokerName || ""}`.toLowerCase();
-  const expected = String(agencyName || "").toLowerCase().replace(/[^a-z0-9א-ת]+/g, " ").trim();
-  const hasOfficeRef = officeUrl && JSON.stringify(item).includes(String(officeUrl).split("?")[0]);
-  if (expected && ownerText && !ownerText.includes(expected.split(" ")[0]) && !hasOfficeRef) return false;
-  return true;
+
+  // Office URL match wins outright (most reliable signal)
+  if (officeUrl) {
+    const officeIdMatch = String(officeUrl).match(/re_office_[a-zA-Z0-9_-]+/);
+    const officeId = officeIdMatch?.[0];
+    const itemBlob = JSON.stringify(item);
+    if (officeId && itemBlob.includes(officeId)) return true;
+    if (itemBlob.includes(String(officeUrl).split("?")[0])) return true;
+  }
+
+  // Normalize both sides — strip ALL non-alphanumeric (Latin + Hebrew), lowercase
+  const normalize = (s: string) => String(s || "").toLowerCase().replace(/[^a-z0-9א-ת]/g, "");
+  const expected = normalize(agencyName || "");
+  const ownerText = normalize(`${item.agencyName || ""}${item.officeName || ""}${item.agentName || ""}${item.brokerName || ""}`);
+
+  if (!expected) return true; // no agency name to compare → don't reject
+  if (!ownerText) return true; // actor didn't return owner info → don't reject (rely on officeUrl/scope)
+
+  // Bidirectional contains check — handles "Cityzen" vs "CityZen Real Estate" etc.
+  if (ownerText.includes(expected) || expected.includes(ownerText)) return true;
+
+  // Hebrew/English transliteration safety: if names share a 4+ char substring, accept
+  for (let i = 0; i <= expected.length - 4; i++) {
+    if (ownerText.includes(expected.slice(i, i + 4))) return true;
+  }
+  return false;
 }
 
 async function runMadlanAgencyDiscoverJob(params: {
