@@ -6884,11 +6884,32 @@ function isMadlanItemLiveAndAgencyScoped(item: any, agencyName?: string | null, 
   if (/sold|rented|inactive|archived|expired|history|transaction|נמכר|הושכר/.test(statusText)) return false;
   const url = String(item.url || "");
   if (url && !/madlan\.co\.il/i.test(url)) return false;
-  const ownerText = `${item.agencyName || ""} ${item.officeName || ""} ${item.agentName || ""} ${item.brokerName || ""}`.toLowerCase();
-  const expected = String(agencyName || "").toLowerCase().replace(/[^a-z0-9א-ת]+/g, " ").trim();
-  const hasOfficeRef = officeUrl && JSON.stringify(item).includes(String(officeUrl).split("?")[0]);
-  if (expected && ownerText && !ownerText.includes(expected.split(" ")[0]) && !hasOfficeRef) return false;
-  return true;
+
+  // Office URL match wins outright (most reliable signal)
+  if (officeUrl) {
+    const officeIdMatch = String(officeUrl).match(/re_office_[a-zA-Z0-9_-]+/);
+    const officeId = officeIdMatch?.[0];
+    const itemBlob = JSON.stringify(item);
+    if (officeId && itemBlob.includes(officeId)) return true;
+    if (itemBlob.includes(String(officeUrl).split("?")[0])) return true;
+  }
+
+  // Normalize both sides — strip ALL non-alphanumeric (Latin + Hebrew), lowercase
+  const normalize = (s: string) => String(s || "").toLowerCase().replace(/[^a-z0-9א-ת]/g, "");
+  const expected = normalize(agencyName || "");
+  const ownerText = normalize(`${item.agencyName || ""}${item.officeName || ""}${item.agentName || ""}${item.brokerName || ""}`);
+
+  if (!expected) return true; // no agency name to compare → don't reject
+  if (!ownerText) return true; // actor didn't return owner info → don't reject (rely on officeUrl/scope)
+
+  // Bidirectional contains check — handles "Cityzen" vs "CityZen Real Estate" etc.
+  if (ownerText.includes(expected) || expected.includes(ownerText)) return true;
+
+  // Hebrew/English transliteration safety: if names share a 4+ char substring, accept
+  for (let i = 0; i <= expected.length - 4; i++) {
+    if (ownerText.includes(expected.slice(i, i + 4))) return true;
+  }
+  return false;
 }
 
 async function runMadlanAgencyDiscoverJob(params: {
@@ -7026,15 +7047,19 @@ async function runMadlanAgencyDiscoverJob(params: {
           maxItems: dealExpected > 0 ? Math.min(Math.max(dealExpected + 5, 10), 60) : 60,
         };
         const attempts = [
-          { ...baseInput, officeUrl: websiteUrl, agentOfficeUrl: websiteUrl, _label: "office-scoped" },
-          { ...baseInput, _label: "city-only-fallback" },
+          { ...baseInput, officeUrl: websiteUrl, agentOfficeUrl: websiteUrl, _label: "tier1-office-scoped" },
+          { startUrls: [{ url: websiteUrl }], dealType, maxItems: baseInput.maxItems, _label: "tier2-start-urls" },
+          { ...baseInput, _label: "tier1-city-only-fallback" },
         ];
 
         let items: any[] = [];
+        let chosenLabel = "";
+        let lastRunId: string | null = null;
         for (const actorInput of attempts) {
-          const label = actorInput._label;
-          delete actorInput._label;
+          const label = (actorInput as any)._label;
+          delete (actorInput as any)._label;
           try {
+            console.log(`[Madlan/Apify] [${label}] city=${heCity}/${dealType} input=${JSON.stringify(actorInput).slice(0, 250)}`);
             const res = await fetch(
               `https://api.apify.com/v2/acts/swerve~madlan-scraper/run-sync-get-dataset-items?token=${APIFY_API_KEY}`,
               {
@@ -7044,18 +7069,31 @@ async function runMadlanAgencyDiscoverJob(params: {
                 signal: AbortSignal.timeout(180_000),
               }
             );
+            const runIdHeader = res.headers.get("x-apify-run-id") || res.headers.get("X-Apify-Run-Id");
+            if (runIdHeader) lastRunId = runIdHeader;
             if (!res.ok) {
               const errText = await res.text();
               console.error(`[Madlan/Apify] Actor failed (${res.status}) [${label}] city=${heCity}/${dealType}: ${errText.slice(0, 300)}`);
               continue;
             }
             const data = await res.json();
-            dlog(`[Madlan/Apify] [${label}] city=${heCity}/${dealType} returned ${Array.isArray(data) ? data.length : 0} items`);
-            if (Array.isArray(data) && data.length > 0) { items = data; break; }
+            const count = Array.isArray(data) ? data.length : 0;
+            console.log(`[Madlan/Apify] [${label}] city=${heCity}/${dealType} returned ${count} raw items (runId=${lastRunId || "n/a"})`);
+            if (count > 0) {
+              items = data;
+              chosenLabel = label;
+              break;
+            }
           } catch (e) {
             console.error(`[Madlan/Apify] Actor call error [${label}] city=${heCity}:`, e);
           }
         }
+
+        if (items.length === 0) continue;
+
+        // Diagnostic: count how many would pass agency-scope filter BEFORE the loop below
+        const wouldPass = items.filter((it: any) => isMadlanItemLiveAndAgencyScoped(it, agency?.name, websiteUrl)).length;
+        console.log(`[Madlan/Apify] [${chosenLabel}] city=${heCity}/${dealType}: ${items.length} raw, ${wouldPass} pass agency-scope filter (agency="${agency?.name}")`);
 
         if (items.length === 0) continue;
 
@@ -7325,6 +7363,90 @@ async function runMadlanAgencyDiscoverJob(params: {
       } // end city loop
     } // end dealType loop
 
+    // ─── Tier 3: Firecrawl fallback for office page ──────────────────────────
+    // If Apify returned 0 across every city/dealType, scrape the office page
+    // directly with Firecrawl. The office URL renders all listings as cards;
+    // we extract /listing/ URLs and queue them for the standard per-URL pipeline.
+    let tier3Discovered = 0;
+    const tier3Urls: string[] = [];
+    if (totalDiscovered === 0) {
+      const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
+      if (FIRECRAWL_API_KEY) {
+        try {
+          console.log(`[Madlan/Tier3] All Apify tiers returned 0. Falling back to Firecrawl on ${websiteUrl}`);
+          const fcRes = await fetch("https://api.firecrawl.dev/v1/scrape", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${FIRECRAWL_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              url: websiteUrl,
+              formats: ["html", "links"],
+              waitFor: 3000,
+              onlyMainContent: false,
+            }),
+            signal: AbortSignal.timeout(120_000),
+          });
+          if (fcRes.ok) {
+            const fcData = await fcRes.json();
+            const fcLinks: string[] = fcData?.data?.links || fcData?.links || [];
+            const fcHtml: string = fcData?.data?.html || fcData?.html || "";
+            const found = new Set<string>();
+            // Extract from links array
+            for (const l of fcLinks) {
+              if (typeof l === "string" && /madlan\.co\.il/i.test(l) &&
+                  /\/(listing|nadlan\/(?:for-sale|for-rent))\//.test(l)) {
+                found.add(normalizeUrl(l));
+              }
+            }
+            // Belt-and-suspenders: regex over raw HTML
+            const htmlMatches = fcHtml.match(/https?:\/\/(?:www\.)?madlan\.co\.il\/(?:nadlan\/(?:for-sale|for-rent)|listing)\/[^"'\s<>]+/gi) || [];
+            for (const m of htmlMatches) found.add(normalizeUrl(m));
+
+            for (const u of found) {
+              if (!knownUrls.has(u)) {
+                tier3Urls.push(u);
+                allDiscoveredUrls.push(u);
+              }
+            }
+            tier3Discovered = tier3Urls.length;
+            console.log(`[Madlan/Tier3] Firecrawl found ${found.size} listing URLs (${tier3Discovered} new after dedup)`);
+
+            // Queue Tier 3 URLs into the standard import pipeline
+            if (tier3Urls.length > 0) {
+              await sb.from("import_jobs").update({
+                status: "ready",
+                total_urls: tier3Urls.length,
+                discovered_urls: tier3Urls,
+                failure_reason: JSON.stringify({
+                  source: "madlan",
+                  tier1_2_apify: { discovered: 0, tried_cities: hebrewCities.length, tried_dealtypes: dealTypes },
+                  tier3_firecrawl: { discovered: tier3Discovered, queued_for_processing: true },
+                }),
+              }).eq("id", jobId);
+
+              await sb.from("agency_sources").update({
+                last_failure_reason: null,
+                last_sync_listings_found: tier3Discovered,
+                last_synced_at: new Date().toISOString(),
+              }).eq("agency_id", agencyId).eq("source_type", "madlan");
+
+              console.log(`[Madlan/Tier3] Queued ${tier3Urls.length} URLs for per-listing extraction. Done.`);
+              return;
+            }
+          } else {
+            const errText = await fcRes.text();
+            console.error(`[Madlan/Tier3] Firecrawl failed (${fcRes.status}): ${errText.slice(0, 300)}`);
+          }
+        } catch (fcErr) {
+          console.error(`[Madlan/Tier3] Firecrawl exception:`, fcErr);
+        }
+      } else {
+        console.warn(`[Madlan/Tier3] FIRECRAWL_API_KEY not configured — skipping fallback`);
+      }
+    }
+
     if (expectedActive > 0 && totalNew > Math.max(expectedActive + 10, Math.ceil(expectedActive * 1.5))) {
       const reason = { source: "madlan", blocked: true, reason: "active_count_mismatch", expected_active: expectedActive, discovered: totalDiscovered, new: totalNew, rejected_inactive: totalRejectedInactive };
       await sb.from("import_jobs").update({ status: "failed", total_urls: 0, discovered_urls: allDiscoveredUrls.slice(0, 500), processed_count: 0, failed_count: totalNew, failure_reason: JSON.stringify(reason) }).eq("id", jobId);
@@ -7332,7 +7454,7 @@ async function runMadlanAgencyDiscoverJob(params: {
       return;
     }
 
-    dlog(`[Madlan/Apify] Summary: ${totalDiscovered} discovered, ${totalNew} new, ${totalInserted} inserted, ${totalMerged} merged, ${totalRejectedInactive} rejected`);
+    dlog(`[Madlan/Apify] Summary: ${totalDiscovered} discovered, ${totalNew} new, ${totalInserted} inserted, ${totalMerged} merged, ${totalRejectedInactive} rejected, tier3=${tier3Discovered}`);
 
     // Update job
     await sb.from("import_jobs").update({
@@ -7341,13 +7463,24 @@ async function runMadlanAgencyDiscoverJob(params: {
       discovered_urls: allDiscoveredUrls.slice(0, 500), // cap stored URLs
       processed_count: totalInserted + totalMerged,
       failed_count: totalNew - totalInserted - totalMerged,
-      failure_reason: JSON.stringify({ source: "madlan", expected_active: expectedActive || null, public_active_count: activeGate.activeCount || null, public_sale_count: activeGate.saleCount || null, public_rent_count: activeGate.rentCount || null, discovered: totalDiscovered, new: totalNew, inserted: totalInserted, merged: totalMerged, rejected_inactive: totalRejectedInactive, image_failures: totalImageFailures }),
+      failure_reason: JSON.stringify({
+        source: "madlan",
+        tier1_2_apify: { discovered: totalDiscovered, new: totalNew, inserted: totalInserted, merged: totalMerged, rejected_inactive: totalRejectedInactive },
+        tier3_firecrawl: { discovered: tier3Discovered },
+        expected_active: expectedActive || null,
+        public_active_count: activeGate.activeCount || null,
+        public_sale_count: activeGate.saleCount || null,
+        public_rent_count: activeGate.rentCount || null,
+        image_failures: totalImageFailures,
+      }),
     }).eq("id", jobId);
 
     // Update agency source
     await sb.from("agency_sources")
       .update({
-        last_failure_reason: totalDiscovered === 0 ? `Apify actor returned 0 results across ${hebrewCities.length} cities (tried both office-scoped and city-only fallback). Office URL may not be indexed on Madlan, or agency has no live listings on Madlan.` : null,
+        last_failure_reason: totalDiscovered === 0 && tier3Discovered === 0
+          ? `All 3 tiers failed: Apify returned 0 across ${hebrewCities.length} cities (office-scoped, startUrls, and city-only fallback all returned 0); Firecrawl on office page found 0 listing URLs. Office may genuinely have no live listings or the page structure changed.`
+          : null,
         last_sync_listings_found: totalDiscovered,
         last_synced_at: new Date().toISOString(),
       })
