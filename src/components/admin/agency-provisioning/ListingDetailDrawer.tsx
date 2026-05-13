@@ -69,6 +69,7 @@ export function ListingDetailDrawer({ agencyId, listing, onClose }: Props) {
   const { data: agents = [] } = useAgencyAgents(agencyId);
   const resolveFlag = useResolveFlag(agencyId);
   const updateListing = useUpdateListing(agencyId);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   if (!listing) return null;
 
