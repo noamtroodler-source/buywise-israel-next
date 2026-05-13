@@ -1206,6 +1206,56 @@ function computeConfidenceScore(
 
 // ─── ADDRESS NORMALIZATION FOR DEDUP ────────────────────────────────────────
 
+// Top streets across supported cities — Hebrew → canonical lowercase English.
+// Applied as a normalization step inside normalizeAddressForDedup so the same
+// physical street collapses across Hebrew (Yad2/Madlan) and English (agency
+// site) sources. Both directions are normalized to the lowercase English form.
+const STREET_ALIAS_MAP: Record<string, string> = {
+  "דיזנגוף": "dizengoff",
+  "בן יהודה": "ben yehuda",
+  "רוטשילד": "rothschild",
+  "אלנבי": "allenby",
+  "המלך ג'ורג'": "king george",
+  "המלך גורג": "king george",
+  "יפו": "jaffa",
+  "הרצל": "herzl",
+  "ביאליק": "bialik",
+  "סוקולוב": "sokolov",
+  "בגין": "begin",
+  "מנחם בגין": "begin",
+  "אבן גבירול": "ibn gvirol",
+  "פרישמן": "frishman",
+  "בוגרשוב": "bograshov",
+  "ז'בוטינסקי": "jabotinsky",
+  "זבוטינסקי": "jabotinsky",
+  "ויצמן": "weizmann",
+  "הירקון": "hayarkon",
+  "שנקין": "sheinkin",
+  "ארלוזורוב": "arlozorov",
+  "גורדון": "gordon",
+  "טרומפלדור": "trumpeldor",
+  "פינסקר": "pinsker",
+  "נורדאו": "nordau",
+  "בן גוריון": "ben gurion",
+  "הרצוג": "herzog",
+  "עמק רפאים": "emek refaim",
+  "המלך דוד": "king david",
+  "אגרון": "agron",
+  "רמבן": "ramban",
+  "רמב\"ן": "ramban",
+  "הנשיא": "hanasi",
+  "המסגר": "hamasger",
+};
+
+function applyStreetAliases(s: string): string {
+  let out = s;
+  for (const [heb, eng] of Object.entries(STREET_ALIAS_MAP)) {
+    if (out.includes(heb)) out = out.split(heb).join(eng);
+    if (out.includes(eng)) out = out.split(eng).join(eng); // idempotent (keeps English form)
+  }
+  return out;
+}
+
 function normalizeAddressForDedup(address: string): string {
   let norm = address.trim().toLowerCase();
 
@@ -1223,6 +1273,9 @@ function normalizeAddressForDedup(address: string): string {
 
   // 3. Strip leading Hebrew definite article "ה" when standalone prefix before a name
   norm = norm.replace(/^ה(?=[א-ת])/, "");
+
+  // 3b. Apply Hebrew↔English street alias normalization (top supported streets)
+  norm = applyStreetAliases(norm);
 
   // 4. Normalize Hebrew final-form characters → base form
   norm = norm.replace(/ך/g, "כ").replace(/ם/g, "מ").replace(/ן/g, "נ").replace(/ף/g, "פ").replace(/ץ/g, "צ");
