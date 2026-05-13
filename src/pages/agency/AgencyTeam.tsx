@@ -27,6 +27,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { AgencyTeamSkeleton } from '@/components/agency/skeletons/AgencyPageSkeletons';
 import { AgencyAnnouncements } from '@/components/agency/AgencyAnnouncements';
+import { AgencyAdminsPanel } from '@/components/agency/AgencyAdminsPanel';
 
 export default function AgencyTeam() {
   const { data: agency, isLoading, isAgencyAdmin } = useMyAgency();
