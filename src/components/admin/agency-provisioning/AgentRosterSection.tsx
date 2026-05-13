@@ -305,6 +305,36 @@ export function AgentRosterSection({ agencyId }: Props) {
                       >
                         <Pencil className="h-3 w-3" />
                       </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            title="Delete agent"
+                            disabled={deleteAgent.isPending}
+                          >
+                            {deleteAgent.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete {a.name}?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This removes the agent from this agency's roster. Any listings currently assigned to them will be unassigned (but not deleted). {a.user_id ? "Their login account will remain but lose access to this agency." : ""}
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => deleteAgent.mutate({ id: a.id, userId: a.user_id })}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Delete agent
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                       {a.user_id ? (
                         <>
                           {!adminUserIds.has(a.user_id) ? (
