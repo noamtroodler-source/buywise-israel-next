@@ -3327,59 +3327,274 @@ function pickFirstUrlFromSrcset(input: string): string {
   return firstEntry.split(/\s+/)[0] || firstEntry;
 }
 
-function extractImagesFromHtml(html: string, pageUrl: string): string[] {
-  const images: string[] = [];
-  const seen = new Set<string>();
-  let match: RegExpExecArray | null;
+// ─── GALLERY-SCOPED IMAGE EXTRACTION ───────────────────────────────────────
+//
+// We replaced a page-wide regex sweep (which leaked sidebar "Similar Properties"
+// thumbnails, footer carousels, agent avatars, and OG/share variants) with a
+// DOM-aware scoped extractor. Strategy, in order:
+//
+//   Layer 1 — Look for a property-gallery container (priority selectors below).
+//             If it has ≥3 image candidates, use ONLY those.
+//   Layer 2 — Always strip images whose ancestry is sidebar / related / agent /
+//             footer / nav, OR whose nearest <a href> points at a DIFFERENT
+//             property slug than the page being scraped.
+//   Fallback — If layer 1 finds nothing, fall back to the legacy whole-page
+//             sweep so we never go from "some photos" to "zero photos".
+//             Layer 2 exclusions still apply to the fallback.
 
-  const addCandidate = (rawUrl: string | null | undefined) => {
-    if (!rawUrl || rawUrl.length < 10) return;
-    const decoded = decodeHtmlEntities(rawUrl).replace(/\\u002F/g, "/").replace(/\\\//g, "/");
+const GALLERY_SELECTORS = [
+  // WordPress / real-estate plugins
+  '[class*="property-gallery"]',
+  '[class*="listing-gallery"]',
+  '[class*="single-property-images"]',
+  '[class*="property-images"]',
+  '[class*="property-media"]',
+  '.woocommerce-product-gallery',
+  '[class*="rh_gallery"]', // Real Homes theme
+  '[class*="houzez-gallery"]', // Houzez theme
+  '[class*="wpresidence"]',
+  // Elementor singles
+  '[data-elementor-type="single"] [class*="gallery"]',
+  // WP block galleries (only inside main/article — handled in code)
+  '.wp-block-gallery',
+  // Generic carousel/slider libs (first one inside main/article only)
+  '.swiper-wrapper',
+  '.slick-slider',
+  '.splide__list',
+  '.fotorama',
+  // Generic gallery class hint
+  '[class*="gallery"]',
+  '[class*="slideshow"]',
+];
+
+const EXCLUDED_ANCESTOR_SELECTOR = [
+  'aside',
+  'footer',
+  'nav',
+  'header',
+  '[class*="related"]',
+  '[class*="similar"]',
+  '[class*="recommend"]',
+  '[class*="recent"]',
+  '[class*="popular"]',
+  '[class*="sidebar"]',
+  '[id*="related"]',
+  '[id*="sidebar"]',
+  '[class*="other-listings"]',
+  '[class*="more-properties"]',
+  '[class*="more-listings"]',
+  '[class*="agent-card"]',
+  '[class*="author"]',
+  '[class*="profile-pic"]',
+  '[class*="avatar"]',
+  '[class*="team"]',
+  '[class*="testimonial"]',
+  '[class*="review"]',
+  '[class*="comments"]',
+  '[class*="cross-sell"]',
+  '[class*="upsell"]',
+].join(', ');
+
+function pageSlug(pageUrl: string): string {
+  try {
+    const u = new URL(pageUrl);
+    const segs = u.pathname.split('/').filter(Boolean);
+    return (segs[segs.length - 1] || '').toLowerCase();
+  } catch {
+    return '';
+  }
+}
+
+function imageBelongsToOtherListing(img: any, currentSlug: string): boolean {
+  if (!currentSlug) return false;
+  let node = img.parentElement;
+  let depth = 0;
+  while (node && depth < 6) {
+    if (node.tagName === 'A') {
+      const href = (node.getAttribute('href') || '').toLowerCase();
+      if (!href || href.startsWith('#') || href.startsWith('javascript:')) return false;
+      // Heuristic: only flag links that look like they point to ANOTHER listing
+      if (!/\/(property|properties|listing|listings|estate|home|homes|apartment|nehes|nadlan)\//.test(href)) {
+        return false;
+      }
+      try {
+        const target = new URL(href, 'http://x/');
+        const segs = target.pathname.split('/').filter(Boolean);
+        const targetSlug = (segs[segs.length - 1] || '').toLowerCase();
+        if (targetSlug && targetSlug !== currentSlug) return true;
+      } catch { /* ignore */ }
+      return false;
+    }
+    node = node.parentElement;
+    depth++;
+  }
+  return false;
+}
+
+function collectImageUrlsFromElement(el: any): string[] {
+  const urls: string[] = [];
+  const imgs = el.querySelectorAll ? el.querySelectorAll('img') : [];
+  for (const img of imgs as any[]) {
+    const candidates = [
+      img.getAttribute('src'),
+      img.getAttribute('data-src'),
+      img.getAttribute('data-lazy-src'),
+      img.getAttribute('data-original'),
+      img.getAttribute('data-large_image'),
+      img.getAttribute('data-full'),
+      img.getAttribute('data-thumb'),
+    ];
+    const srcset = img.getAttribute('srcset') || img.getAttribute('data-srcset');
+    if (srcset) candidates.push(srcset);
+    for (const c of candidates) {
+      if (c) urls.push(c);
+    }
+  }
+  // Lightbox / gallery anchors that wrap thumbnails
+  const anchors = el.querySelectorAll ? el.querySelectorAll('a[href]') : [];
+  for (const a of anchors as any[]) {
+    const href = a.getAttribute('href') || '';
+    if (/\.(jpe?g|png|webp)(?:\?|#|$)/i.test(href)) urls.push(href);
+  }
+  return urls;
+}
+
+function normalizeAndFilterUrls(rawUrls: string[], pageUrl: string): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const raw of rawUrls) {
+    if (!raw || raw.length < 10) continue;
+    const decoded = decodeHtmlEntities(raw).replace(/\\u002F/g, '/').replace(/\\\//g, '/');
     const firstUrl = pickFirstUrlFromSrcset(decoded);
     const lower = firstUrl.toLowerCase();
-    if (isJunkImageUrl(lower)) return;
+    if (isJunkImageUrl(lower)) continue;
     let absolute = firstUrl;
     try {
-      if (firstUrl.startsWith("//")) absolute = `https:${firstUrl}`;
-      else if (firstUrl.startsWith("/")) absolute = new URL(firstUrl, pageUrl).toString();
-      else if (!firstUrl.startsWith("http")) absolute = new URL(firstUrl, pageUrl).toString();
-    } catch { return; }
+      if (firstUrl.startsWith('//')) absolute = `https:${firstUrl}`;
+      else if (firstUrl.startsWith('/')) absolute = new URL(firstUrl, pageUrl).toString();
+      else if (!firstUrl.startsWith('http')) absolute = new URL(firstUrl, pageUrl).toString();
+    } catch { continue; }
     const canonical = canonicalImageKey(absolute);
-    if (!seen.has(canonical)) {
-      seen.add(canonical);
-      images.push(absolute);
-    }
-  };
+    if (seen.has(canonical)) continue;
+    seen.add(canonical);
+    out.push(absolute);
+  }
+  return out;
+}
 
-  // Match direct Wix/media URLs that can be embedded in JSON state or inline styles.
+// Legacy whole-page regex sweep — kept as fallback only.
+function extractImagesFromHtmlLegacy(html: string, pageUrl: string): string[] {
+  const collected: string[] = [];
+  let match: RegExpExecArray | null;
+
   const mediaRegex = /https?:\/\/(?:static\.)?wixstatic\.com\/media\/[^\s"'<>\)\\]+/gi;
-  while ((match = mediaRegex.exec(html)) !== null) addCandidate(match[0]);
+  while ((match = mediaRegex.exec(html)) !== null) collected.push(match[0]);
 
-  // Match <img> tags with src attributes
   const imgRegex = /<img\s[^>]*src\s*=\s*["']([^"']+)["'][^>]*>/gi;
   while ((match = imgRegex.exec(html)) !== null) {
     const src = match[0];
     const url = match[1];
-    // Skip tiny icons, logos, tracking pixels, agent photos
     if (!url || url.length < 10) continue;
-    const lower = url.toLowerCase();
-    if (isJunkImageUrl(lower)) continue;
-    // Check for width/height attributes suggesting small images
     const widthMatch = src.match(/width\s*=\s*["']?(\d+)/i);
     if (widthMatch && parseInt(widthMatch[1]) < 80) continue;
-    addCandidate(url);
+    collected.push(url);
     const srcsetMatch = src.match(/srcset\s*=\s*["']([^"']+)["']/i);
-    if (srcsetMatch) addCandidate(srcsetMatch[1]);
+    if (srcsetMatch) collected.push(srcsetMatch[1]);
   }
 
-  // Also check lazy-loaded and gallery attributes used by WordPress themes
   const lazySrcRegex = /(?:data-(?:src|lazy-src|original|srcset|large_image|full|thumb)|href)\s*=\s*["']([^"']+)["']/gi;
   while ((match = lazySrcRegex.exec(html)) !== null) {
-    addCandidate(match[1]);
+    collected.push(match[1]);
   }
 
-  return images;
+  return normalizeAndFilterUrls(collected, pageUrl);
 }
+
+function extractImagesFromHtml(html: string, pageUrl: string): string[] {
+  if (!html || html.length < 50) return [];
+
+  let document: any = null;
+  try {
+    const parsed = parseHTML(html);
+    document = parsed.document;
+  } catch {
+    return extractImagesFromHtmlLegacy(html, pageUrl);
+  }
+  if (!document) return extractImagesFromHtmlLegacy(html, pageUrl);
+
+  const currentSlug = pageSlug(pageUrl);
+
+  // Scope root: prefer <main> or <article>, fall back to whole document.
+  const scopeRoot =
+    document.querySelector('main') ||
+    document.querySelector('article') ||
+    document.body ||
+    document;
+
+  // Layer 1: try priority selectors for a real gallery container.
+  const galleryUrls: string[] = [];
+  for (const sel of GALLERY_SELECTORS) {
+    let containers: any[] = [];
+    try {
+      containers = Array.from(scopeRoot.querySelectorAll(sel) || []);
+    } catch { continue; }
+    for (const container of containers) {
+      // Skip containers that are themselves inside an excluded ancestor
+      if (container.closest && container.closest(EXCLUDED_ANCESTOR_SELECTOR)) continue;
+      const raw = collectImageUrlsFromElement(container);
+      const cleaned = normalizeAndFilterUrls(raw, pageUrl);
+      // Filter cross-listing leaks
+      const ownImgs = (container.querySelectorAll ? Array.from(container.querySelectorAll('img')) : []) as any[];
+      const blockedHosts = new Set<string>();
+      for (const img of ownImgs) {
+        if (imageBelongsToOtherListing(img, currentSlug)) {
+          for (const attr of ['src', 'data-src', 'data-lazy-src', 'data-original', 'data-large_image']) {
+            const v = img.getAttribute(attr);
+            if (v) blockedHosts.add(canonicalImageKey(v.startsWith('//') ? `https:${v}` : v));
+          }
+        }
+      }
+      const final = cleaned.filter((u) => !blockedHosts.has(canonicalImageKey(u)));
+      if (final.length >= 3) {
+        galleryUrls.push(...final);
+        break;
+      }
+    }
+    if (galleryUrls.length >= 3) break;
+  }
+
+  if (galleryUrls.length >= 3) {
+    // Hard-cap to 30 — Gemini cover-selector trims further later.
+    return galleryUrls.slice(0, 30);
+  }
+
+  // Layer 2 fallback: walk every <img> in the scope root, but apply ancestor
+  // exclusions and cross-listing checks. This handles sites that don't use any
+  // recognized gallery wrapper but DO render proper <img> tags inside <main>.
+  const allImgs: any[] = scopeRoot.querySelectorAll
+    ? Array.from(scopeRoot.querySelectorAll('img'))
+    : [];
+  const fallbackRaw: string[] = [];
+  for (const img of allImgs) {
+    if (img.closest && img.closest(EXCLUDED_ANCESTOR_SELECTOR)) continue;
+    if (imageBelongsToOtherListing(img, currentSlug)) continue;
+    const src = img.getAttribute('src') || img.getAttribute('data-src') ||
+                img.getAttribute('data-lazy-src') || img.getAttribute('data-original') ||
+                img.getAttribute('data-large_image') || img.getAttribute('data-full');
+    if (src) fallbackRaw.push(src);
+    const srcset = img.getAttribute('srcset') || img.getAttribute('data-srcset');
+    if (srcset) fallbackRaw.push(srcset);
+  }
+  const fallbackClean = normalizeAndFilterUrls(fallbackRaw, pageUrl);
+  if (fallbackClean.length >= 3) return fallbackClean.slice(0, 30);
+
+  // Last resort: legacy whole-page regex (Wix sites stash gallery URLs in
+  // inline JSON state outside the DOM). This is the only path that may still
+  // include sidebar leakage, but only fires when nothing else worked.
+  const legacy = extractImagesFromHtmlLegacy(html, pageUrl);
+  return legacy.slice(0, 30);
+}
+
 
 function extractImagesFromMarkdown(markdown: string, pageUrl: string): string[] {
   const htmlLike = (markdown || "")
