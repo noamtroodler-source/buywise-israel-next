@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Loader2, ExternalLink, Check, X, Sparkles, Home, Ruler, Image as ImageIcon, FileText, AlertCircle, CheckCircle2, XCircle } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
@@ -68,6 +69,7 @@ export function ListingDetailDrawer({ agencyId, listing, onClose }: Props) {
   const { data: agents = [] } = useAgencyAgents(agencyId);
   const resolveFlag = useResolveFlag(agencyId);
   const updateListing = useUpdateListing(agencyId);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   if (!listing) return null;
 
@@ -261,7 +263,14 @@ export function ListingDetailDrawer({ agencyId, listing, onClose }: Props) {
                     {section.title === 'Photos' && listing.images && listing.images.length > 0 && (
                       <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
                         {listing.images.map((img, i) => (
-                          <img key={`${img}-${i}`} src={img} alt={`Listing photo ${i + 1}`} className="h-16 w-16 flex-shrink-0 rounded-xl object-cover" loading="lazy" />
+                          <button
+                            key={`${img}-${i}`}
+                            type="button"
+                            onClick={() => setLightboxIndex(i)}
+                            className="h-16 w-16 flex-shrink-0 rounded-xl overflow-hidden ring-offset-background transition hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                          >
+                            <img src={img} alt={`Listing photo ${i + 1}`} className="h-full w-full object-cover" loading="lazy" />
+                          </button>
                         ))}
                       </div>
                     )}
@@ -418,6 +427,39 @@ export function ListingDetailDrawer({ agencyId, listing, onClose }: Props) {
           )}
         </div>
       </SheetContent>
+
+      <Dialog open={lightboxIndex !== null} onOpenChange={o => !o && setLightboxIndex(null)}>
+        <DialogContent className="max-w-5xl p-0 bg-background/95 border-none">
+          {lightboxIndex !== null && listing.images?.[lightboxIndex] && (
+            <div className="relative">
+              <img
+                src={listing.images[lightboxIndex]}
+                alt={`Listing photo ${lightboxIndex + 1}`}
+                className="w-full max-h-[85vh] object-contain rounded-lg"
+              />
+              {listing.images.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setLightboxIndex(i => (i! - 1 + listing.images!.length) % listing.images!.length)}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-background/80 hover:bg-background flex items-center justify-center text-lg font-bold shadow"
+                    aria-label="Previous"
+                  >‹</button>
+                  <button
+                    type="button"
+                    onClick={() => setLightboxIndex(i => (i! + 1) % listing.images!.length)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-background/80 hover:bg-background flex items-center justify-center text-lg font-bold shadow"
+                    aria-label="Next"
+                  >›</button>
+                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-background/80 text-xs">
+                    {lightboxIndex + 1} / {listing.images.length}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Sheet>
   );
 }
