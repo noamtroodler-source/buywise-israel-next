@@ -72,6 +72,7 @@ export function AgentRosterSection({ agencyId }: Props) {
   const setPrimary = useSetPrimaryContact();
   const create = useCreateAgent(agencyId);
   const update = useUpdateAgent(agencyId);
+  const deleteAgent = useDeleteAgent(agencyId);
   const provision = useProvisionAgentAccount(agencyId);
   const reveal = useRevealCredentials();
   const resend = useResendSetupLink();
