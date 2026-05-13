@@ -79,14 +79,6 @@ export default function AgencySources() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => syncAll.mutate()}
-              disabled={syncAll.isPending || mySources.length === 0}
-            >
-              <RefreshCw className={`mr-2 h-4 w-4 ${syncAll.isPending ? "animate-spin" : ""}`} />
-              Sync all now
-            </Button>
             <Dialog open={addOpen} onOpenChange={setAddOpen}>
               <DialogTrigger asChild>
                 <Button disabled={!agencyId}>
