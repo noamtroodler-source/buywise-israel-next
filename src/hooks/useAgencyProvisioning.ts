@@ -237,7 +237,7 @@ export function useDeleteAgent(agencyId: string | null) {
       // Best-effort cleanup of dependent rows that may block the agent delete
       await supabase.from('properties').update({ agent_id: null } as any).eq('agent_id', id);
       await supabase.from('property_co_agents').delete().eq('agent_id', id);
-      await (supabase.from('agency_members') as any).delete().eq('agent_id', id);
+      
 
       const { error } = await supabase.from('agents').delete().eq('id', id);
       if (error) throw error;
