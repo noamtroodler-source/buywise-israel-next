@@ -45,12 +45,36 @@ type MonitorPerson = {
   role: 'Owner' | 'Agent';
   name: string;
   email: string | null;
+  phone: string | null;
   userId: string | null;
   emailStatus: LatestEmail | null;
   token: SetupToken | null;
   passwordCompletedAt: string | null;
   lastActiveAt: string | null;
 };
+
+const LOGIN_URL = `${'https://buywiseisrael.com'}/auth`;
+
+function normalizePhoneForWhatsapp(phone: string | null | undefined): string | null {
+  if (!phone) return null;
+  const digits = phone.replace(/[^\d]/g, '');
+  if (!digits) return null;
+  // Israeli numbers starting with 0 → prepend country code 972
+  if (digits.startsWith('0')) return `972${digits.slice(1)}`;
+  return digits;
+}
+
+function openWhatsApp(phone: string | null | undefined, message: string) {
+  const num = normalizePhoneForWhatsapp(phone);
+  const text = encodeURIComponent(message);
+  const url = num ? `https://wa.me/${num}?text=${text}` : `https://wa.me/?text=${text}`;
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+
+async function copyText(value: string, label: string) {
+  await navigator.clipboard.writeText(value);
+  toast.success(`${label} copied`);
+}
 
 interface Props {
   agency: ProvisioningAgency;
