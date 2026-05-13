@@ -55,7 +55,7 @@ export default function AgencySources() {
   const updateMutation = useUpdateAgencySource();
   const deleteMutation = useDeleteAgencySource();
   const syncOne = useTriggerSourceSync();
-  const syncAll = useTriggerNightlySync();
+  
 
   const [addOpen, setAddOpen] = useState(false);
   const newType = "website" as const;
