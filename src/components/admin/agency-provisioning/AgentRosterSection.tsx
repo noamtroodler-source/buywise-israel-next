@@ -54,11 +54,17 @@ const emptyForm = {
 
 export function AgentRosterSection({ agencyId }: Props) {
   const { data: agents = [], isLoading } = useAgencyAgents(agencyId);
+  const { data: members = [] } = useAgencyMembers(agencyId);
+  const promoteAdmin = usePromoteToAdmin();
+  const demoteAdmin = useDemoteAdmin();
+  const setPrimary = useSetPrimaryContact();
   const create = useCreateAgent(agencyId);
   const update = useUpdateAgent(agencyId);
   const provision = useProvisionAgentAccount(agencyId);
   const reveal = useRevealCredentials();
   const resend = useResendSetupLink();
+
+  const memberByUserId = new Map(members.map((m) => [m.user_id, m]));
 
   const [addOpen, setAddOpen] = useState(false);
   const [editAgent, setEditAgent] = useState<any | null>(null);
