@@ -1,0 +1,42 @@
+# BuyWise Israel
+
+> Property discovery platform built for English-speaking international buyers exploring Israeli real estate. Compare 30+ markets, calculate purchase taxes and total acquisition costs, browse verified listings, and connect with vetted agents — all in English.
+
+## Pages
+
+- [Home](/): Overview of BuyWise Israel and featured markets.
+- [Listings](/listings): Search apartments and homes for sale across Israel.
+- [Buy](/buy): Properties for sale, filtered by price, city, and bedrooms.
+- [Rent](/rent): Rental properties across Israeli cities.
+- [Projects](/projects): New construction developments and pre-sale opportunities.
+- [Areas](/areas): Market data for 30+ Israeli cities and neighborhoods.
+- [Map](/map): Interactive map search of properties and projects.
+- [Tools](/tools): Mortgage, purchase tax, affordability, true-cost, and rent-vs-buy calculators.
+- [Guides](/guides): Long-form guides covering buying in Israel, taxes, mortgages, and more.
+- [Glossary](/glossary): Hebrew real-estate terms translated and explained.
+- [Blog](/blog): Editorial posts on Israeli property markets and buyer journeys.
+- [Agencies](/agencies): Directory of verified Israeli real-estate agencies.
+- [Professionals](/professionals): Vetted lawyers, mortgage advisors, and inspectors.
+- [About](/about): Our principles and how BuyWise works.
+- [Contact](/contact): Reach the BuyWise team.
+
+## Calculators
+
+- [Purchase Tax Calculator](/tools?tool=totalcost): Israeli mas rechisha brackets for residents and non-residents.
+- [Mortgage Calculator](/tools?tool=mortgage): Bank of Israel-compliant LTV/PTI mortgage estimates.
+- [Affordability Calculator](/tools?tool=affordability): How much property you can afford in NIS.
+- [Rent vs Buy](/tools?tool=rentvsbuy): Net wealth comparison over time.
+
+## Guides
+
+- [Buying in Israel](/guides/buying-in-israel)
+- [Understanding Listings](/guides/understanding-listings)
+- [Purchase Tax](/guides/purchase-tax)
+- [True Cost of Buying](/guides/true-cost)
+- [Mortgages](/guides/mortgages)
+- [New vs Resale](/guides/new-vs-resale)
+- [Rent vs Buy](/guides/rent-vs-buy)
+- [New Construction](/guides/new-construction)
+- [Oleh Hadash Buyer](/guides/oleh-buyer)
+- [Investment Property](/guides/investment-property)
+- [Talking to Professionals](/guides/talking-to-professionals)
