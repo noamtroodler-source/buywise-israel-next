@@ -60,7 +60,12 @@ serve(async (req) => {
       .eq('id', agency_id)
       .maybeSingle();
 
-    const isCallerAdmin = !!callerMember || agency?.admin_user_id === caller.id;
+    // Platform admins (BuyWise staff) can manage any agency's roles
+    const { data: hasPlatformAdmin } = await admin.rpc('has_role', {
+      _user_id: caller.id, _role: 'admin',
+    });
+
+    const isCallerAdmin = !!callerMember || agency?.admin_user_id === caller.id || !!hasPlatformAdmin;
     if (!isCallerAdmin) {
       return new Response(JSON.stringify({ error: "Not authorized" }), {
         status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
