@@ -126,38 +126,6 @@ interface BenchmarkRange {
   detail: string;
 }
 
-function BenchmarkCardTile({ card, onTrackInteraction }: { card: BenchmarkCard; onTrackInteraction?: (eventName: string, properties?: Record<string, unknown>) => void }) {
-  const Icon = card.icon;
-
-  return (
-    <div
-      className="group rounded-lg border border-primary/10 bg-gradient-to-br from-background to-primary/5 p-3 transition-colors hover:border-primary/25 hover:from-primary/5 hover:to-primary/10"
-      onClick={() => onTrackInteraction?.('price_context_benchmark_layer_clicked', { benchmark_layer: card.id, benchmark_label: card.label })}
-    >
-      <div className="flex items-start justify-between gap-2">
-        <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors group-hover:bg-primary/15">
-            <Icon className="h-3.5 w-3.5" />
-          </span>
-          {card.label}
-        </p>
-        <Tooltip onOpenChange={(open) => open && onTrackInteraction?.('price_context_benchmark_tooltip_opened', { benchmark_layer: card.id, benchmark_label: card.label })}>
-          <TooltipTrigger asChild>
-            <button type="button" className="rounded-sm text-muted-foreground hover:text-primary" aria-label={`About ${card.label}`} onClick={(event) => event.stopPropagation()}>
-              <Info className="h-3.5 w-3.5" />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="top" className="max-w-xs">
-            <p className="text-xs">{card.detail}</p>
-          </TooltipContent>
-        </Tooltip>
-      </div>
-      <p className="mt-2 text-lg font-semibold text-foreground">{card.value}</p>
-      <p className="mt-1 text-[11px] leading-snug text-muted-foreground">{card.detail}</p>
-    </div>
-  );
-}
-
 function PremiumContextSummary({ priceContext, premiumExplanation }: { priceContext: PriceContextResult; premiumExplanation?: string | null }) {
   const contextChips = uniqueStrings([
     priceContext.propertyClassLabel !== 'Standard resale' ? priceContext.propertyClassLabel : '',
@@ -205,35 +173,6 @@ function buildBuyerTakeaway(priceContext: PriceContextResult) {
     return 'This appears to need premium-property context, so ask what features, rights, view, parking, or project factors explain the gap from standard comps.';
   }
   return 'The asking price appears broadly supported by available recorded-sale context, but still verify size, condition, and included extras before making an offer.';
-}
-
-function buildPriceConfidence(priceContext: PriceContextResult) {
-  if (priceContext.isLuxuryPremiumMode || priceContext.confidenceTier === 'premium_unique_property') {
-    return {
-      label: 'Premium context',
-      summary: 'Standard comps only tell part of the story here.',
-      tone: 'border-primary/20 bg-primary/5 text-primary',
-    };
-  }
-  if (priceContext.confidenceTier === 'insufficient_data') {
-    return {
-      label: 'Low evidence',
-      summary: 'There is not enough recorded-sale support yet.',
-      tone: 'border-muted bg-muted/50 text-muted-foreground',
-    };
-  }
-  if (priceContext.confidenceTier === 'limited_comparable_match' || priceContext.confidenceTier === 'directional_benchmark') {
-    return {
-      label: 'Directional read',
-      summary: 'Useful context, but not a tight valuation signal.',
-      tone: 'border-primary/15 bg-primary/5 text-primary',
-    };
-  }
-  return {
-    label: 'Supported by comps',
-    summary: 'The available evidence gives a stronger pricing signal.',
-    tone: 'border-primary/20 bg-primary/5 text-primary',
-  };
 }
 
 function MarketVerdictBadge({ compsCount, radiusUsedM, priceTier, priceContext }: { compsCount: number; radiusUsedM: number; priceTier?: PriceTier | null; priceContext: PriceContextResult }) {
@@ -286,7 +225,6 @@ function MarketVerdictBadge({ compsCount, radiusUsedM, priceTier, priceContext }
 function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchmarkRanges, compsCount, radiusUsedM, sqmSource, ownershipType, onTrackInteraction }: { priceContext: PriceContextResult; premiumExplanation?: string | null; benchmarkCards: BenchmarkCard[]; benchmarkRanges: BenchmarkRange[]; propertyPricePerSqm: number | null; compsCount: number; radiusUsedM: number; sqmSource?: string | null; ownershipType?: string | null; onTrackInteraction?: (eventName: string, properties?: Record<string, unknown>) => void }) {
   const radiusLabel = radiusUsedM >= 1000 ? '1km' : `${radiusUsedM}m`;
   const buyerTakeaway = buildBuyerTakeaway(priceContext);
-  const confidence = buildPriceConfidence(priceContext);
   const confidenceNotes = [
     compsCount > 0
       ? `${compsCount} recorded sale${compsCount > 1 ? 's' : ''} checked within ${radiusLabel}.`
@@ -302,45 +240,61 @@ function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchma
       ? 'Ownership type should be confirmed during due diligence.'
       : null,
   ].filter(Boolean).slice(0, 4) as string[];
-  const subtitle = priceContext.isLuxuryPremiumMode
-    ? 'Recorded sales and local benchmarks to give background only — luxury properties can trade far above standard ranges.'
-    : 'Recorded sales and local benchmarks to help you understand the asking price.';
 
   return (
-    <div className="space-y-4 rounded-xl border border-primary/10 bg-gradient-to-br from-background to-muted/20 p-4 shadow-sm">
-      <div className="flex items-start gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="mb-2 space-y-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <p className="text-sm font-semibold text-foreground">BuyWise Price Confidence</p>
-              <Badge variant="outline" className={cn('rounded-lg text-xs font-semibold', confidence.tone)}>
-                {confidence.label}
-              </Badge>
+    <div className="space-y-4">
+      {/* Flat benchmark rows — matches Cost Breakdown row pattern */}
+      <div className="overflow-hidden rounded-xl border border-border/60 bg-background">
+        {benchmarkCards.map((card, idx) => {
+          const Icon = card.icon;
+          return (
+            <div
+              key={card.id}
+              className={cn(
+                'flex items-start justify-between gap-4 px-4 py-3',
+                idx > 0 && 'border-t border-border/60',
+              )}
+              onClick={() => onTrackInteraction?.('price_context_benchmark_layer_clicked', { benchmark_layer: card.id, benchmark_label: card.label })}
+            >
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                  <Icon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <p className="text-sm font-medium text-foreground">{card.label}</p>
+                  <Tooltip onOpenChange={(open) => open && onTrackInteraction?.('price_context_benchmark_tooltip_opened', { benchmark_layer: card.id, benchmark_label: card.label })}>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        className="rounded-sm text-muted-foreground/70 hover:text-primary"
+                        aria-label={`About ${card.label}`}
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        <Info className="h-3 w-3" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-xs">
+                      <p className="text-xs">{card.detail}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <p className="mt-0.5 text-xs text-muted-foreground leading-snug">{card.detail}</p>
+              </div>
+              <p className="shrink-0 text-sm font-semibold text-foreground whitespace-nowrap tabular-nums">{card.value}</p>
             </div>
-            <p className="text-xs text-muted-foreground">{subtitle}</p>
-          </div>
-          <div className="rounded-lg border border-primary/15 bg-primary/5 px-3 py-3">
-            <p className="text-base font-semibold text-foreground">{priceContext.publicLabel}</p>
-            <p className="mt-1 text-sm text-muted-foreground">{confidence.summary}</p>
-          </div>
-          <div className="mt-3 grid gap-2 md:grid-cols-3">
-            {benchmarkCards.map((card) => (
-              <BenchmarkCardTile key={card.id} card={card} onTrackInteraction={onTrackInteraction} />
-            ))}
-          </div>
-          <div className="mt-3 flex gap-3 rounded-lg border border-primary/15 bg-primary/5 px-3 py-3">
-            <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <Sparkles className="h-3.5 w-3.5" />
-            </div>
-            <p className="text-sm leading-relaxed text-muted-foreground">
-              <span className="font-semibold text-foreground">Buyer takeaway:</span> {buyerTakeaway}
-            </p>
-          </div>
-          <div className="mt-3">
-            <PremiumContextSummary priceContext={priceContext} premiumExplanation={premiumExplanation} />
-          </div>
-        </div>
+          );
+        })}
       </div>
+
+      {/* Single tinted callout — Buyer takeaway */}
+      <div className="flex gap-3 rounded-lg border border-primary/15 bg-primary/5 px-3 py-3">
+        <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <Sparkles className="h-3.5 w-3.5" />
+        </div>
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          <span className="font-semibold text-foreground">Buyer takeaway:</span> {buyerTakeaway}
+        </p>
+      </div>
+
+      <PremiumContextSummary priceContext={priceContext} premiumExplanation={premiumExplanation} />
 
       <Collapsible onOpenChange={(nextOpen) => nextOpen && onTrackInteraction?.('price_context_details_opened', { confidence_tier: priceContext.confidenceTier })}>
         <CollapsibleTrigger asChild>
@@ -350,7 +304,7 @@ function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchma
           </Button>
         </CollapsibleTrigger>
         <CollapsibleContent className="pt-2">
-          <div className="rounded-lg border border-primary/10 bg-background/80 p-3 text-xs text-muted-foreground space-y-3">
+          <div className="rounded-lg border border-border/60 bg-muted/30 p-3 text-xs text-muted-foreground space-y-3">
             <ul className="space-y-1.5 pl-4">
               {confidenceNotes.map((note) => (
                 <li key={note} className="list-disc">{note}</li>
