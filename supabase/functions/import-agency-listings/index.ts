@@ -7672,10 +7672,53 @@ async function handleResumeJob(body: any) {
   if (resetErr) throw new Error(`Failed to reset processing items: ${resetErr.message}`);
   const resetCount = resetItems?.length || 0;
 
-  // Set job back to ready
+  // Set job back to ready and kick off a fresh batch (resumes self-chain).
   await sb.from("import_jobs").update({ status: "ready", last_heartbeat: null }).eq("id", job_id);
 
+  EdgeRuntime.waitUntil(
+    (async () => {
+      try {
+        await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/import-agency-listings`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ action: "process_batch", job_id }),
+        });
+      } catch (e) {
+        console.error(`Resume kickoff failed for ${job_id}:`, e);
+      }
+    })()
+  );
+
   return { reset_count: resetCount };
+}
+
+async function handlePauseJob(body: any) {
+  const { job_id } = body;
+  if (!job_id) throw new Error("job_id required");
+
+  const sb = supabaseAdmin();
+
+  // Flip the job to paused. The worker checks this at the top of every batch
+  // and before self-chaining, so the next loop turn will exit cleanly.
+  const { error: updateErr } = await sb
+    .from("import_jobs")
+    .update({ status: "paused" })
+    .eq("id", job_id);
+  if (updateErr) throw new Error(`Failed to pause job: ${updateErr.message}`);
+
+  // Return any in-flight 'processing' items back to 'pending' so they're
+  // re-tried after resume instead of being orphaned.
+  const { data: resetItems } = await sb
+    .from("import_job_items")
+    .update({ status: "pending", error_message: null, error_type: null })
+    .eq("job_id", job_id)
+    .eq("status", "processing")
+    .select("id");
+
+  return { reset_count: resetItems?.length || 0, status: "paused" };
 }
 
 async function handleQuarantineMadlanBatch(body: any) {
