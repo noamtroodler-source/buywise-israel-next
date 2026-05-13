@@ -17,7 +17,6 @@ import {
   useUpdateAgencySource,
   useDeleteAgencySource,
   useTriggerSourceSync,
-  useTriggerNightlySync,
   type AgencySource,
 } from "@/hooks/useAgencySources";
 import { useAuth } from "@/hooks/useAuth";
