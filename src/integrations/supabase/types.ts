@@ -5666,6 +5666,9 @@ export type Database = {
           admin_notes: string | null
           agent_fee_required: boolean | null
           agent_id: string | null
+          ai_buyer_takeaway: string | null
+          ai_buyer_takeaway_generated_at: string | null
+          ai_buyer_takeaway_input_hash: string | null
           ai_english_description: string | null
           ai_suggestions: Json
           allows_pets: string | null
@@ -5796,6 +5799,9 @@ export type Database = {
           admin_notes?: string | null
           agent_fee_required?: boolean | null
           agent_id?: string | null
+          ai_buyer_takeaway?: string | null
+          ai_buyer_takeaway_generated_at?: string | null
+          ai_buyer_takeaway_input_hash?: string | null
           ai_english_description?: string | null
           ai_suggestions?: Json
           allows_pets?: string | null
@@ -5926,6 +5932,9 @@ export type Database = {
           admin_notes?: string | null
           agent_fee_required?: boolean | null
           agent_id?: string | null
+          ai_buyer_takeaway?: string | null
+          ai_buyer_takeaway_generated_at?: string | null
+          ai_buyer_takeaway_input_hash?: string | null
           ai_english_description?: string | null
           ai_suggestions?: Json
           allows_pets?: string | null

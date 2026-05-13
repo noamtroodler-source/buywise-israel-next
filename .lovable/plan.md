@@ -1,81 +1,79 @@
+# AI-Generated Buyer Takeaway
 
-# Make Madlan Scraping Bulletproof
+Replace the current static, template-based "Buyer takeaway" line on every property page with a sharp, AI-generated 2-sentence brief that pulls from every relevant signal we already compute (price context, comps, city/neighborhood benchmarks, premium drivers, condition, fees, ownership, size source). Generate once per listing, cache in the database, regenerate when key inputs change, and backfill the entire current inventory (~400 listings).
 
-Cityzen has 50 active listings on Madlan (45 sale + 5 rent), but our Apify actor returns 0 across every city/dealType combination. This plan layers three independent fallbacks so a single point of failure can never zero us out again — and applies to **every** agency, not just Cityzen.
+## What the buyer sees
 
-## What we're solving
+- Same callout slot, same Sparkles icon, same `Buyer takeaway:` label.
+- 1–2 sentences, ~280 char max, plain English, "Trusted Friend" voice.
+- Always actionable: what this listing actually is + the single most useful next step for the buyer.
+- Falls back to the current rule-based string if AI output is missing — UI never breaks.
 
-The current adapter only knows one input shape: `{ city, dealType, officeUrl }`. If any of these fail (actor doesn't recognize officeUrl param, city is too small, agency name doesn't match), we get 0 — even when the office page itself clearly lists 50 properties. We also have no visibility into **why** Apify returned 0.
+## Data the AI gets per listing
 
-## The 3-tier strategy
+A compact JSON brief built server-side with only what matters:
+
+- **Property**: city, neighborhood, price (NIS), size_sqm, Israeli room count, bed/bath, floor/total_floors, year_built, condition, elevator, parking, balcony, storage, accessible, ownership_type, vaad_bayit, property_type, sqm_source, original_price (for reductions), days on market.
+- **Price context** (already computed by `getPriceContext`): publicLabel, confidenceTier, displayGapPercent, propertyClassLabel, premiumDrivers, percentageSuppressed, isLuxuryPremiumMode, confidenceCaps.
+- **Benchmarks**: city avg ₪/sqm, room-specific city ₪/sqm, neighborhood avg ₪/sqm, YoY price change.
+- **Comps**: count of recorded sales used, radius (500m/1km), median ₪/sqm of comps when available.
+- **Premium explanation** text (if agent provided one).
+
+No personal data, no agent contact, no scraped third-party media.
+
+## Architecture
 
 ```text
-Tier 1 — Apify per city (current)
-   {city, dealType, officeUrl}  ──► 0?  next
-Tier 2 — Apify direct office URL (NEW)
-   {startUrls: [officeUrl]}      ──► 0?  next
-Tier 3 — Firecrawl the office page (NEW)
-   GET madlan.co.il/agentsOffice/{id} → extract /listing/ URLs → AI-extract each
+On listing insert/update (trigger -> pg_net) ──► edge fn: generate-buyer-takeaway
+                                                       │
+   Backfill admin button / one-shot script ────────────┤
+                                                       ▼
+                                        Lovable AI Gateway (google/gemini-2.5-flash)
+                                                       │
+                                                       ▼
+                              properties.ai_buyer_takeaway              (text)
+                              properties.ai_buyer_takeaway_generated_at (timestamptz)
+                              properties.ai_buyer_takeaway_input_hash   (text)
 ```
 
-Tier 3 is the safety net: it does not depend on the Apify actor knowing anything about office IDs. As long as the office page renders in a browser, we will find listings.
+- **New edge function `generate-buyer-takeaway`** (Deno, `verify_jwt = false`):
+  - Input: `{ property_id, force?: boolean }`.
+  - Loads property, city row, neighborhood avg, room-specific city price, recent comps summary (reuses the same RPCs the UI uses).
+  - Computes `priceContext` server-side so the model sees the same verdict as the UI.
+  - Hashes the brief inputs; skips regeneration if hash matches stored hash and not `force`.
+  - Calls Lovable AI Gateway (`google/gemini-2.5-flash`) with a tight system prompt:
+    - max 2 sentences, ≤280 chars
+    - no fabricated numbers — only restate signals from the brief
+    - must reference at least one concrete signal (gap %, comps count, premium driver, condition, ownership)
+    - must end with the single most useful next step for the buyer
+    - "Trusted Friend" voice; no "Anglo"; international-buyer framing
+  - Handles 429/402 gracefully (keeps existing value, logs).
+  - Writes the 3 columns above.
 
-## Implementation steps
+- **DB migration**:
+  - Add the 3 columns.
+  - Trigger on `properties` after insert/update of price / size_sqm / condition / premium_drivers / premium_explanation / neighborhood / city / listing_status / vaad_bayit / ownership_type that calls the edge function via `pg_net` (fire-and-forget). Debounced inside the function by hash check.
 
-### 1. Add diagnostic logging to current Apify calls
-Before changing logic, instrument what we already have so future failures are debuggable:
-- Log the **exact actor input payload** sent
-- Log the **raw response item count** before any filtering
-- Log the **count after** `isMadlanItemLiveAndAgencyScoped` filter (so we can see if the actor returned items but our filter rejected them all)
-- Persist Apify `runId` to `import_jobs.failure_reason` JSON
+- **Backfill**:
+  - One-shot edge function `backfill-buyer-takeaways` (admin-only) that pages through all `for_sale` + `for_rent` properties (~400) and invokes `generate-buyer-takeaway` with concurrency ~5. Logs progress; safe to re-run. Triggered from a button in the existing admin tools page.
 
-### 2. Fix agency-name matching (`isMadlanItemLiveAndAgencyScoped`)
-Current code splits agency name on whitespace and matches first token only. This breaks for:
-- Hebrew variants (`Cityzen` vs `סיטיזן`)
-- Casing/whitespace drift
-- Single-word agency names with punctuation
+## Frontend changes (small)
 
-Normalize both sides: lowercase, strip non-alphanumeric (Latin + Hebrew), then check if either contains the other. Add the agency's `name_he` field to the comparison if present.
+- `MarketIntelligence.tsx`:
+  - Add `ai_buyer_takeaway` to the property prop type.
+  - In `BuyWiseTake`, prefer `property.ai_buyer_takeaway` when present; otherwise fall back to existing `buildBuyerTakeaway(priceContext)`.
+  - Keep the tinted callout layout exactly as-is — only the text source changes.
+- Ensure the property-detail fetch selects the new column.
 
-### 3. Add Tier 2 — Apify `startUrls` mode
-Add a third attempt to the existing `attempts` array:
-```ts
-{ startUrls: [{ url: websiteUrl }], maxItems: 60, _label: "office-url-direct" }
-```
-Run this once per dealType (not per city) — the office URL already scopes the broker.
+## Quality + safety guardrails
 
-### 4. Add Tier 3 — Firecrawl office-page fallback
-If Tiers 1 & 2 both return 0 across all cities, scrape the office page itself with Firecrawl (already configured in this function):
-- `firecrawlScrape(officeUrl, { formats: ['html', 'links'], waitFor: 3000 })`
-- Extract URLs matching `/listing/{id}` or `/nadlan/(for-sale|for-rent)/` from the rendered HTML
-- Push those URLs into the existing per-listing extraction pipeline (same path the website source uses)
+- Prompt explicitly forbids inventing numbers; model can only restate signals from the brief.
+- Hard length cap enforced after generation (truncate at sentence boundary if model overshoots).
+- If output fails validation (too long, empty, banned phrase), fall back to rule-based string and don't store.
+- Respects Core memory: "Trusted Friend" voice, "International buyers", NIS internally.
 
-### 5. Per-attempt failure reasons
-Update `last_failure_reason` to record which tier(s) ran and what each returned, e.g.:
-```json
-{
-  "tier1_per_city": {"discovered": 0, "tried_cities": 5},
-  "tier2_office_url": {"discovered": 0, "runId": "abc..."},
-  "tier3_firecrawl": {"discovered": 50, "extracted": 47}
-}
-```
+## Out of scope
 
-### 6. Re-trigger Cityzen and validate
-Once deployed, re-run the Cityzen Madlan source. Expected outcome: Tier 3 catches all 50 listings even if Tiers 1 & 2 still return 0. From there, feed them through the standard merge pipeline so they dedupe against Yad2/website results.
-
-## Files to change
-- `supabase/functions/import-agency-listings/index.ts`
-  - `runMadlanAgencyDiscoverJob` — add Tier 2 + Tier 3 + diagnostics
-  - `isMadlanItemLiveAndAgencyScoped` — normalize agency-name matching
-
-## Why this is the right call
-- **No new dependencies** — Apify and Firecrawl are both already wired in
-- **Fails open, not closed** — three independent code paths; only one needs to work
-- **Debuggable forever** — diagnostics tell us exactly which tier worked or failed
-- **Universal fix** — every future agency on Madlan benefits, not just Cityzen
-- **Memory update** — will save `mem://architecture/madlan-3-tier-discovery` so this approach persists
-
-## What we are NOT doing
-- Not switching scraper providers (Apify still works for most agencies)
-- Not deactivating the Cityzen Madlan source (we want it to work)
-- Not changing the website or Yad2 paths — this is Madlan-only
+- No UI restructuring of the surrounding card (already done in the prior step).
+- No changes to comps math or price-context logic.
+- No new scraping or third-party calls.
