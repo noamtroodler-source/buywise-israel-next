@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import {
   Globe, Loader2, Download, CheckCircle2,
   XCircle, AlertCircle, FileText, RefreshCw, Trash2,
-  ArrowLeftRight, Upload,
+  ArrowLeftRight, Upload, Pause, Play,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
