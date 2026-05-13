@@ -69,6 +69,7 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
   const retryFailedMutation = useRetryFailed();
   const retryRecoverableSkippedMutation = useRetryRecoverableSkipped();
   const resumeJobMutation = useResumeJob();
+  const pauseJobMutation = usePauseJob();
   const quarantineMadlanMutation = useQuarantineMadlanBatch();
   const { startProcessAll, stopProcessAll, isProcessingAll, processingStartTime, processedSoFar } = useProcessAll();
 
