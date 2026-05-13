@@ -164,6 +164,15 @@ Deno.serve(async (req) => {
       })
       .eq("id", agencyId);
 
+    // Seed agency_members: provisioned user is owner + admin + primary contact.
+    await admin.from("agency_members").upsert(
+      [
+        { agency_id: agencyId, user_id: newUserId, role: "owner", is_primary_contact: true, created_by: adminUserId },
+        { agency_id: agencyId, user_id: newUserId, role: "admin", is_primary_contact: false, created_by: adminUserId },
+      ],
+      { onConflict: "agency_id,user_id,role", ignoreDuplicates: true },
+    );
+
     if (!reusedExistingUser) {
       await admin.from("provisional_credentials").insert({
         user_id: newUserId,
