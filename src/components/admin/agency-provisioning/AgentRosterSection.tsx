@@ -27,6 +27,7 @@ import {
   useAgencyAgents,
   useCreateAgent,
   useUpdateAgent,
+  useDeleteAgent,
   useProvisionAgentAccount,
   useRevealCredentials,
   useResendSetupLink,
