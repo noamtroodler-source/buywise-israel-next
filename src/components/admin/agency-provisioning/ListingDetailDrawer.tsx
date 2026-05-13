@@ -427,6 +427,39 @@ export function ListingDetailDrawer({ agencyId, listing, onClose }: Props) {
           )}
         </div>
       </SheetContent>
+
+      <Dialog open={lightboxIndex !== null} onOpenChange={o => !o && setLightboxIndex(null)}>
+        <DialogContent className="max-w-5xl p-0 bg-background/95 border-none">
+          {lightboxIndex !== null && listing.images?.[lightboxIndex] && (
+            <div className="relative">
+              <img
+                src={listing.images[lightboxIndex]}
+                alt={`Listing photo ${lightboxIndex + 1}`}
+                className="w-full max-h-[85vh] object-contain rounded-lg"
+              />
+              {listing.images.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setLightboxIndex(i => (i! - 1 + listing.images!.length) % listing.images!.length)}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-background/80 hover:bg-background flex items-center justify-center text-lg font-bold shadow"
+                    aria-label="Previous"
+                  >‹</button>
+                  <button
+                    type="button"
+                    onClick={() => setLightboxIndex(i => (i! + 1) % listing.images!.length)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-background/80 hover:bg-background flex items-center justify-center text-lg font-bold shadow"
+                    aria-label="Next"
+                  >›</button>
+                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-background/80 text-xs">
+                    {lightboxIndex + 1} / {listing.images.length}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Sheet>
   );
 }
