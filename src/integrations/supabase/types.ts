@@ -432,6 +432,51 @@ export type Database = {
           },
         ]
       }
+      agency_members: {
+        Row: {
+          agency_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_primary_contact: boolean
+          role: string
+          user_id: string
+        }
+        Insert: {
+          agency_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_primary_contact?: boolean
+          role: string
+          user_id: string
+        }
+        Update: {
+          agency_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_primary_contact?: boolean
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agency_members_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agency_members_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agency_notifications: {
         Row: {
           action_url: string | null
@@ -8161,6 +8206,7 @@ export type Database = {
         Args: { p_agency_id: string }
         Returns: Json
       }
+      get_my_agency_role: { Args: { _agency_id: string }; Returns: string }
       get_nearby_sold_comps: {
         Args: {
           p_city: string
@@ -8198,6 +8244,18 @@ export type Database = {
       increment_promo_redemptions: {
         Args: { p_promo_id: string }
         Returns: undefined
+      }
+      is_agency_admin: {
+        Args: { _agency_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_agency_member: {
+        Args: { _agency_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_agency_owner: {
+        Args: { _agency_id: string; _user_id: string }
+        Returns: boolean
       }
       is_founding_agency: { Args: { p_agency_id: string }; Returns: boolean }
       is_url_blocklisted: {
