@@ -90,26 +90,15 @@ serve(async (req) => {
     }
 
     if (action === 'demote') {
-      // Cannot demote an owner via this endpoint — they must transfer ownership first
-      const { data: ownerRow } = await admin
-        .from('agency_members')
-        .select('id')
-        .eq('agency_id', agency_id)
-        .eq('user_id', target_user_id)
-        .eq('role', 'owner')
-        .maybeSingle();
-      if (ownerRow) {
-        return new Response(JSON.stringify({ error: "Transfer ownership before demoting the owner" }), {
-          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
+      // Owner is a founder label only — admins and owners have identical powers.
+      // Demote removes both 'owner' and 'admin' rows for this user; the last-admin
+      // DB trigger will block leaving the agency with zero admins.
       const { error } = await admin
         .from('agency_members')
         .delete()
         .eq('agency_id', agency_id)
         .eq('user_id', target_user_id)
-        .eq('role', 'admin');
+        .in('role', ['owner', 'admin']);
       if (error) throw error; // last-admin trigger will surface here
 
       return new Response(JSON.stringify({ ok: true, action }), {

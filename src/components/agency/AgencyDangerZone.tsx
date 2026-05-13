@@ -29,7 +29,7 @@ export function AgencyDangerZone({ agencyId, agencyName }: Props) {
   const [transferOpen, setTransferOpen] = useState(false);
   const [newOwner, setNewOwner] = useState<string>('');
 
-  if (!perms.isOwner) {
+  if (!perms.isAdmin) {
     return (
       <Card className="rounded-2xl border-destructive/20 bg-destructive/5">
         <CardHeader>
@@ -39,14 +39,15 @@ export function AgencyDangerZone({ agencyId, agencyName }: Props) {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
-            Only the Owner can transfer ownership or delete the agency. Ask the Owner to perform these actions, or have them transfer ownership to you first.
+            Only Admins can transfer the founder badge or delete the agency. Ask an Admin to promote you first.
           </p>
         </CardContent>
       </Card>
     );
   }
 
-  const transferCandidates = members.filter((m) => m.role === 'admin');
+  // Any other admin or the current owner can receive the founder badge
+  const transferCandidates = members.filter((m) => m.user_id !== undefined && (m.role === 'admin' || m.role === 'owner'));
 
   return (
     <Card className="rounded-2xl border-destructive/30">
@@ -55,17 +56,17 @@ export function AgencyDangerZone({ agencyId, agencyName }: Props) {
           <ShieldAlert className="h-5 w-5" /> Danger Zone
         </CardTitle>
         <p className="text-sm text-muted-foreground">
-          Owner-only actions. These cannot be undone.
+          Admin actions. These cannot be undone.
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 p-4 rounded-xl border border-border/50 bg-muted/20">
           <div>
             <p className="font-medium flex items-center gap-2">
-              <Crown className="h-4 w-4 text-amber-500" /> Transfer ownership
+              <Crown className="h-4 w-4 text-amber-500" /> Transfer founder badge
             </p>
             <p className="text-sm text-muted-foreground">
-              Hand the agency to another Admin. You will be demoted to Admin.
+              Move the founder marker to another Admin. Permissions are unchanged — both keep full Admin powers.
             </p>
           </div>
           <Button
@@ -97,9 +98,9 @@ export function AgencyDangerZone({ agencyId, agencyName }: Props) {
       <AlertDialog open={transferOpen} onOpenChange={setTransferOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Transfer ownership of {agencyName}</AlertDialogTitle>
+            <AlertDialogTitle>Transfer founder badge for {agencyName}</AlertDialogTitle>
             <AlertDialogDescription>
-              Pick the Admin who will become the new Owner. You will keep Admin powers afterward.
+              Pick the Admin who will hold the founder marker. Permissions don't change — Admins already have full power.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-3 py-2">

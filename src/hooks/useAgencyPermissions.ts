@@ -17,8 +17,8 @@ export interface AgencyPermissions {
   canManageImports: boolean;
   canManageFeatured: boolean;
   canPromoteAdmins: boolean;
-  canTransferOwnership: boolean;  // owner only
-  canDeleteAgency: boolean;       // owner only
+  canTransferOwnership: boolean;  // any admin (Owner is a founder label only)
+  canDeleteAgency: boolean;       // any admin (Owner is a founder label only)
   isLoading: boolean;
 }
 
@@ -75,8 +75,8 @@ export function useAgencyPermissions(agencyId: string | undefined | null): Agenc
     canManageImports: isAdmin,
     canManageFeatured: isAdmin,
     canPromoteAdmins: isAdmin,
-    canTransferOwnership: isOwner,
-    canDeleteAgency: isOwner,
+    canTransferOwnership: isAdmin,
+    canDeleteAgency: isAdmin,
     isLoading,
   };
 }
