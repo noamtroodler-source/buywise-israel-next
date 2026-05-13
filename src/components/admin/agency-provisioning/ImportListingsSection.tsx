@@ -362,17 +362,48 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
                   </div>
                 )}
               </div>
-              <Badge variant="outline" className={cn(
-                isCompleted && 'bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]',
-                isStalled && 'bg-[hsl(var(--warning))]/10 text-[hsl(var(--warning-foreground))]',
-                isDiscovering && 'bg-primary/10 text-primary animate-pulse',
-                isProcessing && 'bg-primary/10 text-primary animate-pulse',
-                isReady && !isStalled && 'bg-[hsl(var(--warning))]/10 text-[hsl(var(--warning-foreground))]',
-              )}>
-                {(isDiscovering || isProcessing) && <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />}
-                {isStalled ? 'Stalled' : currentJob.status}
-              </Badge>
-            </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {(isProcessing || isReady || isPaused) && !isCompleted && (
+                  isPaused ? (
+                    <Button
+                      onClick={() => resumeJobMutation.mutate(currentJob!.id)}
+                      disabled={resumeJobMutation.isPending}
+                      size="sm"
+                      variant="outline"
+                      className="rounded-lg"
+                    >
+                      {resumeJobMutation.isPending
+                        ? <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
+                        : <Play className="h-3 w-3 mr-1.5" />}
+                      Resume
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={() => pauseJobMutation.mutate(currentJob!.id)}
+                      disabled={pauseJobMutation.isPending}
+                      size="sm"
+                      variant="outline"
+                      className="rounded-lg"
+                    >
+                      {pauseJobMutation.isPending
+                        ? <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
+                        : <Pause className="h-3 w-3 mr-1.5" />}
+                      Pause
+                    </Button>
+                  )
+                )}
+                <Badge variant="outline" className={cn(
+                  isCompleted && 'bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]',
+                  isStalled && 'bg-[hsl(var(--warning))]/10 text-[hsl(var(--warning-foreground))]',
+                  isDiscovering && 'bg-primary/10 text-primary animate-pulse',
+                  isProcessing && 'bg-primary/10 text-primary animate-pulse',
+                  isReady && !isStalled && 'bg-[hsl(var(--warning))]/10 text-[hsl(var(--warning-foreground))]',
+                  isPaused && 'bg-muted text-muted-foreground',
+                )}>
+                  {(isDiscovering || isProcessing) && <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />}
+                  {isStalled ? 'Stalled' : currentJob.status}
+                </Badge>
+              </div>
 
             {isStalled && (
               <div className="flex items-center gap-3 p-3 rounded-xl bg-[hsl(var(--warning))]/10 border border-[hsl(var(--warning))]/20">
