@@ -1,6 +1,7 @@
 // deno-lint-ignore-file no-explicit-any
 declare const EdgeRuntime: { waitUntil(promise: Promise<any>): void };
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { parseHTML } from "https://esm.sh/linkedom@0.18.5";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
