@@ -827,6 +827,10 @@ export default function AgencySettings() {
                 </div>
               </motion.div>
             </form>
+
+            <div className="mt-8">
+              <AgencyDangerZone agencyId={agency.id} agencyName={agency.name} />
+            </div>
           </motion.div>
         </div>
         <Dialog open={showLogoPreview} onOpenChange={setShowLogoPreview}>
