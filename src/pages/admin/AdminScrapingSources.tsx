@@ -33,7 +33,7 @@ import {
   useUpdateAgencySource,
   useDeleteAgencySource,
   useTriggerSourceSync,
-  useTriggerNightlySync,
+  
   AgencySource,
 } from '@/hooks/useAgencySources';
 
@@ -298,7 +298,7 @@ export default function AdminScrapingSources() {
 
   const { data: sources = [], isLoading: sourcesLoading } = useAgencySources();
   const { data: stats } = useAgencySourceStats();
-  const triggerNightly = useTriggerNightlySync();
+  
 
   const filteredSources = search
     ? sources.filter(
@@ -331,17 +331,6 @@ export default function AdminScrapingSources() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={triggerNightly.isPending}
-            onClick={() => triggerNightly.mutate()}
-          >
-            {triggerNightly.isPending
-              ? <Loader2 className="w-4 h-4 animate-spin mr-2" />
-              : <Zap className="w-4 h-4 mr-2" />}
-            Run full sync now
-          </Button>
           <Button size="sm" onClick={() => setAddDialogOpen(true)}>
             <Plus className="w-4 h-4 mr-2" />
             Add source
