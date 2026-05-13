@@ -69,13 +69,15 @@ export function AgencyAdminsPanel({ agencyId }: Props) {
               <span className="font-medium text-foreground truncate">
                 {m.display_name || m.email || 'Unknown user'}
               </span>
-              {isOwnerRow ? (
-                <Badge className="bg-amber-500/15 text-amber-700 hover:bg-amber-500/15 gap-1">
-                  <Crown className="h-3 w-3" /> Owner
-                </Badge>
-              ) : (
-                <Badge variant="secondary" className="gap-1">
-                  <Shield className="h-3 w-3" /> Admin
+              <Badge variant="secondary" className="gap-1">
+                <Shield className="h-3 w-3" /> Admin
+              </Badge>
+              {isOwnerRow && (
+                <Badge
+                  className="bg-amber-500/15 text-amber-700 hover:bg-amber-500/15 gap-1"
+                  title="Original registrant. Same permissions as any Admin."
+                >
+                  <Crown className="h-3 w-3" /> Founder
                 </Badge>
               )}
               {m.is_primary_contact && (
@@ -103,20 +105,16 @@ export function AgencyAdminsPanel({ agencyId }: Props) {
               )}
               {!isOwnerRow && perms.canTransferOwnership && (
                 <DropdownMenuItem onClick={() => setTransferTarget({ userId: m.user_id, name: m.display_name || m.email || 'this admin' })}>
-                  <Crown className="h-4 w-4 mr-2" /> Transfer ownership
+                  <Crown className="h-4 w-4 mr-2" /> Make founder
                 </DropdownMenuItem>
               )}
-              {!isOwnerRow && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    className="text-destructive focus:text-destructive"
-                    onClick={() => demote.mutate({ agencyId, userId: m.user_id })}
-                  >
-                    Demote to agent
-                  </DropdownMenuItem>
-                </>
-              )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive"
+                onClick={() => demote.mutate({ agencyId, userId: m.user_id })}
+              >
+                Demote to agent
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         )}
@@ -133,7 +131,7 @@ export function AgencyAdminsPanel({ agencyId }: Props) {
             <Badge variant="secondary" className="ml-2">{members.length}</Badge>
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            Admins can manage the agency, billing, listings, and team. Only the Owner can transfer ownership or delete the agency.
+            All Admins have full power — billing, team, listings, settings, and deletion. The Founder badge is a display-only marker for the original registrant.
           </p>
         </CardHeader>
         <CardContent className="pt-4 space-y-3">
@@ -179,7 +177,7 @@ export function AgencyAdminsPanel({ agencyId }: Props) {
                     <AlertDialogHeader>
                       <AlertDialogTitle>Promote {a.name} to Admin?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        They'll be able to manage billing, sources, featured listings, the team roster, and the agency profile. They cannot transfer ownership or delete the agency. You can demote them at any time.
+                        Admins have full power: billing, sources, featured listings, team roster, agency profile, transferring the founder badge, and deleting the agency. You can demote them at any time.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -200,10 +198,10 @@ export function AgencyAdminsPanel({ agencyId }: Props) {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
-              <Crown className="h-5 w-5 text-amber-500" /> Transfer ownership to {transferTarget?.name}?
+              <Crown className="h-5 w-5 text-amber-500" /> Move founder badge to {transferTarget?.name}?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              This is permanent. You will be demoted to Admin. The new Owner will be the only person who can transfer ownership again or delete the agency. Billing and operational powers stay the same for both of you.
+              The founder marker will move to {transferTarget?.name}. Permissions don't change — both of you keep full Admin powers (billing, team, settings, deletion).
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
