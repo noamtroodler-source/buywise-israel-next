@@ -7888,16 +7888,12 @@ Deno.serve(async (req) => {
 
     let result;
     if (action === "discover") {
-      if (body.source_type === "yad2_apify") {
-        // Force Apify path — used as automatic Firecrawl fallback by yad2-retry-runner
+      if (body.source_type === "yad2_apify" || body.source_type === "yad2") {
+        // Yad2 routes through Apify (actor amit123/yadscraper) directly.
+        // Firecrawl/raw-HTML path was removed because ShieldSquare blocks it
+        // the vast majority of the time. Apify is now the only Yad2 path,
+        // covering both agency profile URLs and search-result URLs.
         result = await handleYad2Discover(body);
-      } else if (body.source_type === "yad2") {
-        // Auto-detect agency profile page vs search results
-        if (isYad2AgencyUrl(body.website_url)) {
-          result = await handleYad2AgencyDiscover(body);
-        } else {
-          result = await handleYad2Discover(body);
-        }
       } else if (body.source_type === "madlan" || isMadlanAgencyUrl(body.website_url)) {
         result = await handleMadlanAgencyDiscover(body);
       } else {
