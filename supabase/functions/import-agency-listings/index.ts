@@ -4968,16 +4968,55 @@ async function processOneItem(
     let crossSourceMatchId: string | null = null;
     const imageOverlapMatch = await findBestImageOverlapMatch(sb, listing.image_hashes || []);
 
-    // ── Intra-agency strict/price-led dedup ──
-    // Keep same-building/multi-unit inventory, but block exact same-unit repeats
-    // that arrive through alternate URLs, portal mirrors, or URL encoding variants.
-    if (job.agency_id && listing.city && (listing.address || (listing.size_sqm && listing.price && listing.bedrooms != null))) {
+    // ── Canonicalize incoming city for matching (Hebrew/English → canonical English) ──
+    // Yad2 ships Hebrew city names; Madlan mixes Hebrew and English; agency sites are
+    // typically English. Map all variants to the canonical supported English city
+    // before any .ilike("city", ...) so the same physical apartment collapses across
+    // sources for THIS agency.
+    let matcherCity: string | null = null;
+    if (listing.city) {
+      const rawCity = String(listing.city).trim();
+      if (/[\u0590-\u05FF]/.test(rawCity)) {
+        for (const [eng, heb] of Object.entries(CITY_HEBREW_MAP)) {
+          if (heb === rawCity) { matcherCity = eng; break; }
+        }
+      }
+      if (!matcherCity) matcherCity = matchSupportedCity(rawCity) || rawCity;
+    }
+
+    // Pre-compute building identity (independent of geocoded coords) so Tier 0
+    // can match on building_key. The full identity is recomputed later with
+    // geocoded coords for the geocode_key field.
+    const _matcherIdentity = buildListingIdentityEvidence(
+      listing,
+      listing._yad2_latitude || null,
+      listing._yad2_longitude || null,
+    );
+    const agencyOrFilter = job.agency_id
+      ? `primary_agency_id.eq.${job.agency_id},claimed_by_agency_id.eq.${job.agency_id}`
+      : null;
+
+    // ── Tier 0 (PRIMARY): exact building_key match scoped to this agency ──
+    // The strongest cross-source signal: same physical building. Apartment-level
+    // disambiguation happens later via merge logic / unit_identity_key.
+    if (agencyOrFilter && _matcherIdentity.buildingKey) {
+      const { data: bkMatch } = await sb
+        .from("properties")
+        .select("id")
+        .eq("building_key", _matcherIdentity.buildingKey)
+        .or(agencyOrFilter)
+        .limit(1);
+      if (bkMatch && bkMatch.length > 0) crossSourceMatchId = bkMatch[0].id;
+    }
+
+    // ── Tier 1: Intra-agency strict same-unit dedup (alternate URLs, mirrors) ──
+    if (!crossSourceMatchId && agencyOrFilter && matcherCity && (listing.address || (listing.size_sqm && listing.price && listing.bedrooms != null))) {
       const query = sb
         .from("properties")
         .select("id, title, address, city, neighborhood, listing_status, price, size_sqm, bedrooms, bathrooms, floor, source_url")
-        .or(`primary_agency_id.eq.${job.agency_id},claimed_by_agency_id.eq.${job.agency_id}`)
+        .or(agencyOrFilter)
         .eq("listing_status", listing.listing_status || "for_sale")
-        .ilike("city", listing.city.trim())
+        .ilike("city", matcherCity.trim())
         .limit(100);
 
       if (listing.bedrooms != null) query.eq("bedrooms", Math.floor(listing.bedrooms));
@@ -4993,32 +5032,34 @@ async function processOneItem(
       }
     }
 
-    // ── DEDUP: Tier 3 — Cross-source merge ──
-    // If this listing already exists from another source, MERGE rather than duplicate.
-    // Merge strategy: keep the richer version of each field, track all source URLs.
-    // Search by address + city (most reliable)
-    if (listing.address && listing.city) {
+    // ── Tier 2: address-ILIKE cross-source merge, scoped to this agency ──
+    // Same agency listing the same address from a different source (Yad2 + Madlan
+    // + own site) → enrich, don't duplicate. Cross-agency cases are gated later
+    // by check_cross_agency_duplicate_v2 and routed to co-listing.
+    if (!crossSourceMatchId && agencyOrFilter && listing.address && matcherCity) {
       const normalizedAddr = normalizeAddressForDedup(listing.address);
       const addrPattern = buildAddressQueryPattern(normalizedAddr);
       if (normalizedAddr.length > 0) {
         const { data: crossDupes } = await sb
           .from("properties")
           .select("id, agent_id, price, size_sqm, bedrooms, images, description, address, floor, year_built, features, merged_source_urls, source_url, data_quality_score")
+          .or(agencyOrFilter)
           .ilike("address", addrPattern)
-          .ilike("city", listing.city.trim())
+          .ilike("city", matcherCity.trim())
           .not("import_source", "is", null) // only merge sourced listings
-          .neq("id", "00000000-0000-0000-0000-000000000000") // avoid null comparison
+          .neq("id", "00000000-0000-0000-0000-000000000000")
           .limit(1);
         if (crossDupes && crossDupes.length > 0) crossSourceMatchId = crossDupes[0].id;
       }
     }
 
-    // Fuzzy search by city + bedrooms + size + price (when no address)
-    if (!crossSourceMatchId && listing.city && listing.bedrooms != null && listing.size_sqm && listing.price > 0) {
+    // ── Tier 3: fuzzy bedrooms/size/price (when no address), scoped to this agency ──
+    if (!crossSourceMatchId && agencyOrFilter && matcherCity && listing.bedrooms != null && listing.size_sqm && listing.price > 0) {
       const { data: crossFuzzy } = await sb
         .from("properties")
         .select("id, agent_id, price, size_sqm, bedrooms, images, description, address, floor, year_built, features, merged_source_urls, source_url, data_quality_score")
-        .ilike("city", listing.city.trim())
+        .or(agencyOrFilter)
+        .ilike("city", matcherCity.trim())
         .eq("bedrooms", Math.floor(listing.bedrooms))
         .gte("size_sqm", listing.size_sqm - 5)
         .lte("size_sqm", listing.size_sqm + 5)
