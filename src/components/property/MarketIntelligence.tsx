@@ -78,6 +78,7 @@ interface MarketIntelligenceProps {
     source_rooms?: number | null;
     latitude: number | null;
     longitude: number | null;
+    ai_buyer_takeaway?: string | null;
   };
   cityData: {
     average_price_sqm: number | null;
