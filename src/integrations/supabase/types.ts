@@ -8396,6 +8396,10 @@ export type Database = {
         }
         Returns: Json
       }
+      transfer_agency_ownership: {
+        Args: { _actor: string; _agency_id: string; _new_owner: string }
+        Returns: undefined
+      }
       upgrade_primary_from_scrape: {
         Args: {
           p_existing_property_id: string
