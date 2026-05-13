@@ -617,6 +617,7 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
           radiusUsedM={verdictData.radiusUsedM}
           sqmSource={property.sqm_source}
           ownershipType={property.ownership_type}
+          aiBuyerTakeaway={property.ai_buyer_takeaway}
           onTrackInteraction={handlePriceContextInteraction}
         />
 
