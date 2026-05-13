@@ -5740,6 +5740,12 @@ async function handleProcessBatch(body: any) {
     .from("import_jobs").select("*, agencies!inner(id, admin_user_id)").eq("id", job_id).single();
   if (jobErr || !job) throw new Error("Import job not found");
 
+  // Honor a pause request: bail before doing any work and break the self-chain.
+  if (job.status === "paused") {
+    dlog(`Job ${job_id} is paused — skipping batch`);
+    return { processed: 0, succeeded: 0, failed: 0, remaining: 0, status: "paused" };
+  }
+
   const cachedDomainCity = inferCityFromDomain(job.website_url);
   if (cachedDomainCity) dlog(`Domain city: ${cachedDomainCity}`);
 
