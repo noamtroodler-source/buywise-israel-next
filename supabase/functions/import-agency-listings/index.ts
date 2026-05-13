@@ -5850,12 +5850,18 @@ async function handleProcessBatch(body: any) {
   const doneCount = counts?.filter((c) => c.status === "done").length || 0;
   const failedCount = counts?.filter((c) => ["failed", "skipped"].includes(c.status)).length || 0;
   const remainingCount = counts?.filter((c) => c.status === "pending").length || 0;
-  const newStatus = remainingCount === 0 ? "completed" : "ready";
+
+  // Re-read job status so a pause requested during this batch is preserved.
+  const { data: latestJob } = await sb.from("import_jobs").select("status").eq("id", job_id).single();
+  const wasPaused = latestJob?.status === "paused";
+  const newStatus = wasPaused
+    ? "paused"
+    : (remainingCount === 0 ? "completed" : "ready");
 
   await sb.from("import_jobs").update({ processed_count: doneCount, failed_count: failedCount, status: newStatus }).eq("id", job_id);
 
-  // ── Self-chain: if items remain, fire the next batch in the background ──
-  if (remainingCount > 0) {
+  // ── Self-chain: if items remain AND job is not paused, fire the next batch ──
+  if (remainingCount > 0 && !wasPaused) {
     dlog(`Self-chaining: ${remainingCount} items remaining for job ${job_id}`);
     const selfChainUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/import-agency-listings`;
     EdgeRuntime.waitUntil(
@@ -5878,6 +5884,8 @@ async function handleProcessBatch(body: any) {
         }
       })()
     );
+  } else if (wasPaused) {
+    dlog(`Job ${job_id} paused mid-batch — self-chain skipped, ${remainingCount} items remain pending`);
   }
 
   // ─── Cross-agency duplicate scan (fire-and-forget when batch finishes) ───
