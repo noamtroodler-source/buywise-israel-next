@@ -319,6 +319,80 @@ app.get('/projects/:slug', async (req: Request, res: Response) => {
   }
 })
 
+// SSR: Static secondary routes — give each its own title/description/canonical
+const STATIC_ROUTE_META: Record<string, { title: string; description: string }> = {
+  '/listings': {
+    title: 'Properties for Sale & Rent in Israel | BuyWise Israel',
+    description: 'Browse verified Israeli property listings in English. Filter by city, price, bedrooms, and type. Compare apartments across Tel Aviv, Jerusalem, Haifa & 30+ cities.',
+  },
+  '/buy': {
+    title: 'Buy Property in Israel | Apartments & Homes for Sale | BuyWise',
+    description: 'Apartments and homes for sale across Israel, in English. Real prices, real costs, and verified agents — built for international buyers.',
+  },
+  '/rent': {
+    title: 'Rent Property in Israel | Apartments for Rent | BuyWise Israel',
+    description: 'Long-term rental apartments across Israeli cities. Filter by neighborhood, price, and bedrooms — all listings shown in English with vaad bayit context.',
+  },
+  '/projects': {
+    title: 'New Construction Projects in Israel | BuyWise Israel',
+    description: 'Discover new residential developments across Israel: pre-sale, under construction, and completed. Floor plans, pricing, and developer histories in English.',
+  },
+  '/areas': {
+    title: 'Israeli Cities & Neighborhoods | Market Data | BuyWise Israel',
+    description: 'Compare 30+ Israeli cities by price per sqm, rental yields, and lifestyle. Real CBS-grounded data for international buyers, all in English.',
+  },
+  '/blog': {
+    title: 'BuyWise Blog | Israeli Real Estate Insights for Buyers',
+    description: 'Editorial coverage of Israeli property markets, taxes, mortgages, and buyer journeys. Expert insights for international buyers, in English.',
+  },
+  '/agencies': {
+    title: 'Verified Israeli Real Estate Agencies | BuyWise Israel',
+    description: 'Directory of verified real estate agencies operating in Israel. English-friendly teams with active inventory across Tel Aviv, Jerusalem & beyond.',
+  },
+  '/professionals': {
+    title: 'Trusted Real Estate Professionals in Israel | BuyWise',
+    description: 'Vetted lawyers, mortgage advisors, inspectors, and movers serving international buyers in Israel. Profiles, reviews, and direct contact in English.',
+  },
+  '/tools': {
+    title: 'Israeli Real Estate Calculators | Tax, Mortgage & Cost Tools',
+    description: 'Free calculators for Israeli property buyers: purchase tax (mas rechisha), mortgage, affordability, true cost of ownership, and rent vs buy.',
+  },
+  '/guides': {
+    title: 'Buying Property in Israel Guides | BuyWise Israel',
+    description: 'In-depth guides for international buyers: purchase tax, mortgages, true costs, Oleh Hadash benefits, new vs resale, and more — all in English.',
+  },
+  '/glossary': {
+    title: 'Hebrew Real Estate Glossary | BuyWise Israel',
+    description: 'Hebrew real estate terms translated and explained for English-speaking buyers — vaad bayit, mas rechisha, tabu, mamad, and dozens more.',
+  },
+  '/map': {
+    title: 'Map Search | Israeli Properties & Neighborhoods | BuyWise',
+    description: 'Explore Israeli properties, neighborhoods, schools, and transit on an interactive map. Filter listings by area and price — all in English.',
+  },
+  '/about': {
+    title: 'About BuyWise Israel | Our Principles & How We Work',
+    description: 'BuyWise Israel helps international buyers navigate Israeli real estate with clarity. Learn our principles, data sources, and how we vet professionals.',
+  },
+  '/contact': {
+    title: 'Contact BuyWise Israel | Get in Touch',
+    description: 'Reach the BuyWise Israel team with questions about Israeli property, calculators, or our agent network. We respond in English.',
+  },
+  '/for-agents': {
+    title: 'For Agents & Agencies | List on BuyWise Israel',
+    description: 'Reach English-speaking international buyers exploring Israeli real estate. Join the BuyWise agency network and showcase your inventory.',
+  },
+  '/pricing': {
+    title: 'Pricing | BuyWise Israel for Agencies',
+    description: 'Transparent pricing for Israeli real estate agencies and developers on BuyWise Israel. Founding partner spots and standard plans.',
+  },
+}
+
+for (const [routePath, meta] of Object.entries(STATIC_ROUTE_META)) {
+  app.get(routePath, (_req, res) => {
+    sendHtml(res, injectMeta(meta.title, meta.description, `${SITE_URL}${routePath}`))
+  })
+}
+
 // SPA fallback for all other routes
 app.get('*', (_req, res) => {
   fallback(res)
