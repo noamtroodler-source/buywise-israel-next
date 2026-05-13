@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
-import { AlertTriangle, CheckCircle2, Clock, Copy, KeyRound, Mail, RefreshCw, ShieldCheck, UserCheck, Users, type LucideIcon } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Clock, Copy, KeyRound, LogIn, Mail, MessageCircle, MoreHorizontal, RefreshCw, ShieldCheck, UserCheck, Users, type LucideIcon } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -44,12 +45,36 @@ type MonitorPerson = {
   role: 'Owner' | 'Agent';
   name: string;
   email: string | null;
+  phone: string | null;
   userId: string | null;
   emailStatus: LatestEmail | null;
   token: SetupToken | null;
   passwordCompletedAt: string | null;
   lastActiveAt: string | null;
 };
+
+const LOGIN_URL = `${'https://buywiseisrael.com'}/auth`;
+
+function normalizePhoneForWhatsapp(phone: string | null | undefined): string | null {
+  if (!phone) return null;
+  const digits = phone.replace(/[^\d]/g, '');
+  if (!digits) return null;
+  // Israeli numbers starting with 0 → prepend country code 972
+  if (digits.startsWith('0')) return `972${digits.slice(1)}`;
+  return digits;
+}
+
+function openWhatsApp(phone: string | null | undefined, message: string) {
+  const num = normalizePhoneForWhatsapp(phone);
+  const text = encodeURIComponent(message);
+  const url = num ? `https://wa.me/${num}?text=${text}` : `https://wa.me/?text=${text}`;
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+
+async function copyText(value: string, label: string) {
+  await navigator.clipboard.writeText(value);
+  toast.success(`${label} copied`);
+}
 
 interface Props {
   agency: ProvisioningAgency;
@@ -150,6 +175,7 @@ export function OnboardingMonitorSection({ agency }: Props) {
         name: agency.name,
         email: agency.email,
         userId: agency.admin_user_id,
+        phone: (agency as any).phone || null,
         emailStatus: agency.email ? latestEmailByKey.get(`owner-welcome:${agency.email.toLowerCase()}`) || null : null,
         token: agency.admin_user_id ? latestTokenByKey.get(`${agency.admin_user_id}:owner_setup`) || null : null,
         passwordCompletedAt: agency.admin_user_id ? setupCompletedByUser.get(agency.admin_user_id) || null : null,
@@ -165,6 +191,7 @@ export function OnboardingMonitorSection({ agency }: Props) {
         name: agent.name,
         email: agent.email,
         userId: agent.user_id,
+        phone: agent.phone || null,
         emailStatus: agent.email ? latestEmailByKey.get(`agent-welcome:${agent.email.toLowerCase()}`) || null : null,
         token: agent.user_id ? latestTokenByKey.get(`${agent.user_id}:agent_setup`) || null : null,
         passwordCompletedAt: agent.user_id ? setupCompletedByUser.get(agent.user_id) || null : null,
@@ -330,28 +357,72 @@ export function OnboardingMonitorSection({ agency }: Props) {
                       )}
                     </td>
                     <td className="px-3 py-3 align-top text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => copySetupLink(person)}
-                          disabled={!person.token || !!person.token.used_at}
-                          className="gap-1.5"
-                        >
-                          <Copy className="h-3.5 w-3.5" />
-                          Copy
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => issueFreshLink(person)}
-                          disabled={!person.userId || resend.isPending}
-                          className="gap-1.5"
-                        >
-                          <KeyRound className="h-3.5 w-3.5" />
-                          Fresh link
-                        </Button>
-                      </div>
+                      {(() => {
+                        const setupUrl = person.token && !person.token.used_at
+                          ? `${'https://buywiseisrael.com'}/auth/setup-password?token=${person.token.token}`
+                          : null;
+                        const loginUrl = LOGIN_URL;
+                        const setupMessage = setupUrl
+                          ? `Hi ${person.name?.split(' ')[0] || ''}, here's your BuyWise Israel ${person.role.toLowerCase()} account setup link: ${setupUrl}`
+                          : '';
+                        const loginMessage = `Hi ${person.name?.split(' ')[0] || ''}, you can log in to your BuyWise Israel ${person.role.toLowerCase()} portal here: ${loginUrl}`;
+
+                        return (
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => copySetupLink(person)}
+                              disabled={!setupUrl}
+                              className="gap-1.5"
+                              title={setupUrl ? 'Copy password setup link' : 'No active setup link'}
+                            >
+                              <Copy className="h-3.5 w-3.5" />
+                              Copy setup
+                            </Button>
+
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm" className="gap-1.5">
+                                  <MoreHorizontal className="h-3.5 w-3.5" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-56">
+                                <DropdownMenuLabel>Setup link</DropdownMenuLabel>
+                                <DropdownMenuItem
+                                  disabled={!setupUrl}
+                                  onClick={() => setupUrl && copyText(setupUrl, 'Setup link')}
+                                >
+                                  <Copy className="h-4 w-4 mr-2" /> Copy URL
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  disabled={!setupUrl}
+                                  onClick={() => setupUrl && openWhatsApp(person.phone, setupMessage)}
+                                >
+                                  <MessageCircle className="h-4 w-4 mr-2" />
+                                  WhatsApp{person.phone ? '' : ' (no number)'}
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuLabel>Login URL</DropdownMenuLabel>
+                                <DropdownMenuItem onClick={() => copyText(loginUrl, 'Login URL')}>
+                                  <LogIn className="h-4 w-4 mr-2" /> Copy URL
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => openWhatsApp(person.phone, loginMessage)}>
+                                  <MessageCircle className="h-4 w-4 mr-2" />
+                                  WhatsApp{person.phone ? '' : ' (no number)'}
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  disabled={!person.userId || resend.isPending}
+                                  onClick={() => issueFreshLink(person)}
+                                >
+                                  <KeyRound className="h-4 w-4 mr-2" /> Issue fresh link
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        );
+                      })()}
                     </td>
                   </tr>
                 );
