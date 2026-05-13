@@ -223,9 +223,9 @@ function MarketVerdictBadge({ compsCount, radiusUsedM, priceTier, priceContext }
   );
 }
 
-function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchmarkRanges, compsCount, radiusUsedM, sqmSource, ownershipType, onTrackInteraction }: { priceContext: PriceContextResult; premiumExplanation?: string | null; benchmarkCards: BenchmarkCard[]; benchmarkRanges: BenchmarkRange[]; propertyPricePerSqm: number | null; compsCount: number; radiusUsedM: number; sqmSource?: string | null; ownershipType?: string | null; onTrackInteraction?: (eventName: string, properties?: Record<string, unknown>) => void }) {
+function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchmarkRanges, compsCount, radiusUsedM, sqmSource, ownershipType, aiBuyerTakeaway, onTrackInteraction }: { priceContext: PriceContextResult; premiumExplanation?: string | null; benchmarkCards: BenchmarkCard[]; benchmarkRanges: BenchmarkRange[]; propertyPricePerSqm: number | null; compsCount: number; radiusUsedM: number; sqmSource?: string | null; ownershipType?: string | null; aiBuyerTakeaway?: string | null; onTrackInteraction?: (eventName: string, properties?: Record<string, unknown>) => void }) {
   const radiusLabel = radiusUsedM >= 1000 ? '1km' : `${radiusUsedM}m`;
-  const buyerTakeaway = buildBuyerTakeaway(priceContext);
+  const buyerTakeaway = aiBuyerTakeaway?.trim() || buildBuyerTakeaway(priceContext);
   const confidenceNotes = [
     compsCount > 0
       ? `${compsCount} recorded sale${compsCount > 1 ? 's' : ''} checked within ${radiusLabel}.`
