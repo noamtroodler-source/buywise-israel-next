@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
-  ArrowLeft, Users, UserPlus, Plus, Copy, Check, Hash, Loader2, ShieldAlert, Megaphone
+  ArrowLeft, Users, UserPlus, Plus, Copy, Check, Hash, Loader2, ShieldAlert, Megaphone, UserCog
 } from 'lucide-react';
 import { EnhancedEmptyState } from '@/components/shared/EnhancedEmptyState';
 import { Layout } from '@/components/layout/Layout';
