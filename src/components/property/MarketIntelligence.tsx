@@ -78,6 +78,7 @@ interface MarketIntelligenceProps {
     source_rooms?: number | null;
     latitude: number | null;
     longitude: number | null;
+    ai_buyer_takeaway?: string | null;
   };
   cityData: {
     average_price_sqm: number | null;
@@ -222,9 +223,9 @@ function MarketVerdictBadge({ compsCount, radiusUsedM, priceTier, priceContext }
   );
 }
 
-function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchmarkRanges, compsCount, radiusUsedM, sqmSource, ownershipType, onTrackInteraction }: { priceContext: PriceContextResult; premiumExplanation?: string | null; benchmarkCards: BenchmarkCard[]; benchmarkRanges: BenchmarkRange[]; propertyPricePerSqm: number | null; compsCount: number; radiusUsedM: number; sqmSource?: string | null; ownershipType?: string | null; onTrackInteraction?: (eventName: string, properties?: Record<string, unknown>) => void }) {
+function BuyWiseTake({ priceContext, premiumExplanation, benchmarkCards, benchmarkRanges, compsCount, radiusUsedM, sqmSource, ownershipType, aiBuyerTakeaway, onTrackInteraction }: { priceContext: PriceContextResult; premiumExplanation?: string | null; benchmarkCards: BenchmarkCard[]; benchmarkRanges: BenchmarkRange[]; propertyPricePerSqm: number | null; compsCount: number; radiusUsedM: number; sqmSource?: string | null; ownershipType?: string | null; aiBuyerTakeaway?: string | null; onTrackInteraction?: (eventName: string, properties?: Record<string, unknown>) => void }) {
   const radiusLabel = radiusUsedM >= 1000 ? '1km' : `${radiusUsedM}m`;
-  const buyerTakeaway = buildBuyerTakeaway(priceContext);
+  const buyerTakeaway = aiBuyerTakeaway?.trim() || buildBuyerTakeaway(priceContext);
   const confidenceNotes = [
     compsCount > 0
       ? `${compsCount} recorded sale${compsCount > 1 ? 's' : ''} checked within ${radiusLabel}.`
@@ -341,6 +342,18 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
   const location = useLocation();
   const trackedViewKey = useRef<string | null>(null);
   const trackedCompsKey = useRef<string | null>(null);
+
+  // Lazy-generate AI buyer takeaway if missing (fire-and-forget, once per property).
+  const takeawayRequestedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!property.id) return;
+    if (property.ai_buyer_takeaway && property.ai_buyer_takeaway.trim()) return;
+    if (takeawayRequestedRef.current === property.id) return;
+    takeawayRequestedRef.current = property.id;
+    supabase.functions
+      .invoke('generate-buyer-takeaway', { body: { property_id: property.id } })
+      .catch((err) => console.warn('buyer takeaway generation failed', err));
+  }, [property.id, property.ai_buyer_takeaway]);
 
   const handleVerdictComputed = useCallback((avgComparison: number | null, compsCount: number, radiusUsedM: number, avgCompPriceSqm: number | null, compDispersionPercent: number | null = null, compClassMatch: 'same_class' | 'similar_class' | 'mixed_fallback' | 'no_comps' | null = null, roomMatchQuality: PriceContextSpecMatchQuality | null = null, sizeMatchQuality: PriceContextSpecMatchQuality | null = null, compRecencyMonths: number | null = null) => {
     setVerdictData(prev => {
@@ -616,6 +629,7 @@ export function MarketIntelligence({ property, cityData, trackingEnabled = true 
           radiusUsedM={verdictData.radiusUsedM}
           sqmSource={property.sqm_source}
           ownershipType={property.ownership_type}
+          aiBuyerTakeaway={property.ai_buyer_takeaway}
           onTrackInteraction={handlePriceContextInteraction}
         />
 
