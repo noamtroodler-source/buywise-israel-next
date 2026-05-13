@@ -5740,6 +5740,12 @@ async function handleProcessBatch(body: any) {
     .from("import_jobs").select("*, agencies!inner(id, admin_user_id)").eq("id", job_id).single();
   if (jobErr || !job) throw new Error("Import job not found");
 
+  // Honor a pause request: bail before doing any work and break the self-chain.
+  if (job.status === "paused") {
+    dlog(`Job ${job_id} is paused — skipping batch`);
+    return { processed: 0, succeeded: 0, failed: 0, remaining: 0, status: "paused" };
+  }
+
   const cachedDomainCity = inferCityFromDomain(job.website_url);
   if (cachedDomainCity) dlog(`Domain city: ${cachedDomainCity}`);
 
@@ -5844,12 +5850,18 @@ async function handleProcessBatch(body: any) {
   const doneCount = counts?.filter((c) => c.status === "done").length || 0;
   const failedCount = counts?.filter((c) => ["failed", "skipped"].includes(c.status)).length || 0;
   const remainingCount = counts?.filter((c) => c.status === "pending").length || 0;
-  const newStatus = remainingCount === 0 ? "completed" : "ready";
+
+  // Re-read job status so a pause requested during this batch is preserved.
+  const { data: latestJob } = await sb.from("import_jobs").select("status").eq("id", job_id).single();
+  const wasPaused = latestJob?.status === "paused";
+  const newStatus = wasPaused
+    ? "paused"
+    : (remainingCount === 0 ? "completed" : "ready");
 
   await sb.from("import_jobs").update({ processed_count: doneCount, failed_count: failedCount, status: newStatus }).eq("id", job_id);
 
-  // ── Self-chain: if items remain, fire the next batch in the background ──
-  if (remainingCount > 0) {
+  // ── Self-chain: if items remain AND job is not paused, fire the next batch ──
+  if (remainingCount > 0 && !wasPaused) {
     dlog(`Self-chaining: ${remainingCount} items remaining for job ${job_id}`);
     const selfChainUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/import-agency-listings`;
     EdgeRuntime.waitUntil(
@@ -5872,6 +5884,8 @@ async function handleProcessBatch(body: any) {
         }
       })()
     );
+  } else if (wasPaused) {
+    dlog(`Job ${job_id} paused mid-batch — self-chain skipped, ${remainingCount} items remain pending`);
   }
 
   // ─── Cross-agency duplicate scan (fire-and-forget when batch finishes) ───
@@ -7658,10 +7672,53 @@ async function handleResumeJob(body: any) {
   if (resetErr) throw new Error(`Failed to reset processing items: ${resetErr.message}`);
   const resetCount = resetItems?.length || 0;
 
-  // Set job back to ready
+  // Set job back to ready and kick off a fresh batch (resumes self-chain).
   await sb.from("import_jobs").update({ status: "ready", last_heartbeat: null }).eq("id", job_id);
 
+  EdgeRuntime.waitUntil(
+    (async () => {
+      try {
+        await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/import-agency-listings`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ action: "process_batch", job_id }),
+        });
+      } catch (e) {
+        console.error(`Resume kickoff failed for ${job_id}:`, e);
+      }
+    })()
+  );
+
   return { reset_count: resetCount };
+}
+
+async function handlePauseJob(body: any) {
+  const { job_id } = body;
+  if (!job_id) throw new Error("job_id required");
+
+  const sb = supabaseAdmin();
+
+  // Flip the job to paused. The worker checks this at the top of every batch
+  // and before self-chaining, so the next loop turn will exit cleanly.
+  const { error: updateErr } = await sb
+    .from("import_jobs")
+    .update({ status: "paused" })
+    .eq("id", job_id);
+  if (updateErr) throw new Error(`Failed to pause job: ${updateErr.message}`);
+
+  // Return any in-flight 'processing' items back to 'pending' so they're
+  // re-tried after resume instead of being orphaned.
+  const { data: resetItems } = await sb
+    .from("import_job_items")
+    .update({ status: "pending", error_message: null, error_type: null })
+    .eq("job_id", job_id)
+    .eq("status", "processing")
+    .select("id");
+
+  return { reset_count: resetItems?.length || 0, status: "paused" };
 }
 
 async function handleQuarantineMadlanBatch(body: any) {
@@ -7917,6 +7974,7 @@ Deno.serve(async (req) => {
     else if (action === "approve_item") result = await handleApproveItem(body);
     else if (action === "resolve_duplicate_review") result = await handleResolveDuplicateReview(body);
     else if (action === "resume_job") result = await handleResumeJob(body);
+    else if (action === "pause_job") result = await handlePauseJob(body);
     else if (action === "quarantine_madlan_batch") result = await handleQuarantineMadlanBatch(body);
     else if (action === "check_existing") result = await handleCheckExisting(body);
     else if (action === "backfill_street_view") result = await handleBackfillStreetView(body);
