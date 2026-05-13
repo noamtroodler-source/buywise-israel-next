@@ -298,7 +298,7 @@ export default function AdminScrapingSources() {
 
   const { data: sources = [], isLoading: sourcesLoading } = useAgencySources();
   const { data: stats } = useAgencySourceStats();
-  const triggerNightly = useTriggerNightlySync();
+  
 
   const filteredSources = search
     ? sources.filter(
