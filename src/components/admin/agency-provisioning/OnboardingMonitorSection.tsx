@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
-import { AlertTriangle, CheckCircle2, Clock, Copy, KeyRound, Mail, RefreshCw, ShieldCheck, UserCheck, Users, type LucideIcon } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Clock, Copy, KeyRound, LogIn, Mail, MessageCircle, MoreHorizontal, RefreshCw, ShieldCheck, UserCheck, Users, type LucideIcon } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
