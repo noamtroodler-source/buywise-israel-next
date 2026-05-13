@@ -404,6 +404,7 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
                   {isStalled ? 'Stalled' : currentJob.status}
                 </Badge>
               </div>
+            </div>
 
             {isStalled && (
               <div className="flex items-center gap-3 p-3 rounded-xl bg-[hsl(var(--warning))]/10 border border-[hsl(var(--warning))]/20">
