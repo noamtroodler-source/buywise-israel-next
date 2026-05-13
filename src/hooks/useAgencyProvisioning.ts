@@ -230,6 +230,32 @@ export function useUpdateAgent(agencyId: string | null) {
   });
 }
 
+export function useDeleteAgent(agencyId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, userId }: { id: string; userId?: string | null }) => {
+      // Best-effort cleanup of dependent rows that may block the agent delete
+      await supabase.from('properties').update({ agent_id: null } as any).eq('agent_id', id);
+      await supabase.from('property_co_agents').delete().eq('agent_id', id);
+      await supabase.from('agency_members').delete().eq('agent_id', id);
+
+      const { error } = await supabase.from('agents').delete().eq('id', id);
+      if (error) throw error;
+
+      // If they had an auth user, remove their agency membership row too
+      if (userId) {
+        await supabase.from('agency_members').delete().eq('user_id', userId).eq('agency_id', agencyId!);
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['provisioning-agency-agents', agencyId] });
+      qc.invalidateQueries({ queryKey: ['agency-members', agencyId] });
+      toast.success('Agent deleted');
+    },
+    onError: (e: any) => toast.error(e?.message || 'Failed to delete agent'),
+  });
+}
+
 export function useProvisionAgencyAccount() {
   const qc = useQueryClient();
   return useMutation({
