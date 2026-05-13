@@ -8,7 +8,18 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Plus, KeyRound, Loader2, Copy, UserCheck, Send, Upload, X, AlertTriangle, Pencil, Shield, ShieldOff, Star } from 'lucide-react';
+import { Plus, KeyRound, Loader2, Copy, UserCheck, Send, Upload, X, AlertTriangle, Pencil, Shield, ShieldOff, Star, Trash2 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
@@ -16,6 +27,7 @@ import {
   useAgencyAgents,
   useCreateAgent,
   useUpdateAgent,
+  useDeleteAgent,
   useProvisionAgentAccount,
   useRevealCredentials,
   useResendSetupLink,
@@ -60,6 +72,7 @@ export function AgentRosterSection({ agencyId }: Props) {
   const setPrimary = useSetPrimaryContact();
   const create = useCreateAgent(agencyId);
   const update = useUpdateAgent(agencyId);
+  const deleteAgent = useDeleteAgent(agencyId);
   const provision = useProvisionAgentAccount(agencyId);
   const reveal = useRevealCredentials();
   const resend = useResendSetupLink();
@@ -292,6 +305,36 @@ export function AgentRosterSection({ agencyId }: Props) {
                       >
                         <Pencil className="h-3 w-3" />
                       </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            title="Delete agent"
+                            disabled={deleteAgent.isPending}
+                          >
+                            {deleteAgent.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete {a.name}?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This removes the agent from this agency's roster. Any listings currently assigned to them will be unassigned (but not deleted). {a.user_id ? "Their login account will remain but lose access to this agency." : ""}
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => deleteAgent.mutate({ id: a.id, userId: a.user_id })}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Delete agent
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                       {a.user_id ? (
                         <>
                           {!adminUserIds.has(a.user_id) ? (
