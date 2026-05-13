@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
-  ArrowLeft, Users, UserPlus, Plus, Copy, Check, Hash, Loader2, ShieldAlert, Megaphone
+  ArrowLeft, Users, UserPlus, Plus, Copy, Check, Hash, Loader2, ShieldAlert, Megaphone, UserCog
 } from 'lucide-react';
 import { EnhancedEmptyState } from '@/components/shared/EnhancedEmptyState';
 import { Layout } from '@/components/layout/Layout';
@@ -27,6 +27,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { AgencyTeamSkeleton } from '@/components/agency/skeletons/AgencyPageSkeletons';
 import { AgencyAnnouncements } from '@/components/agency/AgencyAnnouncements';
+import { AgencyAdminsPanel } from '@/components/agency/AgencyAdminsPanel';
 
 export default function AgencyTeam() {
   const { data: agency, isLoading, isAgencyAdmin } = useMyAgency();
@@ -105,8 +106,12 @@ export default function AgencyTeam() {
           <TabsList className="bg-muted/50 border border-border/50 rounded-xl p-1">
             <TabsTrigger value="members" className="gap-2 rounded-lg">
               <Users className="h-4 w-4" />
-              Members
+              Agents
               {team.length > 0 && <Badge variant="secondary">{team.length}</Badge>}
+            </TabsTrigger>
+            <TabsTrigger value="admins" className="gap-2 rounded-lg">
+              <UserCog className="h-4 w-4" />
+              Admins
             </TabsTrigger>
             <TabsTrigger value="invites" className="gap-2 rounded-lg">
               <UserPlus className="h-4 w-4" />
@@ -124,12 +129,16 @@ export default function AgencyTeam() {
           <TabsContent value="members" className="mt-4">
             <Card className="rounded-2xl border-primary/10">
               <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent rounded-t-2xl">
-                <CardTitle>Team Members</CardTitle>
+                <CardTitle>Sales Agents</CardTitle>
               </CardHeader>
               <CardContent className="pt-4">
                 <SeatManagementPanel agents={team} />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="admins" className="mt-4">
+            <AgencyAdminsPanel agencyId={agency.id} />
           </TabsContent>
 
           <TabsContent value="invites" className="space-y-4 mt-4">

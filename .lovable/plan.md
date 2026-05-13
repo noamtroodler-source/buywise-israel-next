@@ -1,79 +1,143 @@
-# AI-Generated Buyer Takeaway
 
-Replace the current static, template-based "Buyer takeaway" line on every property page with a sharp, AI-generated 2-sentence brief that pulls from every relevant signal we already compute (price context, comps, city/neighborhood benchmarks, premium drivers, condition, fees, ownership, size source). Generate once per listing, cache in the database, regenerate when key inputs change, and backfill the entire current inventory (~400 listings).
+# Owner vs Admin: Full Operational Admin Model
 
-## What the buyer sees
+## The current reality (what we have)
 
-- Same callout slot, same Sparkles icon, same `Buyer takeaway:` label.
-- 1–2 sentences, ~280 char max, plain English, "Trusted Friend" voice.
-- Always actionable: what this listing actually is + the single most useful next step for the buyer.
-- Falls back to the current rule-based string if AI output is missing — UI never breaks.
+The codebase only knows ONE role: `agencies.admin_user_id` (a single user pointer). `useMyAgency().isAgencyAdmin` is just `user.id === agency.admin_user_id`. Every gated page (`AgencyTeam`, `AgencyBilling`, `AgencySettings`, `AgencyImport`, `AgencyFeatured`, `AgencySources`, etc.) uses that one boolean. The `agents.agency_role` column exists but defaults to `'member'` and isn't used for gating.
 
-## Data the AI gets per listing
+We need to evolve this into: **1 Owner + N Admins + N Agents**, where Admins can do everything except destroy/transfer the agency.
 
-A compact JSON brief built server-side with only what matters:
+## Final permission matrix (source of truth)
 
-- **Property**: city, neighborhood, price (NIS), size_sqm, Israeli room count, bed/bath, floor/total_floors, year_built, condition, elevator, parking, balcony, storage, accessible, ownership_type, vaad_bayit, property_type, sqm_source, original_price (for reductions), days on market.
-- **Price context** (already computed by `getPriceContext`): publicLabel, confidenceTier, displayGapPercent, propertyClassLabel, premiumDrivers, percentageSuppressed, isLuxuryPremiumMode, confidenceCaps.
-- **Benchmarks**: city avg ₪/sqm, room-specific city ₪/sqm, neighborhood avg ₪/sqm, YoY price change.
-- **Comps**: count of recorded sales used, radius (500m/1km), median ₪/sqm of comps when available.
-- **Premium explanation** text (if agent provided one).
+| Capability | Owner | Admin | Agent |
+|---|:---:|:---:|:---:|
+| Manage own listings & leads | ✅ | ✅ | ✅ (own only) |
+| Invite / remove agents | ✅ | ✅ | ❌ |
+| Promote agent ↔ Admin | ✅ | ✅ | ❌ |
+| Edit agency profile, branding, sources | ✅ | ✅ | ❌ |
+| Approve imports, resolve conflicts | ✅ | ✅ | ❌ |
+| Featured placement management | ✅ | ✅ | ❌ |
+| Full agency analytics | ✅ | ✅ | ❌ (own only) |
+| **Billing — invoices, plan, payment method, cancel** | ✅ | ✅ | ❌ |
+| Set/change Primary Contact | ✅ | ✅ | ❌ |
+| Transfer ownership | ✅ | ❌ | ❌ |
+| Delete agency | ✅ | ❌ | ❌ |
+| Demote/remove the Owner | ✅ (self only) | ❌ | ❌ |
 
-No personal data, no agent contact, no scraped third-party media.
+Roles are **additive** — one user can be Owner + Admin + Agent simultaneously. No exclusivity.
 
-## Architecture
+## Database changes
 
-```text
-On listing insert/update (trigger -> pg_net) ──► edge fn: generate-buyer-takeaway
-                                                       │
-   Backfill admin button / one-shot script ────────────┤
-                                                       ▼
-                                        Lovable AI Gateway (google/gemini-2.5-flash)
-                                                       │
-                                                       ▼
-                              properties.ai_buyer_takeaway              (text)
-                              properties.ai_buyer_takeaway_generated_at (timestamptz)
-                              properties.ai_buyer_takeaway_input_hash   (text)
+### 1. New table: `agency_members` (the multi-admin source of truth)
+```
+agency_members
+- id (uuid, pk)
+- agency_id (uuid, fk agencies)
+- user_id (uuid, fk auth.users)
+- role text check in ('owner','admin')   -- 'agent' lives in agents table, not here
+- is_primary_contact boolean default false
+- created_at, created_by
+- UNIQUE (agency_id, user_id, role)
+- Partial unique: ONE owner per agency, ONE primary_contact per agency
 ```
 
-- **New edge function `generate-buyer-takeaway`** (Deno, `verify_jwt = false`):
-  - Input: `{ property_id, force?: boolean }`.
-  - Loads property, city row, neighborhood avg, room-specific city price, recent comps summary (reuses the same RPCs the UI uses).
-  - Computes `priceContext` server-side so the model sees the same verdict as the UI.
-  - Hashes the brief inputs; skips regeneration if hash matches stored hash and not `force`.
-  - Calls Lovable AI Gateway (`google/gemini-2.5-flash`) with a tight system prompt:
-    - max 2 sentences, ≤280 chars
-    - no fabricated numbers — only restate signals from the brief
-    - must reference at least one concrete signal (gap %, comps count, premium driver, condition, ownership)
-    - must end with the single most useful next step for the buyer
-    - "Trusted Friend" voice; no "Anglo"; international-buyer framing
-  - Handles 429/402 gracefully (keeps existing value, logs).
-  - Writes the 3 columns above.
+Why a new table instead of reusing `agents.agency_role`: an Owner/Admin doesn't have to be a licensed selling agent. Keeping office-management roles separate from the sales `agents` table avoids polluting agent-facing analytics/leads with non-selling staff.
 
-- **DB migration**:
-  - Add the 3 columns.
-  - Trigger on `properties` after insert/update of price / size_sqm / condition / premium_drivers / premium_explanation / neighborhood / city / listing_status / vaad_bayit / ownership_type that calls the edge function via `pg_net` (fire-and-forget). Debounced inside the function by hash check.
+### 2. Keep `agencies.admin_user_id` as the **Owner pointer** (rename in code, not in DB)
+Backfill: every existing `admin_user_id` → seed an `agency_members` row with `role='owner'` AND `role='admin'` AND `is_primary_contact=true`. No one loses access on day one.
 
-- **Backfill**:
-  - One-shot edge function `backfill-buyer-takeaways` (admin-only) that pages through all `for_sale` + `for_rent` properties (~400) and invokes `generate-buyer-takeaway` with concurrency ~5. Logs progress; safe to re-run. Triggered from a button in the existing admin tools page.
+### 3. Security-definer helpers (avoid RLS recursion)
+```
+is_agency_owner(_uid uuid, _agency uuid) returns boolean
+is_agency_admin(_uid uuid, _agency uuid) returns boolean   -- true if owner OR admin
+is_agency_member(_uid uuid, _agency uuid) returns boolean  -- owner/admin/agent
+get_my_agency_role(_agency uuid) returns text              -- 'owner'|'admin'|'agent'|null
+```
 
-## Frontend changes (small)
+### 4. Update RLS policies
+Sweep every `agencies`/`properties`/`leads`/`agency_*` policy that currently checks `admin_user_id = auth.uid()` and replace with `is_agency_admin(auth.uid(), agency_id)`. Owner-only destructive policies (delete agency, transfer ownership) keep the strict `is_agency_owner` check.
 
-- `MarketIntelligence.tsx`:
-  - Add `ai_buyer_takeaway` to the property prop type.
-  - In `BuyWiseTake`, prefer `property.ai_buyer_takeaway` when present; otherwise fall back to existing `buildBuyerTakeaway(priceContext)`.
-  - Keep the tinted callout layout exactly as-is — only the text source changes.
-- Ensure the property-detail fetch selects the new column.
+## Backend (edge functions) changes
 
-## Quality + safety guardrails
+| Function | Change |
+|---|---|
+| `provision-agency-account` | After creating the user, also insert an `agency_members` row with `role='owner'` + `role='admin'` + `is_primary_contact=true`. |
+| New: `agency-promote-member` | Promote an existing agent → Admin (or demote). Caller must be Owner or Admin. |
+| New: `agency-transfer-ownership` | Move `owner` role from current Owner → target Admin. **Caller must be the current Owner.** Atomic: remove old owner row, insert new. |
+| New: `agency-delete` | Hard-delete the agency and cascade. Owner-only. Confirmation required (typed agency name). |
+| `handover-agency` | Updated to use the new owner-only check. |
 
-- Prompt explicitly forbids inventing numbers; model can only restate signals from the brief.
-- Hard length cap enforced after generation (truncate at sentence boundary if model overshoots).
-- If output fails validation (too long, empty, banned phrase), fall back to rule-based string and don't store.
-- Respects Core memory: "Trusted Friend" voice, "International buyers", NIS internally.
+All new functions: zod-validated input, JWT-validated caller, service-role for writes, audit log.
 
-## Out of scope
+## Frontend changes
 
-- No UI restructuring of the surrounding card (already done in the prior step).
-- No changes to comps math or price-context logic.
-- No new scraping or third-party calls.
+### Hooks
+- Replace `useMyAgency().isAgencyAdmin` with a richer `useAgencyPermissions(agencyId?)` returning:
+  ```ts
+  { role, isOwner, isAdmin, canManageBilling, canManageTeam,
+    canEditAgency, canManageListings, canTransferOwnership, canDeleteAgency, isLoading }
+  ```
+  `isAdmin` is `true` for both Owner and Admin (since Admin = Owner − 3 destructive actions). All gated pages just check `isAdmin`. Only the Settings → "Danger Zone" tab checks `isOwner`.
+- New `useAgencyMembers(agencyId)` — list owner + admins (separate from `useAgencyTeam` which is the sales roster).
+
+### Route guards (`ProtectedRoute`)
+- Add `requirePermission?: 'admin' | 'owner'` prop. Default behavior unchanged.
+- `/agency/settings/danger` and any future destructive route → `requirePermission="owner"`.
+
+### UI updates
+1. **Agency Team page** (`AgencyTeam.tsx`)
+   - New "Roles & Access" subsection at the top showing: Owner (1), Admins (N), Agents (N).
+   - Each agent row gets a kebab menu: "Promote to Admin" / "Demote to Agent".
+   - Each Admin row: "Make Primary Contact", "Transfer Ownership" (Owner-only, only on Admin rows), "Demote to Agent".
+   - Confirm dialogs for every promote/demote.
+
+2. **Agency Settings page** — split into tabs:
+   - **General** (profile, branding) — Admin
+   - **Sources & Imports** — Admin
+   - **Billing** entry point — Admin
+   - **Danger Zone** — Owner only: Transfer Ownership, Delete Agency
+
+3. **Agency Billing page** (`AgencyBilling.tsx`)
+   - Replace the `!isAgencyAdmin → access denied` block with `!canManageBilling`. Admins now pass through. Copy update: "Admin access required" stays accurate since Admin is the new floor.
+
+4. **Provisioning (white-glove) page** (`AdminAgencyProvisioning.tsx`)
+   - In the agency-creation form, add an "Also make this person an active Admin (recommended)" checkbox (default ON). Pass through to `provision-agency-account` so the seed user gets owner+admin+primary_contact.
+   - In **HandoverSection**, add a "Primary Contact" picker (defaults to the Owner; can pick any Admin) before sending the handover email.
+
+5. **Header / portal switcher** — already context-switches; no nav changes needed. A user with `agent + admin` roles already sees both portal links.
+
+### Erez Real Estate retroactive fix (one-time)
+A second migration step (data migration via `insert`-tool, not schema):
+- Identify Erez's record. Wipe `admin_user_id` placeholder if it points at a ghost user, OR keep it.
+- Insert the office-manager agent's `auth.users.id` into `agency_members` as `role='admin'` + `is_primary_contact=true`. Leave `owner` row empty/pending (allowed — Owner is optional after seed).
+- Add UI banner on agency dashboard: "Owner not yet assigned — contact BuyWise to claim ownership" (only visible to Admins, suppressible).
+
+## Edge cases & guards
+
+1. **Agency with no Owner** — fully allowed. All ops still work via Admins. Only the 3 destructive ops are blocked with a clear "Owner required" message.
+2. **Last Admin tries to demote themselves** — blocked: "You're the last Admin. Promote someone first."
+3. **Owner tries to demote themselves** — only allowed via "Transfer Ownership" flow (atomic). No orphaned-owner state.
+4. **Deleting a user who is Owner of an agency** — `delete-account` edge function refuses unless ownership is transferred or agency is deleted first. Already partially handled; tighten with the new helper.
+5. **Promote an agent who isn't on the agents table** — flow always creates/links an `agency_members` row keyed on `auth.uid`, independent of `agents` table. Office managers who don't sell never need an `agents` row.
+6. **Audit log** — every promote/demote/transfer/delete writes to existing `agency_audit_log` (or `provisioning_audit_log`) with actor, target, action, timestamp.
+7. **Realtime UI** — invalidate `['myAgency']`, `['agencyMembers']`, `['userRoles']` on every mutation so portal access updates without refresh.
+8. **Email notifications** — promote/demote/ownership-transfer triggers a Resend email to the affected user ("You're now an Admin of {agency}").
+
+## Rollout order (single PR per step, each ships independently)
+
+1. **DB migration**: create `agency_members`, helpers, backfill from `admin_user_id`, update RLS. (No UI change yet — old code keeps working because helpers also accept the legacy `admin_user_id`.)
+2. **Hooks**: ship `useAgencyPermissions` + `useAgencyMembers`. Refactor existing pages to use them but keep behavior identical.
+3. **Edge functions**: `agency-promote-member`, `agency-transfer-ownership`, `agency-delete`. Update `provision-agency-account` to seed `agency_members`.
+4. **Team UI**: roles section + promote/demote menu.
+5. **Settings UI**: Danger Zone tab + ownership transfer + delete agency.
+6. **Provisioning UI**: "also make Admin" checkbox + primary-contact picker.
+7. **Erez data fix**: one-off insert via insert tool. Verify in Lovable.
+
+## Out of scope (intentionally deferred)
+- Self-serve agency signup changes (you white-glove 100% today; revisit when self-serve volume picks up).
+- Granular per-Admin permissions (can-do-billing-but-not-team, etc.) — current flat Admin role is plenty.
+- Multi-Owner agencies — single Owner is the legal/billing simplification we want.
+
+---
+
+Say **"go"** and I'll start with step 1 (DB migration). Each step ends with a verification you can click through in the preview before I move to the next.

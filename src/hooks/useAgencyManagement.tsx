@@ -55,6 +55,29 @@ export function useMyAgency() {
     queryFn: async () => {
       if (!user) return null;
 
+      // Find agency the user is an owner/admin of via agency_members,
+      // falling back to legacy admin_user_id pointer.
+      const { data: memberRows } = await supabase
+        .from('agency_members')
+        .select('agency_id, role')
+        .eq('user_id', user.id)
+        .in('role', ['owner', 'admin']);
+
+      const agencyIds = (memberRows ?? []).map((r: any) => r.agency_id);
+
+      if (agencyIds.length > 0) {
+        const { data, error } = await supabase
+          .from('agencies')
+          .select('*')
+          .in('id', agencyIds)
+          .order('created_at', { ascending: true })
+          .limit(1)
+          .maybeSingle();
+        if (error) throw error;
+        if (data) return data as ManagedAgency;
+      }
+
+      // Legacy fallback
       const { data, error } = await supabase
         .from('agencies')
         .select('*')
@@ -62,14 +85,32 @@ export function useMyAgency() {
         .order('created_at', { ascending: true })
         .limit(1)
         .maybeSingle();
-
       if (error) throw error;
       return data as ManagedAgency | null;
     },
     enabled: !!user,
   });
 
-  const isAgencyAdmin = !!(user && query.data && query.data.admin_user_id === user.id);
+  // Compute admin status via membership OR legacy pointer.
+  const { data: isMemberAdmin } = useQuery({
+    queryKey: ['isAgencyAdminMembership', user?.id, query.data?.id],
+    queryFn: async () => {
+      if (!user || !query.data?.id) return false;
+      const { data } = await supabase
+        .from('agency_members')
+        .select('id')
+        .eq('agency_id', query.data.id)
+        .eq('user_id', user.id)
+        .in('role', ['owner', 'admin'])
+        .maybeSingle();
+      return !!data;
+    },
+    enabled: !!user && !!query.data?.id,
+  });
+
+  const isAgencyAdmin = !!(user && query.data && (
+    isMemberAdmin || query.data.admin_user_id === user.id
+  ));
 
   return { ...query, isAgencyAdmin };
 }
