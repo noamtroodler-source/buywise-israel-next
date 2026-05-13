@@ -3515,8 +3515,7 @@ function extractImagesFromHtml(html: string, pageUrl: string): string[] {
 
   let document: any = null;
   try {
-    const parsed = parseHTML(html);
-    document = parsed.document;
+    document = new DOMParser().parseFromString(html, 'text/html');
   } catch {
     return extractImagesFromHtmlLegacy(html, pageUrl);
   }
