@@ -188,6 +188,7 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
   const isProcessing = processBatchMutation.isPending || (currentJob?.status === 'processing' && !isStalled) || isProcessingAll;
   const isReady = (currentJob?.status === 'ready' && pendingCount > 0) || isStalled;
   const isCompleted = currentJob?.status === 'completed';
+  const isPaused = currentJob?.status === 'paused';
   const discoveringSourceType = isBackgroundDiscovering ? currentJob?.source_type : undefined;
   const madlanGateBlocked = currentJob?.source_type === 'madlan' && Boolean(currentJobDiagnostics?.blocked);
 
