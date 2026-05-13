@@ -257,16 +257,33 @@ export function AgentRosterSection({ agencyId }: Props) {
                     )}
                   </TableCell>
                   <TableCell>
-                    {a.user_id ? (
-                      <Badge variant="secondary" className="gap-1">
-                        <UserCheck className="h-3 w-3" /> Provisioned
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline">No account</Badge>
-                    )}
+                    <div className="flex flex-col gap-1 items-start">
+                      {a.user_id ? (
+                        <Badge variant="secondary" className="gap-1">
+                          <UserCheck className="h-3 w-3" /> Provisioned
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline">No account</Badge>
+                      )}
+                      {a.user_id && ownerUserIds.has(a.user_id) && (
+                        <Badge className="gap-1 bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/40" variant="outline">
+                          <Shield className="h-3 w-3" /> Owner
+                        </Badge>
+                      )}
+                      {a.user_id && adminUserIds.has(a.user_id) && !ownerUserIds.has(a.user_id) && (
+                        <Badge className="gap-1 bg-primary/10 text-primary border-primary/40" variant="outline">
+                          <Shield className="h-3 w-3" /> Admin
+                        </Badge>
+                      )}
+                      {a.user_id && primaryUserId === a.user_id && (
+                        <Badge variant="outline" className="gap-1">
+                          <Star className="h-3 w-3 fill-current" /> Primary contact
+                        </Badge>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-2">
+                    <div className="flex items-center justify-end gap-2 flex-wrap">
                       <Button
                         size="sm"
                         variant="ghost"
@@ -277,6 +294,41 @@ export function AgentRosterSection({ agencyId }: Props) {
                       </Button>
                       {a.user_id ? (
                         <>
+                          {!adminUserIds.has(a.user_id) ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => promoteAdmin.mutate({ agencyId, userId: a.user_id! })}
+                              disabled={promoteAdmin.isPending}
+                              title="Grant full agency admin permissions"
+                            >
+                              <Shield className="h-3 w-3 mr-1" /> Make admin
+                            </Button>
+                          ) : !ownerUserIds.has(a.user_id) ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                if (confirm(`Remove admin permissions from ${a.name}?`)) {
+                                  demoteAdmin.mutate({ agencyId, userId: a.user_id! });
+                                }
+                              }}
+                              disabled={demoteAdmin.isPending}
+                            >
+                              <ShieldOff className="h-3 w-3 mr-1" /> Remove admin
+                            </Button>
+                          ) : null}
+                          {adminUserIds.has(a.user_id) && primaryUserId !== a.user_id && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setPrimary.mutate({ agencyId, userId: a.user_id! })}
+                              disabled={setPrimary.isPending}
+                              title="Set as primary contact"
+                            >
+                              <Star className="h-3 w-3 mr-1" /> Set primary
+                            </Button>
+                          )}
                           <Button
                             size="sm"
                             variant="outline"
