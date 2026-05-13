@@ -263,7 +263,14 @@ export function ListingDetailDrawer({ agencyId, listing, onClose }: Props) {
                     {section.title === 'Photos' && listing.images && listing.images.length > 0 && (
                       <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
                         {listing.images.map((img, i) => (
-                          <img key={`${img}-${i}`} src={img} alt={`Listing photo ${i + 1}`} className="h-16 w-16 flex-shrink-0 rounded-xl object-cover" loading="lazy" />
+                          <button
+                            key={`${img}-${i}`}
+                            type="button"
+                            onClick={() => setLightboxIndex(i)}
+                            className="h-16 w-16 flex-shrink-0 rounded-xl overflow-hidden ring-offset-background transition hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                          >
+                            <img src={img} alt={`Listing photo ${i + 1}`} className="h-full w-full object-cover" loading="lazy" />
+                          </button>
                         ))}
                       </div>
                     )}
