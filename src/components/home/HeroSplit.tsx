@@ -51,7 +51,11 @@ export function HeroSplit() {
       <div className="absolute inset-0">
         <img 
           src={heroImage} 
-          alt="Israeli cityscape" 
+          alt="Israeli cityscape"
+          width={1920}
+          height={1080}
+          fetchPriority="high"
+          decoding="async"
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-foreground/75 via-foreground/45 to-foreground/15" />
