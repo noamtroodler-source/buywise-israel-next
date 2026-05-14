@@ -576,14 +576,40 @@ function normalizedLocationTokens(value: string | null | undefined): string[] {
     .filter(Boolean);
 }
 
-function detectOutsideIsraelListing(listing: Record<string, any>, url: string, pageText: string): { outside: boolean; reason: string } {
+type OutsideIsraelTriggerLayer =
+  | "city_match"
+  | "coords_bbox"
+  | "token_scan"
+  | "url_slug"
+  | "structured_regex";
+
+type OutsideIsraelCheck =
+  | { outside: false; reason: "" }
+  | { outside: true; reason: string; trigger_layer: OutsideIsraelTriggerLayer; matched_token: string };
+
+// Build a single alternation from EXTERNAL_LOCATION_KEYS so the structured-regex
+// stays in lockstep with the token dictionary. Hebrew tokens are excluded from
+// the Latin-only alternation; they're already covered by the token scan.
+const STRUCTURED_OUTSIDE_REGEX = (() => {
+  const latinTokens = Array.from(EXTERNAL_LOCATION_KEYS)
+    .filter((tok) => /^[a-z]+$/.test(tok))
+    .sort((a, b) => b.length - a.length) // longest-first to avoid partial matches
+    .map((tok) => tok.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  // Field labels: English + Hebrew (country / location / city / area / region / מדינה / אזור / מיקום)
+  return new RegExp(
+    `(?:country|location|city|area|region|state|מדינה|אזור|מיקום)\\s*[:\\-–>]\\s*([A-Za-z][A-Za-z\\s\\-]{2,40})`,
+    "i",
+  );
+})();
+
+function detectOutsideIsraelListing(listing: Record<string, any>, url: string, pageText: string): OutsideIsraelCheck {
   const cityKey = normalizeCityStr(String(listing.city || ""));
   if (cityKey && EXTERNAL_LOCATION_KEYS.has(cityKey)) {
-    return { outside: true, reason: `outside Israel city/country detected: ${listing.city}` };
+    return { outside: true, reason: `outside Israel city/country detected: ${listing.city}`, trigger_layer: "city_match", matched_token: cityKey };
   }
 
   if (!isCoordinateInIsrael(listing._yad2_latitude ?? listing.latitude ?? null, listing._yad2_longitude ?? listing.longitude ?? null)) {
-    return { outside: true, reason: "coordinates outside Israel bounds" };
+    return { outside: true, reason: "coordinates outside Israel bounds", trigger_layer: "coords_bbox", matched_token: `${listing.latitude},${listing.longitude}` };
   }
 
   const locationText = `${listing.address || ""}\n${listing.title || ""}\n${listing.description || ""}`;
@@ -592,21 +618,25 @@ function detectOutsideIsraelListing(listing: Record<string, any>, url: string, p
     || Object.values(CITY_ALIASES).flat().some((alias) => /[\u0590-\u05FF]/.test(alias) && locationText.includes(alias));
   const externalHits = locationTokens.filter((token) => EXTERNAL_LOCATION_KEYS.has(normalizeCityStr(token)));
   if (!hasIsraeliCitySignal && externalHits.length > 0) {
-    return { outside: true, reason: `outside Israel location detected: ${externalHits[0]}` };
+    return { outside: true, reason: `outside Israel location detected: ${externalHits[0]}`, trigger_layer: "token_scan", matched_token: externalHits[0] };
   }
 
   try {
     const pathTokens = normalizedLocationTokens(decodeURIComponent(new URL(url).pathname));
     const pathExternal = pathTokens.find((token) => EXTERNAL_LOCATION_KEYS.has(normalizeCityStr(token)));
     if (pathExternal && !hasIsraeliCitySignal) {
-      return { outside: true, reason: `outside Israel URL location detected: ${pathExternal}` };
+      return { outside: true, reason: `outside Israel URL location detected: ${pathExternal}`, trigger_layer: "url_slug", matched_token: pathExternal };
     }
   } catch { /* ignore malformed source URLs */ }
 
   const text = pageText.slice(0, 30_000);
-  const structuredOutsideMatch = text.match(/(?:country|location|city|area|region)\s*[:\-–>]\s*(Cyprus|Larnaca|Limassol|Paphos|Nicosia|Greece|Athens|Dubai|UAE|London|United Kingdom|New York|Miami|Florida|Paris|Spain|Portugal)/i);
+  const structuredOutsideMatch = text.match(STRUCTURED_OUTSIDE_REGEX);
   if (structuredOutsideMatch && !hasIsraeliCitySignal) {
-    return { outside: true, reason: `outside Israel structured location detected: ${structuredOutsideMatch[1]}` };
+    const captured = structuredOutsideMatch[1].trim();
+    const capturedKey = normalizeCityStr(captured);
+    if (EXTERNAL_LOCATION_KEYS.has(capturedKey)) {
+      return { outside: true, reason: `outside Israel structured location detected: ${captured}`, trigger_layer: "structured_regex", matched_token: capturedKey };
+    }
   }
 
   return { outside: false, reason: "" };
