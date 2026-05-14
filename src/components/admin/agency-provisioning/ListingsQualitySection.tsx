@@ -64,6 +64,7 @@ const FILTER_LABEL: Record<Filter, string> = {
 
 export function ListingsQualitySection({ agencyId }: { agencyId: string }) {
   const { data: listings = [], isLoading, refetch } = useAgencyListings(agencyId);
+  const { data: skipCounts } = useImportSkipCounts(agencyId);
   const { data: agents = [] } = useAgencyAgents(agencyId);
   const runAudit = useRunListingsAudit();
   const bulkUpdate = useBulkUpdateListings(agencyId);
