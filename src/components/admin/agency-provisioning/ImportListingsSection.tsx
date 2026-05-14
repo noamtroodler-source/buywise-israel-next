@@ -118,23 +118,31 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
 
   const handleSaveAndDiscover = async (e: React.FormEvent) => {
     e.preventDefault();
+    const myToken = ++cancelTokenRef.current;
+    const isCancelled = () => cancelTokenRef.current !== myToken;
+
     const entries = (['website', 'madlan', 'yad2'] as const)
       .map((sourceType) => ({ source_type: sourceType, source_url: sourceUrls[sourceType].trim(), priority: SOURCE_META[sourceType].priority }))
       .filter((source) => source.source_url.length > 0);
     if (entries.length === 0) return;
 
-    // Only sync sources whose URL was actually changed in this session.
-    // Prevents re-scanning previously-saved sources that the user didn't touch.
     const changedTypes = new Set(
       entries
         .filter((entry) => entry.source_url !== (initialUrls[entry.source_type] || '').trim())
         .map((entry) => entry.source_type)
     );
 
-    const savedSources = await upsertSourcesMutation.mutateAsync({
-      agency_id: agencyId,
-      sources: entries,
-    });
+    let savedSources: any[];
+    try {
+      savedSources = await upsertSourcesMutation.mutateAsync({
+        agency_id: agencyId,
+        sources: entries,
+      });
+    } catch (err) {
+      if (isCancelled()) return;
+      throw err;
+    }
+    if (isCancelled()) return;
 
     const sourcesToSync = changedTypes.size > 0
       ? savedSources.filter((s: any) => changedTypes.has(s.source_type))
@@ -142,8 +150,25 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
 
     if (sourcesToSync.length === 0) return;
 
-    const results = await syncAllSourcesMutation.mutateAsync({ sources: sourcesToSync, importType: 'both' });
-    const firstJobId = results.find((result) => result.data?.job_id)?.data?.job_id;
+    let results: any[];
+    try {
+      results = await syncAllSourcesMutation.mutateAsync({ sources: sourcesToSync, importType: 'both' });
+    } catch (err) {
+      if (isCancelled()) return;
+      throw err;
+    }
+
+    const createdJobIds = results.map((r: any) => r?.data?.job_id).filter(Boolean) as string[];
+
+    if (isCancelled()) {
+      // Cancellation arrived while sync was in flight — clean up any jobs it produced.
+      for (const id of createdJobIds) {
+        try { await deleteJobMutation.mutateAsync(id); } catch {}
+      }
+      return;
+    }
+
+    const firstJobId = createdJobIds[0];
     if (firstJobId) {
       setActiveJobId(firstJobId);
     }
