@@ -329,7 +329,7 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
                       // get created moments after cancel by an in-flight sync).
                       const sweep = async () => {
                         const { data } = await supabase
-                          .from('agency_listing_import_jobs')
+                          .from('import_jobs')
                           .select('id, status')
                           .eq('agency_id', agencyId)
                           .in('status', ['discovering', 'ready', 'processing', 'paused']);
