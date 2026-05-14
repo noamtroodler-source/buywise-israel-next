@@ -361,17 +361,6 @@ export function AgentRosterSection({ agencyId }: Props) {
                               <ShieldOff className="h-3 w-3 mr-1" /> Remove admin
                             </Button>
                           ) : null}
-                          {adminUserIds.has(a.user_id) && primaryUserId !== a.user_id && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => setPrimary.mutate({ agencyId, userId: a.user_id! })}
-                              disabled={setPrimary.isPending}
-                              title="Set as primary contact"
-                            >
-                              <Star className="h-3 w-3 mr-1" /> Set primary
-                            </Button>
-                          )}
                           <Button
                             size="sm"
                             variant="outline"
