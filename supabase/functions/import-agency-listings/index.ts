@@ -2357,7 +2357,31 @@ async function handleDiscover(body: any) {
   const { error: itemsErr } = await sb.from("import_job_items").insert(items);
   if (itemsErr) throw new Error(`Failed to create job items: ${itemsErr.message}`);
 
-  return { job_id: job.id, total_listings: listingUrls.length, total_discovered: allUrls.length, new_urls: listingUrls.length, skipped_existing: skippedExisting };
+  // Auto-chain: kick off process_batch in the background so discover→process is
+  // one user action. Without this, "ready" jobs sit forever now that the
+  // nightly cron is disabled.
+  const createdJobId = job.id;
+  if (createdJobId && listingUrls.length > 0) {
+    EdgeRuntime.waitUntil(
+      (async () => {
+        let remaining = listingUrls.length;
+        let safety = 0;
+        while (remaining > 0 && safety < 100) {
+          safety++;
+          try {
+            const result: any = await handleProcessBatch({ job_id: createdJobId });
+            remaining = result?.remaining ?? 0;
+            if (result?.status === "completed") break;
+          } catch (err) {
+            console.error("Auto-chain process_batch failed:", err);
+            break;
+          }
+        }
+      })().catch((err) => console.error("Auto-chain wrapper failed:", err))
+    );
+  }
+
+  return { job_id: job.id, total_listings: listingUrls.length, total_discovered: allUrls.length, new_urls: listingUrls.length, skipped_existing: skippedExisting, started_async: true };
 }
 
 async function handleWebsiteDiscoverAsync(body: any) {
