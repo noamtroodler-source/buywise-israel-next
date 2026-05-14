@@ -523,10 +523,12 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
                     </Button>
                   )}
 
-                  <Button onClick={handleProcessBatch} disabled={isProcessing} variant="outline" className="rounded-xl">
-                    <Download className="h-4 w-4 mr-2" />
-                    {doneCount + skippedCount + failedCount > 0 ? 'Next' : 'First'} Batch ({Math.min(pendingCount, 9)})
-                  </Button>
+                  {(isReadyStuck || isStalled) && (
+                    <Button onClick={handleProcessBatch} disabled={isProcessing} variant="outline" className="rounded-xl">
+                      <Download className="h-4 w-4 mr-2" />
+                      Resume Stuck Import ({Math.min(pendingCount, 9)})
+                    </Button>
+                  )}
                 </>
               )}
 
