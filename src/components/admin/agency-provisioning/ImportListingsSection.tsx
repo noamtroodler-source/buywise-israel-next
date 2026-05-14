@@ -316,25 +316,43 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
                   className="rounded-xl text-destructive hover:text-destructive"
                   disabled={isCancelling}
                   onClick={async () => {
+                    // Bump the token so any in-flight handleSaveAndDiscover bails out.
+                    cancelTokenRef.current += 1;
                     setIsCancelling(true);
+                    setActiveJobId(null);
                     try {
                       upsertSourcesMutation.reset();
                       syncAllSourcesMutation.reset();
                       syncOneSourceMutation.reset();
 
-                      // Delete every in-flight job for this agency (not just the
-                      // one currently surfaced) so a fresh discover can start clean.
-                      const inflight = jobs.filter((j) =>
-                        ['discovering', 'ready', 'processing', 'paused'].includes(j.status)
-                      );
-                      for (const j of inflight) {
-                        try {
-                          await deleteJobMutation.mutateAsync(j.id);
-                        } catch (err) {
-                          console.error('[cancel-and-start-over] failed to delete job', j.id, err);
+                      // Sweep DB for any active jobs (including ones that may
+                      // get created moments after cancel by an in-flight sync).
+                      const sweep = async () => {
+                        const { data } = await supabase
+                          .from('agency_listing_import_jobs')
+                          .select('id, status')
+                          .eq('agency_id', agencyId)
+                          .in('status', ['discovering', 'ready', 'processing', 'paused']);
+                        for (const j of data ?? []) {
+                          try {
+                            await deleteJobMutation.mutateAsync(j.id);
+                          } catch (err) {
+                            console.error('[cancel] delete job failed', j.id, err);
+                          }
                         }
+                        return (data ?? []).length;
+                      };
+
+                      // Run a few sweeps to catch jobs created by the
+                      // still-resolving sync request after the first sweep.
+                      for (let i = 0; i < 4; i++) {
+                        const n = await sweep();
+                        if (i > 0 && n === 0) break;
+                        await new Promise((r) => setTimeout(r, 1500));
                       }
-                      setActiveJobId(null);
+
+                      await queryClient.invalidateQueries({ queryKey: ['import-jobs', agencyId] });
+                      await queryClient.invalidateQueries({ queryKey: ['agency-sources', agencyId] });
                     } finally {
                       setIsCancelling(false);
                     }
