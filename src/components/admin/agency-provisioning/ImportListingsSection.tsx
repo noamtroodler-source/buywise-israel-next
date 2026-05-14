@@ -279,6 +279,26 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
               )}
               </Button>
 
+              {isDiscovering && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-xl text-destructive hover:text-destructive"
+                  onClick={() => {
+                    upsertSourcesMutation.reset();
+                    syncAllSourcesMutation.reset();
+                    syncOneSourceMutation.reset();
+                    if (currentJob && ['discovering', 'ready'].includes(currentJob.status)) {
+                      deleteJobMutation.mutate(currentJob.id);
+                    }
+                    setActiveJobId(null);
+                  }}
+                >
+                  <XCircle className="h-4 w-4 mr-2" />
+                  Cancel & start over
+                </Button>
+              )}
+
               <Button
                 type="button"
                 variant="outline"
