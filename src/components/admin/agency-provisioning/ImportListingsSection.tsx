@@ -79,11 +79,13 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
   const { startProcessAll, stopProcessAll, isProcessingAll, processingStartTime, processedSoFar } = useProcessAll();
 
   useEffect(() => {
-    setSourceUrls({
+    const next = {
       website: sources.find((source) => source.source_type === 'website')?.source_url || '',
       yad2: sources.find((source) => source.source_type === 'yad2')?.source_url || '',
       madlan: sources.find((source) => source.source_type === 'madlan')?.source_url || '',
-    });
+    };
+    setSourceUrls(next);
+    setInitialUrls(next);
   }, [sources]);
 
   const activeSources = useMemo(
