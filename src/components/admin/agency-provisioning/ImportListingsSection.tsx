@@ -216,7 +216,7 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
   })();
 
   const isBackgroundDiscovering = currentJob?.status === 'discovering';
-  const isDiscovering = upsertSourcesMutation.isPending || syncAllSourcesMutation.isPending || syncOneSourceMutation.isPending || isBackgroundDiscovering;
+  const isDiscovering = !isCancelling && (upsertSourcesMutation.isPending || syncAllSourcesMutation.isPending || syncOneSourceMutation.isPending || isBackgroundDiscovering);
   const isProcessing = processBatchMutation.isPending || (currentJob?.status === 'processing' && !isStalled) || isProcessingAll;
   const isReady = (currentJob?.status === 'ready' && pendingCount > 0) || isStalled;
   const isCompleted = currentJob?.status === 'completed';
