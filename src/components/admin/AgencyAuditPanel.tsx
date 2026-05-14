@@ -36,12 +36,20 @@ export function AgencyAuditPanel({ agencyId }: { agencyId: string }) {
 
   const run = useMutation({
     mutationFn: async (): Promise<AuditResult> => {
-      const { data, error } = await supabase.functions.invoke('audit-agency-listings', {
-        body: { agency_id: agencyId, sample_size: sampleSize },
+      const { data: { session } } = await supabase.auth.getSession();
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/audit-agency-listings`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${session?.access_token ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ agency_id: agencyId, sample_size: sampleSize }),
       });
-      if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
-      return data as AuditResult;
+      const json = await res.json();
+      if (!res.ok || json?.error) throw new Error(json?.error || `HTTP ${res.status}`);
+      return json as AuditResult;
     },
     onSuccess: (data) => {
       setResult(data);
