@@ -93,11 +93,6 @@ export function AgencyAdminsPanel({ agencyId }: Props) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              {!m.is_primary_contact && (
-                <DropdownMenuItem onClick={() => setPrimary.mutate({ agencyId, userId: m.user_id })}>
-                  <Star className="h-4 w-4 mr-2" /> Make primary contact
-                </DropdownMenuItem>
-              )}
               {!isOwnerRow && perms.canTransferOwnership && (
                 <DropdownMenuItem onClick={() => setTransferTarget({ userId: m.user_id, name: m.display_name || m.email || 'this admin' })}>
                   <Crown className="h-4 w-4 mr-2" /> Make founder
