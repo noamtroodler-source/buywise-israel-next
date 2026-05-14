@@ -536,31 +536,12 @@ function matchSupportedCity(city: string | undefined | null): string | null {
 const ISRAEL_BOUNDS = { minLat: 29.45, maxLat: 33.35, minLng: 34.15, maxLng: 35.95 };
 
 const EXTERNAL_LOCATION_KEYS = new Set([
-  // Cyprus / Greece
   "cyprus", "larnaca", "limassol", "paphos", "nicosia", "greece", "athens",
-  "thessaloniki", "kassandra", "sithonia", "pefkohori", "chalkidiki", "halkidiki",
-  // Spain / Portugal
-  "spain", "madrid", "barcelona", "marbella", "malaga", "costadelsol",
-  "ibiza", "mallorca", "valencia", "portugal", "lisbon", "porto", "algarve", "cascais",
-  // France / Monaco / Italy
-  "france", "paris", "cannes", "nice", "monaco", "montecarlo", "capferrat", "cotedazur",
-  "italy", "rome", "milan", "florence", "venice",
-  // UK / Ireland
-  "unitedkingdom", "uk", "england", "london", "manchester", "ireland", "dublin",
-  // USA
-  "unitedstates", "usa", "newyork", "manhattan", "brooklyn", "miami", "florida",
-  "losangeles", "aspen", "boston", "chicago",
-  // Middle East / Gulf (non-Israel)
-  "dubai", "uae", "abudhabi", "doha", "qatar", "bahrain", "muscat", "oman",
-  // Caucasus / Eastern Europe
-  "georgia", "tbilisi", "batumi", "hungary", "budapest", "montenegro", "kotor",
-  "turkey", "istanbul", "bodrum", "antalya",
-  // LatAm / Caribbean
-  "panama", "mexico", "tulum", "playadelcarmen", "puntacana", "costarica",
-  // Asia
-  "thailand", "bangkok", "phuket", "kohsamui", "bali", "indonesia", "vietnam",
-  // Hebrew tokens (full strings; matched via includes() in token scan)
-  "יוון", "קפריסין", "דובאי", "מיאמי", "לונדון", "פריז", "ספרד", "פורטוגל", "תאילנד",
+  "spain", "madrid", "barcelona", "portugal", "lisbon", "france", "paris",
+  "italy", "rome", "milan", "unitedkingdom", "uk", "england", "london",
+  "unitedstates", "usa", "newyork", "miami", "florida", "losangeles",
+  "dubai", "uae", "georgia", "tbilisi", "batumi", "hungary", "budapest",
+  "panama", "mexico", "thailand", "bangkok",
 ]);
 
 function isCoordinateInIsrael(latitude: number | null | undefined, longitude: number | null | undefined): boolean {
@@ -576,40 +557,14 @@ function normalizedLocationTokens(value: string | null | undefined): string[] {
     .filter(Boolean);
 }
 
-type OutsideIsraelTriggerLayer =
-  | "city_match"
-  | "coords_bbox"
-  | "token_scan"
-  | "url_slug"
-  | "structured_regex";
-
-type OutsideIsraelCheck =
-  | { outside: false; reason: "" }
-  | { outside: true; reason: string; trigger_layer: OutsideIsraelTriggerLayer; matched_token: string };
-
-// Build a single alternation from EXTERNAL_LOCATION_KEYS so the structured-regex
-// stays in lockstep with the token dictionary. Hebrew tokens are excluded from
-// the Latin-only alternation; they're already covered by the token scan.
-const STRUCTURED_OUTSIDE_REGEX = (() => {
-  const latinTokens = Array.from(EXTERNAL_LOCATION_KEYS)
-    .filter((tok) => /^[a-z]+$/.test(tok))
-    .sort((a, b) => b.length - a.length) // longest-first to avoid partial matches
-    .map((tok) => tok.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
-  // Field labels: English + Hebrew (country / location / city / area / region / מדינה / אזור / מיקום)
-  return new RegExp(
-    `(?:country|location|city|area|region|state|מדינה|אזור|מיקום)\\s*[:\\-–>]\\s*([A-Za-z][A-Za-z\\s\\-]{2,40})`,
-    "i",
-  );
-})();
-
-function detectOutsideIsraelListing(listing: Record<string, any>, url: string, pageText: string): OutsideIsraelCheck {
+function detectOutsideIsraelListing(listing: Record<string, any>, url: string, pageText: string): { outside: boolean; reason: string } {
   const cityKey = normalizeCityStr(String(listing.city || ""));
   if (cityKey && EXTERNAL_LOCATION_KEYS.has(cityKey)) {
-    return { outside: true, reason: `outside Israel city/country detected: ${listing.city}`, trigger_layer: "city_match", matched_token: cityKey };
+    return { outside: true, reason: `outside Israel city/country detected: ${listing.city}` };
   }
 
   if (!isCoordinateInIsrael(listing._yad2_latitude ?? listing.latitude ?? null, listing._yad2_longitude ?? listing.longitude ?? null)) {
-    return { outside: true, reason: "coordinates outside Israel bounds", trigger_layer: "coords_bbox", matched_token: `${listing.latitude},${listing.longitude}` };
+    return { outside: true, reason: "coordinates outside Israel bounds" };
   }
 
   const locationText = `${listing.address || ""}\n${listing.title || ""}\n${listing.description || ""}`;
@@ -618,25 +573,21 @@ function detectOutsideIsraelListing(listing: Record<string, any>, url: string, p
     || Object.values(CITY_ALIASES).flat().some((alias) => /[\u0590-\u05FF]/.test(alias) && locationText.includes(alias));
   const externalHits = locationTokens.filter((token) => EXTERNAL_LOCATION_KEYS.has(normalizeCityStr(token)));
   if (!hasIsraeliCitySignal && externalHits.length > 0) {
-    return { outside: true, reason: `outside Israel location detected: ${externalHits[0]}`, trigger_layer: "token_scan", matched_token: externalHits[0] };
+    return { outside: true, reason: `outside Israel location detected: ${externalHits[0]}` };
   }
 
   try {
     const pathTokens = normalizedLocationTokens(decodeURIComponent(new URL(url).pathname));
     const pathExternal = pathTokens.find((token) => EXTERNAL_LOCATION_KEYS.has(normalizeCityStr(token)));
     if (pathExternal && !hasIsraeliCitySignal) {
-      return { outside: true, reason: `outside Israel URL location detected: ${pathExternal}`, trigger_layer: "url_slug", matched_token: pathExternal };
+      return { outside: true, reason: `outside Israel URL location detected: ${pathExternal}` };
     }
   } catch { /* ignore malformed source URLs */ }
 
   const text = pageText.slice(0, 30_000);
-  const structuredOutsideMatch = text.match(STRUCTURED_OUTSIDE_REGEX);
+  const structuredOutsideMatch = text.match(/(?:country|location|city|area|region)\s*[:\-–>]\s*(Cyprus|Larnaca|Limassol|Paphos|Nicosia|Greece|Athens|Dubai|UAE|London|United Kingdom|New York|Miami|Florida|Paris|Spain|Portugal)/i);
   if (structuredOutsideMatch && !hasIsraeliCitySignal) {
-    const captured = structuredOutsideMatch[1].trim();
-    const capturedKey = normalizeCityStr(captured);
-    if (EXTERNAL_LOCATION_KEYS.has(capturedKey)) {
-      return { outside: true, reason: `outside Israel structured location detected: ${captured}`, trigger_layer: "structured_regex", matched_token: capturedKey };
-    }
+    return { outside: true, reason: `outside Israel structured location detected: ${structuredOutsideMatch[1]}` };
   }
 
   return { outside: false, reason: "" };
@@ -2314,30 +2265,13 @@ async function handleDiscover(body: any) {
   // same /property/* URL pattern. Reject those at the URL stage so we never spend AI
   // tokens on them. Matches both Latin and Hebrew tokens in the decoded path.
   const NON_ISRAEL_SLUG_TOKENS = [
-    // Latin tokens — Greece / Cyprus / Gulf
+    // Latin tokens
     "ierissos", "chalkidiki", "halkidiki", "faliro", "paliouri", "athens", "greece",
     "thessaloniki", "kassandra", "sithonia", "pefkohori", "nea-moudania", "sani",
-    "cyprus", "larnaca", "limassol", "paphos", "nicosia", "dubai", "uae", "abudhabi",
-    "doha", "qatar",
-    // Spain / Portugal
-    "marbella", "malaga", "costa-del-sol", "ibiza", "mallorca", "barcelona", "madrid",
-    "algarve", "cascais", "porto", "lisbon",
-    // France / Monaco / Italy
-    "cannes", "nice", "monaco", "monte-carlo", "cap-ferrat", "cote-d-azur", "cotedazur",
-    "paris", "rome", "milan", "florence", "venice",
-    // UK / USA
-    "london", "manchester", "manhattan", "brooklyn", "miami", "florida", "los-angeles",
-    "aspen", "boston",
-    // Caucasus / Eastern Europe / Turkey
-    "tbilisi", "batumi", "georgia", "budapest", "montenegro", "kotor", "istanbul",
-    "bodrum", "antalya",
-    // LatAm / Caribbean / Asia
-    "tulum", "playa-del-carmen", "punta-cana", "costa-rica", "panama", "bali",
-    "phuket", "koh-samui", "bangkok", "thailand",
+    "cyprus", "larnaca", "limassol", "paphos", "nicosia", "dubai", "tbilisi", "batumi",
     // Hebrew tokens (already URL-decoded)
-    "יוון", "יווני", "חלקידיקי", "חלדקיקי", "פאלרוס", "פאליורי",
+    "יוון", "יווני", "חלקידיקי", "חלדקיקי", "פאלרוס", "פאליורי", "ierissos",
     "סלוניקי", "אתונה", "קסנדרה", "סיתוניה", "קפריסין", "לרנקה", "דובאי",
-    "מיאמי", "לונדון", "פריז", "ספרד", "פורטוגל", "מרבייה",
   ];
   const beforeNonIsrael = allUrls.length;
   const filteredIsrael = allUrls.filter(url => {
@@ -5090,36 +5024,7 @@ async function processOneItem(
         status: "skipped",
         error_message: `Outside Israel listing skipped: ${outsideIsraelCheck.reason}`,
         error_type: "permanent",
-        extracted_data: {
-          ...sanitizedListing,
-          outside_israel_reason: outsideIsraelCheck.reason,
-          provisioning_audit: {
-            outside_israel: true,
-            trigger_layer: outsideIsraelCheck.trigger_layer,
-            matched_token: outsideIsraelCheck.matched_token,
-          },
-        },
-      }).eq("id", item.id);
-      return { succeeded: false };
-    }
-
-    // ── LOCATION-UNCLEAR GATE ──
-    // If we have no city, no address, and no coordinates after extraction, we
-    // can't safely place this listing on the map or in a city. Don't auto-insert
-    // and don't auto-reject — surface for manual review so admin can patch the
-    // address from the source URL.
-    const hasCitySignal = Boolean(String(listing.city || "").trim());
-    const hasAddressSignal = Boolean(String(listing.address || "").trim());
-    const hasCoordSignal = Number.isFinite(listing.latitude) && Number.isFinite(listing.longitude);
-    if (!hasCitySignal && !hasAddressSignal && !hasCoordSignal) {
-      await sb.from("import_job_items").update({
-        status: "skipped",
-        error_message: "Location unclear — no city/address/coords extracted",
-        error_type: "review_required",
-        extracted_data: {
-          ...sanitizedListing,
-          provisioning_audit: { location_unclear: true },
-        },
+        extracted_data: { ...sanitizedListing, outside_israel_reason: outsideIsraelCheck.reason },
       }).eq("id", item.id);
       return { succeeded: false };
     }
