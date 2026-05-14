@@ -3318,7 +3318,11 @@ function extractDescriptionLineFacts(text: string): Record<string, any> {
 // "structure" signal AND have either a real price or a usable image.
 function evaluateAgencyListingQuality(listing: Record<string, any>, imageCount: number): { ok: boolean; reasons: string[] } {
   const reasons: string[] = [];
-  const hasPrice = typeof listing.price === "number" && listing.price >= 250_000;
+  // Rentals are NIS/month (typical 3-20k), sales are NIS (typical 1-10M).
+  // A single 250k floor rejects every rental as "missing_price".
+  const isRental = listing.listing_status === "for_rent";
+  const minPrice = isRental ? 1_000 : 250_000;
+  const hasPrice = typeof listing.price === "number" && listing.price >= minPrice;
   const hasStructure = (listing.bedrooms != null && listing.bedrooms >= 0)
     || (listing.source_rooms != null && listing.source_rooms > 0)
     || (listing.size_sqm != null && listing.size_sqm > 0)
@@ -3330,8 +3334,7 @@ function evaluateAgencyListingQuality(listing: Record<string, any>, imageCount: 
   if (!hasPrice) reasons.push("missing_price");
   if (!hasImage) reasons.push("missing_usable_image");
 
-  // Pass criteria: structure + at least one of price/image
-  const ok = hasStructure && (hasPrice || hasImage) && hasPrice; // require price for agency website imports
+  const ok = hasStructure && hasPrice;
   return { ok, reasons };
 }
 
