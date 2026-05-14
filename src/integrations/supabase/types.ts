@@ -5755,6 +5755,7 @@ export type Database = {
           import_source: string | null
           is_accessible: boolean | null
           is_claimed: boolean
+          is_demo_fabricated: boolean
           is_featured: boolean | null
           is_furnished: boolean | null
           is_published: boolean | null
@@ -5888,6 +5889,7 @@ export type Database = {
           import_source?: string | null
           is_accessible?: boolean | null
           is_claimed?: boolean
+          is_demo_fabricated?: boolean
           is_featured?: boolean | null
           is_furnished?: boolean | null
           is_published?: boolean | null
@@ -6021,6 +6023,7 @@ export type Database = {
           import_source?: string | null
           is_accessible?: boolean | null
           is_claimed?: boolean
+          is_demo_fabricated?: boolean
           is_featured?: boolean | null
           is_furnished?: boolean | null
           is_published?: boolean | null
