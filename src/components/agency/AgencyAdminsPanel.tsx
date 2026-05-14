@@ -27,7 +27,7 @@ export function AgencyAdminsPanel({ agencyId }: Props) {
   const perms = useAgencyPermissions(agencyId);
   const promote = usePromoteToAdmin();
   const demote = useDemoteAdmin();
-  const setPrimary = useSetPrimaryContact();
+  
   const transfer = useTransferOwnership();
 
   const [transferTarget, setTransferTarget] = useState<{ userId: string; name: string } | null>(null);
