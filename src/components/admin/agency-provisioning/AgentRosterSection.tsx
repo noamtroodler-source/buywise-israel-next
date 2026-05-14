@@ -32,7 +32,7 @@ import {
   useRevealCredentials,
   useResendSetupLink,
 } from '@/hooks/useAgencyProvisioning';
-import { useAgencyMembers, usePromoteToAdmin, useDemoteAdmin, useSetPrimaryContact } from '@/hooks/useAgencyMembers';
+import { useAgencyMembers, usePromoteToAdmin, useDemoteAdmin } from '@/hooks/useAgencyMembers';
 import { RevealCredentialsModal } from './RevealCredentialsModal';
 
 interface Props {
