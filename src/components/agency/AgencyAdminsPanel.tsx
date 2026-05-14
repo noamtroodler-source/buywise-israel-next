@@ -80,11 +80,6 @@ export function AgencyAdminsPanel({ agencyId }: Props) {
                   <Crown className="h-3 w-3" /> Founder
                 </Badge>
               )}
-              {m.is_primary_contact && (
-                <Badge className="bg-primary/15 text-primary hover:bg-primary/15 gap-1">
-                  <Star className="h-3 w-3" /> Primary contact
-                </Badge>
-              )}
             </div>
             {m.email && <p className="text-xs text-muted-foreground truncate">{m.email}</p>}
           </div>
