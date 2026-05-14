@@ -63,6 +63,7 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
     madlan: '',
   });
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   const { data: jobs = [] } = useImportJobs(agencyId);
   const { data: sources = [] } = useAgencySources(agencyId);
