@@ -57,6 +57,11 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
     yad2: '',
     madlan: '',
   });
+  const [initialUrls, setInitialUrls] = useState<Record<'website' | 'yad2' | 'madlan', string>>({
+    website: '',
+    yad2: '',
+    madlan: '',
+  });
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
 
   const { data: jobs = [] } = useImportJobs(agencyId);
@@ -74,11 +79,13 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
   const { startProcessAll, stopProcessAll, isProcessingAll, processingStartTime, processedSoFar } = useProcessAll();
 
   useEffect(() => {
-    setSourceUrls({
+    const next = {
       website: sources.find((source) => source.source_type === 'website')?.source_url || '',
       yad2: sources.find((source) => source.source_type === 'yad2')?.source_url || '',
       madlan: sources.find((source) => source.source_type === 'madlan')?.source_url || '',
-    });
+    };
+    setSourceUrls(next);
+    setInitialUrls(next);
   }, [sources]);
 
   const activeSources = useMemo(
@@ -111,12 +118,26 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
       .filter((source) => source.source_url.length > 0);
     if (entries.length === 0) return;
 
+    // Only sync sources whose URL was actually changed in this session.
+    // Prevents re-scanning previously-saved sources that the user didn't touch.
+    const changedTypes = new Set(
+      entries
+        .filter((entry) => entry.source_url !== (initialUrls[entry.source_type] || '').trim())
+        .map((entry) => entry.source_type)
+    );
+
     const savedSources = await upsertSourcesMutation.mutateAsync({
       agency_id: agencyId,
       sources: entries,
     });
 
-    const results = await syncAllSourcesMutation.mutateAsync({ sources: savedSources, importType: 'both' });
+    const sourcesToSync = changedTypes.size > 0
+      ? savedSources.filter((s: any) => changedTypes.has(s.source_type))
+      : savedSources;
+
+    if (sourcesToSync.length === 0) return;
+
+    const results = await syncAllSourcesMutation.mutateAsync({ sources: sourcesToSync, importType: 'both' });
     const firstJobId = results.find((result) => result.data?.job_id)?.data?.job_id;
     if (firstJobId) {
       setActiveJobId(firstJobId);
