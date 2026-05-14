@@ -154,9 +154,7 @@ Deno.serve(async (req) => {
       .filter(p => !shuffled.some(s => s.id === p.id))
       .map(p => ({ id: p.id, title: p.title, address: p.address }));
 
-    const reports: any[] = [];
-
-    for (const p of shuffled) {
+    const reports: any[] = await Promise.all(shuffled.map(async (p) => {
       const issues: Array<{ severity: "warning" | "critical"; kind: string; detail: string }> = [];
       const r: any = {
         id: p.id, title: p.title, source_url: p.source_url,
@@ -173,34 +171,29 @@ Deno.serve(async (req) => {
       try {
         const live = await firecrawlScrape(p.source_url!);
         const liveImages = extractImageUrlsFromHtml(live.html);
-        const listingSlug = slugFromUrl(p.source_url);
-
-        // Photo check
         const storedImgs: string[] = Array.isArray(p.images) ? p.images : [];
-        const foreign = storedImgs.filter(img => {
-          // Try to match listing slug somewhere in URL or in nearby anchors
-          if (!listingSlug) return false;
-          const inLive = liveImages.some(li => li === img);
-          return !inLive;
-        });
         r.live.photo_count = liveImages.length;
-        r.live.foreign_photos = foreign.slice(0, 8);
-        if (storedImgs.length > liveImages.length * 1.5 && liveImages.length > 0) {
-          issues.push({
-            severity: "critical",
-            kind: "photos_excess",
-            detail: `Stored ${storedImgs.length} photos but only ${liveImages.length} found on live page (${foreign.length} not on live page).`,
-          });
-        } else if (foreign.length > 2) {
+
+        if (liveImages.length > 0 && storedImgs.length > liveImages.length * 1.6) {
           issues.push({
             severity: "warning",
-            kind: "photos_foreign",
-            detail: `${foreign.length} stored photos not found on live page.`,
+            kind: "photos_excess",
+            detail: `Stored ${storedImgs.length} photos but live page only has ~${liveImages.length}. Possible "similar listings" leak.`,
+          });
+        } else if (liveImages.length > 0 && storedImgs.length < Math.max(3, liveImages.length * 0.4)) {
+          issues.push({
+            severity: "warning",
+            kind: "photos_missing",
+            detail: `Stored only ${storedImgs.length} photos but live page has ~${liveImages.length}.`,
           });
         }
 
-        // Listing type
-        const cls = await classifyType(p.title || "", p.description || "", p.source_url || "");
+        const [cls, feat, fields] = await Promise.all([
+          classifyType(p.title || "", p.description || "", p.source_url || ""),
+          extractFeaturesStrict(p.title || "", p.description || ""),
+          extractFields(p.title || "", p.description || "", live.html),
+        ]);
+
         r.live.type = cls.type;
         r.live.type_reasoning = cls.reasoning;
         if (cls.type && !["resale", "long_term_rental"].includes(cls.type)) {
@@ -211,8 +204,6 @@ Deno.serve(async (req) => {
           });
         }
 
-        // Features
-        const feat = await extractFeaturesStrict(p.title || "", p.description || "");
         const liveFeatures: string[] = Array.isArray(feat.features) ? feat.features : [];
         const stored: string[] = Array.isArray(p.features) ? p.features : [];
         const extra = stored.filter(f => !liveFeatures.includes(f));
@@ -235,8 +226,6 @@ Deno.serve(async (req) => {
           });
         }
 
-        // Field accuracy
-        const fields = await extractFields(p.title || "", p.description || "", live.html);
         r.live.fields = fields;
         if (fields.price_nis && p.price) {
           const diff = Math.abs(Number(fields.price_nis) - Number(p.price)) / Number(p.price);
@@ -262,7 +251,6 @@ Deno.serve(async (req) => {
           });
         }
 
-        // Cross-contamination: does this listing's title/address appear in another's content?
         const liveText = (live.markdown || "").toLowerCase();
         const cross: string[] = [];
         for (const other of titlesAndAddresses) {
@@ -286,13 +274,10 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Severity
       const hasCritical = issues.some(i => i.severity === "critical");
       r.severity = hasCritical ? "critical" : issues.length > 0 ? "warning" : "ok";
-      reports.push(r);
-
-      await new Promise(rr => setTimeout(rr, 300));
-    }
+      return r;
+    }));
 
     const summary = {
       total: reports.length,
