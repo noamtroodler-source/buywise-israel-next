@@ -7244,10 +7244,15 @@ function isMadlanItemLiveAndAgencyScoped(item: any, agencyName?: string | null, 
     if (itemBlob.includes(String(officeUrl).split("?")[0])) return true;
   }
 
-  // Normalize both sides — strip ALL non-alphanumeric (Latin + Hebrew), lowercase
+  // Normalize both sides — strip ALL non-alphanumeric (Latin + Hebrew), lowercase.
+  // The actor's documented output uses `contactName` + `hasAgent`. Older fields
+  // (agencyName/officeName/agentName/brokerName) kept as belt-and-suspenders in
+  // case the actor returns them on some code paths.
   const normalize = (s: string) => String(s || "").toLowerCase().replace(/[^a-z0-9א-ת]/g, "");
   const expected = normalize(agencyName || "");
-  const ownerText = normalize(`${item.agencyName || ""}${item.officeName || ""}${item.agentName || ""}${item.brokerName || ""}`);
+  const ownerText = normalize(
+    `${item.contactName || ""}${item.agencyName || ""}${item.officeName || ""}${item.agentName || ""}${item.brokerName || ""}`
+  );
 
   if (!expected) return true; // no agency name to compare → don't reject
   if (!ownerText) return true; // actor didn't return owner info → don't reject (rely on officeUrl/scope)
@@ -7386,20 +7391,23 @@ async function runMadlanAgencyDiscoverJob(params: {
       for (const heCity of hebrewCities) {
         dlog(`[Madlan/Apify] Running actor for city="${heCity}" / ${dealType}`);
 
-        // Attempt 1: scoped by office URL (preferred — filters to this agency)
-        // Attempt 2 (fallback): drop the office filter so the actor can return
-        // anything in the city. We then rely on isMadlanItemLiveAndAgencyScoped
-        // to filter by agency name. This catches cases where the actor's office
-        // filter combined with a small/edge-case city returns 0.
+        // swerve~madlan-scraper's documented input schema is ONLY:
+        //   city, dealType, maxItems, minPrice, maxPrice, minRooms, maxRooms,
+        //   neighbourhood, excludeAgents, requireParking, requireElevator,
+        //   requireBalcony, requireSecureRoom
+        // `officeUrl`, `agentOfficeUrl`, `startUrls` are NOT real fields — the
+        // actor silently ignores them. Previously we sent them across three
+        // "tiers" and assumed office-scoping; the actor was actually city-wide
+        // every time, then we filtered post-hoc by office ID embedded in the
+        // item JSON blob (which the actor doesn't return). Send only documented
+        // fields and rely on the post-extraction agency filter.
         const baseInput: Record<string, any> = {
           city: heCity,
           dealType,
-          maxItems: dealExpected > 0 ? Math.min(Math.max(dealExpected + 5, 10), 60) : 60,
+          maxItems: dealExpected > 0 ? Math.min(Math.max(dealExpected + 5, 10), 200) : 200,
         };
         const attempts = [
-          { ...baseInput, officeUrl: websiteUrl, agentOfficeUrl: websiteUrl, _label: "tier1-office-scoped" },
-          { startUrls: [{ url: websiteUrl }], dealType, maxItems: baseInput.maxItems, _label: "tier2-start-urls" },
-          { ...baseInput, _label: "tier1-city-only-fallback" },
+          { ...baseInput, _label: "city-dealType" },
         ];
 
         let items: any[] = [];
