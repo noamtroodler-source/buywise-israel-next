@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
-import { Loader2, Play, RefreshCw, CheckCircle2, AlertTriangle, AlertOctagon, ImageOff } from 'lucide-react';
+import { Loader2, Play, RefreshCw, CheckCircle2, AlertTriangle, AlertOctagon, ImageOff, Globe2, MapPinOff } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -13,6 +15,35 @@ import {
   useRunListingsAudit,
 } from '@/hooks/useAgencyProvisioning';
 import { ListingDetailDrawer } from './ListingDetailDrawer';
+
+function useImportSkipCounts(agencyId: string) {
+  return useQuery({
+    queryKey: ['import-skip-counts', agencyId],
+    queryFn: async () => {
+      // Pull recent skipped items for this agency's jobs and bucket by reason.
+      const { data: jobs } = await supabase
+        .from('import_jobs')
+        .select('id')
+        .eq('agency_id', agencyId)
+        .order('created_at', { ascending: false })
+        .limit(50);
+      const jobIds = (jobs ?? []).map((j) => j.id);
+      if (jobIds.length === 0) return { outsideIsrael: 0, locationUnclear: 0 };
+      const { data: items } = await supabase
+        .from('import_job_items')
+        .select('error_message,error_type')
+        .in('job_id', jobIds)
+        .eq('status', 'skipped')
+        .or('error_message.ilike.%Outside Israel%,error_message.ilike.%Location unclear%');
+      const rows = items ?? [];
+      return {
+        outsideIsrael: rows.filter((r) => /outside israel/i.test(r.error_message || '')).length,
+        locationUnclear: rows.filter((r) => /location unclear/i.test(r.error_message || '')).length,
+      };
+    },
+    refetchInterval: 30_000,
+  });
+}
 
 type Filter = 'all' | 'ready' | 'review' | 'critical';
 type PriceSort = 'none' | 'price_desc' | 'price_asc';
