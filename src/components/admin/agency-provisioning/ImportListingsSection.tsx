@@ -63,6 +63,7 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
     madlan: '',
   });
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   const { data: jobs = [] } = useImportJobs(agencyId);
   const { data: sources = [] } = useAgencySources(agencyId);
@@ -215,7 +216,7 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
   })();
 
   const isBackgroundDiscovering = currentJob?.status === 'discovering';
-  const isDiscovering = upsertSourcesMutation.isPending || syncAllSourcesMutation.isPending || syncOneSourceMutation.isPending || isBackgroundDiscovering;
+  const isDiscovering = !isCancelling && (upsertSourcesMutation.isPending || syncAllSourcesMutation.isPending || syncOneSourceMutation.isPending || isBackgroundDiscovering);
   const isProcessing = processBatchMutation.isPending || (currentJob?.status === 'processing' && !isStalled) || isProcessingAll;
   const isReady = (currentJob?.status === 'ready' && pendingCount > 0) || isStalled;
   const isCompleted = currentJob?.status === 'completed';
@@ -279,23 +280,42 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
               )}
               </Button>
 
-              {isDiscovering && (
+              {(isDiscovering || isCancelling) && (
                 <Button
                   type="button"
                   variant="outline"
                   className="rounded-xl text-destructive hover:text-destructive"
-                  onClick={() => {
-                    upsertSourcesMutation.reset();
-                    syncAllSourcesMutation.reset();
-                    syncOneSourceMutation.reset();
-                    if (currentJob && ['discovering', 'ready'].includes(currentJob.status)) {
-                      deleteJobMutation.mutate(currentJob.id);
+                  disabled={isCancelling}
+                  onClick={async () => {
+                    setIsCancelling(true);
+                    try {
+                      upsertSourcesMutation.reset();
+                      syncAllSourcesMutation.reset();
+                      syncOneSourceMutation.reset();
+
+                      // Delete every in-flight job for this agency (not just the
+                      // one currently surfaced) so a fresh discover can start clean.
+                      const inflight = jobs.filter((j) =>
+                        ['discovering', 'ready', 'processing', 'paused'].includes(j.status)
+                      );
+                      for (const j of inflight) {
+                        try {
+                          await deleteJobMutation.mutateAsync(j.id);
+                        } catch (err) {
+                          console.error('[cancel-and-start-over] failed to delete job', j.id, err);
+                        }
+                      }
+                      setActiveJobId(null);
+                    } finally {
+                      setIsCancelling(false);
                     }
-                    setActiveJobId(null);
                   }}
                 >
-                  <XCircle className="h-4 w-4 mr-2" />
-                  Cancel & start over
+                  {isCancelling ? (
+                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Cancelling...</>
+                  ) : (
+                    <><XCircle className="h-4 w-4 mr-2" />Cancel & start over</>
+                  )}
                 </Button>
               )}
 
