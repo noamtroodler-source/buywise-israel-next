@@ -1,77 +1,76 @@
-# Fix: only scrape the right photos for each listing
+# Sample audit for JRE listings
 
-## Goal
-For every agency site we scrape (JRE, Erez, future agencies), the imported listing should contain **only the photos that belong to that specific property** — never sidebar "similar listings", footer carousels, agent avatars, or site logos.
+Build a one-shot QA tool that audits **5 random JRE listings** against the live agency site and reports problems — no manual checking.
 
-## Why it's broken today
-`extractImagesFromHtml` (in `supabase/functions/import-agency-listings/index.ts` ~line 3329) runs 5 regex sweeps over the entire HTML:
-1. Every `wixstatic.com/media/...` URL anywhere in the page state
-2. Every `<img src>` tag
-3. Every `data-src / data-lazy-src / data-original / data-srcset / data-large_image / data-full / data-thumb` attribute
-4. Every `<a href>` pointing to an image
-5. Plus JSON-LD `structured_images` and the OG image, merged in afterward
+## What it checks per listing
 
-It unions everything, so a JRE listing with ~10 real photos balloons to 30–42 by adding the "Similar Properties" carousel thumbs, lightbox duplicates, and OG/share variants.
+For each of 5 random JRE properties (or N you pick), re-fetch the live `source_url` via Firecrawl and compare against what's stored:
 
-## The fix — three layers, applied in order
+1. **Photos**
+   - Count: stored vs live
+   - Foreign photos: any image whose nearest `<a href>` slug ≠ this listing's slug (catches "similar properties" leaks)
+   - Cross-listing duplicates: phash hamming ≤5 against other JRE listings (uses existing `image_hashes` table)
+   - Missing photos: on live page but not stored
 
-### Layer 1 — DOM-aware gallery scoping (primary)
-Replace the page-wide regex with a real DOM parse using `deno-dom`. Walk a priority list of selectors and stop at the first match that returns ≥3 images:
+2. **Listing type** (Gemini classifier on title + description + URL)
+   - Allowed: `resale`, `long_term_rental`
+   - Flagged: `short_term_rental`, `new_project`, `other` → marked for unpublish
+
+3. **Features**
+   - Re-run strict extractor on live description
+   - Diff vs stored `features[]`
+   - Report `missing_features[]` (under-extracted) and `extra_features[]` (potential fabrication)
+
+4. **Field accuracy**
+   - Gemini extracts price, bedrooms, size, neighborhood, address from live page
+   - Diff vs stored — flag mismatches beyond tolerance (e.g. price > 2% off, bedrooms differ)
+
+5. **Cross-contamination**
+   - Check if this listing's title/address appears inside another JRE listing's description (catches swapped content)
+
+## Output
+
+A single JSON report returned by the function and rendered in a new admin panel card at `/admin/agency-provisioning`:
 
 ```text
-1. JSON-LD with @type RealEstateListing | Product | Residence → use its `image` array
-2. <main> / <article> scoped:
-   - [class*="property-gallery"], [class*="listing-gallery"],
-     [class*="single-property-images"], [class*="property-images"]
-   - .woocommerce-product-gallery
-   - [data-elementor-type="single"] [class*="gallery"]
-   - .wp-block-gallery (first one inside main/article only)
-   - .swiper-wrapper, .slick-slider, .splide__list (first one inside main only)
-3. og:image (single fallback)
+Audit: 5 JRE listings  •  Run at 14 May 2026
+─────────────────────────────────────────────
+✓ 2 OK
+⚠ 2 warnings
+✗ 1 critical
+
+[expand] 12 Rechov Example — CRITICAL
+  • Type: short_term_rental (should be unpublished)
+  • Photos: 18 stored / 9 on live page (9 foreign, slugs mismatch)
+  • Extra features: sukkah_balcony, underfloor_heating (not in description)
+  • Price mismatch: stored ₪4.2M / live ₪3.8M
+  [View live] [View stored] [Unpublish]
 ```
 
-If layer 1 returns ≥3 images → use those, stop. Do NOT union with whole-page scan.
+Photo issues show side-by-side thumbnail strips (live vs stored) so you can eyeball it in 5 seconds.
 
-### Layer 2 — Hard exclusions (always applied to layer 1 results)
-Even when scoping succeeds, drop images whose DOM ancestry matches any of:
+## Where it lives
 
-- Inside `<aside>`, `<footer>`, `<nav>`, `<header>`
-- Inside `[class*="related"]`, `[class*="similar"]`, `[class*="recommend"]`, `[class*="recent"]`, `[class*="popular"]`, `[class*="sidebar"]`, `[id*="related"]`, `[class*="other-listings"]`, `[class*="more-properties"]`
-- Inside `[class*="agent"]`, `[class*="author"]`, `[class*="profile-pic"]`, `[class*="avatar"]`, `[class*="team"]`, `[class*="testimonial"]`, `[class*="review"]`
-- Inside an `<a href>` whose URL slug is **different** from the current page slug — kills the "Similar Properties" tile leak by structure, not by class name (works on any builder)
+- New edge function: `audit-agency-listings` (POST `{ agency_id, sample_size: 5 }`)
+- New panel: `AgencyAuditPanel` added to `AdminAgencyProvisioning` page
+- One button: **"Run sample audit (5 listings)"** + a results table below
+- No DB table yet — results returned in-memory, displayed transiently. (Can add `listing_audit_reports` table later if you want history.)
 
-### Layer 3 — Per-agency overrides (data-driven)
-Add a JSONB `scrape_config` column to the agency record. Optional fields:
+## Out of scope (for this pass)
 
-```json
-{
-  "gallery_selector": ".property-images-gallery",
-  "exclude_selectors": [".similar-properties", ".agent-card"]
-}
-```
-
-When present, layer 1 uses `gallery_selector` first; layer 2 adds `exclude_selectors` to its always-on list. Lets us hand-fix one-off sites without redeploying code.
-
-### Safety net (already exists, keep it)
-The Gemini cover-selector at line 2557 stays. After layers 1–3 we still cap to a hard max of 20 photos and let Gemini pick the cover — but the input to Gemini is now clean.
-
-## Validation plan
-1. Re-scrape the 10 JRE listings I queried earlier (`https://jerusalem-real-estate.co/property/...`)
-2. Confirm photo counts drop to ~8–15 each (vs current 22–42)
-3. Confirm zero photos whose URL or `<a href>` ancestor references a *different* property slug
-4. Spot-check the existing imported records: clear and re-run those 10 to compare before/after
-
-## Out of scope (intentional)
-- The wrong-title problem (URLs not matching titles) — that's a separate AI-extraction bug, not a photo bug. Flag it as a follow-up but don't bundle it here.
-- Changing how photos are stored — zero-storage policy still applies; we're only changing **which** URLs we keep.
+- No auto-fixes, no auto-unpublish — flags only
+- No cron, no full-agency runs — just on-demand sample
+- No new agencies — JRE only; agency_id is parameterized so Erez/others work too with the same button later
 
 ## Technical details
 
-**Files touched:**
-- `supabase/functions/import-agency-listings/index.ts` — rewrite `extractImagesFromHtml` (~line 3329) to DOM-based; add `extractGalleryFromDom`, `isInExcludedAncestor`, `getNearestAnchorSlug` helpers; thread `agency.scrape_config` through `processFirecrawlResult` → `extractImagesFromMarkdown` → `extractImagesFromHtml`.
-- New migration: `alter table agencies add column if not exists scrape_config jsonb;`
-- `deno-dom` import via `npm:deno-dom@0.1.x` (or use `linkedom` if deno-dom proves flaky in the edge runtime)
-
-**Risk:** Some sites may have non-standard markup that defeats all layer-1 selectors. Fallback path: if layer 1 returns 0 images, we fall back to the **current** regex extractor but with layer 2 exclusions applied. Worst case = same behavior as today, never worse.
-
-**Rollout:** Deploy → re-scrape 1 JRE listing via the admin UI → verify count → re-scrape full agency.
+- **Function:** `supabase/functions/audit-agency-listings/index.ts`. Uses Firecrawl scrape (markdown + html), Lovable AI Gateway (`google/gemini-2.5-flash`), service-role Supabase client.
+- **Sampling:** `SELECT id, source_url, ... FROM properties WHERE primary_agency_id = $1 AND source_url IS NOT NULL ORDER BY random() LIMIT 5`
+- **Photo slug check:** parse stored image URLs, extract listing slug from `source_url`, flag any image whose URL path or surrounding anchor doesn't reference that slug
+- **Phash dup check:** join `image_hashes` for all JRE properties, compute hamming distance using existing helper from `ImageDedupPanel.tsx`
+- **Type classifier:** single Gemini call, JSON output `{ type: enum, confidence: number, reasoning: string }`
+- **Feature diff:** reuses the same prompt as `refresh-listing-features`
+- **Field extraction:** one Gemini call returning `{ price_nis, bedrooms, size_sqm, neighborhood, address }` from live HTML
+- **Tolerance:** price ±2%, size ±5%, bedrooms exact, address fuzzy match
+- **Runtime:** ~5 listings × (1 Firecrawl + 3 Gemini) ≈ 30–60s, well within edge function limits
+- **UI:** new file `src/components/admin/AgencyAuditPanel.tsx`, mounted in `src/pages/admin/AdminAgencyProvisioning.tsx`
