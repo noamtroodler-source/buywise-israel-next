@@ -7630,7 +7630,7 @@ async function runMadlanAgencyDiscoverJob(params: {
               currency: "ILS",
               address: address ? normalizeAddressForStorage(address) : "",
               city,
-              neighborhood: madlanItem.neighbourhood || null,
+              neighborhood: listing.neighborhood || madlanItem.neighbourhood || null,
               latitude, longitude,
               bedrooms,
               bathrooms: listing.bathrooms != null ? Math.floor(listing.bathrooms) : null,
