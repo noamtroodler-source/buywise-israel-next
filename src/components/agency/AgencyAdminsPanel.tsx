@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Crown, Shield, Star, MoreVertical, Loader2, UserCog, AlertCircle } from 'lucide-react';
+import { Crown, Shield, MoreVertical, Loader2, UserCog, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,7 +14,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import {
-  useAgencyMembers, usePromoteToAdmin, useDemoteAdmin, useSetPrimaryContact, useTransferOwnership,
+  useAgencyMembers, usePromoteToAdmin, useDemoteAdmin, useTransferOwnership,
 } from '@/hooks/useAgencyMembers';
 import { useAgencyPermissions } from '@/hooks/useAgencyPermissions';
 import { useAgencyTeam } from '@/hooks/useAgencyManagement';
@@ -27,7 +27,7 @@ export function AgencyAdminsPanel({ agencyId }: Props) {
   const perms = useAgencyPermissions(agencyId);
   const promote = usePromoteToAdmin();
   const demote = useDemoteAdmin();
-  const setPrimary = useSetPrimaryContact();
+  
   const transfer = useTransferOwnership();
 
   const [transferTarget, setTransferTarget] = useState<{ userId: string; name: string } | null>(null);
@@ -80,11 +80,6 @@ export function AgencyAdminsPanel({ agencyId }: Props) {
                   <Crown className="h-3 w-3" /> Founder
                 </Badge>
               )}
-              {m.is_primary_contact && (
-                <Badge className="bg-primary/15 text-primary hover:bg-primary/15 gap-1">
-                  <Star className="h-3 w-3" /> Primary contact
-                </Badge>
-              )}
             </div>
             {m.email && <p className="text-xs text-muted-foreground truncate">{m.email}</p>}
           </div>
@@ -98,11 +93,6 @@ export function AgencyAdminsPanel({ agencyId }: Props) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              {!m.is_primary_contact && (
-                <DropdownMenuItem onClick={() => setPrimary.mutate({ agencyId, userId: m.user_id })}>
-                  <Star className="h-4 w-4 mr-2" /> Make primary contact
-                </DropdownMenuItem>
-              )}
               {!isOwnerRow && perms.canTransferOwnership && (
                 <DropdownMenuItem onClick={() => setTransferTarget({ userId: m.user_id, name: m.display_name || m.email || 'this admin' })}>
                   <Crown className="h-4 w-4 mr-2" /> Make founder

@@ -32,7 +32,7 @@ import {
   useRevealCredentials,
   useResendSetupLink,
 } from '@/hooks/useAgencyProvisioning';
-import { useAgencyMembers, usePromoteToAdmin, useDemoteAdmin, useSetPrimaryContact } from '@/hooks/useAgencyMembers';
+import { useAgencyMembers, usePromoteToAdmin, useDemoteAdmin } from '@/hooks/useAgencyMembers';
 import { RevealCredentialsModal } from './RevealCredentialsModal';
 
 interface Props {
@@ -69,7 +69,7 @@ export function AgentRosterSection({ agencyId }: Props) {
   const { data: members = [] } = useAgencyMembers(agencyId);
   const promoteAdmin = usePromoteToAdmin();
   const demoteAdmin = useDemoteAdmin();
-  const setPrimary = useSetPrimaryContact();
+  
   const create = useCreateAgent(agencyId);
   const update = useUpdateAgent(agencyId);
   const deleteAgent = useDeleteAgent(agencyId);
@@ -79,7 +79,6 @@ export function AgentRosterSection({ agencyId }: Props) {
 
   const adminUserIds = new Set(members.filter((m) => m.role === 'admin' || m.role === 'owner').map((m) => m.user_id));
   const ownerUserIds = new Set(members.filter((m) => m.role === 'owner').map((m) => m.user_id));
-  const primaryUserId = members.find((m) => m.is_primary_contact)?.user_id;
 
   const [addOpen, setAddOpen] = useState(false);
   const [editAgent, setEditAgent] = useState<any | null>(null);
@@ -288,11 +287,6 @@ export function AgentRosterSection({ agencyId }: Props) {
                           <Shield className="h-3 w-3" /> Admin
                         </Badge>
                       )}
-                      {a.user_id && primaryUserId === a.user_id && (
-                        <Badge variant="outline" className="gap-1">
-                          <Star className="h-3 w-3 fill-current" /> Primary contact
-                        </Badge>
-                      )}
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
@@ -361,17 +355,6 @@ export function AgentRosterSection({ agencyId }: Props) {
                               <ShieldOff className="h-3 w-3 mr-1" /> Remove admin
                             </Button>
                           ) : null}
-                          {adminUserIds.has(a.user_id) && primaryUserId !== a.user_id && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => setPrimary.mutate({ agencyId, userId: a.user_id! })}
-                              disabled={setPrimary.isPending}
-                              title="Set as primary contact"
-                            >
-                              <Star className="h-3 w-3 mr-1" /> Set primary
-                            </Button>
-                          )}
                           <Button
                             size="sm"
                             variant="outline"
