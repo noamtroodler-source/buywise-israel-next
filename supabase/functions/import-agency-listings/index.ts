@@ -7402,11 +7402,15 @@ async function runMadlanAgencyDiscoverJob(params: {
         let items: any[] = [];
         let chosenLabel = "";
         let lastRunId: string | null = null;
-        for (const actorInput of attempts) {
+        for (let tierIdx = 0; tierIdx < attempts.length; tierIdx++) {
+          const actorInput = attempts[tierIdx];
           const label = (actorInput as any)._label;
           delete (actorInput as any)._label;
+          const tierTag = `tier${tierIdx + 1}/${attempts.length} (${label})`;
           try {
-            console.log(`[Madlan/Apify] [${label}] city=${heCity}/${dealType} input=${JSON.stringify(actorInput).slice(0, 250)}`);
+            console.log(
+              `[Madlan/Apify] ${tierTag} city=${heCity}/${dealType} office=${websiteUrl} FULL_INPUT=${JSON.stringify(actorInput)}`
+            );
             const res = await fetch(
               `https://api.apify.com/v2/acts/swerve~madlan-scraper/run-sync-get-dataset-items?token=${APIFY_API_KEY}`,
               {
@@ -7420,19 +7424,37 @@ async function runMadlanAgencyDiscoverJob(params: {
             if (runIdHeader) lastRunId = runIdHeader;
             if (!res.ok) {
               const errText = await res.text();
-              console.error(`[Madlan/Apify] Actor failed (${res.status}) [${label}] city=${heCity}/${dealType}: ${errText.slice(0, 300)}`);
+              console.error(
+                `[Madlan/Apify] ${tierTag} HTTP_FAIL status=${res.status} city=${heCity}/${dealType} runId=${lastRunId || "n/a"} body=${errText.slice(0, 500)}`
+              );
               continue;
             }
-            const data = await res.json();
-            const count = Array.isArray(data) ? data.length : 0;
-            console.log(`[Madlan/Apify] [${label}] city=${heCity}/${dealType} returned ${count} raw items (runId=${lastRunId || "n/a"})`);
-            if (count > 0) {
-              items = data;
-              chosenLabel = label;
-              break;
+            const rawBody = await res.text();
+            let data: any;
+            try {
+              data = JSON.parse(rawBody);
+            } catch (parseErr) {
+              console.error(
+                `[Madlan/Apify] ${tierTag} JSON_PARSE_FAIL city=${heCity}/${dealType} runId=${lastRunId || "n/a"} body=${rawBody.slice(0, 500)}`
+              );
+              continue;
             }
+            const count = Array.isArray(data) ? data.length : 0;
+            console.log(
+              `[Madlan/Apify] ${tierTag} city=${heCity}/${dealType} returned ${count} raw items (runId=${lastRunId || "n/a"}, status=${res.status})`
+            );
+            if (count === 0) {
+              // Log enough of the response to diagnose: empty array vs error envelope vs unexpected shape.
+              console.warn(
+                `[Madlan/Apify] ${tierTag} ZERO_RESULTS city=${heCity}/${dealType} runId=${lastRunId || "n/a"} bodyType=${Array.isArray(data) ? "array" : typeof data} bodyPreview=${rawBody.slice(0, 500)}`
+              );
+              continue;
+            }
+            items = data;
+            chosenLabel = label;
+            break;
           } catch (e) {
-            console.error(`[Madlan/Apify] Actor call error [${label}] city=${heCity}:`, e);
+            console.error(`[Madlan/Apify] ${tierTag} EXCEPTION city=${heCity}/${dealType}:`, e);
           }
         }
 
