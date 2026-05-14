@@ -66,6 +66,8 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
   });
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
+  const cancelTokenRef = useRef(0);
+  const queryClient = useQueryClient();
 
   const { data: jobs = [] } = useImportJobs(agencyId);
   const { data: sources = [] } = useAgencySources(agencyId);
