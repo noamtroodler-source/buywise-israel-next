@@ -1,0 +1,1 @@
+UPDATE public.import_jobs SET status='failed' WHERE id='b271454a-672c-4360-ae8b-c0a0b1217c88';
