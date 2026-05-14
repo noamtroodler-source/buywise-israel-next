@@ -174,7 +174,7 @@ export function ListingsQualitySection({ agencyId }: { agencyId: string }) {
       </div>
 
       {/* Summary */}
-      <div className="p-4 bg-muted/30 border-b">
+      <div className="p-4 bg-muted/30 border-b space-y-2">
         <div className="flex items-center gap-4 flex-wrap text-sm">
           <span className="font-semibold">{summary.total} listings:</span>
           <span className="text-emerald-700 dark:text-emerald-400">✅ {summary.ready} ready to publish</span>
@@ -184,6 +184,23 @@ export function ListingsQualitySection({ agencyId }: { agencyId: string }) {
             Quick and major review items need attention before handover.
           </span>
         </div>
+        {(skipCounts?.outsideIsrael || skipCounts?.locationUnclear) ? (
+          <div className="flex items-center gap-2 flex-wrap text-xs">
+            <span className="text-muted-foreground">Skipped at import:</span>
+            {skipCounts.outsideIsrael > 0 && (
+              <Badge variant="outline" className="gap-1.5 text-muted-foreground">
+                <Globe2 className="h-3 w-3" />
+                {skipCounts.outsideIsrael} outside Israel
+              </Badge>
+            )}
+            {skipCounts.locationUnclear > 0 && (
+              <Badge variant="outline" className="gap-1.5 text-amber-700 dark:text-amber-400 border-amber-500/30">
+                <MapPinOff className="h-3 w-3" />
+                {skipCounts.locationUnclear} need location review
+              </Badge>
+            )}
+          </div>
+        ) : null}
       </div>
 
       {/* Filter chips + search */}
