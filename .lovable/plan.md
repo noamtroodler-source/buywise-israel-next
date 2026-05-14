@@ -1,76 +1,55 @@
-# Sample audit for JRE listings
+## Goal
+Get the remaining **29 CityZen listings** live (currently unpublished because they each have <4 photos), without violating the zero-storage policy on third-party media.
 
-Build a one-shot QA tool that audits **5 random JRE listings** against the live agency site and reports problems — no manual checking.
+## The blocker
+- We can't fabricate or re-host real photos.
+- We can't drop the 4-photo minimum (you set that as the publish gate).
+- So the only clean path is **re-scrape CityZen** to pick up more photos per listing, then re-run demo-fill.
 
-## What it checks per listing
+## Steps
 
-For each of 5 random JRE properties (or N you pick), re-fetch the live `source_url` via Firecrawl and compare against what's stored:
+### 1. Re-scrape CityZen source
+- Trigger the existing CityZen scraper/import edge function against the live CityZen site.
+- For each listing: capture **all** photo URLs available on the source page (not just the first 1–3).
+- Store photo URLs as references only (no download), matching the zero-storage policy.
 
-1. **Photos**
-   - Count: stored vs live
-   - Foreign photos: any image whose nearest `<a href>` slug ≠ this listing's slug (catches "similar properties" leaks)
-   - Cross-listing duplicates: phash hamming ≤5 against other JRE listings (uses existing `image_hashes` table)
-   - Missing photos: on live page but not stored
+### 2. Merge into existing rows (don't duplicate)
+- Match by source URL or address+price.
+- For each existing CityZen row, **union** the new photo URL list into `images[]`.
+- Update any other fields that came back richer from source (real bedrooms, real size, real description) — these overwrite demo-filled values and clear the per-field demo flag.
 
-2. **Listing type** (Gemini classifier on title + description + URL)
-   - Allowed: `resale`, `long_term_rental`
-   - Flagged: `short_term_rental`, `new_project`, `other` → marked for unpublish
+### 3. Re-run demo-fill on the merged set
+- Same `demo-fill-cityzen` function, unchanged behavior:
+  - Mock street numbers where missing
+  - Inferred bedrooms / size where missing
+  - 4–7 realistic features
+  - "Trusted Friend" English description
+  - Tag `is_demo_fabricated=true`, `data_quality_score=0`
+- Publish gate stays at **≥4 photos + city + price**.
 
-3. **Features**
-   - Re-run strict extractor on live description
-   - Diff vs stored `features[]`
-   - Report `missing_features[]` (under-extracted) and `extra_features[]` (potential fabrication)
+### 4. Handle leftovers honestly
+- Any listing that still has <4 photos after re-scrape stays unpublished. We do not invent photos.
+- Report the final count: how many published, how many still stuck, and why.
 
-4. **Field accuracy**
-   - Gemini extracts price, bedrooms, size, neighborhood, address from live page
-   - Diff vs stored — flag mismatches beyond tolerance (e.g. price > 2% off, bedrooms differ)
+### 5. Verify
+- 0 listings outside Israel
+- 100% of published listings have ≥4 real photos
+- 100% of published listings have street number, bedrooms, size, features, description
+- Admin sees `is_demo_fabricated` flags; agencies/visitors see nothing demo-related
+- Analytics dashboards still exclude `is_demo_fabricated=true` rows
 
-5. **Cross-contamination**
-   - Check if this listing's title/address appears inside another JRE listing's description (catches swapped content)
+## Technical notes
+- Reuse existing scraper edge function for CityZen (no new function).
+- Merge logic: `images = array(distinct old || new)` keyed on URL.
+- demo-fill function already exists and works — just re-invoke after merge.
+- No schema changes.
 
-## Output
+## Out of scope
+- Restoring the original 157 deleted listings (not recoverable).
+- Sourcing photos from anywhere other than CityZen's own site.
+- Removing the 4-photo publish gate.
 
-A single JSON report returned by the function and rendered in a new admin panel card at `/admin/agency-provisioning`:
-
-```text
-Audit: 5 JRE listings  •  Run at 14 May 2026
-─────────────────────────────────────────────
-✓ 2 OK
-⚠ 2 warnings
-✗ 1 critical
-
-[expand] 12 Rechov Example — CRITICAL
-  • Type: short_term_rental (should be unpublished)
-  • Photos: 18 stored / 9 on live page (9 foreign, slugs mismatch)
-  • Extra features: sukkah_balcony, underfloor_heating (not in description)
-  • Price mismatch: stored ₪4.2M / live ₪3.8M
-  [View live] [View stored] [Unpublish]
-```
-
-Photo issues show side-by-side thumbnail strips (live vs stored) so you can eyeball it in 5 seconds.
-
-## Where it lives
-
-- New edge function: `audit-agency-listings` (POST `{ agency_id, sample_size: 5 }`)
-- New panel: `AgencyAuditPanel` added to `AdminAgencyProvisioning` page
-- One button: **"Run sample audit (5 listings)"** + a results table below
-- No DB table yet — results returned in-memory, displayed transiently. (Can add `listing_audit_reports` table later if you want history.)
-
-## Out of scope (for this pass)
-
-- No auto-fixes, no auto-unpublish — flags only
-- No cron, no full-agency runs — just on-demand sample
-- No new agencies — JRE only; agency_id is parameterized so Erez/others work too with the same button later
-
-## Technical details
-
-- **Function:** `supabase/functions/audit-agency-listings/index.ts`. Uses Firecrawl scrape (markdown + html), Lovable AI Gateway (`google/gemini-2.5-flash`), service-role Supabase client.
-- **Sampling:** `SELECT id, source_url, ... FROM properties WHERE primary_agency_id = $1 AND source_url IS NOT NULL ORDER BY random() LIMIT 5`
-- **Photo slug check:** parse stored image URLs, extract listing slug from `source_url`, flag any image whose URL path or surrounding anchor doesn't reference that slug
-- **Phash dup check:** join `image_hashes` for all JRE properties, compute hamming distance using existing helper from `ImageDedupPanel.tsx`
-- **Type classifier:** single Gemini call, JSON output `{ type: enum, confidence: number, reasoning: string }`
-- **Feature diff:** reuses the same prompt as `refresh-listing-features`
-- **Field extraction:** one Gemini call returning `{ price_nis, bedrooms, size_sqm, neighborhood, address }` from live HTML
-- **Tolerance:** price ±2%, size ±5%, bedrooms exact, address fuzzy match
-- **Runtime:** ~5 listings × (1 Firecrawl + 3 Gemini) ≈ 30–60s, well within edge function limits
-- **UI:** new file `src/components/admin/AgencyAuditPanel.tsx`, mounted in `src/pages/admin/AdminAgencyProvisioning.tsx`
+## One thing to confirm before I build
+Do you want me to:
+- **(A)** Re-scrape only — accept that some listings may still end up <4 photos and stay unpublished, OR
+- **(B)** Re-scrape + lower the publish gate to **≥1 photo** for CityZen demo rows specifically (gets all 36 live, but some will look thin)?
