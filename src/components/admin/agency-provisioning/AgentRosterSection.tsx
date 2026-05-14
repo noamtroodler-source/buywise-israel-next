@@ -79,7 +79,6 @@ export function AgentRosterSection({ agencyId }: Props) {
 
   const adminUserIds = new Set(members.filter((m) => m.role === 'admin' || m.role === 'owner').map((m) => m.user_id));
   const ownerUserIds = new Set(members.filter((m) => m.role === 'owner').map((m) => m.user_id));
-  const primaryUserId = members.find((m) => m.is_primary_contact)?.user_id;
 
   const [addOpen, setAddOpen] = useState(false);
   const [editAgent, setEditAgent] = useState<any | null>(null);
