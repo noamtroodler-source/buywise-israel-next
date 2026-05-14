@@ -5115,7 +5115,7 @@ async function processOneItem(
       await sb.from("import_job_items").update({
         status: "skipped",
         error_message: "Location unclear — no city/address/coords extracted",
-        error_type: "needs_review",
+        error_type: "review_required",
         extracted_data: {
           ...sanitizedListing,
           provisioning_audit: { location_unclear: true },
