@@ -231,8 +231,10 @@ Deno.serve(async (req) => {
 
     const brief = await buildBrief(supa, propertyId);
     if (!brief) {
-      return new Response(JSON.stringify({ error: 'property not found' }), {
-        status: 404,
+      // Property no longer exists (e.g. deleted while a stale page tab is open).
+      // Return 200 with takeaway=null so the client can render gracefully without an error toast.
+      return new Response(JSON.stringify({ takeaway: null, reason: 'property_not_found' }), {
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
