@@ -536,12 +536,31 @@ function matchSupportedCity(city: string | undefined | null): string | null {
 const ISRAEL_BOUNDS = { minLat: 29.45, maxLat: 33.35, minLng: 34.15, maxLng: 35.95 };
 
 const EXTERNAL_LOCATION_KEYS = new Set([
+  // Cyprus / Greece
   "cyprus", "larnaca", "limassol", "paphos", "nicosia", "greece", "athens",
-  "spain", "madrid", "barcelona", "portugal", "lisbon", "france", "paris",
-  "italy", "rome", "milan", "unitedkingdom", "uk", "england", "london",
-  "unitedstates", "usa", "newyork", "miami", "florida", "losangeles",
-  "dubai", "uae", "georgia", "tbilisi", "batumi", "hungary", "budapest",
-  "panama", "mexico", "thailand", "bangkok",
+  "thessaloniki", "kassandra", "sithonia", "pefkohori", "chalkidiki", "halkidiki",
+  // Spain / Portugal
+  "spain", "madrid", "barcelona", "marbella", "malaga", "costadelsol",
+  "ibiza", "mallorca", "valencia", "portugal", "lisbon", "porto", "algarve", "cascais",
+  // France / Monaco / Italy
+  "france", "paris", "cannes", "nice", "monaco", "montecarlo", "capferrat", "cotedazur",
+  "italy", "rome", "milan", "florence", "venice",
+  // UK / Ireland
+  "unitedkingdom", "uk", "england", "london", "manchester", "ireland", "dublin",
+  // USA
+  "unitedstates", "usa", "newyork", "manhattan", "brooklyn", "miami", "florida",
+  "losangeles", "aspen", "boston", "chicago",
+  // Middle East / Gulf (non-Israel)
+  "dubai", "uae", "abudhabi", "doha", "qatar", "bahrain", "muscat", "oman",
+  // Caucasus / Eastern Europe
+  "georgia", "tbilisi", "batumi", "hungary", "budapest", "montenegro", "kotor",
+  "turkey", "istanbul", "bodrum", "antalya",
+  // LatAm / Caribbean
+  "panama", "mexico", "tulum", "playadelcarmen", "puntacana", "costarica",
+  // Asia
+  "thailand", "bangkok", "phuket", "kohsamui", "bali", "indonesia", "vietnam",
+  // Hebrew tokens (full strings; matched via includes() in token scan)
+  "יוון", "קפריסין", "דובאי", "מיאמי", "לונדון", "פריז", "ספרד", "פורטוגל", "תאילנד",
 ]);
 
 function isCoordinateInIsrael(latitude: number | null | undefined, longitude: number | null | undefined): boolean {
