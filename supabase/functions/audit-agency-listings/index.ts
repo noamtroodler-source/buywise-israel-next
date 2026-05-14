@@ -154,9 +154,7 @@ Deno.serve(async (req) => {
       .filter(p => !shuffled.some(s => s.id === p.id))
       .map(p => ({ id: p.id, title: p.title, address: p.address }));
 
-    const reports: any[] = [];
-
-    for (const p of shuffled) {
+    const reports: any[] = await Promise.all(shuffled.map(async (p) => {
       const issues: Array<{ severity: "warning" | "critical"; kind: string; detail: string }> = [];
       const r: any = {
         id: p.id, title: p.title, source_url: p.source_url,
@@ -176,7 +174,6 @@ Deno.serve(async (req) => {
         const storedImgs: string[] = Array.isArray(p.images) ? p.images : [];
         r.live.photo_count = liveImages.length;
 
-        // Photo signal: count comparison only (stored images are on our CDN, source images are on agency CDN — direct URL match is meaningless)
         if (liveImages.length > 0 && storedImgs.length > liveImages.length * 1.6) {
           issues.push({
             severity: "warning",
@@ -191,14 +188,12 @@ Deno.serve(async (req) => {
           });
         }
 
-        // Run all 3 Gemini calls in parallel
         const [cls, feat, fields] = await Promise.all([
           classifyType(p.title || "", p.description || "", p.source_url || ""),
           extractFeaturesStrict(p.title || "", p.description || ""),
           extractFields(p.title || "", p.description || "", live.html),
         ]);
 
-        // Listing type
         r.live.type = cls.type;
         r.live.type_reasoning = cls.reasoning;
         if (cls.type && !["resale", "long_term_rental"].includes(cls.type)) {
@@ -209,7 +204,6 @@ Deno.serve(async (req) => {
           });
         }
 
-        // Features
         const liveFeatures: string[] = Array.isArray(feat.features) ? feat.features : [];
         const stored: string[] = Array.isArray(p.features) ? p.features : [];
         const extra = stored.filter(f => !liveFeatures.includes(f));
@@ -232,7 +226,6 @@ Deno.serve(async (req) => {
           });
         }
 
-        // Field accuracy
         r.live.fields = fields;
         if (fields.price_nis && p.price) {
           const diff = Math.abs(Number(fields.price_nis) - Number(p.price)) / Number(p.price);
@@ -258,7 +251,6 @@ Deno.serve(async (req) => {
           });
         }
 
-        // Cross-contamination: does this listing's title/address appear in another's content?
         const liveText = (live.markdown || "").toLowerCase();
         const cross: string[] = [];
         for (const other of titlesAndAddresses) {
@@ -282,13 +274,10 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Severity
       const hasCritical = issues.some(i => i.severity === "critical");
       r.severity = hasCritical ? "critical" : issues.length > 0 ? "warning" : "ok";
-      reports.push(r);
-
-      await new Promise(rr => setTimeout(rr, 300));
-    }
+      return r;
+    }));
 
     const summary = {
       total: reports.length,
