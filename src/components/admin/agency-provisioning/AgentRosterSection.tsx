@@ -287,11 +287,6 @@ export function AgentRosterSection({ agencyId }: Props) {
                           <Shield className="h-3 w-3" /> Admin
                         </Badge>
                       )}
-                      {a.user_id && primaryUserId === a.user_id && (
-                        <Badge variant="outline" className="gap-1">
-                          <Star className="h-3 w-3 fill-current" /> Primary contact
-                        </Badge>
-                      )}
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
