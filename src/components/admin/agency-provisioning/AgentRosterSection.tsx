@@ -69,7 +69,7 @@ export function AgentRosterSection({ agencyId }: Props) {
   const { data: members = [] } = useAgencyMembers(agencyId);
   const promoteAdmin = usePromoteToAdmin();
   const demoteAdmin = useDemoteAdmin();
-  const setPrimary = useSetPrimaryContact();
+  
   const create = useCreateAgent(agencyId);
   const update = useUpdateAgent(agencyId);
   const deleteAgent = useDeleteAgent(agencyId);
