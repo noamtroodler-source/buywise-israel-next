@@ -1,0 +1,1 @@
+UPDATE public.import_jobs SET status='failed', failure_reason=COALESCE(failure_reason,'') || ' [cancelled by admin]', updated_at=now() WHERE agency_id='93133b05-62d3-4311-ac95-eda087aaf447' AND status IN ('discovering','processing','ready','paused');
