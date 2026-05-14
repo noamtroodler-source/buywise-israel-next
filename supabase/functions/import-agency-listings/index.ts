@@ -5090,7 +5090,36 @@ async function processOneItem(
         status: "skipped",
         error_message: `Outside Israel listing skipped: ${outsideIsraelCheck.reason}`,
         error_type: "permanent",
-        extracted_data: { ...sanitizedListing, outside_israel_reason: outsideIsraelCheck.reason },
+        extracted_data: {
+          ...sanitizedListing,
+          outside_israel_reason: outsideIsraelCheck.reason,
+          provisioning_audit: {
+            outside_israel: true,
+            trigger_layer: outsideIsraelCheck.trigger_layer,
+            matched_token: outsideIsraelCheck.matched_token,
+          },
+        },
+      }).eq("id", item.id);
+      return { succeeded: false };
+    }
+
+    // ── LOCATION-UNCLEAR GATE ──
+    // If we have no city, no address, and no coordinates after extraction, we
+    // can't safely place this listing on the map or in a city. Don't auto-insert
+    // and don't auto-reject — surface for manual review so admin can patch the
+    // address from the source URL.
+    const hasCitySignal = Boolean(String(listing.city || "").trim());
+    const hasAddressSignal = Boolean(String(listing.address || "").trim());
+    const hasCoordSignal = Number.isFinite(listing.latitude) && Number.isFinite(listing.longitude);
+    if (!hasCitySignal && !hasAddressSignal && !hasCoordSignal) {
+      await sb.from("import_job_items").update({
+        status: "skipped",
+        error_message: "Location unclear — no city/address/coords extracted",
+        error_type: "needs_review",
+        extracted_data: {
+          ...sanitizedListing,
+          provisioning_audit: { location_unclear: true },
+        },
       }).eq("id", item.id);
       return { succeeded: false };
     }
