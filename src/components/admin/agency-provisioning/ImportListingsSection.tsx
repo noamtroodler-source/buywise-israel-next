@@ -118,12 +118,26 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
       .filter((source) => source.source_url.length > 0);
     if (entries.length === 0) return;
 
+    // Only sync sources whose URL was actually changed in this session.
+    // Prevents re-scanning previously-saved sources that the user didn't touch.
+    const changedTypes = new Set(
+      entries
+        .filter((entry) => entry.source_url !== (initialUrls[entry.source_type] || '').trim())
+        .map((entry) => entry.source_type)
+    );
+
     const savedSources = await upsertSourcesMutation.mutateAsync({
       agency_id: agencyId,
       sources: entries,
     });
 
-    const results = await syncAllSourcesMutation.mutateAsync({ sources: savedSources, importType: 'both' });
+    const sourcesToSync = changedTypes.size > 0
+      ? savedSources.filter((s: any) => changedTypes.has(s.source_type))
+      : savedSources;
+
+    if (sourcesToSync.length === 0) return;
+
+    const results = await syncAllSourcesMutation.mutateAsync({ sources: sourcesToSync, importType: 'both' });
     const firstJobId = results.find((result) => result.data?.job_id)?.data?.job_id;
     if (firstJobId) {
       setActiveJobId(firstJobId);
