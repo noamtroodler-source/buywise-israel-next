@@ -57,6 +57,11 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
     yad2: '',
     madlan: '',
   });
+  const [initialUrls, setInitialUrls] = useState<Record<'website' | 'yad2' | 'madlan', string>>({
+    website: '',
+    yad2: '',
+    madlan: '',
+  });
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
 
   const { data: jobs = [] } = useImportJobs(agencyId);
