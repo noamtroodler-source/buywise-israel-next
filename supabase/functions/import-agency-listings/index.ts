@@ -2314,13 +2314,30 @@ async function handleDiscover(body: any) {
   // same /property/* URL pattern. Reject those at the URL stage so we never spend AI
   // tokens on them. Matches both Latin and Hebrew tokens in the decoded path.
   const NON_ISRAEL_SLUG_TOKENS = [
-    // Latin tokens
+    // Latin tokens — Greece / Cyprus / Gulf
     "ierissos", "chalkidiki", "halkidiki", "faliro", "paliouri", "athens", "greece",
     "thessaloniki", "kassandra", "sithonia", "pefkohori", "nea-moudania", "sani",
-    "cyprus", "larnaca", "limassol", "paphos", "nicosia", "dubai", "tbilisi", "batumi",
+    "cyprus", "larnaca", "limassol", "paphos", "nicosia", "dubai", "uae", "abudhabi",
+    "doha", "qatar",
+    // Spain / Portugal
+    "marbella", "malaga", "costa-del-sol", "ibiza", "mallorca", "barcelona", "madrid",
+    "algarve", "cascais", "porto", "lisbon",
+    // France / Monaco / Italy
+    "cannes", "nice", "monaco", "monte-carlo", "cap-ferrat", "cote-d-azur", "cotedazur",
+    "paris", "rome", "milan", "florence", "venice",
+    // UK / USA
+    "london", "manchester", "manhattan", "brooklyn", "miami", "florida", "los-angeles",
+    "aspen", "boston",
+    // Caucasus / Eastern Europe / Turkey
+    "tbilisi", "batumi", "georgia", "budapest", "montenegro", "kotor", "istanbul",
+    "bodrum", "antalya",
+    // LatAm / Caribbean / Asia
+    "tulum", "playa-del-carmen", "punta-cana", "costa-rica", "panama", "bali",
+    "phuket", "koh-samui", "bangkok", "thailand",
     // Hebrew tokens (already URL-decoded)
-    "יוון", "יווני", "חלקידיקי", "חלדקיקי", "פאלרוס", "פאליורי", "ierissos",
+    "יוון", "יווני", "חלקידיקי", "חלדקיקי", "פאלרוס", "פאליורי",
     "סלוניקי", "אתונה", "קסנדרה", "סיתוניה", "קפריסין", "לרנקה", "דובאי",
+    "מיאמי", "לונדון", "פריז", "ספרד", "פורטוגל", "מרבייה",
   ];
   const beforeNonIsrael = allUrls.length;
   const filteredIsrael = allUrls.filter(url => {
