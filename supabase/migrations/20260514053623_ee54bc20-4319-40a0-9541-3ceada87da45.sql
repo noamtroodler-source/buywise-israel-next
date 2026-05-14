@@ -1,0 +1,1 @@
+DELETE FROM properties WHERE is_demo_fabricated = true OR city ILIKE 'pardesi%';
