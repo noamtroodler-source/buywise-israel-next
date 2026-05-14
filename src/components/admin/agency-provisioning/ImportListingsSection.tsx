@@ -204,6 +204,16 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
     return Date.now() - new Date(heartbeat).getTime() > STALL_THRESHOLD_MS;
   })();
 
+  // Auto-chain now drives "ready" jobs to completion server-side. Only surface
+  // the manual batch button as a recovery trigger when a ready job has gone
+  // quiet for 5+ minutes (the auto-chain likely died).
+  const READY_STALL_MS = 5 * 60 * 1000;
+  const isReadyStuck = currentJob?.status === 'ready' && pendingCount > 0 && (() => {
+    const heartbeat = (currentJob as any).last_heartbeat || (currentJob as any).updated_at;
+    if (!heartbeat) return false;
+    return Date.now() - new Date(heartbeat).getTime() > READY_STALL_MS;
+  })();
+
   const isBackgroundDiscovering = currentJob?.status === 'discovering';
   const isDiscovering = upsertSourcesMutation.isPending || syncAllSourcesMutation.isPending || syncOneSourceMutation.isPending || isBackgroundDiscovering;
   const isProcessing = processBatchMutation.isPending || (currentJob?.status === 'processing' && !isStalled) || isProcessingAll;
@@ -513,10 +523,12 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
                     </Button>
                   )}
 
-                  <Button onClick={handleProcessBatch} disabled={isProcessing} variant="outline" className="rounded-xl">
-                    <Download className="h-4 w-4 mr-2" />
-                    {doneCount + skippedCount + failedCount > 0 ? 'Next' : 'First'} Batch ({Math.min(pendingCount, 9)})
-                  </Button>
+                  {(isReadyStuck || isStalled) && (
+                    <Button onClick={handleProcessBatch} disabled={isProcessing} variant="outline" className="rounded-xl">
+                      <Download className="h-4 w-4 mr-2" />
+                      Resume Stuck Import ({Math.min(pendingCount, 9)})
+                    </Button>
+                  )}
                 </>
               )}
 

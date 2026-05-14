@@ -145,7 +145,7 @@ Deno.serve(async (req) => {
 
             let remaining = newUrls;
             let safety = 0;
-            while (remaining > 0 && safety < 50) {
+            while (remaining > 0 && safety < 100) {
               safety++;
               const processRes = await fetch(
                 `${Deno.env.get("SUPABASE_URL")}/functions/v1/import-agency-listings`,
