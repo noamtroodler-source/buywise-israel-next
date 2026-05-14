@@ -14,7 +14,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import {
-  useAgencyMembers, usePromoteToAdmin, useDemoteAdmin, useSetPrimaryContact, useTransferOwnership,
+  useAgencyMembers, usePromoteToAdmin, useDemoteAdmin, useTransferOwnership,
 } from '@/hooks/useAgencyMembers';
 import { useAgencyPermissions } from '@/hooks/useAgencyPermissions';
 import { useAgencyTeam } from '@/hooks/useAgencyManagement';
