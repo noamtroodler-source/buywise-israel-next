@@ -98,12 +98,11 @@ export function useDiscoverListings() {
       };
     },
     onSuccess: (data) => {
-      if (data.started_async) {
-        toast.success('Discovery started — scanning continues in the background. This may take 2-5 minutes.');
+      const count = data.new_urls || data.total_listings || 0;
+      if (data.started_async || count > 0) {
+        toast.success(`Importing ${count} listings — this runs in the background and will appear here as they're processed.`);
       } else if (data.new_urls === 0 || (!data.job_id && data.skipped_existing)) {
         toast.info(`Your site is up to date — no new listings found. (${data.total_discovered} URLs scanned, ${data.skipped_existing || 0} already imported)`);
-      } else if (data.skipped_existing && data.skipped_existing > 0) {
-        toast.success(`Found ${data.new_urls || data.total_listings} new listing pages (${data.skipped_existing} already imported)`);
       } else {
         toast.success(`Found ${data.total_listings} listing pages`);
       }
