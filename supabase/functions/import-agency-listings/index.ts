@@ -885,14 +885,23 @@ const SKIP_PROPERTY_TYPES = new Set([
 
 function detectShortTermRental(text: string): { isShortTerm: boolean; reason: string } {
   const snippet = text.slice(0, 80_000);
+  // Every pattern below must require *unambiguous* short-term context (a
+  // duration price like "₪500/night", a minimum-stay clause, or an explicit
+  // phrase like "vacation rental" / "דירת נופש"). Bare words like נופש /
+  // לילה / weekly were producing false positives on normal listings that
+  // happened to mention "near vacation area" or "weekly cleaning included".
   const shortTermPatterns: Array<[RegExp, string]> = [
-    [/\bshort[\s-]?term\b/i, "short-term wording"],
+    [/\bshort[\s-]?term\s+(?:rental|let|stay)\b/i, "short-term phrase"],
     [/\bvacation\s+rental\b|\bholiday\s+rental\b|\bairbnb\b/i, "vacation/Airbnb wording"],
-    [/\bper\s+night\b|\bnightly\b|\bby\s+the\s+night\b/i, "nightly pricing"],
-    [/\bper\s+week\b|\bweekly\b|\bby\s+the\s+week\b/i, "weekly pricing"],
-    [/\bminimum\s+(?:stay|rental)\b|\bmin(?:imum)?\s+\d+\s+nights?\b/i, "minimum-stay wording"],
-    [/השכרה\s+לטווח\s+קצר|לטווח\s+קצר|קצר\s+טווח/, "Hebrew short-term wording"],
-    [/לילה|לילות|יומי|יומית|ליום|לשבוע|שבועי|שבועית|נופש|חופשה|איירבנב|אירוח/, "Hebrew nightly/weekly/vacation wording"],
+    [/\bper\s+night\b|\bnightly\s+(?:rate|price|pricing)\b|\bby\s+the\s+night\b/i, "nightly pricing"],
+    [/\bper\s+week\b|\bweekly\s+(?:rate|price|pricing)\b|\bby\s+the\s+week\b/i, "weekly pricing"],
+    [/\bminimum\s+(?:stay|rental|nights?)\b|\bmin(?:imum)?\s+\d+\s+nights?\b/i, "minimum-stay wording"],
+    [/השכרה\s+לטווח\s+קצר|לטווח\s+קצר|קצר\s+טווח/, "Hebrew short-term phrase"],
+    [/₪\s*\d[\d,]*\s*\/?\s*ל(?:ילה|לילות|שבוע|יום)\b/, "Hebrew per-night/week/day price"],
+    [/\d[\d,]*\s*₪\s*\/?\s*ל(?:ילה|לילות|שבוע|יום)\b/, "Hebrew per-night/week/day price (alt)"],
+    [/מינימום\s+\d+\s+לילות?|לפחות\s+\d+\s+לילות?/, "Hebrew minimum nights"],
+    [/איירבנב|אירבנב/i, "Hebrew Airbnb"],
+    [/דירת\s+נופש|דירת\s+אירוח/, "Hebrew vacation apartment phrase"],
   ];
 
   for (const [pattern, reason] of shortTermPatterns) {
