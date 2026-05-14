@@ -207,6 +207,7 @@ function SelectedAgencyWorkspace({ agency }: { agency: any }) {
       <AgentRosterSection agencyId={agency.id} />
       <ImportListingsSection agencyId={agency.id} agencyName={agency.name} />
       <ListingsQualitySection agencyId={agency.id} />
+      <AgencyAuditPanel agencyId={agency.id} />
       <HandoverSection
         agency={agency}
         agentCount={agents.length}
