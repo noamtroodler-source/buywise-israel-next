@@ -15,6 +15,7 @@ import { ListingsQualitySection } from '@/components/admin/agency-provisioning/L
 import { HandoverSection } from '@/components/admin/agency-provisioning/HandoverSection';
 import { OnboardingMonitorSection } from '@/components/admin/agency-provisioning/OnboardingMonitorSection';
 import { AuditLogSection } from '@/components/admin/agency-provisioning/AuditLogSection';
+import { AgencyAuditPanel } from '@/components/admin/AgencyAuditPanel';
 import { PerplexityEnrichDialog } from '@/components/admin/agency-provisioning/PerplexityEnrichDialog';
 import { useAgencyAgents } from '@/hooks/useAgencyProvisioning';
 import { useQuery } from '@tanstack/react-query';
@@ -206,6 +207,7 @@ function SelectedAgencyWorkspace({ agency }: { agency: any }) {
       <AgentRosterSection agencyId={agency.id} />
       <ImportListingsSection agencyId={agency.id} agencyName={agency.name} />
       <ListingsQualitySection agencyId={agency.id} />
+      <AgencyAuditPanel agencyId={agency.id} />
       <HandoverSection
         agency={agency}
         agentCount={agents.length}
