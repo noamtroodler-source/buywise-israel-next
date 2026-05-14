@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Crown, Shield, Star, MoreVertical, Loader2, UserCog, AlertCircle } from 'lucide-react';
+import { Crown, Shield, MoreVertical, Loader2, UserCog, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
