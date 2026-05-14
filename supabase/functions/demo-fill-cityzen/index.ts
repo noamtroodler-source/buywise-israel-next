@@ -156,7 +156,7 @@ Deno.serve(async (req) => {
 
           if (willPublish) {
             patch.is_published = true;
-            patch.verification_status = "live";
+            patch.verification_status = "approved";
             stats.published++;
           }
 
