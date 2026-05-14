@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -64,6 +66,8 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
   });
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
+  const cancelTokenRef = useRef(0);
+  const queryClient = useQueryClient();
 
   const { data: jobs = [] } = useImportJobs(agencyId);
   const { data: sources = [] } = useAgencySources(agencyId);
@@ -114,23 +118,31 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
 
   const handleSaveAndDiscover = async (e: React.FormEvent) => {
     e.preventDefault();
+    const myToken = ++cancelTokenRef.current;
+    const isCancelled = () => cancelTokenRef.current !== myToken;
+
     const entries = (['website', 'madlan', 'yad2'] as const)
       .map((sourceType) => ({ source_type: sourceType, source_url: sourceUrls[sourceType].trim(), priority: SOURCE_META[sourceType].priority }))
       .filter((source) => source.source_url.length > 0);
     if (entries.length === 0) return;
 
-    // Only sync sources whose URL was actually changed in this session.
-    // Prevents re-scanning previously-saved sources that the user didn't touch.
     const changedTypes = new Set(
       entries
         .filter((entry) => entry.source_url !== (initialUrls[entry.source_type] || '').trim())
         .map((entry) => entry.source_type)
     );
 
-    const savedSources = await upsertSourcesMutation.mutateAsync({
-      agency_id: agencyId,
-      sources: entries,
-    });
+    let savedSources: any[];
+    try {
+      savedSources = await upsertSourcesMutation.mutateAsync({
+        agency_id: agencyId,
+        sources: entries,
+      });
+    } catch (err) {
+      if (isCancelled()) return;
+      throw err;
+    }
+    if (isCancelled()) return;
 
     const sourcesToSync = changedTypes.size > 0
       ? savedSources.filter((s: any) => changedTypes.has(s.source_type))
@@ -138,8 +150,25 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
 
     if (sourcesToSync.length === 0) return;
 
-    const results = await syncAllSourcesMutation.mutateAsync({ sources: sourcesToSync, importType: 'both' });
-    const firstJobId = results.find((result) => result.data?.job_id)?.data?.job_id;
+    let results: any[];
+    try {
+      results = await syncAllSourcesMutation.mutateAsync({ sources: sourcesToSync, importType: 'both' });
+    } catch (err) {
+      if (isCancelled()) return;
+      throw err;
+    }
+
+    const createdJobIds = results.map((r: any) => r?.data?.job_id).filter(Boolean) as string[];
+
+    if (isCancelled()) {
+      // Cancellation arrived while sync was in flight — clean up any jobs it produced.
+      for (const id of createdJobIds) {
+        try { await deleteJobMutation.mutateAsync(id); } catch {}
+      }
+      return;
+    }
+
+    const firstJobId = createdJobIds[0];
     if (firstJobId) {
       setActiveJobId(firstJobId);
     }
@@ -287,25 +316,43 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
                   className="rounded-xl text-destructive hover:text-destructive"
                   disabled={isCancelling}
                   onClick={async () => {
+                    // Bump the token so any in-flight handleSaveAndDiscover bails out.
+                    cancelTokenRef.current += 1;
                     setIsCancelling(true);
+                    setActiveJobId(null);
                     try {
                       upsertSourcesMutation.reset();
                       syncAllSourcesMutation.reset();
                       syncOneSourceMutation.reset();
 
-                      // Delete every in-flight job for this agency (not just the
-                      // one currently surfaced) so a fresh discover can start clean.
-                      const inflight = jobs.filter((j) =>
-                        ['discovering', 'ready', 'processing', 'paused'].includes(j.status)
-                      );
-                      for (const j of inflight) {
-                        try {
-                          await deleteJobMutation.mutateAsync(j.id);
-                        } catch (err) {
-                          console.error('[cancel-and-start-over] failed to delete job', j.id, err);
+                      // Sweep DB for any active jobs (including ones that may
+                      // get created moments after cancel by an in-flight sync).
+                      const sweep = async () => {
+                        const { data } = await supabase
+                          .from('import_jobs')
+                          .select('id, status')
+                          .eq('agency_id', agencyId)
+                          .in('status', ['discovering', 'ready', 'processing', 'paused']);
+                        for (const j of data ?? []) {
+                          try {
+                            await deleteJobMutation.mutateAsync(j.id);
+                          } catch (err) {
+                            console.error('[cancel] delete job failed', j.id, err);
+                          }
                         }
+                        return (data ?? []).length;
+                      };
+
+                      // Run a few sweeps to catch jobs created by the
+                      // still-resolving sync request after the first sweep.
+                      for (let i = 0; i < 4; i++) {
+                        const n = await sweep();
+                        if (i > 0 && n === 0) break;
+                        await new Promise((r) => setTimeout(r, 1500));
                       }
-                      setActiveJobId(null);
+
+                      await queryClient.invalidateQueries({ queryKey: ['import-jobs', agencyId] });
+                      await queryClient.invalidateQueries({ queryKey: ['agency-sources', agencyId] });
                     } finally {
                       setIsCancelling(false);
                     }
