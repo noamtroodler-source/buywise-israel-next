@@ -1,0 +1,1 @@
+DELETE FROM public.email_send_log WHERE recipient_email IN ('request@erezrealestate.co.il', 'annalebenson@gmail.com');
