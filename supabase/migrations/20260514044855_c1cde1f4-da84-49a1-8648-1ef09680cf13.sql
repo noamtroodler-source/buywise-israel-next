@@ -1,0 +1,1 @@
+UPDATE public.import_jobs SET status='failed', updated_at=now() WHERE id IN ('7cc5fd45-5eb7-4184-b4ca-dfa18666035f','75bbd21f-0458-4872-8c74-90bdf8bf5e02');
