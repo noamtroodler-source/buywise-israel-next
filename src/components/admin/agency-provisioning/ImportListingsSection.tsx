@@ -48,6 +48,11 @@ const getImportTypeLabel = (importType?: string | null) => {
   return 'Sale only';
 };
 
+const sameSourceUrls = (
+  a: Record<'website' | 'yad2' | 'madlan', string>,
+  b: Record<'website' | 'yad2' | 'madlan', string>,
+) => a.website === b.website && a.yad2 === b.yad2 && a.madlan === b.madlan;
+
 /**
  * Embedded admin import tool — scoped to a single agency. Used inside the
  * Agency Provisioning workspace so admins can pull listings on behalf of the
@@ -66,6 +71,7 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
   });
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [isManualSyncing, setIsManualSyncing] = useState(false);
   const cancelTokenRef = useRef(0);
   const queryClient = useQueryClient();
 
@@ -89,8 +95,8 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
       yad2: sources.find((source) => source.source_type === 'yad2')?.source_url || '',
       madlan: sources.find((source) => source.source_type === 'madlan')?.source_url || '',
     };
-    setSourceUrls(next);
-    setInitialUrls(next);
+    setSourceUrls((prev) => (sameSourceUrls(prev, next) ? prev : next));
+    setInitialUrls((prev) => (sameSourceUrls(prev, next) ? prev : next));
   }, [sources]);
 
   const activeSources = useMemo(
@@ -101,9 +107,9 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
   const currentJob = jobs.length === 0
     ? undefined
     : activeJobId
-      ? jobs.find(j => j.id === activeJobId)
-      : jobs.find(j => ['discovering', 'ready', 'processing'].includes(j.status))
-        || jobs.find(j => !['cancelled', 'obsolete'].includes(j.status));
+      ? jobs.find(j => j.id === activeJobId && j.status !== 'failed')
+      : jobs.find(j => ['discovering', 'ready', 'processing', 'paused'].includes(j.status))
+        || jobs.find(j => j.status === 'completed');
 
   const currentJobSourceLabel = getJobSourceLabel(currentJob?.source_type);
   const currentJobImportTypeLabel = getImportTypeLabel(currentJob?.import_type);
@@ -115,6 +121,15 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
 
   const { data: jobItems = [] } = useImportJobItems(currentJob?.id);
   useRealtimeImportProgress(currentJob?.id);
+
+  const cancelAgencyImportJobs = async () => {
+    const { data, error } = await supabase.functions.invoke('import-agency-listings', {
+      body: { action: 'cancel_agency_jobs', agency_id: agencyId },
+    });
+    if (error) throw error;
+    if (data?.error) throw new Error(data.error);
+    return data as { cancelled_count: number; job_ids: string[] };
+  };
 
   const handleSaveAndDiscover = async (e: React.FormEvent) => {
     e.preventDefault();
