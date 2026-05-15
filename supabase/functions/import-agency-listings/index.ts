@@ -4137,6 +4137,51 @@ function inferCityFromHebrew(text: string): string | null {
   return null;
 }
 
+// Pull the listing-agent block out of the FULL page markdown before it gets
+// truncated to 8000 chars for the AI prompt. On real-estate sites the agent
+// block almost always sits at the bottom of the page (after a long description,
+// features, and map), which is often past the truncation window. By scanning
+// the whole markdown for known agent headings/labels and prepending the matched
+// snippet to the prompt as a dedicated section, AI sees the agent info no
+// matter how long the rest of the page is.
+function extractAgentBlockFromMarkdown(markdown: string): string {
+  if (!markdown) return "";
+  const patterns: RegExp[] = [
+    /LISTING\s+AGENT[\s\S]{0,400}/i,
+    /CONTACT\s+(?:THE\s+)?AGENT[\s\S]{0,400}/i,
+    /YOUR\s+AGENT[\s\S]{0,400}/i,
+    /(?:^|\n)\s*Listed\s+by[\s\S]{0,400}/i,
+    /(?:^|\n)\s*(?:Agent|Broker|Realtor)\s*[:\n][\s\S]{0,400}/i,
+    /(?:^|\n)\s*סוכן[\s\S]{0,400}/,
+    /(?:^|\n)\s*מתווך[\s\S]{0,400}/,
+    /(?:^|\n)\s*איש\s+קשר[\s\S]{0,400}/,
+  ];
+  for (const pattern of patterns) {
+    const match = markdown.match(pattern);
+    if (match) {
+      const block = match[0].trim();
+      if (block.length >= 10) return block.slice(0, 500);
+    }
+  }
+  // Fallback: phone-and-email-in-close-proximity heuristic. Agent contact info
+  // typically sits next to a name; if we see a phone + email within ~250 chars
+  // of each other anywhere on the page, capture that neighborhood.
+  const phoneRe = /(?:\+?972[\s\-]?|0)5\d[\s\-]?\d{3}[\s\-]?\d{4}/;
+  const emailRe = /[\w.+-]+@[\w-]+(?:\.[\w-]+)+/;
+  const phoneMatch = markdown.match(phoneRe);
+  const emailMatch = markdown.match(emailRe);
+  if (phoneMatch && emailMatch) {
+    const pIdx = phoneMatch.index ?? -1;
+    const eIdx = emailMatch.index ?? -1;
+    if (pIdx >= 0 && eIdx >= 0 && Math.abs(pIdx - eIdx) <= 400) {
+      const start = Math.max(0, Math.min(pIdx, eIdx) - 200);
+      const end = Math.min(markdown.length, Math.max(pIdx, eIdx) + 200);
+      return markdown.slice(start, end).trim().slice(0, 500);
+    }
+  }
+  return "";
+}
+
 function buildExtractionPrompt(url: string, domain: string, markdown: string, pageLinks: string[], includeImages = true): string {
   const yad2Hint = url.includes("yad2.co.il") ? `\n${inferYad2RegionHint(url)}` : "";
   const imageInstruction = includeImages
@@ -4245,7 +4290,12 @@ LISTING AGENT — extract per-property, not agency-wide:
   If the page genuinely shows no human agent for this listing, leave listing_agent_name empty rather than guessing.
 - listing_agent_phone: Phone of the same agent if shown. Strip spacing.
 
-Page URL: ${url}
+${(() => {
+  const block = extractAgentBlockFromMarkdown(markdown);
+  return block
+    ? `═══ AGENT BLOCK FOUND ON PAGE (verbatim, preserved before page truncation) ═══\n${block}\n═══ END OF AGENT BLOCK ═══\n\nUse this block as the primary source for listing_agent_name and listing_agent_phone.\n\n`
+    : "";
+})()}Page URL: ${url}
 Page content:
 ${markdown.substring(0, 8000)}
 
