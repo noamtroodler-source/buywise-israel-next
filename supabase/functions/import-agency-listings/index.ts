@@ -114,6 +114,36 @@ async function authorize(req: Request, sb: ReturnType<typeof supabaseAdmin>, bod
   }
 }
 
+async function shouldStopImportJob(sb: ReturnType<typeof supabaseAdmin>, jobId: string): Promise<boolean> {
+  const { data } = await sb.from("import_jobs").select("status").eq("id", jobId).maybeSingle();
+  return !data || data.status === "failed" || data.status === "completed" || data.status === "paused";
+}
+
+async function handleCancelAgencyJobs(body: any) {
+  const { agency_id } = body;
+  if (!agency_id) throw new Error("agency_id required");
+  const sb = supabaseAdmin();
+  const { data: jobs, error } = await sb
+    .from("import_jobs")
+    .select("id")
+    .eq("agency_id", agency_id)
+    .in("status", ["discovering", "ready", "processing", "paused"]);
+  if (error) throw new Error(`Failed to find active jobs: ${error.message}`);
+  const jobIds = (jobs || []).map((job: any) => job.id);
+  if (jobIds.length === 0) return { cancelled_count: 0, job_ids: [] };
+  await sb.from("import_jobs").update({
+    status: "failed",
+    failure_reason: "cancelled_by_admin",
+    last_heartbeat: null,
+  }).in("id", jobIds);
+  await sb.from("import_job_items").update({
+    status: "skipped",
+    error_message: "Cancelled by admin",
+    error_type: "permanent",
+  }).in("job_id", jobIds).in("status", ["pending", "processing"]);
+  return { cancelled_count: jobIds.length, job_ids: jobIds };
+}
+
 // ─── TITLE GENERATION HELPERS ───────────────────────────────────────────────
 
 function toTitleCase(str: string): string {
@@ -2136,6 +2166,10 @@ async function handleDiscover(body: any) {
   const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
   if (!FIRECRAWL_API_KEY) throw new Error("FIRECRAWL_API_KEY not configured");
 
+  if (existingJobId && await shouldStopImportJob(sb, existingJobId)) {
+    return { job_id: existingJobId, total_listings: 0, total_discovered: 0, new_urls: 0, skipped_existing: 0, status: "cancelled" };
+  }
+
   const formattedUrl = normalizedUrl;
   const siteRoot = getSiteRoot(formattedUrl);
   const enteredUrlIsDifferentFromRoot = normalizeUrl(siteRoot) !== normalizeUrl(formattedUrl);
@@ -2157,6 +2191,10 @@ async function handleDiscover(body: any) {
     throw new Error(`Firecrawl MAP failed (${mapRes.status}): ${errText.slice(0, 300)}`);
   }
   const mapData = await mapRes.json();
+
+  if (existingJobId && await shouldStopImportJob(sb, existingJobId)) {
+    return { job_id: existingJobId, total_listings: 0, total_discovered: 0, new_urls: 0, skipped_existing: 0, status: "cancelled" };
+  }
 
   const rawUrls: string[] = [...sitemapUrls, ...(mapData.links || mapData.data || [])];
   console.log(`Root map discovered ${rawUrls.length} URLs`);
@@ -2326,6 +2364,11 @@ async function handleDiscover(body: any) {
   const aiListingUrls = needsAiClassification.length > 0
     ? await classifyUrlsInBatches(needsAiClassification, LOVABLE_API_KEY)
     : [];
+
+  if (existingJobId && await shouldStopImportJob(sb, existingJobId)) {
+    return { job_id: existingJobId, total_listings: 0, total_discovered: allUrls.length, new_urls: 0, skipped_existing: skippedExisting, status: "cancelled" };
+  }
+
   const listingUrls = Array.from(new Set([...deterministicListingUrls, ...aiListingUrls].map((url) => normalizeUrl(url))));
   console.log(`Listing classification: ${deterministicListingUrls.length} deterministic + ${aiListingUrls.length} AI = ${listingUrls.length}`);
 
@@ -5991,10 +6034,10 @@ async function handleProcessBatch(body: any) {
     .from("import_jobs").select("*, agencies!inner(id, admin_user_id)").eq("id", job_id).single();
   if (jobErr || !job) throw new Error("Import job not found");
 
-  // Honor a pause request: bail before doing any work and break the self-chain.
-  if (job.status === "paused") {
-    dlog(`Job ${job_id} is paused — skipping batch`);
-    return { processed: 0, succeeded: 0, failed: 0, remaining: 0, status: "paused" };
+  // Honor pause/cancel requests: bail before doing any work and break the self-chain.
+  if (["paused", "failed", "completed"].includes(job.status)) {
+    dlog(`Job ${job_id} is ${job.status} — skipping batch`);
+    return { processed: 0, succeeded: 0, failed: 0, remaining: 0, status: job.status };
   }
 
   const cachedDomainCity = inferCityFromDomain(job.website_url);
@@ -6036,6 +6079,7 @@ async function handleProcessBatch(body: any) {
   while (true) {
     if (totalProcessed >= MAX_ITEMS) break;
     if (Date.now() - batchStartTime > TIME_LIMIT_MS) break;
+    if (await shouldStopImportJob(sb, job_id)) break;
 
     const { data: pendingItems, error: itemsErr } = await sb
       .from("import_job_items").select("*")
@@ -6050,6 +6094,7 @@ async function handleProcessBatch(body: any) {
 
     for (let i = 0; i < pendingItems.length && totalProcessed < MAX_ITEMS; i += currentConcurrency) {
       if (Date.now() - batchStartTime > TIME_LIMIT_MS) break;
+      if (await shouldStopImportJob(sb, job_id)) break;
 
       const chunk = pendingItems.slice(i, i + currentConcurrency);
       const results = await Promise.allSettled(
@@ -6104,6 +6149,10 @@ async function handleProcessBatch(body: any) {
 
   // Re-read job status so a pause requested during this batch is preserved.
   const { data: latestJob } = await sb.from("import_jobs").select("status").eq("id", job_id).single();
+  if (!latestJob || ["failed", "completed"].includes(latestJob.status)) {
+    return { processed: totalProcessed, succeeded: totalSucceeded, failed: totalFailed, remaining: remainingCount, status: latestJob?.status || "cancelled" };
+  }
+
   const wasPaused = latestJob?.status === "paused";
   const newStatus = wasPaused
     ? "paused"
@@ -8256,6 +8305,7 @@ Deno.serve(async (req) => {
     else if (action === "resolve_duplicate_review") result = await handleResolveDuplicateReview(body);
     else if (action === "resume_job") result = await handleResumeJob(body);
     else if (action === "pause_job") result = await handlePauseJob(body);
+    else if (action === "cancel_agency_jobs") result = await handleCancelAgencyJobs(body);
     else if (action === "quarantine_madlan_batch") result = await handleQuarantineMadlanBatch(body);
     else if (action === "check_existing") result = await handleCheckExisting(body);
     else if (action === "backfill_street_view") result = await handleBackfillStreetView(body);
