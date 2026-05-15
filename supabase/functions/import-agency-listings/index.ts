@@ -4238,6 +4238,13 @@ ADDITIONAL FIELDS — extract whenever present on ANY agency site:
 - features: Use STANDARDIZED keys: elevator, balcony, sun_balcony, sukkah_balcony, mamad, parking, storage, garden, pool, gym, doorman, security, air_conditioning, central_ac, solar_heater, furnished, accessible, shutters, window_bars, security_doors, roof_access, sea_view, city_view, quiet_street, renovated_kitchen, renovated_bathrooms, smart_home, underfloor_heating, jacuzzi, sauna, wine_cellar, private_entrance.
   IMPORTANT: Parse the free-text description for features not in structured data tables. Many agencies list features only in prose.
 
+LISTING AGENT — extract per-property, not agency-wide:
+- listing_agent_name: The HUMAN agent representing THIS listing. Usually in a contact card, sidebar, "listed by" / "contact agent" / "broker" / "סוכן" / "מתווך" / "איש קשר" block, or above/below an agent photo.
+  Different listings on the same agency site often have DIFFERENT listing agents — extract whoever this specific page attributes the listing to.
+  DO NOT use the agency name (e.g. "Jerusalem Real Estate"). DO NOT use a generic label like "Contact us" or "Agent".
+  If the page genuinely shows no human agent for this listing, leave listing_agent_name empty rather than guessing.
+- listing_agent_phone: Phone of the same agent if shown. Strip spacing.
+
 Page URL: ${url}
 Page content:
 ${markdown.substring(0, 8000)}
@@ -4550,6 +4557,55 @@ ${truncatedContent}`;
     console.error(`Simplified retry error:`, err);
     return null;
   }
+}
+
+// Resolve the per-listing agent. Looks up an existing agent in this agency
+// by name (case-insensitive), and if none exists creates one with
+// needs_review=true so an admin can confirm before it shows on the buyer UI.
+// Falls back to the batch-level default when no name was extracted or the
+// lookup/insert fails.
+async function resolveListingAgentId(
+  sb: any,
+  agencyId: string | null | undefined,
+  agentName: string | null | undefined,
+  agentPhone: string | null | undefined,
+  fallbackId: string | null,
+): Promise<string | null> {
+  if (!agencyId) return fallbackId;
+  const cleaned = String(agentName ?? "").trim();
+  if (!cleaned || cleaned.length < 2) return fallbackId;
+
+  // Reject obvious non-human placeholders the AI might still slip through.
+  const lower = cleaned.toLowerCase();
+  if (/^(contact|agent|broker|office|info|sales|מתווך|איש קשר)\b/.test(lower)) {
+    return fallbackId;
+  }
+
+  const { data: existing } = await sb
+    .from("agents")
+    .select("id")
+    .eq("agency_id", agencyId)
+    .ilike("name", cleaned)
+    .limit(1);
+  if (existing && existing.length > 0) return existing[0].id;
+
+  const phone = agentPhone ? String(agentPhone).trim().slice(0, 50) : null;
+  const { data: created, error: insertErr } = await sb
+    .from("agents")
+    .insert({
+      agency_id: agencyId,
+      name: cleaned,
+      phone,
+      enrichment_source: "import_extraction",
+      needs_review: true,
+    })
+    .select("id")
+    .single();
+  if (insertErr) {
+    console.warn(`[Agent resolve] insert failed for "${cleaned}" / agency ${agencyId}: ${insertErr.message}`);
+    return fallbackId;
+  }
+  return created?.id || fallbackId;
 }
 
 async function processOneItem(
@@ -4927,6 +4983,8 @@ async function processOneItem(
                   bank_guarantee_required: { type: "boolean" },
                   checks_required: { type: "boolean" },
                   photo_count: { type: "number" },
+                  listing_agent_name: { type: "string", description: "Name of the agent representing THIS specific listing — usually shown in a contact card, sidebar, or 'listed by'/'agent'/'broker' line on the page. Hebrew or English allowed. Do not use the agency name; use the human's name." },
+                  listing_agent_phone: { type: "string", description: "Phone number of the listing agent if shown on the page." },
                   ...(includeImagesInExtraction ? {
                     image_urls: { type: "array", items: { type: "string" }, description: "Agency-owned listing image URLs visible on this source page only" },
                   } : {}),
@@ -5031,6 +5089,19 @@ async function processOneItem(
       }
       listing._has_structured_data = true;
     }
+
+    // ── Resolve the per-listing agent (replaces the batch-level default) ──
+    // The default agentId passed into this function was the agency's first
+    // agent. After extraction, override with the human listed on this page
+    // so each property is attributed to its real broker.
+    agentId = await resolveListingAgentId(
+      sb,
+      job.agency_id,
+      listing?.listing_agent_name,
+      listing?.listing_agent_phone,
+      agentId,
+    );
+
     if (cmsExtracted) {
       listing._cms_extracted = cmsExtracted;
     }
