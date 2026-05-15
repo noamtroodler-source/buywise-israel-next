@@ -8305,6 +8305,7 @@ Deno.serve(async (req) => {
     else if (action === "resolve_duplicate_review") result = await handleResolveDuplicateReview(body);
     else if (action === "resume_job") result = await handleResumeJob(body);
     else if (action === "pause_job") result = await handlePauseJob(body);
+    else if (action === "cancel_agency_jobs") result = await handleCancelAgencyJobs(body);
     else if (action === "quarantine_madlan_batch") result = await handleQuarantineMadlanBatch(body);
     else if (action === "check_existing") result = await handleCheckExisting(body);
     else if (action === "backfill_street_view") result = await handleBackfillStreetView(body);
