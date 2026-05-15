@@ -4559,11 +4559,28 @@ ${truncatedContent}`;
   }
 }
 
-// Resolve the per-listing agent. Looks up an existing agent in this agency
-// by name (case-insensitive), and if none exists creates one with
-// needs_review=true so an admin can confirm before it shows on the buyer UI.
-// Falls back to the batch-level default when no name was extracted or the
-// lookup/insert fails.
+// Strip everything but Latin alphanumerics + Hebrew letters, lowercase.
+// Catches whitespace/punctuation drift: "Sarah-Cohen", "Sarah  Cohen",
+// "Sarah, Cohen" all normalize to "sarahcohen".
+function normalizeAgentName(s: string | null | undefined): string {
+  return String(s ?? "").toLowerCase().replace(/[^a-z0-9א-ת]/g, "").trim();
+}
+
+// Digits-only with Israeli country-code / leading-zero stripped, so
+// "+972-50-123-4567", "0501234567", and "972501234567" all collapse to
+// "501234567". 7-digit minimum to avoid false matches on short extensions.
+function normalizeAgentPhone(s: string | null | undefined): string {
+  let digits = String(s ?? "").replace(/\D+/g, "");
+  if (digits.startsWith("972")) digits = digits.slice(3);
+  if (digits.startsWith("0")) digits = digits.slice(1);
+  return digits;
+}
+
+// Resolve the per-listing agent. Match order: (1) normalized-name exact,
+// (2) digits-only phone exact. Either hit reuses the existing registered
+// agent. Only when both fail do we insert a new agent — flagged
+// needs_review=true so admins can merge later if it turns out to be a
+// duplicate of an already-registered person under a different spelling.
 async function resolveListingAgentId(
   sb: any,
   agencyId: string | null | undefined,
@@ -4572,37 +4589,58 @@ async function resolveListingAgentId(
   fallbackId: string | null,
 ): Promise<string | null> {
   if (!agencyId) return fallbackId;
-  const cleaned = String(agentName ?? "").trim();
-  if (!cleaned || cleaned.length < 2) return fallbackId;
+  const cleanedName = String(agentName ?? "").trim();
+  const cleanedPhone = String(agentPhone ?? "").trim();
+  if (!cleanedName && !cleanedPhone) return fallbackId;
 
   // Reject obvious non-human placeholders the AI might still slip through.
-  const lower = cleaned.toLowerCase();
-  if (/^(contact|agent|broker|office|info|sales|מתווך|איש קשר)\b/.test(lower)) {
-    return fallbackId;
+  if (cleanedName) {
+    const lower = cleanedName.toLowerCase();
+    if (/^(contact|agent|broker|office|info|sales|מתווך|איש קשר)\b/.test(lower)) {
+      return fallbackId;
+    }
   }
 
-  const { data: existing } = await sb
-    .from("agents")
-    .select("id")
-    .eq("agency_id", agencyId)
-    .ilike("name", cleaned)
-    .limit(1);
-  if (existing && existing.length > 0) return existing[0].id;
+  const normalizedName = normalizeAgentName(cleanedName);
+  const normalizedPhone = normalizeAgentPhone(cleanedPhone);
 
-  const phone = agentPhone ? String(agentPhone).trim().slice(0, 50) : null;
+  // Pull every agent for this agency once (small table; <50 rows typical)
+  // and match in-process so the comparison uses the same normalizers on
+  // both sides instead of relying on Postgres ILIKE semantics.
+  const { data: existingAgents } = await sb
+    .from("agents")
+    .select("id, name, phone")
+    .eq("agency_id", agencyId);
+
+  if (existingAgents && existingAgents.length > 0) {
+    if (normalizedName && normalizedName.length >= 2) {
+      const hit = existingAgents.find((a: any) => normalizeAgentName(a.name) === normalizedName);
+      if (hit) return hit.id;
+    }
+    if (normalizedPhone && normalizedPhone.length >= 7) {
+      const hit = existingAgents.find((a: any) => normalizeAgentPhone(a.phone) === normalizedPhone);
+      if (hit) return hit.id;
+    }
+  }
+
+  // No match. Only auto-create when we have a usable human name; phone
+  // alone isn't enough to seed a new row.
+  if (!cleanedName || cleanedName.length < 2) return fallbackId;
+
+  const phoneForInsert = cleanedPhone ? cleanedPhone.slice(0, 50) : null;
   const { data: created, error: insertErr } = await sb
     .from("agents")
     .insert({
       agency_id: agencyId,
-      name: cleaned,
-      phone,
+      name: cleanedName,
+      phone: phoneForInsert,
       enrichment_source: "import_extraction",
       needs_review: true,
     })
     .select("id")
     .single();
   if (insertErr) {
-    console.warn(`[Agent resolve] insert failed for "${cleaned}" / agency ${agencyId}: ${insertErr.message}`);
+    console.warn(`[Agent resolve] insert failed for "${cleanedName}" / agency ${agencyId}: ${insertErr.message}`);
     return fallbackId;
   }
   return created?.id || fallbackId;
