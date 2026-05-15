@@ -259,8 +259,8 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
     return Date.now() - new Date(heartbeat).getTime() > READY_STALL_MS;
   })();
 
-  const isBackgroundDiscovering = currentJob?.status === 'discovering';
-  const isDiscovering = !isCancelling && (upsertSourcesMutation.isPending || syncAllSourcesMutation.isPending || syncOneSourceMutation.isPending || isBackgroundDiscovering);
+  const isBackgroundDiscovering = !isCancelling && currentJob?.status === 'discovering';
+  const isDiscovering = !isCancelling && (upsertSourcesMutation.isPending || syncAllSourcesMutation.isPending || syncOneSourceMutation.isPending || isManualSyncing || isBackgroundDiscovering);
   const isProcessing = processBatchMutation.isPending || (currentJob?.status === 'processing' && !isStalled) || isProcessingAll;
   const isReady = (currentJob?.status === 'ready' && pendingCount > 0) || isStalled;
   const isCompleted = currentJob?.status === 'completed';
@@ -324,7 +324,7 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
               )}
               </Button>
 
-              {(isDiscovering || isCancelling) && (
+              {(isDiscovering || isProcessing || isPaused || isCancelling) && (
                 <Button
                   type="button"
                   variant="outline"
@@ -339,34 +339,19 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
                       upsertSourcesMutation.reset();
                       syncAllSourcesMutation.reset();
                       syncOneSourceMutation.reset();
+                      stopProcessAll();
+                      setIsManualSyncing(false);
 
-                      // Sweep DB for any active jobs (including ones that may
-                      // get created moments after cancel by an in-flight sync).
-                      const sweep = async () => {
-                        const { data } = await supabase
-                          .from('import_jobs')
-                          .select('id, status')
-                          .eq('agency_id', agencyId)
-                          .in('status', ['discovering', 'ready', 'processing', 'paused']);
-                        for (const j of data ?? []) {
-                          try {
-                            await deleteJobMutation.mutateAsync(j.id);
-                          } catch (err) {
-                            console.error('[cancel] delete job failed', j.id, err);
-                          }
-                        }
-                        return (data ?? []).length;
-                      };
-
-                      // Run a few sweeps to catch jobs created by the
-                      // still-resolving sync request after the first sweep.
+                      // Mark active jobs cancelled server-side. The background
+                      // import worker reads this status and stops instead of
+                      // resurrecting the job after the UI clears.
                       for (let i = 0; i < 4; i++) {
-                        const n = await sweep();
-                        if (i > 0 && n === 0) break;
+                        const result = await cancelAgencyImportJobs();
+                        if (i > 0 && result.cancelled_count === 0) break;
                         await new Promise((r) => setTimeout(r, 1500));
                       }
 
-                      await queryClient.invalidateQueries({ queryKey: ['import-jobs', agencyId] });
+                      await queryClient.invalidateQueries({ queryKey: ['importJobs', agencyId] });
                       await queryClient.invalidateQueries({ queryKey: ['agency-sources', agencyId] });
                     } finally {
                       setIsCancelling(false);
@@ -386,9 +371,14 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
                 variant="outline"
                 disabled={isDiscovering || activeSources.length === 0}
                 onClick={async () => {
-                  const results = await syncAllSourcesMutation.mutateAsync({ sources: activeSources, importType: 'both' });
-                  const firstJobId = results.find((result) => result.data?.job_id)?.data?.job_id;
-                  if (firstJobId) setActiveJobId(firstJobId);
+                  setIsManualSyncing(true);
+                  try {
+                    const results = await syncAllSourcesMutation.mutateAsync({ sources: activeSources, importType: 'both' });
+                    const firstJobId = results.find((result) => result.data?.job_id)?.data?.job_id;
+                    if (firstJobId) setActiveJobId(firstJobId);
+                  } finally {
+                    setIsManualSyncing(false);
+                  }
                 }}
                 className="rounded-xl"
               >
