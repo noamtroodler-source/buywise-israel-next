@@ -114,6 +114,36 @@ async function authorize(req: Request, sb: ReturnType<typeof supabaseAdmin>, bod
   }
 }
 
+async function shouldStopImportJob(sb: ReturnType<typeof supabaseAdmin>, jobId: string): Promise<boolean> {
+  const { data } = await sb.from("import_jobs").select("status").eq("id", jobId).maybeSingle();
+  return !data || data.status === "failed" || data.status === "completed" || data.status === "paused";
+}
+
+async function handleCancelAgencyJobs(body: any) {
+  const { agency_id } = body;
+  if (!agency_id) throw new Error("agency_id required");
+  const sb = supabaseAdmin();
+  const { data: jobs, error } = await sb
+    .from("import_jobs")
+    .select("id")
+    .eq("agency_id", agency_id)
+    .in("status", ["discovering", "ready", "processing", "paused"]);
+  if (error) throw new Error(`Failed to find active jobs: ${error.message}`);
+  const jobIds = (jobs || []).map((job: any) => job.id);
+  if (jobIds.length === 0) return { cancelled_count: 0, job_ids: [] };
+  await sb.from("import_jobs").update({
+    status: "failed",
+    failure_reason: "cancelled_by_admin",
+    last_heartbeat: null,
+  }).in("id", jobIds);
+  await sb.from("import_job_items").update({
+    status: "skipped",
+    error_message: "Cancelled by admin",
+    error_type: "permanent",
+  }).in("job_id", jobIds).in("status", ["pending", "processing"]);
+  return { cancelled_count: jobIds.length, job_ids: jobIds };
+}
+
 // ─── TITLE GENERATION HELPERS ───────────────────────────────────────────────
 
 function toTitleCase(str: string): string {
