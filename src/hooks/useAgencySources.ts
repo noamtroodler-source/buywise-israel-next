@@ -255,9 +255,10 @@ export function useTriggerSourceSync() {
 export function useTriggerAgencySourcesSync() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: AgencySource[] | { sources: AgencySource[]; importType?: AgencySourceImportType }) => {
+    mutationFn: async (input: AgencySource[] | { sources: AgencySource[]; importType?: AgencySourceImportType; shouldContinue?: () => boolean }) => {
       const sources = Array.isArray(input) ? input : input.sources;
       const importType = Array.isArray(input) ? 'both' : input.importType ?? 'both';
+      const shouldContinue = Array.isArray(input) ? undefined : input.shouldContinue;
       const sourceRank: Record<AgencySource['source_type'], number> = { website: 1, madlan: 2, yad2: 3 };
       const activeSources = sources
         .filter((source) => source.is_active && source.source_url)
@@ -267,6 +268,7 @@ export function useTriggerAgencySourcesSync() {
 
       const results = [];
       for (const source of activeSources) {
+        if (shouldContinue && !shouldContinue()) break;
         const { data, error } = await supabase.functions.invoke('import-agency-listings', {
           body: {
             action: 'discover',
@@ -279,6 +281,7 @@ export function useTriggerAgencySourcesSync() {
         if (error) throw error;
         if (data?.error) throw new Error(data.error);
         results.push({ source, data });
+        if (shouldContinue && !shouldContinue()) break;
       }
       return results;
     },
