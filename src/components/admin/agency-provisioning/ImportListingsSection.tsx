@@ -167,7 +167,11 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
 
     let results: any[];
     try {
-      results = await syncAllSourcesMutation.mutateAsync({ sources: sourcesToSync, importType: 'both' });
+      results = await syncAllSourcesMutation.mutateAsync({
+        sources: sourcesToSync,
+        importType: 'both',
+        shouldContinue: () => !isCancelled(),
+      });
     } catch (err) {
       if (isCancelled()) return;
       throw err;
