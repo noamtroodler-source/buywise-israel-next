@@ -4957,11 +4957,13 @@ async function processOneItem(
     let listing: any = null;
     let usedSimplifiedPrompt = false;
 
-    // If CMS extracted all core fields, skip AI entirely
-    if (cmsData && cmsData.price && cmsData.city && cmsData.property_type) {
+    // Skip AI only when the CMS adapter got the core fields AND the listing
+    // agent name. Without the agent name, every property would attach to the
+    // agency's default first agent (the resolver's fallback path).
+    if (cmsData && cmsData.price && cmsData.city && cmsData.property_type && cmsData.listing_agent_name) {
       listing = { ...cmsData, listing_category: "property" };
       cmsExtracted = cmsType;
-      dlog(`CMS adapter (${cmsType}) provided full extraction — skipping AI`);
+      dlog(`CMS adapter (${cmsType}) provided full extraction including agent — skipping AI`);
     } else {
       // Normal AI extraction flow. For Yad2/Madlan, do not ask AI for image URLs.
       const sourceType = String(job.source_type || "").toLowerCase();
