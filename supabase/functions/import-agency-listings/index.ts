@@ -2166,6 +2166,10 @@ async function handleDiscover(body: any) {
   const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
   if (!FIRECRAWL_API_KEY) throw new Error("FIRECRAWL_API_KEY not configured");
 
+  if (existingJobId && await shouldStopImportJob(sb, existingJobId)) {
+    return { job_id: existingJobId, total_listings: 0, total_discovered: 0, new_urls: 0, skipped_existing: 0, status: "cancelled" };
+  }
+
   const formattedUrl = normalizedUrl;
   const siteRoot = getSiteRoot(formattedUrl);
   const enteredUrlIsDifferentFromRoot = normalizeUrl(siteRoot) !== normalizeUrl(formattedUrl);
@@ -2187,6 +2191,10 @@ async function handleDiscover(body: any) {
     throw new Error(`Firecrawl MAP failed (${mapRes.status}): ${errText.slice(0, 300)}`);
   }
   const mapData = await mapRes.json();
+
+  if (existingJobId && await shouldStopImportJob(sb, existingJobId)) {
+    return { job_id: existingJobId, total_listings: 0, total_discovered: 0, new_urls: 0, skipped_existing: 0, status: "cancelled" };
+  }
 
   const rawUrls: string[] = [...sitemapUrls, ...(mapData.links || mapData.data || [])];
   console.log(`Root map discovered ${rawUrls.length} URLs`);
@@ -2356,6 +2364,11 @@ async function handleDiscover(body: any) {
   const aiListingUrls = needsAiClassification.length > 0
     ? await classifyUrlsInBatches(needsAiClassification, LOVABLE_API_KEY)
     : [];
+
+  if (existingJobId && await shouldStopImportJob(sb, existingJobId)) {
+    return { job_id: existingJobId, total_listings: 0, total_discovered: allUrls.length, new_urls: 0, skipped_existing: skippedExisting, status: "cancelled" };
+  }
+
   const listingUrls = Array.from(new Set([...deterministicListingUrls, ...aiListingUrls].map((url) => normalizeUrl(url))));
   console.log(`Listing classification: ${deterministicListingUrls.length} deterministic + ${aiListingUrls.length} AI = ${listingUrls.length}`);
 
