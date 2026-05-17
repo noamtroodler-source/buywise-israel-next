@@ -270,16 +270,16 @@ function SourceRow({
           </p>
         )}
       </div>
-      <div className="flex gap-1">
-        <Button size="sm" variant="outline" onClick={onSync} disabled={isSyncing || !source.is_active}>
-          <RefreshCw className={`h-4 w-4 ${isSyncing ? "animate-spin" : ""}`} />
-        </Button>
-        <Button size="sm" variant="outline" onClick={onTogglePause}>
-          {source.is_active ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-        </Button>
-        <Button size="sm" variant="outline" onClick={onDelete}>
-          <Trash2 className="h-4 w-4 text-destructive" />
-        </Button>
+      <div className="flex flex-col items-end gap-1">
+        <p className="text-xs text-muted-foreground italic">Imports are managed by your account admin</p>
+        <div className="flex gap-1">
+          <Button size="sm" variant="outline" onClick={onTogglePause}>
+            {source.is_active ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+          </Button>
+          <Button size="sm" variant="outline" onClick={onDelete}>
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </Button>
+        </div>
       </div>
     </div>
   );

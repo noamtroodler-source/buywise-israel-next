@@ -97,6 +97,28 @@ async function resolveAgencyId(
 }
 
 // Throws on failure. Returns when the caller is authorized.
+// Actions that mutate state or trigger scraping are admin-only. Agency owners
+// were previously allowed to invoke these from their own portal; we now route
+// all scraping through admin agency-provisioning, so the agency-portal Sync
+// button is hidden and these endpoints require a true admin role.
+// Read-only "is this URL already imported" lookups stay open to agency owners
+// since the frontend uses them for inline UX hints.
+const ADMIN_ONLY_ACTIONS = new Set([
+  "discover",
+  "process_batch",
+  "retry_failed",
+  "retry_recoverable_skipped",
+  "approve_item",
+  "resolve_duplicate_review",
+  "resume_job",
+  "pause_job",
+  "cancel_agency_jobs",
+  "quarantine_madlan_batch",
+  "backfill_street_view",
+  "reassign_agents_from_source",
+  "merge_agents",
+]);
+
 async function authorize(req: Request, sb: ReturnType<typeof supabaseAdmin>, body: any, action: string): Promise<void> {
   const token = getBearerToken(req);
   if (!token) throw new Error("Unauthorized: missing token");
@@ -105,8 +127,7 @@ async function authorize(req: Request, sb: ReturnType<typeof supabaseAdmin>, bod
   const authHeader = req.headers.get("Authorization") ?? req.headers.get("authorization")!;
   const userId = await getUserIdFromToken(token, authHeader);
 
-  // Maintenance/global actions: require global admin role
-  if (action === "backfill_street_view") {
+  if (ADMIN_ONLY_ACTIONS.has(action)) {
     const { data: hasAdmin } = await sb.rpc("has_role", { _user_id: userId, _role: "admin" });
     if (!hasAdmin) throw new Error("Forbidden: admin role required");
     return;

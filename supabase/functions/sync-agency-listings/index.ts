@@ -23,12 +23,45 @@ function detectSourceType(url: string): "yad2" | "madlan" | "website" {
   return "website";
 }
 
+// sync-agency-listings used to be invoked by pg_cron (now unscheduled) and had
+// no auth check — anyone with the function URL could trigger mass scraping
+// across every active agency source. Now that all scraping is admin-managed,
+// require either the service-role key (for internal callers that may still
+// exist) or a logged-in admin user.
+async function authorizeAdminOrServiceRole(req: Request): Promise<void> {
+  const headerVal = req.headers.get("Authorization") ?? req.headers.get("authorization");
+  if (!headerVal?.startsWith("Bearer ")) {
+    throw new Error("Unauthorized: missing token");
+  }
+  const token = headerVal.slice("Bearer ".length).trim();
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (serviceKey && token === serviceKey) return;
+
+  const userClient = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_ANON_KEY")!,
+    { global: { headers: { Authorization: headerVal } } }
+  );
+  const { data, error } = await userClient.auth.getClaims(token);
+  if (error || !data?.claims?.sub) throw new Error("Unauthorized: invalid token");
+  const userId = data.claims.sub as string;
+
+  const adminClient = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+  );
+  const { data: hasAdmin } = await adminClient.rpc("has_role", { _user_id: userId, _role: "admin" });
+  if (!hasAdmin) throw new Error("Forbidden: admin role required");
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    await authorizeAdminOrServiceRole(req);
+
     const sb = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
