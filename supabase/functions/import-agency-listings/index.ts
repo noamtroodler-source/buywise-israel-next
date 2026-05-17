@@ -5367,24 +5367,14 @@ async function processOneItem(
         dlog(`[Agent backstop] HTML extraction found "${agentFromHtml.name}" for ${item.url}`);
       }
 
-      // ── Raw HTTP fetch fallback ──
-      // Diagnostic proved Firecrawl is dropping the LISTING AGENT section on
-      // some agency templates (verified on jerusalem-real-estate.co — direct
-      // fetch returns the agent block, Firecrawl does not). When the markdown
-      // backstop also turned up nothing, fetch the URL ourselves and re-run
-      // the same regex extractor. One extra HTTP call per listing only when
-      // the primary path missed the agent.
-      if (!listing?.listing_agent_name && isAgencyOwnWebsite && item.url) {
-        rawFetchAgent = await fetchAgentFromRawPage(item.url);
-        if (rawFetchAgent.name) {
-          listing.listing_agent_name = rawFetchAgent.name;
-          if (rawFetchAgent.phone && !listing.listing_agent_phone) {
-            listing.listing_agent_phone = rawFetchAgent.phone;
-          }
-          listing._agent_source = "raw_fetch_backstop";
-          dlog(`[Agent raw fetch] Found "${rawFetchAgent.name}" for ${item.url}`);
-        }
-      }
+      // ── Raw HTTP fetch fallback (REMOVED FROM INLINE PATH) ──
+      // Previously did a 15s raw fetch here, which combined with many items
+      // per batch pushed the edge function past Supabase's CPU-time limit
+      // ("CPU Time exceeded" errors in production logs). The raw fetch lives
+      // ONLY in the standalone reassign_agents_from_source action now, where
+      // it can be invoked in controlled small batches. The diagnostic below
+      // still records that the inline raw fetch did not run, so we can tell
+      // the difference between "tried and failed" and "skipped entirely".
 
       // Diagnostic dump: record WHY the backstop succeeded or failed so we can
       // see, via the import_job_items.extracted_data column, exactly what the
