@@ -866,12 +866,34 @@ async function findSoldUrlsFromIndexPages(
 function isNonResalePage(markdown: string, importType: string = "resale"): { skip: boolean; reason: string } {
   const snippet = markdown.substring(0, 3000);
 
-  // Sold/rented patterns — always skip
+  // Sold/rented patterns — must require UNAMBIGUOUS status context, not just
+  // any occurrence of the Hebrew/English word. The old patterns matched
+  // "נמכר" / "sold" anywhere in the page (e.g. "recently sold" sidebars,
+  // marketing copy mentioning sold properties), rejecting every active
+  // listing on agency sites that had a "sold properties" link in chrome.
   const soldPatterns = [
-    /נמכר[הו]?/, /הושכר[הו]?/, /בהסכם/, /לא\s*זמינ[הו]?/, /לא\s*פנוי[הו]?/, /אין\s*בנמצא/,
-    /\bsold\b/i, /\brented\b/i, /\bleased\b/i, /\bunder\s+contract\b/i, /\bunder\s+offer\b/i,
-    /\bsale\s+agreed\b/i, /\blet\s+agreed\b/i, /\boff\s*market\b/i,
-    /\bno\s+longer\s+available\b/i, /\bunavailable\b/i,
+    // Hebrew — status indicators only
+    /מצב\s*[:\-]\s*נמכר/,                 // "Status: sold"
+    /סטטוס\s*[:\-]\s*נמכר/,              // "Status: sold" (alt word)
+    /מצב\s*[:\-]\s*הושכר/,               // "Status: rented out"
+    /סטטוס\s*[:\-]\s*הושכר/,
+    /נמכרה?\s*[!.]/,                       // "Sold!" / "Sold."
+    /הושכרה?\s*[!.]/,                      // "Rented out!" / "Rented out."
+    /נמכרה?\s+ב[־\-\s]?\d[\d,]{2,}/,    // "Sold for [price-like number]"
+    /הושכרה?\s+ב[־\-\s]?\d[\d,]{2,}/,   // "Rented for [price-like number]"
+    /העסקה\s+הסתיימה/,                   // "Transaction completed"
+    /הנכס\s+(?:נמכר|הושכר)/,             // "The property [was] sold/rented"
+    // English — keep the obviously contextual ones
+    /\bSOLD\b\s*(?:!|\.|\s*$|\s*<)/,    // "SOLD" as a banner/standalone marker
+    /\bRENTED\b\s*(?:!|\.|\s*$|\s*<)/,
+    /\bunder\s+contract\b/i,
+    /\bunder\s+offer\b/i,
+    /\bsale\s+agreed\b/i,
+    /\blet\s+agreed\b/i,
+    /\boff[\s-]*market\b/i,
+    /\bno\s+longer\s+available\b/i,
+    /\bproperty\s+has\s+been\s+sold\b/i,
+    /\bthis\s+property\s+is\s+sold\b/i,
   ];
   for (const p of soldPatterns) {
     if (p.test(snippet)) return { skip: true, reason: "Pre-filter: listing appears sold/rented" };
