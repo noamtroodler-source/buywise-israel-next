@@ -2851,6 +2851,116 @@ async function generateAndStoreStreetView(
 // templates. Direct fetch + regex consistently returns the block. This handler
 // lets us verify extraction works (test_url mode) and fix the existing wrong
 // assignments (bulk mode with agency_id) without forcing another full re-import.
+// Merge two agent records that represent the same human. The "source" is the
+// provisional/duplicate (usually auto-created by the scraper) and the "target"
+// is the canonical agent (usually the registered one with a user_id).
+// All properties, co-agent rows, and any other references pointed at the
+// source are re-pointed at the target, then the source row is deleted.
+//
+// Body: { source_agent_id, target_agent_id, dry_run?: boolean }
+// Both agents MUST belong to the same agency.
+//
+// Use case: scraper extracts "Michael Stainmetz" (typo) → creates Agent #99
+// with needs_review=true. Admin sees the duplicate, knows the real one is
+// Agent #42 "Michael Steinmetz" (user_id linked), invokes merge with
+// source=99, target=42. Properties move, Agent #99 is removed, real Michael
+// logs in and sees his listings.
+async function handleMergeAgents(body: any) {
+  const { source_agent_id, target_agent_id, dry_run = false } = body;
+  if (!source_agent_id || !target_agent_id) {
+    throw new Error("source_agent_id and target_agent_id are both required");
+  }
+  if (source_agent_id === target_agent_id) {
+    throw new Error("source_agent_id and target_agent_id must differ");
+  }
+
+  const sb = supabaseAdmin();
+
+  const { data: agents, error: lookupErr } = await sb
+    .from("agents")
+    .select("id, name, agency_id, user_id, enrichment_source, needs_review")
+    .in("id", [source_agent_id, target_agent_id]);
+  if (lookupErr) throw new Error(`Agent lookup failed: ${lookupErr.message}`);
+  if (!agents || agents.length !== 2) {
+    throw new Error("One or both agents not found");
+  }
+  const source = agents.find((a: any) => a.id === source_agent_id);
+  const target = agents.find((a: any) => a.id === target_agent_id);
+  if (!source || !target) throw new Error("Agent records not found");
+  if (source.agency_id !== target.agency_id) {
+    throw new Error("Agents must belong to the same agency");
+  }
+
+  // Count what will move so the dry-run / response can show impact.
+  const { count: propertyCount } = await sb
+    .from("properties")
+    .select("id", { count: "exact", head: true })
+    .eq("agent_id", source_agent_id);
+  const { count: coAgentCount } = await sb
+    .from("property_co_agents")
+    .select("id", { count: "exact", head: true })
+    .eq("agent_id", source_agent_id);
+
+  if (dry_run) {
+    return {
+      mode: "dry_run",
+      source: { id: source.id, name: source.name, has_user_id: !!source.user_id },
+      target: { id: target.id, name: target.name, has_user_id: !!target.user_id },
+      would_move: {
+        properties: propertyCount || 0,
+        co_agent_entries: coAgentCount || 0,
+      },
+    };
+  }
+
+  // 1. Re-point properties from source → target.
+  const { error: propErr } = await sb
+    .from("properties")
+    .update({ agent_id: target_agent_id })
+    .eq("agent_id", source_agent_id);
+  if (propErr) throw new Error(`Move properties failed: ${propErr.message}`);
+
+  // 2. Re-point property_co_agents from source → target, deduping when target
+  //    is already a co-agent on the same property to avoid a UNIQUE violation.
+  const { data: sourceCoAgents } = await sb
+    .from("property_co_agents")
+    .select("id, property_id")
+    .eq("agent_id", source_agent_id);
+
+  if (sourceCoAgents && sourceCoAgents.length > 0) {
+    const propertyIds = sourceCoAgents.map((c: any) => c.property_id);
+    const { data: targetExisting } = await sb
+      .from("property_co_agents")
+      .select("property_id")
+      .eq("agent_id", target_agent_id)
+      .in("property_id", propertyIds);
+    const alreadyCoAgent = new Set((targetExisting || []).map((c: any) => c.property_id));
+    const conflictingRowIds = sourceCoAgents
+      .filter((c: any) => alreadyCoAgent.has(c.property_id))
+      .map((c: any) => c.id);
+    if (conflictingRowIds.length > 0) {
+      await sb.from("property_co_agents").delete().in("id", conflictingRowIds);
+    }
+    await sb.from("property_co_agents")
+      .update({ agent_id: target_agent_id })
+      .eq("agent_id", source_agent_id);
+  }
+
+  // 3. Delete the source agent.
+  const { error: delErr } = await sb.from("agents").delete().eq("id", source_agent_id);
+  if (delErr) throw new Error(`Delete source agent failed: ${delErr.message}`);
+
+  return {
+    mode: "merged",
+    source: { id: source.id, name: source.name },
+    target: { id: target.id, name: target.name },
+    moved: {
+      properties: propertyCount || 0,
+      co_agent_entries: coAgentCount || 0,
+    },
+  };
+}
+
 async function handleReassignAgentsFromSource(body: any) {
   const sb = supabaseAdmin();
   const { agency_id, dry_run = true, limit = 200, test_url, source_url_pattern } = body;
@@ -8852,6 +8962,7 @@ Deno.serve(async (req) => {
     else if (action === "check_existing") result = await handleCheckExisting(body);
     else if (action === "backfill_street_view") result = await handleBackfillStreetView(body);
     else if (action === "reassign_agents_from_source") result = await handleReassignAgentsFromSource(body);
+    else if (action === "merge_agents") result = await handleMergeAgents(body);
     else throw new Error(`Unknown action: ${action}`);
 
     return new Response(JSON.stringify(result), {
