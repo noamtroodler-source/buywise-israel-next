@@ -22,7 +22,7 @@ const dlog = (...args: unknown[]) => { if (DEBUG) console.log(...args); };
 
 // Deploy marker — printed once on cold start. Bump on any structural change so
 // we can confirm via edge-function logs that the latest code is actually live.
-const DEPLOY_MARKER = "madlan-cardurl-whitelist-2026-05-17-v3";
+const DEPLOY_MARKER = "sold-prefilter-disabled-2026-05-17-v4";
 console.log(`[import-agency-listings] cold start — deploy: ${DEPLOY_MARKER}`);
 
 // ─── AUTH ────────────────────────────────────────────────────────────────────
@@ -866,30 +866,18 @@ async function findSoldUrlsFromIndexPages(
 function isNonResalePage(markdown: string, importType: string = "resale"): { skip: boolean; reason: string } {
   const snippet = markdown.substring(0, 3000);
 
-  // Sold/rented pre-filter — DELIBERATELY MINIMAL.
+  // Sold/rented pre-filter — DISABLED.
   //
-  // Every text-based Hebrew pattern we've tried has produced false positives:
-  // agency listing pages routinely include sidebars showing "other listings",
-  // "recently sold" sections, transaction-history widgets, or marketing copy
-  // referencing past deals, all of which contain words like נמכר / הושכר that
-  // do NOT mean THIS listing is sold. With the broad-word patterns ON, Erez
-  // Real Estate had 100% of pages rejected by this pre-filter; with merely
-  // "tightened" patterns, the same false-positive surface still hit many.
-  //
-  // The AI extraction step downstream has a dedicated is_sold_or_rented field
-  // that the model populates correctly from page context — that's the right
-  // place for status detection. Keep this pre-filter only for the few English
-  // patterns that are essentially impossible to misinterpret.
-  const soldPatterns = [
-    /\bunder\s+contract\b/i,
-    /\bunder\s+offer\b/i,
-    /\bsale\s+agreed\b/i,
-    /\blet\s+agreed\b/i,
-    /\bno\s+longer\s+available\b/i,
-    /\bproperty\s+has\s+been\s+sold\b/i,
-    /\bthis\s+property\s+is\s+sold\b/i,
-    /\bthis\s+property\s+has\s+been\s+(?:sold|rented|let)\b/i,
-  ];
+  // Every iteration on text-based patterns (broad Hebrew, tightened Hebrew,
+  // contextual English) produced false positives on agency pages whose
+  // sidebars, "recently sold" sections, and marketing copy contain
+  // sold/rented words without meaning THIS listing is sold. Erez Real
+  // Estate hit 100% pre-filter rejection across two rounds of pattern
+  // narrowing. The AI extraction below has a dedicated is_sold_or_rented
+  // field with full page context; that's the structurally correct place
+  // for status detection. The cost of running AI on a small number of
+  // genuinely-sold pages is worth getting active listings through.
+  const soldPatterns: RegExp[] = [];
   for (const p of soldPatterns) {
     if (p.test(snippet)) return { skip: true, reason: "Pre-filter: listing appears sold/rented" };
   }
