@@ -22,7 +22,7 @@ const dlog = (...args: unknown[]) => { if (DEBUG) console.log(...args); };
 
 // Deploy marker — printed once on cold start. Bump on any structural change so
 // we can confirm via edge-function logs that the latest code is actually live.
-const DEPLOY_MARKER = "madlan-detail-scrapingbee-2026-05-17-v14";
+const DEPLOY_MARKER = "wix-stealth-structure-gate-2026-05-17-v15";
 console.log(`[import-agency-listings] cold start — deploy: ${DEPLOY_MARKER}`);
 
 // ─── AUTH ────────────────────────────────────────────────────────────────────
@@ -3624,14 +3624,17 @@ function evaluateAgencyListingQuality(listing: Record<string, any>, imageCount: 
   if (!hasImage) reasons.push("missing_usable_image");
   if (!hasAddress) reasons.push("missing_address");
 
-  // RELAXED gate: pass if we have structural info AND at least ONE of
-  // price / image / address. This lets thin Hebrew-Wix extractions land
-  // in the admin review queue as drafts (is_published=false) instead of
-  // getting silently dropped. Erez Real Estate hit 28/28 rejected here
-  // with the stricter "hasStructure && hasPrice" rule because AI returns
-  // partial data on these sites. Better partial drafts admins can fix
-  // than zero imports.
-  const ok = hasStructure && (hasPrice || hasImage || hasAddress);
+  // STRUCTURE-ONLY gate: pass if we have ANY structural signal (property_type,
+  // bedrooms, rooms, or size). The previous "structure AND one of
+  // price/image/address" rule still rejected Erez Real Estate 31/31 because
+  // Wix/Hebrew pages return very thin AI extractions — only property_type
+  // makes it through, and we'd lose the entire batch. These ARE real listings
+  // (URLs go to actual property pages); better to land them as is_published
+  // = false drafts so admins can fill in the missing fields than to drop
+  // them entirely. The original filter intent (rejecting Wix /post/ blog
+  // pages that look like listings) is preserved — blog posts won't have
+  // any property_type / rooms / size signal.
+  const ok = hasStructure;
   return { ok, reasons };
 }
 
@@ -5354,6 +5357,12 @@ async function processOneItem(
         return { succeeded: false };
       }
     } else {
+      // Agency websites are usually Wix/WordPress with JS-rendered content.
+      // The Erez Real Estate v14 sync returned only property_type for 31/31
+      // listings — AI extracted nothing else because Firecrawl came back
+      // with the unhydrated Wix shell. Use stealth proxy + longer waitFor
+      // so JS-rendered prices, sizes, images, and addresses are present
+      // when AI sees the markdown.
       scrapeRes = await fetchWithTimeout("https://api.firecrawl.dev/v1/scrape", {
         method: "POST",
         headers: { Authorization: `Bearer ${firecrawlKey}`, "Content-Type": "application/json" },
@@ -5361,9 +5370,9 @@ async function processOneItem(
           url: item.url,
           formats: ["markdown", "links", "html"],
           onlyMainContent: !isAgencyOwnWebsite,
-          waitFor: isAgencyOwnWebsite ? 3000 : undefined,
+          ...(isAgencyOwnWebsite ? { waitFor: 6000, proxy: "stealth" } : {}),
         }),
-      }, 30_000);
+      }, 45_000);
     }
 
     // Retry logic for transient errors (401/500/502/503)
