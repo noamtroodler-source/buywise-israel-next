@@ -22,7 +22,7 @@ const dlog = (...args: unknown[]) => { if (DEBUG) console.log(...args); };
 
 // Deploy marker — printed once on cold start. Bump on any structural change so
 // we can confirm via edge-function logs that the latest code is actually live.
-const DEPLOY_MARKER = "madlan-office-page-rewrite-2026-05-17-v6";
+const DEPLOY_MARKER = "madlan-office-multi-format-2026-05-17-v7";
 console.log(`[import-agency-listings] cold start — deploy: ${DEPLOY_MARKER}`);
 
 // ─── AUTH ────────────────────────────────────────────────────────────────────
@@ -8765,23 +8765,76 @@ async function runMadlanOfficePageDiscoverJob(params: {
   try {
     console.log(`[Madlan/office] Fetching office page for job ${jobId}: ${websiteUrl}`);
 
-    // 1) Fetch the office page. fetchMadlanDetailHtml already routes through
-    //    Firecrawl rawHtml so Cloudflare doesn't wall us off.
-    const html = await fetchMadlanDetailHtml(websiteUrl);
-    if (!html || html.length < 500) {
-      const failReason = "Failed to fetch Madlan office page (Firecrawl returned empty/short HTML)";
-      console.warn(`[Madlan/office] ${failReason} — html_length=${html?.length || 0}`);
+    // 1) Fetch the office page via Firecrawl with multiple formats + JS rendering.
+    //    Madlan is a React app — rawHtml alone returns the SSR shell without
+    //    the listings populated. We request html (rendered), markdown (post-JS
+    //    visible text), AND links (Firecrawl's extracted href array) so we
+    //    have three independent sources to mine for listing URLs.
+    const firecrawlKey = Deno.env.get("FIRECRAWL_API_KEY");
+    if (!firecrawlKey) {
+      const failReason = "FIRECRAWL_API_KEY not configured";
+      console.warn(`[Madlan/office] ${failReason}`);
       await sb.from("import_jobs").update({ status: "failed", failure_reason: failReason }).eq("id", jobId);
       await sb.from("agency_sources").update({ last_failure_reason: failReason }).eq("agency_id", agencyId).eq("source_type", "madlan");
       return;
     }
 
-    // 2) Extract every Madlan listing URL from the page.
-    const listingUrlMatches = html.match(/https?:\/\/(?:www\.)?madlan\.co\.il\/(?:listings|properties|forsale|rent)[^"'\s<>]*/gi) || [];
+    let scrapedHtml = "";
+    let scrapedMarkdown = "";
+    let scrapedLinks: string[] = [];
+    try {
+      const fcRes = await fetchWithTimeout("https://api.firecrawl.dev/v1/scrape", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${firecrawlKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          url: websiteUrl,
+          formats: ["html", "rawHtml", "markdown", "links"],
+          onlyMainContent: false,
+          waitFor: 5000,
+        }),
+      }, 45_000);
+      if (fcRes.ok) {
+        const fcBody = await fcRes.json().catch(() => null);
+        scrapedHtml = (fcBody?.data?.html || fcBody?.data?.rawHtml || fcBody?.html || fcBody?.rawHtml || "") as string;
+        scrapedMarkdown = (fcBody?.data?.markdown || fcBody?.markdown || "") as string;
+        scrapedLinks = Array.isArray(fcBody?.data?.links)
+          ? (fcBody.data.links as string[])
+          : Array.isArray(fcBody?.links)
+            ? (fcBody.links as string[])
+            : [];
+      } else {
+        const errBody = await fcRes.text().catch(() => "");
+        console.warn(`[Madlan/office] Firecrawl HTTP ${fcRes.status}: ${errBody.slice(0, 300)}`);
+      }
+    } catch (err) {
+      console.warn(`[Madlan/office] Firecrawl call failed:`, err);
+    }
+
+    const combinedText = `${scrapedHtml}\n${scrapedMarkdown}\n${scrapedLinks.join("\n")}`;
+    console.log(`[Madlan/office] Firecrawl returned: html=${scrapedHtml.length}, markdown=${scrapedMarkdown.length}, links=${scrapedLinks.length}`);
+
+    if (combinedText.trim().length < 200) {
+      const failReason = "Firecrawl returned no usable content for Madlan office page";
+      console.warn(`[Madlan/office] ${failReason}`);
+      await sb.from("import_jobs").update({ status: "failed", failure_reason: failReason }).eq("id", jobId);
+      await sb.from("agency_sources").update({ last_failure_reason: failReason }).eq("agency_id", agencyId).eq("source_type", "madlan");
+      return;
+    }
+
+    // 2) Extract Madlan listing URLs. Try multiple URL shapes — Madlan has
+    //    used /listings/{id}, /bulletin/{id}, /forsale/.../{id}, /rent/.../{id}.
+    const listingUrlRe = /https?:\/\/(?:www\.)?madlan\.co\.il\/(?:listings?|bulletin|properties?|forsale|rent|deal|asset)\/[^"'\s<>()]+/gi;
+    const fromHtmlMd = combinedText.match(listingUrlRe) || [];
+    const fromLinks = scrapedLinks.filter((u) => listingUrlRe.test(u));
+    // Reset the regex's lastIndex (test() with /g leaves state)
+    listingUrlRe.lastIndex = 0;
+
     const listingUrls = Array.from(new Set(
-      listingUrlMatches.map((u) => normalizeUrl(u)).filter((u) => !!u),
+      [...fromHtmlMd, ...fromLinks]
+        .map((u) => normalizeUrl(u))
+        .filter((u) => !!u && /madlan\.co\.il/.test(u)),
     ));
-    console.log(`[Madlan/office] Extracted ${listingUrls.length} listing URLs from office page (html_length=${html.length})`);
+    console.log(`[Madlan/office] Extracted ${listingUrls.length} listing URLs (html_matches=${fromHtmlMd.length}, link_matches=${fromLinks.length})`);
 
     if (listingUrls.length === 0) {
       const failReason = "No listing URLs found on Madlan office page (regex matched nothing in fetched HTML)";
