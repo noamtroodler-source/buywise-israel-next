@@ -302,18 +302,54 @@ export function ImportListingsSection({ agencyId, agencyName }: { agencyId: stri
           </div>
 
           <form onSubmit={handleSaveAndDiscover} className="space-y-3">
-            {(['website', 'madlan', 'yad2'] as const).map((type) => (
-              <div key={type} className="grid gap-1.5 md:grid-cols-[160px_1fr] md:items-center">
-                <Label className="text-sm">{SOURCE_META[type].label}</Label>
-                <Input
-                  value={sourceUrls[type]}
-                  onChange={(e) => setSourceUrls((prev) => ({ ...prev, [type]: e.target.value }))}
-                  placeholder={SOURCE_META[type].placeholder}
-                  className="rounded-xl"
-                  disabled={isDiscovering}
-                />
-              </div>
-            ))}
+            {(['website', 'madlan', 'yad2'] as const).map((type) => {
+              const url = sourceUrls[type].trim();
+              const hasUrl = url.length > 0;
+              return (
+                <div key={type} className="grid gap-1.5 md:grid-cols-[160px_1fr_auto] md:items-center">
+                  <Label className="text-sm">{SOURCE_META[type].label}</Label>
+                  <Input
+                    value={sourceUrls[type]}
+                    onChange={(e) => setSourceUrls((prev) => ({ ...prev, [type]: e.target.value }))}
+                    placeholder={SOURCE_META[type].placeholder}
+                    className="rounded-xl"
+                    disabled={isDiscovering}
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="rounded-xl whitespace-nowrap"
+                    disabled={isDiscovering || !hasUrl}
+                    title={`Save and discover only from ${SOURCE_META[type].label}`}
+                    onClick={async () => {
+                      const myToken = ++cancelTokenRef.current;
+                      const isCancelled = () => cancelTokenRef.current !== myToken;
+                      setIsManualSyncing(true);
+                      try {
+                        const saved = await upsertSourcesMutation.mutateAsync({
+                          agency_id: agencyId,
+                          sources: [{ source_type: type, source_url: url, priority: SOURCE_META[type].priority }],
+                        });
+                        if (isCancelled() || saved.length === 0) return;
+                        const results = await syncAllSourcesMutation.mutateAsync({
+                          sources: saved,
+                          importType: 'both',
+                          shouldContinue: () => !isCancelled(),
+                        });
+                        const firstJobId = results.find((r: any) => r?.data?.job_id)?.data?.job_id;
+                        if (firstJobId) setActiveJobId(firstJobId);
+                      } finally {
+                        setIsManualSyncing(false);
+                      }
+                    }}
+                  >
+                    <Download className="h-3.5 w-3.5 mr-1.5" />
+                    Discover this source
+                  </Button>
+                </div>
+              );
+            })}
 
             <div className="flex flex-wrap gap-2 pt-1">
               <Button
