@@ -22,7 +22,7 @@ const dlog = (...args: unknown[]) => { if (DEBUG) console.log(...args); };
 
 // Deploy marker — printed once on cold start. Bump on any structural change so
 // we can confirm via edge-function logs that the latest code is actually live.
-const DEPLOY_MARKER = "env-diag-2026-05-17-v16";
+const DEPLOY_MARKER = "scrapingbee-stealth-proxy-2026-05-17-v17";
 console.log(`[import-agency-listings] cold start — deploy: ${DEPLOY_MARKER}`);
 // One-time env-var visibility check. Helps diagnose Lovable secret-propagation
 // issues (e.g. v15 cold-started with SCRAPINGBEE_API_KEY absent even though
@@ -8917,27 +8917,32 @@ async function runMadlanOfficePageDiscoverJob(params: {
     let scrapedLinks: string[] = [];
     let scrapeSource = "none";
 
-    // Madlan serves an Imperva-style JS bot-challenge page that walls
-    // Firecrawl's stealth proxy too — verified by the v10 diagnostic
-    // (5KB HTML, body was entirely the IND*-prefixed wrapper, 0 links).
-    // ScrapingBee's premium_proxy uses a stronger residential pool +
-    // real-browser fingerprint that passes this class of protection.
-    // Try it first when the key is configured.
+    // Madlan serves an Imperva-style JS bot-challenge page (and a Hebrew
+    // Nagish accessibility shell on top). v14 verified that ScrapingBee's
+    // premium_proxy + render_js + 4s wait still returns the 5KB shell.
+    // Two upgrades here:
+    //   1) stealth_proxy=true instead of premium_proxy=true — heavier anti-
+    //      bot stealth (browser fingerprint + behavior emulation), the
+    //      ScrapingBee-recommended path for Imperva-protected sites.
+    //   2) wait=8000 + block_resources=false so the SPA has more time to
+    //      hydrate and we don't accidentally block the listing-card JS.
+    // Also relax the challenge-detection: accept any response over 30KB
+    // (real Madlan pages are >100KB; the 5KB shell is unambiguous). Log
+    // the first 400 chars of the response so we can diagnose if stealth
+    // ALSO comes back walled.
     const scrapingBeeKey = Deno.env.get("SCRAPINGBEE_API_KEY");
     if (scrapingBeeKey) {
       try {
-        const sbUrl = `https://app.scrapingbee.com/api/v1/?api_key=${encodeURIComponent(scrapingBeeKey)}&url=${encodeURIComponent(websiteUrl)}&premium_proxy=true&render_js=true&wait=4000&country_code=il`;
-        const sbRes = await fetchWithTimeout(sbUrl, { method: "GET" }, 60_000);
+        const sbUrl = `https://app.scrapingbee.com/api/v1/?api_key=${encodeURIComponent(scrapingBeeKey)}&url=${encodeURIComponent(websiteUrl)}&stealth_proxy=true&render_js=true&wait=8000&country_code=il&block_resources=false`;
+        const sbRes = await fetchWithTimeout(sbUrl, { method: "GET" }, 90_000);
         if (sbRes.ok) {
           const sbHtml = await sbRes.text();
-          // Only accept the response if it's clearly past the bot challenge —
-          // the IND* wrapper is the signature failure mode. If we see it,
-          // ScrapingBee's response is still the challenge page.
-          const isChallengePage = /INDshadowRootWrap|class="?IND(?:positionLeft|Desktop|Chrome)"?/i.test(sbHtml);
-          if (sbHtml && sbHtml.length > 500 && !isChallengePage) {
+          // Length-based gate. Real Madlan office pages are well over 30KB
+          // after hydration; the bot shell is ~5KB.
+          const looksHydrated = sbHtml.length >= 30_000;
+          console.log(`[Madlan/office] ScrapingBee response: html=${sbHtml.length}, hydrated=${looksHydrated}, first_400=${sbHtml.slice(0, 400).replace(/\s+/g, " ")}`);
+          if (sbHtml && looksHydrated) {
             scrapedHtml = sbHtml;
-            // Pull every href out of the raw HTML (ScrapingBee returns HTML,
-            // not a structured links array like Firecrawl does).
             const hrefMatches = sbHtml.match(/href=["']([^"']+)["']/gi) || [];
             scrapedLinks = hrefMatches
               .map((m) => m.replace(/^href=["']/i, "").replace(/["']$/, ""))
@@ -8945,7 +8950,7 @@ async function runMadlanOfficePageDiscoverJob(params: {
             scrapeSource = "scrapingbee";
             console.log(`[Madlan/office] ScrapingBee succeeded: html=${sbHtml.length}, hrefs=${scrapedLinks.length}`);
           } else {
-            console.warn(`[Madlan/office] ScrapingBee returned challenge or short body — html_length=${sbHtml.length}, challenge_signature=${isChallengePage}`);
+            console.warn(`[Madlan/office] ScrapingBee response too small (html=${sbHtml.length}) — likely still walled, falling back to Firecrawl`);
           }
         } else {
           const errText = await sbRes.text().catch(() => "");
