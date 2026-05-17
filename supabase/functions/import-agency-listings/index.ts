@@ -3896,6 +3896,7 @@ async function fetchAgentFromRawPage(url: string): Promise<{
   phone: string;
   email: string;
   _debug?: {
+    source: string;
     status: number | null;
     html_length: number;
     has_listing_agent_keyword: boolean;
@@ -3906,23 +3907,65 @@ async function fetchAgentFromRawPage(url: string): Promise<{
   };
 }> {
   const empty = { name: "", phone: "", email: "" };
+  const firecrawlKey = Deno.env.get("FIRECRAWL_API_KEY");
+
+  // Prefer Firecrawl with rawHtml format. Direct fetch from Supabase's edge
+  // IPs gets 403'd by Cloudflare on many agency hosts (verified on
+  // jerusalem-real-estate.co). Firecrawl proxies + browser-runtime through
+  // their own infrastructure that Cloudflare allows. rawHtml gives us the
+  // ORIGINAL page bytes — the agent footer survives, unlike the default
+  // html format which runs main-content extraction.
+  if (firecrawlKey) {
+    try {
+      const res = await fetchWithTimeout("https://api.firecrawl.dev/v1/scrape", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${firecrawlKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          url,
+          formats: ["rawHtml"],
+          onlyMainContent: false,
+          waitFor: 2000,
+        }),
+      }, 30_000);
+      const status = res.status;
+      const bodyJson = res.ok ? await res.json().catch(() => null) : null;
+      const rawHtml: string = bodyJson?.data?.rawHtml || bodyJson?.rawHtml || "";
+      const debug = {
+        source: "firecrawl_rawHtml",
+        status,
+        html_length: rawHtml.length,
+        has_listing_agent_keyword: /LISTING\s+AGENT/i.test(rawHtml),
+        has_email_at_pattern: /@jerusalem-real-estate\.co|@[\w-]+\.co\.il|@[\w-]+\.com/i.test(rawHtml),
+        has_phone_pattern: /(?:\+?972|0)5\d[\s\-]?\d{3}[\s\-]?\d{4}/.test(rawHtml),
+        html_preview: rawHtml.slice(0, 500),
+      };
+      if (res.ok && rawHtml && rawHtml.length >= 200) {
+        const visibleText = textFromHtmlFragment(rawHtml);
+        const result = extractAgentFieldsFromHtml(rawHtml, visibleText);
+        if (result.name || result.phone || result.email) {
+          return { ...result, _debug: debug };
+        }
+        return { ...empty, _debug: debug };
+      }
+      return { ...empty, _debug: debug };
+    } catch (err) {
+      // Fall through to direct fetch attempt
+      console.warn(`[Agent fetch] Firecrawl rawHtml failed for ${url}: ${err instanceof Error ? err.message : err}`);
+    }
+  }
+
+  // Direct fetch fallback (works for hosts that aren't bot-protected).
   try {
     const res = await fetchWithTimeout(url, {
       headers: {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "Accept-Language": "en-US,en;q=0.9,he;q=0.8",
-        "Accept-Encoding": "gzip, deflate, br",
-        "Cache-Control": "no-cache",
-        "Sec-Fetch-Dest": "document",
-        "Sec-Fetch-Mode": "navigate",
-        "Sec-Fetch-Site": "none",
-        "Sec-Fetch-User": "?1",
-        "Upgrade-Insecure-Requests": "1",
       },
     }, 15_000);
     const html = res.ok ? await res.text() : "";
     const debug = {
+      source: "direct_fetch",
       status: res.status,
       html_length: html.length,
       has_listing_agent_keyword: /LISTING\s+AGENT/i.test(html),
@@ -3935,7 +3978,7 @@ async function fetchAgentFromRawPage(url: string): Promise<{
     const result = extractAgentFieldsFromHtml(html, visibleText);
     return { ...result, _debug: debug };
   } catch (err) {
-    return { ...empty, _debug: { status: null, html_length: 0, has_listing_agent_keyword: false, has_email_at_pattern: false, has_phone_pattern: false, html_preview: "", error: err instanceof Error ? err.message : String(err) } };
+    return { ...empty, _debug: { source: "direct_fetch", status: null, html_length: 0, has_listing_agent_keyword: false, has_email_at_pattern: false, has_phone_pattern: false, html_preview: "", error: err instanceof Error ? err.message : String(err) } };
   }
 }
 
