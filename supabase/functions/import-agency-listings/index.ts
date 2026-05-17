@@ -22,7 +22,7 @@ const dlog = (...args: unknown[]) => { if (DEBUG) console.log(...args); };
 
 // Deploy marker — printed once on cold start. Bump on any structural change so
 // we can confirm via edge-function logs that the latest code is actually live.
-const DEPLOY_MARKER = "sold-prefilter-disabled-2026-05-17-v4";
+const DEPLOY_MARKER = "ai-sold-flag-tightened-2026-05-17-v5";
 console.log(`[import-agency-listings] cold start — deploy: ${DEPLOY_MARKER}`);
 
 // ─── AUTH ────────────────────────────────────────────────────────────────────
@@ -4670,7 +4670,7 @@ FOR PROPERTIES — extract these fields:
 - Use the dictionary above for property types, not your own guess.
 - listing_status: for_sale if buying/מכירה, for_rent if renting/השכרה
 - short_term_rental: true if the listing is nightly, weekly, vacation/holiday/Airbnb, or Hebrew לטווח קצר/לילה/יומי/שבועי/נופש/חופשה. These are unsupported even if they are rentals.
-- Detect if sold (נמכר), rented (הושכר), under contract (בהסכם). Set is_sold_or_rented=true if so.
+- is_sold_or_rented: ONLY set true if THIS specific listing carries an EXPLICIT status banner, badge, watermark, or label saying it is sold/rented/under-contract (e.g. a red "SOLD" stamp on the hero image, a status field saying "Status: Sold", or a clear sentence like "This property has been sold"). DO NOT set true just because the page text contains the Hebrew word נמכר or הושכר somewhere — those words appear in "recently sold" sidebars, related-listings widgets, transaction-history sections, agency portfolio chrome, and marketing copy referencing past deals on ACTIVE listing pages. If you are not 100% certain that the main subject of the page is no longer available, set is_sold_or_rented=false. When in doubt, treat the listing as active.
 - Price might appear as "₪1,500,000" or "1,500,000 ש״ח" or "$450,000"
 - For rentals, price is monthly rent (e.g., "₪5,500/חודש" or "5,500 ש״ח לחודש")
 - For long-term rentals only: accept monthly/yearly/6+ month leases. Do NOT treat nightly/weekly/vacation rentals as normal rentals.
