@@ -22,7 +22,7 @@ const dlog = (...args: unknown[]) => { if (DEBUG) console.log(...args); };
 
 // Deploy marker — printed once on cold start. Bump on any structural change so
 // we can confirm via edge-function logs that the latest code is actually live.
-const DEPLOY_MARKER = "relaxed-quality-gates-2026-05-17-v13";
+const DEPLOY_MARKER = "madlan-detail-scrapingbee-2026-05-17-v14";
 console.log(`[import-agency-listings] cold start — deploy: ${DEPLOY_MARKER}`);
 
 // ─── AUTH ────────────────────────────────────────────────────────────────────
@@ -4613,6 +4613,7 @@ IMPORTANT CONTEXT:
   2. The URL path
   3. Neighborhood context (e.g., Arnona, Baka, Talbieh → Jerusalem; Neve Tzedek → Tel Aviv)
   4. Hebrew city names in the content (e.g., תל אביב → Tel Aviv, ירושלים → Jerusalem, פתח תקווה → Petah Tikva)
+- TRUST STRUCTURED LOCATION PANELS over prose descriptions. If the page has a clearly marked location panel/sidebar/header showing a neighborhood/city (e.g. "In the West City Center neighborhood, Ness Ziona" on Madlan, or a labeled "Location:" / "City:" field), use THAT city. Do NOT override it based on city names mentioned inside the free-text description — descriptions are often copy-pasted agent templates that contain wrong city names from past listings.
 - If no price is listed (e.g., "Price on Request"), set price to 0.
 - Return city as one of the supported cities listed above.
 
@@ -5282,14 +5283,57 @@ async function processOneItem(
 
     // 1. Scrape
     const isYad2Item = item.url.includes("yad2.co.il");
+    const isMadlanItem = /madlan\.co\.il/i.test(item.url);
     const isAgencyOwnWebsite = isAgencyOwnWebsiteSource(job.source_type);
     const isStrongAgencyListing = isAgencyOwnWebsite && isStrongAgencyListingUrl(item.url, job.website_url || item.url);
     dlog(`Scraping: ${item.url}`);
 
+    // For Madlan detail pages, Imperva walls plain Firecrawl the same way it
+    // walls the office page — we get the IND* challenge HTML instead of real
+    // content. Route through ScrapingBee's premium_proxy + render_js path
+    // (same config that works for the office page). If ScrapingBee misses or
+    // returns the challenge wrapper, fall through to the Firecrawl branch
+    // below so we still attempt extraction.
+    let madlanScrapeBee: { html: string; markdown: string; links: string[] } | null = null;
+    if (isMadlanItem) {
+      const scrapingBeeKey = Deno.env.get("SCRAPINGBEE_API_KEY");
+      if (scrapingBeeKey) {
+        try {
+          const sbUrl = `https://app.scrapingbee.com/api/v1/?api_key=${encodeURIComponent(scrapingBeeKey)}&url=${encodeURIComponent(item.url)}&premium_proxy=true&render_js=true&wait=4000&country_code=il`;
+          const sbRes = await fetchWithTimeout(sbUrl, { method: "GET" }, 60_000);
+          if (sbRes.ok) {
+            const sbHtml = await sbRes.text();
+            const isChallengePage = /INDshadowRootWrap|class="?IND(?:positionLeft|Desktop|Chrome)"?/i.test(sbHtml);
+            if (sbHtml && sbHtml.length > 500 && !isChallengePage) {
+              const hrefMatches = sbHtml.match(/href=["']([^"']+)["']/gi) || [];
+              const sbLinks = hrefMatches
+                .map((m) => m.replace(/^href=["']/i, "").replace(/["']$/, ""))
+                .filter((u) => !!u);
+              const sbMarkdown = textFromHtmlFragment(sbHtml);
+              madlanScrapeBee = { html: sbHtml, markdown: sbMarkdown, links: sbLinks };
+              console.log(`[Madlan/item] ScrapingBee ok for ${item.url}: html=${sbHtml.length} md=${sbMarkdown.length} links=${sbLinks.length}`);
+            } else {
+              console.warn(`[Madlan/item] ScrapingBee challenge/short for ${item.url} html=${sbHtml.length} challenge=${isChallengePage}`);
+            }
+          } else {
+            console.warn(`[Madlan/item] ScrapingBee HTTP ${sbRes.status} for ${item.url}`);
+          }
+        } catch (err) {
+          console.warn(`[Madlan/item] ScrapingBee failed for ${item.url}:`, err);
+        }
+      }
+    }
+
     // For Yad2, wrap the Firecrawl call in a 35s Promise.race timeout.
     // Stealth proxy requests occasionally hang indefinitely, blocking the whole batch.
     let scrapeRes: Response;
-    if (isYad2Item) {
+    if (madlanScrapeBee) {
+      // Synthesize a Firecrawl-shape Response so the rest of the pipeline is unchanged.
+      scrapeRes = new Response(
+        JSON.stringify({ success: true, data: { html: madlanScrapeBee.html, markdown: madlanScrapeBee.markdown, links: madlanScrapeBee.links } }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    } else if (isYad2Item) {
       const scrapePromise = fetchWithTimeout("https://api.firecrawl.dev/v1/scrape", {
         method: "POST",
         headers: { Authorization: `Bearer ${firecrawlKey}`, "Content-Type": "application/json" },
@@ -5431,9 +5475,12 @@ async function processOneItem(
       cmsExtracted = cmsType;
       dlog(`CMS adapter (${cmsType}) provided full extraction including agent — skipping AI`);
     } else {
-      // Normal AI extraction flow. For Yad2/Madlan, do not ask AI for image URLs.
+      // Normal AI extraction flow. For Yad2, do not ask AI for image URLs.
+      // Madlan IS allowed as a photo fallback (website > Madlan > Yad2), and
+      // detail pages have full galleries — so ask AI to pull them when the
+      // source is Madlan. Yad2 stays excluded.
       const sourceType = String(job.source_type || "").toLowerCase();
-      const includeImagesInExtraction = isAgencyOwnWebsite;
+      const includeImagesInExtraction = isAgencyOwnWebsite || isMadlanItem;
       const extractionPrompt = buildExtractionPrompt(item.url, domain, markdown, pageLinks, includeImagesInExtraction);
 
       const extractRes = await fetchWithTimeout("https://ai.gateway.lovable.dev/v1/chat/completions", {
