@@ -22,7 +22,7 @@ const dlog = (...args: unknown[]) => { if (DEBUG) console.log(...args); };
 
 // Deploy marker — printed once on cold start. Bump on any structural change so
 // we can confirm via edge-function logs that the latest code is actually live.
-const DEPLOY_MARKER = "ai-sold-flag-tightened-2026-05-17-v5";
+const DEPLOY_MARKER = "madlan-office-page-rewrite-2026-05-17-v6";
 console.log(`[import-agency-listings] cold start — deploy: ${DEPLOY_MARKER}`);
 
 // ─── AUTH ────────────────────────────────────────────────────────────────────
@@ -8722,8 +8722,15 @@ async function handleMadlanAgencyDiscover(body: any) {
     .single();
   if (jobErr || !job) throw new Error(`Failed to create import job: ${jobErr?.message}`);
 
+  // Rewritten Madlan path (v5): fetch the office page via Firecrawl rawHtml,
+  // extract the agency's own listing URLs, queue each as an import_job_item,
+  // and let the standard processOneItem loop scrape each URL the same way it
+  // scrapes agency-website URLs. Skips the Apify city-wide actor entirely —
+  // that actor returned listings for the whole city and we spent weeks trying
+  // to bolt office-scoping onto it. The office page already lists exactly
+  // this agency's inventory; that's our source of truth.
   EdgeRuntime.waitUntil(
-    runMadlanAgencyDiscoverJob({
+    runMadlanOfficePageDiscoverJob({
       jobId: job.id,
       agencyId: agency_id,
       websiteUrl: website_url,
@@ -8739,6 +8746,133 @@ async function handleMadlanAgencyDiscover(body: any) {
     skipped_existing: 0,
     started_async: true,
   };
+}
+
+// New Madlan discovery: scrape the office page, extract listing URLs, queue
+// them as items. processOneItem handles each URL via Firecrawl + AI — the
+// same pipeline that already works for agency websites. Cross-source dedup,
+// agent extraction, photo handling, short-term filter, and validation all
+// apply automatically because Madlan items go through the same code path.
+async function runMadlanOfficePageDiscoverJob(params: {
+  jobId: string;
+  agencyId: string;
+  websiteUrl: string;
+  effectiveImportType: "resale" | "rental" | "both";
+}) {
+  const { jobId, agencyId, websiteUrl } = params;
+  const sb = supabaseAdmin();
+
+  try {
+    console.log(`[Madlan/office] Fetching office page for job ${jobId}: ${websiteUrl}`);
+
+    // 1) Fetch the office page. fetchMadlanDetailHtml already routes through
+    //    Firecrawl rawHtml so Cloudflare doesn't wall us off.
+    const html = await fetchMadlanDetailHtml(websiteUrl);
+    if (!html || html.length < 500) {
+      const failReason = "Failed to fetch Madlan office page (Firecrawl returned empty/short HTML)";
+      console.warn(`[Madlan/office] ${failReason} — html_length=${html?.length || 0}`);
+      await sb.from("import_jobs").update({ status: "failed", failure_reason: failReason }).eq("id", jobId);
+      await sb.from("agency_sources").update({ last_failure_reason: failReason }).eq("agency_id", agencyId).eq("source_type", "madlan");
+      return;
+    }
+
+    // 2) Extract every Madlan listing URL from the page.
+    const listingUrlMatches = html.match(/https?:\/\/(?:www\.)?madlan\.co\.il\/(?:listings|properties|forsale|rent)[^"'\s<>]*/gi) || [];
+    const listingUrls = Array.from(new Set(
+      listingUrlMatches.map((u) => normalizeUrl(u)).filter((u) => !!u),
+    ));
+    console.log(`[Madlan/office] Extracted ${listingUrls.length} listing URLs from office page (html_length=${html.length})`);
+
+    if (listingUrls.length === 0) {
+      const failReason = "No listing URLs found on Madlan office page (regex matched nothing in fetched HTML)";
+      await sb.from("import_jobs").update({
+        status: "completed",
+        total_urls: 0,
+        discovered_urls: [],
+        failure_reason: failReason,
+      }).eq("id", jobId);
+      await sb.from("agency_sources").update({
+        last_failure_reason: failReason,
+        last_synced_at: new Date().toISOString(),
+        last_sync_listings_found: 0,
+      }).eq("agency_id", agencyId).eq("source_type", "madlan");
+      return;
+    }
+
+    // 3) Dedup against properties already imported from Madlan.
+    const { data: existingProps } = await sb
+      .from("properties")
+      .select("source_url")
+      .not("source_url", "is", null)
+      .like("source_url", "%madlan.co.il%");
+    const knownUrls = new Set<string>(
+      (existingProps || []).map((p: any) => normalizeUrl(p.source_url)).filter(Boolean),
+    );
+    const newUrls = listingUrls.filter((u) => !knownUrls.has(u));
+    console.log(`[Madlan/office] ${newUrls.length} new (${listingUrls.length - newUrls.length} already imported)`);
+
+    // 4) Queue items.
+    if (newUrls.length > 0) {
+      const items = newUrls.map((url) => ({ job_id: jobId, url, status: "pending" }));
+      const { error: itemsErr } = await sb.from("import_job_items").insert(items);
+      if (itemsErr) {
+        console.error(`[Madlan/office] Failed to insert items: ${itemsErr.message}`);
+        await sb.from("import_jobs").update({
+          status: "failed",
+          failure_reason: `Failed to insert items: ${itemsErr.message}`,
+        }).eq("id", jobId);
+        return;
+      }
+    }
+
+    // 5) Mark job ready and record the discovery summary.
+    await sb.from("import_jobs").update({
+      status: newUrls.length > 0 ? "ready" : "completed",
+      total_urls: newUrls.length,
+      discovered_urls: listingUrls,
+      failure_reason: JSON.stringify({
+        source: "madlan",
+        method: "office_page_firecrawl",
+        discovered_total: listingUrls.length,
+        queued: newUrls.length,
+        already_imported: listingUrls.length - newUrls.length,
+      }),
+    }).eq("id", jobId);
+
+    await sb.from("agency_sources").update({
+      last_synced_at: new Date().toISOString(),
+      last_sync_listings_found: newUrls.length,
+      last_sync_job_id: jobId,
+      last_failure_reason: null,
+      consecutive_failures: 0,
+    }).eq("agency_id", agencyId).eq("source_type", "madlan");
+
+    // 6) Auto-chain process_batch — same pattern as the website flow so
+    //    discover → process is one user action.
+    if (newUrls.length > 0) {
+      EdgeRuntime.waitUntil((async () => {
+        let remaining = newUrls.length;
+        let safety = 0;
+        while (remaining > 0 && safety < 100) {
+          safety++;
+          try {
+            const result = await handleProcessBatch({ job_id: jobId });
+            remaining = (result as any)?.remaining ?? 0;
+            if ((result as any)?.status === "completed") break;
+          } catch (err) {
+            console.error(`[Madlan/office] Auto-chain process_batch failed:`, err);
+            break;
+          }
+        }
+      })());
+    }
+  } catch (err) {
+    console.error(`[Madlan/office] Discover failed:`, err);
+    await sb.from("import_jobs").update({
+      status: "failed",
+      failure_reason: err instanceof Error ? err.message : String(err),
+    }).eq("id", jobId);
+  }
 }
 
 // ─── RESUME STALLED JOB ─────────────────────────────────────────────────────
