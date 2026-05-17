@@ -8480,7 +8480,12 @@ async function runMadlanAgencyDiscoverJob(params: {
     // we extract /listing/ URLs and queue them for the standard per-URL pipeline.
     let tier3Discovered = 0;
     const tier3Urls: string[] = [];
-    if (totalDiscovered === 0) {
+    // Gate on actual usable listings (inserted + merged), NOT raw Apify item
+    // count. The actor returns city-wide noise; if none of it passes the
+    // agency-scope filter, we still want Firecrawl to scrape the office page
+    // directly. Previously this gated on totalDiscovered (raw items), so
+    // Tier 3 never fired when Apify returned 800 items where 0 matched.
+    if (totalInserted + totalMerged === 0) {
       const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
       if (FIRECRAWL_API_KEY) {
         try {
