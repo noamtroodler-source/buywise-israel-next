@@ -866,34 +866,29 @@ async function findSoldUrlsFromIndexPages(
 function isNonResalePage(markdown: string, importType: string = "resale"): { skip: boolean; reason: string } {
   const snippet = markdown.substring(0, 3000);
 
-  // Sold/rented patterns — must require UNAMBIGUOUS status context, not just
-  // any occurrence of the Hebrew/English word. The old patterns matched
-  // "נמכר" / "sold" anywhere in the page (e.g. "recently sold" sidebars,
-  // marketing copy mentioning sold properties), rejecting every active
-  // listing on agency sites that had a "sold properties" link in chrome.
+  // Sold/rented pre-filter — DELIBERATELY MINIMAL.
+  //
+  // Every text-based Hebrew pattern we've tried has produced false positives:
+  // agency listing pages routinely include sidebars showing "other listings",
+  // "recently sold" sections, transaction-history widgets, or marketing copy
+  // referencing past deals, all of which contain words like נמכר / הושכר that
+  // do NOT mean THIS listing is sold. With the broad-word patterns ON, Erez
+  // Real Estate had 100% of pages rejected by this pre-filter; with merely
+  // "tightened" patterns, the same false-positive surface still hit many.
+  //
+  // The AI extraction step downstream has a dedicated is_sold_or_rented field
+  // that the model populates correctly from page context — that's the right
+  // place for status detection. Keep this pre-filter only for the few English
+  // patterns that are essentially impossible to misinterpret.
   const soldPatterns = [
-    // Hebrew — status indicators only
-    /מצב\s*[:\-]\s*נמכר/,                 // "Status: sold"
-    /סטטוס\s*[:\-]\s*נמכר/,              // "Status: sold" (alt word)
-    /מצב\s*[:\-]\s*הושכר/,               // "Status: rented out"
-    /סטטוס\s*[:\-]\s*הושכר/,
-    /נמכרה?\s*[!.]/,                       // "Sold!" / "Sold."
-    /הושכרה?\s*[!.]/,                      // "Rented out!" / "Rented out."
-    /נמכרה?\s+ב[־\-\s]?\d[\d,]{2,}/,    // "Sold for [price-like number]"
-    /הושכרה?\s+ב[־\-\s]?\d[\d,]{2,}/,   // "Rented for [price-like number]"
-    /העסקה\s+הסתיימה/,                   // "Transaction completed"
-    /הנכס\s+(?:נמכר|הושכר)/,             // "The property [was] sold/rented"
-    // English — keep the obviously contextual ones
-    /\bSOLD\b\s*(?:!|\.|\s*$|\s*<)/,    // "SOLD" as a banner/standalone marker
-    /\bRENTED\b\s*(?:!|\.|\s*$|\s*<)/,
     /\bunder\s+contract\b/i,
     /\bunder\s+offer\b/i,
     /\bsale\s+agreed\b/i,
     /\blet\s+agreed\b/i,
-    /\boff[\s-]*market\b/i,
     /\bno\s+longer\s+available\b/i,
     /\bproperty\s+has\s+been\s+sold\b/i,
     /\bthis\s+property\s+is\s+sold\b/i,
+    /\bthis\s+property\s+has\s+been\s+(?:sold|rented|let)\b/i,
   ];
   for (const p of soldPatterns) {
     if (p.test(snippet)) return { skip: true, reason: "Pre-filter: listing appears sold/rented" };
