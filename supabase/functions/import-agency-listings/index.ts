@@ -3891,7 +3891,20 @@ function extractAgentFieldsFromHtml(html: string, markdown: string): { name: str
 // IS present in the static HTML. So when no agent name has been resolved by AI
 // or by the markdown-based backstop, fetch the page ourselves and re-run the
 // same regex extractor against the raw response.
-async function fetchAgentFromRawPage(url: string): Promise<{ name: string; phone: string; email: string }> {
+async function fetchAgentFromRawPage(url: string): Promise<{
+  name: string;
+  phone: string;
+  email: string;
+  _debug?: {
+    status: number | null;
+    html_length: number;
+    has_listing_agent_keyword: boolean;
+    has_email_at_pattern: boolean;
+    has_phone_pattern: boolean;
+    html_preview: string;
+    error?: string;
+  };
+}> {
   const empty = { name: "", phone: "", email: "" };
   try {
     const res = await fetchWithTimeout(url, {
@@ -3899,16 +3912,30 @@ async function fetchAgentFromRawPage(url: string): Promise<{ name: string; phone
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "Accept-Language": "en-US,en;q=0.9,he;q=0.8",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Cache-Control": "no-cache",
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "none",
+        "Sec-Fetch-User": "?1",
+        "Upgrade-Insecure-Requests": "1",
       },
     }, 15_000);
-    if (!res.ok) return empty;
-    const html = await res.text();
-    if (!html || html.length < 200) return empty;
+    const html = res.ok ? await res.text() : "";
+    const debug = {
+      status: res.status,
+      html_length: html.length,
+      has_listing_agent_keyword: /LISTING\s+AGENT/i.test(html),
+      has_email_at_pattern: /@jerusalem-real-estate\.co|@[\w-]+\.co\.il|@[\w-]+\.com/i.test(html),
+      has_phone_pattern: /(?:\+?972|0)5\d[\s\-]?\d{3}[\s\-]?\d{4}/.test(html),
+      html_preview: html.slice(0, 500),
+    };
+    if (!res.ok || !html || html.length < 200) return { ...empty, _debug: debug };
     const visibleText = textFromHtmlFragment(html);
-    return extractAgentFieldsFromHtml(html, visibleText);
+    const result = extractAgentFieldsFromHtml(html, visibleText);
+    return { ...result, _debug: debug };
   } catch (err) {
-    console.warn(`[Agent raw fetch] ${url}: ${err instanceof Error ? err.message : err}`);
-    return empty;
+    return { ...empty, _debug: { status: null, html_length: 0, has_listing_agent_keyword: false, has_email_at_pattern: false, has_phone_pattern: false, html_preview: "", error: err instanceof Error ? err.message : String(err) } };
   }
 }
 
