@@ -22,7 +22,7 @@ const dlog = (...args: unknown[]) => { if (DEBUG) console.log(...args); };
 
 // Deploy marker — printed once on cold start. Bump on any structural change so
 // we can confirm via edge-function logs that the latest code is actually live.
-const DEPLOY_MARKER = "madlan-diag-persisted-2026-05-17-v10";
+const DEPLOY_MARKER = "madlan-stealth-proxy-2026-05-17-v11";
 console.log(`[import-agency-listings] cold start — deploy: ${DEPLOY_MARKER}`);
 
 // ─── AUTH ────────────────────────────────────────────────────────────────────
@@ -8837,6 +8837,12 @@ async function runMadlanOfficePageDiscoverJob(params: {
     let scrapedMarkdown = "";
     let scrapedLinks: string[] = [];
     try {
+      // Madlan serves an Imperva/Incapsula-style JS bot-challenge page to
+      // standard datacenter IPs (verified via our own diagnostic — Firecrawl
+      // got back 5KB of HTML whose entire body was the IND*-prefixed
+      // challenge wrapper, no listings, no links). Firecrawl's "stealth"
+      // proxy mode routes through residential IPs that pass the challenge.
+      // We already use this approach for Yad2 elsewhere in this file.
       const fcRes = await fetchWithTimeout("https://api.firecrawl.dev/v1/scrape", {
         method: "POST",
         headers: { Authorization: `Bearer ${firecrawlKey}`, "Content-Type": "application/json" },
@@ -8845,8 +8851,9 @@ async function runMadlanOfficePageDiscoverJob(params: {
           formats: ["html", "rawHtml", "markdown", "links"],
           onlyMainContent: false,
           waitFor: 5000,
+          proxy: "stealth",
         }),
-      }, 45_000);
+      }, 60_000);
       if (fcRes.ok) {
         const fcBody = await fcRes.json().catch(() => null);
         scrapedHtml = (fcBody?.data?.html || fcBody?.data?.rawHtml || fcBody?.html || fcBody?.rawHtml || "") as string;
