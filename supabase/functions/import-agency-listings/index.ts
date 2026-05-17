@@ -7551,19 +7551,21 @@ async function handleYad2Discover(body: any) {
   const maxWait = 300_000;
   const pollInterval = 5_000;
   const startTime = Date.now();
-  let runStatus = "RUNNING";
+  // Apify non-terminal states: READY (queued) and RUNNING. Terminal: SUCCEEDED, FAILED, ABORTED, TIMED-OUT.
+  const NON_TERMINAL = new Set(["READY", "RUNNING"]);
+  let runStatus = "READY";
 
-  while (Date.now() - startTime < maxWait && runStatus === "RUNNING") {
+  while (Date.now() - startTime < maxWait && NON_TERMINAL.has(runStatus)) {
     await delay(pollInterval);
     const statusRes = await fetch(`https://api.apify.com/v2/actor-runs/${runId}?token=${APIFY_API_KEY}`);
     if (statusRes.ok) {
       const statusData = await statusRes.json();
-      runStatus = statusData.data?.status || "RUNNING";
+      runStatus = statusData.data?.status || runStatus;
     }
   }
 
   if (runStatus !== "SUCCEEDED") {
-    throw new Error(`Apify run ${runStatus === "RUNNING" ? "timed out" : `failed with status: ${runStatus}`}`);
+    throw new Error(`Apify run ${NON_TERMINAL.has(runStatus) ? "timed out" : `failed with status: ${runStatus}`}`);
   }
 
   // Fetch results from dataset
