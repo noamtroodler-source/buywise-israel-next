@@ -22,7 +22,7 @@ const dlog = (...args: unknown[]) => { if (DEBUG) console.log(...args); };
 
 // Deploy marker — printed once on cold start. Bump on any structural change so
 // we can confirm via edge-function logs that the latest code is actually live.
-const DEPLOY_MARKER = "madlan-office-multi-format-2026-05-17-v7";
+const DEPLOY_MARKER = "city-fallback-cities-covered-2026-05-17-v8";
 console.log(`[import-agency-listings] cold start — deploy: ${DEPLOY_MARKER}`);
 
 // ─── AUTH ────────────────────────────────────────────────────────────────────
@@ -5747,7 +5747,43 @@ async function processOneItem(
     }
 
     // ── CITY WHITELIST GATE ──
-    const matchedCity = matchSupportedCity(listing.city);
+    // AI extraction sometimes returns empty city on heavily JS-rendered or
+    // visually-only Hebrew listing pages (verified on Erez Real Estate —
+    // 31/31 imports had extracted_city = null). Fall back to:
+    //   1. cachedDomainCity (e.g. jerusalem-real-estate.co → Jerusalem)
+    //   2. agency.cities_covered if it lists exactly one supported city
+    //      (e.g. Erez = ["Tel Aviv", "Nes Ziona"], pick first supported).
+    // Only reject when all three sources have failed.
+    let matchedCity = matchSupportedCity(listing.city);
+    let cityFallbackSource: string | null = null;
+
+    if (!matchedCity && domainCity) {
+      const fromDomain = matchSupportedCity(domainCity);
+      if (fromDomain) {
+        matchedCity = fromDomain;
+        listing.city = fromDomain;
+        cityFallbackSource = "domain";
+      }
+    }
+
+    if (!matchedCity && job.agency_id) {
+      const { data: agencyRow } = await sb
+        .from("agencies")
+        .select("cities_covered")
+        .eq("id", job.agency_id)
+        .maybeSingle();
+      const covered: string[] = Array.isArray(agencyRow?.cities_covered) ? agencyRow!.cities_covered : [];
+      for (const c of covered) {
+        const m = matchSupportedCity(c);
+        if (m) {
+          matchedCity = m;
+          listing.city = m;
+          cityFallbackSource = "agency_cities_covered";
+          break;
+        }
+      }
+    }
+
     if (!matchedCity) {
       await sb.from("import_job_items").update({
         status: "skipped",
@@ -5755,6 +5791,11 @@ async function processOneItem(
         error_type: "permanent",
       }).eq("id", item.id);
       return { succeeded: false };
+    }
+
+    if (cityFallbackSource) {
+      listing._city_inferred_from = cityFallbackSource;
+      dlog(`[CityFallback] ${item.url} → ${matchedCity} (source=${cityFallbackSource})`);
     }
 
     // Determine city match type for confidence scoring
