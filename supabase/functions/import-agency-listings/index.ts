@@ -22,7 +22,7 @@ const dlog = (...args: unknown[]) => { if (DEBUG) console.log(...args); };
 
 // Deploy marker — printed once on cold start. Bump on any structural change so
 // we can confirm via edge-function logs that the latest code is actually live.
-const DEPLOY_MARKER = "city-fallback-robust-2026-05-17-v9";
+const DEPLOY_MARKER = "madlan-diag-persisted-2026-05-17-v10";
 console.log(`[import-agency-listings] cold start — deploy: ${DEPLOY_MARKER}`);
 
 // ─── AUTH ────────────────────────────────────────────────────────────────────
@@ -8891,7 +8891,27 @@ async function runMadlanOfficePageDiscoverJob(params: {
     console.log(`[Madlan/office] Extracted ${listingUrls.length} listing URLs (html_matches=${fromHtmlMd.length}, link_matches=${fromLinks.length})`);
 
     if (listingUrls.length === 0) {
-      const failReason = "No listing URLs found on Madlan office page (regex matched nothing in fetched HTML)";
+      // Persist a rich diagnostic so we can SQL-query exactly what Firecrawl
+      // returned and why the regex matched nothing — instead of needing to
+      // dig through edge-function logs every time.
+      const linkSamples = (scrapedLinks || []).slice(0, 15);
+      const htmlSample = scrapedHtml.slice(0, 400);
+      const markdownSample = scrapedMarkdown.slice(0, 400);
+      const diagnostic = {
+        source: "madlan",
+        method: "office_page_firecrawl",
+        firecrawl_html_length: scrapedHtml.length,
+        firecrawl_markdown_length: scrapedMarkdown.length,
+        firecrawl_links_count: scrapedLinks.length,
+        regex_matches_html_md: fromHtmlMd.length,
+        regex_matches_links: fromLinks.length,
+        sample_links: linkSamples,
+        sample_html_first_400: htmlSample,
+        sample_markdown_first_400: markdownSample,
+        reason: "No listing URLs matched the Madlan listing-URL pattern in any Firecrawl format",
+      };
+      const failReason = JSON.stringify(diagnostic);
+      console.warn(`[Madlan/office] No URLs found. Diagnostic: ${failReason.slice(0, 800)}`);
       await sb.from("import_jobs").update({
         status: "completed",
         total_urls: 0,
@@ -8899,7 +8919,7 @@ async function runMadlanOfficePageDiscoverJob(params: {
         failure_reason: failReason,
       }).eq("id", jobId);
       await sb.from("agency_sources").update({
-        last_failure_reason: failReason,
+        last_failure_reason: "No listing URLs found on Madlan office page — see import_jobs.failure_reason for full diagnostic",
         last_synced_at: new Date().toISOString(),
         last_sync_listings_found: 0,
       }).eq("agency_id", agencyId).eq("source_type", "madlan");
