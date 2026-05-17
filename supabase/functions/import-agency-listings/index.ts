@@ -22,7 +22,7 @@ const dlog = (...args: unknown[]) => { if (DEBUG) console.log(...args); };
 
 // Deploy marker — printed once on cold start. Bump on any structural change so
 // we can confirm via edge-function logs that the latest code is actually live.
-const DEPLOY_MARKER = "madlan-stealth-proxy-2026-05-17-v11";
+const DEPLOY_MARKER = "madlan-scrapingbee-2026-05-17-v12";
 console.log(`[import-agency-listings] cold start — deploy: ${DEPLOY_MARKER}`);
 
 // ─── AUTH ────────────────────────────────────────────────────────────────────
@@ -8836,13 +8836,49 @@ async function runMadlanOfficePageDiscoverJob(params: {
     let scrapedHtml = "";
     let scrapedMarkdown = "";
     let scrapedLinks: string[] = [];
-    try {
-      // Madlan serves an Imperva/Incapsula-style JS bot-challenge page to
-      // standard datacenter IPs (verified via our own diagnostic — Firecrawl
-      // got back 5KB of HTML whose entire body was the IND*-prefixed
-      // challenge wrapper, no listings, no links). Firecrawl's "stealth"
-      // proxy mode routes through residential IPs that pass the challenge.
-      // We already use this approach for Yad2 elsewhere in this file.
+    let scrapeSource = "none";
+
+    // Madlan serves an Imperva-style JS bot-challenge page that walls
+    // Firecrawl's stealth proxy too — verified by the v10 diagnostic
+    // (5KB HTML, body was entirely the IND*-prefixed wrapper, 0 links).
+    // ScrapingBee's premium_proxy uses a stronger residential pool +
+    // real-browser fingerprint that passes this class of protection.
+    // Try it first when the key is configured.
+    const scrapingBeeKey = Deno.env.get("SCRAPINGBEE_API_KEY");
+    if (scrapingBeeKey) {
+      try {
+        const sbUrl = `https://app.scrapingbee.com/api/v1/?api_key=${encodeURIComponent(scrapingBeeKey)}&url=${encodeURIComponent(websiteUrl)}&premium_proxy=true&render_js=true&wait=4000&country_code=il`;
+        const sbRes = await fetchWithTimeout(sbUrl, { method: "GET" }, 60_000);
+        if (sbRes.ok) {
+          const sbHtml = await sbRes.text();
+          // Only accept the response if it's clearly past the bot challenge —
+          // the IND* wrapper is the signature failure mode. If we see it,
+          // ScrapingBee's response is still the challenge page.
+          const isChallengePage = /INDshadowRootWrap|class="?IND(?:positionLeft|Desktop|Chrome)"?/i.test(sbHtml);
+          if (sbHtml && sbHtml.length > 500 && !isChallengePage) {
+            scrapedHtml = sbHtml;
+            // Pull every href out of the raw HTML (ScrapingBee returns HTML,
+            // not a structured links array like Firecrawl does).
+            const hrefMatches = sbHtml.match(/href=["']([^"']+)["']/gi) || [];
+            scrapedLinks = hrefMatches
+              .map((m) => m.replace(/^href=["']/i, "").replace(/["']$/, ""))
+              .filter((u) => !!u);
+            scrapeSource = "scrapingbee";
+            console.log(`[Madlan/office] ScrapingBee succeeded: html=${sbHtml.length}, hrefs=${scrapedLinks.length}`);
+          } else {
+            console.warn(`[Madlan/office] ScrapingBee returned challenge or short body — html_length=${sbHtml.length}, challenge_signature=${isChallengePage}`);
+          }
+        } else {
+          const errText = await sbRes.text().catch(() => "");
+          console.warn(`[Madlan/office] ScrapingBee HTTP ${sbRes.status}: ${errText.slice(0, 300)}`);
+        }
+      } catch (err) {
+        console.warn(`[Madlan/office] ScrapingBee request failed:`, err);
+      }
+    }
+
+    // Fall back to Firecrawl stealth if ScrapingBee didn't get usable content.
+    if (scrapeSource === "none") try {
       const fcRes = await fetchWithTimeout("https://api.firecrawl.dev/v1/scrape", {
         method: "POST",
         headers: { Authorization: `Bearer ${firecrawlKey}`, "Content-Type": "application/json" },
@@ -8863,6 +8899,10 @@ async function runMadlanOfficePageDiscoverJob(params: {
           : Array.isArray(fcBody?.links)
             ? (fcBody.links as string[])
             : [];
+        if (scrapedHtml.length > 500 || scrapedLinks.length > 0) {
+          scrapeSource = "firecrawl";
+          console.log(`[Madlan/office] Firecrawl succeeded: html=${scrapedHtml.length}, markdown=${scrapedMarkdown.length}, links=${scrapedLinks.length}`);
+        }
       } else {
         const errBody = await fcRes.text().catch(() => "");
         console.warn(`[Madlan/office] Firecrawl HTTP ${fcRes.status}: ${errBody.slice(0, 300)}`);
@@ -8872,7 +8912,7 @@ async function runMadlanOfficePageDiscoverJob(params: {
     }
 
     const combinedText = `${scrapedHtml}\n${scrapedMarkdown}\n${scrapedLinks.join("\n")}`;
-    console.log(`[Madlan/office] Firecrawl returned: html=${scrapedHtml.length}, markdown=${scrapedMarkdown.length}, links=${scrapedLinks.length}`);
+    console.log(`[Madlan/office] scrape_source=${scrapeSource}, html=${scrapedHtml.length}, markdown=${scrapedMarkdown.length}, links=${scrapedLinks.length}`);
 
     if (combinedText.trim().length < 200) {
       const failReason = "Firecrawl returned no usable content for Madlan office page";
@@ -8907,6 +8947,7 @@ async function runMadlanOfficePageDiscoverJob(params: {
       const diagnostic = {
         source: "madlan",
         method: "office_page_firecrawl",
+        scrape_source: scrapeSource,
         firecrawl_html_length: scrapedHtml.length,
         firecrawl_markdown_length: scrapedMarkdown.length,
         firecrawl_links_count: scrapedLinks.length,
