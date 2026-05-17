@@ -6358,6 +6358,46 @@ async function processOneItem(
       );
     }
 
+    // ── Background per-listing agent fix via raw HTTP fetch.
+    // Firecrawl drops the LISTING AGENT section on some agency templates
+    // (verified on jerusalem-real-estate.co). Fetching the page directly
+    // returns the block. Doing that inline would add ~5–15s per item and
+    // trips Supabase's CPU-time limit on big batches — so it runs here as
+    // a background task per item, after the property already exists.
+    // resolveListingAgentId handles matching to existing agents (normalized
+    // name + Israeli-phone fallback) or auto-creating new ones with
+    // needs_review=true.
+    if (property?.id && isAgencyOwnWebsite && item.url) {
+      const propertyIdForUpdate = property.id;
+      const currentAgentId = agentId;
+      EdgeRuntime.waitUntil((async () => {
+        try {
+          const agent = await fetchAgentFromRawPage(item.url);
+          if (!agent.name) return;
+          const newAgentId = await resolveListingAgentId(
+            sb,
+            job.agency_id,
+            agent.name,
+            agent.phone,
+            currentAgentId,
+          );
+          if (newAgentId && newAgentId !== currentAgentId) {
+            const { error: updErr } = await sb
+              .from("properties")
+              .update({ agent_id: newAgentId })
+              .eq("id", propertyIdForUpdate);
+            if (updErr) {
+              console.warn(`[Background agent fix] update failed for ${propertyIdForUpdate}: ${updErr.message}`);
+            } else {
+              dlog(`[Background agent fix] ${propertyIdForUpdate} → ${agent.name}`);
+            }
+          }
+        } catch (err) {
+          console.warn(`[Background agent fix] ${item.url}: ${err instanceof Error ? err.message : err}`);
+        }
+      })());
+    }
+
     // Insert cross-source duplicate pair if detected
     if (listing.cross_source_match_id && property?.id) {
       const [pa, pb] = property.id < listing.cross_source_match_id
