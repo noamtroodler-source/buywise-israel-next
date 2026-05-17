@@ -22,7 +22,7 @@ const dlog = (...args: unknown[]) => { if (DEBUG) console.log(...args); };
 
 // Deploy marker — printed once on cold start. Bump on any structural change so
 // we can confirm via edge-function logs that the latest code is actually live.
-const DEPLOY_MARKER = "scrapingbee-stealth-proxy-2026-05-17-v17";
+const DEPLOY_MARKER = "madlan-apify-switch-2026-05-17-v18";
 console.log(`[import-agency-listings] cold start — deploy: ${DEPLOY_MARKER}`);
 // One-time env-var visibility check. Helps diagnose Lovable secret-propagation
 // issues (e.g. v15 cold-started with SCRAPINGBEE_API_KEY absent even though
@@ -8393,6 +8393,49 @@ async function runMadlanAgencyDiscoverJob(params: {
         const wouldPass = items.filter((it: any) => isMadlanItemLiveAndAgencyScoped(it, agency?.name, websiteUrl)).length;
         console.log(`[Madlan/Apify] [${chosenLabel}] city=${heCity}/${dealType}: ${items.length} raw, ${wouldPass} pass agency-scope filter (agency="${agency?.name}")`);
 
+        // Persist a schema diagnostic so we can SEE what swerve~madlan-scraper
+        // actually returns per listing — specifically whether it includes any
+        // agent/office signal (re_office_*, contactName, agencyName, agentName)
+        // we can filter Erez's ~34 listings out of the city-wide dump. Without
+        // a reliable per-item agency signal, isMadlanItemLiveAndAgencyScoped
+        // falls back to "don't reject", which would import the entire city.
+        try {
+          const officeId = String(websiteUrl).match(/re_office_[a-zA-Z0-9_-]+/)?.[0] || null;
+          const sampleItems = items.slice(0, 3).map((it: any) => {
+            const blob = JSON.stringify(it);
+            return {
+              keys: Object.keys(it || {}),
+              url: it?.url || null,
+              contactName: it?.contactName ?? null,
+              agencyName: it?.agencyName ?? null,
+              officeName: it?.officeName ?? null,
+              agentName: it?.agentName ?? null,
+              brokerName: it?.brokerName ?? null,
+              hasAgent: it?.hasAgent ?? null,
+              office_id_present: officeId ? blob.includes(officeId) : null,
+              erez_substring_present: /erez/i.test(blob) || blob.includes("ארז"),
+              blob_first_1200: blob.slice(0, 1200),
+            };
+          });
+          await sb.from("import_jobs").update({
+            failure_reason: JSON.stringify({
+              source: "madlan",
+              method: "apify_swerve_madlan_scraper",
+              city: heCity,
+              dealType,
+              office_url: websiteUrl,
+              office_id: officeId,
+              agency_name: agency?.name || null,
+              raw_item_count: items.length,
+              would_pass_agency_filter: wouldPass,
+              actor_label: chosenLabel,
+              sample_items: sampleItems,
+            }),
+          }).eq("id", jobId);
+        } catch (diagErr) {
+          console.warn(`[Madlan/Apify] schema diagnostic persist failed:`, diagErr);
+        }
+
         if (items.length === 0) continue;
 
         totalDiscovered += items.length;
@@ -8862,8 +8905,17 @@ async function handleMadlanAgencyDiscover(body: any) {
   // that actor returned listings for the whole city and we spent weeks trying
   // to bolt office-scoping onto it. The office page already lists exactly
   // this agency's inventory; that's our source of truth.
+  // SWITCHED v18: office-page direct scrape (runMadlanOfficePageDiscoverJob)
+  // is permanently walled by Madlan's Imperva — Firecrawl, Firecrawl-stealth,
+  // ScrapingBee premium_proxy AND stealth_proxy all returned the 5KB IND*
+  // bot-challenge shell. Going back to the Apify city-wide actor path
+  // (runMadlanAgencyDiscoverJob): Apify runs full headless Chrome in their
+  // cloud with residential IPs, which beats Imperva where proxy services
+  // can't. It returns the whole city, so we filter down to this agency via
+  // isMadlanItemLiveAndAgencyScoped + a persisted schema diagnostic that
+  // tells us exactly what agent/office fields the actor exposes for filtering.
   EdgeRuntime.waitUntil(
-    runMadlanOfficePageDiscoverJob({
+    runMadlanAgencyDiscoverJob({
       jobId: job.id,
       agencyId: agency_id,
       websiteUrl: website_url,
