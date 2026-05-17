@@ -5237,6 +5237,28 @@ async function processOneItem(
         listing._agent_source = "html_backstop";
         dlog(`[Agent backstop] HTML extraction found "${agentFromHtml.name}" for ${item.url}`);
       }
+
+      // Diagnostic dump: record WHY the backstop succeeded or failed so we can
+      // see, via the import_job_items.extracted_data column, exactly what the
+      // extractor saw on each page. Persists per-item until we know agent
+      // extraction is healthy.
+      const debugText = `${markdown}\n${textFromHtmlFragment(pageHtml)}`;
+      const debugBlock = extractAgentBlockFromMarkdown(debugText);
+      listing._agent_debug = {
+        backstop_found_name: agentFromHtml.name || null,
+        backstop_found_phone: agentFromHtml.phone || null,
+        backstop_found_email: agentFromHtml.email || null,
+        block_matched: !!debugBlock,
+        block_preview: debugBlock.slice(0, 200),
+        has_listing_agent_keyword: /LISTING\s+AGENT/i.test(debugText),
+        has_listed_by_keyword: /Listed\s+by/i.test(debugText),
+        has_contact_agent_keyword: /CONTACT\s+(?:THE\s+)?AGENT/i.test(debugText),
+        has_hebrew_agent_keyword: /(?:סוכן|מתווך|איש\s+קשר)/.test(debugText),
+        has_phone_pattern: /(?:\+?972[\s\-]?|0)5\d[\s\-]?\d{3}[\s\-]?\d{4}/.test(debugText),
+        has_email_pattern: /[\w.+-]+@[\w-]+(?:\.[\w-]+)+/.test(debugText),
+        markdown_length: (markdown || "").length,
+        html_text_length: textFromHtmlFragment(pageHtml || "").length,
+      };
     }
 
     // ── Resolve the per-listing agent (replaces the batch-level default) ──
