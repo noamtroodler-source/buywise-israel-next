@@ -291,6 +291,40 @@ export function useProvisionAgentAccount(agencyId: string | null) {
   });
 }
 
+export type MergeAgentsResult = {
+  mode: 'dry_run' | 'merged';
+  source: { id: string; name: string; has_user_id?: boolean };
+  target: { id: string; name: string; has_user_id?: boolean };
+  would_move?: { properties: number; co_agent_entries: number };
+  moved?: { properties: number; co_agent_entries: number };
+};
+
+export function useMergeAgents(agencyId: string | null) {
+  const qc = useQueryClient();
+  return useMutation<MergeAgentsResult, Error, { sourceAgentId: string; targetAgentId: string; dryRun?: boolean }>({
+    mutationFn: async ({ sourceAgentId, targetAgentId, dryRun = false }) => {
+      const { data, error } = await supabase.functions.invoke('import-agency-listings', {
+        body: {
+          action: 'merge_agents',
+          source_agent_id: sourceAgentId,
+          target_agent_id: targetAgentId,
+          dry_run: dryRun,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data as MergeAgentsResult;
+    },
+    onSuccess: (data, vars) => {
+      if (!vars.dryRun && agencyId) {
+        qc.invalidateQueries({ queryKey: ['provisioning-agency-agents', agencyId] });
+        toast.success(`Merged into ${data.target.name} — ${data.moved?.properties ?? 0} listings moved`);
+      }
+    },
+    onError: (e: any) => toast.error(e?.message || 'Merge failed'),
+  });
+}
+
 // ============================================================================
 // Phase 5: Listings + Quality
 // ============================================================================

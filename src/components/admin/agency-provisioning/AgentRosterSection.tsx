@@ -8,7 +8,14 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Plus, KeyRound, Loader2, Copy, UserCheck, Send, Upload, X, AlertTriangle, Pencil, Shield, ShieldOff, Star, Trash2 } from 'lucide-react';
+import { Plus, KeyRound, Loader2, Copy, UserCheck, Send, Upload, X, AlertTriangle, Pencil, Shield, ShieldOff, Star, Trash2, GitMerge } from 'lucide-react';
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from '@/components/ui/select';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,6 +38,7 @@ import {
   useProvisionAgentAccount,
   useRevealCredentials,
   useResendSetupLink,
+  useMergeAgents,
 } from '@/hooks/useAgencyProvisioning';
 import { useAgencyMembers, usePromoteToAdmin, useDemoteAdmin } from '@/hooks/useAgencyMembers';
 import { RevealCredentialsModal } from './RevealCredentialsModal';
@@ -74,6 +82,52 @@ export function AgentRosterSection({ agencyId }: Props) {
   const update = useUpdateAgent(agencyId);
   const deleteAgent = useDeleteAgent(agencyId);
   const provision = useProvisionAgentAccount(agencyId);
+  const mergeAgents = useMergeAgents(agencyId);
+
+  // Merge dialog state. Holds the source agent (clicked from a row),
+  // the chosen target agent id (from the dropdown), and the latest
+  // dry-run preview so the admin can see how many listings would move
+  // before they confirm.
+  const [mergeSource, setMergeSource] = useState<{ id: string; name: string } | null>(null);
+  const [mergeTargetId, setMergeTargetId] = useState<string>('');
+  const [mergePreview, setMergePreview] = useState<{ would_move?: { properties: number; co_agent_entries: number } } | null>(null);
+
+  function openMerge(agent: { id: string; name: string }) {
+    setMergeSource(agent);
+    setMergeTargetId('');
+    setMergePreview(null);
+  }
+  function closeMerge() {
+    setMergeSource(null);
+    setMergeTargetId('');
+    setMergePreview(null);
+  }
+  async function previewMerge() {
+    if (!mergeSource || !mergeTargetId) return;
+    try {
+      const result = await mergeAgents.mutateAsync({
+        sourceAgentId: mergeSource.id,
+        targetAgentId: mergeTargetId,
+        dryRun: true,
+      });
+      setMergePreview(result);
+    } catch {
+      // toast handled by hook's onError
+    }
+  }
+  async function confirmMerge() {
+    if (!mergeSource || !mergeTargetId) return;
+    try {
+      await mergeAgents.mutateAsync({
+        sourceAgentId: mergeSource.id,
+        targetAgentId: mergeTargetId,
+        dryRun: false,
+      });
+      closeMerge();
+    } catch {
+      // toast handled by hook's onError
+    }
+  }
   const reveal = useRevealCredentials();
   const resend = useResendSetupLink();
 
@@ -298,6 +352,14 @@ export function AgentRosterSection({ agencyId }: Props) {
                         title="Edit agent"
                       >
                         <Pencil className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => openMerge({ id: a.id, name: a.name })}
+                        title="Merge this agent into another agent (duplicate cleanup)"
+                      >
+                        <GitMerge className="h-3 w-3" />
                       </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
@@ -656,6 +718,68 @@ export function AgentRosterSection({ agencyId }: Props) {
           {previewUrl && (
             <img src={previewUrl} alt="Avatar preview" className="w-full h-auto rounded-lg" />
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Merge agent dialog */}
+      <Dialog open={!!mergeSource} onOpenChange={(o) => { if (!o) closeMerge(); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Merge {mergeSource?.name} into another agent</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              All listings currently attributed to <strong>{mergeSource?.name}</strong> will be re-pointed to the agent you pick below, and this record will be deleted. Use this when the same human appears twice (e.g. a scraped duplicate with a spelling difference).
+            </p>
+            <div className="space-y-2">
+              <Label>Merge into:</Label>
+              <Select
+                value={mergeTargetId}
+                onValueChange={(v) => { setMergeTargetId(v); setMergePreview(null); }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Pick the canonical agent…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {agents
+                    .filter((a) => a.id !== mergeSource?.id)
+                    .map((a) => (
+                      <SelectItem key={a.id} value={a.id}>
+                        {a.name}{a.user_id ? ' · provisioned' : ''}{a.needs_review ? ' · needs review' : ''}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {mergePreview?.would_move && (
+              <div className="rounded-md border bg-muted/40 p-3 text-sm">
+                <p className="font-medium mb-1">Preview</p>
+                <p className="text-muted-foreground">
+                  {mergePreview.would_move.properties} listing{mergePreview.would_move.properties === 1 ? '' : 's'} will move.
+                  {mergePreview.would_move.co_agent_entries > 0 && ` ${mergePreview.would_move.co_agent_entries} co-agent entry/entries will be consolidated.`}
+                </p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={closeMerge} disabled={mergeAgents.isPending}>Cancel</Button>
+            <Button
+              variant="outline"
+              onClick={previewMerge}
+              disabled={!mergeTargetId || mergeAgents.isPending}
+            >
+              {mergeAgents.isPending && !mergePreview ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : null}
+              Preview
+            </Button>
+            <Button
+              onClick={confirmMerge}
+              disabled={!mergeTargetId || mergeAgents.isPending}
+            >
+              {mergeAgents.isPending ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <GitMerge className="h-3 w-3 mr-1" />}
+              Merge
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </Card>
