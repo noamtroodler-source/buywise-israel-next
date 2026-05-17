@@ -22,8 +22,20 @@ const dlog = (...args: unknown[]) => { if (DEBUG) console.log(...args); };
 
 // Deploy marker — printed once on cold start. Bump on any structural change so
 // we can confirm via edge-function logs that the latest code is actually live.
-const DEPLOY_MARKER = "wix-stealth-structure-gate-2026-05-17-v15";
+const DEPLOY_MARKER = "env-diag-2026-05-17-v16";
 console.log(`[import-agency-listings] cold start — deploy: ${DEPLOY_MARKER}`);
+// One-time env-var visibility check. Helps diagnose Lovable secret-propagation
+// issues (e.g. v15 cold-started with SCRAPINGBEE_API_KEY absent even though
+// the secret was set in the UI, which silently disabled the Madlan/office
+// ScrapingBee path and kept us walled by Imperva).
+const _envDiag = {
+  FIRECRAWL_API_KEY: !!Deno.env.get("FIRECRAWL_API_KEY"),
+  SCRAPINGBEE_API_KEY: !!Deno.env.get("SCRAPINGBEE_API_KEY"),
+  SCRAPINGBEE_API_KEY_length: (Deno.env.get("SCRAPINGBEE_API_KEY") || "").length,
+  APIFY_API_KEY: !!Deno.env.get("APIFY_API_KEY"),
+  LOVABLE_API_KEY: !!Deno.env.get("LOVABLE_API_KEY"),
+};
+console.log(`[import-agency-listings] env diagnostic: ${JSON.stringify(_envDiag)}`);
 
 // ─── AUTH ────────────────────────────────────────────────────────────────────
 //
