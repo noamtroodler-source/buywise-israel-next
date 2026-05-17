@@ -3746,9 +3746,51 @@ function extractAgencyDescriptionLine(markdown: string, html: string): string | 
   return candidates.find(line => /(room|bedroom|apartment|penthouse|villa|beach|marina|sea|parking|sqm|m2|m²|מחסן|חדר|דירה)/i.test(line)) || candidates[0] || null;
 }
 
+// Regex-based agent extractor. Runs against the FULL page (HTML text + markdown)
+// so it works even when AI extraction fails entirely and the fallback path
+// is the only source of listing fields. Also used as a backstop in the main
+// flow when AI succeeded but didn't populate the agent fields (e.g. the agent
+// block sits past the prompt truncation cutoff and the markdown-only locator
+// didn't catch it).
+function extractAgentFieldsFromHtml(html: string, markdown: string): { name: string; phone: string; email: string } {
+  const result = { name: "", phone: "", email: "" };
+  const text = `${markdown}\n${textFromHtmlFragment(html)}`;
+  const block = extractAgentBlockFromMarkdown(text);
+  if (!block) return result;
+
+  const emailMatch = block.match(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/);
+  if (emailMatch) result.email = emailMatch[0];
+
+  const phoneMatch = block.match(/(?:\+?972[\s\-]?|0)5\d[\s\-]?\d{3}[\s\-]?\d{4}|\+?972[\s\-]?\d{1,2}[\s\-]?\d{3}[\s\-]?\d{4}/);
+  if (phoneMatch) result.phone = phoneMatch[0].trim();
+
+  // Pick a line in the block that looks like a human name:
+  // - 2-5 words, each at least 2 chars
+  // - alphabetic only (Latin or Hebrew), apostrophes and hyphens allowed
+  // - not a section header / generic label
+  // - no digits, @, colons
+  const headerWords = /^(LISTING|CONTACT|YOUR|AGENT|BROKER|REALTOR|LISTED|Listing|Contact|Your|Agent|Broker|Realtor|Listed|סוכן|מתווך|איש)\b/;
+  const lines = block.split(/[\n\r]+/).map((l) => l.trim()).filter(Boolean);
+  for (const line of lines) {
+    if (line.length < 3 || line.length > 60) continue;
+    if (/[@\d:]/.test(line)) continue;
+    if (headerWords.test(line)) continue;
+    const words = line.replace(/[,.;!?]/g, "").split(/\s+/).filter((w) => w.length >= 2);
+    if (words.length < 2 || words.length > 5) continue;
+    if (!words.every((w) => /^[A-Za-zא-ת'\-]+$/.test(w))) continue;
+    result.name = line.replace(/[,.;!?]+$/, "").trim();
+    break;
+  }
+  return result;
+}
+
 function extractAgencyHtmlFallback(html: string, markdown: string, url: string): Record<string, any> | null {
   const result: Record<string, any> = { listing_category: "property" };
   const combined = `${decodeURIComponent(url)}\n${markdown}\n${textFromHtmlFragment(html).slice(0, 6000)}`;
+
+  const agentFields = extractAgentFieldsFromHtml(html, markdown);
+  if (agentFields.name) result.listing_agent_name = agentFields.name;
+  if (agentFields.phone) result.listing_agent_phone = agentFields.phone;
   const h1 = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
   const titleTag = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
   const title = h1 ? textFromHtmlFragment(h1[1]) : titleTag ? textFromHtmlFragment(titleTag[1]).split("|")[0].trim() : "";
@@ -5178,6 +5220,23 @@ async function processOneItem(
         listing.city = structuredData.city_hint;
       }
       listing._has_structured_data = true;
+    }
+
+    // ── HTML-based agent backstop ──
+    // If neither AI nor the CMS adapter produced an agent name (e.g. AI
+    // extraction failed entirely and we fell back to extractAgencyHtmlFallback,
+    // or AI succeeded but the agent block was past the prompt truncation),
+    // try the regex extractor against the full page HTML + markdown.
+    if (!listing?.listing_agent_name) {
+      const agentFromHtml = extractAgentFieldsFromHtml(pageHtml, markdown);
+      if (agentFromHtml.name) {
+        listing.listing_agent_name = agentFromHtml.name;
+        if (agentFromHtml.phone && !listing.listing_agent_phone) {
+          listing.listing_agent_phone = agentFromHtml.phone;
+        }
+        listing._agent_source = "html_backstop";
+        dlog(`[Agent backstop] HTML extraction found "${agentFromHtml.name}" for ${item.url}`);
+      }
     }
 
     // ── Resolve the per-listing agent (replaces the batch-level default) ──
