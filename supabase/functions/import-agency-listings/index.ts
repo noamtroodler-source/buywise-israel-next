@@ -2835,6 +2835,101 @@ async function generateAndStoreStreetView(
   }
 }
 
+// Standalone agent reassignment. Iterates the properties already in the DB for
+// a given agency, fetches each property's source_url directly (bypassing the
+// Firecrawl-based import path entirely), extracts the listing agent from the
+// raw HTML, and updates the property's agent_id. Supports a single-URL test
+// mode that returns what was found without touching the DB.
+//
+// Why this exists: agent attribution failed through the import pipeline despite
+// many fixes because Firecrawl drops the LISTING AGENT block on some agency
+// templates. Direct fetch + regex consistently returns the block. This handler
+// lets us verify extraction works (test_url mode) and fix the existing wrong
+// assignments (bulk mode with agency_id) without forcing another full re-import.
+async function handleReassignAgentsFromSource(body: any) {
+  const sb = supabaseAdmin();
+  const { agency_id, dry_run = true, limit = 200, test_url, source_url_pattern } = body;
+
+  // Single-URL test mode: no DB writes, just return what the extractor sees.
+  // Lets us prove the fetch + regex chain works on a real page before running
+  // the bulk update.
+  if (test_url) {
+    const agent = await fetchAgentFromRawPage(String(test_url));
+    return { mode: "test_url", url: test_url, agent };
+  }
+
+  if (!agency_id) throw new Error("agency_id or test_url required");
+
+  let query = sb
+    .from("properties")
+    .select("id, source_url, agent_id, title")
+    .or(`primary_agency_id.eq.${agency_id},claimed_by_agency_id.eq.${agency_id}`)
+    .not("source_url", "is", null);
+  if (source_url_pattern) query = query.ilike("source_url", `%${source_url_pattern}%`);
+  query = query.limit(Number(limit) || 200);
+
+  const { data: properties, error: queryErr } = await query;
+  if (queryErr) throw new Error(`Property query failed: ${queryErr.message}`);
+  if (!properties || properties.length === 0) {
+    return { mode: "bulk", dry_run, processed: 0, updated: 0, message: "No properties found" };
+  }
+
+  const details: any[] = [];
+  let updated = 0;
+  let unchanged = 0;
+  let no_agent_found = 0;
+  let errors = 0;
+
+  for (const prop of properties) {
+    try {
+      const agent = await fetchAgentFromRawPage(String(prop.source_url));
+      if (!agent.name) {
+        details.push({ id: prop.id, url: prop.source_url, status: "no_agent_found" });
+        no_agent_found++;
+        continue;
+      }
+      const newAgentId = await resolveListingAgentId(sb, agency_id, agent.name, agent.phone, prop.agent_id);
+      if (newAgentId && newAgentId !== prop.agent_id) {
+        if (!dry_run) {
+          const { error: updErr } = await sb.from("properties").update({ agent_id: newAgentId }).eq("id", prop.id);
+          if (updErr) {
+            details.push({ id: prop.id, url: prop.source_url, status: "update_failed", error: updErr.message, found_name: agent.name });
+            errors++;
+            continue;
+          }
+        }
+        details.push({
+          id: prop.id,
+          url: prop.source_url,
+          status: dry_run ? "would_update" : "updated",
+          found_name: agent.name,
+          found_phone: agent.phone || null,
+          old_agent_id: prop.agent_id,
+          new_agent_id: newAgentId,
+        });
+        updated++;
+      } else {
+        details.push({ id: prop.id, url: prop.source_url, status: "no_change", found_name: agent.name });
+        unchanged++;
+      }
+    } catch (err) {
+      details.push({ id: prop.id, url: prop.source_url, status: "error", error: err instanceof Error ? err.message : String(err) });
+      errors++;
+    }
+  }
+
+  return {
+    mode: "bulk",
+    dry_run,
+    processed: properties.length,
+    updated,
+    unchanged,
+    no_agent_found,
+    errors,
+    details: details.slice(0, 30),
+  };
+}
+
 async function handleBackfillStreetView(body: any) {
   const sb = supabaseAdmin();
   const { property_id, limit, skip_enhance, force_refresh } = body || {};
@@ -8603,6 +8698,7 @@ Deno.serve(async (req) => {
     else if (action === "quarantine_madlan_batch") result = await handleQuarantineMadlanBatch(body);
     else if (action === "check_existing") result = await handleCheckExisting(body);
     else if (action === "backfill_street_view") result = await handleBackfillStreetView(body);
+    else if (action === "reassign_agents_from_source") result = await handleReassignAgentsFromSource(body);
     else throw new Error(`Unknown action: ${action}`);
 
     return new Response(JSON.stringify(result), {
