@@ -22,7 +22,7 @@ const dlog = (...args: unknown[]) => { if (DEBUG) console.log(...args); };
 
 // Deploy marker — printed once on cold start. Bump on any structural change so
 // we can confirm via edge-function logs that the latest code is actually live.
-const DEPLOY_MARKER = "madlan-scrapingbee-2026-05-17-v12";
+const DEPLOY_MARKER = "relaxed-quality-gates-2026-05-17-v13";
 console.log(`[import-agency-listings] cold start — deploy: ${DEPLOY_MARKER}`);
 
 // ─── AUTH ────────────────────────────────────────────────────────────────────
@@ -3616,13 +3616,22 @@ function evaluateAgencyListingQuality(listing: Record<string, any>, imageCount: 
     || (listing.size_sqm != null && listing.size_sqm > 0)
     || !!listing.property_type;
   const hasImage = imageCount > 0;
+  const hasAddress = typeof listing.address === "string" && listing.address.trim().length >= 5;
 
   if (!hasStructure) reasons.push("missing_property_structure");
   if (!hasPrice && !hasImage) reasons.push("missing_price_and_image");
   if (!hasPrice) reasons.push("missing_price");
   if (!hasImage) reasons.push("missing_usable_image");
+  if (!hasAddress) reasons.push("missing_address");
 
-  const ok = hasStructure && hasPrice;
+  // RELAXED gate: pass if we have structural info AND at least ONE of
+  // price / image / address. This lets thin Hebrew-Wix extractions land
+  // in the admin review queue as drafts (is_published=false) instead of
+  // getting silently dropped. Erez Real Estate hit 28/28 rejected here
+  // with the stricter "hasStructure && hasPrice" rule because AI returns
+  // partial data on these sites. Better partial drafts admins can fix
+  // than zero imports.
+  const ok = hasStructure && (hasPrice || hasImage || hasAddress);
   return { ok, reasons };
 }
 
@@ -5896,10 +5905,12 @@ async function processOneItem(
       extracted_data: { ...listingForDiagnostics, confidence_score: confidenceScore, validation_warnings: validationWarnings },
     }).eq("id", item.id);
 
-    // Agency website pages must fail closed: a strong-looking URL is no longer
-    // enough to import a low-confidence row. We previously imported these as
-    // "flagged", which produced large numbers of empty Wix/blog rows.
-    if (confidenceScore < 40) {
+    // Low-confidence rows are no longer hard-skipped here. Hebrew Wix sites
+    // produce thin AI extractions that score below the old 40 floor even when
+    // they're genuine listings. Let them through to the downstream agency
+    // quality gate + admin review queue; partial drafts (is_published=false)
+    // are easier to fix than zero imports. Only drop the truly empty case.
+    if (confidenceScore < 15) {
       await sb.from("import_job_items").update({
         status: "skipped",
         error_message: `Low confidence (${confidenceScore}/100): insufficient data quality for import`,
