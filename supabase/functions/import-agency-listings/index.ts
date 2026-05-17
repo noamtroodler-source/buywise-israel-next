@@ -3852,6 +3852,37 @@ function extractAgencyDescriptionLine(markdown: string, html: string): string | 
 // flow when AI succeeded but didn't populate the agent fields (e.g. the agent
 // block sits past the prompt truncation cutoff and the markdown-only locator
 // didn't catch it).
+// Many agency sites link each property's "LISTING AGENT" block to that
+// agent's profile page — e.g. /agents/michael-steinmetz/. Firecrawl returns
+// the page's links array even when its main-content extraction strips the
+// footer markup. So when Cloudflare blocks our direct fetch and Firecrawl's
+// html/markdown loses the agent section, the slug in the agent profile link
+// is still a reliable per-listing signal: "michael-steinmetz" → "Michael
+// Steinmetz", which then matches an existing agent via the normalized-name
+// lookup in resolveListingAgentId.
+function extractAgentSlugFromLinks(links: string[]): string {
+  if (!Array.isArray(links)) return "";
+  const slugRe = /\/agents?\/([a-z0-9][a-z0-9-]{1,80})\/?(?:$|\?|#)/i;
+  const skip = new Set(["all", "team", "list", "index", "agent", "agents", "contact"]);
+  for (const link of links) {
+    const m = String(link || "").match(slugRe);
+    if (!m) continue;
+    const slug = m[1].toLowerCase();
+    if (skip.has(slug)) continue;
+    if (!/[a-z]{2}/.test(slug)) continue;
+    return slug;
+  }
+  return "";
+}
+
+function slugToName(slug: string): string {
+  return slug
+    .split("-")
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(" ");
+}
+
 function extractAgentFieldsFromHtml(html: string, markdown: string): { name: string; phone: string; email: string } {
   const result = { name: "", phone: "", email: "" };
   const text = `${markdown}\n${textFromHtmlFragment(html)}`;
@@ -5418,6 +5449,23 @@ async function processOneItem(
         listing.city = structuredData.city_hint;
       }
       listing._has_structured_data = true;
+    }
+
+    // ── Agent slug backstop (free, no extra API calls) ──
+    // Firecrawl returns the page's links even when its main-content extraction
+    // strips the footer with the LISTING AGENT block. Every JRE-style listing
+    // page links its agent at /agents/{slug}/ — the slug IS the human name.
+    // Runs before the heavier regex/raw-fetch paths because it's essentially free.
+    if (!listing?.listing_agent_name && Array.isArray(pageLinks) && pageLinks.length > 0) {
+      const slug = extractAgentSlugFromLinks(pageLinks);
+      if (slug) {
+        const name = slugToName(slug);
+        if (name && name.length >= 3) {
+          listing.listing_agent_name = name;
+          listing._agent_source = "agent_url_slug";
+          dlog(`[Agent slug] /agents/${slug}/ → ${name}`);
+        }
+      }
     }
 
     // ── HTML-based agent backstop ──
