@@ -22,7 +22,7 @@ const dlog = (...args: unknown[]) => { if (DEBUG) console.log(...args); };
 
 // Deploy marker — printed once on cold start. Bump on any structural change so
 // we can confirm via edge-function logs that the latest code is actually live.
-const DEPLOY_MARKER = "city-fallback-cities-covered-2026-05-17-v8";
+const DEPLOY_MARKER = "city-fallback-robust-2026-05-17-v9";
 console.log(`[import-agency-listings] cold start — deploy: ${DEPLOY_MARKER}`);
 
 // ─── AUTH ────────────────────────────────────────────────────────────────────
@@ -5772,13 +5772,26 @@ async function processOneItem(
         .select("cities_covered")
         .eq("id", job.agency_id)
         .maybeSingle();
-      const covered: string[] = Array.isArray(agencyRow?.cities_covered) ? agencyRow!.cities_covered : [];
+      // cities_covered may come back as either a JS array (text[] / jsonb)
+      // or a JSON string (text column). Handle both shapes defensively.
+      let covered: string[] = [];
+      const raw = agencyRow?.cities_covered;
+      if (Array.isArray(raw)) {
+        covered = raw as string[];
+      } else if (typeof raw === "string" && raw.trim().startsWith("[")) {
+        try {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) covered = parsed;
+        } catch { /* keep covered empty */ }
+      }
+      console.log(`[CityFallback] agency=${job.agency_id} cities_covered=${JSON.stringify(covered)} (raw_type=${Array.isArray(raw) ? "array" : typeof raw})`);
       for (const c of covered) {
         const m = matchSupportedCity(c);
         if (m) {
           matchedCity = m;
           listing.city = m;
           cityFallbackSource = "agency_cities_covered";
+          console.log(`[CityFallback] Using ${m} from agency.cities_covered for ${item.url}`);
           break;
         }
       }
