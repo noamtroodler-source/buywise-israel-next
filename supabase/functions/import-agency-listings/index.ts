@@ -7936,8 +7936,42 @@ function toHebrewCity(englishCity: string): string {
 }
 
 async function fetchMadlanDetailHtml(url: string): Promise<string> {
+  // Direct fetch gets Cloudflare-walled on madlan.co.il from Supabase edge IPs
+  // (same as jerusalem-real-estate.co). Route through Firecrawl rawHtml when
+  // the key is available — Firecrawl proxies + browser-runtime returns the
+  // full HTML untouched, including the listing-card markup we need for
+  // cardUrls. Direct fetch is left as a fallback for hosts that don't have
+  // bot protection.
+  const firecrawlKey = Deno.env.get("FIRECRAWL_API_KEY");
+  if (firecrawlKey) {
+    try {
+      const res = await fetchWithTimeout("https://api.firecrawl.dev/v1/scrape", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${firecrawlKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          url,
+          formats: ["rawHtml"],
+          onlyMainContent: false,
+          waitFor: 2000,
+        }),
+      }, 30_000);
+      if (res.ok) {
+        const body = await res.json().catch(() => null);
+        const rawHtml: string = body?.data?.rawHtml || body?.rawHtml || "";
+        if (rawHtml && rawHtml.length >= 200) return rawHtml;
+      }
+    } catch (err) {
+      console.warn(`[Madlan detail fetch] Firecrawl rawHtml failed for ${url}: ${err instanceof Error ? err.message : err}`);
+    }
+  }
   try {
-    const res = await fetchWithTimeout(url, { headers: { Accept: "text/html,*/*", "User-Agent": "Mozilla/5.0" } }, 15_000);
+    const res = await fetchWithTimeout(url, {
+      headers: {
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9,he;q=0.8",
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      },
+    }, 15_000);
     return res.ok ? await res.text() : "";
   } catch { return ""; }
 }
@@ -8018,6 +8052,19 @@ async function runMadlanAgencyDiscoverJob(params: {
       : effectiveImportType === "resale"
         ? activeGate.saleCount
         : activeGate.activeCount;
+
+    // The Madlan office page (when we can fetch it through Firecrawl) lists
+    // the URLs of THIS agency's current active listings. The Apify actor
+    // can't filter by office and returns the entire city, so we use those
+    // URLs as an explicit whitelist. Without this, the actor's city-wide
+    // dump trips the "active gate" rejection and we end up with 0 imports
+    // even when the page clearly shows dozens of active listings.
+    const officeListingUrlSet = new Set<string>(
+      (activeGate.cardUrls || [])
+        .map((u) => normalizeUrl(u))
+        .filter((u) => !!u),
+    );
+    console.log(`[Madlan/Apify] Office whitelist for ${websiteUrl}: ${officeListingUrlSet.size} listing URLs from cardUrls (active=${activeGate.activeCount}, sale=${activeGate.saleCount}, rent=${activeGate.rentCount})`);
     if (expectedActive > 0) {
       await sb.from("import_jobs").update({
         failure_reason: JSON.stringify({
@@ -8210,9 +8257,21 @@ async function runMadlanAgencyDiscoverJob(params: {
 
         totalDiscovered += items.length;
 
-        if (dealExpected > 0 && items.length > Math.max(dealExpected + 10, Math.ceil(dealExpected * 1.5))) {
+        // ActiveGate previously rejected the whole batch whenever the actor
+        // returned more items than the office page's "active" count — which
+        // is the normal case, since the actor returns the entire CITY while
+        // the office page lists only this agency's slice. With the cardUrls
+        // whitelist in place we don't need a coarse count-mismatch reject:
+        // we filter by exact URL match below. Keep the gate only as a last
+        // resort when we have NO whitelist (Firecrawl failed to fetch the
+        // office page) AND no agency-name signal either.
+        if (
+          officeListingUrlSet.size === 0 &&
+          dealExpected > 0 &&
+          items.length > Math.max(dealExpected + 10, Math.ceil(dealExpected * 1.5))
+        ) {
           totalRejectedInactive += items.length;
-          console.warn(`[Madlan/ActiveGate] Blocked ${dealType}@${heCity}: public active=${dealExpected}, actor returned=${items.length}`);
+          console.warn(`[Madlan/ActiveGate] Blocked ${dealType}@${heCity} (no office whitelist available): public active=${dealExpected}, actor returned=${items.length}`);
           continue;
         }
 
@@ -8221,6 +8280,20 @@ async function runMadlanAgencyDiscoverJob(params: {
         try {
           const listingUrl = madlanItem.url || `https://www.madlan.co.il/listings/${madlanItem.id}`;
           allDiscoveredUrls.push(listingUrl);
+
+          // Office whitelist filter. When the office page gave us a list of
+          // this agency's listing URLs, only items whose URL is in that set
+          // count as belonging to this agency. The actor's city-wide dump
+          // is filtered down precisely here, instead of letting the coarse
+          // count-mismatch gate above nuke the whole batch.
+          if (officeListingUrlSet.size > 0) {
+            const norm = normalizeUrl(listingUrl);
+            if (!officeListingUrlSet.has(norm)) {
+              // Different agency's listing in the same city — silently skip
+              // (not "rejected as inactive", since it's not about activity).
+              continue;
+            }
+          }
 
           if (!isMadlanItemLiveAndAgencyScoped(madlanItem, agency?.name, websiteUrl)) {
             totalRejectedInactive++;
