@@ -20,6 +20,11 @@ function supabaseAdmin() {
 const DEBUG = Deno.env.get("DEBUG_IMPORT") === "1";
 const dlog = (...args: unknown[]) => { if (DEBUG) console.log(...args); };
 
+// Deploy marker — printed once on cold start. Bump on any structural change so
+// we can confirm via edge-function logs that the latest code is actually live.
+const DEPLOY_MARKER = "agent-extractor-v2-raw-fetch-2026-05-17";
+console.log(`[import-agency-listings] cold start — deploy: ${DEPLOY_MARKER}`);
+
 // ─── AUTH ────────────────────────────────────────────────────────────────────
 //
 // Calls come from two trust boundaries:
