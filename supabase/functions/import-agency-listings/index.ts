@@ -3784,6 +3784,34 @@ function extractAgentFieldsFromHtml(html: string, markdown: string): { name: str
   return result;
 }
 
+// Last-resort raw HTTP fetch JUST for the agent block. Firecrawl's HTML output
+// drops the bottom of agency pages on some templates (e.g. jerusalem-real-estate.co
+// runs a WordPress widget for the LISTING AGENT section that Firecrawl strips
+// even with onlyMainContent=false). Verified via direct fetch: the agent block
+// IS present in the static HTML. So when no agent name has been resolved by AI
+// or by the markdown-based backstop, fetch the page ourselves and re-run the
+// same regex extractor against the raw response.
+async function fetchAgentFromRawPage(url: string): Promise<{ name: string; phone: string; email: string }> {
+  const empty = { name: "", phone: "", email: "" };
+  try {
+    const res = await fetchWithTimeout(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9,he;q=0.8",
+      },
+    }, 15_000);
+    if (!res.ok) return empty;
+    const html = await res.text();
+    if (!html || html.length < 200) return empty;
+    const visibleText = textFromHtmlFragment(html);
+    return extractAgentFieldsFromHtml(html, visibleText);
+  } catch (err) {
+    console.warn(`[Agent raw fetch] ${url}: ${err instanceof Error ? err.message : err}`);
+    return empty;
+  }
+}
+
 function extractAgencyHtmlFallback(html: string, markdown: string, url: string): Record<string, any> | null {
   const result: Record<string, any> = { listing_category: "property" };
   const combined = `${decodeURIComponent(url)}\n${markdown}\n${textFromHtmlFragment(html).slice(0, 6000)}`;
@@ -5227,6 +5255,7 @@ async function processOneItem(
     // extraction failed entirely and we fell back to extractAgencyHtmlFallback,
     // or AI succeeded but the agent block was past the prompt truncation),
     // try the regex extractor against the full page HTML + markdown.
+    let rawFetchAgent: { name: string; phone: string; email: string } | null = null;
     if (!listing?.listing_agent_name) {
       const agentFromHtml = extractAgentFieldsFromHtml(pageHtml, markdown);
       if (agentFromHtml.name) {
@@ -5236,6 +5265,25 @@ async function processOneItem(
         }
         listing._agent_source = "html_backstop";
         dlog(`[Agent backstop] HTML extraction found "${agentFromHtml.name}" for ${item.url}`);
+      }
+
+      // ── Raw HTTP fetch fallback ──
+      // Diagnostic proved Firecrawl is dropping the LISTING AGENT section on
+      // some agency templates (verified on jerusalem-real-estate.co — direct
+      // fetch returns the agent block, Firecrawl does not). When the markdown
+      // backstop also turned up nothing, fetch the URL ourselves and re-run
+      // the same regex extractor. One extra HTTP call per listing only when
+      // the primary path missed the agent.
+      if (!listing?.listing_agent_name && isAgencyOwnWebsite && item.url) {
+        rawFetchAgent = await fetchAgentFromRawPage(item.url);
+        if (rawFetchAgent.name) {
+          listing.listing_agent_name = rawFetchAgent.name;
+          if (rawFetchAgent.phone && !listing.listing_agent_phone) {
+            listing.listing_agent_phone = rawFetchAgent.phone;
+          }
+          listing._agent_source = "raw_fetch_backstop";
+          dlog(`[Agent raw fetch] Found "${rawFetchAgent.name}" for ${item.url}`);
+        }
       }
 
       // Diagnostic dump: record WHY the backstop succeeded or failed so we can
@@ -5248,6 +5296,10 @@ async function processOneItem(
         backstop_found_name: agentFromHtml.name || null,
         backstop_found_phone: agentFromHtml.phone || null,
         backstop_found_email: agentFromHtml.email || null,
+        raw_fetch_attempted: !!rawFetchAgent,
+        raw_fetch_found_name: rawFetchAgent?.name || null,
+        raw_fetch_found_phone: rawFetchAgent?.phone || null,
+        raw_fetch_found_email: rawFetchAgent?.email || null,
         block_matched: !!debugBlock,
         block_preview: debugBlock.slice(0, 200),
         has_listing_agent_keyword: /LISTING\s+AGENT/i.test(debugText),
