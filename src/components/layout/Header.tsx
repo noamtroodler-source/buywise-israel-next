@@ -110,12 +110,18 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container h-16 grid grid-cols-[auto_1fr_auto] items-center gap-4">
         {/* Logo - Left */}
-        <Link to="/" className="flex items-center gap-0.5">
+        <Link to="/" className="flex items-center gap-2">
           <img src={logoIcon} alt="BuyWise Israel" className="h-[34px] w-[34px] object-contain" />
           <div className="flex items-baseline gap-1">
             <span className="text-[1.1rem] sm:text-[1.3rem] font-bold tracking-tight text-foreground">BuyWise</span>
             <span className="text-[1.1rem] sm:text-[1.3rem] font-extrabold tracking-tight text-primary">Israel</span>
           </div>
+          {isInAgencyPortal && myAgency?.name && (
+            <span className="hidden sm:inline-flex items-center gap-1.5 ml-2 pl-3 border-l border-border text-sm font-medium text-muted-foreground">
+              <Building2 className="h-3.5 w-3.5" />
+              <span className="text-foreground truncate max-w-[200px]">{myAgency.name}</span>
+            </span>
+          )}
         </Link>
 
         {/* Desktop Navigation - True Center */}
