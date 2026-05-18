@@ -184,6 +184,7 @@ const SCHEMA = {
     source_rooms: { type: "number", description: "Original Israeli room count shown on the source" },
     bathrooms: { type: "number" },
     size_sqm: { type: "number" },
+    lot_size_sqm: { type: "number", description: "Garden/yard/lot area in sqm when explicitly shown" },
     balcony_sqm: { type: "number" },
     floor: { type: "number" },
     total_floors: { type: "number" },
@@ -267,6 +268,16 @@ function recoverFromTranscript(extracted: any, transcript: string, notes: string
     if (m) {
       const n = parseInt(m[1], 10);
       if (n > 0 && n < 200) { e.balcony_sqm = n; addNote(`Recovered balcony ${n} sqm from transcript`); }
+    }
+  }
+
+  // Garden area — "Garden area 40 square meters" / "גינה 40 מ״ר"
+  if (!e.lot_size_sqm) {
+    const m = text.match(/(?:garden\s*area|garden|yard|גינה|חצר)[^\d]{0,18}(\d{1,4})\s*(?:square\s*meters?|sq\.?\s?m|sqm|מ["']?ר)?/i) ||
+              text.match(/(\d{1,4})\s*(?:square\s*meters?|sq\.?\s?m|sqm|מ["']?ר)\s*(?:garden|yard|גינה|חצר)/i);
+    if (m) {
+      const n = parseInt(m[1], 10);
+      if (n > 0 && n < 2000) { e.lot_size_sqm = n; addFeature("garden"); addNote(`Recovered garden/yard area ${n} sqm from transcript`); }
     }
   }
 
@@ -361,6 +372,9 @@ function recoverFromTranscript(extracted: any, transcript: string, notes: string
   if (e.has_balcony !== true && tick(/porch|balcony|מרפסת/)) { e.has_balcony = true; addFeature("balcony"); addNote("Recovered has_balcony from transcript"); }
   if (e.has_elevator !== true && tick(/elevator|מעלית/)) { e.has_elevator = true; addFeature("elevator"); addNote("Recovered has_elevator from transcript"); }
   if (e.has_storage !== true && tick(/warehouse|storage|מחסן/)) { e.has_storage = true; addFeature("storage"); addNote("Recovered has_storage from transcript"); }
+  if (/\bdimension\b|ממ["״']?ד|safe\s*room/i.test(text)) { addFeature("mamad"); addNote("Recovered safe room / mamad from transcript"); }
+  if (tick(/garden|yard|גינה|חצר/)) { addFeature("garden"); addNote("Recovered garden feature from transcript"); }
+  if (tick(/parking|חניה/)) { addFeature("parking"); addNote("Recovered parking feature from transcript"); }
   if (!e.ac_type && /(central\s*ac|מיזוג\s*מרכזי)/i.test(text)) { e.ac_type = "central"; addFeature("central_ac"); }
   else if (!e.ac_type && /(air\s*conditioning|מיזוג\s*אוויר|מזגן)/i.test(text) && !/Air\s*conditioning[^\n]{0,15}(?:✗|✘|no)/i.test(text)) { e.ac_type = "split"; addFeature("air_conditioning"); }
   if (e.is_accessible !== true && /Accessible[^\n]{0,20}(?:✓|yes)/i.test(text)) { e.is_accessible = true; addFeature("accessible"); }
