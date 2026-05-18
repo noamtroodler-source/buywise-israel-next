@@ -50,6 +50,9 @@ interface Agent {
   user_id?: string | null;
   agency_member_role?: 'owner' | 'admin' | null;
   invite_accepted?: boolean;
+  phone?: string | null;
+  license_number?: string | null;
+  bio?: string | null;
 }
 
 interface SeatManagementPanelProps {
