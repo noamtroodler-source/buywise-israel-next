@@ -67,6 +67,8 @@ const itemVariants = {
 interface AgencyWizardMetadata {
   currentStep: number;
   assignedAgentId: string | null;
+  importSource?: string | null;
+  provisioningAuditStatus?: string | null;
 }
 
 function AgencyWizardContent() {
@@ -110,6 +112,10 @@ function AgencyWizardContent() {
   const createProperty = useCreatePropertyForAgency();
 
   const [assignedAgentId, setAssignedAgentId] = useState<string | null>(null);
+  // Carried over from the AI Kickstart handoff so the created listing flows
+  // through the same import / quality-review pipeline as scrape-synced ones.
+  const [importSource, setImportSource] = useState<string | null>(null);
+  const [provisioningAuditStatus, setProvisioningAuditStatus] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [submittedTitle, setSubmittedTitle] = useState('');
@@ -158,7 +164,7 @@ function AgencyWizardContent() {
     storageKey,
     autoSaveInterval: 0,
     useSessionKey: false,
-    metadata: { currentStep, assignedAgentId },
+    metadata: { currentStep, assignedAgentId, importSource, provisioningAuditStatus },
     enabled: draftCheckComplete,
   });
 
@@ -184,6 +190,12 @@ function AgencyWizardContent() {
         if (saved.metadata?.assignedAgentId) {
           setAssignedAgentId(saved.metadata.assignedAgentId);
         }
+        if (saved.metadata?.importSource) {
+          setImportSource(saved.metadata.importSource);
+        }
+        if (saved.metadata?.provisioningAuditStatus) {
+          setProvisioningAuditStatus(saved.metadata.provisioningAuditStatus);
+        }
       } else {
         setShowRecoveryDialog(true);
       }
@@ -201,6 +213,12 @@ function AgencyWizardContent() {
       }
       if (saved.metadata?.assignedAgentId) {
         setAssignedAgentId(saved.metadata.assignedAgentId);
+      }
+      if (saved.metadata?.importSource) {
+        setImportSource(saved.metadata.importSource);
+      }
+      if (saved.metadata?.provisioningAuditStatus) {
+        setProvisioningAuditStatus(saved.metadata.provisioningAuditStatus);
       }
     }
     setShowRecoveryDialog(false);
@@ -262,6 +280,10 @@ function AgencyWizardContent() {
     market_fit_review_reason: marketFitReview.reviewReason,
     market_fit_confirmed_at: submitForReview && marketFitReview.requiresConfirmation ? new Date().toISOString() : null,
     ...priceContextFields,
+    // When this draft came from the AI Kickstart handoff, persist the import
+    // provenance and route it into the admin Listings & Quality review queue.
+    ...(importSource ? { import_source: importSource } : {}),
+    ...(provisioningAuditStatus ? { provisioning_audit_status: provisioningAuditStatus } : {}),
     assignedAgentId: assignedAgentId!,
     submitForReview,
   });

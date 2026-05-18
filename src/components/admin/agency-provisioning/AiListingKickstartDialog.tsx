@@ -431,6 +431,11 @@ export function AiListingKickstartDialog({
         assignedAgentId: selectedAgentId ?? (agentMatch?.confidence === 'high' ? agentMatch.agent_id : null),
         coverPhotoIndex: 0,
         duplicateAcknowledged: blockedByDuplicate ? true : duplicates.length > 0 ? true : false,
+        // Flow this listing through the same import/quality review pipeline as
+        // synced scrape imports — it will show under "Need review" in the
+        // admin Listings & Quality section with import_source = 'kickstart_ai'.
+        importSource: 'kickstart_ai',
+        provisioningAuditStatus: 'pending',
       },
       savedAt: new Date().toISOString(),
     };
