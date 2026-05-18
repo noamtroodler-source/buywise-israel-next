@@ -50,8 +50,11 @@ export function AgencyOnboardingProgress({
   listingsCount = 0,
   liveListingsCount = 0,
   toReviewCount = 0,
+  needsFixesCount = 0,
   readyToSubmitCount = 0,
+  pendingReviewCount = 0,
 }: AgencyOnboardingProgressProps) {
+  const needsAttentionCount = toReviewCount + needsFixesCount;
   const profileComplete = Boolean(
     agency.logo_url &&
     (agency.description?.length || 0) >= 150 &&
