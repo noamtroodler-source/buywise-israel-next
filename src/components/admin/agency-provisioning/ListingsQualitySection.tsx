@@ -41,6 +41,7 @@ export function ListingsQualitySection({ agencyId }: { agencyId: string }) {
   const { data: agents = [] } = useAgencyAgents(agencyId);
   const runAudit = useRunListingsAudit();
   const bulkUpdate = useBulkUpdateListings(agencyId);
+  const deleteListings = useDeleteListings(agencyId);
 
   const [filter, setFilter] = useState<Filter>('all');
   const [search, setSearch] = useState('');
@@ -48,6 +49,7 @@ export function ListingsQualitySection({ agencyId }: { agencyId: string }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [drawerListing, setDrawerListing] = useState<ProvisioningListing | null>(null);
   const [bulkAgent, setBulkAgent] = useState<string>('');
+  const [confirmDelete, setConfirmDelete] = useState<{ ids: string[]; label: string } | null>(null);
 
   const propertyIds = useMemo(() => listings.map(l => l.id), [listings]);
   const { data: flags = [] } = useListingFlags(agencyId, propertyIds);
