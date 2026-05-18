@@ -462,11 +462,11 @@ Deno.serve(async (req) => {
     const agencyId: string | null = body.agency_id || null;
 
     if (imageUrls.length === 0 && description.trim().length < 10) {
-      return new Response(JSON.stringify({ error: "Provide at least one image or a description (10+ chars)" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return jsonResponse({ error: "Provide at least one image or a description (10+ chars)" }, 400);
     }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) return new Response(JSON.stringify({ error: "AI service not configured" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!LOVABLE_API_KEY) return jsonResponse({ error: "AI service not configured" }, 500);
 
     const rosterPromise: Promise<RosterAgent[]> = agencyId
       ? admin.from("agents").select("id, name, phone, license_number").eq("agency_id", agencyId).then(({ data }) => (data || []) as RosterAgent[])
@@ -507,19 +507,21 @@ Deno.serve(async (req) => {
     if (!aiResp.ok) {
       const text = await aiResp.text();
       console.error("AI gateway error", aiResp.status, text);
-      if (aiResp.status === 429) return new Response(JSON.stringify({ error: "Rate limited, try again in a moment" }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      if (aiResp.status === 402) return new Response(JSON.stringify({ error: "AI credits exhausted — add credits in Workspace settings" }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      return new Response(JSON.stringify({ error: "AI extraction failed", detail: text }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      if (aiResp.status === 429) return jsonResponse({ error: "Rate limited, try again in a moment" }, 429);
+      if (aiResp.status === 402) return jsonResponse({ error: "AI credits exhausted — add credits in Workspace settings" }, 402);
+      return jsonResponse({ error: "AI extraction failed", detail: text }, 502);
     }
 
-    const aiJson = await aiResp.json();
+    const aiJson = await safeReadJson(aiResp);
+    if (!aiJson) return jsonResponse({ error: "AI extraction returned an empty or invalid response. Please try again." }, 502);
     const toolCall = aiJson?.choices?.[0]?.message?.tool_calls?.[0];
     if (!toolCall?.function?.arguments) {
-      return new Response(JSON.stringify({ error: "AI returned no structured output" }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return jsonResponse({ error: "AI returned no structured output" }, 502);
     }
     let extracted: any = {};
-    try { extracted = JSON.parse(toolCall.function.arguments); } catch {
-      return new Response(JSON.stringify({ error: "AI returned invalid JSON" }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    try { extracted = parseToolArguments(toolCall.function.arguments); } catch (e) {
+      console.error("AI returned invalid tool JSON", e, toolCall.function.arguments.slice(0, 500));
+      return jsonResponse({ error: "AI returned invalid structured data. Please try again." }, 502);
     }
 
     // ── Deterministic rescue pass ──
@@ -535,12 +537,9 @@ Deno.serve(async (req) => {
       extracted.low_confidence_fields = lc;
     }
 
-    return new Response(
-      JSON.stringify({ extracted, agent_match: agentMatch, cover_photo_index: coverIdx, ocr_transcript: transcript, image_kinds: imageKinds }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    return jsonResponse({ extracted, agent_match: agentMatch, cover_photo_index: coverIdx, ocr_transcript: transcript, image_kinds: imageKinds });
   } catch (e: any) {
     console.error("ai-extract-listing error", e);
-    return new Response(JSON.stringify({ error: e?.message || "Unexpected error" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return jsonResponse({ error: e?.message || "Unexpected error" }, 500);
   }
 });
