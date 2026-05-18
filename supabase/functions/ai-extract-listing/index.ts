@@ -520,7 +520,7 @@ Deno.serve(async (req) => {
     for (const url of imageUrls) userContent.push({ type: "image_url", image_url: { url } });
     if (userContent.length === 0) userContent.push({ type: "text", text: "Extract whatever you can." });
 
-    const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const { response: aiResp, json: aiJson, text: aiText } = await fetchAiJsonWithRetry("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -536,14 +536,12 @@ Deno.serve(async (req) => {
     });
 
     if (!aiResp.ok) {
-      const text = await aiResp.text();
-      console.error("AI gateway error", aiResp.status, text);
+      console.error("AI gateway error", aiResp.status, aiText);
       if (aiResp.status === 429) return jsonResponse({ error: "Rate limited, try again in a moment" }, 429);
       if (aiResp.status === 402) return jsonResponse({ error: "AI credits exhausted — add credits in Workspace settings" }, 402);
-      return jsonResponse({ error: "AI extraction failed", detail: text }, 502);
+      return jsonResponse({ error: "AI extraction failed", detail: aiText }, 502);
     }
 
-    const aiJson = await safeReadJson(aiResp);
     if (!aiJson) return jsonResponse({ error: "AI extraction returned an empty or invalid response. Please try again." }, 502);
     const toolCall = aiJson?.choices?.[0]?.message?.tool_calls?.[0];
     if (!toolCall?.function?.arguments) {
