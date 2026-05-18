@@ -957,8 +957,8 @@ export function AiListingKickstartDialog({
               <span>Changes auto-save as a draft</span>
             )}
             {(images.length > 0 || description || extracted) && (
-              <Button variant="ghost" size="sm" onClick={handleStartOver} className="h-7 text-[11px] text-muted-foreground hover:text-destructive">
-                <RotateCcw className="h-3 w-3 mr-1" /> Start over
+              <Button variant="outline" size="sm" onClick={handleStartOver} className="h-8 border-destructive/40 text-destructive hover:bg-destructive hover:text-destructive-foreground">
+                <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Start a new listing
               </Button>
             )}
           </div>
