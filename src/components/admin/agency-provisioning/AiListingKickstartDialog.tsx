@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles, Upload, X, Loader2, Wand2, ArrowRight, UserCheck, UserX, AlertTriangle, ImageIcon, ExternalLink, Check } from 'lucide-react';
 import {
@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { defaultPropertyData, PropertyWizardData } from '@/components/agent/wizard/PropertyWizardContext';
@@ -70,7 +71,19 @@ export function AiListingKickstartDialog({
   const [duplicates, setDuplicates] = useState<DuplicateHit[]>([]);
   const [duplicateAcknowledged, setDuplicateAcknowledged] = useState(false);
   const [statusChoice, setStatusChoice] = useState<'for_sale' | 'for_rent' | null>(null);
+  const [agencyAgents, setAgencyAgents] = useState<{ id: string; name: string }[]>([]);
+  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!open || !agencyId) return;
+    supabase
+      .from('agents')
+      .select('id, name')
+      .eq('agency_id', agencyId)
+      .order('name')
+      .then(({ data }) => setAgencyAgents((data || []) as { id: string; name: string }[]));
+  }, [open, agencyId]);
 
   const handleFiles = useCallback(async (files: FileList | File[]) => {
     const arr = Array.from(files).filter((f) => f.type.startsWith('image/'));
@@ -191,6 +204,7 @@ export function AiListingKickstartDialog({
     setAnalyzing(true);
     setExtracted(null);
     setAgentMatch(null);
+    setSelectedAgentId(null);
     setCoverIndex(null);
     setDuplicates([]);
     setDuplicateAcknowledged(false);
@@ -211,7 +225,9 @@ export function AiListingKickstartDialog({
       if (!data?.extracted) throw new Error('No data returned');
       const ex = data.extracted as ExtractedListing;
       setExtracted(ex);
-      setAgentMatch((data.agent_match as AgentMatch) || null);
+      const match = (data.agent_match as AgentMatch) || null;
+      setAgentMatch(match);
+      if (match?.confidence === 'high') setSelectedAgentId(match.agent_id);
       setCoverIndex(typeof data.cover_photo_index === 'number' ? data.cover_photo_index : null);
       await checkDuplicates(ex);
       toast.success('Extracted — review and open the wizard');
@@ -263,7 +279,7 @@ export function AiListingKickstartDialog({
       data: draftData,
       metadata: {
         currentStep: 1,
-        assignedAgentId: agentMatch?.confidence === 'high' ? agentMatch.agent_id : null,
+        assignedAgentId: selectedAgentId ?? (agentMatch?.confidence === 'high' ? agentMatch.agent_id : null),
         coverPhotoIndex: 0,
         duplicateAcknowledged: blockedByDuplicate ? true : duplicates.length > 0 ? true : false,
       },
@@ -285,6 +301,7 @@ export function AiListingKickstartDialog({
     setDescription('');
     setExtracted(null);
     setAgentMatch(null);
+    setSelectedAgentId(null);
     setCoverIndex(null);
     setDuplicates([]);
     setDuplicateAcknowledged(false);
@@ -501,6 +518,33 @@ export function AiListingKickstartDialog({
                     </div>
                   </div>
                 )}
+
+                {/* Agent selector */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Assign to agent</Label>
+                  <Select
+                    value={selectedAgentId ?? 'none'}
+                    onValueChange={(v) => setSelectedAgentId(v === 'none' ? null : v)}
+                  >
+                    <SelectTrigger className="h-9">
+                      <SelectValue placeholder="Unassigned" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Unassigned</SelectItem>
+                      {agencyAgents.map((a) => (
+                        <SelectItem key={a.id} value={a.id}>
+                          {a.name}
+                          {agentMatch?.agent_id === a.id ? ' — AI match' : ''}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {agentMatch && agentMatch.confidence === 'low' && selectedAgentId !== agentMatch.agent_id && (
+                    <p className="text-[11px] text-amber-700">
+                      AI guessed "{agentMatch.agent_name}" — confirm or pick the right one.
+                    </p>
+                  )}
+                </div>
 
                 {/* Duplicate warning */}
                 {duplicates.length > 0 && (
