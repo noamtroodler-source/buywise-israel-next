@@ -256,6 +256,7 @@ export function ListingsQualitySection({ agencyId }: { agencyId: string }) {
                 <th className="p-2 text-left">Status</th>
                 <th className="p-2 text-right">Score</th>
                 <th className="p-2 text-right">Flags</th>
+                <th className="p-2 w-10"></th>
               </tr>
             </thead>
             <tbody>
