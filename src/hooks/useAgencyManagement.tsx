@@ -527,3 +527,30 @@ export function useUpdateAgentStatus() {
     },
   });
 }
+
+export function useSetAgentAdmin() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      agencyId,
+      userId,
+      action,
+    }: { agencyId: string; userId: string; action: 'promote' | 'demote' }) => {
+      const { data, error } = await supabase.functions.invoke('agency-promote-member', {
+        body: { agency_id: agencyId, user_id: userId, action },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      return data;
+    },
+    onSuccess: (_d, vars) => {
+      queryClient.invalidateQueries({ queryKey: ['agencyTeam'] });
+      queryClient.invalidateQueries({ queryKey: ['agencyMembers'] });
+      toast.success(vars.action === 'promote' ? 'Promoted to Admin' : 'Removed from Admins');
+    },
+    onError: (error: any) => {
+      toast.error('Failed to update admin role: ' + (error?.message ?? 'Unknown error'));
+    },
+  });
+}
