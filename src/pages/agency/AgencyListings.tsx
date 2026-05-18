@@ -287,11 +287,12 @@ export default function AgencyListings() {
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [sort, setSort] = useState<{ key: SortKey; direction: SortDirection } | null>({ key: 'review', direction: 'desc' });
   const formatPrice = useFormatPrice();
+  const statusParam = searchParams.get('status');
 
   useEffect(() => {
-    setStatusFilter(parseStatusFilterParam(searchParams.get('status')));
+    setStatusFilter(parseStatusFilterParam(statusParam));
     setReviewFilter('all');
-  }, [searchParams]);
+  }, [statusParam]);
 
   const toggleSelect = useCallback((id: string) => {
     setSelectedIds(prev => {
