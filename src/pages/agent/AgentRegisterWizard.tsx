@@ -70,6 +70,8 @@ export default function AgentRegisterWizard() {
   const [validatedAgencyName, setValidatedAgencyName] = useState<string | null>(null);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [claimCandidate, setClaimCandidate] = useState<{ id: string; name: string; license_number: string | null; listing_count: number } | null>(null);
+  const [claimPendingChoice, setClaimPendingChoice] = useState<'claim' | 'new' | null>(null);
   
   // Get invite code from URL params
   const urlInviteCode = searchParams.get('code');
