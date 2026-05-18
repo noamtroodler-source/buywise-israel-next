@@ -109,7 +109,7 @@ export default function AgencyTeam() {
 
         <SeatSummaryCard />
 
-        <Tabs defaultValue="members">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="bg-muted/50 border border-border/50 rounded-xl p-1">
             <TabsTrigger value="members" className="gap-2 rounded-lg">
               <Users className="h-4 w-4" />
@@ -135,11 +135,24 @@ export default function AgencyTeam() {
 
           <TabsContent value="members" className="mt-4">
             <Card className="rounded-2xl border-primary/10">
-              <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent rounded-t-2xl">
+              <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent rounded-t-2xl flex flex-row items-center justify-between space-y-0">
                 <CardTitle>Sales Agents</CardTitle>
+                <Button
+                  size="sm"
+                  className="rounded-xl"
+                  onClick={() => setInviteAgentOpen(true)}
+                >
+                  <UserPlus className="h-4 w-4 mr-1" />
+                  Invite Agent
+                </Button>
               </CardHeader>
               <CardContent className="pt-4">
-                <SeatManagementPanel agents={team} />
+                <SeatManagementPanel
+                  agents={team as any}
+                  agencyId={agency.id}
+                  isOwner={isOwner}
+                  currentUserId={user?.id ?? null}
+                />
               </CardContent>
             </Card>
           </TabsContent>
