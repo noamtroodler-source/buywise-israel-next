@@ -262,14 +262,16 @@ export function AiListingKickstartDialog({
     if (!extracted) return;
     setGeneratingDescription(true);
     try {
-      const imageUrls = images.filter((i) => i.publicUrl).map((i) => i.publicUrl!);
+      const ready = images.filter((i) => i.publicUrl);
+      const imageUrls = ready.map((i) => i.publicUrl!);
+      const imageKinds = ready.map((i) => i.kind || 'property_photo');
       const { fields } = { fields: { ...extracted } } as any;
       delete fields.description;
       delete fields.source_notes;
       delete fields.low_confidence_fields;
       delete fields.detected_agent;
       const { data, error } = await supabase.functions.invoke('ai-generate-description', {
-        body: { fields, notes: description.trim(), image_urls: imageUrls },
+        body: { fields, notes: description.trim(), image_urls: imageUrls, image_kinds: imageKinds },
       });
       if (error) throw error;
       if (!data?.description) throw new Error('No description returned');
