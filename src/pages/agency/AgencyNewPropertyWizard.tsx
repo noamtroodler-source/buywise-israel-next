@@ -67,6 +67,8 @@ const itemVariants = {
 interface AgencyWizardMetadata {
   currentStep: number;
   assignedAgentId: string | null;
+  importSource?: string | null;
+  provisioningAuditStatus?: string | null;
 }
 
 function AgencyWizardContent() {
