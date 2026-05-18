@@ -528,7 +528,7 @@ Deno.serve(async (req) => {
           url: String(item?.url || ""),
           bucket: normalizeBucket(item?.bucket),
           originalIndex: index,
-        })).filter((item) => /^https?:\/\//i.test(item.url))
+        })).filter((item: IncomingImage) => /^https?:\/\//i.test(item.url))
       : rawImageUrls.map((url, index) => ({ url, bucket: "photo" as const, originalIndex: index }));
 
     // The actual listing photos can be numerous/large. The detail screenshots are
@@ -578,7 +578,7 @@ Deno.serve(async (req) => {
     if (!LOVABLE_API_KEY) return jsonResponse({ error: "AI service not configured" }, 500);
 
     const rosterPromise: Promise<RosterAgent[]> = agencyId
-      ? admin.from("agents").select("id, name, phone, license_number").eq("agency_id", agencyId).then(({ data }) => (data || []) as RosterAgent[])
+      ? Promise.resolve(admin.from("agents").select("id, name, phone, license_number").eq("agency_id", agencyId).then(({ data }) => (data || []) as RosterAgent[]))
       : Promise.resolve([] as RosterAgent[]);
 
     // ── Stage A: OCR transcript + image classification (parallel) ──
