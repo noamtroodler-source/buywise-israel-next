@@ -320,7 +320,9 @@ export default function AgencyListings() {
         listing.city?.toLowerCase().includes(query);
       if (!matchesSearch) return false;
     }
-    if (statusFilter !== 'all' && getAgencyListingDisplayStatus(listing).key !== statusFilter) return false;
+    if (multiStatusKeys && statusFilter === 'all') {
+      if (!multiStatusKeys.has(getAgencyListingDisplayStatus(listing).key)) return false;
+    } else if (statusFilter !== 'all' && getAgencyListingDisplayStatus(listing).key !== statusFilter) return false;
     if (agentFilter !== 'all' && listing.agent_id !== agentFilter) return false;
     if (cityFilter !== 'all' && listing.city !== cityFilter) return false;
     if (roleFilter !== 'all' && listing.role !== roleFilter) return false;
