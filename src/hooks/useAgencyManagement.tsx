@@ -528,6 +528,37 @@ export function useUpdateAgentStatus() {
   });
 }
 
+export interface UpdateAgentDetailsInput {
+  agentId: string;
+  name?: string;
+  email?: string | null;
+  phone?: string | null;
+  license_number?: string | null;
+  bio?: string | null;
+}
+
+export function useUpdateAgentDetails() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ agentId, ...fields }: UpdateAgentDetailsInput) => {
+      const payload: Record<string, any> = {};
+      for (const [k, v] of Object.entries(fields)) {
+        if (v !== undefined) payload[k] = v === '' ? null : v;
+      }
+      const { error } = await supabase.from('agents').update(payload).eq('id', agentId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agencyTeam'] });
+      toast.success('Agent details updated');
+    },
+    onError: (error: any) => {
+      toast.error('Failed to update agent: ' + (error?.message ?? 'Unknown error'));
+    },
+  });
+}
+
 export function useSetAgentAdmin() {
   const queryClient = useQueryClient();
 

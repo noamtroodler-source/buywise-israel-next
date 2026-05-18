@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
-import { AlertTriangle, Home, Clock, ShieldCheck, MoreVertical, Crown, Mail, Loader2 } from 'lucide-react';
+import { AlertTriangle, Home, Clock, ShieldCheck, MoreVertical, Crown, Mail, Loader2, Pencil } from 'lucide-react';
+import { EditAgentDialog } from './EditAgentDialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -49,6 +50,9 @@ interface Agent {
   user_id?: string | null;
   agency_member_role?: 'owner' | 'admin' | null;
   invite_accepted?: boolean;
+  phone?: string | null;
+  license_number?: string | null;
+  bio?: string | null;
 }
 
 interface SeatManagementPanelProps {
@@ -72,7 +76,7 @@ export function SeatManagementPanel({ agents, agencyId, isOwner, currentUserId }
   const removeAgent = useRemoveAgentFromAgency();
   const setAdmin = useSetAgentAdmin();
   const [removeTarget, setRemoveTarget] = useState<Agent | null>(null);
-
+  const [editTarget, setEditTarget] = useState<Agent | null>(null);
   if (agents.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
@@ -217,31 +221,44 @@ export function SeatManagementPanel({ agents, agencyId, isOwner, currentUserId }
                   </SelectContent>
                 </Select>
 
-                {/* Owner-only: admin promotion menu */}
-                {isOwner && !isSelf && !isAgentOwner && inviteAccepted && agent.user_id && agencyId && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" disabled={setAdmin.isPending}>
-                        {setAdmin.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreVertical className="h-4 w-4" />}
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      {isAgentAdmin ? (
-                        <DropdownMenuItem
-                          onClick={() => setAdmin.mutate({ agencyId, userId: agent.user_id!, action: 'demote' })}
-                        >
-                          Demote from Admin
-                        </DropdownMenuItem>
-                      ) : (
-                        <DropdownMenuItem
-                          onClick={() => setAdmin.mutate({ agencyId, userId: agent.user_id!, action: 'promote' })}
-                        >
-                          Promote to Admin
-                        </DropdownMenuItem>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
+                {/* Actions menu: edit (everyone admin), promote/demote (owner only) */}
+                {(() => {
+                  const canPromote = !!isOwner && !isSelf && !isAgentOwner && inviteAccepted && !!agent.user_id && !!agencyId;
+                  const canEdit = !isAgentOwner || !!isOwner; // Owner can edit anyone (incl. owner self); admins can edit non-owners
+                  if (!canEdit && !canPromote) return null;
+                  return (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" disabled={setAdmin.isPending}>
+                          {setAdmin.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreVertical className="h-4 w-4" />}
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {canEdit && (
+                          <DropdownMenuItem onClick={() => setEditTarget(agent)}>
+                            <Pencil className="h-4 w-4 mr-2" />
+                            Edit details
+                          </DropdownMenuItem>
+                        )}
+                        {canPromote && (
+                          isAgentAdmin ? (
+                            <DropdownMenuItem
+                              onClick={() => setAdmin.mutate({ agencyId: agencyId!, userId: agent.user_id!, action: 'demote' })}
+                            >
+                              Demote from Admin
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem
+                              onClick={() => setAdmin.mutate({ agencyId: agencyId!, userId: agent.user_id!, action: 'promote' })}
+                            >
+                              Promote to Admin
+                            </DropdownMenuItem>
+                          )
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  );
+                })()}
               </div>
             </motion.div>
           );
@@ -288,6 +305,12 @@ export function SeatManagementPanel({ agents, agencyId, isOwner, currentUserId }
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <EditAgentDialog
+        open={!!editTarget}
+        onOpenChange={(o) => !o && setEditTarget(null)}
+        agent={editTarget}
+      />
     </TooltipProvider>
   );
 }
