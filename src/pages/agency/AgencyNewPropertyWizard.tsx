@@ -280,6 +280,10 @@ function AgencyWizardContent() {
     market_fit_review_reason: marketFitReview.reviewReason,
     market_fit_confirmed_at: submitForReview && marketFitReview.requiresConfirmation ? new Date().toISOString() : null,
     ...priceContextFields,
+    // When this draft came from the AI Kickstart handoff, persist the import
+    // provenance and route it into the admin Listings & Quality review queue.
+    ...(importSource ? { import_source: importSource } : {}),
+    ...(provisioningAuditStatus ? { provisioning_audit_status: provisioningAuditStatus } : {}),
     assignedAgentId: assignedAgentId!,
     submitForReview,
   });
