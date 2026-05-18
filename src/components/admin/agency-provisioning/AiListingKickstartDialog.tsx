@@ -391,10 +391,10 @@ export function AiListingKickstartDialog({
       return;
     }
 
-    // Only carry real property photos + floor plans into the listing — never spec sheets / screenshots.
+    // Only carry user-declared listing photos into the listing — never the info / reference bucket.
     const readyAll = images.filter((i) => i.publicUrl);
     const listingImages = readyAll
-      .filter((i) => !i.kind || i.kind === 'property_photo' || i.kind === 'floor_plan')
+      .filter((i) => i.bucket === 'photo')
       .map((i) => i.publicUrl!);
     // Cover must be a property_photo. coverIndex is relative to readyAll order, so translate.
     let coverUrl: string | null = null;
