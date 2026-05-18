@@ -629,10 +629,11 @@ export default function AgencyListings() {
                     className="pl-10 rounded-xl"
                   />
                 </div>
-                <Select value={statusFilter} onValueChange={(value) => handleStatusFilterChange(value as 'all' | AgencyListingDisplayStatusKey)}>
+                <Select value={statusFilter} onValueChange={(value) => handleStatusFilterChange(value as ListingStatusFilterValue)}>
                   <SelectTrigger className="w-[140px] rounded-xl"><SelectValue placeholder="Status" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All statuses</SelectItem>
+                    <SelectItem value="review_work">Needs review + fixes</SelectItem>
                     {AGENCY_LISTING_STATUS_OPTIONS.map((status) => (
                       <SelectItem key={status.key} value={status.key}>{status.label}</SelectItem>
                     ))}
