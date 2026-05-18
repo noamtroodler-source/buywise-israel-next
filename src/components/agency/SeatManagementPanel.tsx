@@ -305,6 +305,12 @@ export function SeatManagementPanel({ agents, agencyId, isOwner, currentUserId }
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <EditAgentDialog
+        open={!!editTarget}
+        onOpenChange={(o) => !o && setEditTarget(null)}
+        agent={editTarget}
+      />
     </TooltipProvider>
   );
 }
