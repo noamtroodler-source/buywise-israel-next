@@ -15,60 +15,56 @@ export interface AgentRegistrationData {
   years_experience?: number;
   languages?: string[];
   specializations?: string[];
+  confirm_claim_agent_id?: string;
+  skip_match?: boolean;
+}
+
+export interface AgentRegistrationResult {
+  status: 'created' | 'claimed' | 'existing' | 'needs_confirmation';
+  agent?: any;
+  match_tier?: string;
+  candidate?: {
+    id: string;
+    name: string;
+    license_number: string | null;
+    listing_count: number;
+  };
 }
 
 export function useAgentRegistration() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
-  return useMutation({
-    mutationFn: async (data: AgentRegistrationData) => {
+  return useMutation<AgentRegistrationResult, Error, AgentRegistrationData>({
+    mutationFn: async (data) => {
       if (!user) throw new Error('Must be logged in');
 
-      // Create agent profile
-      const { data: agent, error: agentError } = await supabase
-        .from('agents')
-        .insert({
-          user_id: user.id,
+      const { data: resp, error } = await supabase.functions.invoke('claim-or-create-agent', {
+        body: {
+          agency_id: data.agency_id || null,
+          agency_name: data.agency_name || null,
           name: data.name,
           email: data.email,
-          phone: data.phone,
-          bio: data.bio,
-          license_number: data.license_number,
-          agency_id: data.agency_id || null,
-          agency_name: data.agency_name,
-          joined_via: data.agency_id ? 'invite_code' : null,
-          years_experience: data.years_experience || 0,
-          languages: data.languages || ['Hebrew', 'English'],
+          phone: data.phone || null,
+          license_number: data.license_number || null,
+          bio: data.bio || null,
+          languages: data.languages,
           specializations: data.specializations,
-          email_verified_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
+          years_experience: data.years_experience ?? 0,
+          confirm_claim_agent_id: data.confirm_claim_agent_id || null,
+          skip_match: data.skip_match || false,
+        },
+      });
 
-      if (agentError) throw agentError;
-
-      // Add agent role to user
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert({
-          user_id: user.id,
-          role: 'agent',
-        });
-
-      if (roleError) {
-        // If role already exists, that's okay
-        if (!roleError.message.includes('duplicate')) {
-          throw roleError;
-        }
-      }
-
-      return agent;
+      if (error) throw error;
+      if (resp?.error) throw new Error(resp.error);
+      return resp as AgentRegistrationResult;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['userRoles'] });
-      queryClient.invalidateQueries({ queryKey: ['agentProfile'] });
-      // Toast handled by the success dialog
+    onSuccess: (result) => {
+      if (result.status !== 'needs_confirmation') {
+        queryClient.invalidateQueries({ queryKey: ['userRoles'] });
+        queryClient.invalidateQueries({ queryKey: ['agentProfile'] });
+      }
     },
     onError: (error) => {
       toast.error(getUserFriendlyError(error, 'Registration failed. Please try again.'));
