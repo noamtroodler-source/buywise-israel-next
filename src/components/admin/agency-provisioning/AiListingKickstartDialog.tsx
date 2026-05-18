@@ -80,6 +80,8 @@ export function AiListingKickstartDialog({
   const [agencyAgents, setAgencyAgents] = useState<{ id: string; name: string }[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const [generatingDescription, setGeneratingDescription] = useState(false);
+  const [draftLoaded, setDraftLoaded] = useState(false);
+  const [savedAt, setSavedAt] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -91,6 +93,85 @@ export function AiListingKickstartDialog({
       .order('name')
       .then(({ data }) => setAgencyAgents((data || []) as { id: string; name: string }[]));
   }, [open, agencyId]);
+
+  // Hydrate draft when dialog opens
+  useEffect(() => {
+    if (!open || !agencyId || draftLoaded) return;
+    try {
+      const raw = localStorage.getItem(draftKey(agencyId));
+      if (raw) {
+        const d = JSON.parse(raw);
+        if (Array.isArray(d.images)) {
+          setImages(
+            d.images
+              .filter((i: any) => i?.publicUrl)
+              .map((i: any) => ({
+                file: new File([], i.fileName || 'restored.jpg'),
+                previewUrl: i.publicUrl,
+                publicUrl: i.publicUrl,
+                uploading: false,
+                enhanced: !!i.enhanced,
+                kind: i.kind,
+              })),
+          );
+        }
+        if (typeof d.description === 'string') setDescription(d.description);
+        if (d.hintIntent) setHintIntent(d.hintIntent);
+        if (typeof d.hintCity === 'string') setHintCity(d.hintCity);
+        if (d.extracted) setExtracted(d.extracted);
+        if (d.agentMatch) setAgentMatch(d.agentMatch);
+        if (d.selectedAgentId !== undefined) setSelectedAgentId(d.selectedAgentId);
+        if (typeof d.coverIndex === 'number') setCoverIndex(d.coverIndex);
+        if (d.statusChoice) setStatusChoice(d.statusChoice);
+        if (typeof d.duplicateAcknowledged === 'boolean') setDuplicateAcknowledged(d.duplicateAcknowledged);
+        if (Array.isArray(d.duplicates)) setDuplicates(d.duplicates);
+        if (d.savedAt) setSavedAt(d.savedAt);
+        if ((d.extracted || (Array.isArray(d.images) && d.images.length > 0) || (typeof d.description === 'string' && d.description.length > 0))) {
+          toast.info('Draft restored', { description: 'Picking up where you left off.' });
+        }
+      }
+    } catch {}
+    setDraftLoaded(true);
+  }, [open, agencyId, draftLoaded]);
+
+  // Autosave draft (debounced) whenever meaningful state changes
+  const draftPayload = useMemo(() => ({
+    images: images
+      .filter((i) => i.publicUrl)
+      .map((i) => ({ publicUrl: i.publicUrl, fileName: i.file?.name, enhanced: !!i.enhanced, kind: i.kind })),
+    description,
+    hintIntent,
+    hintCity,
+    extracted,
+    agentMatch,
+    selectedAgentId,
+    coverIndex,
+    statusChoice,
+    duplicates,
+    duplicateAcknowledged,
+  }), [images, description, hintIntent, hintCity, extracted, agentMatch, selectedAgentId, coverIndex, statusChoice, duplicates, duplicateAcknowledged]);
+
+  useEffect(() => {
+    if (!open || !agencyId || !draftLoaded) return;
+    const handle = window.setTimeout(() => {
+      try {
+        const hasContent =
+          draftPayload.images.length > 0 ||
+          (draftPayload.description && draftPayload.description.trim().length > 0) ||
+          !!draftPayload.extracted;
+        if (!hasContent) {
+          localStorage.removeItem(draftKey(agencyId));
+          setSavedAt(null);
+          return;
+        }
+        const ts = new Date().toISOString();
+        localStorage.setItem(draftKey(agencyId), JSON.stringify({ ...draftPayload, savedAt: ts }));
+        setSavedAt(ts);
+      } catch {}
+    }, 400);
+    return () => window.clearTimeout(handle);
+  }, [open, agencyId, draftLoaded, draftPayload]);
+
 
   const handleFiles = useCallback(async (files: FileList | File[]) => {
     const arr = Array.from(files).filter((f) => f.type.startsWith('image/'));
