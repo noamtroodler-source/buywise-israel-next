@@ -402,13 +402,65 @@ export function AiListingKickstartDialog({
     return Number.isFinite(parsed) ? Math.round(parsed) : null;
   };
 
+  const normalizePropertyType = (value: unknown) => {
+    const normalized = String(value ?? '')
+      .trim()
+      .toLowerCase()
+      .replace(/[\s-]+/g, '_');
+
+    const aliases: Record<string, string> = {
+      apartment: 'apartment',
+      apt: 'apartment',
+      condo: 'apartment',
+      flat: 'apartment',
+      house: 'house',
+      villa: 'house',
+      private_house: 'house',
+      home: 'house',
+      penthouse: 'penthouse',
+      mini_penthouse: 'mini_penthouse',
+      garden: 'garden_apartment',
+      garden_apartment: 'garden_apartment',
+      garden_apt: 'garden_apartment',
+      duplex: 'duplex',
+      cottage: 'cottage',
+      land: 'land',
+      plot: 'land',
+      commercial: 'commercial',
+      office: 'commercial',
+      store: 'commercial',
+    };
+
+    return aliases[normalized] || 'apartment';
+  };
+
+  const normalizeListingStatus = (value: unknown) => {
+    const normalized = String(value ?? '')
+      .trim()
+      .toLowerCase()
+      .replace(/[\s-]+/g, '_');
+
+    const aliases: Record<string, string> = {
+      for_sale: 'for_sale',
+      sale: 'for_sale',
+      sell: 'for_sale',
+      for_rent: 'for_rent',
+      rent: 'for_rent',
+      rental: 'for_rent',
+      sold: 'sold',
+      rented: 'rented',
+    };
+
+    return aliases[normalized] || 'for_sale';
+  };
+
   const pushToListings = async () => {
     if (!extracted) return;
-    const finalStatus = (statusChoice ?? extracted.listing_status ?? 'for_sale') as string;
+    const finalStatus = normalizeListingStatus(statusChoice ?? extracted.listing_status ?? 'for_sale');
+    const finalPropertyType = normalizePropertyType(extracted.property_type);
     const missing: string[] = [];
     if (!extracted.title?.trim()) missing.push('title');
     if (!extracted.price || extracted.price <= 0) missing.push('price');
-    if (!extracted.property_type) missing.push('type');
     if (!finalStatus) missing.push('sale/rent');
     if (!extracted.city?.trim()) missing.push('city');
     if (missing.length) { toast.error(`Missing: ${missing.join(', ')}`); return; }
@@ -429,7 +481,7 @@ export function AiListingKickstartDialog({
       const row: any = {
         title: extracted.title,
         description: extracted.description || null,
-        property_type: extracted.property_type,
+        property_type: finalPropertyType,
         listing_status: finalStatus,
         price: extracted.price,
         address: addressFallback,
