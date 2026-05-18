@@ -912,3 +912,73 @@ function Field({ label, value }: { label: string; value: any }) {
     </div>
   );
 }
+
+function ImageGrid({
+  images,
+  bucket,
+  coverIndex,
+  onPickCover,
+  onRemove,
+}: {
+  images: UploadedImage[];
+  bucket: ImageBucket;
+  coverIndex: number | null;
+  onPickCover: (img: UploadedImage) => void;
+  onRemove: (img: UploadedImage) => void;
+}) {
+  const readyOnly = images.filter((i) => i.publicUrl);
+  return (
+    <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+      {images.filter((img) => img.bucket === bucket).map((img, idx) => {
+        const readyIdx = readyOnly.indexOf(img);
+        const isCover = bucket === 'photo' && coverIndex != null && readyIdx >= 0 && readyIdx === coverIndex;
+        const canPickCover = bucket === 'photo' && !!img.publicUrl && !img.uploading;
+        const kindLabel = img.kind === 'spec_sheet' ? 'Spec sheet'
+          : img.kind === 'floor_plan' ? 'Floor plan'
+          : img.kind === 'screenshot_other' ? 'Screenshot' : null;
+        return (
+          <div
+            key={idx}
+            onClick={() => canPickCover && onPickCover(img)}
+            className={`relative group aspect-square rounded-md overflow-hidden border bg-muted ${isCover ? 'ring-2 ring-primary' : ''} ${canPickCover ? 'cursor-pointer hover:ring-2 hover:ring-primary/40' : ''} ${bucket === 'info' ? 'opacity-80' : ''}`}
+            title={canPickCover ? (isCover ? 'Current cover' : 'Click to use as cover') : bucket === 'info' ? 'Used for facts only — will NOT be added to the listing' : undefined}
+          >
+            <img src={img.previewUrl} alt="" className="w-full h-full object-cover" />
+            {isCover && (
+              <div className="absolute top-1 left-1 bg-primary text-primary-foreground text-[9px] px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                <ImageIcon className="h-2.5 w-2.5" /> Cover
+              </div>
+            )}
+            {bucket === 'info' && kindLabel && (
+              <div className="absolute top-1 left-1 bg-background/80 text-foreground text-[9px] px-1.5 py-0.5 rounded">
+                {kindLabel}
+              </div>
+            )}
+            {img.enhanced && (
+              <div className="absolute bottom-1 left-1 bg-emerald-600 text-white text-[9px] px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                <Wand2 className="h-2.5 w-2.5" /> Enhanced
+              </div>
+            )}
+            {(img.uploading || img.enhancing) && (
+              <div className="absolute inset-0 bg-background/60 flex items-center justify-center">
+                <Loader2 className="h-4 w-4 animate-spin" />
+              </div>
+            )}
+            {img.error && (
+              <div className="absolute inset-0 bg-destructive/70 text-destructive-foreground text-[10px] flex items-center justify-center p-1 text-center">
+                {img.error}
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onRemove(img); }}
+              className="absolute top-1 right-1 bg-background/80 rounded-full p-0.5 opacity-0 group-hover:opacity-100"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
