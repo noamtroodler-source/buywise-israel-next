@@ -446,7 +446,7 @@ export function AiListingKickstartDialog({
       return;
     }
     onOpenChange(false);
-    navigate(`/agency/properties/new?agencyId=${agencyId}`);
+    navigate(`/agency/properties/new?agencyId=${agencyId}&adminProvisioning=1`);
   };
 
   const reset = () => {
