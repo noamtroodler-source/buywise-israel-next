@@ -765,6 +765,16 @@ export default function AgentRegisterWizard() {
         open={showSuccessDialog} 
         onClose={() => setShowSuccessDialog(false)} 
       />
+
+      <ClaimAgentConfirmDialog
+        open={!!claimCandidate}
+        candidate={claimCandidate}
+        agencyName={validatedAgencyName}
+        isLoading={agentRegistration.isPending}
+        pendingChoice={claimPendingChoice}
+        onConfirm={handleClaimConfirm}
+        onDeny={handleClaimDeny}
+      />
     </Layout>
   );
 }
