@@ -109,7 +109,7 @@ export function useAgencyTeam(agencyId: string | undefined) {
 
       const { data, error } = await supabase
         .from('agents')
-        .select('id, name, email, phone, avatar_url, is_verified, status, created_at, last_active_at, agency_role')
+        .select('id, name, email, phone, avatar_url, is_verified, status, created_at, last_active_at, agency_role, user_id')
         .eq('agency_id', agencyId)
         .order('created_at', { ascending: false });
 
@@ -130,11 +130,31 @@ export function useAgencyTeam(agencyId: string | undefined) {
         }
       }
 
-      return (data ?? []).map((a) => ({
+      // Fetch agency_members admin/owner roles to surface "Admin" badge per agent
+      const userIds = (data ?? []).map((a: any) => a.user_id).filter(Boolean) as string[];
+      const memberRoles: Record<string, 'owner' | 'admin'> = {};
+      if (userIds.length > 0) {
+        const { data: members } = await supabase
+          .from('agency_members')
+          .select('user_id, role')
+          .eq('agency_id', agencyId)
+          .in('user_id', userIds)
+          .in('role', ['owner', 'admin']);
+        for (const m of members ?? []) {
+          const existing = memberRoles[(m as any).user_id];
+          // owner trumps admin if both rows exist
+          if (existing !== 'owner') memberRoles[(m as any).user_id] = (m as any).role;
+        }
+      }
+
+      return (data ?? []).map((a: any) => ({
         ...a,
         listing_count: listingCounts[a.id] ?? 0,
-        agency_role: (a as any).agency_role ?? 'member',
-        last_active_at: (a as any).last_active_at ?? null,
+        agency_role: a.agency_role ?? 'member',
+        last_active_at: a.last_active_at ?? null,
+        user_id: a.user_id ?? null,
+        agency_member_role: a.user_id ? (memberRoles[a.user_id] ?? null) : null,
+        invite_accepted: !!a.user_id,
       })) as AgencyAgent[];
     },
     enabled: !!agencyId,
