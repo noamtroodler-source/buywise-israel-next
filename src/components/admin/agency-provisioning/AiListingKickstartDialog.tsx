@@ -855,25 +855,42 @@ export function AiListingKickstartDialog({
           </div>
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          {!extracted ? (
-            <Button onClick={analyze} disabled={analyzing}>
-              {analyzing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
-              Analyze
-            </Button>
-          ) : (
-            <>
-              <Button variant="outline" onClick={analyze} disabled={analyzing}>
-                {analyzing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-                Re-analyze
+        <DialogFooter className="gap-2 sm:gap-2 sm:justify-between flex-wrap">
+          <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+            {savedAt ? (
+              <>
+                <Check className="h-3 w-3 text-emerald-600" />
+                Draft saved · {new Date(savedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </>
+            ) : (
+              <span>Changes auto-save as a draft</span>
+            )}
+            {(images.length > 0 || description || extracted) && (
+              <Button variant="ghost" size="sm" onClick={handleStartOver} className="h-7 text-[11px] text-muted-foreground hover:text-destructive">
+                <RotateCcw className="h-3 w-3 mr-1" /> Start over
               </Button>
-              <Button onClick={openWizard} disabled={needsStatusChoice || blockedByDuplicate}>
-                Open wizard with these values
-                <ArrowRight className="h-4 w-4 ml-2" />
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
+            {!extracted ? (
+              <Button onClick={analyze} disabled={analyzing}>
+                {analyzing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+                Analyze
               </Button>
-            </>
-          )}
+            ) : (
+              <>
+                <Button variant="outline" onClick={analyze} disabled={analyzing}>
+                  {analyzing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+                  Re-analyze
+                </Button>
+                <Button onClick={openWizard} disabled={needsStatusChoice || blockedByDuplicate}>
+                  Open wizard with these values
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </>
+            )}
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
