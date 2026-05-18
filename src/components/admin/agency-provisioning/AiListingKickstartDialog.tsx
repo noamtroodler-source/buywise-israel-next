@@ -234,6 +234,21 @@ export function AiListingKickstartDialog({
       setAgentMatch(match);
       if (match?.confidence === 'high') setSelectedAgentId(match.agent_id);
       setCoverIndex(typeof data.cover_photo_index === 'number' ? data.cover_photo_index : null);
+
+      // Tag each uploaded image with its AI-classified kind so we can hide spec sheets
+      // from the cover-photo grid and from the description writer.
+      const kinds: ImageKind[] | undefined = Array.isArray(data.image_kinds) ? data.image_kinds : undefined;
+      if (kinds && kinds.length > 0) {
+        setImages((prev) => {
+          const readyOnlyUrls = prev.filter((i) => i.publicUrl).map((i) => i.publicUrl);
+          return prev.map((img) => {
+            if (!img.publicUrl) return img;
+            const idx = readyOnlyUrls.indexOf(img.publicUrl);
+            return idx >= 0 && kinds[idx] ? { ...img, kind: kinds[idx] } : img;
+          });
+        });
+      }
+
       await checkDuplicates(ex);
       toast.success('Extracted — review and open the wizard');
     } catch (e: any) {
