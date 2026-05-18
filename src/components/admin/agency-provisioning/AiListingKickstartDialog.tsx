@@ -73,6 +73,7 @@ export function AiListingKickstartDialog({
   const [statusChoice, setStatusChoice] = useState<'for_sale' | 'for_rent' | null>(null);
   const [agencyAgents, setAgencyAgents] = useState<{ id: string; name: string }[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
+  const [generatingDescription, setGeneratingDescription] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -235,6 +236,30 @@ export function AiListingKickstartDialog({
       toast.error(e?.message || 'AI extraction failed');
     } finally {
       setAnalyzing(false);
+    }
+  };
+
+  const regenerateDescription = async () => {
+    if (!extracted) return;
+    setGeneratingDescription(true);
+    try {
+      const imageUrls = images.filter((i) => i.publicUrl).map((i) => i.publicUrl!);
+      const { fields } = { fields: { ...extracted } } as any;
+      delete fields.description;
+      delete fields.source_notes;
+      delete fields.low_confidence_fields;
+      delete fields.detected_agent;
+      const { data, error } = await supabase.functions.invoke('ai-generate-description', {
+        body: { fields, notes: description.trim(), image_urls: imageUrls },
+      });
+      if (error) throw error;
+      if (!data?.description) throw new Error('No description returned');
+      setExtracted((prev) => prev ? { ...prev, description: data.description } : prev);
+      toast.success('Description rewritten');
+    } catch (e: any) {
+      toast.error(e?.message || 'Description generation failed');
+    } finally {
+      setGeneratingDescription(false);
     }
   };
 
@@ -604,11 +629,33 @@ export function AiListingKickstartDialog({
                   </div>
                 )}
 
-                {extracted.description && (
-                  <div className="text-xs text-muted-foreground line-clamp-4 whitespace-pre-line">
-                    {extracted.description}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <Label className="text-xs">Listing description</Label>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={regenerateDescription}
+                      disabled={generatingDescription}
+                      className="h-7 text-xs"
+                    >
+                      {generatingDescription ? (
+                        <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
+                      ) : (
+                        <Wand2 className="h-3 w-3 mr-1.5" />
+                      )}
+                      {extracted.description ? 'Rewrite with AI' : 'Generate with AI'}
+                    </Button>
                   </div>
-                )}
+                  <Textarea
+                    value={extracted.description || ''}
+                    onChange={(e) => setExtracted((prev) => prev ? { ...prev, description: e.target.value } : prev)}
+                    rows={6}
+                    placeholder="Click 'Generate with AI' to write a description from the photos and fields."
+                    className="text-xs resize-none"
+                  />
+                </div>
 
                 {extracted.low_confidence_fields && extracted.low_confidence_fields.length > 0 && (
                   <div className="text-xs">
