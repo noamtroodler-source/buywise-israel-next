@@ -852,8 +852,8 @@ export function AiListingKickstartDialog({
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
-                  <EditField label="Type" value={extracted.property_type} onChange={(v) => updateField('property_type', v)} />
-                  <EditField label="Status" value={extracted.listing_status} onChange={(v) => updateField('listing_status', v)} />
+                  <EditField label="Type" value={extracted.property_type} onChange={(v) => updateField('property_type', v as any)} />
+                  <EditField label="Status" value={extracted.listing_status} onChange={(v) => updateField('listing_status', v as any)} />
                   <EditField label="Price (NIS)" type="number" value={extracted.price ?? ''} onChange={(v) => updateField('price', v === '' ? undefined : Number(v))} />
                   <EditField label="City" value={extracted.city} onChange={(v) => updateField('city', v)} />
                   <EditField label="Neighborhood" value={extracted.neighborhood} onChange={(v) => updateField('neighborhood', v)} />
