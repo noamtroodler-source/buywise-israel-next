@@ -212,6 +212,18 @@ export function ListingsQualitySection({ agencyId }: { agencyId: string }) {
           <Button size="sm" variant="outline" onClick={handleBulkMarkReviewed} disabled={bulkUpdate.isPending}>
             Mark reviewed
           </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="text-destructive hover:text-destructive border-destructive/30 hover:bg-destructive/10"
+            onClick={() => setConfirmDelete({
+              ids: Array.from(selected),
+              label: `${selected.size} listing${selected.size === 1 ? '' : 's'}`,
+            })}
+            disabled={deleteListings.isPending}
+          >
+            <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Delete
+          </Button>
           <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>Clear</Button>
         </div>
       )}
