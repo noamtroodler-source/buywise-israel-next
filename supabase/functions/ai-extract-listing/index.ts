@@ -442,19 +442,20 @@ Deno.serve(async (req) => {
 
   try {
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) return new Response(JSON.stringify({ error: "Missing authorization" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!authHeader) return jsonResponse({ error: "Missing authorization" }, 401);
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const userClient = createClient(supabaseUrl, anonKey, { global: { headers: { Authorization: authHeader } } });
     const { data: { user } } = await userClient.auth.getUser();
-    if (!user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!user) return jsonResponse({ error: "Unauthorized" }, 401);
     const admin = createClient(supabaseUrl, serviceKey);
     const { data: isAdmin } = await admin.rpc("has_role", { _user_id: user.id, _role: "admin" });
-    if (!isAdmin) return new Response(JSON.stringify({ error: "Admin only" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!isAdmin) return jsonResponse({ error: "Admin only" }, 403);
 
-    const body = await req.json();
+    const body = await safeReadJson(req);
+    if (!body) return jsonResponse({ error: "Invalid request body" }, 400);
     const imageUrls: string[] = Array.isArray(body.image_urls) ? body.image_urls.slice(0, 20) : [];
     const description: string = (body.description || "").toString().slice(0, 8000);
     const hint: { listing_status?: string; city?: string } = body.hint || {};
