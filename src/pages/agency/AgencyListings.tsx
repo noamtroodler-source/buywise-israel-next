@@ -52,6 +52,20 @@ import { AGENCY_LISTING_STATUS_OPTIONS, AgencyListingDisplayStatusKey, getAgency
 
 const IMPORTED_BANNER_KEY = 'agency_imported_drafts_banner_dismissed';
 const LAUNCH_REVIEW_GUIDANCE_KEY = 'agency_launch_review_guidance_dismissed';
+const REVIEW_WORK_STATUS_KEYS = new Set<AgencyListingDisplayStatusKey>(['to_review', 'needs_fixes']);
+const VALID_STATUS_KEYS = new Set<AgencyListingDisplayStatusKey>(AGENCY_LISTING_STATUS_OPTIONS.map((status) => status.key));
+type ListingStatusFilterValue = 'all' | 'review_work' | AgencyListingDisplayStatusKey;
+
+function parseStatusFilterParam(statusParam: string | null): ListingStatusFilterValue {
+  const keys = (statusParam ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s): s is AgencyListingDisplayStatusKey => VALID_STATUS_KEYS.has(s as AgencyListingDisplayStatusKey));
+
+  if (keys.length === 2 && keys.every((key) => REVIEW_WORK_STATUS_KEYS.has(key))) return 'review_work';
+  if (keys.length === 1) return keys[0];
+  return 'all';
+}
 
 function ImportedDraftsGuidance({ listings }: { listings: any[] }) {
   const [dismissed, setDismissed] = useState(true);
@@ -262,15 +276,9 @@ export default function AgencyListings() {
   const bulkConfirmListings = useBulkConfirmAgencyListings();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const initialStatusParam = searchParams.get('status') || '';
-  const initialStatusKeys = initialStatusParam
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean) as AgencyListingDisplayStatusKey[];
-  const [statusFilter, setStatusFilter] = useState<'all' | AgencyListingDisplayStatusKey>(
-    () => (initialStatusKeys.length === 1 ? initialStatusKeys[0] : 'all')
+  const [statusFilter, setStatusFilter] = useState<ListingStatusFilterValue>(
+    () => parseStatusFilterParam(searchParams.get('status'))
   );
-  const multiStatusKeys = initialStatusKeys.length > 1 ? new Set(initialStatusKeys) : null;
   const [agentFilter, setAgentFilter] = useState<string>('all');
   const [cityFilter, setCityFilter] = useState<string>('all');
   const [roleFilter, setRoleFilter] = useState<'all' | 'primary' | 'co_listed'>('all');
@@ -279,6 +287,12 @@ export default function AgencyListings() {
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [sort, setSort] = useState<{ key: SortKey; direction: SortDirection } | null>({ key: 'review', direction: 'desc' });
   const formatPrice = useFormatPrice();
+  const statusParam = searchParams.get('status');
+
+  useEffect(() => {
+    setStatusFilter(parseStatusFilterParam(statusParam));
+    setReviewFilter('all');
+  }, [statusParam]);
 
   const toggleSelect = useCallback((id: string) => {
     setSelectedIds(prev => {
@@ -320,9 +334,10 @@ export default function AgencyListings() {
         listing.city?.toLowerCase().includes(query);
       if (!matchesSearch) return false;
     }
-    if (multiStatusKeys && statusFilter === 'all') {
-      if (!multiStatusKeys.has(getAgencyListingDisplayStatus(listing).key)) return false;
-    } else if (statusFilter !== 'all' && getAgencyListingDisplayStatus(listing).key !== statusFilter) return false;
+    const displayStatusKey = getAgencyListingDisplayStatus(listing).key;
+    if (statusFilter === 'review_work') {
+      if (!REVIEW_WORK_STATUS_KEYS.has(displayStatusKey)) return false;
+    } else if (statusFilter !== 'all' && displayStatusKey !== statusFilter) return false;
     if (agentFilter !== 'all' && listing.agent_id !== agentFilter) return false;
     if (cityFilter !== 'all' && listing.city !== cityFilter) return false;
     if (roleFilter !== 'all' && listing.role !== roleFilter) return false;
@@ -394,6 +409,15 @@ export default function AgencyListings() {
     return listing && listing.safe_to_batch_approve && (listing.verification_status === 'draft' || listing.verification_status === 'changes_requested');
   });
 
+  const applySummaryFilter = (value: ListingStatusFilterValue) => {
+    setStatusFilter(value);
+    setReviewFilter('all');
+    setSearchQuery('');
+    setAgentFilter('all');
+    setCityFilter('all');
+    setSelectedIds(new Set());
+  };
+
   const handleBulkDelete = () => {
     bulkDelete.mutate([...selectedIds], {
       onSuccess: () => {
@@ -405,7 +429,7 @@ export default function AgencyListings() {
 
   const safeSelectedIds = [...selectedIds].filter((id) => listings.find((l) => l.id === id)?.safe_to_batch_approve);
 
-  const handleStatusFilterChange = (value: 'all' | AgencyListingDisplayStatusKey) => {
+  const handleStatusFilterChange = (value: ListingStatusFilterValue) => {
     setStatusFilter(value);
     if (value !== 'all') setReviewFilter('all');
   };
@@ -508,13 +532,28 @@ export default function AgencyListings() {
           {/* Stats Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: 'Total listings', value: stats.total, icon: Home },
-              { label: 'Live', value: stats.active, icon: CheckCircle2 },
-              { label: 'Needs quick review', value: stats.needsReview, icon: Clock, highlight: stats.needsReview > 0 },
-              { label: 'Ready to publish', value: stats.ready, icon: Send, highlight: stats.ready > 0 },
+              { label: 'Total listings', value: stats.total, icon: Home, filter: 'all' as const },
+              { label: 'Live', value: stats.active, icon: CheckCircle2, filter: 'live' as const },
+              { label: 'Needs quick review', value: stats.needsReview + stats.quickFix, icon: Clock, filter: 'review_work' as const, highlight: stats.needsReview + stats.quickFix > 0 },
+              { label: 'Ready to publish', value: stats.ready, icon: Send, filter: 'ready_to_submit' as const, highlight: stats.ready > 0 },
             ].map((stat, index) => (
               <motion.div key={stat.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
-                <Card className={cn('rounded-2xl border-primary/10', stat.highlight && 'bg-primary/5 border-primary/20')}>
+                <Card
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => applySummaryFilter(stat.filter)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      applySummaryFilter(stat.filter);
+                    }
+                  }}
+                  className={cn(
+                    'rounded-2xl border-primary/10 cursor-pointer transition-colors hover:bg-primary/5 hover:border-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+                    stat.highlight && 'bg-primary/5 border-primary/20',
+                    statusFilter === stat.filter && 'bg-primary/10 border-primary/30 ring-1 ring-primary/20'
+                  )}
+                >
                   <CardContent className="p-4">
                     <div className="flex items-center gap-3">
                       <div className={cn('p-2 rounded-xl', stat.highlight ? 'bg-primary/20' : 'bg-primary/10')}>
@@ -591,10 +630,11 @@ export default function AgencyListings() {
                     className="pl-10 rounded-xl"
                   />
                 </div>
-                <Select value={statusFilter} onValueChange={(value) => handleStatusFilterChange(value as 'all' | AgencyListingDisplayStatusKey)}>
+                <Select value={statusFilter} onValueChange={(value) => handleStatusFilterChange(value as ListingStatusFilterValue)}>
                   <SelectTrigger className="w-[140px] rounded-xl"><SelectValue placeholder="Status" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All statuses</SelectItem>
+                    <SelectItem value="review_work">Needs review + fixes</SelectItem>
                     {AGENCY_LISTING_STATUS_OPTIONS.map((status) => (
                       <SelectItem key={status.key} value={status.key}>{status.label}</SelectItem>
                     ))}
