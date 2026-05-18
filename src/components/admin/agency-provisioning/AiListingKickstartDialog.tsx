@@ -1,6 +1,6 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, Upload, X, Loader2, Wand2, ArrowRight, UserCheck, UserX, AlertTriangle, ImageIcon, ExternalLink, Check } from 'lucide-react';
+import { Sparkles, Upload, X, Loader2, Wand2, ArrowRight, UserCheck, UserX, AlertTriangle, ImageIcon, ExternalLink, Check, RotateCcw } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
@@ -17,6 +17,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { defaultPropertyData, PropertyWizardData } from '@/components/agent/wizard/PropertyWizardContext';
 
 const AGENCY_WIZARD_STORAGE_KEY = 'agency-property-wizard-draft';
+const KICKSTART_DRAFT_PREFIX = 'ai-kickstart-draft:';
+const draftKey = (agencyId: string) => `${KICKSTART_DRAFT_PREFIX}${agencyId}`;
 
 type ImageKind = 'property_photo' | 'floor_plan' | 'spec_sheet' | 'screenshot_other';
 
