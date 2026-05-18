@@ -1,6 +1,6 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, Upload, X, Loader2, Wand2, ArrowRight, UserCheck, UserX, AlertTriangle, ImageIcon, ExternalLink, Check } from 'lucide-react';
+import { Sparkles, Upload, X, Loader2, Wand2, ArrowRight, UserCheck, UserX, AlertTriangle, ImageIcon, ExternalLink, Check, RotateCcw } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
@@ -17,6 +17,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { defaultPropertyData, PropertyWizardData } from '@/components/agent/wizard/PropertyWizardContext';
 
 const AGENCY_WIZARD_STORAGE_KEY = 'agency-property-wizard-draft';
+const KICKSTART_DRAFT_PREFIX = 'ai-kickstart-draft:';
+const draftKey = (agencyId: string) => `${KICKSTART_DRAFT_PREFIX}${agencyId}`;
 
 type ImageKind = 'property_photo' | 'floor_plan' | 'spec_sheet' | 'screenshot_other';
 
@@ -78,6 +80,8 @@ export function AiListingKickstartDialog({
   const [agencyAgents, setAgencyAgents] = useState<{ id: string; name: string }[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const [generatingDescription, setGeneratingDescription] = useState(false);
+  const [draftLoaded, setDraftLoaded] = useState(false);
+  const [savedAt, setSavedAt] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -89,6 +93,85 @@ export function AiListingKickstartDialog({
       .order('name')
       .then(({ data }) => setAgencyAgents((data || []) as { id: string; name: string }[]));
   }, [open, agencyId]);
+
+  // Hydrate draft when dialog opens
+  useEffect(() => {
+    if (!open || !agencyId || draftLoaded) return;
+    try {
+      const raw = localStorage.getItem(draftKey(agencyId));
+      if (raw) {
+        const d = JSON.parse(raw);
+        if (Array.isArray(d.images)) {
+          setImages(
+            d.images
+              .filter((i: any) => i?.publicUrl)
+              .map((i: any) => ({
+                file: new File([], i.fileName || 'restored.jpg'),
+                previewUrl: i.publicUrl,
+                publicUrl: i.publicUrl,
+                uploading: false,
+                enhanced: !!i.enhanced,
+                kind: i.kind,
+              })),
+          );
+        }
+        if (typeof d.description === 'string') setDescription(d.description);
+        if (d.hintIntent) setHintIntent(d.hintIntent);
+        if (typeof d.hintCity === 'string') setHintCity(d.hintCity);
+        if (d.extracted) setExtracted(d.extracted);
+        if (d.agentMatch) setAgentMatch(d.agentMatch);
+        if (d.selectedAgentId !== undefined) setSelectedAgentId(d.selectedAgentId);
+        if (typeof d.coverIndex === 'number') setCoverIndex(d.coverIndex);
+        if (d.statusChoice) setStatusChoice(d.statusChoice);
+        if (typeof d.duplicateAcknowledged === 'boolean') setDuplicateAcknowledged(d.duplicateAcknowledged);
+        if (Array.isArray(d.duplicates)) setDuplicates(d.duplicates);
+        if (d.savedAt) setSavedAt(d.savedAt);
+        if ((d.extracted || (Array.isArray(d.images) && d.images.length > 0) || (typeof d.description === 'string' && d.description.length > 0))) {
+          toast.info('Draft restored', { description: 'Picking up where you left off.' });
+        }
+      }
+    } catch {}
+    setDraftLoaded(true);
+  }, [open, agencyId, draftLoaded]);
+
+  // Autosave draft (debounced) whenever meaningful state changes
+  const draftPayload = useMemo(() => ({
+    images: images
+      .filter((i) => i.publicUrl)
+      .map((i) => ({ publicUrl: i.publicUrl, fileName: i.file?.name, enhanced: !!i.enhanced, kind: i.kind })),
+    description,
+    hintIntent,
+    hintCity,
+    extracted,
+    agentMatch,
+    selectedAgentId,
+    coverIndex,
+    statusChoice,
+    duplicates,
+    duplicateAcknowledged,
+  }), [images, description, hintIntent, hintCity, extracted, agentMatch, selectedAgentId, coverIndex, statusChoice, duplicates, duplicateAcknowledged]);
+
+  useEffect(() => {
+    if (!open || !agencyId || !draftLoaded) return;
+    const handle = window.setTimeout(() => {
+      try {
+        const hasContent =
+          draftPayload.images.length > 0 ||
+          (draftPayload.description && draftPayload.description.trim().length > 0) ||
+          !!draftPayload.extracted;
+        if (!hasContent) {
+          localStorage.removeItem(draftKey(agencyId));
+          setSavedAt(null);
+          return;
+        }
+        const ts = new Date().toISOString();
+        localStorage.setItem(draftKey(agencyId), JSON.stringify({ ...draftPayload, savedAt: ts }));
+        setSavedAt(ts);
+      } catch {}
+    }, 400);
+    return () => window.clearTimeout(handle);
+  }, [open, agencyId, draftLoaded, draftPayload]);
+
 
   const handleFiles = useCallback(async (files: FileList | File[]) => {
     const arr = Array.from(files).filter((f) => f.type.startsWith('image/'));
@@ -356,7 +439,10 @@ export function AiListingKickstartDialog({
   };
 
   const reset = () => {
-    images.forEach((i) => URL.revokeObjectURL(i.previewUrl));
+    images.forEach((i) => {
+      // Only revoke blob: URLs (restored drafts use the storage publicUrl directly).
+      if (i.previewUrl?.startsWith('blob:')) URL.revokeObjectURL(i.previewUrl);
+    });
     setImages([]);
     setDescription('');
     setExtracted(null);
@@ -368,10 +454,25 @@ export function AiListingKickstartDialog({
     setStatusChoice(null);
     setHintIntent('auto');
     setHintCity('');
+    setSavedAt(null);
+    try { localStorage.removeItem(draftKey(agencyId)); } catch {}
+  };
+
+  const handleStartOver = () => {
+    if (!confirm('Discard this draft and start over? Uploaded photos stay in storage but the form will be cleared.')) return;
+    reset();
+    toast.success('Draft cleared');
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) reset(); onOpenChange(v); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        // Closing the dialog should NOT wipe progress — autosave persists the draft.
+        if (!v) setDraftLoaded(false);
+        onOpenChange(v);
+      }}
+    >
       <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -754,25 +855,42 @@ export function AiListingKickstartDialog({
           </div>
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          {!extracted ? (
-            <Button onClick={analyze} disabled={analyzing}>
-              {analyzing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
-              Analyze
-            </Button>
-          ) : (
-            <>
-              <Button variant="outline" onClick={analyze} disabled={analyzing}>
-                {analyzing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-                Re-analyze
+        <DialogFooter className="gap-2 sm:gap-2 sm:justify-between flex-wrap">
+          <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+            {savedAt ? (
+              <>
+                <Check className="h-3 w-3 text-emerald-600" />
+                Draft saved · {new Date(savedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </>
+            ) : (
+              <span>Changes auto-save as a draft</span>
+            )}
+            {(images.length > 0 || description || extracted) && (
+              <Button variant="ghost" size="sm" onClick={handleStartOver} className="h-7 text-[11px] text-muted-foreground hover:text-destructive">
+                <RotateCcw className="h-3 w-3 mr-1" /> Start over
               </Button>
-              <Button onClick={openWizard} disabled={needsStatusChoice || blockedByDuplicate}>
-                Open wizard with these values
-                <ArrowRight className="h-4 w-4 ml-2" />
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
+            {!extracted ? (
+              <Button onClick={analyze} disabled={analyzing}>
+                {analyzing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+                Analyze
               </Button>
-            </>
-          )}
+            ) : (
+              <>
+                <Button variant="outline" onClick={analyze} disabled={analyzing}>
+                  {analyzing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+                  Re-analyze
+                </Button>
+                <Button onClick={openWizard} disabled={needsStatusChoice || blockedByDuplicate}>
+                  Open wizard with these values
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </>
+            )}
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
