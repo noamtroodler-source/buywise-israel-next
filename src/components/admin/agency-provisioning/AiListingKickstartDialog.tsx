@@ -331,38 +331,79 @@ export function AiListingKickstartDialog({
             </div>
 
             {images.length > 0 && (
-              <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
-                {images.map((img, idx) => {
-                  const readyIdx = images.filter((it) => it.publicUrl).indexOf(img);
-                  const isCover = coverIndex != null && readyIdx === coverIndex;
-                  return (
-                    <div key={idx} className={`relative group aspect-square rounded-md overflow-hidden border bg-muted ${isCover ? 'ring-2 ring-primary' : ''}`}>
-                      <img src={img.previewUrl} alt="" className="w-full h-full object-cover" />
-                      {isCover && (
-                        <div className="absolute top-1 left-1 bg-primary text-primary-foreground text-[9px] px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                          <ImageIcon className="h-2.5 w-2.5" /> Cover
-                        </div>
-                      )}
-                      {img.uploading && (
-                        <div className="absolute inset-0 bg-background/60 flex items-center justify-center">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        </div>
-                      )}
-                      {img.error && (
-                        <div className="absolute inset-0 bg-destructive/70 text-destructive-foreground text-[10px] flex items-center justify-center p-1 text-center">
-                          {img.error}
-                        </div>
-                      )}
-                      <button
+              <div className="space-y-2">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <p className="text-xs text-muted-foreground">
+                    {coverIndex != null ? 'Click any photo to change the cover.' : 'Cover photo will be picked by AI after analysis, or click one to choose.'}
+                  </p>
+                  {extracted && coverIndex != null && (() => {
+                    const readyOnly = images.filter((i) => i.publicUrl);
+                    const cover = readyOnly[coverIndex];
+                    if (!cover) return null;
+                    return (
+                      <Button
                         type="button"
-                        onClick={(e) => { e.stopPropagation(); removeImage(img); }}
-                        className="absolute top-1 right-1 bg-background/80 rounded-full p-0.5 opacity-0 group-hover:opacity-100"
+                        size="sm"
+                        variant="outline"
+                        onClick={enhanceCover}
+                        disabled={cover.enhancing}
                       >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  );
-                })}
+                        {cover.enhancing ? (
+                          <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                        ) : cover.enhanced ? (
+                          <Check className="h-3.5 w-3.5 mr-1.5" />
+                        ) : (
+                          <Wand2 className="h-3.5 w-3.5 mr-1.5" />
+                        )}
+                        {cover.enhanced ? 'Re-enhance cover' : 'Enhance cover with AI'}
+                      </Button>
+                    );
+                  })()}
+                </div>
+                <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+                  {images.map((img, idx) => {
+                    const readyIdx = images.filter((it) => it.publicUrl).indexOf(img);
+                    const isCover = coverIndex != null && readyIdx >= 0 && readyIdx === coverIndex;
+                    const canPickCover = !!img.publicUrl && !img.uploading;
+                    return (
+                      <div
+                        key={idx}
+                        onClick={() => canPickCover && setCoverFromImage(img)}
+                        className={`relative group aspect-square rounded-md overflow-hidden border bg-muted ${isCover ? 'ring-2 ring-primary' : ''} ${canPickCover ? 'cursor-pointer hover:ring-2 hover:ring-primary/40' : ''}`}
+                        title={canPickCover ? (isCover ? 'Current cover' : 'Click to use as cover') : undefined}
+                      >
+                        <img src={img.previewUrl} alt="" className="w-full h-full object-cover" />
+                        {isCover && (
+                          <div className="absolute top-1 left-1 bg-primary text-primary-foreground text-[9px] px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                            <ImageIcon className="h-2.5 w-2.5" /> Cover
+                          </div>
+                        )}
+                        {img.enhanced && (
+                          <div className="absolute bottom-1 left-1 bg-emerald-600 text-white text-[9px] px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                            <Wand2 className="h-2.5 w-2.5" /> Enhanced
+                          </div>
+                        )}
+                        {(img.uploading || img.enhancing) && (
+                          <div className="absolute inset-0 bg-background/60 flex items-center justify-center">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          </div>
+                        )}
+                        {img.error && (
+                          <div className="absolute inset-0 bg-destructive/70 text-destructive-foreground text-[10px] flex items-center justify-center p-1 text-center">
+                            {img.error}
+                          </div>
+                        )}
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); removeImage(img); }}
+                          className="absolute top-1 right-1 bg-background/80 rounded-full p-0.5 opacity-0 group-hover:opacity-100"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
 
