@@ -16,7 +16,8 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { defaultPropertyData, PropertyWizardData } from '@/components/agent/wizard/PropertyWizardContext';
 
-const AGENCY_WIZARD_STORAGE_KEY = 'agency-property-wizard-draft';
+const AGENCY_WIZARD_STORAGE_PREFIX = 'agency-property-wizard-draft';
+const wizardStorageKey = (agencyId: string) => `${AGENCY_WIZARD_STORAGE_PREFIX}:${agencyId}`;
 const KICKSTART_DRAFT_PREFIX = 'ai-kickstart-draft:';
 const draftKey = (agencyId: string) => `${KICKSTART_DRAFT_PREFIX}${agencyId}`;
 
