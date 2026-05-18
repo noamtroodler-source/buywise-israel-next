@@ -75,6 +75,7 @@ function AgencyWizardContent() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const overrideAgencyId = searchParams.get('agencyId');
+  const isAdminProvisioning = searchParams.get('adminProvisioning') === '1';
   const { data, currentStep, setCurrentStep, goNext, goBack, canGoNext, isLastStep, setStepOffset, loadFromSaved, getStepErrors, getAllErrors } = usePropertyWizard();
 
   // Compute step errors for progress bar (step 0 = Assign Agent has no validation here)
@@ -114,8 +115,12 @@ function AgencyWizardContent() {
   const [assignedAgentId, setAssignedAgentId] = useState<string | null>(null);
   // Carried over from the AI Kickstart handoff so the created listing flows
   // through the same import / quality-review pipeline as scrape-synced ones.
-  const [importSource, setImportSource] = useState<string | null>(null);
-  const [provisioningAuditStatus, setProvisioningAuditStatus] = useState<string | null>(null);
+  const [importSource, setImportSource] = useState<string | null>(
+    isAdminProvisioning ? 'manual_provisioning' : null,
+  );
+  const [provisioningAuditStatus, setProvisioningAuditStatus] = useState<string | null>(
+    isAdminProvisioning ? 'pending' : null,
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [submittedTitle, setSubmittedTitle] = useState('');
