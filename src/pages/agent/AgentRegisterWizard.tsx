@@ -224,49 +224,94 @@ export default function AgentRegisterWizard() {
     }
   };
 
+  const runPostRegistrationSideEffects = async () => {
+    // Send welcome email
+    try {
+      await supabase.functions.invoke('send-welcome-email', {
+        body: { email: formData.email, name: formData.name, userType: 'agent' }
+      });
+    } catch (emailError) {
+      console.error('Failed to send welcome email:', emailError);
+    }
+
+    // Notify agency if agent joined via invite code
+    if (validatedAgencyId && validatedAgencyName) {
+      try {
+        await supabase.functions.invoke('send-agency-notification', {
+          body: {
+            type: 'agent_joined',
+            agencyId: validatedAgencyId,
+            agentName: formData.name,
+            agentEmail: formData.email
+          }
+        });
+      } catch (notifyError) {
+        console.error('Failed to notify agency:', notifyError);
+      }
+    }
+  };
+
+  const submitRegistration = async (overrides?: { confirm_claim_agent_id?: string; skip_match?: boolean }) => {
+    return await agentRegistration.mutateAsync({
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone || undefined,
+      license_number: formData.license_number || undefined,
+      agency_id: validatedAgencyId || undefined,
+      agency_name: validatedAgencyName || undefined,
+      years_experience: formData.years_experience,
+      languages: formData.languages,
+      specializations: formData.specializations.length > 0 ? formData.specializations : undefined,
+      bio: formData.bio || undefined,
+      confirm_claim_agent_id: overrides?.confirm_claim_agent_id,
+      skip_match: overrides?.skip_match,
+    });
+  };
+
   const handleSubmit = async () => {
     try {
-      await agentRegistration.mutateAsync({
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone || undefined,
-        license_number: formData.license_number || undefined,
-        agency_id: validatedAgencyId || undefined,
-        agency_name: validatedAgencyName || undefined,
-        years_experience: formData.years_experience,
-        languages: formData.languages,
-        specializations: formData.specializations.length > 0 ? formData.specializations : undefined,
-        bio: formData.bio || undefined,
-      });
-      
-      // Send welcome email
-      try {
-        await supabase.functions.invoke('send-welcome-email', {
-          body: { email: formData.email, name: formData.name, userType: 'agent' }
-        });
-      } catch (emailError) {
-        console.error('Failed to send welcome email:', emailError);
+      const result = await submitRegistration();
+      if (result.status === 'needs_confirmation' && result.candidate) {
+        setClaimCandidate(result.candidate);
+        return;
       }
-      
-      // Notify agency if agent joined via invite code
-      if (validatedAgencyId && validatedAgencyName) {
-        try {
-          await supabase.functions.invoke('send-agency-notification', {
-            body: {
-              type: 'agent_joined',
-              agencyId: validatedAgencyId,
-              agentName: formData.name,
-              agentEmail: formData.email
-            }
-          });
-        } catch (notifyError) {
-          console.error('Failed to notify agency:', notifyError);
-        }
-      }
-      
+      await runPostRegistrationSideEffects();
       setShowSuccessDialog(true);
     } catch (error) {
       // Error handled by mutation
+    }
+  };
+
+  const handleClaimConfirm = async () => {
+    if (!claimCandidate) return;
+    setClaimPendingChoice('claim');
+    try {
+      const result = await submitRegistration({ confirm_claim_agent_id: claimCandidate.id });
+      if (result.status === 'claimed' || result.status === 'created' || result.status === 'existing') {
+        setClaimCandidate(null);
+        await runPostRegistrationSideEffects();
+        setShowSuccessDialog(true);
+      }
+    } catch (error) {
+      // toast handled by mutation
+    } finally {
+      setClaimPendingChoice(null);
+    }
+  };
+
+  const handleClaimDeny = async () => {
+    setClaimPendingChoice('new');
+    try {
+      const result = await submitRegistration({ skip_match: true });
+      if (result.status === 'created' || result.status === 'existing') {
+        setClaimCandidate(null);
+        await runPostRegistrationSideEffects();
+        setShowSuccessDialog(true);
+      }
+    } catch (error) {
+      // toast handled by mutation
+    } finally {
+      setClaimPendingChoice(null);
     }
   };
 
