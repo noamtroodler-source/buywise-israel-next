@@ -31,15 +31,15 @@ export function AgencyDangerZone({ agencyId, agencyName }: Props) {
 
   if (!perms.isAdmin) {
     return (
-      <Card className="rounded-2xl border-destructive/20 bg-destructive/5">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-destructive">
-            <ShieldAlert className="h-5 w-5" /> Danger Zone
+      <Card className="rounded-2xl border-border/60 bg-muted/30">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base font-semibold text-foreground">
+            <ShieldAlert className="h-4 w-4 text-muted-foreground" /> Advanced settings
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Only Admins can transfer the founder badge or delete the agency. Ask an Admin to promote you first.
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Ownership transfer and agency deletion are reserved for Admins. Ask an Admin on your team to make this change.
           </p>
         </CardContent>
       </Card>
@@ -50,28 +50,32 @@ export function AgencyDangerZone({ agencyId, agencyName }: Props) {
   const transferCandidates = members.filter((m) => m.user_id !== undefined && (m.role === 'admin' || m.role === 'owner'));
 
   return (
-    <Card className="rounded-2xl border-destructive/30">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-destructive">
-          <ShieldAlert className="h-5 w-5" /> Danger Zone
+    <Card className="rounded-2xl border-border/60">
+      <CardHeader className="pb-4 border-b border-border/40">
+        <CardTitle className="flex items-center gap-2 text-base font-semibold text-foreground">
+          <ShieldAlert className="h-4 w-4 text-muted-foreground" /> Advanced settings
         </CardTitle>
         <p className="text-sm text-muted-foreground">
-          Admin actions. These cannot be undone.
+          Sensitive actions for agency Admins. Please proceed carefully — these changes cannot be undone.
         </p>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 p-4 rounded-xl border border-border/50 bg-muted/20">
-          <div>
-            <p className="font-medium flex items-center gap-2">
-              <Crown className="h-4 w-4 text-amber-500" /> Transfer founder badge
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Move the founder marker to another Admin. Permissions are unchanged — both keep full Admin powers.
-            </p>
+      <CardContent className="p-0 divide-y divide-border/40">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-5">
+          <div className="flex gap-3">
+            <div className="hidden sm:flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-500/10">
+              <Crown className="h-4 w-4 text-amber-600" />
+            </div>
+            <div className="space-y-1">
+              <p className="font-medium text-sm text-foreground">Transfer founder badge</p>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Move the founder marker to another Admin. Permissions stay the same — both keep full Admin powers.
+              </p>
+            </div>
           </div>
           <Button
             variant="outline"
-            className="rounded-xl border-amber-500/30 text-amber-700 hover:bg-amber-500/10"
+            size="sm"
+            className="rounded-lg shrink-0"
             onClick={() => setTransferOpen(true)}
             disabled={transferCandidates.length === 0}
           >
@@ -79,16 +83,19 @@ export function AgencyDangerZone({ agencyId, agencyName }: Props) {
           </Button>
         </div>
 
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 p-4 rounded-xl border border-destructive/30 bg-destructive/5">
-          <div>
-            <p className="font-medium text-destructive flex items-center gap-2">
-              <Trash2 className="h-4 w-4" /> Delete agency
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Permanently removes the agency and all its data. Listings will be unassigned.
-            </p>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-5 bg-destructive/[0.03]">
+          <div className="flex gap-3">
+            <div className="hidden sm:flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-destructive/10">
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </div>
+            <div className="space-y-1">
+              <p className="font-medium text-sm text-foreground">Delete agency</p>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Permanently removes this agency and all of its data. Listings will be unassigned from agents.
+              </p>
+            </div>
           </div>
-          <Button variant="destructive" className="rounded-xl" onClick={() => setDeleteOpen(true)}>
+          <Button variant="destructive" size="sm" className="rounded-lg shrink-0" onClick={() => setDeleteOpen(true)}>
             Delete agency
           </Button>
         </div>
