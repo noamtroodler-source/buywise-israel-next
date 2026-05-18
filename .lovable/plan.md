@@ -1,55 +1,95 @@
 ## Goal
-Get the remaining **29 CityZen listings** live (currently unpublished because they each have <4 photos), without violating the zero-storage policy on third-party media.
 
-## The blocker
-- We can't fabricate or re-host real photos.
-- We can't drop the 4-photo minimum (you set that as the publish gate).
-- So the only clean path is **re-scrape CityZen** to pick up more photos per listing, then re-run demo-fill.
+Stand up **Demo Realty TLV** — a hidden demo agency with a realistic team and inventory — so you can record the full Loom walkthrough (invite → signup → settings → team → add/assign listing → fix incomplete listings → submit for review) without touching real partners or polluting public surfaces.
 
-## Steps
+## Guardrails
 
-### 1. Re-scrape CityZen source
-- Trigger the existing CityZen scraper/import edge function against the live CityZen site.
-- For each listing: capture **all** photo URLs available on the source page (not just the first 1–3).
-- Store photo URLs as references only (no download), matching the zero-storage policy.
+- Everything created sits in **draft / unpublished** so it never appears on `/listings`, `/map`, `/agencies`, homepage, or search.
+- Agency uses `management_status='draft'`, `verification_status='draft'`, `is_verified=false`, `is_partner=false`.
+- All 30 listings start `is_published=false`, `verification_status='draft'`.
+- Slug `demo-realty-tlv`, and every row tagged `[DEMO]` in admin notes for one-line cleanup.
+- Respects No-Fabrication core memory: this is a recording sandbox, never surfaced publicly, never counted in metrics.
 
-### 2. Merge into existing rows (don't duplicate)
-- Match by source URL or address+price.
-- For each existing CityZen row, **union** the new photo URL list into `images[]`.
-- Update any other fields that came back richer from source (real bedrooms, real size, real description) — these overwrite demo-filled values and clear the per-field demo flag.
+## What gets created
 
-### 3. Re-run demo-fill on the merged set
-- Same `demo-fill-cityzen` function, unchanged behavior:
-  - Mock street numbers where missing
-  - Inferred bedrooms / size where missing
-  - 4–7 realistic features
-  - "Trusted Friend" English description
-  - Tag `is_demo_fabricated=true`, `data_quality_score=0`
-- Publish gate stays at **≥4 photos + city + price**.
+### 1. The agency (1 row in `agencies`)
+- Name: **Demo Realty TLV** · slug `demo-realty-tlv`
+- AI-generated minimalist logo uploaded to `agency-logos` bucket
+- 2-paragraph "Trusted Friend" English description
+- Office: Rothschild Blvd, Tel Aviv (placeholder)
+- Demo phone / email / website
+- Cities covered: Tel Aviv, Jerusalem, Netanya, Herzliya, Ramat Gan
+- Specializations: Apartments, Investment, International Buyers
+- 3 placeholder social links
 
-### 4. Handle leftovers honestly
-- Any listing that still has <4 photos after re-scrape stays unpublished. We do not invent photos.
-- Report the final count: how many published, how many still stuck, and why.
+### 2. The team (6 rows in `agents`, all provisional — no `auth.users` accounts so no real inboxes pinged)
 
-### 5. Verify
-- 0 listings outside Israel
-- 100% of published listings have ≥4 real photos
-- 100% of published listings have street number, bedrooms, size, features, description
-- Admin sees `is_demo_fabricated` flags; agencies/visitors see nothing demo-related
-- Analytics dashboards still exclude `is_demo_fabricated=true` rows
+| `agency_role` | Name | Email | Photo |
+|---|---|---|---|
+| owner | Sarah Cohen | demo.owner@buywiseisrael.com | AI portrait |
+| **admin** | **Noam Troodler** | **noam.troodler@gmail.com** | AI portrait |
+| agent | David Levi | demo.agent1@buywiseisrael.com | AI portrait |
+| agent | Maya Friedman | demo.agent2@buywiseisrael.com | AI portrait |
+| agent | Yossi Mizrahi | demo.agent3@buywiseisrael.com | AI portrait |
+| agent | Rachel Goldberg | demo.agent4@buywiseisrael.com | AI portrait |
+
+Each gets bio, license number, years of experience, languages (Hebrew + English ± others), neighborhoods covered.
+
+Note: Noam sits as **admin** (full operational power per `useAgencyPermissions`), Sarah holds the founder "owner" label.
+
+### 3. The inventory (30 rows in `properties`)
+
+**Distribution by agent** (so you can demo filtering/reassignment):
+- Sarah (owner): 6
+- Noam (admin): 6
+- David: 5 · Maya: 5 · Yossi: 4 · Rachel: 4
+
+**Mix**:
+- ~70% apartment, plus penthouse, garden_apartment, mini_penthouse, house, duplex
+- ~22 `for_sale`, ~8 `for_rent`
+- City spread weighted Tel Aviv, then Jerusalem / Herzliya / Netanya / Ramat Gan
+- Real popular neighborhoods (Florentin, Lev Tel Aviv, Old North, Baka, German Colony, etc.)
+- Realistic NIS prices per city × type
+- 3-5 stock interior URLs per listing (picsum, URL-only — respects zero-storage policy)
+- lat/lng within each city's bounding box so they render on the map when published
+
+### Completeness — 2 complete, 28 incomplete
+
+So the "fix listings needing required info" step in the launch checklist actually has work to do on camera.
+
+- **2 listings**: fully complete — all core fields populated. Used to demo "submit ready listings for review."
+- **28 listings**: each missing **1 or 2** of these core fields, varied across the set so the dashboard shows different "needs attention" reasons:
+  - `address` (null on ~6 — most visible missing field)
+  - `bedrooms` (null on ~6)
+  - `size_sqm` (null on ~5)
+  - `bathrooms` (null on ~4)
+  - `price` set to 0 / nullish (~3)
+  - `description` blank (~4)
+
+Each incomplete listing gets `verification_status='draft'` so it falls under the "to_review" bucket the `AgencyOnboardingProgress` checklist already filters on. This lights up the "Fix listings needing required info" step with a real count.
+
+## Recording flow this unlocks
+
+1. **Team page** — 6 agents on roster, demo "Send invite link" + reassign listings between them
+2. **Listings page** — 30 items, filter by agent, see "to-review" badge, bulk actions
+3. **Fix missing info** — click into incomplete listings, fill the missing field on camera
+4. **Submit for review** — push the 2 complete + freshly-fixed ones
+5. **Add listing wizard** — record a 31st live for the camera
+6. **Admin review** — switch to admin chair, approve one
+7. **Public preview** — flip `is_published=true` on 2-3 briefly to show buyer side, then flip back
+
+## Cleanup
+
+One SQL line removes everything: delete properties + agents + agency where `agency_id = '<demo-id>'`.
 
 ## Technical notes
-- Reuse existing scraper edge function for CityZen (no new function).
-- Merge logic: `images = array(distinct old || new)` keyed on URL.
-- demo-fill function already exists and works — just re-invoke after merge.
-- No schema changes.
 
-## Out of scope
-- Restoring the original 157 deleted listings (not recoverable).
-- Sourcing photos from anywhere other than CityZen's own site.
-- Removing the 4-photo publish gate.
+- Logo + 6 portraits: generated via image tools, uploaded to existing `agency-logos` / `agent-avatars` buckets (will verify bucket names during build)
+- Property images: remote picsum URLs in `images` array (same pattern Yad2 imports use)
+- All inserts via the `supabase--insert` tool in two passes: (1) agency + agents, (2) properties referencing returned agent IDs
+- No schema changes, no migration, no code edits, no edge function changes
 
-## One thing to confirm before I build
-Do you want me to:
-- **(A)** Re-scrape only — accept that some listings may still end up <4 photos and stay unpublished, OR
-- **(B)** Re-scrape + lower the publish gate to **≥1 photo** for CityZen demo rows specifically (gets all 36 live, but some will look thin)?
+## Open before I build
+
+1. **Logo vibe** — clean wordmark in deep navy + warm gold, or different palette?
+2. **Sarah/owner email** — `demo.owner@buywiseisrael.com` placeholder OK, or want a specific one?
