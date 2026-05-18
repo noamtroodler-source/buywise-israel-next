@@ -28,6 +28,37 @@ async function safeReadJson(r: { text: () => Promise<string> }): Promise<any | n
   }
 }
 
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function fetchAiJsonWithRetry(
+  url: string,
+  init: RequestInit,
+  attempts = 2,
+): Promise<{ response: Response; json: any | null; text: string }> {
+  let lastResponse: Response | null = null;
+  let lastText = "";
+
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    const response = await fetch(url, init);
+    const text = await response.text().catch(() => "");
+    lastResponse = response;
+    lastText = text;
+
+    if (!response.ok) return { response, json: null, text };
+    if (text.trim()) {
+      try {
+        return { response, json: JSON.parse(text), text };
+      } catch (e) {
+        console.error("Failed to parse AI gateway JSON", e, text.slice(0, 500));
+      }
+    }
+
+    if (attempt < attempts) await wait(600 * attempt);
+  }
+
+  return { response: lastResponse!, json: null, text: lastText };
+}
+
 function parseToolArguments(raw: string): any {
   let cleaned = raw
     .replace(/```json\s*/gi, "")
