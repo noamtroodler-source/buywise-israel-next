@@ -1,8 +1,7 @@
-// AI Listing Kickstart — extracts wizard-shaped property fields from
-// uploaded photos/screenshots + free text. Admin-only. Returns a partial
-// PropertyWizardData object plus per-field source notes, plus optional
-// detected_agent matched against the agency roster and an AI-picked
-// cover photo index when enough photos are provided.
+// AI Listing Kickstart — two-stage extraction.
+// Stage A: OCR/facts transcript from every screenshot.
+// Stage B: structured wizard fields from transcript + notes + images.
+// Plus deterministic post-processing to rescue facts the model dropped.
 import { createClient } from "npm:@supabase/supabase-js";
 
 const corsHeaders = {
@@ -11,22 +10,74 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const SYSTEM_PROMPT = `You are a bilingual (Hebrew/English) Israeli real estate analyst.
-You will be shown screenshots (Yad2, Madlan, agency websites, WhatsApp messages, floor plans, listing flyers) and/or a free-text description of a single Israeli property. Extract every field you can with high precision.
+// ─── Stage A: OCR / facts transcript ─────────────────────────────────
+const OCR_PROMPT = `You are an OCR + listing-fact transcriber for Israeli real estate screenshots (Yad2, Madlan, agency sites, WhatsApp, flyers, floor plans).
 
-CRITICAL OCR: Read ALL Hebrew and English text visible in every screenshot, including small print, price overlays, badges, sidebar metadata, breadcrumbs, headers, and any prominent numerals (₪, מיליון, חדרים, מ"ר, קומה, שנת בנייה). Do not skip a field if the value is clearly present in the image — extract it.
+For EACH image, write a short block in this exact form, in order:
+
+IMAGE <n>:
+- raw_text: every visible price, number, label, and Hebrew/English word that looks like a listing fact, joined by " | ". Include things like "3,250,000 ₪", "Mr 45" (square meters), "Rooms 1", "floor ground", "5 Floors in the building", "Nahalat Binyamin", "Tel Aviv-Yafo", "Apartment for sale", "Mediator", "new", "renovated", "flexible Entry date", "without Furniture", "9 sq m porch", "elevator", "porch", "dimension", "parking ✗", "Air conditioning ✗", "warehouse ✗", "Pool ✗", "Garden ✗", phone numbers, agent names, agency names.
+- listing_text: any free-form property description / blurb visible (Hebrew or English), verbatim.
+- agent_block: any visible agent name, phone, license number, or agency.
 
 Hard rules:
-- NEVER invent a price. If no price is visible in any image or text, leave it 0. But DO extract prices that ARE visible, including those shown as "₪3,800,000" or "3.8 מיליון ₪".
-- NEVER invent an address or city. Use only what you see. Match cities to common English spellings (Tel Aviv, Jerusalem, Herzliya, Ramat Gan, Netanya, Raanana, Modiin, Beit Shemesh, Rehovot, Petah Tikva, etc.). Hebrew neighborhood names like "נחלת בנימין" should be transliterated ("Nahalat Binyamin").
-- Israeli ROOM COUNT: Hebrew "X חדרים" is the total room count (Israeli convention). Store it as: bedrooms = floor(X) - 1, additional_rooms = 1 (the living room). For "3 חדרים" → bedrooms: 2, additional_rooms: 1. For "4 חדרים" → bedrooms: 3, additional_rooms: 1. For half-rooms like "3.5 חדרים" → bedrooms: 2, additional_rooms: 1 (the .5 is typically a small office/balcony, ignore). Only deviate if a floor plan clearly shows different counts.
-- Listing intent: "להשכרה / לשכירות / ₪/month / per month" => for_rent; "למכירה / for sale / asking price" => for_sale. Set listing_status_confidence to "low" if there is no clear cue in source (price alone is NOT enough).
-- Price is in NIS. If you see "$" convert at ~3.7 NIS/USD. If you see "מיליון" multiply by 1,000,000.
-- For description, write 2-4 short paragraphs in warm, plain English ("Trusted Friend" voice). Use only facts visible in the source. Never claim things you cannot verify.
-- For features[], pick from this controlled vocabulary only: balcony, elevator, storage, parking, mamad, sukkah_balcony, air_conditioning, central_ac, renovated, accessible, pool, garden, furnished, pet_friendly, view, near_park, near_schools, kosher_kitchen, smart_home.
-- For each non-trivial field you populate, add a one-sentence note in source_notes explaining where it came from ("price ₪3,800,000 from Yad2 header", "3 חדרים → 2 bedrooms + 1 additional room").
-- For anything you had to guess or are <70% sure about, list the field name in low_confidence_fields.
-- detected_agent: ONLY populate if a listing agent's name, phone, or license number is visibly stated in the source. Never invent. Leave blank otherwise.`;
+- Transcribe ONLY what is actually visible. Never invent.
+- Keep Hebrew in Hebrew; do not translate in this pass.
+- It's fine if a section is empty — write "(none)".
+- No commentary, no JSON, just the blocks above.`;
+
+async function ocrTranscript(imageUrls: string[], apiKey: string): Promise<string> {
+  if (imageUrls.length === 0) return "";
+  try {
+    const content: any[] = [{ type: "text", text: OCR_PROMPT }];
+    imageUrls.forEach((url, i) => {
+      content.push({ type: "text", text: `IMAGE ${i + 1}:` });
+      content.push({ type: "image_url", image_url: { url } });
+    });
+    const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-pro",
+        temperature: 0,
+        messages: [{ role: "user", content }],
+      }),
+    });
+    if (!r.ok) {
+      console.error("OCR pass failed", r.status, await r.text().catch(() => ""));
+      return "";
+    }
+    const j = await r.json();
+    return (j?.choices?.[0]?.message?.content || "").toString();
+  } catch (e) {
+    console.error("OCR pass error", e);
+    return "";
+  }
+}
+
+// ─── Stage B: structured extraction ──────────────────────────────────
+const SYSTEM_PROMPT = `You are a bilingual (Hebrew/English) Israeli real estate analyst.
+You receive: (1) an OCR/facts transcript already extracted from listing screenshots, (2) optional pasted notes, (3) the original images. Produce a single structured property record.
+
+Hard rules:
+- The OCR transcript is your PRIMARY source. If a fact appears there (price, sqm, rooms, floor, neighborhood, condition, balcony size, furnished status, etc.), it MUST be in your output. Do not drop it.
+- NEVER invent a price, address, or agent. If absent everywhere, leave it empty / 0.
+- Israeli ROOM COUNT: Hebrew "X חדרים" or "Rooms X" is the total room count. bedrooms = floor(X) - 1, additional_rooms = 1. "Rooms 1" → bedrooms: 0, additional_rooms: 1 (studio). "3 חדרים" → bedrooms: 2, additional_rooms: 1.
+- Price in NIS. "מיליון" × 1,000,000. "$" × 3.7.
+- Floor: "ground" / "קרקע" → 0. "minus 1" → -1.
+- "Mr 45" / "מ״ר 45" / "45 sqm" / "45 sq m" all mean size_sqm = 45 (or porch size if it says "porch 9 sq m").
+- Cities: use English ("Tel Aviv", "Jerusalem", "Herzliya"…). Hebrew neighborhoods → transliteration ("Nahalat Binyamin").
+- Listing intent: "להשכרה / ₪/month" → for_rent; "למכירה / for sale / asking price" → for_sale. Confidence "low" if no clear cue.
+- features[] vocabulary only: balcony, elevator, storage, parking, mamad, sukkah_balcony, air_conditioning, central_ac, renovated, accessible, pool, garden, furnished, pet_friendly, view, near_park, near_schools, kosher_kitchen, smart_home.
+- A visible "porch" / "מרפסת" / "balcony" tick → has_balcony true + "balcony" in features.
+- A visible "elevator" / "מעלית" tick → has_elevator true + "elevator".
+- A visible "warehouse" / "storage" / "מחסן" tick → has_storage true + "storage".
+- "without Furniture" / "ללא ריהוט" → furnished_status: "unfurnished".
+- "new" → condition: "new"; "renovated" / "משופץ" → "renovated".
+- description: 2-4 short warm "Trusted Friend" English paragraphs, facts only, no hype.
+- For every non-trivial field you populate, add a one-line source_notes entry ("price 3,250,000 ₪ from IMAGE 2 header").
+- low_confidence_fields: anything you guessed or are <70% sure about.
+- detected_agent: only if a person's name/phone/license is visibly stated.`;
 
 const SCHEMA = {
   type: "object",
@@ -37,15 +88,17 @@ const SCHEMA = {
       enum: ["apartment", "garden_apartment", "penthouse", "mini_penthouse", "duplex", "house", "cottage", "land", "commercial"],
     },
     listing_status: { type: "string", enum: ["for_sale", "for_rent"] },
-    listing_status_confidence: { type: "string", enum: ["high", "low"], description: "'low' when sale-vs-rent is a guess" },
-    price: { type: "number", description: "Price in NIS. 0 if unknown." },
+    listing_status_confidence: { type: "string", enum: ["high", "low"] },
+    price: { type: "number" },
     city: { type: "string" },
     neighborhood: { type: "string" },
     address: { type: "string" },
     bedrooms: { type: "number" },
     additional_rooms: { type: "number" },
+    source_rooms: { type: "number", description: "Original Israeli room count shown on the source" },
     bathrooms: { type: "number" },
     size_sqm: { type: "number" },
+    balcony_sqm: { type: "number" },
     floor: { type: "number" },
     total_floors: { type: "number" },
     year_built: { type: "number" },
@@ -56,8 +109,10 @@ const SCHEMA = {
     has_balcony: { type: "boolean" },
     has_elevator: { type: "boolean" },
     has_storage: { type: "boolean" },
+    is_accessible: { type: "boolean" },
     features: { type: "array", items: { type: "string" } },
     furnished_status: { type: "string", enum: ["fully", "semi", "unfurnished"] },
+    entry_date: { type: "string", description: "ISO date or 'flexible' / 'immediate'" },
     pets_policy: { type: "string", enum: ["allowed", "case_by_case", "not_allowed"] },
     lease_term: { type: "string", enum: ["6_months", "12_months", "24_months", "flexible", "other"] },
     agent_fee_required: { type: "boolean" },
@@ -66,11 +121,11 @@ const SCHEMA = {
     featured_highlight: { type: "string" },
     detected_agent: {
       type: "object",
-      description: "Listing agent identifiers visible in the source. Blank fields if not present.",
       properties: {
         name: { type: "string" },
         phone: { type: "string" },
         license_number: { type: "string" },
+        agency: { type: "string" },
       },
     },
     source_notes: { type: "array", items: { type: "string" } },
@@ -79,19 +134,163 @@ const SCHEMA = {
   required: ["listing_status", "listing_status_confidence", "source_notes"],
 };
 
-// ─── Helpers ─────────────────────────────────────────────────────────
-function normPhone(p?: string): string {
-  if (!p) return "";
-  const digits = p.replace(/\D/g, "");
-  // 972XXXXXXXXX or 0XXXXXXXXX → last 9 digits
-  return digits.slice(-9);
+// ─── Deterministic post-processing ───────────────────────────────────
+function recoverFromTranscript(extracted: any, transcript: string, notes: string): any {
+  const text = `${transcript}\n${notes}`;
+  const e = { ...extracted };
+  e.source_notes = Array.isArray(e.source_notes) ? [...e.source_notes] : [];
+  e.features = Array.isArray(e.features) ? [...e.features] : [];
+
+  const addNote = (s: string) => { if (!e.source_notes.includes(s)) e.source_notes.push(s); };
+  const addFeature = (f: string) => { if (!e.features.includes(f)) e.features.push(f); };
+
+  // Price — "3,250,000 ₪" / "₪ 3,250,000" / "3.8 מיליון"
+  if (!e.price || e.price === 0) {
+    const m = text.match(/([\d,]{5,})\s*(?:₪|NIS|ש"?ח|שקל)/i) || text.match(/(?:₪|NIS)\s*([\d,]{5,})/i);
+    if (m) {
+      const n = parseInt(m[1].replace(/,/g, ""), 10);
+      if (n >= 100_000) { e.price = n; addNote(`Recovered price ${n.toLocaleString()} ₪ from transcript`); }
+    }
+    if ((!e.price || e.price === 0)) {
+      const mm = text.match(/(\d+(?:\.\d+)?)\s*מיליון/);
+      if (mm) {
+        const n = Math.round(parseFloat(mm[1]) * 1_000_000);
+        e.price = n; addNote(`Recovered price ${n.toLocaleString()} ₪ ("מיליון") from transcript`);
+      }
+    }
+  }
+
+  // Size — "Mr 45" / "45 מ"ר" / "45 sqm" / "45 sq m" (but not the porch line)
+  if (!e.size_sqm) {
+    const lines = text.split(/\n/);
+    for (const line of lines) {
+      if (/porch|מרפסת|balcony/i.test(line)) continue;
+      const m = line.match(/(?:Mr|מ["']?ר|sq\.?\s?m|sqm)\s*(\d{2,4})/i) ||
+                line.match(/(\d{2,4})\s*(?:sq\.?\s?m|sqm|מ["']?ר)/i);
+      if (m) {
+        const n = parseInt(m[1], 10);
+        if (n >= 15 && n <= 2000) { e.size_sqm = n; addNote(`Recovered size ${n} sqm from transcript`); break; }
+      }
+    }
+  }
+
+  // Balcony / porch sqm — "porch 9 sq m" / "9 sq m porch" / "מרפסת 9"
+  if (!e.balcony_sqm) {
+    const m = text.match(/(?:porch|balcony|מרפסת)[^\d]{0,12}(\d{1,3})\s*(?:sq\.?\s?m|sqm|מ["']?ר)?/i) ||
+              text.match(/(\d{1,3})\s*(?:sq\.?\s?m|sqm|מ["']?ר)\s*(?:porch|balcony|מרפסת)/i);
+    if (m) {
+      const n = parseInt(m[1], 10);
+      if (n > 0 && n < 200) { e.balcony_sqm = n; addNote(`Recovered balcony ${n} sqm from transcript`); }
+    }
+  }
+
+  // Rooms — "Rooms 1" / "X חדרים"
+  if (e.bedrooms == null && e.additional_rooms == null) {
+    const m = text.match(/Rooms?\s*(\d+(?:\.\d)?)/i) || text.match(/(\d+(?:\.\d)?)\s*חדרים/);
+    if (m) {
+      const r = parseFloat(m[1]);
+      const sleeping = Math.max(0, Math.floor(r) - 1);
+      e.bedrooms = sleeping;
+      e.additional_rooms = 1;
+      e.source_rooms = r;
+      addNote(`Recovered rooms = ${r} → ${sleeping} bedrooms + 1 living from transcript`);
+    }
+  }
+
+  // Floor — "floor ground" / "קומה קרקע" / "floor 3" / "Floor minus 1"
+  if (e.floor == null) {
+    if (/floor\s*ground|קומת\s*קרקע|קומה\s*קרקע|floor\s*קרקע/i.test(text)) {
+      e.floor = 0; addNote("Recovered floor = ground from transcript");
+    } else {
+      const m = text.match(/floor\s*(?:minus\s*)?(-?\d+)/i) || text.match(/קומה\s*(-?\d+)/);
+      if (m) { e.floor = parseInt(m[1], 10); addNote(`Recovered floor = ${e.floor} from transcript`); }
+    }
+  }
+
+  // Total floors — "5 Floors in the building"
+  if (!e.total_floors) {
+    const m = text.match(/(\d{1,2})\s*Floors?\s*in\s*the\s*building/i) || text.match(/בניין\s*בן\s*(\d{1,2})\s*קומות/);
+    if (m) { e.total_floors = parseInt(m[1], 10); addNote(`Recovered total floors = ${e.total_floors} from transcript`); }
+  }
+
+  // City / neighborhood — "In the Nahalat Binyamin neighborhood, Tel Aviv-Yafo"
+  if (!e.city) {
+    if (/Tel\s*Aviv/i.test(text)) { e.city = "Tel Aviv"; addNote("Recovered city = Tel Aviv from transcript"); }
+    else if (/Jerusalem|ירושלים/i.test(text)) { e.city = "Jerusalem"; addNote("Recovered city = Jerusalem from transcript"); }
+    else if (/Herzliya|הרצליה/i.test(text)) { e.city = "Herzliya"; addNote("Recovered city = Herzliya from transcript"); }
+    else if (/Netanya|נתניה/i.test(text)) { e.city = "Netanya"; addNote("Recovered city = Netanya from transcript"); }
+    else if (/Raanana|רעננה/i.test(text)) { e.city = "Raanana"; addNote("Recovered city = Raanana from transcript"); }
+  }
+  if (!e.neighborhood) {
+    const m = text.match(/(?:In the|in the|בשכונת|שכונת)\s+([A-Z][A-Za-z' \-]{2,40}?)\s+neighborhood/);
+    if (m) { e.neighborhood = m[1].trim(); addNote(`Recovered neighborhood = ${e.neighborhood} from transcript`); }
+  }
+
+  // Listing status / type
+  if (!e.listing_status || e.listing_status_confidence === "low") {
+    if (/for\s*sale|למכירה|asking\s*price/i.test(text)) { e.listing_status = "for_sale"; e.listing_status_confidence = "high"; addNote("Listing intent = sale from transcript"); }
+    else if (/for\s*rent|להשכרה|לשכירות|per\s*month|\/month/i.test(text)) { e.listing_status = "for_rent"; e.listing_status_confidence = "high"; addNote("Listing intent = rent from transcript"); }
+  }
+  if (!e.property_type) {
+    if (/penthouse|פנטהאוז/i.test(text)) e.property_type = "penthouse";
+    else if (/apartment|דירה/i.test(text)) e.property_type = "apartment";
+    else if (/house|cottage|בית פרטי|קוטג'/i.test(text)) e.property_type = "house";
+  }
+
+  // Condition
+  if (!e.condition) {
+    if (/\bnew\b|חדש/i.test(text)) e.condition = "new";
+    else if (/renovated|משופץ/i.test(text)) e.condition = "renovated";
+  }
+
+  // Furnished
+  if (!e.furnished_status) {
+    if (/without\s*Furniture|ללא\s*ריהוט|unfurnished/i.test(text)) e.furnished_status = "unfurnished";
+    else if (/fully\s*furnished|מרוהט\s*במלואו/i.test(text)) e.furnished_status = "fully";
+    else if (/furnished|מרוהט/i.test(text)) e.furnished_status = "semi";
+  }
+
+  // Entry date
+  if (!e.entry_date && /flexible\s*Entry\s*date|כניסה\s*גמישה/i.test(text)) {
+    e.entry_date = "flexible"; addNote("Entry date = flexible from transcript");
+  }
+
+  // Booleans / features from ticked rows
+  const tick = (label: RegExp) => {
+    // matches "<label> ✓" / "<label> v" / "<label>: yes" / "<label>" present without explicit ✗
+    const re = new RegExp(`${label.source}[^\\n]{0,30}(?:✓|✔|yes|כן|true|present)`, "i");
+    if (re.test(text)) return true;
+    // Also accept bare presence on its own line ("porch" alone in advantages list)
+    const present = new RegExp(`(^|[|\\n\\s])${label.source}([|\\n\\s]|$)`, "i");
+    const negated = new RegExp(`${label.source}[^\\n]{0,15}(?:✗|✘|no|לא|false)`, "i");
+    return present.test(text) && !negated.test(text);
+  };
+  if (e.has_balcony !== true && tick(/porch|balcony|מרפסת/)) { e.has_balcony = true; addFeature("balcony"); addNote("Recovered has_balcony from transcript"); }
+  if (e.has_elevator !== true && tick(/elevator|מעלית/)) { e.has_elevator = true; addFeature("elevator"); addNote("Recovered has_elevator from transcript"); }
+  if (e.has_storage !== true && tick(/warehouse|storage|מחסן/)) { e.has_storage = true; addFeature("storage"); addNote("Recovered has_storage from transcript"); }
+  if (!e.ac_type && /(central\s*ac|מיזוג\s*מרכזי)/i.test(text)) { e.ac_type = "central"; addFeature("central_ac"); }
+  else if (!e.ac_type && /(air\s*conditioning|מיזוג\s*אוויר|מזגן)/i.test(text) && !/Air\s*conditioning[^\n]{0,15}(?:✗|✘|no)/i.test(text)) { e.ac_type = "split"; addFeature("air_conditioning"); }
+  if (e.is_accessible !== true && /Accessible[^\n]{0,20}(?:✓|yes)/i.test(text)) { e.is_accessible = true; addFeature("accessible"); }
+
+  // Parking
+  if (e.parking == null) {
+    const m = text.match(/(\d)\s*parking/i) || text.match(/parking[^\d✗]{0,10}(\d)/i);
+    if (m) { e.parking = parseInt(m[1], 10); addNote(`Recovered parking = ${e.parking} from transcript`); }
+  }
+
+  // Agent
+  if (!e.detected_agent) e.detected_agent = {};
+  if (!e.detected_agent.phone) {
+    const m = text.match(/(\+?972[-\s]?\d[\d\-\s]{7,12}|0\d[-\s]?\d{3}[-\s]?\d{4})/);
+    if (m) e.detected_agent.phone = m[1];
+  }
+
+  return e;
 }
 
-function normName(n?: string): string {
-  if (!n) return "";
-  return n.toLowerCase().normalize("NFKD").replace(/[^\p{L}\p{N}\s]/gu, "").trim();
-}
-
+// ─── Agent matching helpers ──────────────────────────────────────────
+function normPhone(p?: string): string { if (!p) return ""; return p.replace(/\D/g, "").slice(-9); }
+function normName(n?: string): string { if (!n) return ""; return n.toLowerCase().normalize("NFKD").replace(/[^\p{L}\p{N}\s]/gu, "").trim(); }
 function nameTokenJaccard(a: string, b: string): number {
   const ta = new Set(normName(a).split(/\s+/).filter(Boolean));
   const tb = new Set(normName(b).split(/\s+/).filter(Boolean));
@@ -100,83 +299,44 @@ function nameTokenJaccard(a: string, b: string): number {
   for (const t of ta) if (tb.has(t)) inter++;
   return inter / (ta.size + tb.size - inter);
 }
-
 type RosterAgent = { id: string; name: string; phone: string | null; license_number: string | null };
-
 function matchAgent(detected: { name?: string; phone?: string; license_number?: string } | null | undefined, roster: RosterAgent[]) {
   if (!detected) return null;
   const dName = (detected.name || "").trim();
   const dPhone = normPhone(detected.phone);
   const dLicense = (detected.license_number || "").trim().toLowerCase();
   if (!dName && !dPhone && !dLicense) return null;
-
-  // Tier 1: license
-  if (dLicense) {
-    const hit = roster.find((a) => (a.license_number || "").trim().toLowerCase() === dLicense);
-    if (hit) return { agent: hit, basis: "license_number" as const, confidence: "high" as const };
-  }
-  // Tier 2: phone
-  if (dPhone) {
-    const hit = roster.find((a) => normPhone(a.phone || "") === dPhone);
-    if (hit) return { agent: hit, basis: "phone" as const, confidence: "high" as const };
-  }
-  // Tier 3: name jaccard
+  if (dLicense) { const hit = roster.find((a) => (a.license_number || "").trim().toLowerCase() === dLicense); if (hit) return { agent: hit, basis: "license_number" as const, confidence: "high" as const }; }
+  if (dPhone) { const hit = roster.find((a) => normPhone(a.phone || "") === dPhone); if (hit) return { agent: hit, basis: "phone" as const, confidence: "high" as const }; }
   if (dName) {
     let best: { agent: RosterAgent; score: number } | null = null;
-    for (const a of roster) {
-      const s = nameTokenJaccard(dName, a.name);
-      if (!best || s > best.score) best = { agent: a, score: s };
-    }
-    if (best && best.score >= 0.7) {
-      return { agent: best.agent, basis: "name" as const, confidence: "high" as const };
-    }
-    if (best && best.score >= 0.4) {
-      return { agent: best.agent, basis: "name_weak" as const, confidence: "low" as const };
-    }
+    for (const a of roster) { const s = nameTokenJaccard(dName, a.name); if (!best || s > best.score) best = { agent: a, score: s }; }
+    if (best && best.score >= 0.7) return { agent: best.agent, basis: "name" as const, confidence: "high" as const };
+    if (best && best.score >= 0.4) return { agent: best.agent, basis: "name_weak" as const, confidence: "low" as const };
   }
   return null;
 }
 
 async function pickCoverPhotoIndex(imageUrls: string[], apiKey: string): Promise<number | null> {
-  if (imageUrls.length < 8) return null;
+  if (imageUrls.length < 4) return null;
   try {
     const content: any[] = [
-      {
-        type: "text",
-        text: `You are choosing the single best cover photo for a real-estate listing from ${imageUrls.length} photos (indexed 0..${imageUrls.length - 1} in the order shown).
-
-Ranking priority:
-1. Clear exterior / curb appeal (building facade, garden, street view)
-2. Bright, wide interior shot (living room, kitchen)
-3. Standout amenity (pool, panoramic view, rooftop)
-
-Avoid as cover: floor plans, dark/blurry shots, bathroom-only shots, close-ups, screenshots of listing pages with overlaid text.
-
-Reply with ONLY a single integer: the zero-based index of the chosen cover photo.`,
-      },
+      { type: "text", text: `Pick the best cover photo from ${imageUrls.length} images (indexed 0..${imageUrls.length - 1}). Prefer exterior / wide bright interior / standout view. Avoid floor plans, dark/blurry, bathrooms, screenshots with overlaid text. Reply with ONLY a single integer.` },
       ...imageUrls.map((url) => ({ type: "image_url", image_url: { url } })),
     ];
     const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [{ role: "user", content }],
-        temperature: 0,
-      }),
+      body: JSON.stringify({ model: "google/gemini-2.5-flash", messages: [{ role: "user", content }], temperature: 0 }),
     });
     if (!r.ok) return null;
     const j = await r.json();
-    const txt = j?.choices?.[0]?.message?.content?.toString() || "";
-    const m = txt.match(/\d+/);
+    const m = (j?.choices?.[0]?.message?.content?.toString() || "").match(/\d+/);
     if (!m) return null;
     const idx = parseInt(m[0], 10);
     if (Number.isNaN(idx) || idx < 0 || idx >= imageUrls.length) return null;
     return idx;
-  } catch (e) {
-    console.error("cover pick failed", e);
-    return null;
-  }
+  } catch (e) { console.error("cover pick failed", e); return null; }
 }
 
 Deno.serve(async (req) => {
@@ -184,33 +344,17 @@ Deno.serve(async (req) => {
 
   try {
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Missing authorization" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    if (!authHeader) return new Response(JSON.stringify({ error: "Missing authorization" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-    const userClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
+    const userClient = createClient(supabaseUrl, anonKey, { global: { headers: { Authorization: authHeader } } });
     const { data: { user } } = await userClient.auth.getUser();
-    if (!user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
+    if (!user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     const admin = createClient(supabaseUrl, serviceKey);
     const { data: isAdmin } = await admin.rpc("has_role", { _user_id: user.id, _role: "admin" });
-    if (!isAdmin) {
-      return new Response(JSON.stringify({ error: "Admin only" }), {
-        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    if (!isAdmin) return new Response(JSON.stringify({ error: "Admin only" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const body = await req.json();
     const imageUrls: string[] = Array.isArray(body.image_urls) ? body.image_urls.slice(0, 20) : [];
@@ -219,30 +363,27 @@ Deno.serve(async (req) => {
     const agencyId: string | null = body.agency_id || null;
 
     if (imageUrls.length === 0 && description.trim().length < 10) {
-      return new Response(
-        JSON.stringify({ error: "Provide at least one image or a description (10+ chars)" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Provide at least one image or a description (10+ chars)" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      return new Response(JSON.stringify({ error: "AI service not configured" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    if (!LOVABLE_API_KEY) return new Response(JSON.stringify({ error: "AI service not configured" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    // Fetch agency roster in parallel — used post-extraction
     const rosterPromise: Promise<RosterAgent[]> = agencyId
-      ? admin
-          .from("agents")
-          .select("id, name, phone, license_number")
-          .eq("agency_id", agencyId)
-          .then(({ data }) => (data || []) as RosterAgent[])
+      ? admin.from("agents").select("id, name, phone, license_number").eq("agency_id", agencyId).then(({ data }) => (data || []) as RosterAgent[])
       : Promise.resolve([] as RosterAgent[]);
 
+    // ── Stage A: OCR transcript (parallel with cover pick) ──
+    const [transcript, coverIdx] = await Promise.all([
+      ocrTranscript(imageUrls, LOVABLE_API_KEY),
+      pickCoverPhotoIndex(imageUrls, LOVABLE_API_KEY),
+    ]);
+    console.log("OCR transcript length:", transcript.length);
+
+    // ── Stage B: structured extraction ──
     const userContent: any[] = [];
-    if (description.trim()) userContent.push({ type: "text", text: `Description / notes:\n${description}` });
+    if (transcript) userContent.push({ type: "text", text: `OCR / facts transcript from the screenshots:\n${transcript}` });
+    if (description.trim()) userContent.push({ type: "text", text: `Additional notes from user:\n${description}` });
     if (hint.listing_status) userContent.push({ type: "text", text: `Hint — listing intent is ${hint.listing_status}` });
     if (hint.city) userContent.push({ type: "text", text: `Hint — likely city is ${hint.city}` });
     for (const url of imageUrls) userContent.push({ type: "image_url", image_url: { url } });
@@ -258,14 +399,7 @@ Deno.serve(async (req) => {
           { role: "user", content: userContent },
         ],
         temperature: 0,
-        tools: [{
-          type: "function",
-          function: {
-            name: "extract_listing",
-            description: "Return structured wizard-ready property data extracted from the inputs.",
-            parameters: SCHEMA,
-          },
-        }],
+        tools: [{ type: "function", function: { name: "extract_listing", description: "Structured wizard-ready property data.", parameters: SCHEMA } }],
         tool_choice: { type: "function", function: { name: "extract_listing" } },
       }),
     });
@@ -273,55 +407,28 @@ Deno.serve(async (req) => {
     if (!aiResp.ok) {
       const text = await aiResp.text();
       console.error("AI gateway error", aiResp.status, text);
-      if (aiResp.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limited, try again in a moment" }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (aiResp.status === 402) {
-        return new Response(JSON.stringify({ error: "AI credits exhausted — add credits in Workspace settings" }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      return new Response(JSON.stringify({ error: "AI extraction failed", detail: text }), {
-        status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      if (aiResp.status === 429) return new Response(JSON.stringify({ error: "Rate limited, try again in a moment" }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      if (aiResp.status === 402) return new Response(JSON.stringify({ error: "AI credits exhausted — add credits in Workspace settings" }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ error: "AI extraction failed", detail: text }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     const aiJson = await aiResp.json();
     const toolCall = aiJson?.choices?.[0]?.message?.tool_calls?.[0];
     if (!toolCall?.function?.arguments) {
-      return new Response(JSON.stringify({ error: "AI returned no structured output", raw: aiJson }), {
-        status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(JSON.stringify({ error: "AI returned no structured output" }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-
     let extracted: any = {};
-    try {
-      extracted = JSON.parse(toolCall.function.arguments);
-    } catch {
-      return new Response(JSON.stringify({ error: "AI returned invalid JSON" }), {
-        status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    try { extracted = JSON.parse(toolCall.function.arguments); } catch {
+      return new Response(JSON.stringify({ error: "AI returned invalid JSON" }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // ─── Agent fuzzy match + cover pick in parallel ────────────────
-    const [roster, coverIdx] = await Promise.all([
-      rosterPromise,
-      pickCoverPhotoIndex(imageUrls, LOVABLE_API_KEY),
-    ]);
+    // ── Deterministic rescue pass ──
+    extracted = recoverFromTranscript(extracted, transcript, description);
 
+    // ── Agent match ──
+    const roster = await rosterPromise;
     const match = matchAgent(extracted.detected_agent, roster);
-    const agentMatch = match
-      ? {
-          agent_id: match.agent.id,
-          agent_name: match.agent.name,
-          basis: match.basis,
-          confidence: match.confidence,
-        }
-      : null;
-
-    // If agent wasn't confidently matched but was detected, surface in low_confidence
+    const agentMatch = match ? { agent_id: match.agent.id, agent_name: match.agent.name, basis: match.basis, confidence: match.confidence } : null;
     if (extracted.detected_agent && (!match || match.confidence === "low")) {
       const lc: string[] = Array.isArray(extracted.low_confidence_fields) ? extracted.low_confidence_fields : [];
       if (!lc.includes("assigned_agent")) lc.push("assigned_agent");
@@ -329,17 +436,11 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({
-        extracted,
-        agent_match: agentMatch,
-        cover_photo_index: coverIdx,
-      }),
+      JSON.stringify({ extracted, agent_match: agentMatch, cover_photo_index: coverIdx, ocr_transcript: transcript }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (e: any) {
     console.error("ai-extract-listing error", e);
-    return new Response(JSON.stringify({ error: e?.message || "Unexpected error" }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(JSON.stringify({ error: e?.message || "Unexpected error" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });
