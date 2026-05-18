@@ -18,11 +18,14 @@ import {
   useRejectJoinRequest,
   useAgencyInvites,
 } from '@/hooks/useAgencyManagement';
+import { useAgencyPermissions } from '@/hooks/useAgencyPermissions';
+import { useAuth } from '@/hooks/useAuth';
 import { useSeatLimitCheck } from '@/hooks/useSeatLimitCheck';
 import { SeatSummaryCard } from '@/components/agency/SeatSummaryCard';
 import { SeatManagementPanel } from '@/components/agency/SeatManagementPanel';
 import { SeatOverageConsentDialog } from '@/components/agency/SeatOverageConsentDialog';
 import { CreateInviteDialog } from '@/components/agency/CreateInviteDialog';
+import { InviteAgentDialog } from '@/components/agency/InviteAgentDialog';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { AgencyTeamSkeleton } from '@/components/agency/skeletons/AgencyPageSkeletons';
@@ -30,6 +33,7 @@ import { AgencyAnnouncements } from '@/components/agency/AgencyAnnouncements';
 import { AgencyAdminsPanel } from '@/components/agency/AgencyAdminsPanel';
 
 export default function AgencyTeam() {
+  const { user } = useAuth();
   const { data: agency, isLoading, isAgencyAdmin } = useMyAgency();
   const { data: team = [] } = useAgencyTeam(agency?.id);
   const { data: joinRequests = [] } = useAgencyJoinRequests(agency?.id);
@@ -37,9 +41,12 @@ export default function AgencyTeam() {
   const approveRequest = useApproveJoinRequest();
   const rejectRequest = useRejectJoinRequest();
   const { canInvite, currentSeats, maxSeats, isOverLimit } = useSeatLimitCheck();
+  const { isOwner } = useAgencyPermissions(agency?.id);
 
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [createInviteOpen, setCreateInviteOpen] = useState(false);
+  const [inviteAgentOpen, setInviteAgentOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('members');
   const [consentDialogOpen, setConsentDialogOpen] = useState(false);
   const [pendingApproval, setPendingApproval] = useState<{ requestId: string; agentId: string } | null>(null);
 
