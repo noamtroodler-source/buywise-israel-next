@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { Sparkles, Upload, X, Loader2, Wand2, ArrowRight, UserCheck, UserX, AlertTriangle, ImageIcon, ExternalLink, Check, RotateCcw } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -69,6 +70,7 @@ export function AiListingKickstartDialog({
   agencyId: string;
 }) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [images, setImages] = useState<UploadedImage[]>([]);
   const [description, setDescription] = useState('');
   const [hintIntent, setHintIntent] = useState<'auto' | 'for_sale' | 'for_rent'>('auto');
@@ -454,6 +456,61 @@ export function AiListingKickstartDialog({
     return aliases[normalized] || 'for_sale';
   };
 
+  const normalizeFurnishedStatus = (value: unknown) => {
+    const normalized = String(value ?? '')
+      .trim()
+      .toLowerCase()
+      .replace(/[\s-]+/g, '_');
+
+    const aliases: Record<string, 'fully' | 'semi' | 'unfurnished'> = {
+      fully: 'fully',
+      full: 'fully',
+      furnished: 'fully',
+      fully_furnished: 'fully',
+      yes: 'fully',
+      semi: 'semi',
+      partly: 'semi',
+      partial: 'semi',
+      partially_furnished: 'semi',
+      semi_furnished: 'semi',
+      unfurnished: 'unfurnished',
+      not_furnished: 'unfurnished',
+      no_furniture: 'unfurnished',
+      without: 'unfurnished',
+      without_furniture: 'unfurnished',
+      none: 'unfurnished',
+      no: 'unfurnished',
+    };
+
+    return aliases[normalized] ?? null;
+  };
+
+  const normalizeAcType = (value: unknown) => {
+    const normalized = String(value ?? '')
+      .trim()
+      .toLowerCase()
+      .replace(/[\s-]+/g, '_');
+
+    const aliases: Record<string, 'none' | 'split' | 'central' | 'mini_central'> = {
+      none: 'none',
+      no: 'none',
+      no_ac: 'none',
+      without: 'none',
+      split: 'split',
+      splits: 'split',
+      split_units: 'split',
+      unit: 'split',
+      units: 'split',
+      central: 'central',
+      central_ac: 'central',
+      mini_central: 'mini_central',
+      mini_central_ac: 'mini_central',
+      mini: 'mini_central',
+    };
+
+    return aliases[normalized] ?? null;
+  };
+
   const pushToListings = async () => {
     if (!extracted) return;
     const finalStatus = normalizeListingStatus(statusChoice ?? extracted.listing_status ?? 'for_sale');
@@ -495,8 +552,8 @@ export function AiListingKickstartDialog({
         total_floors: toNullableInt(extracted.total_floors),
         year_built: toNullableInt(extracted.year_built),
         parking: toNullableInt(extracted.parking),
-        ac_type: (extracted as any).ac_type ?? null,
-        furnished_status: extracted.furnished_status ?? null,
+        ac_type: normalizeAcType((extracted as any).ac_type),
+        furnished_status: normalizeFurnishedStatus(extracted.furnished_status),
         vaad_bayit_monthly: toNullableInt(extracted.vaad_bayit_monthly),
         has_balcony: !!extracted.has_balcony,
         has_elevator: !!extracted.has_elevator,
@@ -516,6 +573,10 @@ export function AiListingKickstartDialog({
       const { error } = await supabase.from('properties').insert(row);
       if (error) throw error;
       try { localStorage.removeItem(draftKey(agencyId)); } catch {}
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['provisioning-agency-listings', agencyId] }),
+        queryClient.invalidateQueries({ queryKey: ['provisioning-agency-listing-count', agencyId] }),
+      ]);
       toast.success('Sent to Listings & Quality for review');
       onOpenChange(false);
     } catch (e: any) {
