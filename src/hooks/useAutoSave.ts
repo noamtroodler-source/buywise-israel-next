@@ -88,6 +88,8 @@ export function useAutoSave<T, M = Record<string, unknown>>({
       clearTimeout(debounceTimerRef.current);
     }
 
+    if (!enabled) return;
+
     const currentData = JSON.stringify(data);
 
     // Mark dirty if data differs from initial mount data
@@ -120,7 +122,7 @@ export function useAutoSave<T, M = Record<string, unknown>>({
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [data, metadata, actualStorageKey, debounceMs]);
+  }, [data, metadata, actualStorageKey, debounceMs, enabled]);
 
   // Auto-save to database at intervals
   useEffect(() => {
