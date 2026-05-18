@@ -511,6 +511,30 @@ export function useBulkUpdateListings(agencyId: string | null) {
   });
 }
 
+export function useDeleteListings(agencyId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      if (ids.length === 0) return { deleted: 0 };
+      // Clean up rows that reference properties via FK before deleting the listings
+      // themselves. We swallow errors from optional tables so a missing reference
+      // table never blocks the delete.
+      await supabase.from('import_job_items').delete().in('property_id', ids).then(() => {}, () => {});
+      await supabase.from('listing_quality_flags').delete().in('property_id', ids).then(() => {}, () => {});
+      const { error } = await supabase.from('properties').delete().in('id', ids);
+      if (error) throw error;
+      return { deleted: ids.length };
+    },
+    onSuccess: ({ deleted }) => {
+      qc.invalidateQueries({ queryKey: ['provisioning-agency-listings', agencyId] });
+      qc.invalidateQueries({ queryKey: ['provisioning-agency-listing-count', agencyId] });
+      qc.invalidateQueries({ queryKey: ['agencyListingsManagement'] });
+      toast.success(`Deleted ${deleted} listing${deleted === 1 ? '' : 's'}`);
+    },
+    onError: (e: any) => toast.error(e?.message || 'Failed to delete listings'),
+  });
+}
+
 export function useRevealCredentials() {
   return useMutation({
     mutationFn: async (input: { userId?: string; credentialId?: string }) => {
