@@ -11,6 +11,7 @@ import { AgencyProvisioningSidebar } from '@/components/admin/agency-provisionin
 import { AgencyProfileSection } from '@/components/admin/agency-provisioning/AgencyProfileSection';
 import { AgentRosterSection } from '@/components/admin/agency-provisioning/AgentRosterSection';
 import { ImportListingsSection } from '@/components/admin/agency-provisioning/ImportListingsSection';
+import { ManualAddListingSection } from '@/components/admin/agency-provisioning/ManualAddListingSection';
 import { ListingsQualitySection } from '@/components/admin/agency-provisioning/ListingsQualitySection';
 import { HandoverSection } from '@/components/admin/agency-provisioning/HandoverSection';
 import { OnboardingMonitorSection } from '@/components/admin/agency-provisioning/OnboardingMonitorSection';
