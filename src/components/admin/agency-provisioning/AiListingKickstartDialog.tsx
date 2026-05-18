@@ -85,7 +85,8 @@ export function AiListingKickstartDialog({
   const [generatingDescription, setGeneratingDescription] = useState(false);
   const [draftLoaded, setDraftLoaded] = useState(false);
   const [savedAt, setSavedAt] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const infoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!open || !agencyId) return;
