@@ -262,7 +262,15 @@ export default function AgencyListings() {
   const bulkConfirmListings = useBulkConfirmAgencyListings();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | AgencyListingDisplayStatusKey>(() => (searchParams.get('status') as AgencyListingDisplayStatusKey) || 'all');
+  const initialStatusParam = searchParams.get('status') || '';
+  const initialStatusKeys = initialStatusParam
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean) as AgencyListingDisplayStatusKey[];
+  const [statusFilter, setStatusFilter] = useState<'all' | AgencyListingDisplayStatusKey>(
+    () => (initialStatusKeys.length === 1 ? initialStatusKeys[0] : 'all')
+  );
+  const multiStatusKeys = initialStatusKeys.length > 1 ? new Set(initialStatusKeys) : null;
   const [agentFilter, setAgentFilter] = useState<string>('all');
   const [cityFilter, setCityFilter] = useState<string>('all');
   const [roleFilter, setRoleFilter] = useState<'all' | 'primary' | 'co_listed'>('all');
