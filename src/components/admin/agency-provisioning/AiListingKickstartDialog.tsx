@@ -991,6 +991,32 @@ function Field({ label, value }: { label: string; value: any }) {
   );
 }
 
+function EditField({ label, value, onChange, type = 'text' }: { label: string; value: any; onChange: (v: string) => void; type?: 'text' | 'number' }) {
+  return (
+    <div className="space-y-0.5">
+      <div className="text-muted-foreground text-[10px] uppercase tracking-wide">{label}</div>
+      <Input
+        type={type}
+        value={value ?? ''}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-8 text-xs"
+      />
+    </div>
+  );
+}
+
+function ToggleChip({ label, on, onChange }: { label: string; on: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!on)}
+      className={`px-2 py-0.5 rounded-full border text-xs transition ${on ? 'bg-primary text-primary-foreground border-primary' : 'bg-background text-muted-foreground hover:border-primary/50'}`}
+    >
+      {label}
+    </button>
+  );
+}
+
 function ImageGrid({
   images,
   bucket,
