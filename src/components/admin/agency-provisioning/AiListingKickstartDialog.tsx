@@ -430,13 +430,13 @@ export function AiListingKickstartDialog({
       savedAt: new Date().toISOString(),
     };
     try {
-      localStorage.setItem(AGENCY_WIZARD_STORAGE_KEY, JSON.stringify(payload));
+      localStorage.setItem(wizardStorageKey(agencyId), JSON.stringify(payload));
     } catch {
       toast.error('Could not save draft locally');
       return;
     }
     onOpenChange(false);
-    navigate('/agency/properties/new');
+    navigate(`/agency/properties/new?agencyId=${agencyId}`);
   };
 
   const reset = () => {
