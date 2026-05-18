@@ -229,26 +229,25 @@ export default function AgencyImport() {
           {agency && (
             <Card className="rounded-2xl border-primary/10">
               <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-4">
                   <div>
-                    <h3 className="text-sm font-semibold">Auto-Sync</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-semibold">Auto-Sync</h3>
+                      <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                        Beta
+                      </span>
+                    </div>
                     <p className="text-xs text-muted-foreground">
-                      Automatically check for new listings daily
-                      {(agency as any).last_sync_at && (
-                        <> · Last sync: {new Date((agency as any).last_sync_at).toLocaleDateString()}</>
-                      )}
+                      Automatically check for new listings weekly
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1 italic">
+                      Coming soon — fully available in about 2 weeks.
                     </p>
                   </div>
                   <Switch
-                    checked={(agency as any).auto_sync_enabled || false}
-                    onCheckedChange={(checked) => {
-                      updateAutoSyncMutation.mutate({
-                        agencyId: agency.id,
-                        enabled: checked,
-                        url: (agency as any).auto_sync_url || agency.website || undefined,
-                      });
-                    }}
-                    disabled={updateAutoSyncMutation.isPending || !(agency.website || (agency as any).auto_sync_url)}
+                    checked={false}
+                    disabled
+                    aria-label="Auto-Sync (coming soon)"
                   />
                 </div>
               </CardContent>
