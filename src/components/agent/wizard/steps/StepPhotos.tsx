@@ -6,9 +6,9 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 export function StepPhotos() {
   const { data, updateData } = usePropertyWizard();
   
-  const minPhotos = data.bedrooms + (data.additional_rooms || 0) + data.bathrooms;
-  const safeMinPhotos = Math.max(minPhotos, 3); // At least 3 no matter what
-  const recommendedPhotos = safeMinPhotos + 2;
+  const safeMinPhotos = 3;
+  const minPhotos = safeMinPhotos;
+  const recommendedPhotos = 5;
   const hasEnoughPhotos = data.images.length >= safeMinPhotos;
 
   return (
@@ -55,7 +55,7 @@ export function StepPhotos() {
               )}
               {!hasEnoughPhotos && (
                 <span>
-                  {' '}— Minimum {safeMinPhotos} photos required ({data.bedrooms} bed{data.bedrooms !== 1 ? 's' : ''} + {data.additional_rooms || 0} room{(data.additional_rooms || 0) !== 1 ? 's' : ''} + {data.bathrooms} bath{data.bathrooms !== 1 ? 's' : ''})
+                  {' '}— Minimum {safeMinPhotos} photos required
                 </span>
               )}
             </AlertDescription>
