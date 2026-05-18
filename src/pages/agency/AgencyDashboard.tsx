@@ -74,7 +74,9 @@ export default function AgencyDashboard() {
 
   const pendingRequests = joinRequests.length;
   const toReviewCount = listings.filter((listing) => getAgencyListingDisplayStatus(listing).key === 'to_review').length;
+  const needsFixesCount = listings.filter((listing) => getAgencyListingDisplayStatus(listing).key === 'needs_fixes').length;
   const readyToSubmitCount = listings.filter((listing) => getAgencyListingDisplayStatus(listing).key === 'ready_to_submit').length;
+  const pendingReviewCount = listings.filter((listing) => getAgencyListingDisplayStatus(listing).key === 'pending_buywise_review').length;
   const liveListingsCount = listings.filter((listing) => getAgencyListingDisplayStatus(listing).key === 'live').length;
 
   // Quick action navigation items
