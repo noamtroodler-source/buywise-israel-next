@@ -38,7 +38,9 @@ interface AgencyOnboardingProgressProps {
   listingsCount?: number;
   liveListingsCount?: number;
   toReviewCount?: number;
+  needsFixesCount?: number;
   readyToSubmitCount?: number;
+  pendingReviewCount?: number;
 }
 
 export function AgencyOnboardingProgress({
@@ -48,8 +50,11 @@ export function AgencyOnboardingProgress({
   listingsCount = 0,
   liveListingsCount = 0,
   toReviewCount = 0,
+  needsFixesCount = 0,
   readyToSubmitCount = 0,
+  pendingReviewCount = 0,
 }: AgencyOnboardingProgressProps) {
+  const needsAttentionCount = toReviewCount + needsFixesCount;
   const profileComplete = Boolean(
     agency.logo_url &&
     (agency.description?.length || 0) >= 150 &&
@@ -93,22 +98,34 @@ export function AgencyOnboardingProgress({
     {
       id: 'fix',
       label: 'Fix listings needing required info',
-      description: toReviewCount > 0 ? `${toReviewCount} listing${toReviewCount === 1 ? '' : 's'} need core details` : 'Required fields are handled',
+      description: needsAttentionCount > 0 ? `${needsAttentionCount} listing${needsAttentionCount === 1 ? '' : 's'} need core details` : 'Required fields are handled',
       icon: Wrench,
-      isComplete: listingsCount > 0 && toReviewCount === 0,
-      link: '/agency/listings?status=to_review',
+      isComplete: listingsCount > 0 && needsAttentionCount === 0,
+      link: '/agency/listings?status=to_review,needs_fixes',
       action: 'Review listings',
-      count: toReviewCount,
+      count: needsAttentionCount,
     },
     {
       id: 'submit',
       label: 'Submit ready listings for review',
       description: `${readyToSubmitCount} listing${readyToSubmitCount === 1 ? '' : 's'} ready for BuyWise review`,
       icon: Send,
-      isComplete: readyToSubmitCount === 0 && listingsCount > 0 && toReviewCount === 0,
+      isComplete: readyToSubmitCount === 0 && listingsCount > 0 && needsAttentionCount === 0,
       link: '/agency/listings?status=ready_to_submit',
       action: 'Submit batch',
       count: readyToSubmitCount,
+    },
+    {
+      id: 'pending',
+      label: 'Awaiting BuyWise review',
+      description: pendingReviewCount > 0
+        ? `${pendingReviewCount} listing${pendingReviewCount === 1 ? '' : 's'} submitted — typically reviewed within 1 business day`
+        : 'Submitted listings appear here while BuyWise reviews them',
+      icon: Send,
+      isComplete: liveListingsCount >= 1 || (listingsCount > 0 && pendingReviewCount === 0 && readyToSubmitCount === 0 && needsAttentionCount === 0),
+      link: '/agency/listings?status=pending_buywise_review',
+      action: 'View submitted',
+      count: pendingReviewCount,
     },
     {
       id: 'live',
