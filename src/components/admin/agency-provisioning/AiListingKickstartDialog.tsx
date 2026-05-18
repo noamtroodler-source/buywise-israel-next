@@ -103,6 +103,51 @@ export function AiListingKickstartDialog({
     setImages((prev) => prev.filter((it) => it !== img));
   };
 
+  const setCoverFromImage = (img: UploadedImage) => {
+    const readyOnly = images.filter((i) => i.publicUrl);
+    const idx = readyOnly.indexOf(img);
+    if (idx >= 0) setCoverIndex(idx);
+  };
+
+  const enhanceCover = async () => {
+    const readyOnly = images.filter((i) => i.publicUrl);
+    if (coverIndex == null || coverIndex < 0 || coverIndex >= readyOnly.length) {
+      toast.error('Pick a cover photo first');
+      return;
+    }
+    const target = readyOnly[coverIndex];
+    if (!target.publicUrl || target.enhancing) return;
+    setImages((prev) => prev.map((it) => it === target ? { ...it, enhancing: true } : it));
+    try {
+      const { data, error } = await supabase.functions.invoke('enhance-image', {
+        body: {
+          image_url: target.publicUrl,
+          bucket: 'property-images',
+          path: `ai-kickstart/enhanced-${crypto.randomUUID()}.png`,
+          style: 'photo_correct',
+        },
+      });
+      if (error) throw error;
+      if (data?.enhanced && data?.image_url) {
+        setImages((prev) => prev.map((it) =>
+          it === target
+            ? { ...it, publicUrl: data.image_url, previewUrl: data.image_url, enhancing: false, enhanced: true }
+            : it,
+        ));
+        toast.success('Cover photo enhanced');
+      } else {
+        setImages((prev) => prev.map((it) => it === target ? { ...it, enhancing: false } : it));
+        const reason = data?.reason === 'rate_limited' ? 'Rate limited — try again shortly'
+          : data?.reason === 'credits_exhausted' ? 'AI credits exhausted'
+          : 'Enhancement skipped — original kept';
+        toast.info(reason);
+      }
+    } catch (e: any) {
+      setImages((prev) => prev.map((it) => it === target ? { ...it, enhancing: false } : it));
+      toast.error(e?.message || 'Enhancement failed');
+    }
+  };
+
   const onDrop = (e: React.DragEvent) => {
     e.preventDefault();
     if (e.dataTransfer.files?.length) handleFiles(e.dataTransfer.files);
