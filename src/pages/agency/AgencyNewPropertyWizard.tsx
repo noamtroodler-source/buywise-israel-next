@@ -149,7 +149,7 @@ function AgencyWizardContent() {
 
   const autoSave = useAutoSave<PropertyWizardData, AgencyWizardMetadata>({
     data,
-    storageKey: AGENCY_WIZARD_STORAGE_KEY,
+    storageKey,
     autoSaveInterval: 0,
     useSessionKey: false,
     metadata: { currentStep, assignedAgentId },
