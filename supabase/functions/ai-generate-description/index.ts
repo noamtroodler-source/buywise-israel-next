@@ -54,7 +54,14 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const fields = body.fields || {};
     const notes: string = (body.notes || "").toString().slice(0, 4000);
-    const imageUrls: string[] = Array.isArray(body.image_urls) ? body.image_urls.slice(0, 12) : [];
+    const rawUrls: string[] = Array.isArray(body.image_urls) ? body.image_urls : [];
+    const kinds: string[] = Array.isArray(body.image_kinds) ? body.image_kinds : [];
+    // Only feed real property photos to the writer. Spec sheets, floor plans, and screenshots
+    // are not visual evidence of finishes/light/ceilings.
+    const photoUrls = (kinds.length === rawUrls.length
+      ? rawUrls.filter((_, i) => kinds[i] === "property_photo")
+      : rawUrls
+    ).slice(0, 12);
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) return new Response(JSON.stringify({ error: "AI service not configured" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -73,14 +80,19 @@ Deno.serve(async (req) => {
       { type: "text", text: `Known fields (JSON):\n${JSON.stringify(keep, null, 2)}` },
     ];
     if (notes.trim()) userContent.push({ type: "text", text: `Extra notes / source text:\n${notes}` });
-    for (const url of imageUrls) userContent.push({ type: "image_url", image_url: { url } });
+    if (photoUrls.length > 0) {
+      userContent.push({ type: "text", text: `The following ${photoUrls.length} image(s) are real photos of the property. Anything you say about ceilings, light, finishes, view, or layout MUST be visible in one of these.` });
+      for (const url of photoUrls) userContent.push({ type: "image_url", image_url: { url } });
+    } else {
+      userContent.push({ type: "text", text: `No property photos were provided. Describe ONLY what the structured fields and notes say. Do not invent visual details.` });
+    }
 
     const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: "google/gemini-2.5-pro",
-        temperature: 0.3,
+        temperature: 0.2,
         messages: [
           { role: "system", content: SYSTEM },
           { role: "user", content: userContent },
