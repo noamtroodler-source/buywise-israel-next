@@ -376,6 +376,16 @@ export default function AgencyTeam() {
         onOpenChange={setCreateInviteOpen}
       />
 
+      <InviteAgentDialog
+        open={inviteAgentOpen}
+        onOpenChange={setInviteAgentOpen}
+        defaultInviteCode={agency.default_invite_code}
+        onManageCodes={() => {
+          setInviteAgentOpen(false);
+          setActiveTab('invites');
+        }}
+      />
+
       {maxSeats !== null && (
         <SeatOverageConsentDialog
           open={consentDialogOpen}
