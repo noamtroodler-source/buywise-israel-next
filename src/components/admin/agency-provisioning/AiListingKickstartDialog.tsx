@@ -312,6 +312,7 @@ export function AiListingKickstartDialog({
       const { data, error } = await supabase.functions.invoke('ai-extract-listing', {
         body: {
           image_urls: ready.map((i) => i.publicUrl),
+          image_items: ready.map((i) => ({ publicUrl: i.publicUrl, url: i.publicUrl, bucket: i.bucket })),
           description: description.trim(),
           agency_id: agencyId,
           hint: {
