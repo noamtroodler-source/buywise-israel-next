@@ -298,12 +298,22 @@ export function AiListingKickstartDialog({
       return;
     }
 
-    const readyImages = images.filter((i) => i.publicUrl).map((i) => i.publicUrl!);
-    // Reorder so AI-picked cover is first.
-    let orderedImages = readyImages;
-    if (coverIndex != null && coverIndex >= 0 && coverIndex < readyImages.length) {
-      orderedImages = [readyImages[coverIndex], ...readyImages.filter((_, i) => i !== coverIndex)];
+    // Only carry real property photos + floor plans into the listing — never spec sheets / screenshots.
+    const readyAll = images.filter((i) => i.publicUrl);
+    const listingImages = readyAll
+      .filter((i) => !i.kind || i.kind === 'property_photo' || i.kind === 'floor_plan')
+      .map((i) => i.publicUrl!);
+    // Cover must be a property_photo. coverIndex is relative to readyAll order, so translate.
+    let coverUrl: string | null = null;
+    if (coverIndex != null && coverIndex >= 0 && coverIndex < readyAll.length) {
+      const candidate = readyAll[coverIndex];
+      if (candidate?.publicUrl && listingImages.includes(candidate.publicUrl)) {
+        coverUrl = candidate.publicUrl;
+      }
     }
+    const orderedImages = coverUrl
+      ? [coverUrl, ...listingImages.filter((u) => u !== coverUrl)]
+      : listingImages;
 
     const finalStatus = statusChoice ?? extracted.listing_status;
 
