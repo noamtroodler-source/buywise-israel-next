@@ -211,7 +211,7 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const imageUrls: string[] = Array.isArray(body.image_urls) ? body.image_urls.slice(0, 12) : [];
+    const imageUrls: string[] = Array.isArray(body.image_urls) ? body.image_urls.slice(0, 20) : [];
     const description: string = (body.description || "").toString().slice(0, 8000);
     const hint: { listing_status?: string; city?: string } = body.hint || {};
     const agencyId: string | null = body.agency_id || null;
