@@ -52,6 +52,20 @@ import { AGENCY_LISTING_STATUS_OPTIONS, AgencyListingDisplayStatusKey, getAgency
 
 const IMPORTED_BANNER_KEY = 'agency_imported_drafts_banner_dismissed';
 const LAUNCH_REVIEW_GUIDANCE_KEY = 'agency_launch_review_guidance_dismissed';
+const REVIEW_WORK_STATUS_KEYS = new Set<AgencyListingDisplayStatusKey>(['to_review', 'needs_fixes']);
+const VALID_STATUS_KEYS = new Set<AgencyListingDisplayStatusKey>(AGENCY_LISTING_STATUS_OPTIONS.map((status) => status.key));
+type ListingStatusFilterValue = 'all' | 'review_work' | AgencyListingDisplayStatusKey;
+
+function parseStatusFilterParam(statusParam: string | null): ListingStatusFilterValue {
+  const keys = (statusParam ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s): s is AgencyListingDisplayStatusKey => VALID_STATUS_KEYS.has(s as AgencyListingDisplayStatusKey));
+
+  if (keys.length === 2 && keys.every((key) => REVIEW_WORK_STATUS_KEYS.has(key))) return 'review_work';
+  if (keys.length === 1) return keys[0];
+  return 'all';
+}
 
 function ImportedDraftsGuidance({ listings }: { listings: any[] }) {
   const [dismissed, setDismissed] = useState(true);
