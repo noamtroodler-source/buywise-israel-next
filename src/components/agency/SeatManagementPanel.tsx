@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
-import { AlertTriangle, Home, Clock, ShieldCheck, MoreVertical, Crown, Mail, Loader2 } from 'lucide-react';
+import { AlertTriangle, Home, Clock, ShieldCheck, MoreVertical, Crown, Mail, Loader2, Pencil } from 'lucide-react';
+import { EditAgentDialog } from './EditAgentDialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
