@@ -142,7 +142,7 @@ export function AiListingKickstartDialog({
   const draftPayload = useMemo(() => ({
     images: images
       .filter((i) => i.publicUrl)
-      .map((i) => ({ publicUrl: i.publicUrl, fileName: i.file?.name, enhanced: !!i.enhanced, kind: i.kind })),
+      .map((i) => ({ publicUrl: i.publicUrl, fileName: i.file?.name, enhanced: !!i.enhanced, kind: i.kind, bucket: i.bucket })),
     description,
     hintIntent,
     hintCity,
