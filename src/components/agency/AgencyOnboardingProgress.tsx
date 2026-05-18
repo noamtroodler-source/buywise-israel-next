@@ -38,7 +38,9 @@ interface AgencyOnboardingProgressProps {
   listingsCount?: number;
   liveListingsCount?: number;
   toReviewCount?: number;
+  needsFixesCount?: number;
   readyToSubmitCount?: number;
+  pendingReviewCount?: number;
 }
 
 export function AgencyOnboardingProgress({
