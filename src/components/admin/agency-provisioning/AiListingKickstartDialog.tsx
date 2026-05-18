@@ -210,8 +210,8 @@ export function AiListingKickstartDialog({
   };
 
   const setCoverFromImage = (img: UploadedImage) => {
-    if (img.kind && img.kind !== 'property_photo') {
-      toast.info('Only real property photos can be the cover.');
+    if (img.bucket !== 'photo') {
+      toast.info('Only listing photos can be the cover.');
       return;
     }
     const readyOnly = images.filter((i) => i.publicUrl);
