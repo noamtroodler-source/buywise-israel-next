@@ -379,6 +379,84 @@ export function AiListingKickstartDialog({
 
   const needsStatusChoice = !!extracted && extracted.listing_status_confidence === 'low' && !statusChoice;
   const blockedByDuplicate = duplicates.length > 0 && !duplicateAcknowledged;
+  const [pushing, setPushing] = useState(false);
+
+  const updateField = <K extends keyof ExtractedListing>(key: K, value: ExtractedListing[K]) => {
+    setExtracted((prev) => prev ? { ...prev, [key]: value } : prev);
+  };
+
+  const buildListingImages = () => {
+    const readyAll = images.filter((i) => i.publicUrl);
+    const listingImages = readyAll.filter((i) => i.bucket === 'photo').map((i) => i.publicUrl!);
+    let coverUrl: string | null = null;
+    if (coverIndex != null && coverIndex >= 0 && coverIndex < readyAll.length) {
+      const c = readyAll[coverIndex];
+      if (c?.publicUrl && listingImages.includes(c.publicUrl)) coverUrl = c.publicUrl;
+    }
+    return coverUrl ? [coverUrl, ...listingImages.filter((u) => u !== coverUrl)] : listingImages;
+  };
+
+  const pushToListings = async () => {
+    if (!extracted) return;
+    if (needsStatusChoice) { toast.warning('Choose sale or rent first'); return; }
+    if (blockedByDuplicate) { toast.warning('Acknowledge the possible duplicate first'); return; }
+    const finalStatus = (statusChoice ?? extracted.listing_status) as string | undefined;
+    const missing: string[] = [];
+    if (!extracted.title?.trim()) missing.push('title');
+    if (!extracted.price || extracted.price <= 0) missing.push('price');
+    if (!extracted.property_type) missing.push('type');
+    if (!finalStatus) missing.push('sale/rent');
+    if (!extracted.city?.trim()) missing.push('city');
+    if (missing.length) { toast.error(`Missing: ${missing.join(', ')}`); return; }
+
+    setPushing(true);
+    try {
+      const row: any = {
+        title: extracted.title,
+        description: extracted.description || null,
+        property_type: extracted.property_type,
+        listing_status: finalStatus,
+        price: extracted.price,
+        address: extracted.address || null,
+        city: extracted.city,
+        neighborhood: extracted.neighborhood || null,
+        bedrooms: extracted.bedrooms ?? null,
+        bathrooms: extracted.bathrooms ?? null,
+        size_sqm: extracted.size_sqm ?? null,
+        floor: extracted.floor ?? null,
+        total_floors: extracted.total_floors ?? null,
+        year_built: extracted.year_built ?? null,
+        parking: extracted.parking ?? null,
+        ac_type: (extracted as any).ac_type ?? null,
+        furnished_status: extracted.furnished_status ?? null,
+        vaad_bayit_monthly: extracted.vaad_bayit_monthly ?? null,
+        has_balcony: !!extracted.has_balcony,
+        has_elevator: !!extracted.has_elevator,
+        has_storage: !!extracted.has_storage,
+        features: extracted.features || [],
+        images: buildListingImages(),
+        primary_agency_id: agencyId,
+        claimed_by_agency_id: agencyId,
+        agent_id: selectedAgentId,
+        verification_status: 'pending_review',
+        submitted_at: new Date().toISOString(),
+        is_published: false,
+        added_manually: true,
+        import_source: 'kickstart_ai',
+        provisioning_audit_status: 'pending',
+      };
+      const { error } = await supabase.from('properties').insert(row);
+      if (error) throw error;
+      try { localStorage.removeItem(draftKey(agencyId)); } catch {}
+      toast.success('Sent to Listings & Quality for review');
+      onOpenChange(false);
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to create listing');
+    } finally {
+      setPushing(false);
+    }
+  };
+
 
   const openWizard = () => {
     if (!extracted) return;
