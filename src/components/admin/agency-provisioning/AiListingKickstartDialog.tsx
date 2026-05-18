@@ -257,9 +257,9 @@ export function AiListingKickstartDialog({
     }
   };
 
-  const onDrop = (e: React.DragEvent) => {
+  const onDrop = (bucket: ImageBucket) => (e: React.DragEvent) => {
     e.preventDefault();
-    if (e.dataTransfer.files?.length) handleFiles(e.dataTransfer.files);
+    if (e.dataTransfer.files?.length) handleFiles(e.dataTransfer.files, bucket);
   };
 
   const checkDuplicates = async (ex: ExtractedListing) => {
