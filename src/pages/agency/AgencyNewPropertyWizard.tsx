@@ -71,6 +71,8 @@ interface AgencyWizardMetadata {
 
 function AgencyWizardContent() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const overrideAgencyId = searchParams.get('agencyId');
   const { data, currentStep, setCurrentStep, goNext, goBack, canGoNext, isLastStep, setStepOffset, loadFromSaved, getStepErrors, getAllErrors } = usePropertyWizard();
 
   // Compute step errors for progress bar (step 0 = Assign Agent has no validation here)
@@ -84,7 +86,24 @@ function AgencyWizardContent() {
     setStepOffset(1);
   }, [setStepOffset]);
 
-  const { data: agency } = useMyAgency();
+  const { data: myAgency } = useMyAgency();
+  // Admin provisioning flow can target a different agency via ?agencyId=
+  const { data: overrideAgency } = useQuery({
+    queryKey: ['wizard-override-agency', overrideAgencyId],
+    queryFn: async () => {
+      if (!overrideAgencyId) return null;
+      const { data, error } = await supabase
+        .from('agencies')
+        .select('*')
+        .eq('id', overrideAgencyId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!overrideAgencyId,
+  });
+  const agency = overrideAgencyId ? overrideAgency : myAgency;
+  const storageKey = wizardStorageKey(agency?.id);
   const { data: team = [] } = useAgencyTeam(agency?.id);
   const { data: listings = [] } = useAgencyListingsManagement(agency?.id);
   const { data: cities = [] } = useCities();
