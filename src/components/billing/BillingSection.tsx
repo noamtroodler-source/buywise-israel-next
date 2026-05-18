@@ -44,9 +44,13 @@ export function BillingSection() {
 
   if (!sub) return null;
 
+  // Founding-partner override: every agency is on the free Founding Partner plan
+  // until paid tiers go live. Remove this flag to restore real billing UI.
+  const FOUNDING_PARTNER_OVERRIDE = true;
+
   const hasSubscription = sub.status !== 'none';
   const isTrialing = sub.status === 'trialing';
-  const isFoundingAgency = !!sub.isFoundingAgency;
+  const isFoundingAgency = FOUNDING_PARTNER_OVERRIDE || !!sub.isFoundingAgency;
   const trialDaysLeft = isTrialing && sub.trialEnd
     ? Math.max(0, differenceInDays(new Date(sub.trialEnd), new Date()))
     : null;
@@ -66,84 +70,97 @@ export function BillingSection() {
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Current Plan */}
-        <div className="p-4 rounded-xl bg-muted/30 border border-border/50 space-y-3">
+        <div className="p-4 rounded-xl bg-gradient-to-br from-amber-50 to-primary/5 border border-amber-200/60 space-y-3">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
               <p className="text-sm text-muted-foreground">Current Plan</p>
-              <p className="text-lg font-semibold text-foreground">{sub.planName}</p>
+              <p className="text-lg font-semibold text-foreground">
+                {isFoundingAgency ? 'Founding Partner' : sub.planName}
+              </p>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
-              <Badge
-                variant="secondary"
-                className={
-                  sub.status === 'past_due'
-                    ? 'bg-destructive/10 text-destructive border-destructive/20'
-                    : sub.status === 'trialing'
-                    ? 'bg-primary/10 text-primary border-primary/20'
-                    : sub.status === 'active'
-                    ? 'bg-primary/10 text-primary border-primary/20'
-                    : 'bg-muted text-muted-foreground'
-                }
-              >
-                {sub.status === 'none' ? 'No Plan' : sub.status}
-              </Badge>
-              {sub.billingCycle && (
-                <Badge variant="outline" className="text-xs">
-                  {sub.billingCycle === 'annual' ? 'Annual billing' : 'Monthly billing'}
+              {isFoundingAgency ? (
+                <Badge className="bg-amber-100 text-amber-900 border border-amber-300 hover:bg-amber-100">
+                  Free · Founding Partner
                 </Badge>
+              ) : (
+                <>
+                  <Badge
+                    variant="secondary"
+                    className={
+                      sub.status === 'past_due'
+                        ? 'bg-destructive/10 text-destructive border-destructive/20'
+                        : sub.status === 'trialing'
+                        ? 'bg-primary/10 text-primary border-primary/20'
+                        : sub.status === 'active'
+                        ? 'bg-primary/10 text-primary border-primary/20'
+                        : 'bg-muted text-muted-foreground'
+                    }
+                  >
+                    {sub.status === 'none' ? 'No Plan' : sub.status}
+                  </Badge>
+                  {sub.billingCycle && (
+                    <Badge variant="outline" className="text-xs">
+                      {sub.billingCycle === 'annual' ? 'Annual billing' : 'Monthly billing'}
+                    </Badge>
+                  )}
+                </>
               )}
             </div>
           </div>
 
-          {isTrialing && trialDaysLeft !== null && (
-            <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <Clock className="h-3 w-3" />
-              {trialDaysLeft} day{trialDaysLeft !== 1 ? 's' : ''} remaining in free trial
+          {isFoundingAgency ? (
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              You're in free as one of our founding agencies — unlimited agents, unlimited listings,
+              and 3 featured homepage spots every month. We'll give you plenty of notice before any
+              paid tiers kick in.
             </p>
-          )}
+          ) : (
+            <>
+              {isTrialing && trialDaysLeft !== null && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  {trialDaysLeft} day{trialDaysLeft !== 1 ? 's' : ''} remaining in free trial
+                </p>
+              )}
 
-          {isFoundingAgency && (
-            <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <Clock className="h-3 w-3" />
-              Founding agency access is free. Only featured listings beyond the 3 monthly free slots are paid.
-            </p>
-          )}
-
-          {!isTrialing && hasSubscription && sub.currentPeriodEnd && (
-            <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <Calendar className="h-3 w-3" />
-              Next billing: {format(new Date(sub.currentPeriodEnd), 'MMMM d, yyyy')}
-            </p>
+              {!isTrialing && hasSubscription && sub.currentPeriodEnd && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Calendar className="h-3 w-3" />
+                  Next billing: {format(new Date(sub.currentPeriodEnd), 'MMMM d, yyyy')}
+                </p>
+              )}
+            </>
           )}
         </div>
 
         {/* Actions */}
-        <div className="flex flex-wrap gap-2">
-          {!isFoundingAgency && (
+        {!isFoundingAgency && (
+          <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" asChild className="rounded-xl border-primary/20 hover:bg-primary/5">
               <Link to="/pricing">
                 <ArrowUpRight className="h-4 w-4 mr-1.5" />
                 {hasSubscription ? 'Change Plan' : 'View Plans'}
               </Link>
             </Button>
-          )}
-          {hasSubscription && !isTrialing && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-xl border-primary/20 hover:bg-primary/5"
-              onClick={openBillingPortal}
-              disabled={portalLoading}
-            >
-              {portalLoading ? (
-                <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
-              ) : (
-                <ExternalLink className="h-4 w-4 mr-1.5" />
-              )}
-              Manage Billing
-            </Button>
-          )}
-        </div>
+            {hasSubscription && !isTrialing && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-xl border-primary/20 hover:bg-primary/5"
+                onClick={openBillingPortal}
+                disabled={portalLoading}
+              >
+                {portalLoading ? (
+                  <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                ) : (
+                  <ExternalLink className="h-4 w-4 mr-1.5" />
+                )}
+                Manage Billing
+              </Button>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
