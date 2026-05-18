@@ -519,6 +519,33 @@ export function AiListingKickstartDialog({
                   </div>
                 )}
 
+                {/* Agent selector */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Assign to agent</Label>
+                  <Select
+                    value={selectedAgentId ?? 'none'}
+                    onValueChange={(v) => setSelectedAgentId(v === 'none' ? null : v)}
+                  >
+                    <SelectTrigger className="h-9">
+                      <SelectValue placeholder="Unassigned" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Unassigned</SelectItem>
+                      {agencyAgents.map((a) => (
+                        <SelectItem key={a.id} value={a.id}>
+                          {a.name}
+                          {agentMatch?.agent_id === a.id ? ' — AI match' : ''}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {agentMatch && agentMatch.confidence === 'low' && selectedAgentId !== agentMatch.agent_id && (
+                    <p className="text-[11px] text-amber-700">
+                      AI guessed "{agentMatch.agent_name}" — confirm or pick the right one.
+                    </p>
+                  )}
+                </div>
+
                 {/* Duplicate warning */}
                 {duplicates.length > 0 && (
                   <div className="rounded-md border border-amber-300 bg-amber-50 p-3 space-y-2">
