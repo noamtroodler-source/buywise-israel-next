@@ -239,6 +239,30 @@ export function AiListingKickstartDialog({
     }
   };
 
+  const regenerateDescription = async () => {
+    if (!extracted) return;
+    setGeneratingDescription(true);
+    try {
+      const imageUrls = images.filter((i) => i.publicUrl).map((i) => i.publicUrl!);
+      const { fields } = { fields: { ...extracted } } as any;
+      delete fields.description;
+      delete fields.source_notes;
+      delete fields.low_confidence_fields;
+      delete fields.detected_agent;
+      const { data, error } = await supabase.functions.invoke('ai-generate-description', {
+        body: { fields, notes: description.trim(), image_urls: imageUrls },
+      });
+      if (error) throw error;
+      if (!data?.description) throw new Error('No description returned');
+      setExtracted((prev) => prev ? { ...prev, description: data.description } : prev);
+      toast.success('Description rewritten');
+    } catch (e: any) {
+      toast.error(e?.message || 'Description generation failed');
+    } finally {
+      setGeneratingDescription(false);
+    }
+  };
+
   const needsStatusChoice = !!extracted && extracted.listing_status_confidence === 'low' && !statusChoice;
   const blockedByDuplicate = duplicates.length > 0 && !duplicateAcknowledged;
 
