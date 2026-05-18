@@ -73,6 +73,7 @@ export function AiListingKickstartDialog({
   const [statusChoice, setStatusChoice] = useState<'for_sale' | 'for_rent' | null>(null);
   const [agencyAgents, setAgencyAgents] = useState<{ id: string; name: string }[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
+  const [generatingDescription, setGeneratingDescription] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
