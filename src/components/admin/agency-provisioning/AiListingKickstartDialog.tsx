@@ -261,7 +261,7 @@ export function AiListingKickstartDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 min-h-0 -mx-6 px-6">
+        <div className="flex-1 min-h-0 overflow-y-auto -mx-6 px-6">
           <div className="space-y-5 py-2">
             {/* Dropzone */}
             <div
@@ -496,7 +496,7 @@ export function AiListingKickstartDialog({
               </Card>
             )}
           </div>
-        </ScrollArea>
+        </div>
 
         <DialogFooter className="gap-2 sm:gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
