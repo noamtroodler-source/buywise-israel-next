@@ -64,7 +64,7 @@ Hard rules:
 - NEVER invent a price, address, or agent. If absent everywhere, leave it empty / 0.
 - Israeli ROOM COUNT: Hebrew "X חדרים" or "Rooms X" is the total room count. bedrooms = floor(X) - 1, additional_rooms = 1. "Rooms 1" → bedrooms: 0, additional_rooms: 1 (studio). "3 חדרים" → bedrooms: 2, additional_rooms: 1.
 - Price in NIS. "מיליון" × 1,000,000. "$" × 3.7.
-- Floor: "ground" / "קרקע" → 0. "minus 1" → -1.
+- Floor: "ground" / "ground floor" / "קרקע" / "קומת קרקע" → 0 (NEVER -1). Only use negative numbers if the source literally says "מינוס", "minus", "basement", or "מרתף".
 - "Mr 45" / "מ״ר 45" / "45 sqm" / "45 sq m" all mean size_sqm = 45 (or porch size if it says "porch 9 sq m").
 - Cities: use English ("Tel Aviv", "Jerusalem", "Herzliya"…). Hebrew neighborhoods → transliteration ("Nahalat Binyamin").
 - Listing intent: "להשכרה / ₪/month" → for_rent; "למכירה / for sale / asking price" → for_sale. Confidence "low" if no clear cue.
