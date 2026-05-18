@@ -122,9 +122,8 @@ export function useAgencyTeam(agencyId: string | undefined) {
       if (agentIds.length > 0) {
         const { data: props } = await supabase
           .from('properties')
-          .select('agent_id')
-          .in('agent_id', agentIds)
-          .eq('is_published', true);
+          .select('agent_id, verification_status')
+          .in('agent_id', agentIds);
 
         for (const p of props ?? []) {
           if (p.agent_id) listingCounts[p.agent_id] = (listingCounts[p.agent_id] ?? 0) + 1;
