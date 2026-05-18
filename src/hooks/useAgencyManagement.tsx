@@ -546,7 +546,7 @@ export function useUpdateAgentDetails() {
       for (const [k, v] of Object.entries(fields)) {
         if (v !== undefined) payload[k] = v === '' ? null : v;
       }
-      const { error } = await supabase.from('agents').update(payload).eq('id', agentId);
+      const { error } = await supabase.from('agents').update(payload as any).eq('id', agentId);
       if (error) throw error;
     },
     onSuccess: () => {
