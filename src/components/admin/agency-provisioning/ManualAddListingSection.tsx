@@ -123,7 +123,7 @@ export function ManualAddListingSection({ agencyId, agencyName }: { agencyId: st
               Kickstart with AI
             </Button>
             <Button variant="outline" asChild>
-              <Link to={`/agency/properties/new?agencyId=${agencyId}`}>
+              <Link to={`/agency/properties/new?agencyId=${agencyId}&adminProvisioning=1`}>
                 <Plus className="h-4 w-4 mr-2" />
                 New listing
               </Link>
