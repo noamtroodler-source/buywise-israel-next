@@ -33,16 +33,30 @@ const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 async function fetchAiJsonWithRetry(
   url: string,
   init: RequestInit,
-  attempts = 2,
+  attempts = 4,
 ): Promise<{ response: Response; json: any | null; text: string }> {
   let lastResponse: Response | null = null;
   let lastText = "";
 
   for (let attempt = 1; attempt <= attempts; attempt++) {
-    const response = await fetch(url, init);
+    let response: Response;
+    try {
+      response = await fetch(url, init);
+    } catch (e) {
+      console.error(`AI gateway fetch threw (attempt ${attempt}/${attempts})`, e);
+      if (attempt < attempts) { await wait(800 * attempt); continue; }
+      throw e;
+    }
     const text = await response.text().catch(() => "");
     lastResponse = response;
     lastText = text;
+
+    // Retry on 429 (rate limit) and 5xx (transient gateway/model errors)
+    if (response.status === 429 || response.status >= 500) {
+      console.warn(`AI gateway ${response.status} (attempt ${attempt}/${attempts})`, text.slice(0, 300));
+      if (attempt < attempts) { await wait(900 * attempt); continue; }
+      return { response, json: null, text };
+    }
 
     if (!response.ok) return { response, json: null, text };
     if (text.trim()) {
@@ -53,7 +67,7 @@ async function fetchAiJsonWithRetry(
       }
     }
 
-    if (attempt < attempts) await wait(600 * attempt);
+    if (attempt < attempts) await wait(700 * attempt);
   }
 
   return { response: lastResponse!, json: null, text: lastText };
@@ -488,8 +502,12 @@ Deno.serve(async (req) => {
     const body = await safeReadJson(req);
     if (!body) return jsonResponse({ error: "Invalid request body" }, 400);
     const rawImageUrls: string[] = Array.isArray(body.image_urls) ? body.image_urls.slice(0, 20) : [];
-    // Filter out images >8MB (AI gateway rejects total >30MB). HEAD-check each URL.
-    const MAX_BYTES = 8 * 1024 * 1024;
+    // Filter images to stay under AI gateway 30MB per-request limit.
+    // Per-image cap 15MB; assume 1.5MB when content-length is unknown (Supabase Storage
+    // often omits it). Total budget 28MB.
+    const MAX_BYTES = 15 * 1024 * 1024;
+    const TOTAL_BUDGET = 28 * 1024 * 1024;
+    const ASSUMED_UNKNOWN = 1.5 * 1024 * 1024;
     const sized = await Promise.all(rawImageUrls.map(async (url) => {
       try {
         const h = await fetch(url, { method: "HEAD" });
@@ -497,16 +515,17 @@ Deno.serve(async (req) => {
         return { url, len: Number.isFinite(len) ? len : 0 };
       } catch { return { url, len: 0 }; }
     }));
-    // Keep images under cap; if size unknown (0), allow but cap total count tighter
     let runningTotal = 0;
     const imageUrls: string[] = [];
+    const skipped: string[] = [];
     for (const { url, len } of sized) {
-      if (len > MAX_BYTES) { console.warn(`Skipping oversized image (${len} bytes):`, url); continue; }
-      const assumed = len || 3 * 1024 * 1024; // assume 3MB if unknown
-      if (runningTotal + assumed > 25 * 1024 * 1024) { console.warn("Image budget reached, skipping rest"); break; }
+      if (len > MAX_BYTES) { skipped.push(`oversized:${len}`); console.warn(`Skipping oversized image (${len} bytes):`, url); continue; }
+      const assumed = len || ASSUMED_UNKNOWN;
+      if (runningTotal + assumed > TOTAL_BUDGET) { skipped.push("budget"); console.warn("Image budget reached, skipping rest"); break; }
       runningTotal += assumed;
       imageUrls.push(url);
     }
+    console.log(`Images: ${rawImageUrls.length} provided, ${imageUrls.length} kept, ${skipped.length} skipped (${skipped.join(",")})`);
     if (rawImageUrls.length > 0 && imageUrls.length === 0) {
       console.warn("All images were filtered as oversized");
     }
@@ -565,15 +584,29 @@ Deno.serve(async (req) => {
     }
 
     if (!aiJson) return jsonResponse({ error: "AI extraction returned an empty or invalid response. Please try again." }, 502);
-    const toolCall = aiJson?.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall?.function?.arguments) {
-      return jsonResponse({ error: "AI returned no structured output" }, 502);
-    }
+    const message = aiJson?.choices?.[0]?.message;
+    const toolCall = message?.tool_calls?.[0];
     let extracted: any = {};
-    try { extracted = parseToolArguments(toolCall.function.arguments); } catch (e) {
-      console.error("AI returned invalid tool JSON", e, toolCall.function.arguments.slice(0, 500));
-      return jsonResponse({ error: "AI returned invalid structured data. Please try again." }, 502);
+    let extractionSource = "tool_call";
+    if (toolCall?.function?.arguments) {
+      try { extracted = parseToolArguments(toolCall.function.arguments); } catch (e) {
+        console.error("AI returned invalid tool JSON", e, String(toolCall.function.arguments).slice(0, 500));
+      }
     }
+    // Fallback: model returned JSON in message.content instead of calling the tool
+    if (!extracted || Object.keys(extracted).length === 0) {
+      const raw = (message?.content || "").toString();
+      const m = raw.match(/\{[\s\S]*\}/);
+      if (m) {
+        try { extracted = parseToolArguments(m[0]); extractionSource = "content_json"; }
+        catch (e) { console.error("Fallback content JSON parse failed", e, raw.slice(0, 500)); }
+      }
+    }
+    if (!extracted || Object.keys(extracted).length === 0) {
+      console.error("No structured output from AI", JSON.stringify(message || {}).slice(0, 800));
+      return jsonResponse({ error: "AI did not return structured listing data. Please try again or add a couple more screenshots." }, 502);
+    }
+    console.log(`Extraction source: ${extractionSource}, fields: ${Object.keys(extracted).length}`);
 
     // ── Deterministic rescue pass ──
     extracted = recoverFromTranscript(extracted, transcript, description);
