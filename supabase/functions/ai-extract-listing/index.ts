@@ -430,12 +430,13 @@ Deno.serve(async (req) => {
       ? admin.from("agents").select("id, name, phone, license_number").eq("agency_id", agencyId).then(({ data }) => (data || []) as RosterAgent[])
       : Promise.resolve([] as RosterAgent[]);
 
-    // ── Stage A: OCR transcript (parallel with cover pick) ──
-    const [transcript, coverIdx] = await Promise.all([
+    // ── Stage A: OCR transcript + image classification (parallel) ──
+    const [transcript, imageKinds] = await Promise.all([
       ocrTranscript(imageUrls, LOVABLE_API_KEY),
-      pickCoverPhotoIndex(imageUrls, LOVABLE_API_KEY),
+      classifyImages(imageUrls, LOVABLE_API_KEY),
     ]);
-    console.log("OCR transcript length:", transcript.length);
+    const coverIdx = await pickCoverPhotoIndex(imageUrls, LOVABLE_API_KEY, imageKinds);
+    console.log("OCR transcript length:", transcript.length, "kinds:", imageKinds);
 
     // ── Stage B: structured extraction ──
     const userContent: any[] = [];
