@@ -487,7 +487,29 @@ Deno.serve(async (req) => {
 
     const body = await safeReadJson(req);
     if (!body) return jsonResponse({ error: "Invalid request body" }, 400);
-    const imageUrls: string[] = Array.isArray(body.image_urls) ? body.image_urls.slice(0, 20) : [];
+    const rawImageUrls: string[] = Array.isArray(body.image_urls) ? body.image_urls.slice(0, 20) : [];
+    // Filter out images >8MB (AI gateway rejects total >30MB). HEAD-check each URL.
+    const MAX_BYTES = 8 * 1024 * 1024;
+    const sized = await Promise.all(rawImageUrls.map(async (url) => {
+      try {
+        const h = await fetch(url, { method: "HEAD" });
+        const len = parseInt(h.headers.get("content-length") || "0", 10);
+        return { url, len: Number.isFinite(len) ? len : 0 };
+      } catch { return { url, len: 0 }; }
+    }));
+    // Keep images under cap; if size unknown (0), allow but cap total count tighter
+    let runningTotal = 0;
+    const imageUrls: string[] = [];
+    for (const { url, len } of sized) {
+      if (len > MAX_BYTES) { console.warn(`Skipping oversized image (${len} bytes):`, url); continue; }
+      const assumed = len || 3 * 1024 * 1024; // assume 3MB if unknown
+      if (runningTotal + assumed > 25 * 1024 * 1024) { console.warn("Image budget reached, skipping rest"); break; }
+      runningTotal += assumed;
+      imageUrls.push(url);
+    }
+    if (rawImageUrls.length > 0 && imageUrls.length === 0) {
+      console.warn("All images were filtered as oversized");
+    }
     const description: string = (body.description || "").toString().slice(0, 8000);
     const hint: { listing_status?: string; city?: string } = body.hint || {};
     const agencyId: string | null = body.agency_id || null;
