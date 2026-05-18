@@ -409,6 +409,11 @@ function matchAgent(detected: { name?: string; phone?: string; license_number?: 
 }
 
 type ImageKind = "property_photo" | "floor_plan" | "spec_sheet" | "screenshot_other";
+type IncomingImage = { url: string; bucket: "info" | "photo"; originalIndex: number };
+
+function normalizeBucket(value: unknown): "info" | "photo" {
+  return value === "info" ? "info" : "photo";
+}
 
 async function classifyImages(imageUrls: string[], apiKey: string): Promise<ImageKind[]> {
   if (imageUrls.length === 0) return [];
@@ -502,31 +507,47 @@ Deno.serve(async (req) => {
     const body = await safeReadJson(req);
     if (!body) return jsonResponse({ error: "Invalid request body" }, 400);
     const rawImageUrls: string[] = Array.isArray(body.image_urls) ? body.image_urls.slice(0, 20) : [];
+    const rawImageItems: IncomingImage[] = Array.isArray(body.image_items)
+      ? body.image_items.slice(0, 20).map((item: any, index: number) => ({
+          url: String(item?.url || ""),
+          bucket: normalizeBucket(item?.bucket),
+          originalIndex: index,
+        })).filter((item) => /^https?:\/\//i.test(item.url))
+      : rawImageUrls.map((url, index) => ({ url, bucket: "photo" as const, originalIndex: index }));
+
+    // The actual listing photos can be numerous/large. The detail screenshots are
+    // the critical extraction source, so always spend the image budget on them first.
+    const prioritizedImages = [...rawImageItems].sort((a, b) => {
+      if (a.bucket !== b.bucket) return a.bucket === "info" ? -1 : 1;
+      return a.originalIndex - b.originalIndex;
+    });
     // Filter images to stay under AI gateway 30MB per-request limit.
     // Per-image cap 15MB; assume 1.5MB when content-length is unknown (Supabase Storage
     // often omits it). Total budget 28MB.
     const MAX_BYTES = 15 * 1024 * 1024;
     const TOTAL_BUDGET = 28 * 1024 * 1024;
     const ASSUMED_UNKNOWN = 1.5 * 1024 * 1024;
-    const sized = await Promise.all(rawImageUrls.map(async (url) => {
+    const sized = await Promise.all(prioritizedImages.map(async (item) => {
       try {
-        const h = await fetch(url, { method: "HEAD" });
+        const h = await fetch(item.url, { method: "HEAD" });
         const len = parseInt(h.headers.get("content-length") || "0", 10);
-        return { url, len: Number.isFinite(len) ? len : 0 };
-      } catch { return { url, len: 0 }; }
+        return { ...item, len: Number.isFinite(len) ? len : 0 };
+      } catch { return { ...item, len: 0 }; }
     }));
     let runningTotal = 0;
-    const imageUrls: string[] = [];
+    const keptImages: IncomingImage[] = [];
     const skipped: string[] = [];
-    for (const { url, len } of sized) {
-      if (len > MAX_BYTES) { skipped.push(`oversized:${len}`); console.warn(`Skipping oversized image (${len} bytes):`, url); continue; }
+    for (const item of sized) {
+      const { url, len } = item;
+      if (len > MAX_BYTES) { skipped.push(`${item.bucket}:oversized:${len}`); console.warn(`Skipping oversized image (${len} bytes):`, url); continue; }
       const assumed = len || ASSUMED_UNKNOWN;
-      if (runningTotal + assumed > TOTAL_BUDGET) { skipped.push("budget"); console.warn("Image budget reached, skipping rest"); break; }
+      if (runningTotal + assumed > TOTAL_BUDGET) { skipped.push(`${item.bucket}:budget`); console.warn("Image budget reached, skipping rest"); continue; }
       runningTotal += assumed;
-      imageUrls.push(url);
+      keptImages.push(item);
     }
-    console.log(`Images: ${rawImageUrls.length} provided, ${imageUrls.length} kept, ${skipped.length} skipped (${skipped.join(",")})`);
-    if (rawImageUrls.length > 0 && imageUrls.length === 0) {
+    const imageUrls = keptImages.map((item) => item.url);
+    console.log(`Images: ${rawImageItems.length} provided (${rawImageItems.filter((i) => i.bucket === "info").length} info, ${rawImageItems.filter((i) => i.bucket === "photo").length} photos), ${imageUrls.length} kept, ${skipped.length} skipped (${skipped.join(",")})`);
+    if (rawImageItems.length > 0 && imageUrls.length === 0) {
       console.warn("All images were filtered as oversized");
     }
     const description: string = (body.description || "").toString().slice(0, 8000);
