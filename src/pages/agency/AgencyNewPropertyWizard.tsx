@@ -155,15 +155,16 @@ function AgencyWizardContent() {
     metadata: { currentStep, assignedAgentId },
   });
 
-  // Check for saved draft on mount
+  // Check for saved draft once the storage key is settled (waits for override agency to resolve)
   useEffect(() => {
     if (hasCheckedDraft.current) return;
+    if (overrideAgencyId && !overrideAgency) return; // still resolving target agency
     hasCheckedDraft.current = true;
     const saved = autoSave.getSavedData();
     if (saved?.data && saved.data.title) {
       setShowRecoveryDialog(true);
     }
-  }, []);
+  }, [overrideAgencyId, overrideAgency, autoSave]);
 
   const handleResumeDraft = () => {
     const saved = autoSave.getSavedData();
