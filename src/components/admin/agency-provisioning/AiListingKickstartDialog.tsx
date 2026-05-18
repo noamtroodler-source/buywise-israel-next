@@ -301,6 +301,7 @@ export function AiListingKickstartDialog({
     setDescription('');
     setExtracted(null);
     setAgentMatch(null);
+    setSelectedAgentId(null);
     setCoverIndex(null);
     setDuplicates([]);
     setDuplicateAcknowledged(false);
