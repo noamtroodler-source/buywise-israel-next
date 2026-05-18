@@ -10,6 +10,44 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+function jsonResponse(payload: Record<string, unknown>, status = 200): Response {
+  return new Response(JSON.stringify(payload), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+async function safeReadJson(r: Response): Promise<any | null> {
+  const text = await r.text().catch(() => "");
+  if (!text.trim()) return null;
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    console.error("Failed to parse AI gateway JSON", e, text.slice(0, 500));
+    return null;
+  }
+}
+
+function parseToolArguments(raw: string): any {
+  let cleaned = raw
+    .replace(/```json\s*/gi, "")
+    .replace(/```\s*/g, "")
+    .trim();
+
+  const start = cleaned.search(/[\{\[]/);
+  if (start > 0) cleaned = cleaned.slice(start);
+
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    cleaned = cleaned
+      .replace(/,\s*}/g, "}")
+      .replace(/,\s*]/g, "]")
+      .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "");
+    return JSON.parse(cleaned);
+  }
+}
+
 // ─── Stage A: OCR / facts transcript ─────────────────────────────────
 const OCR_PROMPT = `You are an OCR + listing-fact transcriber for Israeli real estate screenshots (Yad2, Madlan, agency sites, WhatsApp, flyers, floor plans).
 
