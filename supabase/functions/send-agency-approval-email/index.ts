@@ -55,7 +55,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const resend = new Resend(resendApiKey);
-    const portalUrl = "https://buywiseisrael.com/agency/dashboard";
+    const portalUrl = "https://buywiseisrael.com/agency";
     const publicPageUrl = `https://buywiseisrael.com/agencies/${agency.slug}`;
 
     const { error: emailError } = await resend.emails.send({
