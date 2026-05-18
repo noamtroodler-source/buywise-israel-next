@@ -115,6 +115,7 @@ export function AiListingKickstartDialog({
                 uploading: false,
                 enhanced: !!i.enhanced,
                 kind: i.kind,
+                bucket: (i.bucket as ImageBucket) || (i.kind === 'property_photo' ? 'photo' : 'info'),
               })),
           );
         }
