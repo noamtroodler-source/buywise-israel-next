@@ -30,6 +30,14 @@ interface UseAutoSaveOptions<T, M = Record<string, unknown>> {
   debounceMs?: number;
   useSessionKey?: boolean;
   metadata?: M;
+  /**
+   * When false, pauses the debounced localStorage write. Use this while
+   * the host component is still deciding whether to hydrate from an
+   * existing draft — otherwise the initial empty `data` would clobber
+   * the saved payload (e.g. an AI Kickstart handoff) before recovery
+   * can run.
+   */
+  enabled?: boolean;
 }
 
 function generateSessionId(): string {
@@ -44,6 +52,7 @@ export function useAutoSave<T, M = Record<string, unknown>>({
   debounceMs = 500,
   useSessionKey = false,
   metadata,
+  enabled = true,
 }: UseAutoSaveOptions<T, M>) {
   const [state, setState] = useState<AutoSaveState>({
     isSaving: false,
