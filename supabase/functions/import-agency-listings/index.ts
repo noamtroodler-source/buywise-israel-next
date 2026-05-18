@@ -5682,6 +5682,39 @@ async function processOneItem(
       listing._has_structured_data = true;
     }
 
+    // ── HARD SOLD/RENTED BANNER CHECK on raw page signals ──
+    // Agency listing pages routinely prefix their own <title>/<h1>/og:title
+    // with "SOLD:", "RENTED:", "UNDER CONTRACT:", "נמכר", "הושכר" when a
+    // deal closes (e.g. gordonrealtyrbs.com "SOLD: 5 room apartment in
+    // Donna M3"). The AI re-titler then rewrites the headline and the
+    // signal is lost. Catch it here, before AI rewrites, by scanning the
+    // raw title sources for an explicit status prefix/badge.
+    {
+      const h1Match = pageHtml.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+      const titleTagMatch = pageHtml.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+      const rawTitleSources = [
+        structuredData?.og_title,
+        h1Match ? h1Match[1] : "",
+        titleTagMatch ? titleTagMatch[1] : "",
+      ]
+        .map((s) => (s ? String(s).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim() : ""))
+        .filter(Boolean);
+      const SOLD_BANNER_RE = /^\s*(?:\[|\(|\*+\s*)?\s*(sold|rented|leased|under\s+contract|off[-\s]?market|נמכר|הושכר|בהסכם)\b[\s:.,!\-–|\]\)*]/i;
+      const SOLD_INLINE_RE = /\b(?:status\s*[:\-]?\s*(?:sold|rented|leased|under\s+contract)|\bsold\s*[:\-]|\brented\s*[:\-])\b/i;
+      let bannerHit: string | null = null;
+      for (const src of rawTitleSources) {
+        if (SOLD_BANNER_RE.test(src) || SOLD_INLINE_RE.test(src)) { bannerHit = src; break; }
+      }
+      if (bannerHit) {
+        dlog(`[Sold banner] Rejecting ${item.url} — raw title carries sold/rented banner: "${bannerHit.slice(0, 120)}"`);
+        await sb.from("import_job_items").update({
+          status: "skipped",
+          error_message: `Sold/rented banner on source page: "${bannerHit.slice(0, 120)}"`,
+          error_type: "permanent",
+        }).eq("id", item.id);
+        return { succeeded: false };
+      }
+    }
     // ── Agent slug backstop (free, no extra API calls) ──
     // Firecrawl returns the page's links even when its main-content extraction
     // strips the footer with the LISTING AGENT block. Every JRE-style listing
