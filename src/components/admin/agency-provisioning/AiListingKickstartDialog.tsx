@@ -404,9 +404,7 @@ export function AiListingKickstartDialog({
 
   const pushToListings = async () => {
     if (!extracted) return;
-    if (needsStatusChoice) { toast.warning('Choose sale or rent first'); return; }
-    if (blockedByDuplicate) { toast.warning('Acknowledge the possible duplicate first'); return; }
-    const finalStatus = (statusChoice ?? extracted.listing_status) as string | undefined;
+    const finalStatus = (statusChoice ?? extracted.listing_status ?? 'for_sale') as string;
     const missing: string[] = [];
     if (!extracted.title?.trim()) missing.push('title');
     if (!extracted.price || extracted.price <= 0) missing.push('price');
@@ -414,6 +412,10 @@ export function AiListingKickstartDialog({
     if (!finalStatus) missing.push('sale/rent');
     if (!extracted.city?.trim()) missing.push('city');
     if (missing.length) { toast.error(`Missing: ${missing.join(', ')}`); return; }
+
+    if (blockedByDuplicate) {
+      toast.info('Possible duplicate noted — sending it to Quality for review.');
+    }
 
     // address is NOT NULL in DB — fall back to neighborhood/city so review queue is never blocked
     const addressFallback =
@@ -985,7 +987,7 @@ export function AiListingKickstartDialog({
                 <Button variant="outline" onClick={openWizard} disabled={needsStatusChoice || blockedByDuplicate}>
                   Open in wizard
                 </Button>
-                <Button onClick={pushToListings} disabled={pushing || needsStatusChoice || blockedByDuplicate}>
+                <Button onClick={pushToListings} disabled={pushing}>
                   {pushing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <ArrowRight className="h-4 w-4 mr-2" />}
                   Send to Listings & Quality
                 </Button>
