@@ -379,6 +379,84 @@ export function AiListingKickstartDialog({
 
   const needsStatusChoice = !!extracted && extracted.listing_status_confidence === 'low' && !statusChoice;
   const blockedByDuplicate = duplicates.length > 0 && !duplicateAcknowledged;
+  const [pushing, setPushing] = useState(false);
+
+  const updateField = <K extends keyof ExtractedListing>(key: K, value: ExtractedListing[K]) => {
+    setExtracted((prev) => prev ? { ...prev, [key]: value } : prev);
+  };
+
+  const buildListingImages = () => {
+    const readyAll = images.filter((i) => i.publicUrl);
+    const listingImages = readyAll.filter((i) => i.bucket === 'photo').map((i) => i.publicUrl!);
+    let coverUrl: string | null = null;
+    if (coverIndex != null && coverIndex >= 0 && coverIndex < readyAll.length) {
+      const c = readyAll[coverIndex];
+      if (c?.publicUrl && listingImages.includes(c.publicUrl)) coverUrl = c.publicUrl;
+    }
+    return coverUrl ? [coverUrl, ...listingImages.filter((u) => u !== coverUrl)] : listingImages;
+  };
+
+  const pushToListings = async () => {
+    if (!extracted) return;
+    if (needsStatusChoice) { toast.warning('Choose sale or rent first'); return; }
+    if (blockedByDuplicate) { toast.warning('Acknowledge the possible duplicate first'); return; }
+    const finalStatus = (statusChoice ?? extracted.listing_status) as string | undefined;
+    const missing: string[] = [];
+    if (!extracted.title?.trim()) missing.push('title');
+    if (!extracted.price || extracted.price <= 0) missing.push('price');
+    if (!extracted.property_type) missing.push('type');
+    if (!finalStatus) missing.push('sale/rent');
+    if (!extracted.city?.trim()) missing.push('city');
+    if (missing.length) { toast.error(`Missing: ${missing.join(', ')}`); return; }
+
+    setPushing(true);
+    try {
+      const row: any = {
+        title: extracted.title,
+        description: extracted.description || null,
+        property_type: extracted.property_type,
+        listing_status: finalStatus,
+        price: extracted.price,
+        address: extracted.address || null,
+        city: extracted.city,
+        neighborhood: extracted.neighborhood || null,
+        bedrooms: extracted.bedrooms ?? null,
+        bathrooms: extracted.bathrooms ?? null,
+        size_sqm: extracted.size_sqm ?? null,
+        floor: extracted.floor ?? null,
+        total_floors: extracted.total_floors ?? null,
+        year_built: extracted.year_built ?? null,
+        parking: extracted.parking ?? null,
+        ac_type: (extracted as any).ac_type ?? null,
+        furnished_status: extracted.furnished_status ?? null,
+        vaad_bayit_monthly: extracted.vaad_bayit_monthly ?? null,
+        has_balcony: !!extracted.has_balcony,
+        has_elevator: !!extracted.has_elevator,
+        has_storage: !!extracted.has_storage,
+        features: extracted.features || [],
+        images: buildListingImages(),
+        primary_agency_id: agencyId,
+        claimed_by_agency_id: agencyId,
+        agent_id: selectedAgentId,
+        verification_status: 'pending_review',
+        submitted_at: new Date().toISOString(),
+        is_published: false,
+        added_manually: true,
+        import_source: 'kickstart_ai',
+        provisioning_audit_status: 'pending',
+      };
+      const { error } = await supabase.from('properties').insert(row);
+      if (error) throw error;
+      try { localStorage.removeItem(draftKey(agencyId)); } catch {}
+      toast.success('Sent to Listings & Quality for review');
+      onOpenChange(false);
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to create listing');
+    } finally {
+      setPushing(false);
+    }
+  };
+
 
   const openWizard = () => {
     if (!extracted) return;
@@ -763,47 +841,43 @@ export function AiListingKickstartDialog({
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
-                  <Field label="Type" value={extracted.property_type} />
-                  <Field label="Price (NIS)" value={extracted.price ? extracted.price.toLocaleString() : '—'} />
-                  <Field label="City" value={extracted.city} />
-                  <Field label="Neighborhood" value={extracted.neighborhood} />
-                  <Field label="Address" value={extracted.address} />
-                  <Field
-                    label="Rooms"
-                    value={
-                      (extracted as any).source_rooms
-                        ? `${(extracted as any).source_rooms} (${extracted.bedrooms ?? 0} bd + ${extracted.additional_rooms ?? 0})`
-                        : extracted.bedrooms != null
-                        ? `${extracted.bedrooms} bd + ${extracted.additional_rooms ?? 0}`
-                        : undefined
-                    }
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Title</Label>
+                  <Input
+                    value={extracted.title || ''}
+                    onChange={(e) => updateField('title', e.target.value)}
+                    placeholder="Listing title"
+                    className="h-9 text-sm"
                   />
-                  <Field label="Bathrooms" value={extracted.bathrooms} />
-                  <Field label="Size (sqm)" value={extracted.size_sqm} />
-                  <Field label="Balcony (sqm)" value={(extracted as any).balcony_sqm} />
-                  <Field
-                    label="Floor"
-                    value={
-                      extracted.floor != null
-                        ? `${extracted.floor === 0 ? 'Ground' : extracted.floor}${extracted.total_floors ? ` / ${extracted.total_floors}` : ''}`
-                        : undefined
-                    }
-                  />
-                  <Field label="Parking" value={extracted.parking} />
-                  <Field label="Year built" value={extracted.year_built} />
-                  <Field label="Condition" value={extracted.condition} />
-                  <Field label="AC" value={extracted.ac_type} />
-                  <Field label="Furnished" value={extracted.furnished_status} />
-                  <Field label="Entry date" value={(extracted as any).entry_date} />
-                  <Field label="Vaad bayit (₪/mo)" value={extracted.vaad_bayit_monthly?.toLocaleString?.()} />
                 </div>
 
-                <div className="flex flex-wrap gap-1">
-                  {extracted.has_balcony && <Badge variant="secondary" className="text-xs">Balcony</Badge>}
-                  {extracted.has_elevator && <Badge variant="secondary" className="text-xs">Elevator</Badge>}
-                  {extracted.has_storage && <Badge variant="secondary" className="text-xs">Storage</Badge>}
-                  {(extracted as any).is_accessible && <Badge variant="secondary" className="text-xs">Accessible</Badge>}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+                  <EditField label="Type" value={extracted.property_type} onChange={(v) => updateField('property_type', v as any)} />
+                  <EditField label="Status" value={extracted.listing_status} onChange={(v) => updateField('listing_status', v as any)} />
+                  <EditField label="Price (NIS)" type="number" value={extracted.price ?? ''} onChange={(v) => updateField('price', v === '' ? undefined : Number(v))} />
+                  <EditField label="City" value={extracted.city} onChange={(v) => updateField('city', v)} />
+                  <EditField label="Neighborhood" value={extracted.neighborhood} onChange={(v) => updateField('neighborhood', v)} />
+                  <EditField label="Address" value={extracted.address} onChange={(v) => updateField('address', v)} />
+                  <EditField label="Bedrooms" type="number" value={extracted.bedrooms ?? ''} onChange={(v) => updateField('bedrooms', v === '' ? undefined : Number(v))} />
+                  <EditField label="Additional rooms" type="number" value={(extracted as any).additional_rooms ?? ''} onChange={(v) => updateField('additional_rooms' as any, v === '' ? undefined : Number(v))} />
+                  <EditField label="Bathrooms" type="number" value={extracted.bathrooms ?? ''} onChange={(v) => updateField('bathrooms', v === '' ? undefined : Number(v))} />
+                  <EditField label="Size (sqm)" type="number" value={extracted.size_sqm ?? ''} onChange={(v) => updateField('size_sqm', v === '' ? undefined : Number(v))} />
+                  <EditField label="Balcony (sqm)" type="number" value={(extracted as any).balcony_sqm ?? ''} onChange={(v) => updateField('balcony_sqm' as any, v === '' ? undefined : Number(v))} />
+                  <EditField label="Floor" type="number" value={extracted.floor ?? ''} onChange={(v) => updateField('floor', v === '' ? undefined : Number(v))} />
+                  <EditField label="Total floors" type="number" value={extracted.total_floors ?? ''} onChange={(v) => updateField('total_floors', v === '' ? undefined : Number(v))} />
+                  <EditField label="Parking" type="number" value={extracted.parking ?? ''} onChange={(v) => updateField('parking', v === '' ? undefined : Number(v))} />
+                  <EditField label="Year built" type="number" value={extracted.year_built ?? ''} onChange={(v) => updateField('year_built', v === '' ? undefined : Number(v))} />
+                  <EditField label="Condition" value={extracted.condition} onChange={(v) => updateField('condition', v)} />
+                  <EditField label="AC" value={extracted.ac_type} onChange={(v) => updateField('ac_type' as any, v)} />
+                  <EditField label="Furnished" value={extracted.furnished_status} onChange={(v) => updateField('furnished_status' as any, v)} />
+                  <EditField label="Entry date" value={(extracted as any).entry_date} onChange={(v) => updateField('entry_date' as any, v)} />
+                  <EditField label="Vaad bayit (₪/mo)" type="number" value={extracted.vaad_bayit_monthly ?? ''} onChange={(v) => updateField('vaad_bayit_monthly', v === '' ? undefined : Number(v))} />
+                </div>
+
+                <div className="flex flex-wrap gap-2 text-xs">
+                  <ToggleChip label="Balcony" on={!!extracted.has_balcony} onChange={(on) => updateField('has_balcony', on)} />
+                  <ToggleChip label="Elevator" on={!!extracted.has_elevator} onChange={(on) => updateField('has_elevator', on)} />
+                  <ToggleChip label="Storage" on={!!extracted.has_storage} onChange={(on) => updateField('has_storage', on)} />
                   {extracted.features && extracted.features.map((f) => (
                     <Badge key={f} variant="outline" className="text-xs">{f}</Badge>
                   ))}
@@ -894,9 +968,12 @@ export function AiListingKickstartDialog({
                   {analyzing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
                   Re-analyze
                 </Button>
-                <Button onClick={openWizard} disabled={needsStatusChoice || blockedByDuplicate}>
-                  Open wizard with these values
-                  <ArrowRight className="h-4 w-4 ml-2" />
+                <Button variant="outline" onClick={openWizard} disabled={needsStatusChoice || blockedByDuplicate}>
+                  Open in wizard
+                </Button>
+                <Button onClick={pushToListings} disabled={pushing || needsStatusChoice || blockedByDuplicate}>
+                  {pushing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <ArrowRight className="h-4 w-4 mr-2" />}
+                  Send to Listings & Quality
                 </Button>
               </>
             )}
@@ -914,6 +991,32 @@ function Field({ label, value }: { label: string; value: any }) {
       <div className="text-muted-foreground">{label}</div>
       <div className="font-medium truncate">{display}</div>
     </div>
+  );
+}
+
+function EditField({ label, value, onChange, type = 'text' }: { label: string; value: any; onChange: (v: string) => void; type?: 'text' | 'number' }) {
+  return (
+    <div className="space-y-0.5">
+      <div className="text-muted-foreground text-[10px] uppercase tracking-wide">{label}</div>
+      <Input
+        type={type}
+        value={value ?? ''}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-8 text-xs"
+      />
+    </div>
+  );
+}
+
+function ToggleChip({ label, on, onChange }: { label: string; on: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!on)}
+      className={`px-2 py-0.5 rounded-full border text-xs transition ${on ? 'bg-primary text-primary-foreground border-primary' : 'bg-background text-muted-foreground hover:border-primary/50'}`}
+    >
+      {label}
+    </button>
   );
 }
 
