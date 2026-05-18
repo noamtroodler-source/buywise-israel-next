@@ -112,6 +112,10 @@ function AgencyWizardContent() {
   const createProperty = useCreatePropertyForAgency();
 
   const [assignedAgentId, setAssignedAgentId] = useState<string | null>(null);
+  // Carried over from the AI Kickstart handoff so the created listing flows
+  // through the same import / quality-review pipeline as scrape-synced ones.
+  const [importSource, setImportSource] = useState<string | null>(null);
+  const [provisioningAuditStatus, setProvisioningAuditStatus] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [submittedTitle, setSubmittedTitle] = useState('');
