@@ -531,13 +531,28 @@ export default function AgencyListings() {
           {/* Stats Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: 'Total listings', value: stats.total, icon: Home },
-              { label: 'Live', value: stats.active, icon: CheckCircle2 },
-              { label: 'Needs quick review', value: stats.needsReview, icon: Clock, highlight: stats.needsReview > 0 },
-              { label: 'Ready to publish', value: stats.ready, icon: Send, highlight: stats.ready > 0 },
+              { label: 'Total listings', value: stats.total, icon: Home, filter: 'all' as const },
+              { label: 'Live', value: stats.active, icon: CheckCircle2, filter: 'live' as const },
+              { label: 'Needs quick review', value: stats.needsReview + stats.quickFix, icon: Clock, filter: 'review_work' as const, highlight: stats.needsReview + stats.quickFix > 0 },
+              { label: 'Ready to publish', value: stats.ready, icon: Send, filter: 'ready_to_submit' as const, highlight: stats.ready > 0 },
             ].map((stat, index) => (
               <motion.div key={stat.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
-                <Card className={cn('rounded-2xl border-primary/10', stat.highlight && 'bg-primary/5 border-primary/20')}>
+                <Card
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => applySummaryFilter(stat.filter)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      applySummaryFilter(stat.filter);
+                    }
+                  }}
+                  className={cn(
+                    'rounded-2xl border-primary/10 cursor-pointer transition-colors hover:bg-primary/5 hover:border-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+                    stat.highlight && 'bg-primary/5 border-primary/20',
+                    statusFilter === stat.filter && 'bg-primary/10 border-primary/30 ring-1 ring-primary/20'
+                  )}
+                >
                   <CardContent className="p-4">
                     <div className="flex items-center gap-3">
                       <div className={cn('p-2 rounded-xl', stat.highlight ? 'bg-primary/20' : 'bg-primary/10')}>
