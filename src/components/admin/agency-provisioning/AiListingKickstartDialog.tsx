@@ -968,9 +968,12 @@ export function AiListingKickstartDialog({
                   {analyzing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
                   Re-analyze
                 </Button>
-                <Button onClick={openWizard} disabled={needsStatusChoice || blockedByDuplicate}>
-                  Open wizard with these values
-                  <ArrowRight className="h-4 w-4 ml-2" />
+                <Button variant="outline" onClick={openWizard} disabled={needsStatusChoice || blockedByDuplicate}>
+                  Open in wizard
+                </Button>
+                <Button onClick={pushToListings} disabled={pushing || needsStatusChoice || blockedByDuplicate}>
+                  {pushing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <ArrowRight className="h-4 w-4 mr-2" />}
+                  Send to Listings & Quality
                 </Button>
               </>
             )}
