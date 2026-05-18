@@ -18,11 +18,14 @@ import {
   useRejectJoinRequest,
   useAgencyInvites,
 } from '@/hooks/useAgencyManagement';
+import { useAgencyPermissions } from '@/hooks/useAgencyPermissions';
+import { useAuth } from '@/hooks/useAuth';
 import { useSeatLimitCheck } from '@/hooks/useSeatLimitCheck';
 import { SeatSummaryCard } from '@/components/agency/SeatSummaryCard';
 import { SeatManagementPanel } from '@/components/agency/SeatManagementPanel';
 import { SeatOverageConsentDialog } from '@/components/agency/SeatOverageConsentDialog';
 import { CreateInviteDialog } from '@/components/agency/CreateInviteDialog';
+import { InviteAgentDialog } from '@/components/agency/InviteAgentDialog';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { AgencyTeamSkeleton } from '@/components/agency/skeletons/AgencyPageSkeletons';
@@ -30,6 +33,7 @@ import { AgencyAnnouncements } from '@/components/agency/AgencyAnnouncements';
 import { AgencyAdminsPanel } from '@/components/agency/AgencyAdminsPanel';
 
 export default function AgencyTeam() {
+  const { user } = useAuth();
   const { data: agency, isLoading, isAgencyAdmin } = useMyAgency();
   const { data: team = [] } = useAgencyTeam(agency?.id);
   const { data: joinRequests = [] } = useAgencyJoinRequests(agency?.id);
@@ -37,9 +41,12 @@ export default function AgencyTeam() {
   const approveRequest = useApproveJoinRequest();
   const rejectRequest = useRejectJoinRequest();
   const { canInvite, currentSeats, maxSeats, isOverLimit } = useSeatLimitCheck();
+  const { isOwner } = useAgencyPermissions(agency?.id);
 
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [createInviteOpen, setCreateInviteOpen] = useState(false);
+  const [inviteAgentOpen, setInviteAgentOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('members');
   const [consentDialogOpen, setConsentDialogOpen] = useState(false);
   const [pendingApproval, setPendingApproval] = useState<{ requestId: string; agentId: string } | null>(null);
 
@@ -102,7 +109,7 @@ export default function AgencyTeam() {
 
         <SeatSummaryCard />
 
-        <Tabs defaultValue="members">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="bg-muted/50 border border-border/50 rounded-xl p-1">
             <TabsTrigger value="members" className="gap-2 rounded-lg">
               <Users className="h-4 w-4" />
@@ -128,11 +135,24 @@ export default function AgencyTeam() {
 
           <TabsContent value="members" className="mt-4">
             <Card className="rounded-2xl border-primary/10">
-              <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent rounded-t-2xl">
+              <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent rounded-t-2xl flex flex-row items-center justify-between space-y-0">
                 <CardTitle>Sales Agents</CardTitle>
+                <Button
+                  size="sm"
+                  className="rounded-xl"
+                  onClick={() => setInviteAgentOpen(true)}
+                >
+                  <UserPlus className="h-4 w-4 mr-1" />
+                  Invite Agent
+                </Button>
               </CardHeader>
               <CardContent className="pt-4">
-                <SeatManagementPanel agents={team} />
+                <SeatManagementPanel
+                  agents={team as any}
+                  agencyId={agency.id}
+                  isOwner={isOwner}
+                  currentUserId={user?.id ?? null}
+                />
               </CardContent>
             </Card>
           </TabsContent>
@@ -354,6 +374,16 @@ export default function AgencyTeam() {
         agencyId={agency.id}
         open={createInviteOpen}
         onOpenChange={setCreateInviteOpen}
+      />
+
+      <InviteAgentDialog
+        open={inviteAgentOpen}
+        onOpenChange={setInviteAgentOpen}
+        defaultInviteCode={agency.default_invite_code}
+        onManageCodes={() => {
+          setInviteAgentOpen(false);
+          setActiveTab('invites');
+        }}
       />
 
       {maxSeats !== null && (
