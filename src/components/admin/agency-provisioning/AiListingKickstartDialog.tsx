@@ -312,6 +312,7 @@ export function AiListingKickstartDialog({
       const { data, error } = await supabase.functions.invoke('ai-extract-listing', {
         body: {
           image_urls: ready.map((i) => i.publicUrl),
+          image_items: ready.map((i) => ({ publicUrl: i.publicUrl, url: i.publicUrl, bucket: i.bucket })),
           description: description.trim(),
           agency_id: agencyId,
           hint: {
@@ -548,6 +549,7 @@ export function AiListingKickstartDialog({
         additional_rooms: toNullableInt((extracted as any).additional_rooms),
         bathrooms: toNullableInt(extracted.bathrooms),
         size_sqm: extracted.size_sqm ?? null,
+        lot_size_sqm: (extracted as any).lot_size_sqm ?? null,
         floor: toNullableInt(extracted.floor),
         total_floors: toNullableInt(extracted.total_floors),
         year_built: toNullableInt(extracted.year_built),
@@ -991,6 +993,7 @@ export function AiListingKickstartDialog({
                   <EditField label="Additional rooms" type="number" value={(extracted as any).additional_rooms ?? ''} onChange={(v) => updateField('additional_rooms' as any, v === '' ? undefined : Number(v))} />
                   <EditField label="Bathrooms" type="number" value={extracted.bathrooms ?? ''} onChange={(v) => updateField('bathrooms', v === '' ? undefined : Number(v))} />
                   <EditField label="Size (sqm)" type="number" value={extracted.size_sqm ?? ''} onChange={(v) => updateField('size_sqm', v === '' ? undefined : Number(v))} />
+                  <EditField label="Garden / lot (sqm)" type="number" value={(extracted as any).lot_size_sqm ?? ''} onChange={(v) => updateField('lot_size_sqm' as any, v === '' ? undefined : Number(v))} />
                   <EditField label="Balcony (sqm)" type="number" value={(extracted as any).balcony_sqm ?? ''} onChange={(v) => updateField('balcony_sqm' as any, v === '' ? undefined : Number(v))} />
                   <EditField label="Floor" type="number" value={extracted.floor ?? ''} onChange={(v) => updateField('floor', v === '' ? undefined : Number(v))} />
                   <EditField label="Total floors" type="number" value={extracted.total_floors ?? ''} onChange={(v) => updateField('total_floors', v === '' ? undefined : Number(v))} />

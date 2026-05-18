@@ -99,7 +99,7 @@ const OCR_PROMPT = `You are an OCR + listing-fact transcriber for Israeli real e
 For EACH image, write a short block in this exact form, in order:
 
 IMAGE <n>:
-- raw_text: every visible price, number, label, and Hebrew/English word that looks like a listing fact, joined by " | ". Include things like "3,250,000 ₪", "Mr 45" (square meters), "Rooms 1", "floor ground", "5 Floors in the building", "Nahalat Binyamin", "Tel Aviv-Yafo", "Apartment for sale", "Mediator", "new", "renovated", "flexible Entry date", "without Furniture", "9 sq m porch", "elevator", "porch", "dimension", "parking ✗", "Air conditioning ✗", "warehouse ✗", "Pool ✗", "Garden ✗", phone numbers, agent names, agency names.
+- raw_text: every visible price, number, label, and Hebrew/English word that looks like a listing fact, joined by " | ". Include things like "3,250,000 ₪", "Mr 45" (square meters), "Rooms 1", "floor ground", "5 Floors in the building", "Garden area 40 square meters", "Nahalat Binyamin", "Tel Aviv-Yafo", "Garden apartment for sale", "Mediator", "new", "renovated", "flexible Entry date", "without Furniture", "9 sq m porch", "elevator", "porch", "dimension"/"ממ״ד", "parking ✓/✗", "Air conditioning ✓/✗", "warehouse ✓/✗", "Garden ✓/✗", phone numbers, agent names, agency names.
 - listing_text: any free-form property description / blurb visible (Hebrew or English), verbatim.
 - agent_block: any visible agent name, phone, license number, or agency.
 
@@ -156,6 +156,8 @@ Hard rules:
 - A visible "porch" / "מרפסת" / "balcony" tick → has_balcony true + "balcony" in features.
 - A visible "elevator" / "מעלית" tick → has_elevator true + "elevator".
 - A visible "warehouse" / "storage" / "מחסן" tick → has_storage true + "storage".
+- "dimension" in translated Israeli listings usually means ממ״ד / safe room → add "mamad".
+- "Garden area 40 square meters" / "גינה 40 מ״ר" → lot_size_sqm: 40 and add "garden".
 - "without Furniture" / "ללא ריהוט" → furnished_status: "unfurnished".
 - "new" → condition: "new"; "renovated" / "משופץ" → "renovated".
 - description: 2-4 short warm "Trusted Friend" English paragraphs, facts only, no hype.
@@ -182,6 +184,7 @@ const SCHEMA = {
     source_rooms: { type: "number", description: "Original Israeli room count shown on the source" },
     bathrooms: { type: "number" },
     size_sqm: { type: "number" },
+    lot_size_sqm: { type: "number", description: "Garden/yard/lot area in sqm when explicitly shown" },
     balcony_sqm: { type: "number" },
     floor: { type: "number" },
     total_floors: { type: "number" },
@@ -265,6 +268,16 @@ function recoverFromTranscript(extracted: any, transcript: string, notes: string
     if (m) {
       const n = parseInt(m[1], 10);
       if (n > 0 && n < 200) { e.balcony_sqm = n; addNote(`Recovered balcony ${n} sqm from transcript`); }
+    }
+  }
+
+  // Garden area — "Garden area 40 square meters" / "גינה 40 מ״ר"
+  if (!e.lot_size_sqm) {
+    const m = text.match(/(?:garden\s*area|garden|yard|גינה|חצר)[^\d]{0,18}(\d{1,4})\s*(?:square\s*meters?|sq\.?\s?m|sqm|מ["']?ר)?/i) ||
+              text.match(/(\d{1,4})\s*(?:square\s*meters?|sq\.?\s?m|sqm|מ["']?ר)\s*(?:garden|yard|גינה|חצר)/i);
+    if (m) {
+      const n = parseInt(m[1], 10);
+      if (n > 0 && n < 2000) { e.lot_size_sqm = n; addFeature("garden"); addNote(`Recovered garden/yard area ${n} sqm from transcript`); }
     }
   }
 
@@ -359,6 +372,9 @@ function recoverFromTranscript(extracted: any, transcript: string, notes: string
   if (e.has_balcony !== true && tick(/porch|balcony|מרפסת/)) { e.has_balcony = true; addFeature("balcony"); addNote("Recovered has_balcony from transcript"); }
   if (e.has_elevator !== true && tick(/elevator|מעלית/)) { e.has_elevator = true; addFeature("elevator"); addNote("Recovered has_elevator from transcript"); }
   if (e.has_storage !== true && tick(/warehouse|storage|מחסן/)) { e.has_storage = true; addFeature("storage"); addNote("Recovered has_storage from transcript"); }
+  if (/\bdimension\b|ממ["״']?ד|safe\s*room/i.test(text)) { addFeature("mamad"); addNote("Recovered safe room / mamad from transcript"); }
+  if (tick(/garden|yard|גינה|חצר/)) { addFeature("garden"); addNote("Recovered garden feature from transcript"); }
+  if (tick(/parking|חניה/)) { addFeature("parking"); addNote("Recovered parking feature from transcript"); }
   if (!e.ac_type && /(central\s*ac|מיזוג\s*מרכזי)/i.test(text)) { e.ac_type = "central"; addFeature("central_ac"); }
   else if (!e.ac_type && /(air\s*conditioning|מיזוג\s*אוויר|מזגן)/i.test(text) && !/Air\s*conditioning[^\n]{0,15}(?:✗|✘|no)/i.test(text)) { e.ac_type = "split"; addFeature("air_conditioning"); }
   if (e.is_accessible !== true && /Accessible[^\n]{0,20}(?:✓|yes)/i.test(text)) { e.is_accessible = true; addFeature("accessible"); }
@@ -409,6 +425,11 @@ function matchAgent(detected: { name?: string; phone?: string; license_number?: 
 }
 
 type ImageKind = "property_photo" | "floor_plan" | "spec_sheet" | "screenshot_other";
+type IncomingImage = { url: string; bucket: "info" | "photo"; originalIndex: number };
+
+function normalizeBucket(value: unknown): "info" | "photo" {
+  return value === "info" ? "info" : "photo";
+}
 
 async function classifyImages(imageUrls: string[], apiKey: string): Promise<ImageKind[]> {
   if (imageUrls.length === 0) return [];
@@ -502,31 +523,47 @@ Deno.serve(async (req) => {
     const body = await safeReadJson(req);
     if (!body) return jsonResponse({ error: "Invalid request body" }, 400);
     const rawImageUrls: string[] = Array.isArray(body.image_urls) ? body.image_urls.slice(0, 20) : [];
+    const rawImageItems: IncomingImage[] = Array.isArray(body.image_items)
+      ? body.image_items.slice(0, 20).map((item: any, index: number) => ({
+          url: String(item?.url || ""),
+          bucket: normalizeBucket(item?.bucket),
+          originalIndex: index,
+        })).filter((item: IncomingImage) => /^https?:\/\//i.test(item.url))
+      : rawImageUrls.map((url, index) => ({ url, bucket: "photo" as const, originalIndex: index }));
+
+    // The actual listing photos can be numerous/large. The detail screenshots are
+    // the critical extraction source, so always spend the image budget on them first.
+    const prioritizedImages = [...rawImageItems].sort((a, b) => {
+      if (a.bucket !== b.bucket) return a.bucket === "info" ? -1 : 1;
+      return a.originalIndex - b.originalIndex;
+    });
     // Filter images to stay under AI gateway 30MB per-request limit.
     // Per-image cap 15MB; assume 1.5MB when content-length is unknown (Supabase Storage
     // often omits it). Total budget 28MB.
     const MAX_BYTES = 15 * 1024 * 1024;
     const TOTAL_BUDGET = 28 * 1024 * 1024;
     const ASSUMED_UNKNOWN = 1.5 * 1024 * 1024;
-    const sized = await Promise.all(rawImageUrls.map(async (url) => {
+    const sized = await Promise.all(prioritizedImages.map(async (item) => {
       try {
-        const h = await fetch(url, { method: "HEAD" });
+        const h = await fetch(item.url, { method: "HEAD" });
         const len = parseInt(h.headers.get("content-length") || "0", 10);
-        return { url, len: Number.isFinite(len) ? len : 0 };
-      } catch { return { url, len: 0 }; }
+        return { ...item, len: Number.isFinite(len) ? len : 0 };
+      } catch { return { ...item, len: 0 }; }
     }));
     let runningTotal = 0;
-    const imageUrls: string[] = [];
+    const keptImages: IncomingImage[] = [];
     const skipped: string[] = [];
-    for (const { url, len } of sized) {
-      if (len > MAX_BYTES) { skipped.push(`oversized:${len}`); console.warn(`Skipping oversized image (${len} bytes):`, url); continue; }
+    for (const item of sized) {
+      const { url, len } = item;
+      if (len > MAX_BYTES) { skipped.push(`${item.bucket}:oversized:${len}`); console.warn(`Skipping oversized image (${len} bytes):`, url); continue; }
       const assumed = len || ASSUMED_UNKNOWN;
-      if (runningTotal + assumed > TOTAL_BUDGET) { skipped.push("budget"); console.warn("Image budget reached, skipping rest"); break; }
+      if (runningTotal + assumed > TOTAL_BUDGET) { skipped.push(`${item.bucket}:budget`); console.warn("Image budget reached, skipping rest"); continue; }
       runningTotal += assumed;
-      imageUrls.push(url);
+      keptImages.push(item);
     }
-    console.log(`Images: ${rawImageUrls.length} provided, ${imageUrls.length} kept, ${skipped.length} skipped (${skipped.join(",")})`);
-    if (rawImageUrls.length > 0 && imageUrls.length === 0) {
+    const imageUrls = keptImages.map((item) => item.url);
+    console.log(`Images: ${rawImageItems.length} provided (${rawImageItems.filter((i) => i.bucket === "info").length} info, ${rawImageItems.filter((i) => i.bucket === "photo").length} photos), ${imageUrls.length} kept, ${skipped.length} skipped (${skipped.join(",")})`);
+    if (rawImageItems.length > 0 && imageUrls.length === 0) {
       console.warn("All images were filtered as oversized");
     }
     const description: string = (body.description || "").toString().slice(0, 8000);
@@ -541,7 +578,7 @@ Deno.serve(async (req) => {
     if (!LOVABLE_API_KEY) return jsonResponse({ error: "AI service not configured" }, 500);
 
     const rosterPromise: Promise<RosterAgent[]> = agencyId
-      ? admin.from("agents").select("id, name, phone, license_number").eq("agency_id", agencyId).then(({ data }) => (data || []) as RosterAgent[])
+      ? Promise.resolve(admin.from("agents").select("id, name, phone, license_number").eq("agency_id", agencyId).then(({ data }) => (data || []) as RosterAgent[]))
       : Promise.resolve([] as RosterAgent[]);
 
     // ── Stage A: OCR transcript + image classification (parallel) ──
@@ -549,7 +586,14 @@ Deno.serve(async (req) => {
       ocrTranscript(imageUrls, LOVABLE_API_KEY),
       classifyImages(imageUrls, LOVABLE_API_KEY),
     ]);
-    const coverIdx = await pickCoverPhotoIndex(imageUrls, LOVABLE_API_KEY, imageKinds);
+    const coverKinds = imageKinds.map((kind, i) => keptImages[i]?.bucket === "photo" ? kind : "spec_sheet");
+    const coverIdxInKept = await pickCoverPhotoIndex(imageUrls, LOVABLE_API_KEY, coverKinds);
+    const coverIdx = coverIdxInKept == null ? null : keptImages[coverIdxInKept]?.originalIndex ?? null;
+    const imageKindsByOriginal = rawImageItems.map(() => "screenshot_other" as ImageKind);
+    imageKinds.forEach((kind, i) => {
+      const kept = keptImages[i];
+      if (kept) imageKindsByOriginal[kept.originalIndex] = kind;
+    });
     console.log("OCR transcript length:", transcript.length, "kinds:", imageKinds);
 
     // ── Stage B: structured extraction ──
@@ -621,7 +665,7 @@ Deno.serve(async (req) => {
       extracted.low_confidence_fields = lc;
     }
 
-    return jsonResponse({ extracted, agent_match: agentMatch, cover_photo_index: coverIdx, ocr_transcript: transcript, image_kinds: imageKinds });
+    return jsonResponse({ extracted, agent_match: agentMatch, cover_photo_index: coverIdx, ocr_transcript: transcript, image_kinds: imageKindsByOriginal });
   } catch (e: any) {
     console.error("ai-extract-listing error", e);
     return jsonResponse({ error: e?.message || "Unexpected error" }, 500);
