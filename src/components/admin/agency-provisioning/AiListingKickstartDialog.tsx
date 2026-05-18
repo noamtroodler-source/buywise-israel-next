@@ -204,6 +204,7 @@ export function AiListingKickstartDialog({
     setAnalyzing(true);
     setExtracted(null);
     setAgentMatch(null);
+    setSelectedAgentId(null);
     setCoverIndex(null);
     setDuplicates([]);
     setDuplicateAcknowledged(false);
