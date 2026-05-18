@@ -278,7 +278,7 @@ export function AiListingKickstartDialog({
       data: draftData,
       metadata: {
         currentStep: 1,
-        assignedAgentId: agentMatch?.confidence === 'high' ? agentMatch.agent_id : null,
+        assignedAgentId: selectedAgentId ?? (agentMatch?.confidence === 'high' ? agentMatch.agent_id : null),
         coverPhotoIndex: 0,
         duplicateAcknowledged: blockedByDuplicate ? true : duplicates.length > 0 ? true : false,
       },
