@@ -224,7 +224,9 @@ export function AiListingKickstartDialog({
       if (!data?.extracted) throw new Error('No data returned');
       const ex = data.extracted as ExtractedListing;
       setExtracted(ex);
-      setAgentMatch((data.agent_match as AgentMatch) || null);
+      const match = (data.agent_match as AgentMatch) || null;
+      setAgentMatch(match);
+      if (match?.confidence === 'high') setSelectedAgentId(match.agent_id);
       setCoverIndex(typeof data.cover_photo_index === 'number' ? data.cover_photo_index : null);
       await checkDuplicates(ex);
       toast.success('Extracted — review and open the wizard');
