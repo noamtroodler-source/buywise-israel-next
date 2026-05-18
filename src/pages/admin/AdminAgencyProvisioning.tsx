@@ -11,6 +11,7 @@ import { AgencyProvisioningSidebar } from '@/components/admin/agency-provisionin
 import { AgencyProfileSection } from '@/components/admin/agency-provisioning/AgencyProfileSection';
 import { AgentRosterSection } from '@/components/admin/agency-provisioning/AgentRosterSection';
 import { ImportListingsSection } from '@/components/admin/agency-provisioning/ImportListingsSection';
+import { ManualAddListingSection } from '@/components/admin/agency-provisioning/ManualAddListingSection';
 import { ListingsQualitySection } from '@/components/admin/agency-provisioning/ListingsQualitySection';
 import { HandoverSection } from '@/components/admin/agency-provisioning/HandoverSection';
 import { OnboardingMonitorSection } from '@/components/admin/agency-provisioning/OnboardingMonitorSection';
@@ -206,6 +207,7 @@ function SelectedAgencyWorkspace({ agency }: { agency: any }) {
       <AgencyProfileSection agency={agency} />
       <AgentRosterSection agencyId={agency.id} />
       <ImportListingsSection agencyId={agency.id} agencyName={agency.name} />
+      <ManualAddListingSection agencyId={agency.id} agencyName={agency.name} />
       <ListingsQualitySection agencyId={agency.id} />
       <AgencyAuditPanel agencyId={agency.id} />
       <HandoverSection
