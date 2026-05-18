@@ -76,7 +76,7 @@ export function SeatManagementPanel({ agents, agencyId, isOwner, currentUserId }
   const removeAgent = useRemoveAgentFromAgency();
   const setAdmin = useSetAgentAdmin();
   const [removeTarget, setRemoveTarget] = useState<Agent | null>(null);
-
+  const [editTarget, setEditTarget] = useState<Agent | null>(null);
   if (agents.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
