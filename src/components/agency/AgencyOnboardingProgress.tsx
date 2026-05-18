@@ -116,18 +116,6 @@ export function AgencyOnboardingProgress({
       count: readyToSubmitCount,
     },
     {
-      id: 'pending',
-      label: 'Awaiting BuyWise review',
-      description: pendingReviewCount > 0
-        ? `${pendingReviewCount} listing${pendingReviewCount === 1 ? '' : 's'} submitted — typically reviewed within 1 business day`
-        : 'Submitted listings appear here while BuyWise reviews them',
-      icon: Send,
-      isComplete: liveListingsCount >= 1 || (listingsCount > 0 && pendingReviewCount === 0 && readyToSubmitCount === 0 && needsAttentionCount === 0),
-      link: '/agency/listings?status=pending_buywise_review',
-      action: 'View submitted',
-      count: pendingReviewCount,
-    },
-    {
       id: 'live',
       label: 'Get first listing live',
       description: liveListingsCount > 0 ? 'Your first live listing completes launch' : 'Listings go live after BuyWise review',
