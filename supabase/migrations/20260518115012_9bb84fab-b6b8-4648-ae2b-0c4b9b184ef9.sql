@@ -1,0 +1,3 @@
+DELETE FROM public.import_job_items WHERE property_id IN (SELECT id FROM public.properties WHERE (primary_agency_id='dc8d1362-b79d-4417-b82f-d3f94bcd7fc0' OR claimed_by_agency_id='dc8d1362-b79d-4417-b82f-d3f94bcd7fc0') AND (price IS NULL OR price = 0));
+DELETE FROM public.listing_quality_flags WHERE property_id IN (SELECT id FROM public.properties WHERE (primary_agency_id='dc8d1362-b79d-4417-b82f-d3f94bcd7fc0' OR claimed_by_agency_id='dc8d1362-b79d-4417-b82f-d3f94bcd7fc0') AND (price IS NULL OR price = 0));
+DELETE FROM public.properties WHERE (primary_agency_id='dc8d1362-b79d-4417-b82f-d3f94bcd7fc0' OR claimed_by_agency_id='dc8d1362-b79d-4417-b82f-d3f94bcd7fc0') AND (price IS NULL OR price = 0);
