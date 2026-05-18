@@ -1,103 +1,69 @@
-# Agent Invite Claim Flow
+# Reset Demo Realty TLV for a fresh demo run
 
-## Goal
+## Confirmed targets
 
-When an agent signs up through an agency invite link, automatically attach them to the **existing provisional agent row** that the agency already imported (with their pre-assigned listings) instead of creating a duplicate empty profile.
+- **Agency:** Demo Realty TLV — `d3070000-0000-4000-a000-000000000001`
+- **Owner login:** noam.troodler@gmail.com — `7e7d2499-f0ff-4f46-920c-f565bde6e532`
+- **Current state**: 6 provisional agents (none claimed), 44 listings attached, no blog posts, no pending invites, no announcements, no testimonials, owner already has owner+admin rows in `agency_members` and `admin / agent / developer / user` roles in `user_roles`.
 
-## Matching strategy
+So you're actually 90% of the way to a clean medium-reset already. The only thing making it feel "used" is that the agency is flagged as `handover_completed_at` set + `pending_items_dismissed_at` (the onboarding nudges have been dismissed). Once we clear those flags the dashboard greets him with the onboarding cards again.
 
-Run server-side against unclaimed agents (`agency_id = X AND user_id IS NULL`) in this priority:
+## What I'll do
 
-1. **License number** match → auto-claim (highest confidence — license numbers are unique to a person)
-2. **Phone number** match (normalized: digits only, last 9) → auto-claim
-3. **Email** match (case-insensitive) → auto-claim
-4. **Name fuzzy match** (normalized: lowercase, strip diacritics, Levenshtein ≤ 2) → **return as suggestion, do not auto-claim**. Show a "Is this you?" confirmation screen in the signup wizard.
+### 1. Reset agency state so it looks freshly handed over
 
-If nothing matches → create a fresh agent row like today.
+Migration on `agencies` (single row, id = above):
+- `handover_completed_at` → `NULL`  → re-shows the "complete handover" / welcome cards
+- `pending_items_dismissed_at` → `NULL`  → re-shows the pending-items panel
+- `last_conflict_digest_at` → `NULL`  → clears the digest banner
+- Leave `status='active'`, `management_status='handed_over'`, `admin_user_id`, `default_invite_code` untouched (he still needs to log in and own the agency).
 
-## What "claim" does
+### 2. Wipe transient activity tied to this agency
 
-Update the existing provisional row in place:
-- Set `user_id` to the new auth user's id
-- Overwrite `name`, `email`, `phone`, `license_number`, `bio`, `languages`, `specializations`, `years_experience` with whatever the agent entered in the wizard (their input is the source of truth)
-- Set `is_provisional = false`, `joined_via = 'invite_code'`, `email_verified_at = now()`, `status = 'active'`, `approved_at = now()`
-- Insert `agent` role into `user_roles`
+Inserts (delete) into:
+- `agency_announcements` WHERE agency_id = demo agency
+- `agency_notifications` WHERE agency_id = demo agency
+- `agency_join_requests` WHERE agency_id = demo agency
+- `agency_invites` WHERE agency_id = demo agency  (clears any active invite-link sessions)
+- `agency_testimonials` WHERE agency_id = demo agency
+- `agency_provisioning_notes` WHERE agency_id = demo agency
+- `blog_posts` WHERE author_id = owner
+- `agent_notifications` WHERE agent_id IN (the 6 provisional agents) — keeps inbox clean for the agent-side demo
 
-**No new agent row is created.** All `properties.agent_id` references stay intact → listings appear in the agent's dashboard on first login.
+All currently 0 rows except the audit/notes which may have a couple — safe deletes.
 
-## Pieces to build
+### 3. Keep (medium reset)
 
-### 1. Edge function `claim-or-create-agent` (new)
+- 6 provisional agents (`Sarah Cohen`, `Noam Troodler`, `David Levi`, `Maya Friedman`, `Yossi Mizrahi`, `Rachel Goldberg`) with their `is_provisional=true, user_id=NULL` — these are the roster cards.
+- 44 listings — they stay attached via `properties.agent_id`.
+- `agency_members` rows for Noam (owner + admin).
+- `user_roles` for Noam.
 
-Runs with service-role key, validates JWT in code.
+### 4. Make sure no stale `agents` row owns Noam
 
-**Input (Zod-validated):**
-```
-{
-  agency_id: uuid,
-  name: string,
-  email: string,
-  phone?: string,
-  license_number?: string,
-  bio?: string,
-  languages?: string[],
-  specializations?: string[],
-  years_experience?: number,
-  confirm_claim_agent_id?: uuid   // present when user confirmed a fuzzy match
-}
-```
+Confirmed there is no claimed `agents` row with his `user_id`, so nothing to clean. The "Noam Troodler" provisional row stays unclaimed — when he goes through the invite-claim flow in the demo, the new claim-or-create-agent function will license-match him to that row automatically, which is exactly the magic moment you want to show.
 
-**Logic:**
-- Verify caller JWT, extract `user_id`.
-- If `confirm_claim_agent_id` is set → validate it's unclaimed + in this agency, then claim it.
-- Otherwise run the 4-tier match against `agents` where `agency_id = input.agency_id AND user_id IS NULL`.
-- Tiers 1–3 → claim immediately, return `{ status: 'claimed', agent }`.
-- Tier 4 (name fuzzy) → return `{ status: 'needs_confirmation', candidate: {id, name, listing_count, license_number} }`. Do NOT modify anything.
-- No match → insert new agent row, return `{ status: 'created', agent }`.
-- Always insert the `agent` role into `user_roles` (ignore duplicate-key error).
+### 5. Send the password-reset email
 
-### 2. Update `useAgentRegistration` hook
+I'll add a tiny admin edge function `admin-send-password-reset` (one route, service-role) that:
+- Verifies caller is `admin` via `user_roles`
+- Calls `supabase.auth.admin.generateLink({ type: 'recovery', email })`
+- Triggers `supabase.auth.resetPasswordForEmail(email, { redirectTo })` so the existing `auth-email-hook` ships the branded BuyWise reset email
 
-Replace the direct `INSERT` with a call to `supabase.functions.invoke('claim-or-create-agent', { body })`. Return the function's `{ status, agent, candidate }` payload to the caller.
+Then I'll invoke it for `noam.troodler@gmail.com` and confirm in `email_send_log` that a `recovery` email was queued and delivered.
 
-### 3. Add a "Is this you?" step to `AgentRegisterWizard`
+You'll get an email titled "Reset your BuyWise password" within ~1 minute. Click → set new password → land on `/auth` → log in → land on Demo Realty TLV dashboard with the onboarding cards back, 6 provisional agents + 44 listings ready, no claimed sub-agents. Perfect demo state.
 
-In `handleSubmit`:
-- Call the mutation.
-- If response is `status: 'needs_confirmation'` → open a confirmation dialog showing the candidate: `"We found Sarah Cohen on the {agency} roster with 8 listings already assigned. Is this you?"` with two buttons:
-  - **"Yes, that's me"** → re-call mutation with `confirm_claim_agent_id: candidate.id`
-  - **"No, I'm new here"** → re-call mutation with an explicit `skip_match: true` flag to force creation
-- On `claimed` or `created` → continue with existing welcome-email + agency-notification flow.
+## Verification I'll run after
 
-### 4. Dialog component `ClaimAgentConfirmDialog`
+1. `SELECT handover_completed_at, pending_items_dismissed_at FROM agencies WHERE id = demo` → both `NULL`.
+2. `SELECT COUNT(*) FROM agents WHERE agency_id = demo` → still 6, all `is_provisional = true`, all `user_id IS NULL`.
+3. `SELECT COUNT(*) FROM properties p JOIN agents a ON a.id = p.agent_id WHERE a.agency_id = demo` → still 44.
+4. `SELECT status, recipient, template_name, created_at FROM email_send_log WHERE recipient = 'noam.troodler@gmail.com' ORDER BY created_at DESC LIMIT 3` → newest row is recovery + status `sent` (or `pending` → `sent` within 5s).
+5. Log into preview as your own user-replay and tap the agency dashboard URL once to confirm the onboarding cards reappear.
 
-Simple shadcn `AlertDialog` showing candidate name, license number (if any), listing count, and the two action buttons. Loading state on the chosen button while the second mutation runs.
+## Technical notes
 
-## Edge cases handled
-
-- **Double-claim race**: the edge function re-checks `user_id IS NULL` inside the UPDATE's WHERE clause; if another session claimed first, it falls through to "create new".
-- **Empty license / phone**: skipped from matching when blank — never matches `NULL = NULL`.
-- **Wrong agency**: matching is scoped to `agency_id` in the invite, so an agent invited to Agency A can never claim a provisional row in Agency B.
-- **Already-claimed account signing up again**: if the auth user already has an agent row, return it instead of creating/claiming.
-
-## Verification (mandatory before declaring done)
-
-1. **Dry-run query**: pick a real provisional agent row (e.g., Sarah Cohen) and confirm matching tiers find it via license/phone/email/name in a test SELECT.
-2. **License path**: simulate signup with matching license_number → confirm the existing row's `user_id` is set, `is_provisional = false`, and `properties.agent_id` count is unchanged.
-3. **Fuzzy-name path**: simulate signup with name "Sara Cohen" (typo) → confirm response is `needs_confirmation`, no DB writes happened, then confirm → row claimed.
-4. **No-match path**: simulate signup with unrelated identity → confirm a fresh row is created.
-5. **Listings visibility**: after claiming, query `properties WHERE agent_id = claimed.id` to verify the 8 listings are now visible to the new user.
-6. **Deploy** the edge function and confirm no console errors during a real wizard run.
-
-## Technical notes (for reference)
-
-- Files touched:
-  - new: `supabase/functions/claim-or-create-agent/index.ts`
-  - new: `src/components/agent/ClaimAgentConfirmDialog.tsx`
-  - edited: `src/hooks/useAgentRegistration.tsx`
-  - edited: `src/pages/agent/AgentRegisterWizard.tsx` (and `AgentRegister.tsx` if it shares the same submit path)
-- No DB schema changes needed — `is_provisional`, `joined_via`, `user_id` already exist on `agents`.
-- Phone normalization: strip non-digits, keep last 9 digits (handles `+972`, `0`, spaces, dashes).
-- Name normalization: `toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim()`.
-- Levenshtein implemented inline (small util, ~20 lines).
-- Matching is per-agency only, so worst case it scans ~50 rows — no index needed.
+- All wipe operations go through `supabase--insert` (data ops, not schema), so no migration approval beyond the one-row UPDATE on `agencies`. I'll bundle the UPDATE into a single insert-tool call too since it's data not schema.
+- The new edge function is the only file change in code; everything else is database.
+- Rollback: if something looks wrong I can re-flip `handover_completed_at = now()` from a single SQL update — non-destructive.
