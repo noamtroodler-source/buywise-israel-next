@@ -18,6 +18,8 @@ import { defaultPropertyData, PropertyWizardData } from '@/components/agent/wiza
 
 const AGENCY_WIZARD_STORAGE_KEY = 'agency-property-wizard-draft';
 
+type ImageKind = 'property_photo' | 'floor_plan' | 'spec_sheet' | 'screenshot_other';
+
 interface UploadedImage {
   file: File;
   previewUrl: string;
@@ -25,8 +27,10 @@ interface UploadedImage {
   uploading: boolean;
   enhancing?: boolean;
   enhanced?: boolean;
+  kind?: ImageKind;
   error?: string;
 }
+
 
 interface ExtractedListing extends Partial<PropertyWizardData> {
   source_notes?: string[];
