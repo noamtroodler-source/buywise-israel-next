@@ -396,6 +396,12 @@ export function AiListingKickstartDialog({
     return coverUrl ? [coverUrl, ...listingImages.filter((u) => u !== coverUrl)] : listingImages;
   };
 
+  const toNullableInt = (value: unknown) => {
+    if (value === undefined || value === null || value === '') return null;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? Math.round(parsed) : null;
+  };
+
   const pushToListings = async () => {
     if (!extracted) return;
     if (needsStatusChoice) { toast.warning('Choose sale or rent first'); return; }
@@ -427,16 +433,17 @@ export function AiListingKickstartDialog({
         address: addressFallback,
         city: extracted.city,
         neighborhood: extracted.neighborhood || null,
-        bedrooms: extracted.bedrooms ?? null,
-        bathrooms: extracted.bathrooms ?? null,
+        bedrooms: toNullableInt(extracted.bedrooms),
+        additional_rooms: toNullableInt((extracted as any).additional_rooms),
+        bathrooms: toNullableInt(extracted.bathrooms),
         size_sqm: extracted.size_sqm ?? null,
-        floor: extracted.floor ?? null,
-        total_floors: extracted.total_floors ?? null,
-        year_built: extracted.year_built ?? null,
-        parking: extracted.parking ?? null,
+        floor: toNullableInt(extracted.floor),
+        total_floors: toNullableInt(extracted.total_floors),
+        year_built: toNullableInt(extracted.year_built),
+        parking: toNullableInt(extracted.parking),
         ac_type: (extracted as any).ac_type ?? null,
         furnished_status: extracted.furnished_status ?? null,
-        vaad_bayit_monthly: extracted.vaad_bayit_monthly ?? null,
+        vaad_bayit_monthly: toNullableInt(extracted.vaad_bayit_monthly),
         has_balcony: !!extracted.has_balcony,
         has_elevator: !!extracted.has_elevator,
         has_storage: !!extracted.has_storage,
