@@ -16,7 +16,8 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { defaultPropertyData, PropertyWizardData } from '@/components/agent/wizard/PropertyWizardContext';
 
-const AGENCY_WIZARD_STORAGE_KEY = 'agency-property-wizard-draft';
+const AGENCY_WIZARD_STORAGE_PREFIX = 'agency-property-wizard-draft';
+const wizardStorageKey = (agencyId: string) => `${AGENCY_WIZARD_STORAGE_PREFIX}:${agencyId}`;
 const KICKSTART_DRAFT_PREFIX = 'ai-kickstart-draft:';
 const draftKey = (agencyId: string) => `${KICKSTART_DRAFT_PREFIX}${agencyId}`;
 
@@ -429,13 +430,13 @@ export function AiListingKickstartDialog({
       savedAt: new Date().toISOString(),
     };
     try {
-      localStorage.setItem(AGENCY_WIZARD_STORAGE_KEY, JSON.stringify(payload));
+      localStorage.setItem(wizardStorageKey(agencyId), JSON.stringify(payload));
     } catch {
       toast.error('Could not save draft locally');
       return;
     }
     onOpenChange(false);
-    navigate('/agency/properties/new');
+    navigate(`/agency/properties/new?agencyId=${agencyId}`);
   };
 
   const reset = () => {

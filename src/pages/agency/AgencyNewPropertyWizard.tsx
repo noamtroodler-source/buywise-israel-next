@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Save, Send, Loader2, Sparkles, FileText } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
@@ -38,7 +40,9 @@ import { getMarketFitReview } from '@/lib/marketFit';
 import { PriceContextSubmissionPreview } from '@/components/agent/wizard/PriceContextSubmissionPreview';
 import { getWizardPriceContextPersistence } from '@/lib/wizardPriceContext';
 
-const AGENCY_WIZARD_STORAGE_KEY = 'agency-property-wizard-draft';
+const AGENCY_WIZARD_STORAGE_PREFIX = 'agency-property-wizard-draft';
+const wizardStorageKey = (agencyId: string | null | undefined) =>
+  agencyId ? `${AGENCY_WIZARD_STORAGE_PREFIX}:${agencyId}` : AGENCY_WIZARD_STORAGE_PREFIX;
 
 const steps = [
   { title: 'Assign Agent', description: 'Choose team member' },
@@ -67,6 +71,8 @@ interface AgencyWizardMetadata {
 
 function AgencyWizardContent() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const overrideAgencyId = searchParams.get('agencyId');
   const { data, currentStep, setCurrentStep, goNext, goBack, canGoNext, isLastStep, setStepOffset, loadFromSaved, getStepErrors, getAllErrors } = usePropertyWizard();
 
   // Compute step errors for progress bar (step 0 = Assign Agent has no validation here)
@@ -80,7 +86,24 @@ function AgencyWizardContent() {
     setStepOffset(1);
   }, [setStepOffset]);
 
-  const { data: agency } = useMyAgency();
+  const { data: myAgency } = useMyAgency();
+  // Admin provisioning flow can target a different agency via ?agencyId=
+  const { data: overrideAgency } = useQuery({
+    queryKey: ['wizard-override-agency', overrideAgencyId],
+    queryFn: async () => {
+      if (!overrideAgencyId) return null;
+      const { data, error } = await supabase
+        .from('agencies')
+        .select('*')
+        .eq('id', overrideAgencyId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!overrideAgencyId,
+  });
+  const agency = overrideAgencyId ? overrideAgency : myAgency;
+  const storageKey = wizardStorageKey(agency?.id);
   const { data: team = [] } = useAgencyTeam(agency?.id);
   const { data: listings = [] } = useAgencyListingsManagement(agency?.id);
   const { data: cities = [] } = useCities();
@@ -126,21 +149,22 @@ function AgencyWizardContent() {
 
   const autoSave = useAutoSave<PropertyWizardData, AgencyWizardMetadata>({
     data,
-    storageKey: AGENCY_WIZARD_STORAGE_KEY,
+    storageKey,
     autoSaveInterval: 0,
     useSessionKey: false,
     metadata: { currentStep, assignedAgentId },
   });
 
-  // Check for saved draft on mount
+  // Check for saved draft once the storage key is settled (waits for override agency to resolve)
   useEffect(() => {
     if (hasCheckedDraft.current) return;
+    if (overrideAgencyId && !overrideAgency) return; // still resolving target agency
     hasCheckedDraft.current = true;
     const saved = autoSave.getSavedData();
     if (saved?.data && saved.data.title) {
       setShowRecoveryDialog(true);
     }
-  }, []);
+  }, [overrideAgencyId, overrideAgency, autoSave]);
 
   const handleResumeDraft = () => {
     const saved = autoSave.getSavedData();
