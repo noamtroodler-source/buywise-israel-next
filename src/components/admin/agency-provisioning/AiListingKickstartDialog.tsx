@@ -327,19 +327,20 @@ export function AiListingKickstartDialog({
       if (match?.confidence === 'high') setSelectedAgentId(match.agent_id);
       setCoverIndex(typeof data.cover_photo_index === 'number' ? data.cover_photo_index : null);
 
-      // Tag each uploaded image with its AI-classified kind so we can hide spec sheets
-      // from the cover-photo grid and from the description writer.
+      // Tag each uploaded image with its AI-classified kind, but the user's
+      // explicit bucket choice always wins: 'photo' → property_photo;
+      // 'info' → keep AI's classification (floor_plan / spec_sheet / screenshot_other).
       const kinds: ImageKind[] | undefined = Array.isArray(data.image_kinds) ? data.image_kinds : undefined;
-      if (kinds && kinds.length > 0) {
-        setImages((prev) => {
-          const readyOnlyUrls = prev.filter((i) => i.publicUrl).map((i) => i.publicUrl);
-          return prev.map((img) => {
-            if (!img.publicUrl) return img;
-            const idx = readyOnlyUrls.indexOf(img.publicUrl);
-            return idx >= 0 && kinds[idx] ? { ...img, kind: kinds[idx] } : img;
-          });
+      setImages((prev) => {
+        const readyOnlyUrls = prev.filter((i) => i.publicUrl).map((i) => i.publicUrl);
+        return prev.map((img) => {
+          if (!img.publicUrl) return img;
+          if (img.bucket === 'photo') return { ...img, kind: 'property_photo' };
+          const idx = readyOnlyUrls.indexOf(img.publicUrl);
+          const aiKind = kinds && idx >= 0 ? kinds[idx] : undefined;
+          return { ...img, kind: aiKind || img.kind || 'screenshot_other' };
         });
-      }
+      });
 
       await checkDuplicates(ex);
       toast.success('Extracted — review and open the wizard');
