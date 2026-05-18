@@ -22,7 +22,7 @@ const dlog = (...args: unknown[]) => { if (DEBUG) console.log(...args); };
 
 // Deploy marker — printed once on cold start. Bump on any structural change so
 // we can confirm via edge-function logs that the latest code is actually live.
-const DEPLOY_MARKER = "madlan-apify-switch-2026-05-17-v18";
+const DEPLOY_MARKER = "disable-newdev-prefilter-2026-05-18-v19";
 console.log(`[import-agency-listings] cold start — deploy: ${DEPLOY_MARKER}`);
 // One-time env-var visibility check. Helps diagnose Lovable secret-propagation
 // issues (e.g. v15 cold-started with SCRAPINGBEE_API_KEY absent even though
@@ -927,13 +927,23 @@ function isNonResalePage(markdown: string, importType: string = "resale"): { ski
     }
   }
 
-  // New construction / developer indicators
-  const newDevPatterns = [
-    /מקבלן/, /על\s+הנייר/, /חדש\s+מקבלן/, /פרויקט\s+חדש/,
-    /דירות\s+חדשות\s+מקבלן/, /בנייה\s+חדשה/,
-    /\bnew\s+construction\b/i, /\boff[\s-]?plan\b/i,
-    /\bfrom\s+developer\b/i, /\bpre[\s-]?sale\b/i,
-  ];
+  // New construction / developer pre-filter — DISABLED.
+  //
+  // Same failure mode as the sold/rented pre-filter above: these patterns
+  // run against the first 3000 chars of the page, which includes the site's
+  // global header/nav/footer. Agency sites routinely have a "New Construction"
+  // nav link, "from developer" marketing copy, or Hebrew מקבלן/בנייה חדשה in
+  // category menus — none of which means THIS listing is an off-plan project.
+  // Gordon Realty (gordonrealtyrbs.com) hit 41/43 false rejections here:
+  // every resale listing page carries the same site chrome.
+  //
+  // The AI extraction below already classifies listing_category as
+  // "property" | "project" | "not_listing" with full page context, and
+  // genuine developments are skipped via the "Project/development page"
+  // path. That is the structurally correct place for this decision — a
+  // regex over page chrome is not. Running AI on the small number of real
+  // project pages is worth getting every genuine resale listing through.
+  const newDevPatterns: RegExp[] = [];
   for (const p of newDevPatterns) {
     if (p.test(snippet)) return { skip: true, reason: "Pre-filter: new construction/developer listing" };
   }
