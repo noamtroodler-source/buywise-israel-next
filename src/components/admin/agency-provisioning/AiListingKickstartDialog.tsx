@@ -441,13 +441,18 @@ export function AiListingKickstartDialog({
                   {images.map((img, idx) => {
                     const readyIdx = images.filter((it) => it.publicUrl).indexOf(img);
                     const isCover = coverIndex != null && readyIdx >= 0 && readyIdx === coverIndex;
-                    const canPickCover = !!img.publicUrl && !img.uploading;
+                    const isProperty = !img.kind || img.kind === 'property_photo';
+                    const canPickCover = !!img.publicUrl && !img.uploading && isProperty;
+                    const kindLabel = img.kind === 'spec_sheet' ? 'Spec sheet'
+                      : img.kind === 'floor_plan' ? 'Floor plan'
+                      : img.kind === 'screenshot_other' ? 'Screenshot' : null;
+                    const willBeExcluded = img.kind === 'spec_sheet' || img.kind === 'screenshot_other';
                     return (
                       <div
                         key={idx}
                         onClick={() => canPickCover && setCoverFromImage(img)}
-                        className={`relative group aspect-square rounded-md overflow-hidden border bg-muted ${isCover ? 'ring-2 ring-primary' : ''} ${canPickCover ? 'cursor-pointer hover:ring-2 hover:ring-primary/40' : ''}`}
-                        title={canPickCover ? (isCover ? 'Current cover' : 'Click to use as cover') : undefined}
+                        className={`relative group aspect-square rounded-md overflow-hidden border bg-muted ${isCover ? 'ring-2 ring-primary' : ''} ${canPickCover ? 'cursor-pointer hover:ring-2 hover:ring-primary/40' : ''} ${willBeExcluded ? 'opacity-60' : ''}`}
+                        title={canPickCover ? (isCover ? 'Current cover' : 'Click to use as cover') : willBeExcluded ? 'Used for facts only — will NOT be added to the listing' : undefined}
                       >
                         <img src={img.previewUrl} alt="" className="w-full h-full object-cover" />
                         {isCover && (
@@ -455,11 +460,17 @@ export function AiListingKickstartDialog({
                             <ImageIcon className="h-2.5 w-2.5" /> Cover
                           </div>
                         )}
+                        {kindLabel && !isCover && (
+                          <div className={`absolute top-1 left-1 text-[9px] px-1.5 py-0.5 rounded ${willBeExcluded ? 'bg-amber-500 text-white' : 'bg-background/80 text-foreground'}`}>
+                            {kindLabel}
+                          </div>
+                        )}
                         {img.enhanced && (
                           <div className="absolute bottom-1 left-1 bg-emerald-600 text-white text-[9px] px-1.5 py-0.5 rounded flex items-center gap-0.5">
                             <Wand2 className="h-2.5 w-2.5" /> Enhanced
                           </div>
                         )}
+
                         {(img.uploading || img.enhancing) && (
                           <div className="absolute inset-0 bg-background/60 flex items-center justify-center">
                             <Loader2 className="h-4 w-4 animate-spin" />
