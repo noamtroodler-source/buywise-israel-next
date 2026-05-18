@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, Upload, X, Loader2, Wand2, ArrowRight } from 'lucide-react';
+import { Sparkles, Upload, X, Loader2, Wand2, ArrowRight, UserCheck, UserX, AlertTriangle, ImageIcon, ExternalLink } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
@@ -28,11 +28,29 @@ interface UploadedImage {
 interface ExtractedListing extends Partial<PropertyWizardData> {
   source_notes?: string[];
   low_confidence_fields?: string[];
+  listing_status_confidence?: 'high' | 'low';
+  detected_agent?: { name?: string; phone?: string; license_number?: string };
+}
+
+interface AgentMatch {
+  agent_id: string;
+  agent_name: string;
+  basis: 'license_number' | 'phone' | 'name' | 'name_weak';
+  confidence: 'high' | 'low';
+}
+
+interface DuplicateHit {
+  id: string;
+  title: string | null;
+  address: string | null;
+  city: string | null;
+  price: number | null;
 }
 
 export function AiListingKickstartDialog({
   open,
   onOpenChange,
+  agencyId,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -45,24 +63,24 @@ export function AiListingKickstartDialog({
   const [hintCity, setHintCity] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
   const [extracted, setExtracted] = useState<ExtractedListing | null>(null);
+  const [agentMatch, setAgentMatch] = useState<AgentMatch | null>(null);
+  const [coverIndex, setCoverIndex] = useState<number | null>(null);
+  const [duplicates, setDuplicates] = useState<DuplicateHit[]>([]);
+  const [duplicateAcknowledged, setDuplicateAcknowledged] = useState(false);
+  const [statusChoice, setStatusChoice] = useState<'for_sale' | 'for_rent' | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFiles = useCallback(async (files: FileList | File[]) => {
     const arr = Array.from(files).filter((f) => f.type.startsWith('image/'));
     if (arr.length === 0) return;
-    if (images.length + arr.length > 12) {
-      toast.warning('Up to 12 images at a time. Some were skipped.');
-    }
+    if (images.length + arr.length > 12) toast.warning('Up to 12 images at a time. Some were skipped.');
     const accepted = arr.slice(0, 12 - images.length);
     const newEntries: UploadedImage[] = accepted.map((file) => ({
-      file,
-      previewUrl: URL.createObjectURL(file),
-      uploading: true,
+      file, previewUrl: URL.createObjectURL(file), uploading: true,
     }));
     setImages((prev) => [...prev, ...newEntries]);
 
-    for (let i = 0; i < newEntries.length; i++) {
-      const entry = newEntries[i];
+    for (const entry of newEntries) {
       try {
         const ext = entry.file.name.split('.').pop() || 'jpg';
         const path = `ai-kickstart/${crypto.randomUUID()}.${ext}`;
@@ -71,17 +89,9 @@ export function AiListingKickstartDialog({
           .upload(path, entry.file, { contentType: entry.file.type });
         if (error) throw error;
         const { data } = supabase.storage.from('property-images').getPublicUrl(path);
-        setImages((prev) =>
-          prev.map((it) =>
-            it === entry ? { ...it, uploading: false, publicUrl: data.publicUrl } : it,
-          ),
-        );
+        setImages((prev) => prev.map((it) => it === entry ? { ...it, uploading: false, publicUrl: data.publicUrl } : it));
       } catch (e: any) {
-        setImages((prev) =>
-          prev.map((it) =>
-            it === entry ? { ...it, uploading: false, error: e?.message || 'Upload failed' } : it,
-          ),
-        );
+        setImages((prev) => prev.map((it) => it === entry ? { ...it, uploading: false, error: e?.message || 'Upload failed' } : it));
       }
     }
   }, [images.length]);
@@ -96,6 +106,31 @@ export function AiListingKickstartDialog({
     if (e.dataTransfer.files?.length) handleFiles(e.dataTransfer.files);
   };
 
+  const checkDuplicates = async (ex: ExtractedListing) => {
+    const city = (ex.city || '').trim();
+    const price = Number(ex.price || 0);
+    if (!city || price <= 0) {
+      setDuplicates([]);
+      return;
+    }
+    const min = Math.round(price * 0.95);
+    const max = Math.round(price * 1.05);
+    try {
+      let q = supabase
+        .from('properties')
+        .select('id, title, address, city, price, bedrooms')
+        .ilike('city', city)
+        .gte('price', min)
+        .lte('price', max)
+        .limit(5);
+      if (ex.bedrooms != null) q = q.eq('bedrooms', ex.bedrooms);
+      const { data } = await q;
+      setDuplicates((data || []) as DuplicateHit[]);
+    } catch {
+      setDuplicates([]);
+    }
+  };
+
   const analyze = async () => {
     const ready = images.filter((i) => i.publicUrl);
     if (ready.length === 0 && description.trim().length < 10) {
@@ -108,11 +143,17 @@ export function AiListingKickstartDialog({
     }
     setAnalyzing(true);
     setExtracted(null);
+    setAgentMatch(null);
+    setCoverIndex(null);
+    setDuplicates([]);
+    setDuplicateAcknowledged(false);
+    setStatusChoice(null);
     try {
       const { data, error } = await supabase.functions.invoke('ai-extract-listing', {
         body: {
           image_urls: ready.map((i) => i.publicUrl),
           description: description.trim(),
+          agency_id: agencyId,
           hint: {
             ...(hintIntent !== 'auto' ? { listing_status: hintIntent } : {}),
             ...(hintCity.trim() ? { city: hintCity.trim() } : {}),
@@ -121,7 +162,11 @@ export function AiListingKickstartDialog({
       });
       if (error) throw error;
       if (!data?.extracted) throw new Error('No data returned');
-      setExtracted(data.extracted as ExtractedListing);
+      const ex = data.extracted as ExtractedListing;
+      setExtracted(ex);
+      setAgentMatch((data.agent_match as AgentMatch) || null);
+      setCoverIndex(typeof data.cover_photo_index === 'number' ? data.cover_photo_index : null);
+      await checkDuplicates(ex);
       toast.success('Extracted — review and open the wizard');
     } catch (e: any) {
       toast.error(e?.message || 'AI extraction failed');
@@ -130,32 +175,56 @@ export function AiListingKickstartDialog({
     }
   };
 
+  const needsStatusChoice = !!extracted && extracted.listing_status_confidence === 'low' && !statusChoice;
+  const blockedByDuplicate = duplicates.length > 0 && !duplicateAcknowledged;
+
   const openWizard = () => {
     if (!extracted) return;
+    if (needsStatusChoice) {
+      toast.warning('Choose sale or rent first');
+      return;
+    }
+    if (blockedByDuplicate) {
+      toast.warning('Acknowledge the possible duplicate before continuing');
+      return;
+    }
 
-    // Merge with wizard defaults so every required key exists.
+    const readyImages = images.filter((i) => i.publicUrl).map((i) => i.publicUrl!);
+    // Reorder so AI-picked cover is first.
+    let orderedImages = readyImages;
+    if (coverIndex != null && coverIndex >= 0 && coverIndex < readyImages.length) {
+      orderedImages = [readyImages[coverIndex], ...readyImages.filter((_, i) => i !== coverIndex)];
+    }
+
+    const finalStatus = statusChoice ?? extracted.listing_status;
+
     const draftData: PropertyWizardData = {
       ...defaultPropertyData,
       ...Object.fromEntries(
         Object.entries(extracted).filter(([k, v]) =>
-          v !== undefined && v !== null && !['source_notes', 'low_confidence_fields'].includes(k),
+          v !== undefined && v !== null &&
+          !['source_notes', 'low_confidence_fields', 'listing_status_confidence', 'detected_agent'].includes(k),
         ),
       ),
-      // Attach uploaded images as listing photos.
-      images: images.filter((i) => i.publicUrl).map((i) => i.publicUrl!),
-      // Sensible defaults.
+      listing_status: finalStatus as PropertyWizardData['listing_status'],
+      images: orderedImages,
       sqm_source: extracted.size_sqm ? (defaultPropertyData.sqm_source ?? 'agent_estimate') : undefined,
       is_immediate_entry: true,
     } as PropertyWizardData;
 
     const payload = {
       data: draftData,
-      metadata: { currentStep: 1, assignedAgentId: null },
+      metadata: {
+        currentStep: 1,
+        assignedAgentId: agentMatch?.confidence === 'high' ? agentMatch.agent_id : null,
+        coverPhotoIndex: 0,
+        duplicateAcknowledged: blockedByDuplicate ? true : duplicates.length > 0 ? true : false,
+      },
       savedAt: new Date().toISOString(),
     };
     try {
       localStorage.setItem(AGENCY_WIZARD_STORAGE_KEY, JSON.stringify(payload));
-    } catch (e) {
+    } catch {
       toast.error('Could not save draft locally');
       return;
     }
@@ -168,6 +237,11 @@ export function AiListingKickstartDialog({
     setImages([]);
     setDescription('');
     setExtracted(null);
+    setAgentMatch(null);
+    setCoverIndex(null);
+    setDuplicates([]);
+    setDuplicateAcknowledged(false);
+    setStatusChoice(null);
     setHintIntent('auto');
     setHintCity('');
   };
@@ -182,8 +256,8 @@ export function AiListingKickstartDialog({
           </DialogTitle>
           <DialogDescription>
             Drop in any screenshots (Yad2, Madlan, agency PDFs, WhatsApp, floor plans) and/or a
-            description. AI will fill in bedrooms, baths, price, rental vs. resale, amenities and
-            more — you review in the wizard before submitting.
+            description. AI fills in the wizard fields, matches the listing agent from your roster,
+            picks a cover photo, and warns you about possible duplicates.
           </DialogDescription>
         </DialogHeader>
 
@@ -198,9 +272,7 @@ export function AiListingKickstartDialog({
             >
               <Upload className="h-6 w-6 mx-auto text-muted-foreground mb-2" />
               <p className="text-sm font-medium">Drop screenshots here or click to upload</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                PNG, JPG, WebP — up to 12 images
-              </p>
+              <p className="text-xs text-muted-foreground mt-1">PNG, JPG, WebP — up to 12 images</p>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -213,28 +285,37 @@ export function AiListingKickstartDialog({
 
             {images.length > 0 && (
               <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
-                {images.map((img, idx) => (
-                  <div key={idx} className="relative group aspect-square rounded-md overflow-hidden border bg-muted">
-                    <img src={img.previewUrl} alt="" className="w-full h-full object-cover" />
-                    {img.uploading && (
-                      <div className="absolute inset-0 bg-background/60 flex items-center justify-center">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      </div>
-                    )}
-                    {img.error && (
-                      <div className="absolute inset-0 bg-destructive/70 text-destructive-foreground text-[10px] flex items-center justify-center p-1 text-center">
-                        {img.error}
-                      </div>
-                    )}
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); removeImage(img); }}
-                      className="absolute top-1 right-1 bg-background/80 rounded-full p-0.5 opacity-0 group-hover:opacity-100"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </div>
-                ))}
+                {images.map((img, idx) => {
+                  const readyIdx = images.filter((it) => it.publicUrl).indexOf(img);
+                  const isCover = coverIndex != null && readyIdx === coverIndex;
+                  return (
+                    <div key={idx} className={`relative group aspect-square rounded-md overflow-hidden border bg-muted ${isCover ? 'ring-2 ring-primary' : ''}`}>
+                      <img src={img.previewUrl} alt="" className="w-full h-full object-cover" />
+                      {isCover && (
+                        <div className="absolute top-1 left-1 bg-primary text-primary-foreground text-[9px] px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                          <ImageIcon className="h-2.5 w-2.5" /> Cover
+                        </div>
+                      )}
+                      {img.uploading && (
+                        <div className="absolute inset-0 bg-background/60 flex items-center justify-center">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        </div>
+                      )}
+                      {img.error && (
+                        <div className="absolute inset-0 bg-destructive/70 text-destructive-foreground text-[10px] flex items-center justify-center p-1 text-center">
+                          {img.error}
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); removeImage(img); }}
+                        className="absolute top-1 right-1 bg-background/80 rounded-full p-0.5 opacity-0 group-hover:opacity-100"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             )}
 
@@ -284,12 +365,89 @@ export function AiListingKickstartDialog({
             {/* Result preview */}
             {extracted && (
               <Card className="p-4 space-y-3 bg-muted/30">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   <div className="font-medium text-sm flex items-center gap-2">
                     <Wand2 className="h-4 w-4 text-primary" /> Extracted draft
                   </div>
-                  <Badge variant="secondary">{(extracted.listing_status || 'for_sale').replace('_', ' ')}</Badge>
+                  <div className="flex items-center gap-2">
+                    {extracted.listing_status_confidence !== 'low' && (
+                      <Badge variant="secondary">{(extracted.listing_status || 'for_sale').replace('_', ' ')}</Badge>
+                    )}
+                    {agentMatch?.confidence === 'high' && (
+                      <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 gap-1">
+                        <UserCheck className="h-3 w-3" /> {agentMatch.agent_name}
+                      </Badge>
+                    )}
+                    {agentMatch && agentMatch.confidence === 'low' && (
+                      <Badge variant="outline" className="border-amber-400 text-amber-700 gap-1">
+                        <UserX className="h-3 w-3" /> Maybe {agentMatch.agent_name}
+                      </Badge>
+                    )}
+                    {!agentMatch && extracted.detected_agent?.name && (
+                      <Badge variant="outline" className="border-amber-400 text-amber-700 gap-1">
+                        <UserX className="h-3 w-3" /> No agent match
+                      </Badge>
+                    )}
+                  </div>
                 </div>
+
+                {/* Forced sale/rent choice */}
+                {extracted.listing_status_confidence === 'low' && (
+                  <div className="rounded-md border border-amber-300 bg-amber-50 p-3 space-y-2">
+                    <div className="text-xs font-medium text-amber-900 flex items-center gap-1">
+                      <AlertTriangle className="h-3.5 w-3.5" /> Is this for sale or for rent? Source wasn't clear.
+                    </div>
+                    <div className="flex gap-2">
+                      {(['for_sale', 'for_rent'] as const).map((opt) => (
+                        <Button
+                          key={opt}
+                          type="button"
+                          size="sm"
+                          variant={statusChoice === opt ? 'default' : 'outline'}
+                          onClick={() => setStatusChoice(opt)}
+                          className="flex-1"
+                        >
+                          {opt === 'for_sale' ? 'For sale' : 'For rent'}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Duplicate warning */}
+                {duplicates.length > 0 && (
+                  <div className="rounded-md border border-amber-300 bg-amber-50 p-3 space-y-2">
+                    <div className="text-xs font-medium text-amber-900 flex items-center gap-1">
+                      <AlertTriangle className="h-3.5 w-3.5" />
+                      {duplicates.length === 1 ? 'Possible duplicate already in inventory' : `${duplicates.length} possible duplicates in inventory`}
+                    </div>
+                    <ul className="text-xs space-y-1">
+                      {duplicates.map((d) => (
+                        <li key={d.id} className="flex items-center justify-between gap-2">
+                          <span className="truncate">
+                            {d.title || 'Untitled'} — {d.address || d.city} · ₪{(d.price ?? 0).toLocaleString()}
+                          </span>
+                          <a
+                            href={`/property/${d.id}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-0.5 text-primary hover:underline shrink-0"
+                          >
+                            View <ExternalLink className="h-3 w-3" />
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                    {!duplicateAcknowledged && (
+                      <Button size="sm" variant="outline" onClick={() => setDuplicateAcknowledged(true)}>
+                        Continue anyway
+                      </Button>
+                    )}
+                    {duplicateAcknowledged && (
+                      <div className="text-xs text-amber-800">Acknowledged — you can open the wizard.</div>
+                    )}
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
                   <Field label="Type" value={extracted.property_type} />
@@ -353,7 +511,7 @@ export function AiListingKickstartDialog({
                 {analyzing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
                 Re-analyze
               </Button>
-              <Button onClick={openWizard}>
+              <Button onClick={openWizard} disabled={needsStatusChoice || blockedByDuplicate}>
                 Open wizard with these values
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
