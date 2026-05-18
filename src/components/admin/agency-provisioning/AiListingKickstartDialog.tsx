@@ -71,7 +71,19 @@ export function AiListingKickstartDialog({
   const [duplicates, setDuplicates] = useState<DuplicateHit[]>([]);
   const [duplicateAcknowledged, setDuplicateAcknowledged] = useState(false);
   const [statusChoice, setStatusChoice] = useState<'for_sale' | 'for_rent' | null>(null);
+  const [agencyAgents, setAgencyAgents] = useState<{ id: string; name: string }[]>([]);
+  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!open || !agencyId) return;
+    supabase
+      .from('agents')
+      .select('id, name')
+      .eq('agency_id', agencyId)
+      .order('name')
+      .then(({ data }) => setAgencyAgents((data || []) as { id: string; name: string }[]));
+  }, [open, agencyId]);
 
   const handleFiles = useCallback(async (files: FileList | File[]) => {
     const arr = Array.from(files).filter((f) => f.type.startsWith('image/'));
