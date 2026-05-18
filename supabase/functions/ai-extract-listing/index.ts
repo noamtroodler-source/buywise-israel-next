@@ -17,7 +17,7 @@ function jsonResponse(payload: Record<string, unknown>, status = 200): Response 
   });
 }
 
-async function safeReadJson(r: Response): Promise<any | null> {
+async function safeReadJson(r: { text: () => Promise<string> }): Promise<any | null> {
   const text = await r.text().catch(() => "");
   if (!text.trim()) return null;
   try {
