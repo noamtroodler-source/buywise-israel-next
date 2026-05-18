@@ -1,0 +1,1 @@
+DELETE FROM public.properties WHERE primary_agency_id IN ('bf22a831-dd0f-459a-8d8f-928ad292ea32','3bb23813-2c1c-416a-88e6-aae7afc81b89') OR claimed_by_agency_id IN ('bf22a831-dd0f-459a-8d8f-928ad292ea32','3bb23813-2c1c-416a-88e6-aae7afc81b89');
