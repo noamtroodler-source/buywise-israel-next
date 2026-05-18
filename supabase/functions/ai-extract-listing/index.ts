@@ -10,6 +10,75 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+function jsonResponse(payload: Record<string, unknown>, status = 200): Response {
+  return new Response(JSON.stringify(payload), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+async function safeReadJson(r: { text: () => Promise<string> }): Promise<any | null> {
+  const text = await r.text().catch(() => "");
+  if (!text.trim()) return null;
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    console.error("Failed to parse AI gateway JSON", e, text.slice(0, 500));
+    return null;
+  }
+}
+
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function fetchAiJsonWithRetry(
+  url: string,
+  init: RequestInit,
+  attempts = 2,
+): Promise<{ response: Response; json: any | null; text: string }> {
+  let lastResponse: Response | null = null;
+  let lastText = "";
+
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    const response = await fetch(url, init);
+    const text = await response.text().catch(() => "");
+    lastResponse = response;
+    lastText = text;
+
+    if (!response.ok) return { response, json: null, text };
+    if (text.trim()) {
+      try {
+        return { response, json: JSON.parse(text), text };
+      } catch (e) {
+        console.error("Failed to parse AI gateway JSON", e, text.slice(0, 500));
+      }
+    }
+
+    if (attempt < attempts) await wait(600 * attempt);
+  }
+
+  return { response: lastResponse!, json: null, text: lastText };
+}
+
+function parseToolArguments(raw: string): any {
+  let cleaned = raw
+    .replace(/```json\s*/gi, "")
+    .replace(/```\s*/g, "")
+    .trim();
+
+  const start = cleaned.search(/[\{\[]/);
+  if (start > 0) cleaned = cleaned.slice(start);
+
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    cleaned = cleaned
+      .replace(/,\s*}/g, "}")
+      .replace(/,\s*]/g, "]")
+      .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "");
+    return JSON.parse(cleaned);
+  }
+}
+
 // ─── Stage A: OCR / facts transcript ─────────────────────────────────
 const OCR_PROMPT = `You are an OCR + listing-fact transcriber for Israeli real estate screenshots (Yad2, Madlan, agency sites, WhatsApp, flyers, floor plans).
 
@@ -47,7 +116,8 @@ async function ocrTranscript(imageUrls: string[], apiKey: string): Promise<strin
       console.error("OCR pass failed", r.status, await r.text().catch(() => ""));
       return "";
     }
-    const j = await r.json();
+    const j = await safeReadJson(r);
+    if (!j) return "";
     return (j?.choices?.[0]?.message?.content || "").toString();
   } catch (e) {
     console.error("OCR pass error", e);
@@ -351,11 +421,12 @@ No prose, no markdown.` },
       body: JSON.stringify({ model: "google/gemini-2.5-flash", temperature: 0, messages: [{ role: "user", content }] }),
     });
     if (!r.ok) { console.error("classify failed", r.status); return imageUrls.map(() => "property_photo"); }
-    const j = await r.json();
+    const j = await safeReadJson(r);
+    if (!j) return imageUrls.map(() => "property_photo");
     const raw = (j?.choices?.[0]?.message?.content || "").toString();
     const m = raw.match(/\[[\s\S]*\]/);
     if (!m) return imageUrls.map(() => "property_photo");
-    const arr = JSON.parse(m[0]);
+    const arr = parseToolArguments(m[0]);
     if (!Array.isArray(arr)) return imageUrls.map(() => "property_photo");
     const valid: ImageKind[] = ["property_photo","floor_plan","spec_sheet","screenshot_other"];
     return imageUrls.map((_, i) => {
@@ -387,7 +458,8 @@ async function pickCoverPhotoIndex(imageUrls: string[], apiKey: string, kinds: I
       body: JSON.stringify({ model: "google/gemini-2.5-flash", messages: [{ role: "user", content }], temperature: 0 }),
     });
     if (!r.ok) return eligibleIdx[0];
-    const j = await r.json();
+    const j = await safeReadJson(r);
+    if (!j) return eligibleIdx[0];
     const m = (j?.choices?.[0]?.message?.content?.toString() || "").match(/\d+/);
     if (!m) return eligibleIdx[0];
     const idx = parseInt(m[0], 10);
@@ -401,30 +473,31 @@ Deno.serve(async (req) => {
 
   try {
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) return new Response(JSON.stringify({ error: "Missing authorization" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!authHeader) return jsonResponse({ error: "Missing authorization" }, 401);
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const userClient = createClient(supabaseUrl, anonKey, { global: { headers: { Authorization: authHeader } } });
     const { data: { user } } = await userClient.auth.getUser();
-    if (!user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!user) return jsonResponse({ error: "Unauthorized" }, 401);
     const admin = createClient(supabaseUrl, serviceKey);
     const { data: isAdmin } = await admin.rpc("has_role", { _user_id: user.id, _role: "admin" });
-    if (!isAdmin) return new Response(JSON.stringify({ error: "Admin only" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!isAdmin) return jsonResponse({ error: "Admin only" }, 403);
 
-    const body = await req.json();
+    const body = await safeReadJson(req);
+    if (!body) return jsonResponse({ error: "Invalid request body" }, 400);
     const imageUrls: string[] = Array.isArray(body.image_urls) ? body.image_urls.slice(0, 20) : [];
     const description: string = (body.description || "").toString().slice(0, 8000);
     const hint: { listing_status?: string; city?: string } = body.hint || {};
     const agencyId: string | null = body.agency_id || null;
 
     if (imageUrls.length === 0 && description.trim().length < 10) {
-      return new Response(JSON.stringify({ error: "Provide at least one image or a description (10+ chars)" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return jsonResponse({ error: "Provide at least one image or a description (10+ chars)" }, 400);
     }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) return new Response(JSON.stringify({ error: "AI service not configured" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!LOVABLE_API_KEY) return jsonResponse({ error: "AI service not configured" }, 500);
 
     const rosterPromise: Promise<RosterAgent[]> = agencyId
       ? admin.from("agents").select("id, name, phone, license_number").eq("agency_id", agencyId).then(({ data }) => (data || []) as RosterAgent[])
@@ -447,7 +520,7 @@ Deno.serve(async (req) => {
     for (const url of imageUrls) userContent.push({ type: "image_url", image_url: { url } });
     if (userContent.length === 0) userContent.push({ type: "text", text: "Extract whatever you can." });
 
-    const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const { response: aiResp, json: aiJson, text: aiText } = await fetchAiJsonWithRetry("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -463,21 +536,21 @@ Deno.serve(async (req) => {
     });
 
     if (!aiResp.ok) {
-      const text = await aiResp.text();
-      console.error("AI gateway error", aiResp.status, text);
-      if (aiResp.status === 429) return new Response(JSON.stringify({ error: "Rate limited, try again in a moment" }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      if (aiResp.status === 402) return new Response(JSON.stringify({ error: "AI credits exhausted — add credits in Workspace settings" }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      return new Response(JSON.stringify({ error: "AI extraction failed", detail: text }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      console.error("AI gateway error", aiResp.status, aiText);
+      if (aiResp.status === 429) return jsonResponse({ error: "Rate limited, try again in a moment" }, 429);
+      if (aiResp.status === 402) return jsonResponse({ error: "AI credits exhausted — add credits in Workspace settings" }, 402);
+      return jsonResponse({ error: "AI extraction failed", detail: aiText }, 502);
     }
 
-    const aiJson = await aiResp.json();
+    if (!aiJson) return jsonResponse({ error: "AI extraction returned an empty or invalid response. Please try again." }, 502);
     const toolCall = aiJson?.choices?.[0]?.message?.tool_calls?.[0];
     if (!toolCall?.function?.arguments) {
-      return new Response(JSON.stringify({ error: "AI returned no structured output" }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return jsonResponse({ error: "AI returned no structured output" }, 502);
     }
     let extracted: any = {};
-    try { extracted = JSON.parse(toolCall.function.arguments); } catch {
-      return new Response(JSON.stringify({ error: "AI returned invalid JSON" }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    try { extracted = parseToolArguments(toolCall.function.arguments); } catch (e) {
+      console.error("AI returned invalid tool JSON", e, toolCall.function.arguments.slice(0, 500));
+      return jsonResponse({ error: "AI returned invalid structured data. Please try again." }, 502);
     }
 
     // ── Deterministic rescue pass ──
@@ -493,12 +566,9 @@ Deno.serve(async (req) => {
       extracted.low_confidence_fields = lc;
     }
 
-    return new Response(
-      JSON.stringify({ extracted, agent_match: agentMatch, cover_photo_index: coverIdx, ocr_transcript: transcript, image_kinds: imageKinds }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    return jsonResponse({ extracted, agent_match: agentMatch, cover_photo_index: coverIdx, ocr_transcript: transcript, image_kinds: imageKinds });
   } catch (e: any) {
     console.error("ai-extract-listing error", e);
-    return new Response(JSON.stringify({ error: e?.message || "Unexpected error" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return jsonResponse({ error: e?.message || "Unexpected error" }, 500);
   }
 });
