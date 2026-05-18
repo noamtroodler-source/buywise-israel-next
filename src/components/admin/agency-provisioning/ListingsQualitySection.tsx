@@ -314,6 +314,20 @@ export function ListingsQualitySection({ agencyId }: { agencyId: string }) {
                         <span className="text-xs text-muted-foreground">0</span>
                       )}
                     </td>
+                    <td className="p-2 text-right" onClick={(e) => e.stopPropagation()}>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                        title="Delete listing"
+                        onClick={() => setConfirmDelete({
+                          ids: [l.id],
+                          label: l.address || l.city || 'this listing',
+                        })}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </td>
                   </tr>
                 );
               })}
@@ -323,6 +337,45 @@ export function ListingsQualitySection({ agencyId }: { agencyId: string }) {
       )}
 
       <ListingDetailDrawer agencyId={agencyId} listing={drawerListing} onClose={() => setDrawerListing(null)} />
+
+      <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {confirmDelete?.label}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes the listing{confirmDelete && confirmDelete.ids.length > 1 ? 's' : ''} from
+              the database, including their audit flags and import history. Scraped photos in storage are kept.
+              This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteListings.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteListings.isPending}
+              onClick={async (e) => {
+                e.preventDefault();
+                if (!confirmDelete) return;
+                try {
+                  await deleteListings.mutateAsync(confirmDelete.ids);
+                  setSelected((prev) => {
+                    const next = new Set(prev);
+                    confirmDelete.ids.forEach((id) => next.delete(id));
+                    return next;
+                  });
+                  setConfirmDelete(null);
+                } catch {}
+              }}
+            >
+              {deleteListings.isPending ? (
+                <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Deleting…</>
+              ) : (
+                <><Trash2 className="h-3.5 w-3.5 mr-1.5" /> Delete</>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
