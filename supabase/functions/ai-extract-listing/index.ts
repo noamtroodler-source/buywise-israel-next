@@ -99,7 +99,7 @@ const OCR_PROMPT = `You are an OCR + listing-fact transcriber for Israeli real e
 For EACH image, write a short block in this exact form, in order:
 
 IMAGE <n>:
-- raw_text: every visible price, number, label, and Hebrew/English word that looks like a listing fact, joined by " | ". Include things like "3,250,000 ₪", "Mr 45" (square meters), "Rooms 1", "floor ground", "5 Floors in the building", "Nahalat Binyamin", "Tel Aviv-Yafo", "Apartment for sale", "Mediator", "new", "renovated", "flexible Entry date", "without Furniture", "9 sq m porch", "elevator", "porch", "dimension", "parking ✗", "Air conditioning ✗", "warehouse ✗", "Pool ✗", "Garden ✗", phone numbers, agent names, agency names.
+- raw_text: every visible price, number, label, and Hebrew/English word that looks like a listing fact, joined by " | ". Include things like "3,250,000 ₪", "Mr 45" (square meters), "Rooms 1", "floor ground", "5 Floors in the building", "Garden area 40 square meters", "Nahalat Binyamin", "Tel Aviv-Yafo", "Garden apartment for sale", "Mediator", "new", "renovated", "flexible Entry date", "without Furniture", "9 sq m porch", "elevator", "porch", "dimension"/"ממ״ד", "parking ✓/✗", "Air conditioning ✓/✗", "warehouse ✓/✗", "Garden ✓/✗", phone numbers, agent names, agency names.
 - listing_text: any free-form property description / blurb visible (Hebrew or English), verbatim.
 - agent_block: any visible agent name, phone, license number, or agency.
 
@@ -156,6 +156,8 @@ Hard rules:
 - A visible "porch" / "מרפסת" / "balcony" tick → has_balcony true + "balcony" in features.
 - A visible "elevator" / "מעלית" tick → has_elevator true + "elevator".
 - A visible "warehouse" / "storage" / "מחסן" tick → has_storage true + "storage".
+- "dimension" in translated Israeli listings usually means ממ״ד / safe room → add "mamad".
+- "Garden area 40 square meters" / "גינה 40 מ״ר" → lot_size_sqm: 40 and add "garden".
 - "without Furniture" / "ללא ריהוט" → furnished_status: "unfurnished".
 - "new" → condition: "new"; "renovated" / "משופץ" → "renovated".
 - description: 2-4 short warm "Trusted Friend" English paragraphs, facts only, no hype.
