@@ -570,7 +570,14 @@ Deno.serve(async (req) => {
       ocrTranscript(imageUrls, LOVABLE_API_KEY),
       classifyImages(imageUrls, LOVABLE_API_KEY),
     ]);
-    const coverIdx = await pickCoverPhotoIndex(imageUrls, LOVABLE_API_KEY, imageKinds);
+    const coverKinds = imageKinds.map((kind, i) => keptImages[i]?.bucket === "photo" ? kind : "spec_sheet");
+    const coverIdxInKept = await pickCoverPhotoIndex(imageUrls, LOVABLE_API_KEY, coverKinds);
+    const coverIdx = coverIdxInKept == null ? null : keptImages[coverIdxInKept]?.originalIndex ?? null;
+    const imageKindsByOriginal = rawImageItems.map(() => "screenshot_other" as ImageKind);
+    imageKinds.forEach((kind, i) => {
+      const kept = keptImages[i];
+      if (kept) imageKindsByOriginal[kept.originalIndex] = kind;
+    });
     console.log("OCR transcript length:", transcript.length, "kinds:", imageKinds);
 
     // ── Stage B: structured extraction ──
@@ -642,7 +649,7 @@ Deno.serve(async (req) => {
       extracted.low_confidence_fields = lc;
     }
 
-    return jsonResponse({ extracted, agent_match: agentMatch, cover_photo_index: coverIdx, ocr_transcript: transcript, image_kinds: imageKinds });
+    return jsonResponse({ extracted, agent_match: agentMatch, cover_photo_index: coverIdx, ocr_transcript: transcript, image_kinds: imageKindsByOriginal });
   } catch (e: any) {
     console.error("ai-extract-listing error", e);
     return jsonResponse({ error: e?.message || "Unexpected error" }, 500);
