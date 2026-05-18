@@ -1,69 +1,59 @@
-# Reset Demo Realty TLV for a fresh demo run
+# AI-Assisted Listing Kickstart
 
-## Confirmed targets
+Goal: From the Agency Provisioning page, let you drop in any number of screenshots (Yad2, Madlan, agency PDFs, WhatsApp images, floor plans) plus a free-text description, and have AI extract every listing field it can — bedrooms, baths, size, price, rental vs resale, amenities, address — then open the standard agency listing wizard pre-filled with those values for you to review and submit.
 
-- **Agency:** Demo Realty TLV — `d3070000-0000-4000-a000-000000000001`
-- **Owner login:** noam.troodler@gmail.com — `7e7d2499-f0ff-4f46-920c-f565bde6e532`
-- **Current state**: 6 provisional agents (none claimed), 44 listings attached, no blog posts, no pending invites, no announcements, no testimonials, owner already has owner+admin rows in `agency_members` and `admin / agent / developer / user` roles in `user_roles`.
+## User flow
 
-So you're actually 90% of the way to a clean medium-reset already. The only thing making it feel "used" is that the agency is flagged as `handover_completed_at` set + `pending_items_dismissed_at` (the onboarding nudges have been dismissed). Once we clear those flags the dashboard greets him with the onboarding cards again.
+1. In `Admin → Agency Provisioning`, the new **"Add a listing manually"** card gets an additional primary button: **"Kickstart with AI"** (the existing "New listing" button stays as the empty-wizard path).
+2. Clicking it opens a dialog:
+   - **Photos / screenshots dropzone** — drag-and-drop multiple files (jpg/png/webp/pdf-page-as-image). Thumbnails shown, can remove individuals. No hard cap, soft warn after 12.
+   - **Description textarea** — paste anything: Hebrew, English, broker WhatsApp blurb, MLS-style copy, voice-note transcript.
+   - **Quick hints row** (optional, helps AI when photos are ambiguous): listing intent (Sale / Rent / Auto-detect), city pre-pick.
+   - **Analyze** button.
+3. Edge function runs Gemini 3 Flash vision with all images + the description text and a strict structured-output schema covering the wizard fields. Returns a `PropertyWizardData` partial plus a per-field confidence map and a list of "source notes" ("price read from Yad2 header", "bedrooms inferred from floor plan").
+4. Result preview panel inside the dialog shows extracted values with confidence chips. You can edit any field inline, then click **"Open wizard with these values"**.
+5. The extracted draft is written to the existing wizard draft key (`agency-property-wizard-draft`) and the route navigates to `/agency/properties/new`. Wizard loads pre-filled; uploaded images are attached to Step 4 (Photos) so they ride along into the listing.
+6. You review step-by-step, fix anything the AI got wrong, and submit normally. No new submission path — same `useCreatePropertyForAgency` mutation.
 
-## What I'll do
+## What the AI extracts
 
-### 1. Reset agency state so it looks freshly handed over
+Mapped 1:1 to `PropertyWizardData`:
 
-Migration on `agencies` (single row, id = above):
-- `handover_completed_at` → `NULL`  → re-shows the "complete handover" / welcome cards
-- `pending_items_dismissed_at` → `NULL`  → re-shows the pending-items panel
-- `last_conflict_digest_at` → `NULL`  → clears the digest banner
-- Leave `status='active'`, `management_status='handed_over'`, `admin_user_id`, `default_invite_code` untouched (he still needs to log in and own the agency).
+- **Basics**: title, property_type (apartment / penthouse / garden_apartment / duplex / house / etc.), listing_status (`for_sale` vs `for_rent` — auto-detected from "להשכרה / לשכירות" or "₪/month" cues, overridable), price (NIS, normalized from "$" or "₪" or "מיליון"), city + neighborhood + address (Hebrew → matched against city whitelist + neighborhood roster via `neighborhoodMatcher`).
+- **Details**: bedrooms, additional_rooms (computed via Israeli room count standard from "5 חדרים"), bathrooms, size_sqm (with sqm_source = `agent_estimate` unless an explicit tabu/arnona reference appears), floor / total_floors, year_built, parking.
+- **Features**: condition, ac_type, balcony/elevator/storage booleans, vaad_bayit_monthly, lease_term/furnished_status/pets_policy/agent_fee_required (rental only), features[] (mamad, sukkah balcony, accessible, renovated, etc. — using the existing Israeli listing fields vocabulary).
+- **Description / highlights**: AI rewrites the source into the "Trusted Friend" voice in English (per brand voice memory), preserves any factual claim, flags anything it had to invent so you can delete.
 
-### 2. Wipe transient activity tied to this agency
+Fields the AI is NOT allowed to invent: price (must appear in a photo or the text), address/city (must match the city whitelist), license/agent identity. Missing → left blank with a "needs human" note.
 
-Inserts (delete) into:
-- `agency_announcements` WHERE agency_id = demo agency
-- `agency_notifications` WHERE agency_id = demo agency
-- `agency_join_requests` WHERE agency_id = demo agency
-- `agency_invites` WHERE agency_id = demo agency  (clears any active invite-link sessions)
-- `agency_testimonials` WHERE agency_id = demo agency
-- `agency_provisioning_notes` WHERE agency_id = demo agency
-- `blog_posts` WHERE author_id = owner
-- `agent_notifications` WHERE agent_id IN (the 6 provisional agents) — keeps inbox clean for the agent-side demo
+## Technical sketch (for engineering)
 
-All currently 0 rows except the audit/notes which may have a couple — safe deletes.
+```text
+src/
+  components/admin/agency-provisioning/
+    ManualAddListingSection.tsx          # adds 2nd button "Kickstart with AI"
+    AiListingKickstartDialog.tsx         # new — dropzone, textarea, results panel
+  lib/
+    aiListingKickstart.ts                # client helper: uploads to storage, calls fn,
+                                         # writes draft to localStorage, navigates
+supabase/
+  functions/
+    ai-extract-listing/index.ts          # new — Gemini 3 Flash vision + Output.object
+                                         # schema mirroring PropertyWizardData
+                                         # uses createLovableAiGatewayProvider
+```
 
-### 3. Keep (medium reset)
+- Images are uploaded to the existing property-images storage bucket under a temp prefix (`kickstart/<uuid>/...`) so we get stable URLs to feed Gemini and to pre-attach to Step 4 Photos. Anything not used in 24h is cleaned by a small cron (or we can skip cleanup for v1).
+- Edge function: `verify_jwt = true`, admin role check via `has_role(auth.uid(), 'admin')`, returns `{ data, confidence, notes }`.
+- Wizard hydration: extend the existing `loadFromSaved` path — already supports localStorage drafts; we only need to pre-populate it before navigation.
+- No new tables, no schema migration. Reuses storage, wizard, mutation, validation.
 
-- 6 provisional agents (`Sarah Cohen`, `Noam Troodler`, `David Levi`, `Maya Friedman`, `Yossi Mizrahi`, `Rachel Goldberg`) with their `is_provisional=true, user_id=NULL` — these are the roster cards.
-- 44 listings — they stay attached via `properties.agent_id`.
-- `agency_members` rows for Noam (owner + admin).
-- `user_roles` for Noam.
+## Out of scope (v1)
 
-### 4. Make sure no stale `agents` row owns Noam
+- Auto-submit without review (always lands in wizard for human approval).
+- PDF parsing as documents (we treat PDFs as one image per page via a quick client-side rasterize — or punt to "upload pages as images" if rasterize is fiddly).
+- Floor-plan dimensioning (sqm comes only from explicit numbers in the input, not from measuring the plan).
 
-Confirmed there is no claimed `agents` row with his `user_id`, so nothing to clean. The "Noam Troodler" provisional row stays unclaimed — when he goes through the invite-claim flow in the demo, the new claim-or-create-agent function will license-match him to that row automatically, which is exactly the magic moment you want to show.
+## Open question for you
 
-### 5. Send the password-reset email
-
-I'll add a tiny admin edge function `admin-send-password-reset` (one route, service-role) that:
-- Verifies caller is `admin` via `user_roles`
-- Calls `supabase.auth.admin.generateLink({ type: 'recovery', email })`
-- Triggers `supabase.auth.resetPasswordForEmail(email, { redirectTo })` so the existing `auth-email-hook` ships the branded BuyWise reset email
-
-Then I'll invoke it for `noam.troodler@gmail.com` and confirm in `email_send_log` that a `recovery` email was queued and delivered.
-
-You'll get an email titled "Reset your BuyWise password" within ~1 minute. Click → set new password → land on `/auth` → log in → land on Demo Realty TLV dashboard with the onboarding cards back, 6 provisional agents + 44 listings ready, no claimed sub-agents. Perfect demo state.
-
-## Verification I'll run after
-
-1. `SELECT handover_completed_at, pending_items_dismissed_at FROM agencies WHERE id = demo` → both `NULL`.
-2. `SELECT COUNT(*) FROM agents WHERE agency_id = demo` → still 6, all `is_provisional = true`, all `user_id IS NULL`.
-3. `SELECT COUNT(*) FROM properties p JOIN agents a ON a.id = p.agent_id WHERE a.agency_id = demo` → still 44.
-4. `SELECT status, recipient, template_name, created_at FROM email_send_log WHERE recipient = 'noam.troodler@gmail.com' ORDER BY created_at DESC LIMIT 3` → newest row is recovery + status `sent` (or `pending` → `sent` within 5s).
-5. Log into preview as your own user-replay and tap the agency dashboard URL once to confirm the onboarding cards reappear.
-
-## Technical notes
-
-- All wipe operations go through `supabase--insert` (data ops, not schema), so no migration approval beyond the one-row UPDATE on `agencies`. I'll bundle the UPDATE into a single insert-tool call too since it's data not schema.
-- The new edge function is the only file change in code; everything else is database.
-- Rollback: if something looks wrong I can re-flip `handover_completed_at = now()` from a single SQL update — non-destructive.
+Should the AI also try to **assign an agent** from the agency roster when it can read an agent name off the screenshot (e.g. Yad2 listing card shows "סוכן: David Cohen")? Default plan: yes, soft-match by name → if confident, pre-fill Step 1 (Assign Agent), else leave blank.
