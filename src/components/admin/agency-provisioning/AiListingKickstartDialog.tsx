@@ -496,7 +496,7 @@ export function AiListingKickstartDialog({
               </Card>
             )}
           </div>
-        </ScrollArea>
+        </div>
 
         <DialogFooter className="gap-2 sm:gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
