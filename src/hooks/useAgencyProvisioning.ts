@@ -520,7 +520,7 @@ export function useDeleteListings(agencyId: string | null) {
       // themselves. We swallow errors from optional tables so a missing reference
       // table never blocks the delete.
       await supabase.from('import_job_items').delete().in('property_id', ids).then(() => {}, () => {});
-      await supabase.from('property_audit_flags').delete().in('property_id', ids).then(() => {}, () => {});
+      await supabase.from('listing_quality_flags').delete().in('property_id', ids).then(() => {}, () => {});
       const { error } = await supabase.from('properties').delete().in('id', ids);
       if (error) throw error;
       return { deleted: ids.length };
