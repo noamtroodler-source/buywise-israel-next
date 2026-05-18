@@ -33,16 +33,30 @@ const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 async function fetchAiJsonWithRetry(
   url: string,
   init: RequestInit,
-  attempts = 2,
+  attempts = 4,
 ): Promise<{ response: Response; json: any | null; text: string }> {
   let lastResponse: Response | null = null;
   let lastText = "";
 
   for (let attempt = 1; attempt <= attempts; attempt++) {
-    const response = await fetch(url, init);
+    let response: Response;
+    try {
+      response = await fetch(url, init);
+    } catch (e) {
+      console.error(`AI gateway fetch threw (attempt ${attempt}/${attempts})`, e);
+      if (attempt < attempts) { await wait(800 * attempt); continue; }
+      throw e;
+    }
     const text = await response.text().catch(() => "");
     lastResponse = response;
     lastText = text;
+
+    // Retry on 429 (rate limit) and 5xx (transient gateway/model errors)
+    if (response.status === 429 || response.status >= 500) {
+      console.warn(`AI gateway ${response.status} (attempt ${attempt}/${attempts})`, text.slice(0, 300));
+      if (attempt < attempts) { await wait(900 * attempt); continue; }
+      return { response, json: null, text };
+    }
 
     if (!response.ok) return { response, json: null, text };
     if (text.trim()) {
@@ -53,7 +67,7 @@ async function fetchAiJsonWithRetry(
       }
     }
 
-    if (attempt < attempts) await wait(600 * attempt);
+    if (attempt < attempts) await wait(700 * attempt);
   }
 
   return { response: lastResponse!, json: null, text: lastText };
