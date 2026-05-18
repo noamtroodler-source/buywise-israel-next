@@ -502,8 +502,12 @@ Deno.serve(async (req) => {
     const body = await safeReadJson(req);
     if (!body) return jsonResponse({ error: "Invalid request body" }, 400);
     const rawImageUrls: string[] = Array.isArray(body.image_urls) ? body.image_urls.slice(0, 20) : [];
-    // Filter out images >8MB (AI gateway rejects total >30MB). HEAD-check each URL.
-    const MAX_BYTES = 8 * 1024 * 1024;
+    // Filter images to stay under AI gateway 30MB per-request limit.
+    // Per-image cap 15MB; assume 1.5MB when content-length is unknown (Supabase Storage
+    // often omits it). Total budget 28MB.
+    const MAX_BYTES = 15 * 1024 * 1024;
+    const TOTAL_BUDGET = 28 * 1024 * 1024;
+    const ASSUMED_UNKNOWN = 1.5 * 1024 * 1024;
     const sized = await Promise.all(rawImageUrls.map(async (url) => {
       try {
         const h = await fetch(url, { method: "HEAD" });
@@ -511,16 +515,17 @@ Deno.serve(async (req) => {
         return { url, len: Number.isFinite(len) ? len : 0 };
       } catch { return { url, len: 0 }; }
     }));
-    // Keep images under cap; if size unknown (0), allow but cap total count tighter
     let runningTotal = 0;
     const imageUrls: string[] = [];
+    const skipped: string[] = [];
     for (const { url, len } of sized) {
-      if (len > MAX_BYTES) { console.warn(`Skipping oversized image (${len} bytes):`, url); continue; }
-      const assumed = len || 3 * 1024 * 1024; // assume 3MB if unknown
-      if (runningTotal + assumed > 25 * 1024 * 1024) { console.warn("Image budget reached, skipping rest"); break; }
+      if (len > MAX_BYTES) { skipped.push(`oversized:${len}`); console.warn(`Skipping oversized image (${len} bytes):`, url); continue; }
+      const assumed = len || ASSUMED_UNKNOWN;
+      if (runningTotal + assumed > TOTAL_BUDGET) { skipped.push("budget"); console.warn("Image budget reached, skipping rest"); break; }
       runningTotal += assumed;
       imageUrls.push(url);
     }
+    console.log(`Images: ${rawImageUrls.length} provided, ${imageUrls.length} kept, ${skipped.length} skipped (${skipped.join(",")})`);
     if (rawImageUrls.length > 0 && imageUrls.length === 0) {
       console.warn("All images were filtered as oversized");
     }
