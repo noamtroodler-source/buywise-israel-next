@@ -409,6 +409,13 @@ export function AiListingKickstartDialog({
     if (!extracted.city?.trim()) missing.push('city');
     if (missing.length) { toast.error(`Missing: ${missing.join(', ')}`); return; }
 
+    // address is NOT NULL in DB — fall back to neighborhood/city so review queue is never blocked
+    const addressFallback =
+      extracted.address?.trim() ||
+      [extracted.neighborhood, extracted.city].filter(Boolean).join(', ') ||
+      extracted.city ||
+      'Address pending review';
+
     setPushing(true);
     try {
       const row: any = {
@@ -417,7 +424,7 @@ export function AiListingKickstartDialog({
         property_type: extracted.property_type,
         listing_status: finalStatus,
         price: extracted.price,
-        address: extracted.address || null,
+        address: addressFallback,
         city: extracted.city,
         neighborhood: extracted.neighborhood || null,
         bedrooms: extracted.bedrooms ?? null,
