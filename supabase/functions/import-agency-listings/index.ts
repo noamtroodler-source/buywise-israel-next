@@ -1054,6 +1054,14 @@ function validatePropertyData(
     }
   }
 
+  // Hard requirement: agency-website listings without a usable price are
+  // almost always sold/under-contract pages where the agency stripped the
+  // price, or Hebrew duplicates of an already-imported English page.
+  // Reject them rather than letting them through as price=0.
+  if ((listing.price == null || listing.price === 0) && (validateAsResale || validateAsRental)) {
+    errors.push("missing price — agency listings must include a published price");
+  }
+
   if (listing.listing_status === "for_rent" && effectiveImportType === "resale") {
     errors.push("rental listing — resale import only");
   }
