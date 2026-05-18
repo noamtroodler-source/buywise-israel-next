@@ -22,6 +22,7 @@ const KICKSTART_DRAFT_PREFIX = 'ai-kickstart-draft:';
 const draftKey = (agencyId: string) => `${KICKSTART_DRAFT_PREFIX}${agencyId}`;
 
 type ImageKind = 'property_photo' | 'floor_plan' | 'spec_sheet' | 'screenshot_other';
+type ImageBucket = 'photo' | 'info';
 
 interface UploadedImage {
   file: File;
@@ -31,6 +32,7 @@ interface UploadedImage {
   enhancing?: boolean;
   enhanced?: boolean;
   kind?: ImageKind;
+  bucket: ImageBucket; // user's explicit choice — overrides AI kind guessing
   error?: string;
 }
 
@@ -83,7 +85,8 @@ export function AiListingKickstartDialog({
   const [generatingDescription, setGeneratingDescription] = useState(false);
   const [draftLoaded, setDraftLoaded] = useState(false);
   const [savedAt, setSavedAt] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const infoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!open || !agencyId) return;
@@ -113,6 +116,7 @@ export function AiListingKickstartDialog({
                 uploading: false,
                 enhanced: !!i.enhanced,
                 kind: i.kind,
+                bucket: (i.bucket as ImageBucket) || (i.kind === 'property_photo' ? 'photo' : 'info'),
               })),
           );
         }
@@ -139,7 +143,7 @@ export function AiListingKickstartDialog({
   const draftPayload = useMemo(() => ({
     images: images
       .filter((i) => i.publicUrl)
-      .map((i) => ({ publicUrl: i.publicUrl, fileName: i.file?.name, enhanced: !!i.enhanced, kind: i.kind })),
+      .map((i) => ({ publicUrl: i.publicUrl, fileName: i.file?.name, enhanced: !!i.enhanced, kind: i.kind, bucket: i.bucket })),
     description,
     hintIntent,
     hintCity,
@@ -174,13 +178,13 @@ export function AiListingKickstartDialog({
   }, [open, agencyId, draftLoaded, draftPayload]);
 
 
-  const handleFiles = useCallback(async (files: FileList | File[]) => {
+  const handleFiles = useCallback(async (files: FileList | File[], bucket: ImageBucket) => {
     const arr = Array.from(files).filter((f) => f.type.startsWith('image/'));
     if (arr.length === 0) return;
     if (images.length + arr.length > 20) toast.warning('Up to 20 images at a time. Some were skipped.');
     const accepted = arr.slice(0, 20 - images.length);
     const newEntries: UploadedImage[] = accepted.map((file) => ({
-      file, previewUrl: URL.createObjectURL(file), uploading: true,
+      file, previewUrl: URL.createObjectURL(file), uploading: true, bucket,
     }));
     setImages((prev) => [...prev, ...newEntries]);
 
@@ -206,8 +210,8 @@ export function AiListingKickstartDialog({
   };
 
   const setCoverFromImage = (img: UploadedImage) => {
-    if (img.kind && img.kind !== 'property_photo') {
-      toast.info('Only real property photos can be the cover.');
+    if (img.bucket !== 'photo') {
+      toast.info('Only listing photos can be the cover.');
       return;
     }
     const readyOnly = images.filter((i) => i.publicUrl);
@@ -254,9 +258,9 @@ export function AiListingKickstartDialog({
     }
   };
 
-  const onDrop = (e: React.DragEvent) => {
+  const onDrop = (bucket: ImageBucket) => (e: React.DragEvent) => {
     e.preventDefault();
-    if (e.dataTransfer.files?.length) handleFiles(e.dataTransfer.files);
+    if (e.dataTransfer.files?.length) handleFiles(e.dataTransfer.files, bucket);
   };
 
   const checkDuplicates = async (ex: ExtractedListing) => {
@@ -323,19 +327,20 @@ export function AiListingKickstartDialog({
       if (match?.confidence === 'high') setSelectedAgentId(match.agent_id);
       setCoverIndex(typeof data.cover_photo_index === 'number' ? data.cover_photo_index : null);
 
-      // Tag each uploaded image with its AI-classified kind so we can hide spec sheets
-      // from the cover-photo grid and from the description writer.
+      // Tag each uploaded image with its AI-classified kind, but the user's
+      // explicit bucket choice always wins: 'photo' → property_photo;
+      // 'info' → keep AI's classification (floor_plan / spec_sheet / screenshot_other).
       const kinds: ImageKind[] | undefined = Array.isArray(data.image_kinds) ? data.image_kinds : undefined;
-      if (kinds && kinds.length > 0) {
-        setImages((prev) => {
-          const readyOnlyUrls = prev.filter((i) => i.publicUrl).map((i) => i.publicUrl);
-          return prev.map((img) => {
-            if (!img.publicUrl) return img;
-            const idx = readyOnlyUrls.indexOf(img.publicUrl);
-            return idx >= 0 && kinds[idx] ? { ...img, kind: kinds[idx] } : img;
-          });
+      setImages((prev) => {
+        const readyOnlyUrls = prev.filter((i) => i.publicUrl).map((i) => i.publicUrl);
+        return prev.map((img) => {
+          if (!img.publicUrl) return img;
+          if (img.bucket === 'photo') return { ...img, kind: 'property_photo' };
+          const idx = readyOnlyUrls.indexOf(img.publicUrl);
+          const aiKind = kinds && idx >= 0 ? kinds[idx] : undefined;
+          return { ...img, kind: aiKind || img.kind || 'screenshot_other' };
         });
-      }
+      });
 
       await checkDuplicates(ex);
       toast.success('Extracted — review and open the wizard');
@@ -386,10 +391,10 @@ export function AiListingKickstartDialog({
       return;
     }
 
-    // Only carry real property photos + floor plans into the listing — never spec sheets / screenshots.
+    // Only carry user-declared listing photos into the listing — never the info / reference bucket.
     const readyAll = images.filter((i) => i.publicUrl);
     const listingImages = readyAll
-      .filter((i) => !i.kind || i.kind === 'property_photo' || i.kind === 'floor_plan')
+      .filter((i) => i.bucket === 'photo')
       .map((i) => i.publicUrl!);
     // Cover must be a property_photo. coverIndex is relative to readyAll order, so translate.
     let coverUrl: string | null = null;
@@ -481,39 +486,69 @@ export function AiListingKickstartDialog({
             Kickstart a listing with AI
           </DialogTitle>
           <DialogDescription>
-            Drop in any screenshots (Yad2, Madlan, agency PDFs, WhatsApp, floor plans) and/or a
-            description. AI fills in the wizard fields, matches the listing agent from your roster,
-            picks a cover photo, and warns you about possible duplicates.
+            Drop reference material (Yad2 / Madlan screenshots, PDFs, floor plans) into the left zone — AI reads facts from these.
+            Drop the actual property photos into the right zone — those become the listing gallery and cover.
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 min-h-0 overflow-y-auto -mx-6 px-6">
           <div className="space-y-5 py-2">
-            {/* Dropzone */}
-            <div
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={onDrop}
-              onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-primary/60 hover:bg-muted/30 transition"
-            >
-              <Upload className="h-6 w-6 mx-auto text-muted-foreground mb-2" />
-              <p className="text-sm font-medium">Drop screenshots here or click to upload</p>
-              <p className="text-xs text-muted-foreground mt-1">PNG, JPG, WebP — up to 20 images</p>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                multiple
-                hidden
-                onChange={(e) => e.target.files && handleFiles(e.target.files)}
-              />
+            {/* Two-bucket dropzones */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {/* Listing info / reference */}
+              <div
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={onDrop('info')}
+                onClick={() => infoInputRef.current?.click()}
+                className="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:border-primary/60 hover:bg-muted/30 transition"
+              >
+                <Upload className="h-5 w-5 mx-auto text-muted-foreground mb-1.5" />
+                <p className="text-sm font-medium">Listing info / reference</p>
+                <p className="text-[11px] text-muted-foreground mt-1 leading-tight">
+                  Yad2 / Madlan screenshots, PDFs, floor plans, spec sheets.<br />
+                  AI reads facts from these — they're <strong>not</strong> added as listing photos.
+                </p>
+                <input
+                  ref={infoInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  hidden
+                  onChange={(e) => e.target.files && handleFiles(e.target.files, 'info')}
+                />
+              </div>
+
+              {/* Actual listing photos */}
+              <div
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={onDrop('photo')}
+                onClick={() => photoInputRef.current?.click()}
+                className="border-2 border-dashed border-primary/40 rounded-lg p-4 text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition"
+              >
+                <ImageIcon className="h-5 w-5 mx-auto text-primary mb-1.5" />
+                <p className="text-sm font-medium">Listing photos</p>
+                <p className="text-[11px] text-muted-foreground mt-1 leading-tight">
+                  The actual property pictures.<br />
+                  These become the gallery and cover photo on the listing.
+                </p>
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  hidden
+                  onChange={(e) => e.target.files && handleFiles(e.target.files, 'photo')}
+                />
+              </div>
             </div>
 
-            {images.length > 0 && (
+            {/* Listing photos grid */}
+            {images.some((i) => i.bucket === 'photo') && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <p className="text-xs text-muted-foreground">
-                    {coverIndex != null ? 'Click any photo to change the cover.' : 'Cover photo will be picked by AI after analysis, or click one to choose.'}
+                    <span className="font-medium text-foreground">Listing photos · </span>
+                    {coverIndex != null ? 'Click any photo to change the cover.' : 'Pick one as the cover, or AI will choose after analysis.'}
                   </p>
                   {extracted && coverIndex != null && (() => {
                     const readyOnly = images.filter((i) => i.publicUrl);
@@ -539,61 +574,30 @@ export function AiListingKickstartDialog({
                     );
                   })()}
                 </div>
-                <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
-                  {images.map((img, idx) => {
-                    const readyIdx = images.filter((it) => it.publicUrl).indexOf(img);
-                    const isCover = coverIndex != null && readyIdx >= 0 && readyIdx === coverIndex;
-                    const isProperty = !img.kind || img.kind === 'property_photo';
-                    const canPickCover = !!img.publicUrl && !img.uploading && isProperty;
-                    const kindLabel = img.kind === 'spec_sheet' ? 'Spec sheet'
-                      : img.kind === 'floor_plan' ? 'Floor plan'
-                      : img.kind === 'screenshot_other' ? 'Screenshot' : null;
-                    const willBeExcluded = img.kind === 'spec_sheet' || img.kind === 'screenshot_other';
-                    return (
-                      <div
-                        key={idx}
-                        onClick={() => canPickCover && setCoverFromImage(img)}
-                        className={`relative group aspect-square rounded-md overflow-hidden border bg-muted ${isCover ? 'ring-2 ring-primary' : ''} ${canPickCover ? 'cursor-pointer hover:ring-2 hover:ring-primary/40' : ''} ${willBeExcluded ? 'opacity-60' : ''}`}
-                        title={canPickCover ? (isCover ? 'Current cover' : 'Click to use as cover') : willBeExcluded ? 'Used for facts only — will NOT be added to the listing' : undefined}
-                      >
-                        <img src={img.previewUrl} alt="" className="w-full h-full object-cover" />
-                        {isCover && (
-                          <div className="absolute top-1 left-1 bg-primary text-primary-foreground text-[9px] px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                            <ImageIcon className="h-2.5 w-2.5" /> Cover
-                          </div>
-                        )}
-                        {kindLabel && !isCover && (
-                          <div className={`absolute top-1 left-1 text-[9px] px-1.5 py-0.5 rounded ${willBeExcluded ? 'bg-amber-500 text-white' : 'bg-background/80 text-foreground'}`}>
-                            {kindLabel}
-                          </div>
-                        )}
-                        {img.enhanced && (
-                          <div className="absolute bottom-1 left-1 bg-emerald-600 text-white text-[9px] px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                            <Wand2 className="h-2.5 w-2.5" /> Enhanced
-                          </div>
-                        )}
+                <ImageGrid
+                  images={images}
+                  bucket="photo"
+                  coverIndex={coverIndex}
+                  onPickCover={setCoverFromImage}
+                  onRemove={removeImage}
+                />
+              </div>
+            )}
 
-                        {(img.uploading || img.enhancing) && (
-                          <div className="absolute inset-0 bg-background/60 flex items-center justify-center">
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          </div>
-                        )}
-                        {img.error && (
-                          <div className="absolute inset-0 bg-destructive/70 text-destructive-foreground text-[10px] flex items-center justify-center p-1 text-center">
-                            {img.error}
-                          </div>
-                        )}
-                        <button
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); removeImage(img); }}
-                          className="absolute top-1 right-1 bg-background/80 rounded-full p-0.5 opacity-0 group-hover:opacity-100"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
+            {/* Info / reference grid */}
+            {images.some((i) => i.bucket === 'info') && (
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">
+                  <span className="font-medium text-foreground">Reference material · </span>
+                  Used for AI extraction only — never added to the listing.
+                </p>
+                <ImageGrid
+                  images={images}
+                  bucket="info"
+                  coverIndex={null}
+                  onPickCover={() => {}}
+                  onRemove={removeImage}
+                />
               </div>
             )}
 
@@ -904,6 +908,76 @@ function Field({ label, value }: { label: string; value: any }) {
     <div>
       <div className="text-muted-foreground">{label}</div>
       <div className="font-medium truncate">{display}</div>
+    </div>
+  );
+}
+
+function ImageGrid({
+  images,
+  bucket,
+  coverIndex,
+  onPickCover,
+  onRemove,
+}: {
+  images: UploadedImage[];
+  bucket: ImageBucket;
+  coverIndex: number | null;
+  onPickCover: (img: UploadedImage) => void;
+  onRemove: (img: UploadedImage) => void;
+}) {
+  const readyOnly = images.filter((i) => i.publicUrl);
+  return (
+    <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+      {images.filter((img) => img.bucket === bucket).map((img, idx) => {
+        const readyIdx = readyOnly.indexOf(img);
+        const isCover = bucket === 'photo' && coverIndex != null && readyIdx >= 0 && readyIdx === coverIndex;
+        const canPickCover = bucket === 'photo' && !!img.publicUrl && !img.uploading;
+        const kindLabel = img.kind === 'spec_sheet' ? 'Spec sheet'
+          : img.kind === 'floor_plan' ? 'Floor plan'
+          : img.kind === 'screenshot_other' ? 'Screenshot' : null;
+        return (
+          <div
+            key={idx}
+            onClick={() => canPickCover && onPickCover(img)}
+            className={`relative group aspect-square rounded-md overflow-hidden border bg-muted ${isCover ? 'ring-2 ring-primary' : ''} ${canPickCover ? 'cursor-pointer hover:ring-2 hover:ring-primary/40' : ''} ${bucket === 'info' ? 'opacity-80' : ''}`}
+            title={canPickCover ? (isCover ? 'Current cover' : 'Click to use as cover') : bucket === 'info' ? 'Used for facts only — will NOT be added to the listing' : undefined}
+          >
+            <img src={img.previewUrl} alt="" className="w-full h-full object-cover" />
+            {isCover && (
+              <div className="absolute top-1 left-1 bg-primary text-primary-foreground text-[9px] px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                <ImageIcon className="h-2.5 w-2.5" /> Cover
+              </div>
+            )}
+            {bucket === 'info' && kindLabel && (
+              <div className="absolute top-1 left-1 bg-background/80 text-foreground text-[9px] px-1.5 py-0.5 rounded">
+                {kindLabel}
+              </div>
+            )}
+            {img.enhanced && (
+              <div className="absolute bottom-1 left-1 bg-emerald-600 text-white text-[9px] px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                <Wand2 className="h-2.5 w-2.5" /> Enhanced
+              </div>
+            )}
+            {(img.uploading || img.enhancing) && (
+              <div className="absolute inset-0 bg-background/60 flex items-center justify-center">
+                <Loader2 className="h-4 w-4 animate-spin" />
+              </div>
+            )}
+            {img.error && (
+              <div className="absolute inset-0 bg-destructive/70 text-destructive-foreground text-[10px] flex items-center justify-center p-1 text-center">
+                {img.error}
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onRemove(img); }}
+              className="absolute top-1 right-1 bg-background/80 rounded-full p-0.5 opacity-0 group-hover:opacity-100"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+        );
+      })}
     </div>
   );
 }
