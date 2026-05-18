@@ -22,6 +22,7 @@ const KICKSTART_DRAFT_PREFIX = 'ai-kickstart-draft:';
 const draftKey = (agencyId: string) => `${KICKSTART_DRAFT_PREFIX}${agencyId}`;
 
 type ImageKind = 'property_photo' | 'floor_plan' | 'spec_sheet' | 'screenshot_other';
+type ImageBucket = 'photo' | 'info';
 
 interface UploadedImage {
   file: File;
@@ -31,6 +32,7 @@ interface UploadedImage {
   enhancing?: boolean;
   enhanced?: boolean;
   kind?: ImageKind;
+  bucket: ImageBucket; // user's explicit choice — overrides AI kind guessing
   error?: string;
 }
 
