@@ -612,22 +612,53 @@ export function AiListingKickstartDialog({
                   <Field label="City" value={extracted.city} />
                   <Field label="Neighborhood" value={extracted.neighborhood} />
                   <Field label="Address" value={extracted.address} />
-                  <Field label="Bedrooms" value={extracted.bedrooms} />
+                  <Field
+                    label="Rooms"
+                    value={
+                      (extracted as any).source_rooms
+                        ? `${(extracted as any).source_rooms} (${extracted.bedrooms ?? 0} bd + ${extracted.additional_rooms ?? 0})`
+                        : extracted.bedrooms != null
+                        ? `${extracted.bedrooms} bd + ${extracted.additional_rooms ?? 0}`
+                        : undefined
+                    }
+                  />
                   <Field label="Bathrooms" value={extracted.bathrooms} />
                   <Field label="Size (sqm)" value={extracted.size_sqm} />
-                  <Field label="Floor" value={extracted.floor != null ? `${extracted.floor}/${extracted.total_floors ?? '?'}` : undefined} />
+                  <Field label="Balcony (sqm)" value={(extracted as any).balcony_sqm} />
+                  <Field
+                    label="Floor"
+                    value={
+                      extracted.floor != null
+                        ? `${extracted.floor === 0 ? 'Ground' : extracted.floor}${extracted.total_floors ? ` / ${extracted.total_floors}` : ''}`
+                        : undefined
+                    }
+                  />
                   <Field label="Parking" value={extracted.parking} />
                   <Field label="Year built" value={extracted.year_built} />
                   <Field label="Condition" value={extracted.condition} />
+                  <Field label="AC" value={extracted.ac_type} />
+                  <Field label="Furnished" value={extracted.furnished_status} />
+                  <Field label="Entry date" value={(extracted as any).entry_date} />
+                  <Field label="Vaad bayit (₪/mo)" value={extracted.vaad_bayit_monthly?.toLocaleString?.()} />
                 </div>
 
-                {extracted.features && extracted.features.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {extracted.features.map((f) => (
-                      <Badge key={f} variant="outline" className="text-xs">{f}</Badge>
-                    ))}
+                <div className="flex flex-wrap gap-1">
+                  {extracted.has_balcony && <Badge variant="secondary" className="text-xs">Balcony</Badge>}
+                  {extracted.has_elevator && <Badge variant="secondary" className="text-xs">Elevator</Badge>}
+                  {extracted.has_storage && <Badge variant="secondary" className="text-xs">Storage</Badge>}
+                  {(extracted as any).is_accessible && <Badge variant="secondary" className="text-xs">Accessible</Badge>}
+                  {extracted.features && extracted.features.map((f) => (
+                    <Badge key={f} variant="outline" className="text-xs">{f}</Badge>
+                  ))}
+                </div>
+
+                {extracted.detected_agent?.name || extracted.detected_agent?.phone ? (
+                  <div className="text-xs text-muted-foreground">
+                    <span className="font-medium text-foreground">Listing agent seen in source: </span>
+                    {extracted.detected_agent?.name || '—'}
+                    {extracted.detected_agent?.phone ? ` · ${extracted.detected_agent.phone}` : ''}
                   </div>
-                )}
+                ) : null}
 
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between gap-2">
