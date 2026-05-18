@@ -170,7 +170,9 @@ export default function AgencyDashboard() {
             listingsCount={listings.length}
             liveListingsCount={liveListingsCount}
             toReviewCount={toReviewCount}
+            needsFixesCount={needsFixesCount}
             readyToSubmitCount={readyToSubmitCount}
+            pendingReviewCount={pendingReviewCount}
           />
 
           {/* Quick Actions Grid */}
