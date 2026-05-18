@@ -40,7 +40,9 @@ import { getMarketFitReview } from '@/lib/marketFit';
 import { PriceContextSubmissionPreview } from '@/components/agent/wizard/PriceContextSubmissionPreview';
 import { getWizardPriceContextPersistence } from '@/lib/wizardPriceContext';
 
-const AGENCY_WIZARD_STORAGE_KEY = 'agency-property-wizard-draft';
+const AGENCY_WIZARD_STORAGE_PREFIX = 'agency-property-wizard-draft';
+const wizardStorageKey = (agencyId: string | null | undefined) =>
+  agencyId ? `${AGENCY_WIZARD_STORAGE_PREFIX}:${agencyId}` : AGENCY_WIZARD_STORAGE_PREFIX;
 
 const steps = [
   { title: 'Assign Agent', description: 'Choose team member' },
