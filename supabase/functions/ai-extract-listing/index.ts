@@ -197,15 +197,22 @@ function recoverFromTranscript(extracted: any, transcript: string, notes: string
     }
   }
 
-  // Floor — "floor ground" / "קומה קרקע" / "floor 3" / "Floor minus 1"
+  // Floor — "floor ground" / "קומת קרקע" / "קרקע" / "ground floor" → 0
+  //         "floor 3" / "Floor minus 1" → number
+  // Also OVERRIDE a model-returned -1 if the transcript clearly says ground.
+  const groundFloor = /(?:floor\s*ground|ground\s*floor|קומת\s*קרקע|קומה\s*קרקע|\bקרקע\b)/i.test(text);
   if (e.floor == null) {
-    if (/floor\s*ground|קומת\s*קרקע|קומה\s*קרקע|floor\s*קרקע/i.test(text)) {
+    if (groundFloor) {
       e.floor = 0; addNote("Recovered floor = ground from transcript");
     } else {
       const m = text.match(/floor\s*(?:minus\s*)?(-?\d+)/i) || text.match(/קומה\s*(-?\d+)/);
       if (m) { e.floor = parseInt(m[1], 10); addNote(`Recovered floor = ${e.floor} from transcript`); }
     }
+  } else if (e.floor < 0 && groundFloor) {
+    addNote(`Corrected floor from ${e.floor} to 0 (transcript says ground/קרקע, not basement)`);
+    e.floor = 0;
   }
+
 
   // Total floors — "5 Floors in the building"
   if (!e.total_floors) {
