@@ -18,6 +18,8 @@ import { defaultPropertyData, PropertyWizardData } from '@/components/agent/wiza
 
 const AGENCY_WIZARD_STORAGE_KEY = 'agency-property-wizard-draft';
 
+type ImageKind = 'property_photo' | 'floor_plan' | 'spec_sheet' | 'screenshot_other';
+
 interface UploadedImage {
   file: File;
   previewUrl: string;
@@ -25,8 +27,10 @@ interface UploadedImage {
   uploading: boolean;
   enhancing?: boolean;
   enhanced?: boolean;
+  kind?: ImageKind;
   error?: string;
 }
+
 
 interface ExtractedListing extends Partial<PropertyWizardData> {
   source_notes?: string[];
@@ -118,6 +122,10 @@ export function AiListingKickstartDialog({
   };
 
   const setCoverFromImage = (img: UploadedImage) => {
+    if (img.kind && img.kind !== 'property_photo') {
+      toast.info('Only real property photos can be the cover.');
+      return;
+    }
     const readyOnly = images.filter((i) => i.publicUrl);
     const idx = readyOnly.indexOf(img);
     if (idx >= 0) setCoverIndex(idx);
@@ -230,6 +238,21 @@ export function AiListingKickstartDialog({
       setAgentMatch(match);
       if (match?.confidence === 'high') setSelectedAgentId(match.agent_id);
       setCoverIndex(typeof data.cover_photo_index === 'number' ? data.cover_photo_index : null);
+
+      // Tag each uploaded image with its AI-classified kind so we can hide spec sheets
+      // from the cover-photo grid and from the description writer.
+      const kinds: ImageKind[] | undefined = Array.isArray(data.image_kinds) ? data.image_kinds : undefined;
+      if (kinds && kinds.length > 0) {
+        setImages((prev) => {
+          const readyOnlyUrls = prev.filter((i) => i.publicUrl).map((i) => i.publicUrl);
+          return prev.map((img) => {
+            if (!img.publicUrl) return img;
+            const idx = readyOnlyUrls.indexOf(img.publicUrl);
+            return idx >= 0 && kinds[idx] ? { ...img, kind: kinds[idx] } : img;
+          });
+        });
+      }
+
       await checkDuplicates(ex);
       toast.success('Extracted — review and open the wizard');
     } catch (e: any) {
@@ -243,14 +266,16 @@ export function AiListingKickstartDialog({
     if (!extracted) return;
     setGeneratingDescription(true);
     try {
-      const imageUrls = images.filter((i) => i.publicUrl).map((i) => i.publicUrl!);
+      const ready = images.filter((i) => i.publicUrl);
+      const imageUrls = ready.map((i) => i.publicUrl!);
+      const imageKinds = ready.map((i) => i.kind || 'property_photo');
       const { fields } = { fields: { ...extracted } } as any;
       delete fields.description;
       delete fields.source_notes;
       delete fields.low_confidence_fields;
       delete fields.detected_agent;
       const { data, error } = await supabase.functions.invoke('ai-generate-description', {
-        body: { fields, notes: description.trim(), image_urls: imageUrls },
+        body: { fields, notes: description.trim(), image_urls: imageUrls, image_kinds: imageKinds },
       });
       if (error) throw error;
       if (!data?.description) throw new Error('No description returned');
@@ -277,12 +302,22 @@ export function AiListingKickstartDialog({
       return;
     }
 
-    const readyImages = images.filter((i) => i.publicUrl).map((i) => i.publicUrl!);
-    // Reorder so AI-picked cover is first.
-    let orderedImages = readyImages;
-    if (coverIndex != null && coverIndex >= 0 && coverIndex < readyImages.length) {
-      orderedImages = [readyImages[coverIndex], ...readyImages.filter((_, i) => i !== coverIndex)];
+    // Only carry real property photos + floor plans into the listing — never spec sheets / screenshots.
+    const readyAll = images.filter((i) => i.publicUrl);
+    const listingImages = readyAll
+      .filter((i) => !i.kind || i.kind === 'property_photo' || i.kind === 'floor_plan')
+      .map((i) => i.publicUrl!);
+    // Cover must be a property_photo. coverIndex is relative to readyAll order, so translate.
+    let coverUrl: string | null = null;
+    if (coverIndex != null && coverIndex >= 0 && coverIndex < readyAll.length) {
+      const candidate = readyAll[coverIndex];
+      if (candidate?.publicUrl && listingImages.includes(candidate.publicUrl)) {
+        coverUrl = candidate.publicUrl;
+      }
     }
+    const orderedImages = coverUrl
+      ? [coverUrl, ...listingImages.filter((u) => u !== coverUrl)]
+      : listingImages;
 
     const finalStatus = statusChoice ?? extracted.listing_status;
 
@@ -406,13 +441,18 @@ export function AiListingKickstartDialog({
                   {images.map((img, idx) => {
                     const readyIdx = images.filter((it) => it.publicUrl).indexOf(img);
                     const isCover = coverIndex != null && readyIdx >= 0 && readyIdx === coverIndex;
-                    const canPickCover = !!img.publicUrl && !img.uploading;
+                    const isProperty = !img.kind || img.kind === 'property_photo';
+                    const canPickCover = !!img.publicUrl && !img.uploading && isProperty;
+                    const kindLabel = img.kind === 'spec_sheet' ? 'Spec sheet'
+                      : img.kind === 'floor_plan' ? 'Floor plan'
+                      : img.kind === 'screenshot_other' ? 'Screenshot' : null;
+                    const willBeExcluded = img.kind === 'spec_sheet' || img.kind === 'screenshot_other';
                     return (
                       <div
                         key={idx}
                         onClick={() => canPickCover && setCoverFromImage(img)}
-                        className={`relative group aspect-square rounded-md overflow-hidden border bg-muted ${isCover ? 'ring-2 ring-primary' : ''} ${canPickCover ? 'cursor-pointer hover:ring-2 hover:ring-primary/40' : ''}`}
-                        title={canPickCover ? (isCover ? 'Current cover' : 'Click to use as cover') : undefined}
+                        className={`relative group aspect-square rounded-md overflow-hidden border bg-muted ${isCover ? 'ring-2 ring-primary' : ''} ${canPickCover ? 'cursor-pointer hover:ring-2 hover:ring-primary/40' : ''} ${willBeExcluded ? 'opacity-60' : ''}`}
+                        title={canPickCover ? (isCover ? 'Current cover' : 'Click to use as cover') : willBeExcluded ? 'Used for facts only — will NOT be added to the listing' : undefined}
                       >
                         <img src={img.previewUrl} alt="" className="w-full h-full object-cover" />
                         {isCover && (
@@ -420,11 +460,17 @@ export function AiListingKickstartDialog({
                             <ImageIcon className="h-2.5 w-2.5" /> Cover
                           </div>
                         )}
+                        {kindLabel && !isCover && (
+                          <div className={`absolute top-1 left-1 text-[9px] px-1.5 py-0.5 rounded ${willBeExcluded ? 'bg-amber-500 text-white' : 'bg-background/80 text-foreground'}`}>
+                            {kindLabel}
+                          </div>
+                        )}
                         {img.enhanced && (
                           <div className="absolute bottom-1 left-1 bg-emerald-600 text-white text-[9px] px-1.5 py-0.5 rounded flex items-center gap-0.5">
                             <Wand2 className="h-2.5 w-2.5" /> Enhanced
                           </div>
                         )}
+
                         {(img.uploading || img.enhancing) && (
                           <div className="absolute inset-0 bg-background/60 flex items-center justify-center">
                             <Loader2 className="h-4 w-4 animate-spin" />

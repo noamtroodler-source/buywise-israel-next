@@ -64,7 +64,7 @@ Hard rules:
 - NEVER invent a price, address, or agent. If absent everywhere, leave it empty / 0.
 - Israeli ROOM COUNT: Hebrew "X חדרים" or "Rooms X" is the total room count. bedrooms = floor(X) - 1, additional_rooms = 1. "Rooms 1" → bedrooms: 0, additional_rooms: 1 (studio). "3 חדרים" → bedrooms: 2, additional_rooms: 1.
 - Price in NIS. "מיליון" × 1,000,000. "$" × 3.7.
-- Floor: "ground" / "קרקע" → 0. "minus 1" → -1.
+- Floor: "ground" / "ground floor" / "קרקע" / "קומת קרקע" → 0 (NEVER -1). Only use negative numbers if the source literally says "מינוס", "minus", "basement", or "מרתף".
 - "Mr 45" / "מ״ר 45" / "45 sqm" / "45 sq m" all mean size_sqm = 45 (or porch size if it says "porch 9 sq m").
 - Cities: use English ("Tel Aviv", "Jerusalem", "Herzliya"…). Hebrew neighborhoods → transliteration ("Nahalat Binyamin").
 - Listing intent: "להשכרה / ₪/month" → for_rent; "למכירה / for sale / asking price" → for_sale. Confidence "low" if no clear cue.
@@ -197,15 +197,22 @@ function recoverFromTranscript(extracted: any, transcript: string, notes: string
     }
   }
 
-  // Floor — "floor ground" / "קומה קרקע" / "floor 3" / "Floor minus 1"
+  // Floor — "floor ground" / "קומת קרקע" / "קרקע" / "ground floor" → 0
+  //         "floor 3" / "Floor minus 1" → number
+  // Also OVERRIDE a model-returned -1 if the transcript clearly says ground.
+  const groundFloor = /(?:floor\s*ground|ground\s*floor|קומת\s*קרקע|קומה\s*קרקע|\bקרקע\b)/i.test(text);
   if (e.floor == null) {
-    if (/floor\s*ground|קומת\s*קרקע|קומה\s*קרקע|floor\s*קרקע/i.test(text)) {
+    if (groundFloor) {
       e.floor = 0; addNote("Recovered floor = ground from transcript");
     } else {
       const m = text.match(/floor\s*(?:minus\s*)?(-?\d+)/i) || text.match(/קומה\s*(-?\d+)/);
       if (m) { e.floor = parseInt(m[1], 10); addNote(`Recovered floor = ${e.floor} from transcript`); }
     }
+  } else if (e.floor < 0 && groundFloor) {
+    addNote(`Corrected floor from ${e.floor} to 0 (transcript says ground/קרקע, not basement)`);
+    e.floor = 0;
   }
+
 
   // Total floors — "5 Floors in the building"
   if (!e.total_floors) {
@@ -317,27 +324,77 @@ function matchAgent(detected: { name?: string; phone?: string; license_number?: 
   return null;
 }
 
-async function pickCoverPhotoIndex(imageUrls: string[], apiKey: string): Promise<number | null> {
-  if (imageUrls.length < 4) return null;
+type ImageKind = "property_photo" | "floor_plan" | "spec_sheet" | "screenshot_other";
+
+async function classifyImages(imageUrls: string[], apiKey: string): Promise<ImageKind[]> {
+  if (imageUrls.length === 0) return [];
   try {
     const content: any[] = [
-      { type: "text", text: `Pick the best cover photo from ${imageUrls.length} images (indexed 0..${imageUrls.length - 1}). Prefer exterior / wide bright interior / standout view. Avoid floor plans, dark/blurry, bathrooms, screenshots with overlaid text. Reply with ONLY a single integer.` },
-      ...imageUrls.map((url) => ({ type: "image_url", image_url: { url } })),
+      { type: "text", text:
+`Classify each image (in order) into ONE bucket:
+- property_photo: a real photo of the home — exterior, interior room, kitchen, bathroom, balcony view, building facade
+- floor_plan: a line-drawing or schematic plan of the apartment layout
+- spec_sheet: a screenshot of a listing site, table of specs, price card, Yad2/Madlan UI, WhatsApp message, PDF page, or anything dominated by text/labels
+- screenshot_other: anything else that is NOT a usable property photo (maps, blank pages, logos, ID cards)
+
+Reply with ONLY a JSON array of strings in order, e.g.:
+["property_photo","spec_sheet","property_photo","floor_plan"]
+No prose, no markdown.` },
+      ...imageUrls.map((url, i) => ([
+        { type: "text", text: `Image ${i}:` },
+        { type: "image_url", image_url: { url } },
+      ])).flat(),
+    ];
+    const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ model: "google/gemini-2.5-flash", temperature: 0, messages: [{ role: "user", content }] }),
+    });
+    if (!r.ok) { console.error("classify failed", r.status); return imageUrls.map(() => "property_photo"); }
+    const j = await r.json();
+    const raw = (j?.choices?.[0]?.message?.content || "").toString();
+    const m = raw.match(/\[[\s\S]*\]/);
+    if (!m) return imageUrls.map(() => "property_photo");
+    const arr = JSON.parse(m[0]);
+    if (!Array.isArray(arr)) return imageUrls.map(() => "property_photo");
+    const valid: ImageKind[] = ["property_photo","floor_plan","spec_sheet","screenshot_other"];
+    return imageUrls.map((_, i) => {
+      const v = (arr[i] || "").toString();
+      return (valid as string[]).includes(v) ? v as ImageKind : "property_photo";
+    });
+  } catch (e) {
+    console.error("classify error", e);
+    return imageUrls.map(() => "property_photo");
+  }
+}
+
+async function pickCoverPhotoIndex(imageUrls: string[], apiKey: string, kinds: ImageKind[]): Promise<number | null> {
+  // Only consider real property photos as cover candidates.
+  const eligibleIdx = imageUrls.map((_, i) => i).filter((i) => kinds[i] === "property_photo");
+  if (eligibleIdx.length === 0) return null;
+  if (eligibleIdx.length === 1) return eligibleIdx[0];
+  try {
+    const content: any[] = [
+      { type: "text", text: `Pick the best cover photo. Eligible image indices: ${eligibleIdx.join(",")}. Prefer exterior / wide bright interior / standout view. Avoid bathrooms and dark/blurry shots. Reply with ONLY one of those integers.` },
+      ...eligibleIdx.map((i) => ([
+        { type: "text", text: `Image ${i}:` },
+        { type: "image_url", image_url: { url: imageUrls[i] } },
+      ])).flat(),
     ];
     const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({ model: "google/gemini-2.5-flash", messages: [{ role: "user", content }], temperature: 0 }),
     });
-    if (!r.ok) return null;
+    if (!r.ok) return eligibleIdx[0];
     const j = await r.json();
     const m = (j?.choices?.[0]?.message?.content?.toString() || "").match(/\d+/);
-    if (!m) return null;
+    if (!m) return eligibleIdx[0];
     const idx = parseInt(m[0], 10);
-    if (Number.isNaN(idx) || idx < 0 || idx >= imageUrls.length) return null;
-    return idx;
-  } catch (e) { console.error("cover pick failed", e); return null; }
+    return eligibleIdx.includes(idx) ? idx : eligibleIdx[0];
+  } catch (e) { console.error("cover pick failed", e); return eligibleIdx[0]; }
 }
+
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -373,12 +430,13 @@ Deno.serve(async (req) => {
       ? admin.from("agents").select("id, name, phone, license_number").eq("agency_id", agencyId).then(({ data }) => (data || []) as RosterAgent[])
       : Promise.resolve([] as RosterAgent[]);
 
-    // ── Stage A: OCR transcript (parallel with cover pick) ──
-    const [transcript, coverIdx] = await Promise.all([
+    // ── Stage A: OCR transcript + image classification (parallel) ──
+    const [transcript, imageKinds] = await Promise.all([
       ocrTranscript(imageUrls, LOVABLE_API_KEY),
-      pickCoverPhotoIndex(imageUrls, LOVABLE_API_KEY),
+      classifyImages(imageUrls, LOVABLE_API_KEY),
     ]);
-    console.log("OCR transcript length:", transcript.length);
+    const coverIdx = await pickCoverPhotoIndex(imageUrls, LOVABLE_API_KEY, imageKinds);
+    console.log("OCR transcript length:", transcript.length, "kinds:", imageKinds);
 
     // ── Stage B: structured extraction ──
     const userContent: any[] = [];
@@ -436,7 +494,7 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ extracted, agent_match: agentMatch, cover_photo_index: coverIdx, ocr_transcript: transcript }),
+      JSON.stringify({ extracted, agent_match: agentMatch, cover_photo_index: coverIdx, ocr_transcript: transcript, image_kinds: imageKinds }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (e: any) {
