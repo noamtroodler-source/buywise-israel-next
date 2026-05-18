@@ -164,7 +164,7 @@ function AgencyWizardContent() {
     storageKey,
     autoSaveInterval: 0,
     useSessionKey: false,
-    metadata: { currentStep, assignedAgentId },
+    metadata: { currentStep, assignedAgentId, importSource, provisioningAuditStatus },
     enabled: draftCheckComplete,
   });
 
