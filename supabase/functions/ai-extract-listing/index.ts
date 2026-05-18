@@ -85,7 +85,8 @@ async function ocrTranscript(imageUrls: string[], apiKey: string): Promise<strin
       console.error("OCR pass failed", r.status, await r.text().catch(() => ""));
       return "";
     }
-    const j = await r.json();
+    const j = await safeReadJson(r);
+    if (!j) return "";
     return (j?.choices?.[0]?.message?.content || "").toString();
   } catch (e) {
     console.error("OCR pass error", e);
@@ -389,11 +390,12 @@ No prose, no markdown.` },
       body: JSON.stringify({ model: "google/gemini-2.5-flash", temperature: 0, messages: [{ role: "user", content }] }),
     });
     if (!r.ok) { console.error("classify failed", r.status); return imageUrls.map(() => "property_photo"); }
-    const j = await r.json();
+    const j = await safeReadJson(r);
+    if (!j) return imageUrls.map(() => "property_photo");
     const raw = (j?.choices?.[0]?.message?.content || "").toString();
     const m = raw.match(/\[[\s\S]*\]/);
     if (!m) return imageUrls.map(() => "property_photo");
-    const arr = JSON.parse(m[0]);
+    const arr = parseToolArguments(m[0]);
     if (!Array.isArray(arr)) return imageUrls.map(() => "property_photo");
     const valid: ImageKind[] = ["property_photo","floor_plan","spec_sheet","screenshot_other"];
     return imageUrls.map((_, i) => {
@@ -425,7 +427,8 @@ async function pickCoverPhotoIndex(imageUrls: string[], apiKey: string, kinds: I
       body: JSON.stringify({ model: "google/gemini-2.5-flash", messages: [{ role: "user", content }], temperature: 0 }),
     });
     if (!r.ok) return eligibleIdx[0];
-    const j = await r.json();
+    const j = await safeReadJson(r);
+    if (!j) return eligibleIdx[0];
     const m = (j?.choices?.[0]?.message?.content?.toString() || "").match(/\d+/);
     if (!m) return eligibleIdx[0];
     const idx = parseInt(m[0], 10);
