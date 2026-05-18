@@ -147,12 +147,19 @@ function AgencyWizardContent() {
     setHighestVisitedStep((prev) => Math.max(prev, currentStep));
   }, [currentStep]);
 
+  // Track whether the draft-recovery effect has completed. We MUST NOT let
+  // useAutoSave's debounced write run before this — otherwise the initial
+  // empty `data` overwrites the AI Kickstart handoff that wrote the draft
+  // moments before this page mounted.
+  const [draftCheckComplete, setDraftCheckComplete] = useState(false);
+
   const autoSave = useAutoSave<PropertyWizardData, AgencyWizardMetadata>({
     data,
     storageKey,
     autoSaveInterval: 0,
     useSessionKey: false,
     metadata: { currentStep, assignedAgentId },
+    enabled: draftCheckComplete,
   });
 
   // Check for saved draft once the storage key is settled (waits for override agency to resolve)
@@ -161,10 +168,29 @@ function AgencyWizardContent() {
     if (overrideAgencyId && !overrideAgency) return; // still resolving target agency
     hasCheckedDraft.current = true;
     const saved = autoSave.getSavedData();
-    if (saved?.data && saved.data.title) {
-      setShowRecoveryDialog(true);
+    if (saved?.data && (saved.data.title || saved.data.address || saved.data.price || (Array.isArray(saved.data.images) && saved.data.images.length > 0))) {
+      // Fresh handoff from the AI Kickstart dialog (saved within the last
+      // 30 seconds) → auto-resume instead of forcing a "Recover draft?"
+      // dialog. The user already clicked "Open in wizard"; asking again
+      // is just friction and was the source of the "all my info is gone"
+      // confusion.
+      const isFreshHandoff = saved.savedAt
+        && Date.now() - new Date(saved.savedAt).getTime() < 30_000;
+      if (isFreshHandoff) {
+        loadFromSaved(saved.data);
+        if (saved.metadata?.currentStep !== undefined) {
+          setCurrentStep(saved.metadata.currentStep);
+        }
+        if (saved.metadata?.assignedAgentId) {
+          setAssignedAgentId(saved.metadata.assignedAgentId);
+        }
+      } else {
+        setShowRecoveryDialog(true);
+      }
     }
-  }, [overrideAgencyId, overrideAgency, autoSave]);
+    // Unblock autoSave only after we've snapshot-read the draft.
+    setDraftCheckComplete(true);
+  }, [overrideAgencyId, overrideAgency, autoSave, loadFromSaved, setCurrentStep]);
 
   const handleResumeDraft = () => {
     const saved = autoSave.getSavedData();
