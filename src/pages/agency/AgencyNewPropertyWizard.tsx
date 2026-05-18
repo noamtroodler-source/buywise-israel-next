@@ -190,6 +190,12 @@ function AgencyWizardContent() {
         if (saved.metadata?.assignedAgentId) {
           setAssignedAgentId(saved.metadata.assignedAgentId);
         }
+        if (saved.metadata?.importSource) {
+          setImportSource(saved.metadata.importSource);
+        }
+        if (saved.metadata?.provisioningAuditStatus) {
+          setProvisioningAuditStatus(saved.metadata.provisioningAuditStatus);
+        }
       } else {
         setShowRecoveryDialog(true);
       }
@@ -207,6 +213,12 @@ function AgencyWizardContent() {
       }
       if (saved.metadata?.assignedAgentId) {
         setAssignedAgentId(saved.metadata.assignedAgentId);
+      }
+      if (saved.metadata?.importSource) {
+        setImportSource(saved.metadata.importSource);
+      }
+      if (saved.metadata?.provisioningAuditStatus) {
+        setProvisioningAuditStatus(saved.metadata.provisioningAuditStatus);
       }
     }
     setShowRecoveryDialog(false);
