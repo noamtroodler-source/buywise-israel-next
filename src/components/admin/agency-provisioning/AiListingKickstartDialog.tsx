@@ -22,6 +22,8 @@ interface UploadedImage {
   previewUrl: string;
   publicUrl?: string;
   uploading: boolean;
+  enhancing?: boolean;
+  enhanced?: boolean;
   error?: string;
 }
 
