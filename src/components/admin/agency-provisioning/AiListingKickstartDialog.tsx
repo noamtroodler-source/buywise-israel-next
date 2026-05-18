@@ -177,13 +177,13 @@ export function AiListingKickstartDialog({
   }, [open, agencyId, draftLoaded, draftPayload]);
 
 
-  const handleFiles = useCallback(async (files: FileList | File[]) => {
+  const handleFiles = useCallback(async (files: FileList | File[], bucket: ImageBucket) => {
     const arr = Array.from(files).filter((f) => f.type.startsWith('image/'));
     if (arr.length === 0) return;
     if (images.length + arr.length > 20) toast.warning('Up to 20 images at a time. Some were skipped.');
     const accepted = arr.slice(0, 20 - images.length);
     const newEntries: UploadedImage[] = accepted.map((file) => ({
-      file, previewUrl: URL.createObjectURL(file), uploading: true,
+      file, previewUrl: URL.createObjectURL(file), uploading: true, bucket,
     }));
     setImages((prev) => [...prev, ...newEntries]);
 
