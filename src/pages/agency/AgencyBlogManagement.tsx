@@ -150,14 +150,6 @@ export default function AgencyBlogManagement() {
                 <p className="text-sm text-muted-foreground">{blogPosts.length + teamPosts.length} total article{blogPosts.length + teamPosts.length !== 1 ? 's' : ''}</p>
               </div>
             </div>
-            {canSubmit && (
-              <Button asChild className="rounded-xl">
-                <Link to="/agency/blog/new">
-                  <Plus className="h-4 w-4 mr-2" />
-                  New Article
-                </Link>
-              </Button>
-            )}
           </div>
 
           {/* Tabs */}
