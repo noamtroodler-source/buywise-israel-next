@@ -272,7 +272,7 @@ export function AiListingKickstartDialog({
             >
               <Upload className="h-6 w-6 mx-auto text-muted-foreground mb-2" />
               <p className="text-sm font-medium">Drop screenshots here or click to upload</p>
-              <p className="text-xs text-muted-foreground mt-1">PNG, JPG, WebP — up to 12 images</p>
+              <p className="text-xs text-muted-foreground mt-1">PNG, JPG, WebP — up to 20 images</p>
               <input
                 ref={fileInputRef}
                 type="file"
