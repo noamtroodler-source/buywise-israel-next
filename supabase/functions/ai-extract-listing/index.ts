@@ -584,15 +584,29 @@ Deno.serve(async (req) => {
     }
 
     if (!aiJson) return jsonResponse({ error: "AI extraction returned an empty or invalid response. Please try again." }, 502);
-    const toolCall = aiJson?.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall?.function?.arguments) {
-      return jsonResponse({ error: "AI returned no structured output" }, 502);
-    }
+    const message = aiJson?.choices?.[0]?.message;
+    const toolCall = message?.tool_calls?.[0];
     let extracted: any = {};
-    try { extracted = parseToolArguments(toolCall.function.arguments); } catch (e) {
-      console.error("AI returned invalid tool JSON", e, toolCall.function.arguments.slice(0, 500));
-      return jsonResponse({ error: "AI returned invalid structured data. Please try again." }, 502);
+    let extractionSource = "tool_call";
+    if (toolCall?.function?.arguments) {
+      try { extracted = parseToolArguments(toolCall.function.arguments); } catch (e) {
+        console.error("AI returned invalid tool JSON", e, String(toolCall.function.arguments).slice(0, 500));
+      }
     }
+    // Fallback: model returned JSON in message.content instead of calling the tool
+    if (!extracted || Object.keys(extracted).length === 0) {
+      const raw = (message?.content || "").toString();
+      const m = raw.match(/\{[\s\S]*\}/);
+      if (m) {
+        try { extracted = parseToolArguments(m[0]); extractionSource = "content_json"; }
+        catch (e) { console.error("Fallback content JSON parse failed", e, raw.slice(0, 500)); }
+      }
+    }
+    if (!extracted || Object.keys(extracted).length === 0) {
+      console.error("No structured output from AI", JSON.stringify(message || {}).slice(0, 800));
+      return jsonResponse({ error: "AI did not return structured listing data. Please try again or add a couple more screenshots." }, 502);
+    }
+    console.log(`Extraction source: ${extractionSource}, fields: ${Object.keys(extracted).length}`);
 
     // ── Deterministic rescue pass ──
     extracted = recoverFromTranscript(extracted, transcript, description);
