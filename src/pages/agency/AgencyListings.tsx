@@ -408,6 +408,15 @@ export default function AgencyListings() {
     return listing && listing.safe_to_batch_approve && (listing.verification_status === 'draft' || listing.verification_status === 'changes_requested');
   });
 
+  const applySummaryFilter = (value: ListingStatusFilterValue) => {
+    setStatusFilter(value);
+    setReviewFilter('all');
+    setSearchQuery('');
+    setAgentFilter('all');
+    setCityFilter('all');
+    setSelectedIds(new Set());
+  };
+
   const handleBulkDelete = () => {
     bulkDelete.mutate([...selectedIds], {
       onSuccess: () => {
@@ -419,7 +428,7 @@ export default function AgencyListings() {
 
   const safeSelectedIds = [...selectedIds].filter((id) => listings.find((l) => l.id === id)?.safe_to_batch_approve);
 
-  const handleStatusFilterChange = (value: 'all' | AgencyListingDisplayStatusKey) => {
+  const handleStatusFilterChange = (value: ListingStatusFilterValue) => {
     setStatusFilter(value);
     if (value !== 'all') setReviewFilter('all');
   };
