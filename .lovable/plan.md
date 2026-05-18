@@ -1,59 +1,64 @@
-# AI-Assisted Listing Kickstart
+## AI Kickstart v2 — Enhancements
 
-Goal: From the Agency Provisioning page, let you drop in any number of screenshots (Yad2, Madlan, agency PDFs, WhatsApp images, floor plans) plus a free-text description, and have AI extract every listing field it can — bedrooms, baths, size, price, rental vs resale, amenities, address — then open the standard agency listing wizard pre-filled with those values for you to review and submit.
+Add four improvements to the existing `AiListingKickstartDialog` + `ai-extract-listing` edge function flow.
 
-## User flow
+### 1. Agent auto-assignment from roster
 
-1. In `Admin → Agency Provisioning`, the new **"Add a listing manually"** card gets an additional primary button: **"Kickstart with AI"** (the existing "New listing" button stays as the empty-wizard path).
-2. Clicking it opens a dialog:
-   - **Photos / screenshots dropzone** — drag-and-drop multiple files (jpg/png/webp/pdf-page-as-image). Thumbnails shown, can remove individuals. No hard cap, soft warn after 12.
-   - **Description textarea** — paste anything: Hebrew, English, broker WhatsApp blurb, MLS-style copy, voice-note transcript.
-   - **Quick hints row** (optional, helps AI when photos are ambiguous): listing intent (Sale / Rent / Auto-detect), city pre-pick.
-   - **Analyze** button.
-3. Edge function runs Gemini 3 Flash vision with all images + the description text and a strict structured-output schema covering the wizard fields. Returns a `PropertyWizardData` partial plus a per-field confidence map and a list of "source notes" ("price read from Yad2 header", "bedrooms inferred from floor plan").
-4. Result preview panel inside the dialog shows extracted values with confidence chips. You can edit any field inline, then click **"Open wizard with these values"**.
-5. The extracted draft is written to the existing wizard draft key (`agency-property-wizard-draft`) and the route navigates to `/agency/properties/new`. Wizard loads pre-filled; uploaded images are attached to Step 4 (Photos) so they ride along into the listing.
-6. You review step-by-step, fix anything the AI got wrong, and submit normally. No new submission path — same `useCreatePropertyForAgency` mutation.
+**Backend (`ai-extract-listing`):**
+- Add `agencyId` to the request payload.
+- Before extraction, fetch the agency's agents: `select id, full_name, phone, license_number from agents where agency_id = ?`.
+- Extend the Gemini schema with `detected_agent: { name, phone, license_number, confidence }`.
+- After extraction, fuzzy-match detected agent against roster:
+  - Exact license_number match → confident assignment
+  - Normalized phone match (strip +972/0) → confident
+  - Full-name token Jaccard ≥ 0.7 → confident
+  - Otherwise → leave null, surface in `low_confidence_fields`
+- Return `assigned_agent_id` (or null) + the raw `detected_agent` for UI display.
 
-## What the AI extracts
+**Frontend:** Preview panel shows "Assigned to: David Cohen ✓" (green) or "Agent: not matched — pick in wizard" (amber). Pre-fill `metadata.assignedAgentId` in the wizard draft.
 
-Mapped 1:1 to `PropertyWizardData`:
+### 2. Duplicate detection before commit
 
-- **Basics**: title, property_type (apartment / penthouse / garden_apartment / duplex / house / etc.), listing_status (`for_sale` vs `for_rent` — auto-detected from "להשכרה / לשכירות" or "₪/month" cues, overridable), price (NIS, normalized from "$" or "₪" or "מיליון"), city + neighborhood + address (Hebrew → matched against city whitelist + neighborhood roster via `neighborhoodMatcher`).
-- **Details**: bedrooms, additional_rooms (computed via Israeli room count standard from "5 חדרים"), bathrooms, size_sqm (with sqm_source = `agent_estimate` unless an explicit tabu/arnona reference appears), floor / total_floors, year_built, parking.
-- **Features**: condition, ac_type, balcony/elevator/storage booleans, vaad_bayit_monthly, lease_term/furnished_status/pets_policy/agent_fee_required (rental only), features[] (mamad, sukkah balcony, accessible, renovated, etc. — using the existing Israeli listing fields vocabulary).
-- **Description / highlights**: AI rewrites the source into the "Trusted Friend" voice in English (per brand voice memory), preserves any factual claim, flags anything it had to invent so you can delete.
+**Frontend:** After extraction returns, before showing "Open wizard", call `supabase.functions.invoke('detect-duplicates', { address, city, price, bedrooms, size_sqm })`.
 
-Fields the AI is NOT allowed to invent: price (must appear in a photo or the text), address/city (must match the city whitelist), license/agent identity. Missing → left blank with a "needs human" note.
+**If matches found:** Show an amber warning block in the preview:
+> "⚠ Possible duplicate: [Property title] at [address] — listed [date]. [View listing] [Continue anyway]"
 
-## Technical sketch (for engineering)
+Two CTAs: **View existing** (opens `/property/:id` in new tab) and **Continue anyway** (proceeds to wizard with a flag in draft metadata: `duplicateAcknowledged: true`).
 
-```text
-src/
-  components/admin/agency-provisioning/
-    ManualAddListingSection.tsx          # adds 2nd button "Kickstart with AI"
-    AiListingKickstartDialog.tsx         # new — dropzone, textarea, results panel
-  lib/
-    aiListingKickstart.ts                # client helper: uploads to storage, calls fn,
-                                         # writes draft to localStorage, navigates
-supabase/
-  functions/
-    ai-extract-listing/index.ts          # new — Gemini 3 Flash vision + Output.object
-                                         # schema mirroring PropertyWizardData
-                                         # uses createLovableAiGatewayProvider
-```
+If `detect-duplicates` doesn't currently accept this shape, add a thin wrapper or extend it minimally — confirm signature before wiring.
 
-- Images are uploaded to the existing property-images storage bucket under a temp prefix (`kickstart/<uuid>/...`) so we get stable URLs to feed Gemini and to pre-attach to Step 4 Photos. Anything not used in 24h is cleaned by a small cron (or we can skip cleanup for v1).
-- Edge function: `verify_jwt = true`, admin role check via `has_role(auth.uid(), 'admin')`, returns `{ data, confidence, notes }`.
-- Wizard hydration: extend the existing `loadFromSaved` path — already supports localStorage drafts; we only need to pre-populate it before navigation.
-- No new tables, no schema migration. Reuses storage, wizard, mutation, validation.
+### 3. Photo curation hint (auto-pick cover)
 
-## Out of scope (v1)
+**Backend:** When ≥8 photos uploaded, add a second Gemini call inside `ai-extract-listing` (or a chained step) using the curb-appeal sort prompt from the AI Vision Cover Selection memory. Returns `cover_photo_index: number` and `photo_ranking: number[]`.
 
-- Auto-submit without review (always lands in wizard for human approval).
-- PDF parsing as documents (we treat PDFs as one image per page via a quick client-side rasterize — or punt to "upload pages as images" if rasterize is fiddly).
-- Floor-plan dimensioning (sqm comes only from explicit numbers in the input, not from measuring the plan).
+**Frontend:** Preview shows the chosen cover with a "AI-picked cover" badge and a small "Change" link that opens a photo grid to override. Store `metadata.coverPhotoIndex` in the draft so Step 4 of the wizard reflects it.
 
-## Open question for you
+If <8 photos: skip the call, default cover = first photo (current behavior).
 
-Should the AI also try to **assign an agent** from the agency roster when it can read an agent name off the screenshot (e.g. Yad2 listing card shows "סוכן: David Cohen")? Default plan: yes, soft-match by name → if confident, pre-fill Step 1 (Assign Agent), else leave blank.
+### 4. Rental vs resale forced choice
+
+**Backend:** Include `listing_status_confidence: 'high' | 'low'` in the extraction output. Mark low when Hebrew/English cues are absent or contradictory (e.g., price stated without "להשכרה" or "למכירה" keywords).
+
+**Frontend:** In the preview panel:
+- If `listing_status_confidence === 'high'` → show as a regular field.
+- If `'low'` → render a required radio group ("Is this for sale or for rent?") with **Sale** / **Rent** options. The "Open wizard with these values" button stays disabled until a choice is made.
+
+### Files to touch
+
+- `supabase/functions/ai-extract-listing/index.ts` — add agencyId param, roster fetch + fuzzy match, cover-selection chained call, listing_status confidence flag, expanded response shape.
+- `src/components/admin/agency-provisioning/AiListingKickstartDialog.tsx` — pass agencyId, render agent match badge, duplicate warning block, AI-picked cover badge, conditional sale/rent radio, gate the CTA on resolved choices.
+- (No DB migrations — purely additive to existing function output and existing draft localStorage shape.)
+
+### Technical notes
+
+- Keep the Gemini extraction schema under 20 top-level properties (per `ai-extraction-schema-branching` memory) — nest the new fields (`detected_agent`, `cover_photo_index`, `listing_status_confidence`) inside existing groups where possible.
+- Cover-selection prompt: pass photo URLs (already uploaded to property-images bucket) directly to Gemini 2.5 Flash; ask it to rank by "exterior curb appeal, then bright interior, then amenity" per the existing memory.
+- Duplicate detection call must be debounced — only run once per extraction result, not on every preview re-render.
+- All new UI strings follow "Trusted Friend" voice.
+
+### Out of scope (v2)
+
+- Editing the matched agent inline (handled in wizard Step 1).
+- Merging into the duplicate listing (only warn + link out).
+- Re-running extraction after photo reorder.
