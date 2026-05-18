@@ -202,7 +202,7 @@ export function computeStepErrors(data: PropertyWizardData, adjustedStep: number
       break;
     }
     case 3: { // Photos
-      const minPhotos = Math.max(data.bedrooms + (data.additional_rooms || 0) + data.bathrooms, 3);
+      const minPhotos = 3;
       if (data.images.length < minPhotos) errors.push(`At least ${minPhotos} photos required (have ${data.images.length})`);
       break;
     }
