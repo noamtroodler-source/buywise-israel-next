@@ -486,9 +486,8 @@ export function AiListingKickstartDialog({
             Kickstart a listing with AI
           </DialogTitle>
           <DialogDescription>
-            Drop in any screenshots (Yad2, Madlan, agency PDFs, WhatsApp, floor plans) and/or a
-            description. AI fills in the wizard fields, matches the listing agent from your roster,
-            picks a cover photo, and warns you about possible duplicates.
+            Drop reference material (Yad2 / Madlan screenshots, PDFs, floor plans) into the left zone — AI reads facts from these.
+            Drop the actual property photos into the right zone — those become the listing gallery and cover.
           </DialogDescription>
         </DialogHeader>
 
