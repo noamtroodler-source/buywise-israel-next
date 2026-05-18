@@ -439,7 +439,10 @@ export function AiListingKickstartDialog({
   };
 
   const reset = () => {
-    images.forEach((i) => URL.revokeObjectURL(i.previewUrl));
+    images.forEach((i) => {
+      // Only revoke blob: URLs (restored drafts use the storage publicUrl directly).
+      if (i.previewUrl?.startsWith('blob:')) URL.revokeObjectURL(i.previewUrl);
+    });
     setImages([]);
     setDescription('');
     setExtracted(null);
@@ -451,10 +454,25 @@ export function AiListingKickstartDialog({
     setStatusChoice(null);
     setHintIntent('auto');
     setHintCity('');
+    setSavedAt(null);
+    try { localStorage.removeItem(draftKey(agencyId)); } catch {}
+  };
+
+  const handleStartOver = () => {
+    if (!confirm('Discard this draft and start over? Uploaded photos stay in storage but the form will be cleared.')) return;
+    reset();
+    toast.success('Draft cleared');
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) reset(); onOpenChange(v); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        // Closing the dialog should NOT wipe progress — autosave persists the draft.
+        if (!v) setDraftLoaded(false);
+        onOpenChange(v);
+      }}
+    >
       <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
