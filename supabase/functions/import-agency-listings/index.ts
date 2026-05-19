@@ -6132,15 +6132,47 @@ async function processOneItem(
     // ── Tier 0 (PRIMARY): exact building_key match scoped to this agency ──
     // The strongest cross-source signal: same physical building. Apartment-level
     // disambiguation happens later via merge logic / unit_identity_key.
+    // For website-source imports, building_key alone is NOT enough — two units
+    // in the same building would collapse. We require either matching apartment
+    // number/floor or bedrooms+size proximity to confirm same unit.
     if (agencyOrFilter && _matcherIdentity.buildingKey) {
       const { data: bkMatch } = await sb
         .from("properties")
-        .select("id")
+        .select("id, apartment_number, floor, bedrooms, size_sqm, price, source_url")
         .eq("building_key", _matcherIdentity.buildingKey)
         .or(agencyOrFilter)
-        .limit(1);
-      if (bkMatch && bkMatch.length > 0) crossSourceMatchId = bkMatch[0].id;
+        .limit(10);
+      if (bkMatch && bkMatch.length > 0) {
+        const incomingUnit = (listing.apartment_number ?? "").toString().trim().toLowerCase();
+        const incomingFloor = listing.floor != null ? Math.floor(listing.floor) : null;
+        const sameUnit = bkMatch.find((c: any) => {
+          if ((job.source_type || "website") !== "website") return true;
+          // Website job: require strong unit-level match
+          const cUnit = (c.apartment_number ?? "").toString().trim().toLowerCase();
+          if (incomingUnit && cUnit && incomingUnit === cUnit) return true;
+          const cUrl = canonicalUrlIdentity(c.source_url);
+          const iUrl = canonicalUrlIdentity(item.url);
+          if (cUrl && iUrl && cUrl === iUrl) return true;
+          // Same floor + same bedrooms + size within 3sqm + price within 3%
+          const sameFloor = incomingFloor != null && c.floor != null && Math.floor(c.floor) === incomingFloor;
+          const sameBeds = listing.bedrooms != null && c.bedrooms != null && Math.floor(c.bedrooms) === Math.floor(listing.bedrooms);
+          const sizeTight = listing.size_sqm && c.size_sqm && Math.abs(c.size_sqm - listing.size_sqm) <= 3;
+          const priceTight = listing.price && c.price && Math.abs(c.price - listing.price) / Math.max(c.price, listing.price) <= 0.03;
+          return sameFloor && sameBeds && sizeTight && priceTight;
+        });
+        if (sameUnit) crossSourceMatchId = sameUnit.id;
+      }
     }
+
+
+
+    // For agency-website imports we treat each scraped URL as a distinct unit
+    // unless there is overwhelming evidence of a duplicate (canonical URL match,
+    // identical normalized address, or photo overlap). An agency almost never
+    // posts the same unit twice on its own site, so loose price+size+bedroom
+    // fuzzy matching previously collapsed genuinely different apartments
+    // (e.g. Dolev vs. Revivim, both 2BR/~76sqm in RBS A) into one row.
+    const isWebsiteJob = (job.source_type || "website") === "website";
 
     // ── Tier 1: Intra-agency strict same-unit dedup (alternate URLs, mirrors) ──
     if (!crossSourceMatchId && agencyOrFilter && matcherCity && (listing.address || (listing.size_sqm && listing.price && listing.bedrooms != null))) {
@@ -6157,18 +6189,27 @@ async function processOneItem(
       if (listing.price) query.gte("price", listing.price * 0.97).lte("price", listing.price * 1.03);
 
       const { data: sameAgencyCandidates } = await query;
-      const sameUnit = (sameAgencyCandidates || []).find((candidate: any) =>
-        isStrictSameUnitDuplicate(candidate, listing) || isLikelySameAgencyDuplicate(candidate, listing, item.url)
-      );
+      const sameUnit = (sameAgencyCandidates || []).find((candidate: any) => {
+        if (isWebsiteJob) {
+          // Only collapse on a canonical-URL match (mirror/re-scrape). Never
+          // collapse based on price/size/bedroom heuristics for the agency's
+          // own site — those almost always indicate a different unit.
+          const existingUrl = canonicalUrlIdentity(candidate.source_url);
+          const incomingUrl = canonicalUrlIdentity(item.url);
+          return !!(existingUrl && incomingUrl && existingUrl === incomingUrl);
+        }
+        return isStrictSameUnitDuplicate(candidate, listing) || isLikelySameAgencyDuplicate(candidate, listing, item.url);
+      });
       if (sameUnit) {
         crossSourceMatchId = sameUnit.id;
       }
     }
 
     // ── Tier 2: address-ILIKE cross-source merge, scoped to this agency ──
-    // Same agency listing the same address from a different source (Yad2 + Madlan
-    // + own site) → enrich, don't duplicate. Cross-agency cases are gated later
-    // by check_cross_agency_duplicate_v2 and routed to co-listing.
+    // For portal imports (Yad2/Madlan) we accept ILIKE-substring matches against
+    // existing rows so the same address collapses across sources. For website
+    // imports we require an exact normalized address match — substring matches
+    // on a short street name match too many siblings.
     if (!crossSourceMatchId && agencyOrFilter && listing.address && matcherCity) {
       const normalizedAddr = normalizeAddressForDedup(listing.address);
       const addrPattern = buildAddressQueryPattern(normalizedAddr);
@@ -6181,13 +6222,30 @@ async function processOneItem(
           .ilike("city", matcherCity.trim())
           .not("import_source", "is", null) // only merge sourced listings
           .neq("id", "00000000-0000-0000-0000-000000000000")
-          .limit(1);
-        if (crossDupes && crossDupes.length > 0) crossSourceMatchId = crossDupes[0].id;
+          .limit(5);
+        if (crossDupes && crossDupes.length > 0) {
+          if (isWebsiteJob) {
+            // Require exact normalized address equality AND matching bedrooms
+            // (when known) before merging two distinct website URLs.
+            const exact = crossDupes.find((c: any) => {
+              const existingNorm = normalizeAddressForDedup(c.address || "");
+              if (existingNorm !== normalizedAddr) return false;
+              if (listing.bedrooms != null && c.bedrooms != null && Math.floor(c.bedrooms) !== Math.floor(listing.bedrooms)) return false;
+              return true;
+            });
+            if (exact) crossSourceMatchId = exact.id;
+          } else {
+            crossSourceMatchId = crossDupes[0].id;
+          }
+        }
       }
     }
 
-    // ── Tier 3: fuzzy bedrooms/size/price (when no address), scoped to this agency ──
-    if (!crossSourceMatchId && agencyOrFilter && matcherCity && listing.bedrooms != null && listing.size_sqm && listing.price > 0) {
+    // ── Tier 3: fuzzy bedrooms/size/price (when no address) ──
+    // DISABLED for website-source imports — collapses different units in the
+    // same building. Portal imports still use it because portals legitimately
+    // re-list the same unit without a normalized address.
+    if (!isWebsiteJob && !crossSourceMatchId && agencyOrFilter && matcherCity && listing.bedrooms != null && listing.size_sqm && listing.price > 0) {
       const { data: crossFuzzy } = await sb
         .from("properties")
         .select("id, agent_id, price, size_sqm, bedrooms, images, description, address, floor, year_built, features, merged_source_urls, source_url, data_quality_score")
@@ -6202,6 +6260,7 @@ async function processOneItem(
         .limit(1);
       if (crossFuzzy && crossFuzzy.length > 0) crossSourceMatchId = crossFuzzy[0].id;
     }
+
 
     if (crossSourceMatchId) {
       // ── MERGE: enrich existing property with better data from this source ──
