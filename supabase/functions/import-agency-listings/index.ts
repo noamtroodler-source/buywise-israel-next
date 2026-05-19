@@ -6132,15 +6132,39 @@ async function processOneItem(
     // ── Tier 0 (PRIMARY): exact building_key match scoped to this agency ──
     // The strongest cross-source signal: same physical building. Apartment-level
     // disambiguation happens later via merge logic / unit_identity_key.
+    // For website-source imports, building_key alone is NOT enough — two units
+    // in the same building would collapse. We require either matching apartment
+    // number/floor or bedrooms+size proximity to confirm same unit.
     if (agencyOrFilter && _matcherIdentity.buildingKey) {
       const { data: bkMatch } = await sb
         .from("properties")
-        .select("id")
+        .select("id, apartment_number, floor, bedrooms, size_sqm, price, source_url")
         .eq("building_key", _matcherIdentity.buildingKey)
         .or(agencyOrFilter)
-        .limit(1);
-      if (bkMatch && bkMatch.length > 0) crossSourceMatchId = bkMatch[0].id;
+        .limit(10);
+      if (bkMatch && bkMatch.length > 0) {
+        const incomingUnit = (listing.apartment_number ?? "").toString().trim().toLowerCase();
+        const incomingFloor = listing.floor != null ? Math.floor(listing.floor) : null;
+        const sameUnit = bkMatch.find((c: any) => {
+          if ((job.source_type || "website") !== "website") return true;
+          // Website job: require strong unit-level match
+          const cUnit = (c.apartment_number ?? "").toString().trim().toLowerCase();
+          if (incomingUnit && cUnit && incomingUnit === cUnit) return true;
+          const cUrl = canonicalUrlIdentity(c.source_url);
+          const iUrl = canonicalUrlIdentity(item.url);
+          if (cUrl && iUrl && cUrl === iUrl) return true;
+          // Same floor + same bedrooms + size within 3sqm + price within 3%
+          const sameFloor = incomingFloor != null && c.floor != null && Math.floor(c.floor) === incomingFloor;
+          const sameBeds = listing.bedrooms != null && c.bedrooms != null && Math.floor(c.bedrooms) === Math.floor(listing.bedrooms);
+          const sizeTight = listing.size_sqm && c.size_sqm && Math.abs(c.size_sqm - listing.size_sqm) <= 3;
+          const priceTight = listing.price && c.price && Math.abs(c.price - listing.price) / Math.max(c.price, listing.price) <= 0.03;
+          return sameFloor && sameBeds && sizeTight && priceTight;
+        });
+        if (sameUnit) crossSourceMatchId = sameUnit.id;
+      }
     }
+
+
 
     // For agency-website imports we treat each scraped URL as a distinct unit
     // unless there is overwhelming evidence of a duplicate (canonical URL match,
