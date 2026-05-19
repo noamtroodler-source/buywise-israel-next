@@ -164,6 +164,27 @@ export function ListingDetailDrawer({ agencyId, listing, onClose }: Props) {
     updateListing.mutate({ id: listing!.id, patch: { ai_suggestions: remaining } });
   }
 
+  function removePhoto(photoUrl: string) {
+    if (updateListing.isPending || !listing) return;
+    const current = listing.images || [];
+    const firstMatchIndex = current.findIndex(u => u === photoUrl);
+    if (firstMatchIndex === -1) return;
+
+    const next = current.filter((_, index) => index !== firstMatchIndex);
+    updateListing.mutate(
+      { id: listing.id, patch: { images: next } },
+      {
+        onSuccess: () => {
+          setLightboxIndex((index) => {
+            if (index === null) return null;
+            if (next.length === 0) return null;
+            return Math.min(index, next.length - 1);
+          });
+        },
+      },
+    );
+  }
+
   return (
     <Sheet open={open} onOpenChange={v => !v && onClose()}>
       <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
@@ -276,19 +297,10 @@ export function ListingDetailDrawer({ agencyId, listing, onClose }: Props) {
                               aria-label="Delete photo"
                               disabled={updateListing.isPending}
                               onClick={(e) => {
+                                e.preventDefault();
                                 e.stopPropagation();
-                                if (updateListing.isPending) return;
                                 if (!confirm('Remove this photo from the listing?')) return;
-                                // Remove by URL match (not index) so reorders/refetches can't delete the wrong photo.
-                                // If the same URL appears multiple times, only the first occurrence is removed.
-                                const current = listing.images || [];
-                                let removed = false;
-                                const next = current.filter((u) => {
-                                  if (!removed && u === img) { removed = true; return false; }
-                                  return true;
-                                });
-                                if (!removed) return;
-                                updateListing.mutate({ id: listing.id, patch: { images: next } });
+                                removePhoto(img);
                               }}
                               className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-destructive text-destructive-foreground shadow-md opacity-0 group-hover:opacity-100 focus:opacity-100 transition flex items-center justify-center hover:scale-110"
                             >
