@@ -5768,7 +5768,6 @@ async function processOneItem(
     // extraction failed entirely and we fell back to extractAgencyHtmlFallback,
     // or AI succeeded but the agent block was past the prompt truncation),
     // try the regex extractor against the full page HTML + markdown.
-    let rawFetchAgent: { name: string; phone: string; email: string } | null = null;
     if (!listing?.listing_agent_name) {
       const agentFromHtml = extractAgentFieldsFromHtml(pageHtml, markdown);
       if (agentFromHtml.name) {
@@ -5799,10 +5798,10 @@ async function processOneItem(
         backstop_found_name: agentFromHtml.name || null,
         backstop_found_phone: agentFromHtml.phone || null,
         backstop_found_email: agentFromHtml.email || null,
-        raw_fetch_attempted: !!rawFetchAgent,
-        raw_fetch_found_name: rawFetchAgent?.name || null,
-        raw_fetch_found_phone: rawFetchAgent?.phone || null,
-        raw_fetch_found_email: rawFetchAgent?.email || null,
+        raw_fetch_attempted: false,
+        raw_fetch_found_name: null,
+        raw_fetch_found_phone: null,
+        raw_fetch_found_email: null,
         block_matched: !!debugBlock,
         block_preview: debugBlock.slice(0, 200),
         has_listing_agent_keyword: /LISTING\s+AGENT/i.test(debugText),
