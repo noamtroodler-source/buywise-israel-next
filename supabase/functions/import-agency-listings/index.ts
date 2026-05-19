@@ -2238,6 +2238,7 @@ function getSiteRoot(url: string): string {
 async function handleDiscover(body: any) {
   const { agency_id, website_url, import_type = "resale", job_id: existingJobId } = body;
   if (!agency_id || !website_url) throw new Error("agency_id and website_url required");
+  const maxListings = parseWebsiteImportQueueLimit(body?.max_listings);
 
   const sb = supabaseAdmin();
   const normalizedUrl = normalizeUrl(website_url);
@@ -2457,8 +2458,11 @@ async function handleDiscover(body: any) {
     return { job_id: existingJobId, total_listings: 0, total_discovered: allUrls.length, new_urls: 0, skipped_existing: skippedExisting, status: "cancelled" };
   }
 
-  const listingUrls = Array.from(new Set([...deterministicListingUrls, ...aiListingUrls].map((url) => normalizeUrl(url))));
-  console.log(`Listing classification: ${deterministicListingUrls.length} deterministic + ${aiListingUrls.length} AI = ${listingUrls.length}`);
+  const discoveredListingUrls = Array.from(new Set([...deterministicListingUrls, ...aiListingUrls].map((url) => normalizeUrl(url))));
+  const priorityUrls = new Set([...directLinks, ...modeIndexUrls, ...sitemapUrls].map((url) => normalizeUrl(url)));
+  const cappedListings = prioritizeAndCapListingUrls(discoveredListingUrls, priorityUrls, maxListings);
+  const listingUrls = cappedListings.urls;
+  console.log(`Listing classification: ${deterministicListingUrls.length} deterministic + ${aiListingUrls.length} AI = ${discoveredListingUrls.length}; queued ${listingUrls.length}${cappedListings.capped ? ` after cap (${cappedListings.removed} held back)` : ""}`);
 
   if (listingUrls.length === 0) {
     if (existingJobId) {
@@ -2477,13 +2481,13 @@ async function handleDiscover(body: any) {
   if (existingJobId) {
     const { error: updateJobErr } = await sb
       .from("import_jobs")
-      .update({ status: "ready", total_urls: listingUrls.length, discovered_urls: allUrls, import_type, failure_reason: JSON.stringify({ url_sanitation: canonical.diagnostics, discovered_raw: rawUrls.length, canonical: canonical.urls.length, queued: listingUrls.length }) })
+      .update({ status: "ready", total_urls: listingUrls.length, discovered_urls: allUrls, import_type, failure_reason: JSON.stringify({ url_sanitation: canonical.diagnostics, discovered_raw: rawUrls.length, canonical: canonical.urls.length, classified: discoveredListingUrls.length, queued: listingUrls.length, queue_cap: maxListings, queue_cap_applied: cappedListings.capped, queue_cap_removed: cappedListings.removed }) })
       .eq("id", existingJobId);
     if (updateJobErr) throw new Error(`Failed to update import job: ${updateJobErr.message}`);
   } else {
     const { data: insertedJob, error: jobErr } = await sb
       .from("import_jobs")
-      .insert({ agency_id, website_url: formattedUrl, status: "ready", total_urls: listingUrls.length, discovered_urls: allUrls, import_type, source_type: "website", failure_reason: JSON.stringify({ url_sanitation: canonical.diagnostics, discovered_raw: rawUrls.length, canonical: canonical.urls.length, queued: listingUrls.length }) })
+      .insert({ agency_id, website_url: formattedUrl, status: "ready", total_urls: listingUrls.length, discovered_urls: allUrls, import_type, source_type: "website", failure_reason: JSON.stringify({ url_sanitation: canonical.diagnostics, discovered_raw: rawUrls.length, canonical: canonical.urls.length, classified: discoveredListingUrls.length, queued: listingUrls.length, queue_cap: maxListings, queue_cap_applied: cappedListings.capped, queue_cap_removed: cappedListings.removed }) })
       .select("id").single();
     if (jobErr) throw new Error(`Failed to create import job: ${jobErr.message}`);
     job = insertedJob;
@@ -2521,7 +2525,7 @@ async function handleDiscover(body: any) {
     );
   }
 
-  return { job_id: job.id, total_listings: listingUrls.length, total_discovered: allUrls.length, new_urls: listingUrls.length, skipped_existing: skippedExisting, started_async: true };
+  return { job_id: job.id, total_listings: listingUrls.length, total_discovered: allUrls.length, total_classified: discoveredListingUrls.length, new_urls: listingUrls.length, skipped_existing: skippedExisting, queue_cap: maxListings, queue_cap_applied: cappedListings.capped, queue_cap_removed: cappedListings.removed, started_async: true };
 }
 
 async function handleWebsiteDiscoverAsync(body: any) {
