@@ -239,10 +239,27 @@ export function AgentRosterSection({ agencyId }: Props) {
   }
 
   async function handleProvisionAgent(agentId: string, email: string) {
+    let effectiveEmail = email;
+    if (!effectiveEmail) {
+      const entered = window.prompt('This agent has no email on file. Enter an email to provision their account:');
+      if (!entered) return;
+      const trimmed = entered.trim();
+      if (!/^\S+@\S+\.\S+$/.test(trimmed)) {
+        toast.error('Please enter a valid email address');
+        return;
+      }
+      try {
+        await update.mutateAsync({ id: agentId, patch: { email: trimmed } as any });
+      } catch (e: any) {
+        toast.error(e?.message || 'Failed to save email');
+        return;
+      }
+      effectiveEmail = trimmed;
+    }
     const res = await provision.mutateAsync({ agentId });
     if (res?.userId) {
       const cred = await reveal.mutateAsync({ userId: res.userId });
-      setCredModal({ email: cred.email || email, password: cred.password });
+      setCredModal({ email: cred.email || effectiveEmail, password: cred.password });
     }
   }
 
