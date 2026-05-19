@@ -18,8 +18,6 @@ import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/comp
 import { differenceInDays } from 'date-fns';
 import { useEventTracking } from '@/hooks/useEventTracking';
 import { useTouchSwipe } from '@/hooks/useTouchSwipe';
-import { useNeighborhoodIllustration } from '@/hooks/useNeighborhoodIllustration';
-import { cityHeroImages } from '@/lib/cityHeroImages';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { PRICE_CONTEXT_FLAGS } from '@/lib/featureFlags';
 
@@ -41,7 +39,7 @@ interface PropertyCardProps {
   hideTitle?: boolean;
 }
 
-const PLACEHOLDER_IMAGE = 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&auto=format&fit=crop&q=60';
+const PLACEHOLDER_IMAGE = '/placeholder.svg';
 
 /**
  * Agency avatar stack: primary logo in front, up to 2 co-agent avatars
@@ -157,14 +155,6 @@ function AgencyLogoStack({
   );
 }
 
-function cityToSlug(city: string): string {
-  return city
-    .toLowerCase()
-    .replace(/['']/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/[^a-z0-9-]/g, '');
-}
-
 function isGenericStockPhoto(url: string | null | undefined): boolean {
   if (!url) return false;
   return url.includes('images.unsplash.com/photo-');
@@ -172,25 +162,18 @@ function isGenericStockPhoto(url: string | null | undefined): boolean {
 
 function getCardImageSrc({
   src,
-  city,
-  neighborhoodImage,
   fallbackSrc,
   error,
   treatStockAsMissing,
 }: {
   src: string | null | undefined;
-  city: string | null | undefined;
-  neighborhoodImage: string | undefined;
   fallbackSrc?: string | null;
   error: boolean;
   treatStockAsMissing: boolean;
 }) {
-  const cityImage = city ? cityHeroImages[cityToSlug(city)] : undefined;
   const hasRealImage = !!src && !error && !(treatStockAsMissing && isGenericStockPhoto(src));
 
-  return hasRealImage
-    ? src
-    : (neighborhoodImage || cityImage || fallbackSrc || src || PLACEHOLDER_IMAGE);
+  return hasRealImage ? src : (fallbackSrc || PLACEHOLDER_IMAGE);
 }
 
 const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardProps>(function PropertyCard({ property, className, showCompareButton = false, showShareButton = true, showMonthlyEstimate = false, hideStatusBadge = false, compact = false, maxBadges = 2, showCategoryBadge = false, hideFeaturedBadge = false, compareCategory, alwaysShowCompare = false, hideTitle = false }, ref) {
@@ -337,11 +320,8 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
     }
   };
 
-  const illustrationUrl = useNeighborhoodIllustration(property.city, property.neighborhood);
   const currentImage = getCardImageSrc({
     src: images[currentImageIndex],
-    city: property.city,
-    neighborhoodImage: illustrationUrl,
     fallbackSrc: rawImages[0],
     error: imageError,
     treatStockAsMissing: false,
