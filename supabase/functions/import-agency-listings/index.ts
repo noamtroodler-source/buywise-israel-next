@@ -1605,6 +1605,33 @@ const STRIP_PARAMS = new Set([
   '_', 'nocache', 'timestamp', 'cachebuster',
 ]);
 
+const DEFAULT_WEBSITE_IMPORT_QUEUE_LIMIT = 120;
+const MAX_WEBSITE_IMPORT_QUEUE_LIMIT = 200;
+
+function parseWebsiteImportQueueLimit(value: unknown): number {
+  const requested = Number(value);
+  if (!Number.isFinite(requested) || requested <= 0) return DEFAULT_WEBSITE_IMPORT_QUEUE_LIMIT;
+  return Math.min(Math.floor(requested), MAX_WEBSITE_IMPORT_QUEUE_LIMIT);
+}
+
+function prioritizeAndCapListingUrls(urls: string[], priorityUrls: Set<string>, maxListings: number) {
+  const highPriority: string[] = [];
+  const normalPriority: string[] = [];
+  for (const url of urls) {
+    const normalized = normalizeUrl(url);
+    if (priorityUrls.has(normalized)) highPriority.push(normalized);
+    else normalPriority.push(normalized);
+  }
+  const ordered = [...highPriority, ...normalPriority];
+  const capped = ordered.length > maxListings;
+  return {
+    urls: ordered.slice(0, maxListings),
+    capped,
+    removed: capped ? ordered.length - maxListings : 0,
+    priority_count: highPriority.length,
+  };
+}
+
 function normalizeUrl(raw: string): string {
   let url = raw.trim();
   if (!url.startsWith("http")) url = `https://${url}`;
