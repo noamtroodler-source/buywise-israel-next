@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { Loader2, ExternalLink, Check, X, Sparkles, Home, Ruler, Image as ImageIcon, FileText, AlertCircle, CheckCircle2, XCircle } from 'lucide-react';
+import { Loader2, ExternalLink, Check, X, Sparkles, Home, Ruler, Image as ImageIcon, FileText, AlertCircle, CheckCircle2, XCircle, Trash2 } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -263,17 +263,33 @@ export function ListingDetailDrawer({ agencyId, listing, onClose }: Props) {
                     {section.title === 'Photos' && listing.images && listing.images.length > 0 && (
                       <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
                         {listing.images.map((img, i) => (
-                          <button
-                            key={`${img}-${i}`}
-                            type="button"
-                            onClick={() => setLightboxIndex(i)}
-                            className="h-16 w-16 flex-shrink-0 rounded-xl overflow-hidden ring-offset-background transition hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                          >
-                            <img src={img} alt={`Listing photo ${i + 1}`} className="h-full w-full object-cover" loading="lazy" />
-                          </button>
+                          <div key={`${img}-${i}`} className="group relative h-16 w-16 flex-shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => setLightboxIndex(i)}
+                              className="h-full w-full rounded-xl overflow-hidden ring-offset-background transition hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                            >
+                              <img src={img} alt={`Listing photo ${i + 1}`} className="h-full w-full object-cover" loading="lazy" />
+                            </button>
+                            <button
+                              type="button"
+                              aria-label="Delete photo"
+                              disabled={updateListing.isPending}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (!confirm('Remove this photo from the listing?')) return;
+                                const next = (listing.images || []).filter((_, idx) => idx !== i);
+                                updateListing.mutate({ id: listing.id, patch: { images: next } });
+                              }}
+                              className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-destructive text-destructive-foreground shadow-md opacity-0 group-hover:opacity-100 focus:opacity-100 transition flex items-center justify-center hover:scale-110"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          </div>
                         ))}
                       </div>
                     )}
+
                   </CardContent>
                 </Card>
               );
