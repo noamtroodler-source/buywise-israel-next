@@ -28,6 +28,9 @@ export function GoogleMapsProvider({ children }: GoogleMapsProviderProps) {
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: apiKey,
     libraries,
+    // Force English place names so Israeli addresses never come back in Hebrew.
+    language: 'en',
+    region: 'IL',
     preventGoogleFontsLoading: !apiKey,
   });
 

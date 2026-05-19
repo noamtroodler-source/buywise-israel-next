@@ -151,6 +151,8 @@ Hard rules:
 - Floor: "ground" / "ground floor" / "קרקע" / "קומת קרקע" → 0 (NEVER -1). Only use negative numbers if the source literally says "מינוס", "minus", "basement", or "מרתף".
 - "Mr 45" / "מ״ר 45" / "45 sqm" / "45 sq m" all mean size_sqm = 45 (or porch size if it says "porch 9 sq m").
 - Cities: use English ("Tel Aviv", "Jerusalem", "Herzliya"…). Hebrew neighborhoods → transliteration ("Nahalat Binyamin").
+- ADDRESS: Always output in Latin characters (English/transliteration). Transliterate Hebrew street names ("קהילת ברודצקי" → "Kehilat Brodetsky", "אבן גבירול" → "Ibn Gabirol"). Format: "Street Name Number" only — no city, no neighborhood, no Hebrew. If you cannot confidently transliterate, leave address empty rather than emitting Hebrew.
+- neighborhood and city: same rule — Latin characters only. If unsure, leave empty.
 - Listing intent: "להשכרה / ₪/month" → for_rent; "למכירה / for sale / asking price" → for_sale. Confidence "low" if no clear cue.
 - features[] vocabulary only: balcony, elevator, storage, parking, mamad, sukkah_balcony, air_conditioning, central_ac, renovated, accessible, pool, garden, furnished, pet_friendly, view, near_park, near_schools, kosher_kitchen, smart_home.
 - A visible "porch" / "מרפסת" / "balcony" tick → has_balcony true + "balcony" in features.
@@ -390,6 +392,20 @@ function recoverFromTranscript(extracted: any, transcript: string, notes: string
   if (!e.detected_agent.phone) {
     const m = text.match(/(\+?972[-\s]?\d[\d\-\s]{7,12}|0\d[-\s]?\d{3}[-\s]?\d{4})/);
     if (m) e.detected_agent.phone = m[1];
+  }
+
+  // Hebrew guard — strip any address/neighborhood/city that still contains Hebrew.
+  // Better to leave blank than display Hebrew text in an English-language product.
+  const HEBREW_RE = /[\u0590-\u05FF]/;
+  for (const field of ["address", "neighborhood", "city"] as const) {
+    const v = e[field];
+    if (typeof v === "string" && HEBREW_RE.test(v)) {
+      addNote(`Dropped ${field} "${v}" — contained Hebrew characters (not transliterated)`);
+      e[field] = "";
+      if (Array.isArray(e.low_confidence_fields) && !e.low_confidence_fields.includes(field)) {
+        e.low_confidence_fields.push(field);
+      }
+    }
   }
 
   return e;
