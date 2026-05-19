@@ -279,7 +279,16 @@ export function useProvisionAgentAccount(agencyId: string | null) {
   return useMutation({
     mutationFn: async (input: { agentId: string }) => {
       const { data, error } = await supabase.functions.invoke('provision-agent-account', { body: input });
-      if (error) throw error;
+      if (error) {
+        // supabase-js wraps non-2xx as FunctionsHttpError and hides the body.
+        // Pull the real reason ("Agent has no email on file", etc.) out of the response.
+        let msg = error.message || 'Failed';
+        try {
+          const body = await (error as any).context?.json?.();
+          if (body?.error) msg = typeof body.error === 'string' ? body.error : JSON.stringify(body.error);
+        } catch { /* ignore */ }
+        throw new Error(msg);
+      }
       if (!data?.success) throw new Error(data?.error || 'Failed');
       return data;
     },
