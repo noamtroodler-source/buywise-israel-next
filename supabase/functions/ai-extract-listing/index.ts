@@ -151,6 +151,8 @@ Hard rules:
 - Floor: "ground" / "ground floor" / "קרקע" / "קומת קרקע" → 0 (NEVER -1). Only use negative numbers if the source literally says "מינוס", "minus", "basement", or "מרתף".
 - "Mr 45" / "מ״ר 45" / "45 sqm" / "45 sq m" all mean size_sqm = 45 (or porch size if it says "porch 9 sq m").
 - Cities: use English ("Tel Aviv", "Jerusalem", "Herzliya"…). Hebrew neighborhoods → transliteration ("Nahalat Binyamin").
+- ADDRESS: Always output in Latin characters (English/transliteration). Transliterate Hebrew street names ("קהילת ברודצקי" → "Kehilat Brodetsky", "אבן גבירול" → "Ibn Gabirol"). Format: "Street Name Number" only — no city, no neighborhood, no Hebrew. If you cannot confidently transliterate, leave address empty rather than emitting Hebrew.
+- neighborhood and city: same rule — Latin characters only. If unsure, leave empty.
 - Listing intent: "להשכרה / ₪/month" → for_rent; "למכירה / for sale / asking price" → for_sale. Confidence "low" if no clear cue.
 - features[] vocabulary only: balcony, elevator, storage, parking, mamad, sukkah_balcony, air_conditioning, central_ac, renovated, accessible, pool, garden, furnished, pet_friendly, view, near_park, near_schools, kosher_kitchen, smart_home.
 - A visible "porch" / "מרפסת" / "balcony" tick → has_balcony true + "balcony" in features.
