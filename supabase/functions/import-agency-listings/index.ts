@@ -899,33 +899,20 @@ function isNonResalePage(markdown: string, importType: string = "resale"): { ski
     return { skip: true, reason: `Pre-filter: short-term rental not supported (${shortTerm.reason})` };
   }
 
-  // Rental indicators — only skip in resale-only mode
-  if (importType === "resale") {
-    const rentalPatterns = [
-      /להשכרה/, /שכירות\s+חודשית/, /דמי\s*שכירות/, /שכ[\"״]ח/,
-      /\bfor\s+rent\b/i, /\bmonthly\s+rent\b/i, /\brental\b/i,
-    ];
-    for (const p of rentalPatterns) {
-      if (p.test(snippet)) return { skip: true, reason: "Pre-filter: rental listing (resale only)" };
-    }
-  }
-
-  // Sale indicators — skip in rental-only mode
-  if (importType === "rental") {
-    const salePatterns = [
-      /למכירה/, /מכירה/, /\bfor\s+sale\b/i, /\bbuy\b/i, /\bpurchase\b/i,
-    ];
-    let hasSaleSignal = false;
-    for (const p of salePatterns) {
-      if (p.test(snippet)) { hasSaleSignal = true; break; }
-    }
-    // Only skip if sale signals are present AND no rental signals
-    const rentalSignals = [/להשכרה/, /שכירות/, /\bfor\s+rent\b/i, /\brental\b/i, /\brent\b/i];
-    const hasRentalSignal = rentalSignals.some(p => p.test(snippet));
-    if (hasSaleSignal && !hasRentalSignal) {
-      return { skip: true, reason: "Pre-filter: sale listing (rental import only)" };
-    }
-  }
+  // Rental/sale text pre-filter — DISABLED.
+  //
+  // Same failure mode as the sold/rented and new-dev filters above: matching
+  // "for rent" / "להשכרה" against the first 3000 chars of markdown catches
+  // site chrome — "For Rent" nav links, sidebar category lists, related-listing
+  // widgets, footer menus — not the listing itself. Aliyah Realty
+  // (aliyahrealty.com) hit 100% false rejection because the global nav
+  // includes a Rentals section, so every for-sale URL was tagged as rental.
+  //
+  // The AI extractor sets listing_status ("for_sale" | "for_rent") with full
+  // page context and the import-side validator (`rental listing — resale
+  // import only` at line ~1066) enforces import_type against the AI's
+  // structured classification. That is the correct decision boundary.
+  void importType;
 
   // New construction / developer pre-filter — DISABLED.
   //
