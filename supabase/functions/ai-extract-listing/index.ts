@@ -394,6 +394,20 @@ function recoverFromTranscript(extracted: any, transcript: string, notes: string
     if (m) e.detected_agent.phone = m[1];
   }
 
+  // Hebrew guard — strip any address/neighborhood/city that still contains Hebrew.
+  // Better to leave blank than display Hebrew text in an English-language product.
+  const HEBREW_RE = /[\u0590-\u05FF]/;
+  for (const field of ["address", "neighborhood", "city"] as const) {
+    const v = e[field];
+    if (typeof v === "string" && HEBREW_RE.test(v)) {
+      addNote(`Dropped ${field} "${v}" — contained Hebrew characters (not transliterated)`);
+      e[field] = "";
+      if (Array.isArray(e.low_confidence_fields) && !e.low_confidence_fields.includes(field)) {
+        e.low_confidence_fields.push(field);
+      }
+    }
+  }
+
   return e;
 }
 
