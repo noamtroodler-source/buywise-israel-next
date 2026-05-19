@@ -1605,6 +1605,33 @@ const STRIP_PARAMS = new Set([
   '_', 'nocache', 'timestamp', 'cachebuster',
 ]);
 
+const DEFAULT_WEBSITE_IMPORT_QUEUE_LIMIT = 120;
+const MAX_WEBSITE_IMPORT_QUEUE_LIMIT = 200;
+
+function parseWebsiteImportQueueLimit(value: unknown): number {
+  const requested = Number(value);
+  if (!Number.isFinite(requested) || requested <= 0) return DEFAULT_WEBSITE_IMPORT_QUEUE_LIMIT;
+  return Math.min(Math.floor(requested), MAX_WEBSITE_IMPORT_QUEUE_LIMIT);
+}
+
+function prioritizeAndCapListingUrls(urls: string[], priorityUrls: Set<string>, maxListings: number) {
+  const highPriority: string[] = [];
+  const normalPriority: string[] = [];
+  for (const url of urls) {
+    const normalized = normalizeUrl(url);
+    if (priorityUrls.has(normalized)) highPriority.push(normalized);
+    else normalPriority.push(normalized);
+  }
+  const ordered = [...highPriority, ...normalPriority];
+  const capped = ordered.length > maxListings;
+  return {
+    urls: ordered.slice(0, maxListings),
+    capped,
+    removed: capped ? ordered.length - maxListings : 0,
+    priority_count: highPriority.length,
+  };
+}
+
 function normalizeUrl(raw: string): string {
   let url = raw.trim();
   if (!url.startsWith("http")) url = `https://${url}`;
@@ -2211,6 +2238,7 @@ function getSiteRoot(url: string): string {
 async function handleDiscover(body: any) {
   const { agency_id, website_url, import_type = "resale", job_id: existingJobId } = body;
   if (!agency_id || !website_url) throw new Error("agency_id and website_url required");
+  const maxListings = parseWebsiteImportQueueLimit(body?.max_listings);
 
   const sb = supabaseAdmin();
   const normalizedUrl = normalizeUrl(website_url);
@@ -2430,8 +2458,11 @@ async function handleDiscover(body: any) {
     return { job_id: existingJobId, total_listings: 0, total_discovered: allUrls.length, new_urls: 0, skipped_existing: skippedExisting, status: "cancelled" };
   }
 
-  const listingUrls = Array.from(new Set([...deterministicListingUrls, ...aiListingUrls].map((url) => normalizeUrl(url))));
-  console.log(`Listing classification: ${deterministicListingUrls.length} deterministic + ${aiListingUrls.length} AI = ${listingUrls.length}`);
+  const discoveredListingUrls = Array.from(new Set([...deterministicListingUrls, ...aiListingUrls].map((url) => normalizeUrl(url))));
+  const priorityUrls = new Set([...directLinks, ...modeIndexUrls, ...sitemapUrls].map((url) => normalizeUrl(url)));
+  const cappedListings = prioritizeAndCapListingUrls(discoveredListingUrls, priorityUrls, maxListings);
+  const listingUrls = cappedListings.urls;
+  console.log(`Listing classification: ${deterministicListingUrls.length} deterministic + ${aiListingUrls.length} AI = ${discoveredListingUrls.length}; queued ${listingUrls.length}${cappedListings.capped ? ` after cap (${cappedListings.removed} held back)` : ""}`);
 
   if (listingUrls.length === 0) {
     if (existingJobId) {
@@ -2450,13 +2481,13 @@ async function handleDiscover(body: any) {
   if (existingJobId) {
     const { error: updateJobErr } = await sb
       .from("import_jobs")
-      .update({ status: "ready", total_urls: listingUrls.length, discovered_urls: allUrls, import_type, failure_reason: JSON.stringify({ url_sanitation: canonical.diagnostics, discovered_raw: rawUrls.length, canonical: canonical.urls.length, queued: listingUrls.length }) })
+      .update({ status: "ready", total_urls: listingUrls.length, discovered_urls: allUrls, import_type, failure_reason: JSON.stringify({ url_sanitation: canonical.diagnostics, discovered_raw: rawUrls.length, canonical: canonical.urls.length, classified: discoveredListingUrls.length, queued: listingUrls.length, queue_cap: maxListings, queue_cap_applied: cappedListings.capped, queue_cap_removed: cappedListings.removed }) })
       .eq("id", existingJobId);
     if (updateJobErr) throw new Error(`Failed to update import job: ${updateJobErr.message}`);
   } else {
     const { data: insertedJob, error: jobErr } = await sb
       .from("import_jobs")
-      .insert({ agency_id, website_url: formattedUrl, status: "ready", total_urls: listingUrls.length, discovered_urls: allUrls, import_type, source_type: "website", failure_reason: JSON.stringify({ url_sanitation: canonical.diagnostics, discovered_raw: rawUrls.length, canonical: canonical.urls.length, queued: listingUrls.length }) })
+      .insert({ agency_id, website_url: formattedUrl, status: "ready", total_urls: listingUrls.length, discovered_urls: allUrls, import_type, source_type: "website", failure_reason: JSON.stringify({ url_sanitation: canonical.diagnostics, discovered_raw: rawUrls.length, canonical: canonical.urls.length, classified: discoveredListingUrls.length, queued: listingUrls.length, queue_cap: maxListings, queue_cap_applied: cappedListings.capped, queue_cap_removed: cappedListings.removed }) })
       .select("id").single();
     if (jobErr) throw new Error(`Failed to create import job: ${jobErr.message}`);
     job = insertedJob;
@@ -2494,7 +2525,7 @@ async function handleDiscover(body: any) {
     );
   }
 
-  return { job_id: job.id, total_listings: listingUrls.length, total_discovered: allUrls.length, new_urls: listingUrls.length, skipped_existing: skippedExisting, started_async: true };
+  return { job_id: job.id, total_listings: listingUrls.length, total_discovered: allUrls.length, total_classified: discoveredListingUrls.length, new_urls: listingUrls.length, skipped_existing: skippedExisting, queue_cap: maxListings, queue_cap_applied: cappedListings.capped, queue_cap_removed: cappedListings.removed, started_async: true };
 }
 
 async function handleWebsiteDiscoverAsync(body: any) {
@@ -5737,7 +5768,6 @@ async function processOneItem(
     // extraction failed entirely and we fell back to extractAgencyHtmlFallback,
     // or AI succeeded but the agent block was past the prompt truncation),
     // try the regex extractor against the full page HTML + markdown.
-    let rawFetchAgent: { name: string; phone: string; email: string } | null = null;
     if (!listing?.listing_agent_name) {
       const agentFromHtml = extractAgentFieldsFromHtml(pageHtml, markdown);
       if (agentFromHtml.name) {
@@ -5768,10 +5798,10 @@ async function processOneItem(
         backstop_found_name: agentFromHtml.name || null,
         backstop_found_phone: agentFromHtml.phone || null,
         backstop_found_email: agentFromHtml.email || null,
-        raw_fetch_attempted: !!rawFetchAgent,
-        raw_fetch_found_name: rawFetchAgent?.name || null,
-        raw_fetch_found_phone: rawFetchAgent?.phone || null,
-        raw_fetch_found_email: rawFetchAgent?.email || null,
+        raw_fetch_attempted: false,
+        raw_fetch_found_name: null,
+        raw_fetch_found_phone: null,
+        raw_fetch_found_email: null,
         block_matched: !!debugBlock,
         block_preview: debugBlock.slice(0, 200),
         has_listing_agent_keyword: /LISTING\s+AGENT/i.test(debugText),
