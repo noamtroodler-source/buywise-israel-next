@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { Loader2, ExternalLink, Check, X, Sparkles, Home, Ruler, Image as ImageIcon, FileText, AlertCircle, CheckCircle2, XCircle } from 'lucide-react';
+import { Loader2, ExternalLink, Check, X, Sparkles, Home, Ruler, Image as ImageIcon, FileText, AlertCircle, CheckCircle2, XCircle, Trash2 } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
