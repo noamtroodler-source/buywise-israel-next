@@ -184,12 +184,22 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ---- Flip status ----
+    // ---- Resolve real owner user_id (from agency_members) and flip status ----
+    const { data: ownerMember } = await admin
+      .from("agency_members")
+      .select("user_id")
+      .eq("agency_id", agencyId)
+      .eq("role", "owner")
+      .maybeSingle();
+
+    const realOwnerId = ownerMember?.user_id ?? agency.admin_user_id;
+
     await admin
       .from("agencies")
       .update({
         management_status: "handed_over",
         handover_completed_at: new Date().toISOString(),
+        admin_user_id: realOwnerId,
       })
       .eq("id", agencyId);
 
