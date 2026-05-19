@@ -47,9 +47,14 @@ export function ListingsQualitySection({ agencyId }: { agencyId: string }) {
   const [search, setSearch] = useState('');
   const [priceSort, setPriceSort] = useState<PriceSort>('none');
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [drawerListing, setDrawerListing] = useState<ProvisioningListing | null>(null);
+  const [drawerListingId, setDrawerListingId] = useState<string | null>(null);
   const [bulkAgent, setBulkAgent] = useState<string>('');
   const [confirmDelete, setConfirmDelete] = useState<{ ids: string[]; label: string } | null>(null);
+
+  const drawerListing = useMemo(
+    () => drawerListingId ? listings.find(l => l.id === drawerListingId) ?? null : null,
+    [drawerListingId, listings],
+  );
 
   const propertyIds = useMemo(() => listings.map(l => l.id), [listings]);
   const { data: flags = [] } = useListingFlags(agencyId, propertyIds);
@@ -270,7 +275,7 @@ export function ListingsQualitySection({ agencyId }: { agencyId: string }) {
                   <tr
                     key={l.id}
                     className="border-t hover:bg-muted/30 cursor-pointer"
-                    onClick={() => setDrawerListing(l)}
+                    onClick={() => setDrawerListingId(l.id)}
                   >
                     <td className="p-2" onClick={e => e.stopPropagation()}>
                       <input type="checkbox" checked={selected.has(l.id)} onChange={() => toggleSelect(l.id)} />
@@ -336,7 +341,7 @@ export function ListingsQualitySection({ agencyId }: { agencyId: string }) {
         </div>
       )}
 
-      <ListingDetailDrawer agencyId={agencyId} listing={drawerListing} onClose={() => setDrawerListing(null)} />
+      <ListingDetailDrawer agencyId={agencyId} listing={drawerListing} onClose={() => setDrawerListingId(null)} />
 
       <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
         <AlertDialogContent>
