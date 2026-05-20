@@ -124,7 +124,7 @@ export default function Principles() {
               </h2>
             </motion.div>
 
-            <div className="grid md:grid-cols-2 gap-8 md:gap-12 max-w-3xl mx-auto w-full">
+            <div className="grid md:grid-cols-2 gap-8 md:gap-16 max-w-2xl mx-auto w-full justify-items-center md:justify-items-start">
               {/* We Are */}
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
