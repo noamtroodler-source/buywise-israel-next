@@ -3929,6 +3929,28 @@ function extractImagesFromHtml(html: string, pageUrl: string): string[] {
     document.body ||
     document;
 
+  // Layer 0: Lemkin/Aliyah-style themes mark gallery photos with `img-responsive`.
+  // Pick those directly when present — they exclude agent headshots and icons.
+  try {
+    const responsiveImgs = (scopeRoot.querySelectorAll
+      ? Array.from(scopeRoot.querySelectorAll('img.img-responsive'))
+      : []) as any[];
+    const responsiveRaw: string[] = [];
+    for (const img of responsiveImgs) {
+      if (img.closest && img.closest(EXCLUDED_ANCESTOR_SELECTOR)) continue;
+      if (imageBelongsToOtherListing(img, currentSlug)) continue;
+      const src = img.getAttribute('src') || img.getAttribute('data-src') ||
+                  img.getAttribute('data-lazy-src') || img.getAttribute('data-original') ||
+                  img.getAttribute('data-large_image') || img.getAttribute('data-full');
+      // Skip lightbox base64 placeholders.
+      if (src && !src.startsWith('data:')) responsiveRaw.push(src);
+      const srcset = img.getAttribute('srcset') || img.getAttribute('data-srcset');
+      if (srcset) responsiveRaw.push(srcset);
+    }
+    const responsiveClean = normalizeAndFilterUrls(responsiveRaw, pageUrl);
+    if (responsiveClean.length >= 3) return responsiveClean.slice(0, 30);
+  } catch { /* fall through */ }
+
   // Layer 1: try priority selectors for a real gallery container.
   const galleryUrls: string[] = [];
   for (const sel of GALLERY_SELECTORS) {
