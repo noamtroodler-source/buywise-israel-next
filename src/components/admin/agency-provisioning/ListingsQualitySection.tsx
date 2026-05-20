@@ -294,6 +294,25 @@ export function ListingsQualitySection({ agencyId }: { agencyId: string }) {
                       <div className="font-medium truncate">{l.address}</div>
                       <div className="text-xs text-muted-foreground truncate">{l.city}</div>
                     </td>
+                    <td className="p-2" onClick={(e) => e.stopPropagation()}>
+                      <Select
+                        value={l.listing_status === 'for_rent' ? 'for_rent' : 'for_sale'}
+                        onValueChange={(value) => {
+                          bulkUpdate.mutate({ ids: [l.id], patch: { listing_status: value } });
+                        }}
+                        disabled={bulkUpdate.isPending}
+                      >
+                        <SelectTrigger
+                          className={`h-7 w-[110px] text-xs ${l.listing_status === 'for_rent' ? 'border-sky-500/40 text-sky-700 dark:text-sky-400' : 'border-emerald-500/40 text-emerald-700 dark:text-emerald-400'}`}
+                        >
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="for_sale">For sale</SelectItem>
+                          <SelectItem value="for_rent">For rent</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </td>
                     <td className="p-2 text-right whitespace-nowrap">
                       {l.price ? `₪${Number(l.price).toLocaleString()}` : '—'}
                     </td>
