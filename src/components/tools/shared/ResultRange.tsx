@@ -27,18 +27,18 @@ function formatValue(
   switch (format) {
     case 'currency':
       if (value >= 1000000) {
-        return `${currencySymbol}${(value / 1000000).toFixed(1).replace('.0', '')}M`;
+        return `${currencySymbol}${Math.round(value / 1000000)}M`;
       }
       if (value >= 1000) {
-        return `${currencySymbol}${(value / 1000).toFixed(1).replace('.0', '')}k`;
+        return `${currencySymbol}${Math.round(value / 1000)}k`;
       }
       return `${currencySymbol}${Math.round(value).toLocaleString()}`;
     case 'compact':
       if (value >= 1000000) {
-        return `${(value / 1000000).toFixed(1).replace('.0', '')}M`;
+        return `${Math.round(value / 1000000)}M`;
       }
       if (value >= 1000) {
-        return `${(value / 1000).toFixed(1).replace('.0', '')}k`;
+        return `${Math.round(value / 1000)}k`;
       }
       return Math.round(value).toLocaleString();
     case 'percent':
