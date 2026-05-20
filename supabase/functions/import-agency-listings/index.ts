@@ -1649,19 +1649,37 @@ function normalizeUrl(raw: string): string {
   }
 }
 
+// Tracking / session params that never identify a listing and should be
+// stripped before computing a canonical identity. Anything else in the
+// query string (e.g. ?slug=..., ?id=..., ?listing=...) IS part of the
+// identity — otherwise sites that route every listing through a single
+// path like /properties/listing.php?slug=foo collapse into one record.
+const TRACKING_QUERY_PARAMS = new Set([
+  "utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content",
+  "gclid", "fbclid", "mc_cid", "mc_eid", "ref", "referrer", "source",
+  "_ga", "_gl", "yclid", "msclkid", "igshid",
+]);
+
 function canonicalUrlIdentity(raw: string | null | undefined): string {
   if (!raw) return "";
   try {
     const normalized = normalizeUrl(raw);
     const parsed = new URL(normalized);
+    // Strip tracking params, keep identifying params, sort for stability.
+    const keep: [string, string][] = [];
+    for (const [k, v] of parsed.searchParams.entries()) {
+      if (!TRACKING_QUERY_PARAMS.has(k.toLowerCase())) keep.push([k, v]);
+    }
+    keep.sort(([a], [b]) => a.localeCompare(b));
     parsed.search = "";
+    for (const [k, v] of keep) parsed.searchParams.append(k, v);
     parsed.hash = "";
     return decodeURIComponent(parsed.toString()).toLowerCase().replace(/\/+$/, "");
   } catch {
     try {
-      return decodeURIComponent(String(raw)).toLowerCase().split(/[?#]/)[0].replace(/\/+$/, "");
+      return decodeURIComponent(String(raw)).toLowerCase().split(/#/)[0].replace(/\/+$/, "");
     } catch {
-      return String(raw).toLowerCase().split(/[?#]/)[0].replace(/\/+$/, "");
+      return String(raw).toLowerCase().split(/#/)[0].replace(/\/+$/, "");
     }
   }
 }
