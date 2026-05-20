@@ -22,7 +22,7 @@ const dlog = (...args: unknown[]) => { if (DEBUG) console.log(...args); };
 
 // Deploy marker — printed once on cold start. Bump on any structural change so
 // we can confirm via edge-function logs that the latest code is actually live.
-const DEPLOY_MARKER = "preserve-listing-query-identity-2026-05-20-v20";
+const DEPLOY_MARKER = "lemkin-img-responsive-extractor-2026-05-20-v21";
 console.log(`[import-agency-listings] cold start — deploy: ${DEPLOY_MARKER}`);
 // One-time env-var visibility check. Helps diagnose Lovable secret-propagation
 // issues (e.g. v15 cold-started with SCRAPINGBEE_API_KEY absent even though
@@ -3534,6 +3534,12 @@ function isJunkImageUrl(lower: string): boolean {
       lower.includes("pixel") || lower.includes("tracking") || lower.includes("badge") ||
       lower.includes("flag") || lower.includes("social") ||
       lower.includes("googlemap") || lower.includes("maps.googleapis")) return true;
+  // SVGs are never real listing photos (always UI chrome / iconography).
+  if (/\.svg(?:$|\?|#)/.test(lower)) return true;
+  // WordPress theme/plugin assets (Lemkin/Aliyah: bedroom.png, square-meter.png,
+  // back.svg, view-ico.svg, call.svg, whatsapp.svg, etc. all live under these).
+  if (lower.includes("/wp-content/themes/") || lower.includes("/wp-content/plugins/")) return true;
+  if (/\/themes\/[^/]+\/(?:assets|images|img)\//.test(lower)) return true;
   // Wix / Wix-related system & widget assets and trackers
   if (lower.includes("yandex-metrica") || lower.includes("wixapps.net/common/img") ||
       lower.includes("error-img") || lower.includes("error_img") ||
@@ -3922,6 +3928,28 @@ function extractImagesFromHtml(html: string, pageUrl: string): string[] {
     document.querySelector('article') ||
     document.body ||
     document;
+
+  // Layer 0: Lemkin/Aliyah-style themes mark gallery photos with `img-responsive`.
+  // Pick those directly when present — they exclude agent headshots and icons.
+  try {
+    const responsiveImgs = (scopeRoot.querySelectorAll
+      ? Array.from(scopeRoot.querySelectorAll('img.img-responsive'))
+      : []) as any[];
+    const responsiveRaw: string[] = [];
+    for (const img of responsiveImgs) {
+      if (img.closest && img.closest(EXCLUDED_ANCESTOR_SELECTOR)) continue;
+      if (imageBelongsToOtherListing(img, currentSlug)) continue;
+      const src = img.getAttribute('src') || img.getAttribute('data-src') ||
+                  img.getAttribute('data-lazy-src') || img.getAttribute('data-original') ||
+                  img.getAttribute('data-large_image') || img.getAttribute('data-full');
+      // Skip lightbox base64 placeholders.
+      if (src && !src.startsWith('data:')) responsiveRaw.push(src);
+      const srcset = img.getAttribute('srcset') || img.getAttribute('data-srcset');
+      if (srcset) responsiveRaw.push(srcset);
+    }
+    const responsiveClean = normalizeAndFilterUrls(responsiveRaw, pageUrl);
+    if (responsiveClean.length >= 3) return responsiveClean.slice(0, 30);
+  } catch { /* fall through */ }
 
   // Layer 1: try priority selectors for a real gallery container.
   const galleryUrls: string[] = [];

@@ -22,8 +22,11 @@ function extractImages(scrape: any, sourceHost = "cityzen.co.il"): string[] {
     try {
       const abs = new URL(u, `https://${sourceHost}`).toString();
       if (!/\.(jpe?g|png|webp|avif)(\?|$)/i.test(abs)) return;
-      // Skip tiny icons / placeholders
-      if (/(icon|logo|favicon|placeholder|sprite)/i.test(abs)) return;
+      const lower = abs.toLowerCase();
+      // Skip tiny icons / placeholders / theme & plugin chrome / agent headshots.
+      if (/(icon|logo|favicon|placeholder|sprite|avatar|agent|team|badge|flag)/i.test(lower)) return;
+      if (lower.includes("/wp-content/themes/") || lower.includes("/wp-content/plugins/")) return;
+      if (/\/themes\/[^/]+\/(?:assets|images|img)\//.test(lower)) return;
       urls.add(abs);
     } catch { /* ignore */ }
   };
