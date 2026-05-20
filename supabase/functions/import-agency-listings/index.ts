@@ -8277,7 +8277,9 @@ async function firecrawlMapMadlanOffice(officeUrl: string): Promise<string[]> {
 }
 
 async function inspectMadlanActiveOfficePage(url: string): Promise<{ activeCount: number; saleCount: number; rentCount: number; cardUrls: string[]; cardImages: string[] }> {
-  const html = await fetchMadlanDetailHtml(url);
+  // Office pages are JS-rendered — give the browser 8s and retry once if the
+  // first paint missed the listing cards.
+  const html = await fetchMadlanDetailHtml(url, { waitFor: 8000, retries: 2 });
   const text = textFromHtmlFragment(html);
   const numberBefore = (labels: RegExp[]) => {
     for (const label of labels) {
@@ -8289,7 +8291,18 @@ async function inspectMadlanActiveOfficePage(url: string): Promise<{ activeCount
   const activeMatch = text.match(/(\d{1,4})\s*(?:Active properties|נכסים פעילים)/i);
   const saleCount = numberBefore([/Residences? for sale/i, /דירות למכירה/i, /נכסים למכירה/i]);
   const rentCount = numberBefore([/Residences? for rent/i, /דירות להשכרה/i, /נכסים להשכרה/i]);
-  const cardUrls = Array.from(new Set((html.match(/https?:\/\/(?:www\.)?madlan\.co\.il\/(?:listings|properties|forsale|rent)[^"'\s<>]*/gi) || []).map(normalizeUrl)));
+  let cardUrls = Array.from(new Set((html.match(/https?:\/\/(?:www\.)?madlan\.co\.il\/(?:listings|properties|forsale|rent)[^"'\s<>]*/gi) || []).map(normalizeUrl)));
+  // Fallback: if the rendered HTML didn't yield any card URLs (Madlan didn't
+  // finish hydrating in time), use Firecrawl `map` to discover them.
+  if (cardUrls.length === 0) {
+    const mapped = await firecrawlMapMadlanOffice(url);
+    if (mapped.length > 0) {
+      cardUrls = Array.from(new Set(mapped.map(normalizeUrl)));
+      console.log(`[Madlan/OfficeProbe] map fallback recovered ${cardUrls.length} listing URLs for ${url}`);
+    } else {
+      console.warn(`[Madlan/OfficeProbe] rawHtml + map both returned 0 listing URLs for ${url}`);
+    }
+  }
   const cardImages = extractImagesFromHtml(html, url).filter((img) => /madlan|img|image|cloud|cdn/i.test(img)).slice(0, 200);
   return { activeCount: activeMatch ? parseInt(activeMatch[1], 10) || saleCount + rentCount : saleCount + rentCount, saleCount, rentCount, cardUrls, cardImages };
 }
