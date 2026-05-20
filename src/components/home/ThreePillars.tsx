@@ -9,7 +9,7 @@ const pillars = [
     icon: Search,
     title: 'Discover',
     subtitle: 'Find properties your way',
-    description: 'Every property comes from an agency known for working well with international buyers — no Hebrew, no middlemen, just direct access to sellers who get it.',
+    description: 'Agencies vetted for international buyers — no Hebrew, no middlemen, just direct access.',
     gradient: 'from-primary/10 to-primary/5',
     iconBg: 'bg-primary/10',
     iconColor: 'text-primary',
