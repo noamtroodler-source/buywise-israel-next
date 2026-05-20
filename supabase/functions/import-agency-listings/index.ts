@@ -3534,6 +3534,12 @@ function isJunkImageUrl(lower: string): boolean {
       lower.includes("pixel") || lower.includes("tracking") || lower.includes("badge") ||
       lower.includes("flag") || lower.includes("social") ||
       lower.includes("googlemap") || lower.includes("maps.googleapis")) return true;
+  // SVGs are never real listing photos (always UI chrome / iconography).
+  if (/\.svg(?:$|\?|#)/.test(lower)) return true;
+  // WordPress theme/plugin assets (Lemkin/Aliyah: bedroom.png, square-meter.png,
+  // back.svg, view-ico.svg, call.svg, whatsapp.svg, etc. all live under these).
+  if (lower.includes("/wp-content/themes/") || lower.includes("/wp-content/plugins/")) return true;
+  if (/\/themes\/[^/]+\/(?:assets|images|img)\//.test(lower)) return true;
   // Wix / Wix-related system & widget assets and trackers
   if (lower.includes("yandex-metrica") || lower.includes("wixapps.net/common/img") ||
       lower.includes("error-img") || lower.includes("error_img") ||
