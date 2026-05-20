@@ -20,16 +20,16 @@ import { Card, CardContent } from '@/components/ui/card';
 
 const weAreItems = [
   'A neutral, English-first entry point to Israeli real estate',
-  'A clarity layer — market data, pricing context, tax transparency, and process guidance in one place',
-  'Pro-agent and pro-professional — we prepare buyers, not replace experts',
-  'Independent and unbiased',
+  'A clarity layer for market data, taxes, and process',
+  'Pro-agent — we prepare buyers, not replace experts',
+  'Independent, unbiased, and free to use',
 ];
 
 const weAreNotItems = [
   'A brokerage or agency',
-  'Commission-based',
-  'A replacement for lawyers, mortgage brokers, or agents',
-  'A listings portal competing with agencies for supply',
+  'A commission-based platform',
+  'A replacement for lawyers, brokers, or agents',
+  'A listings portal competing with agencies',
 ];
 
 const principles = [
