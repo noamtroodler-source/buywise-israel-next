@@ -1,0 +1,1 @@
+UPDATE public.properties SET agent_id = 'af64446b-e98d-44fc-98da-0124543806ea' WHERE primary_agency_id = 'dc8d1362-b79d-4417-b82f-d3f94bcd7fc0' OR claimed_by_agency_id = 'dc8d1362-b79d-4417-b82f-d3f94bcd7fc0';
