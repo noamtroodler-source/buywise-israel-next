@@ -20,16 +20,16 @@ import { Card, CardContent } from '@/components/ui/card';
 
 const weAreItems = [
   'A neutral, English-first entry point to Israeli real estate',
-  'A clarity layer — market data, pricing context, tax transparency, and process guidance in one place',
-  'Pro-agent and pro-professional — we prepare buyers, not replace experts',
-  'Independent and unbiased',
+  'A clarity layer for market data, taxes, and process',
+  'Pro-agent — we prepare buyers, not replace experts',
+  'Independent, unbiased, and free to use',
 ];
 
 const weAreNotItems = [
   'A brokerage or agency',
-  'Commission-based',
-  'A replacement for lawyers, mortgage brokers, or agents',
-  'A listings portal competing with agencies for supply',
+  'A commission-based platform',
+  'A replacement for lawyers, brokers, or agents',
+  'A listings portal competing with agencies',
 ];
 
 const principles = [
@@ -124,13 +124,14 @@ export default function Principles() {
               </h2>
             </motion.div>
 
-            <div className="inline-grid md:grid-cols-2 gap-y-8 gap-x-12 md:gap-x-20">
+            <div className="grid md:grid-cols-2 gap-8 md:gap-12 max-w-3xl mx-auto w-full">
               {/* We Are */}
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
-                className="flex flex-col max-w-xs"
+                className="flex flex-col"
+
               >
                 <h3 className="font-semibold text-foreground mb-5 text-lg flex items-center gap-2.5">
                   <div className="p-1.5 rounded-full bg-primary/10">
@@ -153,7 +154,7 @@ export default function Principles() {
                 initial={{ opacity: 0, x: 20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
-                className="flex flex-col max-w-xs"
+                className="flex flex-col"
               >
                 <h3 className="font-semibold text-foreground mb-5 text-lg flex items-center gap-2.5">
                   <div className="p-1.5 rounded-full bg-destructive/10">
