@@ -1,4 +1,6 @@
 import { Layout } from '@/components/layout/Layout';
+import { motion } from 'framer-motion';
+import { Users } from 'lucide-react';
 import { SEOHead } from '@/components/seo/SEOHead';
 import { generateHomepageJsonLd } from '@/lib/seo';
 import { HeroSplit } from '@/components/home/HeroSplit';
