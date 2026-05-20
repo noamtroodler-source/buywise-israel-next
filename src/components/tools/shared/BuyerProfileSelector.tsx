@@ -342,7 +342,9 @@ export function useBuyerProfileState(
     is_upgrading: false,
   };
   
-  const [profile, setProfile] = useState<BuyerProfileDimensions>(defaultProfile);
+  const [profile, setProfile] = useState<BuyerProfileDimensions>(
+    savedProfile || defaultProfile
+  );
   
   return [profile, setProfile];
 }
