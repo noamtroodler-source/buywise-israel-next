@@ -130,7 +130,8 @@ export default function Principles() {
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
-                className="flex flex-col max-w-xs"
+                className="flex flex-col"
+
               >
                 <h3 className="font-semibold text-foreground mb-5 text-lg flex items-center gap-2.5">
                   <div className="p-1.5 rounded-full bg-primary/10">
