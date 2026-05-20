@@ -103,7 +103,7 @@ export default function Principles() {
               </h2>
               <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 rounded-xl p-6 md:p-8 border border-primary/20">
                 <p className="text-base md:text-lg text-foreground leading-relaxed">
-                  BuyWise Israel takes on the full responsibility of illuminating the Israeli real estate market for the international buyer — bringing together market data, pricing context, tax and cost transparency, process guidance, and vetted professionals into one clear, personalized, and genuinely useful experience.
+                  BuyWise Israel takes on the full responsibility of illuminating the Israeli real estate market for the international buyer — bringing together market data, pricing context, tax and cost transparency, process guidance, and vetted professionals and agencies into one clear, personalized, and genuinely useful experience.
                 </p>
                 <p className="text-base md:text-lg text-muted-foreground leading-relaxed mt-4">
                   We do the lifting so agencies don't have to change how they operate — enhancing their listings, elevating their presentation, and ensuring the buyers who reach them arrive informed, serious, and ready.
