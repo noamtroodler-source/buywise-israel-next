@@ -61,7 +61,7 @@ export function PreferencesDialog({ trigger }: PreferencesDialogProps) {
             className="h-9 px-3 gap-1.5 rounded-full border border-border/60 hover:bg-primary/5 hover:border-primary/30 transition-all focus-visible:ring-0 focus-visible:ring-offset-0"
           >
             <span className="text-sm font-medium text-foreground">
-              {currencySymbol} · {unitLabel}
+              {currencySymbol}
             </span>
             <ChevronDown className="h-3 w-3 text-muted-foreground" />
           </Button>
