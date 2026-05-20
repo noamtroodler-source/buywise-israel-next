@@ -34,7 +34,32 @@ const Index = () => {
       
       {/* 4. Three Pillars - Establish value prop */}
       <ThreePillars />
-      
+
+      {/* 4.5 Agency Trust Band */}
+      <section className="py-4 md:py-6">
+        <div className="container">
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.4 }}
+            className="flex items-start gap-3 md:gap-4 rounded-xl border border-border/60 bg-muted/40 px-5 py-4 md:px-8 md:py-5"
+          >
+            <div className="mt-0.5 flex-shrink-、0 w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Users className="w-4 h-4 text-primary" />
+            </div>
+            <div>
+              <h3 className="text-sm md:text-base font-bold text-foreground">
+                Agencies you can actually reach out to
+              </h3>
+              <p className="text-sm text-muted-foreground leading-relaxed mt-0.5">
+                We only partner with agencies known for working well with international buyers — so you can feel comfortable reaching out directly.
+              </p>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
       {/* 5. Platform Promise - Why we're different */}
       <PlatformPromise />
       
