@@ -22,7 +22,7 @@ const dlog = (...args: unknown[]) => { if (DEBUG) console.log(...args); };
 
 // Deploy marker — printed once on cold start. Bump on any structural change so
 // we can confirm via edge-function logs that the latest code is actually live.
-const DEPLOY_MARKER = "disable-newdev-prefilter-2026-05-18-v19";
+const DEPLOY_MARKER = "preserve-listing-query-identity-2026-05-20-v20";
 console.log(`[import-agency-listings] cold start — deploy: ${DEPLOY_MARKER}`);
 // One-time env-var visibility check. Helps diagnose Lovable secret-propagation
 // issues (e.g. v15 cold-started with SCRAPINGBEE_API_KEY absent even though
