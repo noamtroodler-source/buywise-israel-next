@@ -45,7 +45,7 @@ const Index = () => {
             transition={{ duration: 0.4 }}
             className="flex items-start gap-3 md:gap-4 rounded-xl border border-border/60 bg-muted/40 px-5 py-4 md:px-8 md:py-5"
           >
-            <div className="mt-0.5 flex-shrink-、0 w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+            <div className="mt-1 flex-shrink-0 w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
               <Users className="w-4 h-4 text-primary" />
             </div>
             <div>
