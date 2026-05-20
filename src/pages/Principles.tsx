@@ -124,7 +124,7 @@ export default function Principles() {
               </h2>
             </motion.div>
 
-            <div className="mx-auto grid md:grid-cols-2 gap-10 md:gap-16 w-fit">
+            <div className="mx-auto grid md:grid-cols-2 gap-10 md:gap-20 w-fit md:pl-24">
               {/* We Are */}
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
