@@ -296,12 +296,29 @@ export function ListingsQualitySection({ agencyId }: { agencyId: string }) {
                     <td className="p-2 text-right whitespace-nowrap">
                       {l.price ? `₪${Number(l.price).toLocaleString()}` : '—'}
                     </td>
-                    <td className="p-2">
-                      {agent ? (
-                        <span className="text-xs">{agent.name}</span>
-                      ) : (
-                        <span className="text-xs text-destructive">Unassigned</span>
-                      )}
+                    <td className="p-2" onClick={(e) => e.stopPropagation()}>
+                      <Select
+                        value={l.agent_id ?? 'unassigned'}
+                        onValueChange={(value) => {
+                          bulkUpdate.mutate({
+                            ids: [l.id],
+                            patch: { agent_id: value === 'unassigned' ? null : value },
+                          });
+                        }}
+                        disabled={bulkUpdate.isPending}
+                      >
+                        <SelectTrigger
+                          className={`h-8 w-[160px] text-xs ${!agent ? 'text-destructive border-destructive/30' : ''}`}
+                        >
+                          <SelectValue placeholder="Unassigned" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="unassigned">Unassigned</SelectItem>
+                          {agents.map((a) => (
+                            <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </td>
                     <td className="p-2">
                       <Badge variant="outline" className={`text-xs gap-1 ${badge.cls}`}>
