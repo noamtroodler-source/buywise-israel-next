@@ -8202,7 +8202,7 @@ function toHebrewCity(englishCity: string): string {
   return englishCity;
 }
 
-async function fetchMadlanDetailHtml(url: string): Promise<string> {
+async function fetchMadlanDetailHtml(url: string, opts?: { waitFor?: number; retries?: number }): Promise<string> {
   // Direct fetch gets Cloudflare-walled on madlan.co.il from Supabase edge IPs
   // (same as jerusalem-real-estate.co). Route through Firecrawl rawHtml when
   // the key is available — Firecrawl proxies + browser-runtime returns the
@@ -8210,25 +8210,29 @@ async function fetchMadlanDetailHtml(url: string): Promise<string> {
   // cardUrls. Direct fetch is left as a fallback for hosts that don't have
   // bot protection.
   const firecrawlKey = Deno.env.get("FIRECRAWL_API_KEY");
+  const waitFor = Math.max(2000, opts?.waitFor ?? 2000);
+  const retries = Math.max(1, opts?.retries ?? 1);
   if (firecrawlKey) {
-    try {
-      const res = await fetchWithTimeout("https://api.firecrawl.dev/v1/scrape", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${firecrawlKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          url,
-          formats: ["rawHtml"],
-          onlyMainContent: false,
-          waitFor: 2000,
-        }),
-      }, 30_000);
-      if (res.ok) {
-        const body = await res.json().catch(() => null);
-        const rawHtml: string = body?.data?.rawHtml || body?.rawHtml || "";
-        if (rawHtml && rawHtml.length >= 200) return rawHtml;
+    for (let attempt = 0; attempt < retries; attempt++) {
+      try {
+        const res = await fetchWithTimeout("https://api.firecrawl.dev/v1/scrape", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${firecrawlKey}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            url,
+            formats: ["rawHtml"],
+            onlyMainContent: false,
+            waitFor: waitFor + attempt * 2000, // back off longer on retries
+          }),
+        }, 45_000);
+        if (res.ok) {
+          const body = await res.json().catch(() => null);
+          const rawHtml: string = body?.data?.rawHtml || body?.rawHtml || "";
+          if (rawHtml && rawHtml.length >= 200) return rawHtml;
+        }
+      } catch (err) {
+        console.warn(`[Madlan detail fetch] Firecrawl rawHtml attempt ${attempt + 1}/${retries} failed for ${url}: ${err instanceof Error ? err.message : err}`);
       }
-    } catch (err) {
-      console.warn(`[Madlan detail fetch] Firecrawl rawHtml failed for ${url}: ${err instanceof Error ? err.message : err}`);
     }
   }
   try {
@@ -8241,6 +8245,35 @@ async function fetchMadlanDetailHtml(url: string): Promise<string> {
     }, 15_000);
     return res.ok ? await res.text() : "";
   } catch { return ""; }
+}
+
+// Firecrawl `map` endpoint returns ALL discoverable URLs on a domain matching
+// an optional search term. We use it as a fallback for Madlan office pages
+// when rawHtml rendering fails to surface the listing cards.
+async function firecrawlMapMadlanOffice(officeUrl: string): Promise<string[]> {
+  const firecrawlKey = Deno.env.get("FIRECRAWL_API_KEY");
+  if (!firecrawlKey) return [];
+  const officeIdMatch = officeUrl.match(/re_office_[a-zA-Z0-9_-]+/);
+  const officeId = officeIdMatch?.[0];
+  try {
+    const res = await fetchWithTimeout("https://api.firecrawl.dev/v2/map", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${firecrawlKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        url: officeUrl,
+        search: officeId || "listings",
+        limit: 1000,
+        includeSubdomains: false,
+      }),
+    }, 30_000);
+    if (!res.ok) return [];
+    const body = await res.json().catch(() => null);
+    const links: string[] = body?.links || body?.data?.links || [];
+    return links.filter((u) => /madlan\.co\.il\/(listings|properties|forsale|rent)/i.test(u));
+  } catch (err) {
+    console.warn(`[Madlan/Map] Firecrawl map failed for ${officeUrl}: ${err instanceof Error ? err.message : err}`);
+    return [];
+  }
 }
 
 async function inspectMadlanActiveOfficePage(url: string): Promise<{ activeCount: number; saleCount: number; rentCount: number; cardUrls: string[]; cardImages: string[] }> {
