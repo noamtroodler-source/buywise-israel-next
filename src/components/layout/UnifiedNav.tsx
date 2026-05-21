@@ -147,7 +147,7 @@ const LEARN_ITEMS = [
 ];
 
 const COMPANY_ITEMS = [
-  { label: 'About', href: '/about', description: 'Our story' },
+  { label: 'About', href: '/about', description: 'Why BuyWise' },
   { label: 'Professionals', href: '/professionals', description: 'Vetted experts' },
   { label: 'Contact', href: '/contact', description: 'Get in touch' },
 ];
