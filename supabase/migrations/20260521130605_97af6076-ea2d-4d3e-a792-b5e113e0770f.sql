@@ -1,0 +1,10 @@
+UPDATE blog_posts SET cover_image = 'https://eveqhyqxdibjayliazxm.supabase.co/storage/v1/object/public/property-images/blog%2Fpost-41.jpg' WHERE slug = 'is-now-a-good-time-to-buy-property-in-israel';
+UPDATE blog_posts SET cover_image = 'https://eveqhyqxdibjayliazxm.supabase.co/storage/v1/object/public/property-images/blog%2Fpost-42.jpg' WHERE slug = 'buying-before-or-after-aliyah';
+UPDATE blog_posts SET cover_image = 'https://eveqhyqxdibjayliazxm.supabase.co/storage/v1/object/public/property-images/blog%2Fpost-43.jpg' WHERE slug = 'second-home-vs-primary-residence';
+UPDATE blog_posts SET cover_image = 'https://eveqhyqxdibjayliazxm.supabase.co/storage/v1/object/public/property-images/blog%2Fpost-44.jpg' WHERE slug = 'best-english-speaking-communities-in-israel';
+UPDATE blog_posts SET cover_image = 'https://eveqhyqxdibjayliazxm.supabase.co/storage/v1/object/public/property-images/blog%2Fpost-45.jpg' WHERE slug = 'nefesh-bnefesh-and-israeli-real-estate';
+UPDATE blog_posts SET cover_image = 'https://eveqhyqxdibjayliazxm.supabase.co/storage/v1/object/public/property-images/blog%2Fpost-46.jpg' WHERE slug = 'making-aliyah-and-buying-property-same-time';
+UPDATE blog_posts SET cover_image = 'https://eveqhyqxdibjayliazxm.supabase.co/storage/v1/object/public/property-images/blog%2Fpost-47.jpg' WHERE slug = 'managing-an-israeli-apartment-from-abroad';
+UPDATE blog_posts SET cover_image = 'https://eveqhyqxdibjayliazxm.supabase.co/storage/v1/object/public/property-images/blog%2Fpost-48.jpg' WHERE slug = 'finding-english-speaking-real-estate-lawyer-israel';
+UPDATE blog_posts SET cover_image = 'https://eveqhyqxdibjayliazxm.supabase.co/storage/v1/object/public/property-images/blog%2Fpost-49.jpg' WHERE slug = 'israeli-real-estate-calendar-best-time-of-year';
+UPDATE blog_posts SET cover_image = 'https://eveqhyqxdibjayliazxm.supabase.co/storage/v1/object/public/property-images/blog%2Fpost-50.jpg' WHERE slug = 'hebrew-real-estate-glossary';
