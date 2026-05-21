@@ -813,31 +813,45 @@ export function InvestmentReturnCalculator() {
               </Collapsible>
 
               {/* Stock Market Comparison */}
-              <Card className="border-primary/20 bg-primary/5">
-                <CardContent className="pt-5 space-y-2">
-                  <h3 className="font-semibold text-sm">📊 vs. Stock Market (7% CAGR)</h3>
-                  <div className="text-sm">
-                    {(() => {
-                      const stockReturn = results.totalDayOneCash * (Math.pow(1 + STOCK_MARKET_BENCHMARK, watchedValues.holdingPeriod) - 1);
-                      const difference = results.netProfit - stockReturn;
-                      return (
-                        <div className="space-y-1">
-                          <div className="flex justify-between text-muted-foreground">
-                            <span>Same cash in stocks</span>
-                            <span>{formatCurrency(Math.round(stockReturn))} profit</span>
-                          </div>
-                          <div className="flex justify-between font-medium">
-                            <span>Property advantage</span>
-                            <span className={difference >= 0 ? 'text-semantic-green-foreground' : 'text-semantic-red-foreground'}>
-                              {difference >= 0 ? '+' : ''}{formatCurrency(Math.round(difference))}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })()}
+              <Card className="border-primary/20 bg-gradient-to-br from-primary/5 via-background to-accent/5 overflow-hidden">
+                <CardContent className="p-5 space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                      <BarChart3 className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="font-semibold text-sm leading-tight">vs. Stock Market</h3>
+                      <p className="text-xs text-muted-foreground">7% CAGR benchmark</p>
+                    </div>
                   </div>
+                  {(() => {
+                    const stockReturn = results.totalDayOneCash * (Math.pow(1 + STOCK_MARKET_BENCHMARK, watchedValues.holdingPeriod) - 1);
+                    const difference = results.netProfit - stockReturn;
+                    const advantage = difference >= 0;
+                    return (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">Same cash in stocks</span>
+                          <span className="font-medium tabular-nums">{formatCurrency(Math.round(stockReturn))}</span>
+                        </div>
+                        <Separator />
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">Property advantage</span>
+                          <span className={cn(
+                            "inline-flex items-center rounded-full px-2.5 py-1 text-sm font-semibold tabular-nums",
+                            advantage
+                              ? "bg-semantic-green/15 text-semantic-green-foreground"
+                              : "bg-semantic-red/15 text-semantic-red-foreground"
+                          )}>
+                            {advantage ? '+' : ''}{formatCurrency(Math.round(difference))}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </CardContent>
               </Card>
+
             </div>
           ) : (
             <Card>
