@@ -42,10 +42,11 @@ const TAX_BRACKETS: Record<BuyerType, TaxBracket[]> = {
     { min: 20183565, max: null, rate: 0.10 },
   ],
   oleh: [
-    { min: 0, max: 1978745, rate: 0 },
-    { min: 1978745, max: 6055070, rate: 0.005 }, // Special 0.5% rate
-    { min: 6055070, max: 20183565, rate: 0.08 },
-    { min: 20183565, max: null, rate: 0.10 },
+    // Israel Tax Authority Oleh Chadash brackets (frozen 2025/2026)
+    // 0.5% on first slice, then 5% above — benefit unavailable above ~₪20.18M (foreign rates apply)
+    { min: 0, max: 1978745, rate: 0.005 },
+    { min: 1978745, max: 20183565, rate: 0.05 },
+    { min: 20183565, max: null, rate: 0.08 },
   ],
   upgrader: [
     // Same as first_time if selling within 24 months (updated from 18)
