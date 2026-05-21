@@ -1,24 +1,29 @@
-I found the issue: the kickstart extractor is relying on one big vision-to-JSON call, so it can “see” facts in screenshots but still omit them from the final structured object. The UI also only previews a limited set of fields, so some extracted facts may not be visible even when they exist.
+## Plan: Publish blog posts 21–30
 
-Plan:
+### 1. Editorial cleanup of `/mnt/documents/bwi_posts_21_30_final.md`
+- Replace every "Anglo" with "English-speaking community" / "international buyers" (context-appropriate) across posts 21, 22, 23, 24, 25 — including the Post 24 comparison table column header.
+- Spell out "NBN" → "Nefesh B'Nefesh (NBN)" on first mention in Post 21.
+- Strip the broken `*Related: Post X*` footers from all 10 posts (the site has no such links).
+- De-dupe the "honest version / honest note / honest framework" tic — vary phrasing.
+- Save as `bwi_posts_21_30_revised.md`.
 
-1. Make extraction two-stage instead of one-shot
-- Stage A: run a dedicated OCR/facts pass over every uploaded screenshot and force it to transcribe visible listing facts per image: price, sqm, rooms, floor, neighborhood, condition, entry date, balcony/porch size, total floors, furnished status, parking/elevator/storage/AC/accessibility, agent details, and raw description text.
-- Stage B: feed that facts transcript plus pasted notes into the structured listing extractor.
+### 2. Database insert
+- Parse the revised markdown with a Node script.
+- Insert 10 rows into `blog_posts` under the existing **City Guides** + relevant tax/process categories:
+  - 21 Rehovot, 22 Ashdod, 23 N vs S Tel Aviv, 24 Jerusalem neighborhoods, 25 TA vs Jerusalem → City Guides
+  - 26 Buyer tax brackets, 27 Lawyer fees, 28 VAT, 29 Arnona, 30 Wiring money → Taxes & Costs / Process category
+- Fields: slug, title, excerpt, body (markdown), category_id, city_id where applicable, published_at = now, status = published.
 
-2. Add deterministic cleanup after AI
-- Parse obvious values from the transcript as a safety net: `3,250,000 ₪`, `45 מ״ר / Mr 45`, `Rooms 1`, `floor ground`, `5 floors`, `Nahalat Binyamin`, `porch 9 sq m`, `without furniture`, `new/renovated`.
-- Reconcile features into wizard fields: `porch/balcony` → `has_balcony`, `elevator` → `has_elevator`, `warehouse/storage` → `has_storage`, `air conditioning/central AC` → `ac_type`, plus parking counts.
-- Preserve source notes so you can see exactly where each value came from.
+### 3. AI cover images (10)
+- Generate editorial 1536×1024 images via `imagegen` for each post topic:
+  - 21 Weizmann/Rehovot science campus, 22 Ashdod marina, 23 Tel Aviv north vs south split, 24 Jerusalem stone neighborhoods montage, 25 TA skyline vs Jerusalem Old City split, 26 Tax document/shekel scales, 27 Lawyer desk with contract, 28 New construction crane + price tag, 29 Municipal building/keys, 30 International wire transfer concept.
+- Upload to `property-images` bucket under `blog/post-21.jpg`…`blog/post-30.jpg`.
+- Update each `blog_posts.cover_image_url` via insert tool.
 
-3. Expand the returned schema and preview
-- Add fields the screenshots clearly contain but the current preview ignores or underrepresents: original room count, entry date, balcony size, furnished status, total floors, boolean amenities, and extracted description source text.
-- Update the “Extracted draft” preview to show these fields so it no longer looks like AI missed data that is actually present.
+### 4. Verify
+- Read back the 10 inserted rows, confirm slugs, categories, and cover URLs all resolve.
 
-4. Improve error visibility
-- If OCR finds a fact but structured output drops it, the post-processor will restore it and add a note like “Recovered price from OCR transcript.”
-- If a field is still missing, it will show as genuinely missing instead of silently failing.
-
-Files to update after approval:
-- `supabase/functions/ai-extract-listing/index.ts`
-- `src/components/admin/agency-provisioning/AiListingKickstartDialog.tsx`
+### Technical notes
+- Use `supabase--insert` for all data writes (no schema changes).
+- Images saved to `/mnt/documents/blog/post-XX.jpg` then uploaded via `supabase--storage_upload`.
+- No code changes to the repo.
