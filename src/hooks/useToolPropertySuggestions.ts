@@ -41,11 +41,17 @@ export function useToolPropertySuggestions({
       }
 
       const { data, error } = await query
+        .not('images', 'is', null)
         .order('created_at', { ascending: false })
-        .limit(8);
+        .limit(24);
 
       if (error) throw error;
-      return (data as unknown as Property[]) || [];
+      // Only keep listings that actually have at least one usable image,
+      // so we never render the blank teal placeholder cards.
+      const withImages = ((data as unknown as Property[]) || []).filter(
+        (p) => Array.isArray(p.images) && p.images.some((img) => typeof img === 'string' && img.length > 0)
+      );
+      return withImages.slice(0, 8);
     },
     enabled: enabled && maxPrice > 0 && maxPrice > minPrice,
     staleTime: 30 * 1000,
