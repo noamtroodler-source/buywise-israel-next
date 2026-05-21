@@ -37,7 +37,7 @@ export function MoreNav() {
                           About
                         </span>
                         <span className="text-xs text-muted-foreground/70 group-hover:text-accent-foreground/70">
-                          Our story
+                          Why BuyWise
                         </span>
                       </Link>
                     </NavigationMenuLink>
