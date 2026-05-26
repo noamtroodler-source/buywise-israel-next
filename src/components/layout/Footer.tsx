@@ -32,7 +32,7 @@ export function Footer() {
                 Rent Property
               </Link>
               <Link to="/tools" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                Tools & Calculators
+                BuyWise Toolkit
               </Link>
               <Link to="/areas" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 Explore Areas
