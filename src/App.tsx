@@ -186,6 +186,7 @@ const AdminPrimaryDisputes = lazyPage(() => import("./pages/admin/AdminPrimaryDi
 const AdminMergeReversals = lazyPage(() => import("./pages/admin/AdminMergeReversals"));
 const AdminColistingReports = lazyPage(() => import("./pages/admin/AdminColistingReports"));
 const AdminColistingTelemetry = lazyPage(() => import("./pages/admin/AdminColistingTelemetry"));
+const AdminIntel = lazyPage(() => import("./pages/admin/AdminIntel"));
 // Global query client config for optimal caching
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -564,6 +565,7 @@ const App = () => (
                           <Route path="merge-reversals" element={<AdminMergeReversals />} />
                           <Route path="colisting-reports" element={<AdminColistingReports />} />
                           <Route path="colisting-telemetry" element={<AdminColistingTelemetry />} />
+                          <Route path="intel" element={<AdminIntel />} />
                         </Route>
                         
                         <Route path="*" element={<NotFound />} />
