@@ -47,6 +47,7 @@ const Compare = lazyPage(() => import("./pages/Compare"));
 const CompareProjects = lazyPage(() => import("./pages/CompareProjects"));
 const Blog = lazyPage(() => import("./pages/Blog"));
 const BlogPost = lazyPage(() => import("./pages/BlogPost"));
+const Intel = lazyPage(() => import("./pages/Intel"));
 const Areas = lazyPage(() => import("./pages/Areas"));
 const AreaDetail = lazyPage(() => import("./pages/AreaDetail"));
 const Tools = lazyPage(() => import("./pages/Tools"));
@@ -244,6 +245,7 @@ const App = () => (
                         <Route path="/compare-projects" element={<CompareProjects />} />
                         <Route path="/blog" element={<Blog />} />
                         <Route path="/blog/:slug" element={<BlogPost />} />
+                        <Route path="/intel" element={<Intel />} />
                         <Route path="/areas" element={<Areas />} />
                         <Route path="/areas/:slug" element={<AreaDetail />} />
                         <Route path="/tools" element={<Tools />} />

@@ -140,11 +140,13 @@ function SimpleMenuContent({ items }: { items: { label: string; href: string; de
 }
 
 const LEARN_ITEMS = [
+  { label: 'BuyWise Intel', href: '/intel', description: 'Israeli market news, explained for buyers' },
   { label: 'Blog', href: '/blog', description: 'Latest articles & insights' },
   { label: 'All Guides', href: '/guides', description: 'Step-by-step buying guides' },
   { label: 'All Tools', href: '/tools', description: 'Calculators & checklists' },
   { label: 'Hebrew Glossary', href: '/glossary', description: 'Key terms explained' },
 ];
+
 
 const COMPANY_ITEMS = [
   { label: 'About', href: '/about', description: 'Why BuyWise' },
