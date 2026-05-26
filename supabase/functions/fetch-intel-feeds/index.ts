@@ -274,6 +274,12 @@ async function fetchSource(supabase: any, source: {
       // tier 2 sources get a small relevance penalty
       const relevance = Math.max(1, Math.min(5, source.tier === 2 ? baseRelevance - 1 : baseRelevance));
 
+      // --- Relevance gate: skip off-topic stories (war, sports, foreign markets, etc.) ---
+      if (enriched && enriched.relevance_score <= 1) {
+        console.log(`[${source.name}] skipped off-topic: ${headline.slice(0, 80)}`);
+        continue;
+      }
+
       // --- Cross-source dedup ---
       const headlineForDedup = headlineEn || headline;
       const dedup = await findDuplicateGroup(supabase, headlineForDedup, category, new Date(publishedAt));
