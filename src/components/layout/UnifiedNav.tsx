@@ -140,7 +140,7 @@ function SimpleMenuContent({ items }: { items: { label: string; href: string; de
 }
 
 const LEARN_ITEMS = [
-  { label: 'BuyWise Desk', href: '/intel', description: 'Israeli market news, explained for buyers' },
+  { label: 'BuyWise Intel', href: '/intel', description: 'Israeli market news, explained for buyers' },
   { label: 'Blog', href: '/blog', description: 'Latest articles & insights' },
   { label: 'BuyWise Playbook', href: '/guides', description: 'Step-by-step buying guides' },
   { label: 'BuyWise Toolkit', href: '/tools', description: 'Calculators & checklists' },
