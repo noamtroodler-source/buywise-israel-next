@@ -1,8 +1,8 @@
-import { Search, X } from 'lucide-react';
+import { Search, SlidersHorizontal, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
 import { INTEL_CATEGORIES } from '@/lib/intel/categories';
 import { IntelCategory } from '@/hooks/useIntel';
@@ -12,70 +12,31 @@ interface Props {
   category: IntelCategory | 'all';
   source: string | 'all';
   sortBy: 'recent' | 'relevance';
-  hasTake: boolean;
   search: string;
   sources: { name: string }[];
   onChange: (next: Partial<{
     category: IntelCategory | 'all';
     source: string | 'all';
     sortBy: 'recent' | 'relevance';
-    hasTake: boolean;
     search: string;
   }>) => void;
   onReset: () => void;
 }
 
 export function IntelFilterBar(p: Props) {
-  const hasActive = p.category !== 'all' || p.source !== 'all' || p.hasTake || p.search.trim().length > 0 || p.sortBy !== 'recent';
+  const activeCount =
+    (p.source !== 'all' ? 1 : 0) +
+    (p.sortBy !== 'recent' ? 1 : 0) +
+    (p.search.trim() ? 1 : 0);
+  const hasAny = activeCount > 0 || p.category !== 'all';
 
   return (
-    <div className="sticky top-16 z-30 -mx-4 mb-6 border-b border-border bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:mx-0">
-      {/* Search + sort + take toggle */}
-      <div className="flex flex-col gap-3 md:flex-row md:items-center">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={p.search}
-            onChange={(e) => p.onChange({ search: e.target.value })}
-            placeholder="Search headlines…"
-            className="pl-9"
-          />
-        </div>
-
-        <Select value={p.source} onValueChange={(v) => p.onChange({ source: v as string })}>
-          <SelectTrigger className="md:w-48"><SelectValue placeholder="All sources" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All sources</SelectItem>
-            {p.sources.map((s) => (
-              <SelectItem key={s.name} value={s.name}>{s.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select value={p.sortBy} onValueChange={(v) => p.onChange({ sortBy: v as 'recent' | 'relevance' })}>
-          <SelectTrigger className="md:w-40"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="recent">Most recent</SelectItem>
-            <SelectItem value="relevance">Most relevant</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <div className="flex items-center gap-2">
-          <Switch id="hasTake" checked={p.hasTake} onCheckedChange={(v) => p.onChange({ hasTake: v })} />
-          <Label htmlFor="hasTake" className="cursor-pointer text-sm">Only with BuyWise Take</Label>
-        </div>
-
-        {hasActive && (
-          <Button variant="ghost" size="sm" onClick={p.onReset} className="self-start md:self-auto">
-            <X className="mr-1 h-4 w-4" /> Reset
-          </Button>
-        )}
-      </div>
-
-      {/* Category chips */}
-      <div className="mt-3 -mx-1 flex flex-nowrap gap-2 overflow-x-auto px-1 pb-1">
-        <ChipButton active={p.category === 'all'} onClick={() => p.onChange({ category: 'all' })}>All</ChipButton>
-        {INTEL_CATEGORIES.filter(c => c.id !== 'general').map((c) => {
+    <div className="mb-8 border-b border-border/60 pb-4">
+      <div className="flex items-center gap-2 overflow-x-auto -mx-1 px-1 pb-1">
+        <ChipButton active={p.category === 'all'} onClick={() => p.onChange({ category: 'all' })}>
+          All
+        </ChipButton>
+        {INTEL_CATEGORIES.filter((c) => c.id !== 'general').map((c) => {
           const Icon = c.icon;
           return (
             <ChipButton key={c.id} active={p.category === c.id} onClick={() => p.onChange({ category: c.id })}>
@@ -84,6 +45,64 @@ export function IntelFilterBar(p: Props) {
             </ChipButton>
           );
         })}
+
+        <div className="ml-auto flex shrink-0 items-center gap-1.5 pl-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="h-8 gap-1.5">
+                <SlidersHorizontal className="h-3.5 w-3.5" />
+                <span className="text-xs">Filter</span>
+                {activeCount > 0 && (
+                  <span className="ml-0.5 rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground">
+                    {activeCount}
+                  </span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-72 space-y-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs uppercase tracking-wide text-muted-foreground">Search</Label>
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={p.search}
+                    onChange={(e) => p.onChange({ search: e.target.value })}
+                    placeholder="Search headlines…"
+                    className="h-9 pl-8 text-sm"
+                  />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs uppercase tracking-wide text-muted-foreground">Source</Label>
+                <Select value={p.source} onValueChange={(v) => p.onChange({ source: v as string })}>
+                  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All sources</SelectItem>
+                    {p.sources.map((s) => (
+                      <SelectItem key={s.name} value={s.name}>{s.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs uppercase tracking-wide text-muted-foreground">Sort</Label>
+                <Select value={p.sortBy} onValueChange={(v) => p.onChange({ sortBy: v as 'recent' | 'relevance' })}>
+                  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="recent">Most recent</SelectItem>
+                    <SelectItem value="relevance">Most relevant</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          {hasAny && (
+            <Button variant="ghost" size="sm" onClick={p.onReset} className="h-8 px-2">
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );

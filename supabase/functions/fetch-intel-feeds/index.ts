@@ -103,12 +103,30 @@ function scoreRelevance(headline: string, excerpt: string, category: Category, t
 }
 
 function stripHtml(s: string): string {
-  return s.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/\s+/g, " ").trim();
+  return s
+    // Drop script/style blocks entirely
+    .replace(/<(script|style)[\s\S]*?<\/\1>/gi, "")
+    // Strip well-formed tags
+    .replace(/<[^>]*>/g, "")
+    // Strip dangling/unclosed tag fragments like "<img align='right' src='https://..."
+    .replace(/<[a-z!\/][^<]*$/i, "")
+    // Strip stray attribute leftovers e.g. "align='right' src='..."
+    .replace(/\b(?:align|src|href|width|height|style|class)\s*=\s*(['"])[^'"]*\1/gi, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&#39;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function firstTwoSentences(s: string): string {
   const clean = stripHtml(s);
   if (!clean) return "";
+  // Guard: if anything still looks like markup, drop it
+  if (/[<>]/.test(clean)) return "";
   const parts = clean.match(/[^.!?]+[.!?]+/g);
   if (!parts || parts.length === 0) return clean.slice(0, 240);
   return parts.slice(0, 2).join(" ").trim().slice(0, 280);

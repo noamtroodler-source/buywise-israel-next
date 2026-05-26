@@ -8,23 +8,9 @@ import { useToast } from '@/hooks/use-toast';
 export function IntelSidebar() {
   return (
     <aside className="space-y-6 lg:sticky lg:top-24 lg:self-start">
-      <AboutCard />
       <BriefSubscribeCard />
       <SourcesList />
     </aside>
-  );
-}
-
-function AboutCard() {
-  return (
-    <div className="rounded-lg border border-border bg-card p-5">
-      <h3 className="text-base font-semibold text-foreground">About BuyWise Intel</h3>
-      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-        Curated Israeli real estate, mortgage, and tax news — with a short
-        BuyWise Take explaining what each story means for international
-        buyers. We link out to the original source for every article.
-      </p>
-    </div>
   );
 }
 
@@ -53,14 +39,13 @@ export function BriefSubscribeCard() {
   };
 
   return (
-    <div className="rounded-lg border border-border bg-primary/5 p-5">
+    <div className="rounded-lg border border-border/60 bg-primary/5 p-5">
       <div className="flex items-center gap-2">
         <Mail className="h-4 w-4 text-primary" />
         <h3 className="text-base font-semibold text-foreground">The BuyWise Brief</h3>
       </div>
       <p className="mt-2 text-sm text-muted-foreground">
-        A weekly digest of the Israeli stories that actually matter for buyers
-        — with our take on each one.
+        A weekly digest of what actually matters for international buyers — in your inbox.
       </p>
       {done ? (
         <div className="mt-4 flex items-center gap-2 text-sm text-foreground">
@@ -89,8 +74,8 @@ function SourcesList() {
   const { data: sources = [] } = useIntelSources();
   if (!sources.length) return null;
   return (
-    <div className="rounded-lg border border-border bg-card p-5">
-      <h3 className="text-base font-semibold text-foreground">Sources we follow</h3>
+    <div className="rounded-lg border border-border/60 bg-card p-5">
+      <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Sources</h3>
       <ul className="mt-3 space-y-1.5 text-sm">
         {sources.map((s: any) => (
           <li key={s.id} className="flex items-center justify-between gap-2 text-muted-foreground">
@@ -112,10 +97,6 @@ function SourcesList() {
           </li>
         ))}
       </ul>
-      <p className="mt-3 text-[11px] text-muted-foreground/70">
-        Headlines and excerpts © their respective publishers. Click any item
-        to read the full story on the source site.
-      </p>
     </div>
   );
 }
