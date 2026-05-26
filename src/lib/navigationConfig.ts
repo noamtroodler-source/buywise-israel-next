@@ -58,7 +58,7 @@ export const NAV_CONFIG: Record<string, NavSection> = {
       {
         title: 'Guides',
         items: [
-          { label: 'Complete Buying Guide', href: '/guides/buying-in-israel', description: '14 chapters', phase: 'understand' },
+          { label: 'BuyWise Playbook', href: '/guides/buying-in-israel', description: 'The complete 14-chapter guide', phase: 'understand' },
           { label: 'Purchase Tax Guide', href: '/guides/purchase-tax', description: 'Mas Rechisha explained', phase: 'check' },
           { label: 'True Cost of Buying', href: '/guides/true-cost', description: 'Hidden costs revealed', phase: 'check' },
           { label: 'Mortgages in Israel', href: '/guides/mortgages', description: 'Financing for foreigners', phase: 'move_forward' },
