@@ -45,7 +45,7 @@ export const NAV_CONFIG: Record<string, NavSection> = {
         ]
       },
       {
-        title: 'Calculators',
+        title: 'BuyWise Toolkit',
         items: [
           { label: 'Mortgage Calculator', href: '/tools?tool=mortgage', description: 'Monthly payments & rates', phase: 'move_forward' },
           { label: 'BuyWise Affordability', href: '/tools?tool=affordability', description: 'What can you afford?', phase: 'define' },
