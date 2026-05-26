@@ -23,7 +23,7 @@ export function IntelLongList({ articles, pageSize = 30 }: Props) {
   const more = articles.length > shown;
 
   return (
-    <section>
+    <section className="min-w-0">
       <header className="mb-3 flex items-end justify-between border-b border-border pb-2">
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-foreground">
           Latest
@@ -32,7 +32,7 @@ export function IntelLongList({ articles, pageSize = 30 }: Props) {
           {articles.length} stories
         </p>
       </header>
-      <ul>
+      <ul className="min-w-0">
         {visible.map((a, i) => (
           <LongRow key={a.id} article={a} zebra={i % 2 === 1} />
         ))}
@@ -64,13 +64,13 @@ function LongRow({ article, zebra }: { article: IntelFeedItem; zebra: boolean })
   } catch { /* noop */ }
 
   return (
-    <li className={cn('group', zebra && 'bg-muted/30')}>
+    <li className={cn('group min-w-0', zebra && 'bg-muted/30')}>
       <a
         href={article.url}
         target="_blank"
         rel="noopener noreferrer nofollow"
         onClick={() => trackIntelClick(article)}
-        className="flex items-baseline gap-3 px-3 py-2.5 sm:gap-4"
+        className="flex min-w-0 items-baseline gap-3 px-3 py-2.5 sm:gap-4"
       >
         <span className="hidden w-24 shrink-0 text-[11px] uppercase tracking-wider text-muted-foreground tabular-nums sm:inline">
           {when || '—'}
@@ -79,7 +79,7 @@ function LongRow({ article, zebra }: { article: IntelFeedItem; zebra: boolean })
           {article.source_name}
         </span>
         <h4
-          className="flex-1 text-[14.5px] leading-snug text-foreground transition-colors group-hover:text-primary"
+          className="min-w-0 flex-1 break-words text-[14.5px] leading-snug text-foreground transition-colors group-hover:text-primary"
           dir={ltr ? 'ltr' : 'rtl'}
         >
           {headline}
@@ -99,12 +99,12 @@ function LongRow({ article, zebra }: { article: IntelFeedItem; zebra: boolean })
       </div>
 
       {hasTake && (
-        <div className="px-3 pb-3 sm:pl-[13rem]">
+        <div className="min-w-0 px-3 pb-3">
           <button
             type="button"
             onClick={() => setOpen((o) => !o)}
             aria-expanded={open}
-            className="group/take flex w-full items-start gap-1.5 rounded-sm border border-primary/25 bg-primary/[0.05] px-2 py-1.5 text-left transition-colors hover:bg-primary/[0.09]"
+            className="flex w-full min-w-0 max-w-full items-start gap-1.5 rounded-sm border border-primary/25 bg-primary/[0.05] px-2 py-1.5 text-left transition-colors hover:bg-primary/[0.09]"
           >
             {open ? (
               <ChevronDown className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
@@ -114,13 +114,13 @@ function LongRow({ article, zebra }: { article: IntelFeedItem; zebra: boolean })
             <span className="inline-flex shrink-0 items-center rounded-sm bg-primary px-1 py-px text-[9px] font-semibold uppercase tracking-[0.12em] text-primary-foreground">
               Buyer Impact
             </span>
-            <span className={cn('text-[12px] leading-snug text-foreground', !open && 'line-clamp-1')}>
+            <span className={cn('min-w-0 flex-1 break-words text-[12px] leading-snug text-foreground', !open && 'line-clamp-1')}>
               {article.signal || firstSentence(article.take_body ?? '')}
             </span>
           </button>
 
           {open && (
-            <div className="mt-2 space-y-2 border-l-2 border-primary bg-primary/[0.04] px-3 py-2.5">
+            <div className="mt-2 min-w-0 space-y-2 break-words border-l-2 border-primary bg-primary/[0.04] px-3 py-2.5">
               {article.signal && <Beat icon={<Radio className="h-3 w-3" />} label="Signal" text={article.signal} />}
               {article.why_you_care && <Beat icon={<Compass className="h-3 w-3" />} label="Why you care" text={article.why_you_care} />}
               {article.our_move && <Beat icon={<Eye className="h-3 w-3" />} label="Our move" text={article.our_move} />}
@@ -137,12 +137,12 @@ function LongRow({ article, zebra }: { article: IntelFeedItem; zebra: boolean })
 
 function Beat({ icon, label, text }: { icon: React.ReactNode; label: string; text: string }) {
   return (
-    <div>
+    <div className="min-w-0">
       <div className="mb-0.5 flex items-center gap-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-primary/80">
         {icon}
         <span>{label}</span>
       </div>
-      <p className="text-[13px] leading-snug text-foreground">{text}</p>
+      <p className="break-words text-[13px] leading-snug text-foreground">{text}</p>
     </div>
   );
 }

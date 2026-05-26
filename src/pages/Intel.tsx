@@ -131,11 +131,13 @@ export default function Intel() {
               <>
                 {/* DealBook spine: Today's Take + Watchlist */}
                 {featured && (
-                  <section className="grid gap-10 border-b border-border pb-12 lg:grid-cols-[1.6fr,1fr] lg:gap-12">
-                    <div className="lg:border-r lg:border-border lg:pr-12">
+                  <section className="grid min-w-0 gap-10 border-b border-border pb-12 lg:grid-cols-[1.6fr,1fr] lg:gap-12">
+                    <div className="min-w-0 lg:border-r lg:border-border lg:pr-12">
                       <IntelTodaysTake article={featured} />
                     </div>
-                    <IntelWatchlist articles={watchlist} />
+                    <div className="min-w-0">
+                      <IntelWatchlist articles={watchlist} />
+                    </div>
                   </section>
                 )}
 
