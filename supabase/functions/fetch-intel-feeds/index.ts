@@ -221,7 +221,7 @@ async function deepReadLiveCapHit(supabase: any): Promise<boolean> {
   return (count ?? 0) >= DEEP_READ_LIVE_CAP;
 }
 
-interface FetchCtx { deepReadsQueuedThisCycle: number }
+interface FetchCtx { ctx.deepReadsQueuedThisCycle: number }
 
 async function fetchSource(supabase: any, source: {
   id: string;
@@ -387,7 +387,7 @@ async function fetchSource(supabase: any, source: {
             }, { onConflict: "article_id,tier" });
 
             // ---- Deep Read classifier — only on Breakdown-eligible, relevance>=4 articles ----
-            if (relevance >= 4 && deepReadsQueuedThisCycle < DEEP_READ_PER_CYCLE_MAX) {
+            if (relevance >= 4 && ctx.deepReadsQueuedThisCycle < DEEP_READ_PER_CYCLE_MAX) {
               const cls = await classifyDeepRead({
                 headline: headlineEn || headline,
                 excerpt: excerptEn || excerpt || null,
@@ -418,7 +418,7 @@ async function fetchSource(supabase: any, source: {
                     take_body: deepReadToBody(dr),
                     ai_drafted: true,
                   }, { onConflict: "article_id,tier" });
-                  deepReadsQueuedThisCycle++;
+                  ctx.deepReadsQueuedThisCycle++;
                   console.log(`[${source.name}] queued Deep Read: ${headline.slice(0, 80)}`);
                 }
               }
