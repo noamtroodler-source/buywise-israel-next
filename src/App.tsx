@@ -47,6 +47,7 @@ const Compare = lazyPage(() => import("./pages/Compare"));
 const CompareProjects = lazyPage(() => import("./pages/CompareProjects"));
 const Blog = lazyPage(() => import("./pages/Blog"));
 const BlogPost = lazyPage(() => import("./pages/BlogPost"));
+const Intel = lazyPage(() => import("./pages/Intel"));
 const Areas = lazyPage(() => import("./pages/Areas"));
 const AreaDetail = lazyPage(() => import("./pages/AreaDetail"));
 const Tools = lazyPage(() => import("./pages/Tools"));
