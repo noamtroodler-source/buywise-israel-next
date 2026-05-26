@@ -6,7 +6,15 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { parseFeed } from "https://deno.land/x/rss@1.0.0/mod.ts";
-import { enrichArticle, jaccardSimilarity, type IntelCategory } from "../_shared/intel-ai.ts";
+import {
+  enrichArticle, jaccardSimilarity, draftBreakdown, classifyDeepRead, draftDeepRead, deepReadToBody,
+  type IntelCategory,
+} from "../_shared/intel-ai.ts";
+
+// Per-cycle Deep Read cap. Live shelf cap also enforced at write time.
+const DEEP_READ_PER_CYCLE_MAX = 2;
+const DEEP_READ_LIVE_CAP = 5;
+const DEEP_READ_LIVE_WINDOW_DAYS = 14;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -202,13 +210,26 @@ async function findDuplicateGroup(
 // Fetch + parse a single source
 // ---------------------------------------------------------------
 
+async function deepReadLiveCapHit(supabase: any): Promise<boolean> {
+  const cutoff = new Date(Date.now() - DEEP_READ_LIVE_WINDOW_DAYS * 86400_000).toISOString();
+  const { count } = await supabase
+    .from("intel_takes")
+    .select("id", { count: "exact", head: true })
+    .eq("tier", "deep_read")
+    .eq("status", "published")
+    .gte("published_at", cutoff);
+  return (count ?? 0) >= DEEP_READ_LIVE_CAP;
+}
+
+interface FetchCtx { deepReadsQueuedThisCycle: number }
+
 async function fetchSource(supabase: any, source: {
   id: string;
   name: string;
   url: string;
   language: string;
   tier: number;
-}) {
+}, ctx: FetchCtx) {
   let added = 0;
   let error: string | null = null;
 
@@ -311,7 +332,7 @@ async function fetchSource(supabase: any, source: {
         }
       }
 
-      const { error: insertErr } = await supabase
+      const { data: inserted, error: insertErr } = await supabase
         .from("intel_articles")
         .insert({
           source_id: source.id,
@@ -332,10 +353,81 @@ async function fetchSource(supabase: any, source: {
           relevance_score: relevance,
           dedup_group_id: dedupGroupId,
           is_duplicate: isDuplicate,
-        });
+        })
+        .select("id")
+        .maybeSingle();
 
-      if (!insertErr) added++;
-      else console.error(`[${source.name}] insert error:`, insertErr.message);
+      if (insertErr) {
+        console.error(`[${source.name}] insert error:`, insertErr.message);
+        continue;
+      }
+      added++;
+
+      // ---- Auto-draft Breakdown for every visible, non-duplicate, relevant article ----
+      if (inserted?.id && !isDuplicate && relevance >= 2) {
+        try {
+          const b = await draftBreakdown({
+            headline: headlineEn || headline,
+            excerpt: excerptEn || excerpt || null,
+            category,
+            source_name: source.name,
+          });
+          if (b) {
+            await supabase.from("intel_takes").upsert({
+              article_id: inserted.id,
+              tier: "breakdown",
+              status: "published",
+              take_label: b.take_label,
+              signal: b.signal,
+              why_you_care: b.why_you_care,
+              our_move: b.our_move,
+              take_body: [b.signal, b.why_you_care, b.our_move].filter(Boolean).join("\n\n"),
+              ai_drafted: true,
+              published_at: new Date().toISOString(),
+            }, { onConflict: "article_id,tier" });
+
+            // ---- Deep Read classifier — only on Breakdown-eligible, relevance>=4 articles ----
+            if (relevance >= 4 && ctx.deepReadsQueuedThisCycle < DEEP_READ_PER_CYCLE_MAX) {
+              const cls = await classifyDeepRead({
+                headline: headlineEn || headline,
+                excerpt: excerptEn || excerpt || null,
+                category,
+                source_name: source.name,
+                published_at: publishedAt,
+              });
+              if (
+                cls?.deserves_deep_read &&
+                cls.rubric_hits.length >= 2 &&
+                cls.confidence >= 0.8 &&
+                !(await deepReadLiveCapHit(supabase))
+              ) {
+                const dr = await draftDeepRead({
+                  headline: headlineEn || headline,
+                  excerpt: excerptEn || excerpt || null,
+                  category,
+                  source_name: source.name,
+                });
+                if (dr) {
+                  await supabase.from("intel_takes").upsert({
+                    article_id: inserted.id,
+                    tier: "deep_read",
+                    status: "pending_review",
+                    take_label: dr.take_label,
+                    deep_read_subheads: dr.sections,
+                    deep_read_body: deepReadToBody(dr),
+                    take_body: deepReadToBody(dr),
+                    ai_drafted: true,
+                  }, { onConflict: "article_id,tier" });
+                  ctx.deepReadsQueuedThisCycle++;
+                  console.log(`[${source.name}] queued Deep Read: ${headline.slice(0, 80)}`);
+                }
+              }
+            }
+          }
+        } catch (e) {
+          console.error(`[${source.name}] take draft error:`, e instanceof Error ? e.message : e);
+        }
+      }
     }
   } catch (e) {
     error = e instanceof Error ? e.message : String(e);
@@ -374,9 +466,10 @@ Deno.serve(async (req) => {
     const { data: sources, error } = await query;
     if (error) throw error;
 
+    const ctx: FetchCtx = { deepReadsQueuedThisCycle: 0 };
     const results = [];
     for (const s of (sources ?? []) as any[]) {
-      const r = await fetchSource(supabase, s);
+      const r = await fetchSource(supabase, s, ctx);
       results.push(r);
     }
 

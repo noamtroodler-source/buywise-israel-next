@@ -3800,33 +3800,63 @@ export type Database = {
           article_id: string
           created_at: string
           created_by: string | null
+          deep_read_body: string | null
+          deep_read_subheads: Json | null
           id: string
+          our_move: string | null
           published_at: string | null
+          rejected_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          signal: string | null
+          status: Database["public"]["Enums"]["intel_take_status"]
           take_body: string
           take_label: string
+          tier: Database["public"]["Enums"]["intel_take_tier"]
           updated_at: string
+          why_you_care: string | null
         }
         Insert: {
           ai_drafted?: boolean
           article_id: string
           created_at?: string
           created_by?: string | null
+          deep_read_body?: string | null
+          deep_read_subheads?: Json | null
           id?: string
+          our_move?: string | null
           published_at?: string | null
+          rejected_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          signal?: string | null
+          status?: Database["public"]["Enums"]["intel_take_status"]
           take_body: string
           take_label?: string
+          tier?: Database["public"]["Enums"]["intel_take_tier"]
           updated_at?: string
+          why_you_care?: string | null
         }
         Update: {
           ai_drafted?: boolean
           article_id?: string
           created_at?: string
           created_by?: string | null
+          deep_read_body?: string | null
+          deep_read_subheads?: Json | null
           id?: string
+          our_move?: string | null
           published_at?: string | null
+          rejected_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          signal?: string | null
+          status?: Database["public"]["Enums"]["intel_take_status"]
           take_body?: string
           take_label?: string
+          tier?: Database["public"]["Enums"]["intel_take_tier"]
           updated_at?: string
+          why_you_care?: string | null
         }
         Relationships: [
           {
@@ -8137,6 +8167,44 @@ export type Database = {
         }
         Relationships: []
       }
+      intel_deep_reads_v: {
+        Row: {
+          ai_drafted: boolean | null
+          article_id: string | null
+          article_published_at: string | null
+          category: string | null
+          deep_read_body: string | null
+          deep_read_subheads: Json | null
+          headline: string | null
+          headline_en: string | null
+          image_url: string | null
+          our_move: string | null
+          published_at: string | null
+          signal: string | null
+          slug: string | null
+          source_name: string | null
+          source_url: string | null
+          take_id: string | null
+          take_label: string | null
+          why_you_care: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intel_takes_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "intel_articles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intel_takes_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "intel_feed_v"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       intel_feed_v: {
         Row: {
           auto_categorized: boolean | null
@@ -8144,8 +8212,10 @@ export type Database = {
           category_confidence: number | null
           created_at: string | null
           dedup_group_id: string | null
+          deep_read_slug: string | null
           excerpt: string | null
           excerpt_en: string | null
+          has_deep_read: boolean | null
           headline: string | null
           headline_en: string | null
           id: string | null
@@ -8154,8 +8224,10 @@ export type Database = {
           is_featured: boolean | null
           is_hidden: boolean | null
           is_pinned: boolean | null
+          our_move: string | null
           published_at: string | null
           relevance_score: number | null
+          signal: string | null
           source_id: string | null
           source_language: string | null
           source_name: string | null
@@ -8167,6 +8239,7 @@ export type Database = {
           take_published_at: string | null
           translated_at: string | null
           url: string | null
+          why_you_care: string | null
         }
         Relationships: [
           {
@@ -8181,6 +8254,46 @@ export type Database = {
             columns: ["source_id"]
             isOneToOne: false
             referencedRelation: "intel_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      intel_pending_deep_reads_v: {
+        Row: {
+          ai_drafted: boolean | null
+          article_id: string | null
+          article_published_at: string | null
+          category: string | null
+          created_at: string | null
+          deep_read_body: string | null
+          deep_read_subheads: Json | null
+          excerpt_en: string | null
+          headline: string | null
+          headline_en: string | null
+          image_url: string | null
+          our_move: string | null
+          relevance_score: number | null
+          signal: string | null
+          source_name: string | null
+          source_url: string | null
+          status: Database["public"]["Enums"]["intel_take_status"] | null
+          take_id: string | null
+          take_label: string | null
+          why_you_care: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intel_takes_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "intel_articles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intel_takes_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "intel_feed_v"
             referencedColumns: ["id"]
           },
         ]
@@ -8644,6 +8757,7 @@ export type Database = {
         Args: { p_promo_id: string }
         Returns: undefined
       }
+      intel_slugify: { Args: { input: string }; Returns: string }
       is_agency_admin: {
         Args: { _agency_id: string; _user_id: string }
         Returns: boolean
@@ -8844,6 +8958,8 @@ export type Database = {
       agent_email_strategy: "send_all_now" | "send_after_owner"
       agent_status: "pending" | "active" | "suspended"
       app_role: "admin" | "agent" | "user" | "developer"
+      intel_take_status: "draft" | "pending_review" | "published" | "rejected"
+      intel_take_tier: "breakdown" | "deep_read"
       listing_flag_severity: "critical" | "warning" | "info"
       listing_flag_type:
         | "missing_field"
@@ -9016,6 +9132,8 @@ export const Constants = {
       agent_email_strategy: ["send_all_now", "send_after_owner"],
       agent_status: ["pending", "active", "suspended"],
       app_role: ["admin", "agent", "user", "developer"],
+      intel_take_status: ["draft", "pending_review", "published", "rejected"],
+      intel_take_tier: ["breakdown", "deep_read"],
       listing_flag_severity: ["critical", "warning", "info"],
       listing_flag_type: [
         "missing_field",

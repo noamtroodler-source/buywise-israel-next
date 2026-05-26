@@ -76,6 +76,9 @@ export function IntelTodaysTake({ article }: Props) {
         <IntelTakeBlock
           label={article.take_label ?? 'BuyWise Take'}
           body={article.take_body}
+          signal={article.signal}
+          whyYouCare={article.why_you_care}
+          ourMove={article.our_move}
         />
       ) : !ltr ? (
         <p className="mt-4 text-sm italic text-muted-foreground">
