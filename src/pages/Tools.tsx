@@ -91,7 +91,7 @@ const allTools: Record<string, Tool> = {
   },
   'listing-decoder': {
     id: 'listing-decoder',
-    label: 'Listing Decoder',
+    label: 'BuyWise Decoder',
     description: 'Paste a Hebrew listing URL — get a full English breakdown, missing data flags, and questions to ask.',
     icon: Languages,
     guidanceHint: 'Found a listing? Start here',
