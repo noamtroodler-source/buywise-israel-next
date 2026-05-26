@@ -6,7 +6,15 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { parseFeed } from "https://deno.land/x/rss@1.0.0/mod.ts";
-import { enrichArticle, jaccardSimilarity, type IntelCategory } from "../_shared/intel-ai.ts";
+import {
+  enrichArticle, jaccardSimilarity, draftBreakdown, classifyDeepRead, draftDeepRead, deepReadToBody,
+  type IntelCategory,
+} from "../_shared/intel-ai.ts";
+
+// Per-cycle Deep Read cap. Live shelf cap also enforced at write time.
+const DEEP_READ_PER_CYCLE_MAX = 2;
+const DEEP_READ_LIVE_CAP = 5;
+const DEEP_READ_LIVE_WINDOW_DAYS = 14;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
