@@ -88,7 +88,7 @@ export const NAV_CONFIG: Record<string, NavSection> = {
         ]
       },
       {
-        title: 'Guides',
+        title: 'BuyWise Playbook',
         items: [
           { label: 'Rent vs Buy Guide', href: '/guides/rent-vs-buy', description: 'Decision framework', phase: 'understand' },
         ]
