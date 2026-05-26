@@ -245,6 +245,7 @@ const App = () => (
                         <Route path="/compare-projects" element={<CompareProjects />} />
                         <Route path="/blog" element={<Blog />} />
                         <Route path="/blog/:slug" element={<BlogPost />} />
+                        <Route path="/intel" element={<Intel />} />
                         <Route path="/areas" element={<Areas />} />
                         <Route path="/areas/:slug" element={<AreaDetail />} />
                         <Route path="/tools" element={<Tools />} />
