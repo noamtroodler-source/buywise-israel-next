@@ -167,7 +167,7 @@ export default function Guides() {
   return (
     <Layout>
       <SEOHead
-        title="Buying Guides for Israel | BuyWise Israel"
+        title="BuyWise Playbook — Buying Guides for Israel"
         description="Comprehensive guides for buying property in Israel. Learn about taxes, mortgages, legal process, and what international buyers need to know."
         canonicalUrl="https://buywiseisrael.com/guides"
       />
