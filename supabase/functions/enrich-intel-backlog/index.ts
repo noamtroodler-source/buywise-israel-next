@@ -84,8 +84,9 @@ Deno.serve(async (req) => {
     };
     // Only overwrite category if still auto-categorized (don't clobber admin choices)
     patch.category = enriched.category;
-    // Don't bump relevance for backlog: keep stored score unless category changes significantly
-    if (enriched.relevance_score >= 4) patch.relevance_score = enriched.relevance_score;
+    patch.relevance_score = enriched.relevance_score;
+    // Auto-hide off-topic articles (war, sports, unrelated tech, foreign markets, etc.)
+    if (enriched.relevance_score <= 1) patch.is_hidden = true;
 
     const { error: upErr } = await supabase
       .from("intel_articles")
