@@ -1,7 +1,14 @@
 import { ExternalLink } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
-import { IntelFeedItem } from '@/hooks/useIntel';
+import {
+  IntelFeedItem,
+  displayHeadline,
+  displayExcerpt,
+  isDisplayedInEnglish,
+  isTranslatedFromHebrew,
+  trackIntelClick,
+} from '@/hooks/useIntel';
 import { CATEGORY_BY_ID } from '@/lib/intel/categories';
 import { IntelTakeBlock } from './IntelTakeBlock';
 import { cn } from '@/lib/utils';
@@ -15,13 +22,21 @@ interface Props {
 export function IntelArticleCard({ article, onClick, variant = 'default' }: Props) {
   const cat = CATEGORY_BY_ID[article.category] ?? CATEGORY_BY_ID.general;
   const Icon = cat.icon;
-  const isHebrew = article.source_language === 'he';
+  const headline = displayHeadline(article);
+  const excerpt = displayExcerpt(article);
+  const ltr = isDisplayedInEnglish(article);
+  const translated = isTranslatedFromHebrew(article);
   const isFeatured = variant === 'featured';
 
   let when = '';
   try {
     when = formatDistanceToNow(new Date(article.published_at), { addSuffix: true });
   } catch { /* noop */ }
+
+  const handleClick = () => {
+    trackIntelClick(article);
+    onClick?.(article);
+  };
 
   return (
     <article
@@ -33,9 +48,9 @@ export function IntelArticleCard({ article, onClick, variant = 'default' }: Prop
       <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
         <span className="font-medium text-foreground">{article.source_name}</span>
         {when && <span>· {when}</span>}
-        {isHebrew && (
+        {translated && (
           <Badge variant="outline" className="border-muted-foreground/30 text-[10px] uppercase tracking-wide">
-            Hebrew
+            HE → EN
           </Badge>
         )}
         <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
@@ -49,23 +64,23 @@ export function IntelArticleCard({ article, onClick, variant = 'default' }: Prop
           'mt-3 font-semibold text-foreground',
           isFeatured ? 'text-2xl md:text-3xl leading-tight' : 'text-lg leading-snug',
         )}
-        dir={isHebrew ? 'rtl' : 'ltr'}
+        dir={ltr ? 'ltr' : 'rtl'}
       >
-        {article.headline}
+        {headline}
       </h3>
 
-      {article.excerpt && (
+      {excerpt && (
         <p
           className={cn(
             'mt-2 text-muted-foreground',
             isFeatured ? 'text-base md:text-lg' : 'text-sm',
           )}
-          dir={isHebrew ? 'rtl' : 'ltr'}
+          dir={ltr ? 'ltr' : 'rtl'}
         >
-          {article.excerpt}
+          {excerpt}
         </p>
       )}
-      {!article.excerpt && isHebrew && !article.take_body && (
+      {!excerpt && !ltr && !article.take_body && (
         <p className="mt-2 text-sm italic text-muted-foreground">
           Hebrew article — we'll add an English BuyWise Take shortly.
         </p>
@@ -80,7 +95,7 @@ export function IntelArticleCard({ article, onClick, variant = 'default' }: Prop
           href={article.url}
           target="_blank"
           rel="noopener noreferrer nofollow"
-          onClick={() => onClick?.(article)}
+          onClick={handleClick}
           className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
         >
           Read on {article.source_name}
