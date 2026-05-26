@@ -56,7 +56,7 @@ const allTools: Record<string, Tool> = {
   },
   affordability: { 
     id: 'affordability', 
-    label: 'Affordability Calculator', 
+    label: 'BuyWise Affordability', 
     description: 'Know what you can realistically buy in Israel — based on income, savings, and local lending limits.', 
     icon: Wallet,
     guidanceHint: 'Great first step',
