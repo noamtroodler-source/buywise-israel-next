@@ -72,7 +72,7 @@ export function LearnNav() {
                           {isVisited("/guides") && (
                             <span className="h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />
                           )}
-                          All Guides
+                          BuyWise Playbook
                         </span>
                         <span className="text-xs text-muted-foreground/70 group-hover:text-accent-foreground/70">
                           Step-by-step buying guides
