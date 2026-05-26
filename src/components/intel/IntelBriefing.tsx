@@ -7,6 +7,7 @@ import {
 } from '@/hooks/useIntel';
 import { CATEGORY_BY_ID } from '@/lib/intel/categories';
 import { IntelImage } from './IntelImage';
+import { TakeChip } from './IntelTakeBlock';
 
 interface Props {
   articles: IntelFeedItem[];
@@ -43,6 +44,7 @@ function BriefItem({ article }: { article: IntelFeedItem }) {
   } catch { /* noop */ }
 
   const onOpen = () => trackIntelClick(article);
+  const hasTake = !!(article.signal || article.take_body);
 
   return (
     <article className="group">
@@ -52,12 +54,19 @@ function BriefItem({ article }: { article: IntelFeedItem }) {
       <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-primary">
         {cat.label}
       </p>
+
+      {hasTake && (
+        <div className="mt-2">
+          <TakeChip signal={article.signal} body={article.take_body} />
+        </div>
+      )}
+
       <a
         href={article.url}
         target="_blank"
         rel="noopener noreferrer nofollow"
         onClick={onOpen}
-        className="mt-1.5 block"
+        className="mt-2 block"
       >
         <h3
           className="text-[17px] font-bold leading-snug text-foreground transition-colors hover:text-primary"

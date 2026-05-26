@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ChevronDown, ChevronRight, Radio, Compass, Eye } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import {
   IntelFeedItem,
@@ -51,10 +52,12 @@ export function IntelLongList({ articles, pageSize = 30 }: Props) {
 }
 
 function LongRow({ article, zebra }: { article: IntelFeedItem; zebra: boolean }) {
+  const [open, setOpen] = useState(false);
   const cat = CATEGORY_BY_ID[article.category] ?? CATEGORY_BY_ID.general;
   const headline = displayHeadline(article);
   const ltr = isDisplayedInEnglish(article);
   const translated = isTranslatedFromHebrew(article);
+  const hasTake = !!(article.signal || article.take_body);
   let when = '';
   try {
     when = formatDistanceToNow(new Date(article.published_at), { addSuffix: true });
@@ -94,6 +97,57 @@ function LongRow({ article, zebra }: { article: IntelFeedItem; zebra: boolean })
         <span className="font-medium text-foreground/70">{article.source_name}</span>
         {when && <span>· {when}</span>}
       </div>
+
+      {hasTake && (
+        <div className="px-3 pb-3 sm:pl-[13rem]">
+          <button
+            type="button"
+            onClick={() => setOpen((o) => !o)}
+            aria-expanded={open}
+            className="group/take flex w-full items-start gap-1.5 rounded-sm border border-primary/25 bg-primary/[0.05] px-2 py-1.5 text-left transition-colors hover:bg-primary/[0.09]"
+          >
+            {open ? (
+              <ChevronDown className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
+            ) : (
+              <ChevronRight className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
+            )}
+            <span className="inline-flex shrink-0 items-center rounded-sm bg-primary px-1 py-px text-[9px] font-semibold uppercase tracking-[0.12em] text-primary-foreground">
+              Buyer Impact
+            </span>
+            <span className={cn('text-[12px] leading-snug text-foreground', !open && 'line-clamp-1')}>
+              {article.signal || firstSentence(article.take_body ?? '')}
+            </span>
+          </button>
+
+          {open && (
+            <div className="mt-2 space-y-2 border-l-2 border-primary bg-primary/[0.04] px-3 py-2.5">
+              {article.signal && <Beat icon={<Radio className="h-3 w-3" />} label="Signal" text={article.signal} />}
+              {article.why_you_care && <Beat icon={<Compass className="h-3 w-3" />} label="Why you care" text={article.why_you_care} />}
+              {article.our_move && <Beat icon={<Eye className="h-3 w-3" />} label="Our move" text={article.our_move} />}
+              {!article.signal && !article.why_you_care && !article.our_move && article.take_body && (
+                <p className="text-[13px] leading-relaxed text-foreground whitespace-pre-line">{article.take_body}</p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </li>
   );
+}
+
+function Beat({ icon, label, text }: { icon: React.ReactNode; label: string; text: string }) {
+  return (
+    <div>
+      <div className="mb-0.5 flex items-center gap-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-primary/80">
+        {icon}
+        <span>{label}</span>
+      </div>
+      <p className="text-[13px] leading-snug text-foreground">{text}</p>
+    </div>
+  );
+}
+
+function firstSentence(s: string): string {
+  const m = s.trim().match(/^[\s\S]*?[.!?](?=\s|$)/);
+  return (m?.[0] ?? s).trim();
 }
