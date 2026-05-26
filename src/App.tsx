@@ -287,6 +287,7 @@ const App = () => (
                         {/* Legal pages */}
                         <Route path="/privacy" element={<PrivacyPolicy />} />
                         <Route path="/terms" element={<TermsOfService />} />
+                        <Route path="/legal/intel-attribution" element={<IntelAttribution />} />
                         
                         {/* Auth pages */}
                         <Route path="/forgot-password" element={<ForgotPassword />} />
