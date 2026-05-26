@@ -3800,33 +3800,63 @@ export type Database = {
           article_id: string
           created_at: string
           created_by: string | null
+          deep_read_body: string | null
+          deep_read_subheads: Json | null
           id: string
+          our_move: string | null
           published_at: string | null
+          rejected_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          signal: string | null
+          status: Database["public"]["Enums"]["intel_take_status"]
           take_body: string
           take_label: string
+          tier: Database["public"]["Enums"]["intel_take_tier"]
           updated_at: string
+          why_you_care: string | null
         }
         Insert: {
           ai_drafted?: boolean
           article_id: string
           created_at?: string
           created_by?: string | null
+          deep_read_body?: string | null
+          deep_read_subheads?: Json | null
           id?: string
+          our_move?: string | null
           published_at?: string | null
+          rejected_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          signal?: string | null
+          status?: Database["public"]["Enums"]["intel_take_status"]
           take_body: string
           take_label?: string
+          tier?: Database["public"]["Enums"]["intel_take_tier"]
           updated_at?: string
+          why_you_care?: string | null
         }
         Update: {
           ai_drafted?: boolean
           article_id?: string
           created_at?: string
           created_by?: string | null
+          deep_read_body?: string | null
+          deep_read_subheads?: Json | null
           id?: string
+          our_move?: string | null
           published_at?: string | null
+          rejected_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          signal?: string | null
+          status?: Database["public"]["Enums"]["intel_take_status"]
           take_body?: string
           take_label?: string
+          tier?: Database["public"]["Enums"]["intel_take_tier"]
           updated_at?: string
+          why_you_care?: string | null
         }
         Relationships: [
           {
@@ -8844,6 +8874,8 @@ export type Database = {
       agent_email_strategy: "send_all_now" | "send_after_owner"
       agent_status: "pending" | "active" | "suspended"
       app_role: "admin" | "agent" | "user" | "developer"
+      intel_take_status: "draft" | "pending_review" | "published" | "rejected"
+      intel_take_tier: "breakdown" | "deep_read"
       listing_flag_severity: "critical" | "warning" | "info"
       listing_flag_type:
         | "missing_field"
@@ -9016,6 +9048,8 @@ export const Constants = {
       agent_email_strategy: ["send_all_now", "send_after_owner"],
       agent_status: ["pending", "active", "suspended"],
       app_role: ["admin", "agent", "user", "developer"],
+      intel_take_status: ["draft", "pending_review", "published", "rejected"],
+      intel_take_tier: ["breakdown", "deep_read"],
       listing_flag_severity: ["critical", "warning", "info"],
       listing_flag_type: [
         "missing_field",
