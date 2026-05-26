@@ -11,6 +11,7 @@ import { IntelBeatTabs, BEATS } from '@/components/intel/IntelBeatTabs';
 import { IntelLongList } from '@/components/intel/IntelLongList';
 import { IntelSidebar, BriefSubscribeCard } from '@/components/intel/IntelSidebar';
 import { IntelSkeleton, IntelEmptyState } from '@/components/intel/IntelStates';
+import { DeepReadShelf } from '@/components/intel/DeepReadShelf';
 
 const BEAT_IDS = new Set(BEATS.map((b) => b.id));
 
@@ -120,6 +121,9 @@ export default function Intel() {
                     <IntelWatchlist articles={watchlist} title="What we're watching" />
                   </section>
                 )}
+
+                {/* Deep Reads shelf */}
+                <DeepReadShelf />
 
                 {/* The Briefing */}
                 {briefing.length > 0 && (
