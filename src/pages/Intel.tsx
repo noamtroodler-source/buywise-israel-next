@@ -2,68 +2,62 @@ import { useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { SEOHead } from '@/components/seo/SEOHead';
-import { useIntelFeed, useIntelFeatured, useIntelSources, IntelCategory } from '@/hooks/useIntel';
-import { IntelArticleCard } from '@/components/intel/IntelArticleCard';
-import { IntelHeadlineRow } from '@/components/intel/IntelHeadlineRow';
-import { IntelFilterBar } from '@/components/intel/IntelFilterBar';
+import { useIntelFeed, useIntelFeatured, IntelCategory } from '@/hooks/useIntel';
+import { IntelDateline } from '@/components/intel/IntelDateline';
+import { IntelTodaysTake } from '@/components/intel/IntelTodaysTake';
+import { IntelWatchlist } from '@/components/intel/IntelWatchlist';
+import { IntelBriefing } from '@/components/intel/IntelBriefing';
+import { IntelBeatTabs, BEATS } from '@/components/intel/IntelBeatTabs';
+import { IntelLongList } from '@/components/intel/IntelLongList';
 import { IntelSidebar, BriefSubscribeCard } from '@/components/intel/IntelSidebar';
 import { IntelSkeleton, IntelEmptyState } from '@/components/intel/IntelStates';
 
-const ALL_CATEGORIES: (IntelCategory | 'all')[] = [
-  'all', 'property-market', 'mortgage-rates', 'tax-legal',
-  'city-spotlight', 'new-developments', 'macro-economy',
-  'aliyah-immigration', 'policy-regulation', 'general',
-];
+const BEAT_IDS = new Set(BEATS.map((b) => b.id));
 
 export default function Intel() {
   const [params, setParams] = useSearchParams();
 
-  const category = (params.get('category') as IntelCategory | 'all') ?? 'all';
-  const source = params.get('source') ?? 'all';
-  const sortBy = (params.get('sort') as 'recent' | 'relevance') ?? 'recent';
-  const search = params.get('q') ?? '';
-  const safeCategory = ALL_CATEGORIES.includes(category) ? category : 'all';
+  const rawCategory = (params.get('category') as IntelCategory | 'all') ?? 'all';
+  const category: IntelCategory | 'all' = BEAT_IDS.has(rawCategory) ? rawCategory : 'all';
 
-  const update = (next: Record<string, string | undefined>) => {
+  const setCategory = (next: IntelCategory | 'all') => {
     const merged = new URLSearchParams(params);
-    Object.entries(next).forEach(([k, v]) => {
-      if (v === undefined || v === '' || v === 'all' || v === 'recent') {
-        merged.delete(k);
-      } else {
-        merged.set(k, String(v));
-      }
-    });
+    if (next === 'all') merged.delete('category');
+    else merged.set('category', next);
     setParams(merged, { replace: true });
   };
-
   const reset = () => setParams({}, { replace: true });
 
-  const { data: sources = [] } = useIntelSources();
   const { data: featured } = useIntelFeatured();
   const { data: articles = [], isLoading } = useIntelFeed({
-    category: safeCategory,
-    source,
-    sortBy,
-    search,
-    limit: 60,
+    category,
+    sortBy: 'recent',
+    limit: 80,
   });
 
-  // Remove featured + "general" noise from list pools
-  const visible = useMemo(
+  // Pool of non-featured articles
+  const pool = useMemo(
     () => articles.filter((a) => (featured ? a.id !== featured.id : true)),
     [articles, featured],
   );
 
-  // Split: cards with Takes get hero/grid treatment, everything else falls to the compact list
-  const withTakes = useMemo(
-    () => visible.filter((a) => !!a.take_body).slice(0, 4),
-    [visible],
+  // Watchlist: 8 most-recent headlines
+  const watchlist = useMemo(() => pool.slice(0, 8), [pool]);
+
+  // Briefing: 3 strongest stories with Takes that aren't in watchlist (or featured)
+  const briefingPool = useMemo(
+    () => pool.filter((a) => !!a.take_body),
+    [pool],
   );
-  const takeIds = new Set(withTakes.map((a) => a.id));
-  const headlines = useMemo(
-    () => visible.filter((a) => !takeIds.has(a.id)),
+  const briefing = useMemo(() => briefingPool.slice(0, 3), [briefingPool]);
+  const briefingIds = new Set(briefing.map((a) => a.id));
+  const watchlistIds = new Set(watchlist.map((a) => a.id));
+
+  // Long list: everything else
+  const longList = useMemo(
+    () => pool.filter((a) => !briefingIds.has(a.id) && !watchlistIds.has(a.id)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [visible, withTakes],
+    [pool, briefing, watchlist],
   );
 
   const jsonLd = {
@@ -71,7 +65,8 @@ export default function Intel() {
     '@type': 'CollectionPage',
     name: 'BuyWise Intel — Israeli real estate news for buyers',
     url: 'https://buywiseisrael.com/intel',
-    description: 'Curated Israeli real estate, mortgage, and tax news with original BuyWise commentary for international buyers.',
+    description:
+      'Curated Israeli real estate, mortgage, and tax news with original BuyWise commentary for international buyers.',
   };
 
   return (
@@ -83,82 +78,57 @@ export default function Intel() {
         jsonLd={jsonLd}
       />
 
-      <div className="container mx-auto px-4 py-10 lg:py-14">
-        {/* Quieter, calmer header */}
-        <header className="mb-10 max-w-3xl">
-          <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-            Learn · Intel
-          </p>
-          <h1 className="mt-3 text-4xl font-semibold tracking-tight text-foreground md:text-5xl">
+      <div className="container mx-auto max-w-7xl px-4 py-6 lg:py-10">
+        <IntelDateline />
+
+        {/* Masthead */}
+        <header className="mt-8 max-w-3xl md:mt-10">
+          <h1 className="font-serif text-5xl leading-none tracking-tight text-foreground md:text-6xl">
             BuyWise Intel
           </h1>
-          <p className="mt-4 text-base text-muted-foreground md:text-lg">
-            Israeli property, mortgage, and tax news that actually matters for international buyers — with a short BuyWise Take on the stories worth slowing down for.
+          <p className="mt-3 text-base text-muted-foreground md:text-lg">
+            Israeli property, mortgages, and tax — decoded for international buyers.
           </p>
         </header>
 
-        <div className="grid gap-12 lg:grid-cols-[1fr,300px]">
-          <div className="min-w-0">
-            <IntelFilterBar
-              category={safeCategory}
-              source={source}
-              sortBy={sortBy}
-              search={search}
-              sources={sources as any}
-              onChange={(n) => update({
-                category: n.category,
-                source: n.source,
-                sort: n.sortBy,
-                q: n.search,
-              })}
-              onReset={reset}
-            />
+        {/* Beat tabs */}
+        <div className="mt-8">
+          <IntelBeatTabs active={category} onChange={setCategory} />
+        </div>
 
+        {/* Main spine */}
+        <div className="mt-10 grid gap-12 lg:grid-cols-[1fr,320px]">
+          <div className="min-w-0 space-y-14">
             {isLoading ? (
               <IntelSkeleton />
             ) : !articles.length ? (
               <IntelEmptyState onReset={reset} />
             ) : (
-              <div className="space-y-14">
-                {/* Tier 1 — Featured */}
+              <>
+                {/* DealBook spine: Today's Take + Watchlist */}
                 {featured && (
-                  <section>
-                    <IntelArticleCard article={featured} variant="featured" />
+                  <section className="grid gap-10 border-b border-border pb-12 lg:grid-cols-[1.6fr,1fr] lg:gap-12">
+                    <div className="lg:border-r lg:border-border lg:pr-12">
+                      <IntelTodaysTake article={featured} />
+                    </div>
+                    <IntelWatchlist articles={watchlist} />
                   </section>
                 )}
 
-                {/* Tier 2 — BuyWise Takes */}
-                {withTakes.length > 0 && (
-                  <section>
-                    <SectionHeader
-                      eyebrow="The BuyWise Take"
-                      title="Stories worth slowing down for"
-                      subtitle="Our editorial read on what each story means for your decision."
-                    />
-                    <div className="grid gap-5 md:grid-cols-2">
-                      {withTakes.map((a) => (
-                        <IntelArticleCard key={a.id} article={a} />
-                      ))}
-                    </div>
+                {!featured && watchlist.length > 0 && (
+                  <section className="border-b border-border pb-12">
+                    <IntelWatchlist articles={watchlist} title="What we're watching" />
                   </section>
                 )}
 
-                {/* Tier 3 — Compact headlines */}
-                {headlines.length > 0 && (
-                  <section>
-                    <SectionHeader
-                      eyebrow="Latest"
-                      title="The rest of the feed"
-                      subtitle="Headlines we're tracking. Click through to the original source."
-                    />
-                    <div className="rounded-lg border border-border/60 bg-card px-5">
-                      {headlines.map((a) => (
-                        <IntelHeadlineRow key={a.id} article={a} />
-                      ))}
-                    </div>
-                  </section>
+                {/* The Briefing */}
+                {briefing.length > 0 && (
+                  <IntelBriefing articles={briefing} />
                 )}
-              </div>
+
+                {/* The Long List */}
+                {longList.length > 0 && <IntelLongList articles={longList} />}
+              </>
             )}
           </div>
 
@@ -167,21 +137,11 @@ export default function Intel() {
           </div>
         </div>
 
-        {/* Mobile: subscribe card at the end */}
-        <div className="mt-12 lg:hidden">
+        {/* Mobile subscribe */}
+        <div className="mt-14 lg:hidden">
           <BriefSubscribeCard />
         </div>
       </div>
     </Layout>
-  );
-}
-
-function SectionHeader({ eyebrow, title, subtitle }: { eyebrow: string; title: string; subtitle?: string }) {
-  return (
-    <div className="mb-5">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">{eyebrow}</p>
-      <h2 className="mt-1.5 text-2xl font-semibold tracking-tight text-foreground">{title}</h2>
-      {subtitle && <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>}
-    </div>
   );
 }
