@@ -76,6 +76,10 @@ const MapSearch = lazyPage(() => import("./pages/MapSearch"));
 // Legal pages
 const PrivacyPolicy = lazyPage(() => import("./pages/legal/PrivacyPolicy"));
 const TermsOfService = lazyPage(() => import("./pages/legal/TermsOfService"));
+const IntelAttribution = lazyPage(() => import("./pages/legal/IntelAttribution"));
+
+// Intel
+const IntelDeepRead = lazyPage(() => import("./pages/IntelDeepRead"));
 
 // Auth pages
 const ForgotPassword = lazyPage(() => import("./pages/ForgotPassword"));
@@ -247,6 +251,7 @@ const App = () => (
                         <Route path="/blog" element={<Blog />} />
                         <Route path="/blog/:slug" element={<BlogPost />} />
                         <Route path="/intel" element={<Intel />} />
+                        <Route path="/intel/deep/:slug" element={<IntelDeepRead />} />
                         <Route path="/areas" element={<Areas />} />
                         <Route path="/areas/:slug" element={<AreaDetail />} />
                         <Route path="/tools" element={<Tools />} />
