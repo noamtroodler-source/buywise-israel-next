@@ -468,7 +468,7 @@ Deno.serve(async (req) => {
 
     const results = [];
     for (const s of (sources ?? []) as any[]) {
-      const r = await fetchSource(supabase, s);
+      const r = await fetchSource(supabase, s, ctx);
       results.push(r);
     }
 
