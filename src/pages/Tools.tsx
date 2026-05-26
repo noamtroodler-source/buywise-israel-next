@@ -49,7 +49,7 @@ const allTools: Record<string, Tool> = {
   },
   totalcost: { 
     id: 'totalcost', 
-    label: 'True Cost Calculator', 
+    label: 'BuyWise True Cost', 
     description: 'See the true cost of buying in Israel — taxes, fees, closing costs, and surprises most buyers miss.', 
     icon: Receipt,
     guidanceHint: 'Avoid surprises later',
