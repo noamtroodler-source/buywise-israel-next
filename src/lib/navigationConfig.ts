@@ -111,8 +111,8 @@ export const NAV_CONFIG: Record<string, NavSection> = {
       {
         title: 'Calculators',
         items: [
-          { label: 'True Cost Calculator', href: '/tools?tool=totalcost', description: 'New build costs', phase: 'check' },
-          { label: 'Investment Returns', href: '/tools?tool=investment', description: 'Pre-sale ROI', phase: 'check' },
+          { label: 'BuyWise True Cost', href: '/tools?tool=totalcost', description: 'New build costs', phase: 'check' },
+          { label: 'BuyWise Returns', href: '/tools?tool=investment', description: 'Pre-sale ROI', phase: 'check' },
           { label: 'Mortgage Calculator', href: '/tools?tool=mortgage', description: 'Payment planning', phase: 'move_forward' },
         ]
       },
