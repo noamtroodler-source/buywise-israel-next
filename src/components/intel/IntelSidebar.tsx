@@ -4,11 +4,13 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { subscribeToBrief, useIntelSources } from '@/hooks/useIntel';
 import { useToast } from '@/hooks/use-toast';
+import { IntelCurationNote } from './IntelCurationNote';
 
 export function IntelSidebar() {
   return (
-    <aside className="space-y-6 lg:sticky lg:top-24 lg:self-start">
+    <aside className="space-y-8 lg:sticky lg:top-24 lg:self-start">
       <BriefSubscribeCard />
+      <IntelCurationNote />
       <SourcesList />
     </aside>
   );
@@ -26,7 +28,7 @@ export function BriefSubscribeCard() {
     try {
       await subscribeToBrief(email);
       setDone(true);
-      toast({ title: 'You\'re on the list.', description: 'We\'ll send the next BuyWise Brief your way.' });
+      toast({ title: "You're on the list.", description: "We'll send the next BuyWise Brief your way." });
     } catch (err) {
       toast({
         title: 'Could not subscribe',
@@ -39,13 +41,13 @@ export function BriefSubscribeCard() {
   };
 
   return (
-    <div className="rounded-lg border border-border/60 bg-primary/5 p-5">
+    <div id="brief-subscribe" className="border border-border bg-card p-5">
       <div className="flex items-center gap-2">
         <Mail className="h-4 w-4 text-primary" />
-        <h3 className="text-base font-semibold text-foreground">The BuyWise Brief</h3>
+        <h3 className="font-serif text-xl leading-none text-foreground">The BuyWise Weekly Brief</h3>
       </div>
       <p className="mt-2 text-sm text-muted-foreground">
-        A weekly digest of what actually matters for international buyers — in your inbox.
+        One email a week. What changed in Israeli property, mortgages, and tax — and what to do about it.
       </p>
       {done ? (
         <div className="mt-4 flex items-center gap-2 text-sm text-foreground">
@@ -74,8 +76,10 @@ function SourcesList() {
   const { data: sources = [] } = useIntelSources();
   if (!sources.length) return null;
   return (
-    <div className="rounded-lg border border-border/60 bg-card p-5">
-      <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Sources</h3>
+    <div className="border-t border-border pt-5">
+      <h3 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-foreground">
+        Sources we read
+      </h3>
       <ul className="mt-3 space-y-1.5 text-sm">
         {sources.map((s: any) => (
           <li key={s.id} className="flex items-center justify-between gap-2 text-muted-foreground">
