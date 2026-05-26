@@ -83,8 +83,8 @@ export default function Intel() {
 
         {/* Masthead */}
         <header className="mt-8 max-w-3xl md:mt-10">
-          <h1 className="font-serif text-5xl leading-none tracking-tight text-foreground md:text-6xl">
-            BuyWise Intel
+          <h1 className="text-4xl font-extrabold leading-[1.05] tracking-tight text-foreground md:text-5xl">
+            BuyWise <span className="text-primary">Intel</span>
           </h1>
           <p className="mt-3 text-base text-muted-foreground md:text-lg">
             Israeli property, mortgages, and tax — decoded for international buyers.

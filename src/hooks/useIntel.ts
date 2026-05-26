@@ -21,6 +21,7 @@ export interface IntelFeedItem {
   headline: string;
   excerpt: string | null;
   url: string;
+  image_url: string | null;
   published_at: string;
   category: IntelCategory;
   relevance_score: number;

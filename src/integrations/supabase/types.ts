@@ -3549,6 +3549,7 @@ export type Database = {
           excerpt: string | null
           headline: string
           id: string
+          image_url: string | null
           is_featured: boolean
           is_hidden: boolean
           is_pinned: boolean
@@ -3567,6 +3568,7 @@ export type Database = {
           excerpt?: string | null
           headline: string
           id?: string
+          image_url?: string | null
           is_featured?: boolean
           is_hidden?: boolean
           is_pinned?: boolean
@@ -3585,6 +3587,7 @@ export type Database = {
           excerpt?: string | null
           headline?: string
           id?: string
+          image_url?: string | null
           is_featured?: boolean
           is_hidden?: boolean
           is_pinned?: boolean
@@ -8058,6 +8061,7 @@ export type Database = {
           excerpt: string | null
           headline: string | null
           id: string | null
+          image_url: string | null
           is_featured: boolean | null
           is_hidden: boolean | null
           is_pinned: boolean | null

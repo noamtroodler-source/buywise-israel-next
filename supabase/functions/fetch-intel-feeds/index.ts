@@ -1,6 +1,7 @@
 // BuyWise Intel — RSS ingestion edge function
 // Runs hourly via pg_cron. Fetches enabled sources, dedupes by URL,
-// categorizes + scores, and inserts new articles. Never stores images.
+// categorizes + scores, extracts hero image URLs (we never download the
+// image — only store the source's hot-link URL per zero-storage policy).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { parseFeed } from "https://deno.land/x/rss@1.0.0/mod.ts";
@@ -132,6 +133,81 @@ function firstTwoSentences(s: string): string {
   return parts.slice(0, 2).join(" ").trim().slice(0, 280);
 }
 
+/** Extract a hero image URL from an RSS item. Tries (in order):
+ *  enclosure, media:content, media:thumbnail, first <img> in description/content. */
+function extractImageUrl(item: any, rawDescription: string): string | null {
+  // 1. enclosure (standard RSS 2.0)
+  const enclosures = item.attachments ?? item.enclosures ?? [];
+  for (const a of enclosures) {
+    const url = a?.url ?? a?.href;
+    const type = a?.mimeType ?? a?.type ?? "";
+    if (url && (type.startsWith("image/") || /\.(jpe?g|png|webp|gif)(\?|$)/i.test(url))) {
+      return url;
+    }
+  }
+  // 2. media:content / media:thumbnail (Yedioth, Calcalist, Globes typically)
+  const mediaContent = item["media:content"] ?? item.mediaContent;
+  if (mediaContent) {
+    const arr = Array.isArray(mediaContent) ? mediaContent : [mediaContent];
+    for (const m of arr) {
+      const u = m?.url ?? m?.["@_url"] ?? m?.attributes?.url;
+      if (u) return u;
+    }
+  }
+  const mediaThumb = item["media:thumbnail"] ?? item.mediaThumbnails;
+  if (mediaThumb) {
+    const arr = Array.isArray(mediaThumb) ? mediaThumb : [mediaThumb];
+    for (const m of arr) {
+      const u = m?.url ?? m?.["@_url"] ?? m?.attributes?.url;
+      if (u) return u;
+    }
+  }
+  // 3. First <img> in description / content HTML
+  const html = rawDescription || "";
+  const m = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+  if (m?.[1]) return m[1];
+  return null;
+}
+
+/** Fallback: scan raw RSS XML for per-item image URLs keyed by article link.
+ *  Handles enclosure, media:content, media:thumbnail, and inline <img>. */
+function buildRawImageMap(xml: string): Map<string, string> {
+  const map = new Map<string, string>();
+  // Match both <item>...</item> (RSS) and <entry>...</entry> (Atom)
+  const itemRe = /<(item|entry)\b[\s\S]*?<\/\1>/gi;
+  const matches = xml.match(itemRe) ?? [];
+  for (const block of matches) {
+    // Find link: prefer <link>http</link> for RSS, then <link href="..."/> for Atom
+    let link: string | null = null;
+    const linkText = block.match(/<link[^>]*>\s*<!\[CDATA\[([^\]]+)\]\]>\s*<\/link>/i)
+      ?? block.match(/<link[^>]*>([^<\s]+)<\/link>/i);
+    if (linkText?.[1]) link = linkText[1].trim();
+    if (!link) {
+      const atom = block.match(/<link[^>]+href=["']([^"']+)["']/i);
+      if (atom?.[1]) link = atom[1].trim();
+    }
+    if (!link) continue;
+
+    let img: string | null = null;
+    const enclosure = block.match(/<enclosure[^>]+url=["']([^"']+)["'][^>]*type=["']image\//i)
+      ?? block.match(/<enclosure[^>]+type=["']image\/[^"']+["'][^>]*url=["']([^"']+)["']/i)
+      ?? block.match(/<enclosure[^>]+url=["']([^"']+\.(?:jpe?g|png|webp|gif)(?:\?[^"']*)?)["']/i);
+    if (enclosure?.[1]) img = enclosure[1];
+
+    if (!img) {
+      const mc = block.match(/<media:content[^>]+url=["']([^"']+)["']/i)
+        ?? block.match(/<media:thumbnail[^>]+url=["']([^"']+)["']/i);
+      if (mc?.[1]) img = mc[1];
+    }
+    if (!img) {
+      const inline = block.match(/<img[^>]+src=["']([^"']+)["']/i);
+      if (inline?.[1]) img = inline[1];
+    }
+    if (img) map.set(link, img);
+  }
+  return map;
+}
+
 // ---------------------------------------------------------------
 // Fetch + parse a single source
 // ---------------------------------------------------------------
@@ -158,6 +234,7 @@ async function fetchSource(supabase: ReturnType<typeof createClient>, source: {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const xml = await res.text();
     const feed = await parseFeed(xml);
+    const rawImageMap = buildRawImageMap(xml);
 
     const items = feed.entries ?? [];
     for (const item of items) {
@@ -173,6 +250,10 @@ async function fetchSource(supabase: ReturnType<typeof createClient>, source: {
       const publishedAt = item.published ?? item.updated ?? new Date();
       const category = categorize(`${headline} ${excerpt}`, source.language);
       const relevance = scoreRelevance(headline, excerpt, category, source.tier, new Date(publishedAt));
+      const imageUrl =
+        extractImageUrl(item as any, rawExcerpt) ??
+        rawImageMap.get(url) ??
+        null;
 
       const { error: insertErr } = await supabase
         .from("intel_articles")
@@ -184,16 +265,24 @@ async function fetchSource(supabase: ReturnType<typeof createClient>, source: {
           headline,
           excerpt: excerpt || null,
           url,
+          image_url: imageUrl,
           published_at: publishedAt,
           category,
           relevance_score: relevance,
         });
 
-      // unique violation = already ingested; ignore
       if (!insertErr) {
         added++;
-      } else if (!insertErr.message?.includes("duplicate") && !insertErr.message?.includes("unique")) {
-        // log unexpected errors but keep going
+      } else if (insertErr.message?.includes("duplicate") || insertErr.message?.includes("unique")) {
+        // Backfill: if we already had this article without an image, add it now.
+        if (imageUrl) {
+          await supabase
+            .from("intel_articles")
+            .update({ image_url: imageUrl })
+            .eq("url", url)
+            .is("image_url", null);
+        }
+      } else {
         console.error(`[${source.name}] insert error:`, insertErr.message);
       }
     }

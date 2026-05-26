@@ -3,6 +3,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { IntelFeedItem } from '@/hooks/useIntel';
 import { CATEGORY_BY_ID } from '@/lib/intel/categories';
 import { IntelTakeBlock } from './IntelTakeBlock';
+import { IntelImage } from './IntelImage';
 
 interface Props {
   article: IntelFeedItem;
@@ -18,17 +19,28 @@ export function IntelTodaysTake({ article }: Props) {
 
   return (
     <article className="group">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">
+      <a href={article.url} target="_blank" rel="noopener noreferrer nofollow" className="block">
+        <IntelImage src={article.image_url} alt={article.headline} aspect="video" rounded />
+      </a>
+
+      <p className="mt-5 text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">
         Today's Take · {cat.label}
       </p>
-      <h2
-        className="mt-3 font-serif text-3xl leading-[1.1] tracking-tight text-foreground md:text-[2.75rem]"
-        dir={isHebrew ? 'rtl' : 'ltr'}
+      <a
+        href={article.url}
+        target="_blank"
+        rel="noopener noreferrer nofollow"
+        className="mt-2 block"
       >
-        {article.headline}
-      </h2>
+        <h2
+          className="text-3xl font-bold leading-[1.1] tracking-tight text-foreground transition-colors hover:text-primary md:text-[2.5rem]"
+          dir={isHebrew ? 'rtl' : 'ltr'}
+        >
+          {article.headline}
+        </h2>
+      </a>
       <div className="mt-3 flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground tabular-nums">
-        <span className="font-medium text-foreground/80">{article.source_name}</span>
+        <span className="font-semibold text-foreground/80">{article.source_name}</span>
         {when && <span>· {when}</span>}
         {isHebrew && (
           <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide">HE</span>
@@ -37,7 +49,7 @@ export function IntelTodaysTake({ article }: Props) {
 
       {article.excerpt && (
         <p
-          className="mt-4 text-[17px] leading-relaxed text-muted-foreground"
+          className="mt-4 text-base leading-relaxed text-muted-foreground md:text-[17px]"
           dir={isHebrew ? 'rtl' : 'ltr'}
         >
           {article.excerpt}
@@ -59,7 +71,7 @@ export function IntelTodaysTake({ article }: Props) {
         href={article.url}
         target="_blank"
         rel="noopener noreferrer nofollow"
-        className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+        className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
       >
         Read on {article.source_name}
         <ExternalLink className="h-3.5 w-3.5" />
