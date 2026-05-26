@@ -88,6 +88,32 @@ function ArticlesTab() {
     });
   };
 
+  const [runningAll, setRunningAll] = useState(false);
+  const runBackfillUntilDone = async () => {
+    setRunningAll(true);
+    let totalProcessed = 0;
+    let batches = 0;
+    try {
+      for (let i = 0; i < 20; i++) {
+        const res: any = await backfill.mutateAsync(40);
+        const processed = Number(res?.processed ?? 0);
+        totalProcessed += processed;
+        batches++;
+        if (processed === 0) break;
+        // small breather to avoid Gemini rate limits
+        await new Promise((r) => setTimeout(r, 1500));
+      }
+      toast({
+        title: 'Backfill complete',
+        description: `Enriched ${totalProcessed} articles across ${batches} batch${batches === 1 ? '' : 'es'}.`,
+      });
+    } catch (e: any) {
+      toast({ title: 'Stopped early', description: e.message, variant: 'destructive' });
+    } finally {
+      setRunningAll(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <Card>
@@ -131,9 +157,13 @@ function ArticlesTab() {
               </SelectContent>
             </Select>
           </div>
-          <Button variant="outline" onClick={runBackfill} disabled={backfill.isPending}>
-            <Languages className={`h-4 w-4 mr-1 ${backfill.isPending ? 'animate-pulse' : ''}`} />
+          <Button variant="outline" onClick={runBackfill} disabled={backfill.isPending || runningAll}>
+            <Languages className={`h-4 w-4 mr-1 ${backfill.isPending && !runningAll ? 'animate-pulse' : ''}`} />
             Enrich backlog
+          </Button>
+          <Button onClick={runBackfillUntilDone} disabled={backfill.isPending || runningAll}>
+            <Languages className={`h-4 w-4 mr-1 ${runningAll ? 'animate-pulse' : ''}`} />
+            {runningAll ? 'Running…' : 'Run until done'}
           </Button>
         </CardContent>
       </Card>
