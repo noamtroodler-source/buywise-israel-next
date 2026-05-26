@@ -221,7 +221,7 @@ async function deepReadLiveCapHit(supabase: any): Promise<boolean> {
   return (count ?? 0) >= DEEP_READ_LIVE_CAP;
 }
 
-interface FetchCtx { ctx.deepReadsQueuedThisCycle: number }
+interface FetchCtx { deepReadsQueuedThisCycle: number }
 
 async function fetchSource(supabase: any, source: {
   id: string;
