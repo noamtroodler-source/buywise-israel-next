@@ -3542,14 +3542,65 @@ export type Database = {
         }
         Relationships: []
       }
+      intel_article_clicks: {
+        Row: {
+          article_id: string
+          created_at: string
+          id: string
+          referrer_path: string | null
+          session_id: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          article_id: string
+          created_at?: string
+          id?: string
+          referrer_path?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          article_id?: string
+          created_at?: string
+          id?: string
+          referrer_path?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intel_article_clicks_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "intel_articles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intel_article_clicks_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "intel_feed_v"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       intel_articles: {
         Row: {
+          auto_categorized: boolean
           category: string
+          category_confidence: number | null
           created_at: string
+          dedup_group_id: string | null
           excerpt: string | null
+          excerpt_en: string | null
           headline: string
+          headline_en: string | null
           id: string
           image_url: string | null
+          is_duplicate: boolean
           is_featured: boolean
           is_hidden: boolean
           is_pinned: boolean
@@ -3559,16 +3610,23 @@ export type Database = {
           source_language: string
           source_name: string
           source_tier: number
+          translated_at: string | null
           updated_at: string
           url: string
         }
         Insert: {
+          auto_categorized?: boolean
           category?: string
+          category_confidence?: number | null
           created_at?: string
+          dedup_group_id?: string | null
           excerpt?: string | null
+          excerpt_en?: string | null
           headline: string
+          headline_en?: string | null
           id?: string
           image_url?: string | null
+          is_duplicate?: boolean
           is_featured?: boolean
           is_hidden?: boolean
           is_pinned?: boolean
@@ -3578,16 +3636,23 @@ export type Database = {
           source_language?: string
           source_name: string
           source_tier?: number
+          translated_at?: string | null
           updated_at?: string
           url: string
         }
         Update: {
+          auto_categorized?: boolean
           category?: string
+          category_confidence?: number | null
           created_at?: string
+          dedup_group_id?: string | null
           excerpt?: string | null
+          excerpt_en?: string | null
           headline?: string
+          headline_en?: string | null
           id?: string
           image_url?: string | null
+          is_duplicate?: boolean
           is_featured?: boolean
           is_hidden?: boolean
           is_pinned?: boolean
@@ -3597,10 +3662,18 @@ export type Database = {
           source_language?: string
           source_name?: string
           source_tier?: number
+          translated_at?: string | null
           updated_at?: string
           url?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "intel_articles_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "intel_source_health_v"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "intel_articles_source_id_fkey"
             columns: ["source_id"]
@@ -3667,6 +3740,13 @@ export type Database = {
             foreignKeyName: "intel_fetch_log_source_id_fkey"
             columns: ["source_id"]
             isOneToOne: false
+            referencedRelation: "intel_source_health_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intel_fetch_log_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
             referencedRelation: "intel_sources"
             referencedColumns: ["id"]
           },
@@ -3716,6 +3796,7 @@ export type Database = {
       }
       intel_takes: {
         Row: {
+          ai_drafted: boolean
           article_id: string
           created_at: string
           created_by: string | null
@@ -3726,6 +3807,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          ai_drafted?: boolean
           article_id: string
           created_at?: string
           created_by?: string | null
@@ -3736,6 +3818,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          ai_drafted?: boolean
           article_id?: string
           created_at?: string
           created_by?: string | null
@@ -8056,12 +8139,18 @@ export type Database = {
       }
       intel_feed_v: {
         Row: {
+          auto_categorized: boolean | null
           category: string | null
+          category_confidence: number | null
           created_at: string | null
+          dedup_group_id: string | null
           excerpt: string | null
+          excerpt_en: string | null
           headline: string | null
+          headline_en: string | null
           id: string | null
           image_url: string | null
+          is_duplicate: boolean | null
           is_featured: boolean | null
           is_hidden: boolean | null
           is_pinned: boolean | null
@@ -8071,13 +8160,22 @@ export type Database = {
           source_language: string | null
           source_name: string | null
           source_tier: number | null
+          take_ai_drafted: boolean | null
           take_body: string | null
           take_id: string | null
           take_label: string | null
           take_published_at: string | null
+          translated_at: string | null
           url: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "intel_articles_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "intel_source_health_v"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "intel_articles_source_id_fkey"
             columns: ["source_id"]
@@ -8086,6 +8184,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      intel_source_health_v: {
+        Row: {
+          articles_last_7d: number | null
+          enabled: boolean | null
+          homepage_url: string | null
+          hours_since_fetch: number | null
+          id: string | null
+          is_unhealthy: boolean | null
+          language: string | null
+          last_error: string | null
+          last_fetched_at: string | null
+          name: string | null
+          tier: number | null
+          url: string | null
+        }
+        Insert: {
+          articles_last_7d?: never
+          enabled?: boolean | null
+          homepage_url?: string | null
+          hours_since_fetch?: never
+          id?: string | null
+          is_unhealthy?: never
+          language?: string | null
+          last_error?: string | null
+          last_fetched_at?: string | null
+          name?: string | null
+          tier?: number | null
+          url?: string | null
+        }
+        Update: {
+          articles_last_7d?: never
+          enabled?: boolean | null
+          homepage_url?: string | null
+          hours_since_fetch?: never
+          id?: string | null
+          is_unhealthy?: never
+          language?: string | null
+          last_error?: string | null
+          last_fetched_at?: string | null
+          name?: string | null
+          tier?: number | null
+          url?: string | null
+        }
+        Relationships: []
       }
       scraping_cost_by_day: {
         Row: {
