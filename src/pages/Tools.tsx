@@ -329,7 +329,7 @@ export default function Tools() {
             <div className="min-h-screen bg-background">
               <div className="container py-6">
                 <DualNavigation
-                  parentLabel="All Tools"
+                  parentLabel="BuyWise Toolkit"
                   parentPath="/tools"
                   backLabel="Go back"
                   className="mb-2"
