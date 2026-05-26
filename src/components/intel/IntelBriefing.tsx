@@ -1,6 +1,7 @@
 import { formatDistanceToNow } from 'date-fns';
 import { IntelFeedItem } from '@/hooks/useIntel';
 import { CATEGORY_BY_ID } from '@/lib/intel/categories';
+import { IntelImage } from './IntelImage';
 
 interface Props {
   articles: IntelFeedItem[];
@@ -10,24 +11,24 @@ export function IntelBriefing({ articles }: Props) {
   if (!articles.length) return null;
   return (
     <section>
-      <header className="mb-4 flex items-end justify-between border-b border-border pb-2">
+      <header className="mb-5 flex items-end justify-between border-b border-border pb-2">
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-foreground">
           The Briefing
         </p>
         <p className="hidden text-xs text-muted-foreground sm:block">
-          One-line BuyWise read on three stories worth your attention.
+          Three stories. One BuyWise read on each.
         </p>
       </header>
-      <div className="grid gap-8 md:grid-cols-3 md:divide-x md:divide-border/60">
-        {articles.slice(0, 3).map((a, i) => (
-          <BriefItem key={a.id} article={a} className={i === 0 ? '' : 'md:pl-6'} />
+      <div className="grid gap-8 md:grid-cols-3">
+        {articles.slice(0, 3).map((a) => (
+          <BriefItem key={a.id} article={a} />
         ))}
       </div>
     </section>
   );
 }
 
-function BriefItem({ article, className = '' }: { article: IntelFeedItem; className?: string }) {
+function BriefItem({ article }: { article: IntelFeedItem }) {
   const cat = CATEGORY_BY_ID[article.category] ?? CATEGORY_BY_ID.general;
   const isHebrew = article.source_language === 'he';
   let when = '';
@@ -36,25 +37,28 @@ function BriefItem({ article, className = '' }: { article: IntelFeedItem; classN
   } catch { /* noop */ }
 
   return (
-    <article className={className}>
-      <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-primary">
+    <article className="group">
+      <a href={article.url} target="_blank" rel="noopener noreferrer nofollow" className="block">
+        <IntelImage src={article.image_url} alt={article.headline} aspect="video" rounded />
+      </a>
+      <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-primary">
         {cat.label}
       </p>
       <a
         href={article.url}
         target="_blank"
         rel="noopener noreferrer nofollow"
-        className="mt-2 block"
+        className="mt-1.5 block"
       >
         <h3
-          className="text-lg font-semibold leading-snug text-foreground hover:text-primary"
+          className="text-[17px] font-bold leading-snug text-foreground transition-colors hover:text-primary"
           dir={isHebrew ? 'rtl' : 'ltr'}
         >
           {article.headline}
         </h3>
       </a>
       {article.take_body && (
-        <p className="mt-2 font-serif text-[15px] italic leading-relaxed text-foreground/80">
+        <p className="mt-2 border-l-2 border-primary/60 pl-3 text-sm leading-relaxed text-foreground/80">
           {firstSentence(article.take_body)}
         </p>
       )}
