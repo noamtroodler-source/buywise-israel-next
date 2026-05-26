@@ -1,0 +1,1 @@
+ALTER VIEW public.intel_feed_v SET (security_invoker = on);
