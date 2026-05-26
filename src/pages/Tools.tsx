@@ -316,7 +316,7 @@ export default function Tools() {
                 className="max-w-4xl mx-auto space-y-4"
               >
                 <DualNavigation
-                  parentLabel="All Tools"
+                  parentLabel="BuyWise Toolkit"
                   parentPath="/tools"
                   backLabel="Go back"
                   className="mb-2"
