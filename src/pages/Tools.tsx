@@ -63,7 +63,7 @@ const allTools: Record<string, Tool> = {
   },
   investment: { 
     id: 'investment', 
-    label: 'Investment Return Calculator', 
+    label: 'BuyWise Returns', 
     description: 'Evaluate returns, cash flow, and long-term value — using Israeli market assumptions.', 
     icon: TrendingUp,
     badge: 'Beta',
