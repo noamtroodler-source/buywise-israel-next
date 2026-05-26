@@ -120,7 +120,7 @@ export const NAV_CONFIG: Record<string, NavSection> = {
         title: 'BuyWise Playbook',
         items: [
           { label: 'New vs Resale', href: '/guides/new-vs-resale', description: 'Risks & benefits', phase: 'understand' },
-          { label: 'Complete Buying Guide', href: '/guides/buying-in-israel', description: 'Full process overview', phase: 'understand' },
+          { label: 'BuyWise Playbook', href: '/guides/buying-in-israel', description: 'Full process overview', phase: 'understand' },
           { label: 'Talking to Professionals', href: '/guides/talking-to-professionals', description: 'Lawyers & agents', phase: 'check' },
         ]
       }
