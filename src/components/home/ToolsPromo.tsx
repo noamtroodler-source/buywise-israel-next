@@ -30,7 +30,7 @@ export const ToolsPromo = () => {
           </div>
           <Button asChild className="px-5 self-start md:self-auto">
             <Link to="/tools" className="gap-2 font-medium">
-              Explore All Tools
+              Open BuyWise Toolkit
               <ArrowRight className="h-4 w-4" />
             </Link>
           </Button>

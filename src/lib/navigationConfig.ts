@@ -45,20 +45,20 @@ export const NAV_CONFIG: Record<string, NavSection> = {
         ]
       },
       {
-        title: 'Calculators',
+        title: 'BuyWise Toolkit',
         items: [
           { label: 'Mortgage Calculator', href: '/tools?tool=mortgage', description: 'Monthly payments & rates', phase: 'move_forward' },
           { label: 'BuyWise Affordability', href: '/tools?tool=affordability', description: 'What can you afford?', phase: 'define' },
           { label: 'BuyWise True Cost', href: '/tools?tool=totalcost', description: 'Taxes, fees & closing costs', phase: 'check' },
           { label: 'BuyWise Returns', href: '/tools?tool=investment', description: 'ROI & cash flow analysis', phase: 'check' },
-          { label: 'Rent vs Buy', href: '/tools?tool=rentvsbuy', description: 'Compare your options', phase: 'define' },
+          { label: 'BuyWise Compass', href: '/tools?tool=rentvsbuy', description: 'Rent vs buy decision tool', phase: 'define' },
           { label: 'BuyWise Decoder', href: '/tools?tool=listing-decoder', description: 'Translate & analyze listings', phase: 'check', badge: 'beta' },
         ]
       },
       {
-        title: 'Guides',
+        title: 'BuyWise Playbook',
         items: [
-          { label: 'Complete Buying Guide', href: '/guides/buying-in-israel', description: '14 chapters', phase: 'understand' },
+          { label: 'BuyWise Playbook', href: '/guides/buying-in-israel', description: 'The complete 14-chapter guide', phase: 'understand' },
           { label: 'Purchase Tax Guide', href: '/guides/purchase-tax', description: 'Mas Rechisha explained', phase: 'check' },
           { label: 'True Cost of Buying', href: '/guides/true-cost', description: 'Hidden costs revealed', phase: 'check' },
           { label: 'Mortgages in Israel', href: '/guides/mortgages', description: 'Financing for foreigners', phase: 'move_forward' },
@@ -83,12 +83,12 @@ export const NAV_CONFIG: Record<string, NavSection> = {
         title: 'Tools for Renters',
         items: [
           { label: 'BuyWise Affordability', href: '/tools?tool=affordability', description: 'Budget planning', phase: 'define' },
-          { label: 'Rent vs Buy', href: '/tools?tool=rentvsbuy', description: 'Should you rent or buy?', phase: 'define' },
+          { label: 'BuyWise Compass', href: '/tools?tool=rentvsbuy', description: 'Should you rent or buy?', phase: 'define' },
           { label: 'Document Checklist', href: '/tools?tool=documents', description: 'What to prepare', phase: 'move_forward', badge: 'beta' },
         ]
       },
       {
-        title: 'Guides',
+        title: 'BuyWise Playbook',
         items: [
           { label: 'Rent vs Buy Guide', href: '/guides/rent-vs-buy', description: 'Decision framework', phase: 'understand' },
         ]
@@ -109,7 +109,7 @@ export const NAV_CONFIG: Record<string, NavSection> = {
         ]
       },
       {
-        title: 'Calculators',
+        title: 'BuyWise Toolkit',
         items: [
           { label: 'BuyWise True Cost', href: '/tools?tool=totalcost', description: 'New build costs', phase: 'check' },
           { label: 'BuyWise Returns', href: '/tools?tool=investment', description: 'Pre-sale ROI', phase: 'check' },
@@ -117,10 +117,10 @@ export const NAV_CONFIG: Record<string, NavSection> = {
         ]
       },
       {
-        title: 'Guides',
+        title: 'BuyWise Playbook',
         items: [
           { label: 'New vs Resale', href: '/guides/new-vs-resale', description: 'Risks & benefits', phase: 'understand' },
-          { label: 'Complete Buying Guide', href: '/guides/buying-in-israel', description: 'Full process overview', phase: 'understand' },
+          { label: 'BuyWise Playbook', href: '/guides/buying-in-israel', description: 'Full process overview', phase: 'understand' },
           { label: 'Talking to Professionals', href: '/guides/talking-to-professionals', description: 'Lawyers & agents', phase: 'check' },
         ]
       }

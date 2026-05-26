@@ -44,7 +44,7 @@ export function BriefSubscribeCard() {
     <div id="brief-subscribe" className="border border-border bg-card p-5">
       <div className="flex items-center gap-2">
         <Mail className="h-4 w-4 text-primary" />
-        <h3 className="text-base font-bold tracking-tight text-foreground">The BuyWise Weekly Brief</h3>
+        <h3 className="text-base font-bold tracking-tight text-foreground">BuyWise Brief</h3>
       </div>
       <p className="mt-2 text-sm text-muted-foreground">
         One email a week. What changed in Israeli property, mortgages, and tax — and what to do about it.

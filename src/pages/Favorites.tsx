@@ -107,8 +107,8 @@ export default function Favorites() {
   return (
     <Layout>
       <SEOHead
-        title="Saved Properties | BuyWise Israel"
-        description="View and compare your saved properties. Get price drop alerts and manage your favorites across devices."
+        title="BuyWise Watchlist — Your Saved Properties"
+        description="Your watchlist of saved properties and projects. Get price drop alerts and compare across devices."
         canonicalUrl="https://buywiseisrael.com/favorites"
         noindex={true}
       />
@@ -122,7 +122,7 @@ export default function Favorites() {
             className="space-y-2"
           >
             <h1 className="text-3xl md:text-4xl font-bold text-foreground">
-              Saved Properties
+              BuyWise <span className="text-primary">Watchlist</span>
             </h1>
             <p className="text-muted-foreground">
               Compare your favorites and get notified when prices drop.

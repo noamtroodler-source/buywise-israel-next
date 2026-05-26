@@ -70,7 +70,7 @@ const allTools: Record<string, Tool> = {
   },
   rentvsbuy: { 
     id: 'rentvsbuy', 
-    label: 'Rent vs Buy Calculator', 
+    label: 'BuyWise Compass', 
     description: 'Compare renting versus buying in Israel — and when ownership makes sense.', 
     icon: Scale,
   },
@@ -301,7 +301,7 @@ export default function Tools() {
   return (
     <Layout>
       <SEOHead
-        title="Property Calculators & Tools | BuyWise Israel"
+        title="BuyWise Toolkit — Israeli Property Calculators"
         description="Free Israeli real estate calculators: mortgage, affordability, true cost, rent vs buy, and more. Built for international buyers."
         canonicalUrl="https://buywiseisrael.com/tools"
       />
@@ -316,7 +316,7 @@ export default function Tools() {
                 className="max-w-4xl mx-auto space-y-4"
               >
                 <DualNavigation
-                  parentLabel="All Tools"
+                  parentLabel="BuyWise Toolkit"
                   parentPath="/tools"
                   backLabel="Go back"
                   className="mb-2"
@@ -329,7 +329,7 @@ export default function Tools() {
             <div className="min-h-screen bg-background">
               <div className="container py-6">
                 <DualNavigation
-                  parentLabel="All Tools"
+                  parentLabel="BuyWise Toolkit"
                   parentPath="/tools"
                   backLabel="Go back"
                   className="mb-2"
@@ -345,7 +345,7 @@ export default function Tools() {
                 className="max-w-4xl mx-auto space-y-4"
               >
                 <DualNavigation
-                  parentLabel="All Tools"
+                  parentLabel="BuyWise Toolkit"
                   parentPath="/tools"
                   backLabel="Go back"
                   className="mb-2"
@@ -364,7 +364,7 @@ export default function Tools() {
                   animate={{ opacity: 1, y: 0 }}
                 >
                   <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
-                    Property Tools & Calculators
+                    The BuyWise <span className="text-primary">Toolkit</span>
                   </h1>
                   <p className="text-muted-foreground max-w-xl mx-auto mb-6">
                     Let's figure out what you can afford, what it really costs, and where you stand — together.

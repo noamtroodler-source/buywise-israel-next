@@ -143,7 +143,7 @@ const LEARN_ITEMS = [
   { label: 'BuyWise Desk', href: '/intel', description: 'Israeli market news, explained for buyers' },
   { label: 'Blog', href: '/blog', description: 'Latest articles & insights' },
   { label: 'BuyWise Playbook', href: '/guides', description: 'Step-by-step buying guides' },
-  { label: 'All Tools', href: '/tools', description: 'Calculators & checklists' },
+  { label: 'BuyWise Toolkit', href: '/tools', description: 'Calculators & checklists' },
   { label: 'Hebrew Glossary', href: '/glossary', description: 'Key terms explained' },
 ];
 
