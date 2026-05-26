@@ -25,6 +25,7 @@ import { INTEL_CATEGORIES } from '@/lib/intel/categories';
 import { IntelCategory } from '@/hooks/useIntel';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
+import { VoiceLinter } from '@/components/intel/VoiceLinter';
 
 const TAKE_LABELS = ['What This Means', 'Buyer Impact', 'Watch List', 'Reality Check', 'BuyWise View'];
 const WORD_CAP = 300;
@@ -371,6 +372,9 @@ function TakeEditor({ article, onClose }: { article: AdminIntelArticle; onClose:
               rows={8}
               placeholder="2–4 sentences. Speak as the trusted friend — what this means for an international buyer."
             />
+            <div className="mt-1.5">
+              <VoiceLinter text={body} />
+            </div>
             {aiDrafted && (
               <p className="mt-1 text-[11px] text-muted-foreground">
                 AI-drafted · review for accuracy before publishing.
