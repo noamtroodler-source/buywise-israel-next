@@ -169,6 +169,45 @@ function extractImageUrl(item: any, rawDescription: string): string | null {
   return null;
 }
 
+/** Fallback: scan raw RSS XML for per-item image URLs keyed by article link.
+ *  Handles enclosure, media:content, media:thumbnail, and inline <img>. */
+function buildRawImageMap(xml: string): Map<string, string> {
+  const map = new Map<string, string>();
+  // Match both <item>...</item> (RSS) and <entry>...</entry> (Atom)
+  const itemRe = /<(item|entry)\b[\s\S]*?<\/\1>/gi;
+  const matches = xml.match(itemRe) ?? [];
+  for (const block of matches) {
+    // Find link: prefer <link>http</link> for RSS, then <link href="..."/> for Atom
+    let link: string | null = null;
+    const linkText = block.match(/<link[^>]*>\s*<!\[CDATA\[([^\]]+)\]\]>\s*<\/link>/i)
+      ?? block.match(/<link[^>]*>([^<\s]+)<\/link>/i);
+    if (linkText?.[1]) link = linkText[1].trim();
+    if (!link) {
+      const atom = block.match(/<link[^>]+href=["']([^"']+)["']/i);
+      if (atom?.[1]) link = atom[1].trim();
+    }
+    if (!link) continue;
+
+    let img: string | null = null;
+    const enclosure = block.match(/<enclosure[^>]+url=["']([^"']+)["'][^>]*type=["']image\//i)
+      ?? block.match(/<enclosure[^>]+type=["']image\/[^"']+["'][^>]*url=["']([^"']+)["']/i)
+      ?? block.match(/<enclosure[^>]+url=["']([^"']+\.(?:jpe?g|png|webp|gif)(?:\?[^"']*)?)["']/i);
+    if (enclosure?.[1]) img = enclosure[1];
+
+    if (!img) {
+      const mc = block.match(/<media:content[^>]+url=["']([^"']+)["']/i)
+        ?? block.match(/<media:thumbnail[^>]+url=["']([^"']+)["']/i);
+      if (mc?.[1]) img = mc[1];
+    }
+    if (!img) {
+      const inline = block.match(/<img[^>]+src=["']([^"']+)["']/i);
+      if (inline?.[1]) img = inline[1];
+    }
+    if (img) map.set(link, img);
+  }
+  return map;
+}
+
 // ---------------------------------------------------------------
 // Fetch + parse a single source
 // ---------------------------------------------------------------
@@ -195,6 +234,7 @@ async function fetchSource(supabase: ReturnType<typeof createClient>, source: {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const xml = await res.text();
     const feed = await parseFeed(xml);
+    const rawImageMap = buildRawImageMap(xml);
 
     const items = feed.entries ?? [];
     for (const item of items) {
@@ -210,7 +250,10 @@ async function fetchSource(supabase: ReturnType<typeof createClient>, source: {
       const publishedAt = item.published ?? item.updated ?? new Date();
       const category = categorize(`${headline} ${excerpt}`, source.language);
       const relevance = scoreRelevance(headline, excerpt, category, source.tier, new Date(publishedAt));
-      const imageUrl = extractImageUrl(item as any, rawExcerpt);
+      const imageUrl =
+        extractImageUrl(item as any, rawExcerpt) ??
+        rawImageMap.get(url) ??
+        null;
 
       const { error: insertErr } = await supabase
         .from("intel_articles")
