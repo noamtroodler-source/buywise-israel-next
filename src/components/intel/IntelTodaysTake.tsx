@@ -10,7 +10,7 @@ import {
   trackIntelClick,
 } from '@/hooks/useIntel';
 import { CATEGORY_BY_ID } from '@/lib/intel/categories';
-import { IntelTakeBlock } from './IntelTakeBlock';
+import { IntelTakeBlock, TakeChip } from './IntelTakeBlock';
 import { IntelImage } from './IntelImage';
 
 interface Props {
@@ -39,12 +39,19 @@ export function IntelTodaysTake({ article }: Props) {
       <p className="mt-5 text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">
         Today's Take · {cat.label}
       </p>
+
+      {(article.signal || article.take_body) && (
+        <div className="mt-3">
+          <TakeChip signal={article.signal} body={article.take_body} targetId={`take-${article.id}`} />
+        </div>
+      )}
+
       <a
         href={article.url}
         target="_blank"
         rel="noopener noreferrer nofollow"
         onClick={onOpen}
-        className="mt-2 block"
+        className="mt-3 block"
       >
         <h2
           className="text-3xl font-bold leading-[1.1] tracking-tight text-foreground transition-colors hover:text-primary md:text-[2.5rem]"
@@ -74,6 +81,7 @@ export function IntelTodaysTake({ article }: Props) {
 
       {article.take_body ? (
         <IntelTakeBlock
+          id={`take-${article.id}`}
           label={article.take_label ?? 'BuyWise Take'}
           body={article.take_body}
           signal={article.signal}

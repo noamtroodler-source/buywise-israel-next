@@ -20,6 +20,7 @@ export default function Intel() {
 
   const rawCategory = (params.get('category') as IntelCategory | 'all') ?? 'all';
   const category: IntelCategory | 'all' = BEAT_IDS.has(rawCategory) ? rawCategory : 'all';
+  const takesOnly = params.get('takes') === '1';
 
   const setCategory = (next: IntelCategory | 'all') => {
     const merged = new URLSearchParams(params);
@@ -27,14 +28,30 @@ export default function Intel() {
     else merged.set('category', next);
     setParams(merged, { replace: true });
   };
+  const setTakesOnly = (next: boolean) => {
+    const merged = new URLSearchParams(params);
+    if (next) merged.set('takes', '1');
+    else merged.delete('takes');
+    setParams(merged, { replace: true });
+  };
   const reset = () => setParams({}, { replace: true });
 
-  const { data: featured } = useIntelFeatured();
+  const { data: featured } = useIntelFeatured(takesOnly);
   const { data: articles = [], isLoading } = useIntelFeed({
     category,
     sortBy: 'recent',
+    hasTake: takesOnly,
     limit: 80,
   });
+
+  // Count of articles in the current category that carry a Take (for the toggle badge)
+  const { data: takesPoolForCount = [] } = useIntelFeed({
+    category,
+    sortBy: 'recent',
+    hasTake: true,
+    limit: 80,
+  });
+  const takesCount = takesPoolForCount.length;
 
   // Pool of non-featured articles
   const pool = useMemo(
@@ -94,7 +111,13 @@ export default function Intel() {
 
         {/* Beat tabs */}
         <div className="mt-8">
-          <IntelBeatTabs active={category} onChange={setCategory} />
+          <IntelBeatTabs
+            active={category}
+            onChange={setCategory}
+            takesOnly={takesOnly}
+            onToggleTakesOnly={setTakesOnly}
+            takesCount={takesCount}
+          />
         </div>
 
         {/* Main spine */}
