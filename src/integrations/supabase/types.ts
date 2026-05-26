@@ -3542,6 +3542,223 @@ export type Database = {
         }
         Relationships: []
       }
+      intel_articles: {
+        Row: {
+          category: string
+          created_at: string
+          excerpt: string | null
+          headline: string
+          id: string
+          is_featured: boolean
+          is_hidden: boolean
+          is_pinned: boolean
+          published_at: string
+          relevance_score: number
+          source_id: string | null
+          source_language: string
+          source_name: string
+          source_tier: number
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          excerpt?: string | null
+          headline: string
+          id?: string
+          is_featured?: boolean
+          is_hidden?: boolean
+          is_pinned?: boolean
+          published_at: string
+          relevance_score?: number
+          source_id?: string | null
+          source_language?: string
+          source_name: string
+          source_tier?: number
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          excerpt?: string | null
+          headline?: string
+          id?: string
+          is_featured?: boolean
+          is_hidden?: boolean
+          is_pinned?: boolean
+          published_at?: string
+          relevance_score?: number
+          source_id?: string | null
+          source_language?: string
+          source_name?: string
+          source_tier?: number
+          updated_at?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intel_articles_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "intel_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      intel_brief_subscribers: {
+        Row: {
+          confirmed_at: string | null
+          created_at: string
+          email: string
+          id: string
+          source: string | null
+          unsubscribed_at: string | null
+        }
+        Insert: {
+          confirmed_at?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          source?: string | null
+          unsubscribed_at?: string | null
+        }
+        Update: {
+          confirmed_at?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          source?: string | null
+          unsubscribed_at?: string | null
+        }
+        Relationships: []
+      }
+      intel_fetch_log: {
+        Row: {
+          articles_added: number
+          error: string | null
+          id: string
+          ran_at: string
+          source_id: string | null
+          source_name: string | null
+        }
+        Insert: {
+          articles_added?: number
+          error?: string | null
+          id?: string
+          ran_at?: string
+          source_id?: string | null
+          source_name?: string | null
+        }
+        Update: {
+          articles_added?: number
+          error?: string | null
+          id?: string
+          ran_at?: string
+          source_id?: string | null
+          source_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intel_fetch_log_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "intel_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      intel_sources: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          homepage_url: string | null
+          id: string
+          language: string
+          last_error: string | null
+          last_fetched_at: string | null
+          name: string
+          tier: number
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          homepage_url?: string | null
+          id?: string
+          language?: string
+          last_error?: string | null
+          last_fetched_at?: string | null
+          name: string
+          tier?: number
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          homepage_url?: string | null
+          id?: string
+          language?: string
+          last_error?: string | null
+          last_fetched_at?: string | null
+          name?: string
+          tier?: number
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
+      intel_takes: {
+        Row: {
+          article_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          published_at: string | null
+          take_body: string
+          take_label: string
+          updated_at: string
+        }
+        Insert: {
+          article_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          published_at?: string | null
+          take_body: string
+          take_label?: string
+          updated_at?: string
+        }
+        Update: {
+          article_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          published_at?: string | null
+          take_body?: string
+          take_label?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intel_takes_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "intel_articles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intel_takes_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "intel_feed_v"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lead_response_events: {
         Row: {
           agent_id: string | null
@@ -7833,6 +8050,38 @@ export type Database = {
           website?: string | null
         }
         Relationships: []
+      }
+      intel_feed_v: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          excerpt: string | null
+          headline: string | null
+          id: string | null
+          is_featured: boolean | null
+          is_hidden: boolean | null
+          is_pinned: boolean | null
+          published_at: string | null
+          relevance_score: number | null
+          source_id: string | null
+          source_language: string | null
+          source_name: string | null
+          source_tier: number | null
+          take_body: string | null
+          take_id: string | null
+          take_label: string | null
+          take_published_at: string | null
+          url: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intel_articles_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "intel_sources"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       scraping_cost_by_day: {
         Row: {
