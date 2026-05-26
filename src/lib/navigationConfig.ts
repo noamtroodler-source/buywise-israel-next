@@ -109,7 +109,7 @@ export const NAV_CONFIG: Record<string, NavSection> = {
         ]
       },
       {
-        title: 'Calculators',
+        title: 'BuyWise Toolkit',
         items: [
           { label: 'BuyWise True Cost', href: '/tools?tool=totalcost', description: 'New build costs', phase: 'check' },
           { label: 'BuyWise Returns', href: '/tools?tool=investment', description: 'Pre-sale ROI', phase: 'check' },
@@ -117,7 +117,7 @@ export const NAV_CONFIG: Record<string, NavSection> = {
         ]
       },
       {
-        title: 'Guides',
+        title: 'BuyWise Playbook',
         items: [
           { label: 'New vs Resale', href: '/guides/new-vs-resale', description: 'Risks & benefits', phase: 'understand' },
           { label: 'Complete Buying Guide', href: '/guides/buying-in-israel', description: 'Full process overview', phase: 'understand' },
