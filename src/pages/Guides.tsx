@@ -183,8 +183,8 @@ export default function Guides() {
               className="text-center max-w-2xl mx-auto"
             >
               <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                Master <span className="text-primary">Israel</span> Real Estate
-                <span className="block">Step by Step</span>
+                The BuyWise <span className="text-primary">Playbook</span>
+                <span className="block">Israel, Step by Step</span>
               </h1>
               <p className="text-muted-foreground text-lg mb-4">
                 Comprehensive guides for international buyers —
