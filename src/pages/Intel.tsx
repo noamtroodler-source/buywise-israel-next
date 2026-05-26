@@ -111,7 +111,13 @@ export default function Intel() {
 
         {/* Beat tabs */}
         <div className="mt-8">
-          <IntelBeatTabs active={category} onChange={setCategory} />
+          <IntelBeatTabs
+            active={category}
+            onChange={setCategory}
+            takesOnly={takesOnly}
+            onToggleTakesOnly={setTakesOnly}
+            takesCount={takesCount}
+          />
         </div>
 
         {/* Main spine */}
