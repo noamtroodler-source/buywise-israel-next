@@ -87,7 +87,7 @@ export function IntelArticleCard({ article, onClick, variant = 'default' }: Prop
       )}
 
       {article.take_body && (
-        <IntelTakeBlock label={article.take_label ?? 'BuyWise Take'} body={article.take_body} />
+        <IntelTakeBlock label={article.take_label ?? 'BuyWise Take'} body={article.take_body} signal={article.signal} whyYouCare={article.why_you_care} ourMove={article.our_move} />
       )}
 
       <div className="mt-4 flex items-center justify-between">
