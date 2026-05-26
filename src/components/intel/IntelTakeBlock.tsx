@@ -42,6 +42,10 @@ export function IntelTakeBlock({ label, body, signal, whyYouCare, ourMove, bylin
       ) : body ? (
         <p className="text-[15px] leading-relaxed text-foreground whitespace-pre-line">{body}</p>
       ) : null}
+
+      <p className="mt-3 text-[10px] uppercase tracking-wider text-muted-foreground/70">
+        BuyWise editorial · not the original reporting
+      </p>
     </div>
   );
 }
