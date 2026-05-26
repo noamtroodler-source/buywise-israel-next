@@ -63,7 +63,7 @@ export default function Intel() {
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
-    name: 'BuyWise Intel — Israeli real estate news for buyers',
+    name: 'BuyWise Desk — Israeli real estate news for buyers',
     url: 'https://buywiseisrael.com/intel',
     description:
       'Curated Israeli real estate, mortgage, and tax news with original BuyWise commentary for international buyers.',
@@ -72,7 +72,7 @@ export default function Intel() {
   return (
     <Layout>
       <SEOHead
-        title="BuyWise Intel — Israeli Real Estate News for Buyers"
+        title="BuyWise Desk — Israeli Real Estate News for Buyers"
         description="Curated property, mortgage, tax, and policy news from Israel — with a short BuyWise Take on what each story means for international buyers."
         canonicalUrl="https://buywiseisrael.com/intel"
         jsonLd={jsonLd}
@@ -84,7 +84,7 @@ export default function Intel() {
         {/* Masthead */}
         <header className="mt-8 max-w-3xl md:mt-10">
           <h1 className="text-4xl font-extrabold leading-[1.05] tracking-tight text-foreground md:text-5xl">
-            BuyWise <span className="text-primary">Intel</span>
+            BuyWise <span className="text-primary">Desk</span>
           </h1>
           <p className="mt-3 text-base text-muted-foreground md:text-lg">
             Israeli property, mortgages, and tax — decoded for international buyers.

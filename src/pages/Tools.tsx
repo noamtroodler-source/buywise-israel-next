@@ -49,21 +49,21 @@ const allTools: Record<string, Tool> = {
   },
   totalcost: { 
     id: 'totalcost', 
-    label: 'True Cost Calculator', 
+    label: 'BuyWise True Cost', 
     description: 'See the true cost of buying in Israel — taxes, fees, closing costs, and surprises most buyers miss.', 
     icon: Receipt,
     guidanceHint: 'Avoid surprises later',
   },
   affordability: { 
     id: 'affordability', 
-    label: 'Affordability Calculator', 
+    label: 'BuyWise Affordability', 
     description: 'Know what you can realistically buy in Israel — based on income, savings, and local lending limits.', 
     icon: Wallet,
     guidanceHint: 'Great first step',
   },
   investment: { 
     id: 'investment', 
-    label: 'Investment Return Calculator', 
+    label: 'BuyWise Returns', 
     description: 'Evaluate returns, cash flow, and long-term value — using Israeli market assumptions.', 
     icon: TrendingUp,
     badge: 'Beta',
@@ -91,7 +91,7 @@ const allTools: Record<string, Tool> = {
   },
   'listing-decoder': {
     id: 'listing-decoder',
-    label: 'Listing Decoder',
+    label: 'BuyWise Decoder',
     description: 'Paste a Hebrew listing URL — get a full English breakdown, missing data flags, and questions to ask.',
     icon: Languages,
     guidanceHint: 'Found a listing? Start here',
