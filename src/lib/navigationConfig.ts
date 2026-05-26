@@ -56,7 +56,7 @@ export const NAV_CONFIG: Record<string, NavSection> = {
         ]
       },
       {
-        title: 'Guides',
+        title: 'BuyWise Playbook',
         items: [
           { label: 'BuyWise Playbook', href: '/guides/buying-in-israel', description: 'The complete 14-chapter guide', phase: 'understand' },
           { label: 'Purchase Tax Guide', href: '/guides/purchase-tax', description: 'Mas Rechisha explained', phase: 'check' },
