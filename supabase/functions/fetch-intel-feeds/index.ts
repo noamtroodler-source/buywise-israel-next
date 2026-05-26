@@ -466,6 +466,7 @@ Deno.serve(async (req) => {
     const { data: sources, error } = await query;
     if (error) throw error;
 
+    const ctx: FetchCtx = { deepReadsQueuedThisCycle: 0 };
     const results = [];
     for (const s of (sources ?? []) as any[]) {
       const r = await fetchSource(supabase, s, ctx);
