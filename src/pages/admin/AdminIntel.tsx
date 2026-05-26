@@ -157,9 +157,13 @@ function ArticlesTab() {
               </SelectContent>
             </Select>
           </div>
-          <Button variant="outline" onClick={runBackfill} disabled={backfill.isPending}>
-            <Languages className={`h-4 w-4 mr-1 ${backfill.isPending ? 'animate-pulse' : ''}`} />
+          <Button variant="outline" onClick={runBackfill} disabled={backfill.isPending || runningAll}>
+            <Languages className={`h-4 w-4 mr-1 ${backfill.isPending && !runningAll ? 'animate-pulse' : ''}`} />
             Enrich backlog
+          </Button>
+          <Button onClick={runBackfillUntilDone} disabled={backfill.isPending || runningAll}>
+            <Languages className={`h-4 w-4 mr-1 ${runningAll ? 'animate-pulse' : ''}`} />
+            {runningAll ? 'Running…' : 'Run until done'}
           </Button>
         </CardContent>
       </Card>
