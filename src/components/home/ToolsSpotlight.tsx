@@ -61,7 +61,7 @@ export function ToolsSpotlight() {
           </div>
           <Button variant="outline" asChild>
             <Link to="/tools" className="gap-2">
-              All Tools
+              BuyWise Toolkit
               <ArrowRight className="h-4 w-4" />
             </Link>
           </Button>
