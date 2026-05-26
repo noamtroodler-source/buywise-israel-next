@@ -90,7 +90,7 @@ export function LearnNav() {
                           {isVisited("/tools") && (
                             <span className="h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />
                           )}
-                          All Tools
+                          BuyWise Toolkit
                         </span>
                         <span className="text-xs text-muted-foreground/70 group-hover:text-accent-foreground/70">
                           Calculators & checklists
