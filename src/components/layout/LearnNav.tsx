@@ -27,6 +27,25 @@ export function LearnNav() {
                   <li>
                     <NavigationMenuLink asChild>
                       <Link
+                        to="/intel"
+                        className="group flex flex-col rounded-lg px-3 py-2.5 -mx-1 hover:bg-muted/50 transition-colors"
+                      >
+                        <span className="text-sm font-medium text-foreground group-hover:text-accent-foreground flex items-center gap-1.5">
+                          {isVisited("/intel") && (
+                            <span className="h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />
+                          )}
+                          BuyWise Intel
+                          <span className="ml-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">New</span>
+                        </span>
+                        <span className="text-xs text-muted-foreground/70 group-hover:text-accent-foreground/70">
+                          Israeli market news, explained for buyers
+                        </span>
+                      </Link>
+                    </NavigationMenuLink>
+                  </li>
+                  <li>
+                    <NavigationMenuLink asChild>
+                      <Link
                         to="/blog"
                         className="group flex flex-col rounded-lg px-3 py-2.5 -mx-1 hover:bg-muted/50 transition-colors"
                       >
@@ -42,6 +61,7 @@ export function LearnNav() {
                       </Link>
                     </NavigationMenuLink>
                   </li>
+
                   <li>
                     <NavigationMenuLink asChild>
                       <Link
