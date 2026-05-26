@@ -246,6 +246,11 @@ async function fetchSource(supabase: any, source: {
         item.content?.value ?? "";
       const excerpt = firstTwoSentences(rawExcerpt);
       const publishedAt = item.published ?? item.updated ?? new Date();
+
+      // --- Age gate: only ingest articles from the last 48 hours (matches cron cadence) ---
+      const ageMs = Date.now() - new Date(publishedAt).getTime();
+      if (ageMs > 48 * 60 * 60 * 1000) continue;
+
       const imageUrl =
         extractImageUrl(item as any, rawExcerpt) ??
         rawImageMap.get(url) ??
