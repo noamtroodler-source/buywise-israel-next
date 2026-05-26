@@ -141,10 +141,16 @@ export function useDraftIntelTakeAI() {
 }
 
 export function useEnrichIntelBacklog() {
-  return useMutation<unknown, Error, number | void>({
-    mutationFn: async (limit) => {
-      const lim = typeof limit === 'number' ? limit : 25;
-      const { data, error } = await supabase.functions.invoke('enrich-intel-backlog', { body: { limit: lim } });
+  return useMutation<unknown, Error, { limit?: number; mode?: 'all' | 'enrich' | 'breakdowns' } | number | void>({
+    mutationFn: async (arg) => {
+      let limit = 25;
+      let mode: 'all' | 'enrich' | 'breakdowns' = 'all';
+      if (typeof arg === 'number') limit = arg;
+      else if (arg && typeof arg === 'object') {
+        if (typeof arg.limit === 'number') limit = arg.limit;
+        if (arg.mode) mode = arg.mode;
+      }
+      const { data, error } = await supabase.functions.invoke('enrich-intel-backlog', { body: { limit, mode } });
       if (error) throw error;
       return data;
     },

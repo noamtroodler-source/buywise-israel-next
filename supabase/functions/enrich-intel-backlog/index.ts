@@ -35,8 +35,19 @@ Deno.serve(async (req) => {
   }
 
   const url = new URL(req.url);
-  const limit = Math.max(1, Math.min(50, Number(url.searchParams.get("limit") ?? 20)));
-  const mode = url.searchParams.get("mode") ?? "all"; // "enrich" | "breakdowns" | "all"
+  let bodyLimit: number | null = null;
+  let bodyMode: string | null = null;
+  try {
+    if (req.method === "POST") {
+      const b = await req.clone().json().catch(() => ({}));
+      if (b && typeof b === "object") {
+        if (b.limit != null) bodyLimit = Number(b.limit);
+        if (typeof b.mode === "string") bodyMode = b.mode;
+      }
+    }
+  } catch { /* ignore */ }
+  const limit = Math.max(1, Math.min(50, Number(bodyLimit ?? url.searchParams.get("limit") ?? 20)));
+  const mode = bodyMode ?? url.searchParams.get("mode") ?? "all"; // "enrich" | "breakdowns" | "all"
 
   let processed = 0, failed = 0, translated = 0, recategorized = 0, breakdownsAdded = 0;
 

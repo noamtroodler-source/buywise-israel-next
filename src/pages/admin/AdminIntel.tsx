@@ -18,10 +18,14 @@ import {
   useDraftIntelTakeAI, useEnrichIntelBacklog, useIntelSourceHealth,
   AdminIntelArticle, AdminIntelSource,
 } from '@/hooks/useAdminIntel';
+import { DeepReadQueueTab } from '@/components/admin/intel/DeepReadQueueTab';
+import { useAdminPendingDeepReads } from '@/hooks/useIntelDeepRead';
+import { BookOpen } from 'lucide-react';
 import { INTEL_CATEGORIES } from '@/lib/intel/categories';
 import { IntelCategory } from '@/hooks/useIntel';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
+import { VoiceLinter } from '@/components/intel/VoiceLinter';
 
 const TAKE_LABELS = ['What This Means', 'Buyer Impact', 'Watch List', 'Reality Check', 'BuyWise View'];
 const WORD_CAP = 300;
@@ -38,10 +42,16 @@ export default function AdminIntel() {
       <Tabs defaultValue="articles" className="w-full">
         <TabsList>
           <TabsTrigger value="articles">Articles</TabsTrigger>
+          <TabsTrigger value="deepreads" className="gap-1.5">
+            <BookOpen className="h-3.5 w-3.5" />
+            Deep Reads
+            <PendingCountBadge />
+          </TabsTrigger>
           <TabsTrigger value="sources">Sources</TabsTrigger>
           <TabsTrigger value="subscribers">Brief Subscribers</TabsTrigger>
         </TabsList>
         <TabsContent value="articles" className="mt-6"><ArticlesTab /></TabsContent>
+        <TabsContent value="deepreads" className="mt-6"><DeepReadQueueTab /></TabsContent>
         <TabsContent value="sources" className="mt-6"><SourcesTab /></TabsContent>
         <TabsContent value="subscribers" className="mt-6"><SubscribersTab /></TabsContent>
       </Tabs>
@@ -61,6 +71,16 @@ function SourceHealthBanner() {
         {unhealthy.map((r) => r.name).join(' · ')} — stale or erroring. Check the Sources tab.
       </AlertDescription>
     </Alert>
+  );
+}
+
+function PendingCountBadge() {
+  const { data: pending = [] } = useAdminPendingDeepReads();
+  if (!pending.length) return null;
+  return (
+    <Badge variant={pending.length > 2 ? 'destructive' : 'secondary'} className="ml-1 h-4 px-1.5 text-[10px]">
+      {pending.length}
+    </Badge>
   );
 }
 
@@ -352,6 +372,9 @@ function TakeEditor({ article, onClose }: { article: AdminIntelArticle; onClose:
               rows={8}
               placeholder="2–4 sentences. Speak as the trusted friend — what this means for an international buyer."
             />
+            <div className="mt-1.5">
+              <VoiceLinter text={body} />
+            </div>
             {aiDrafted && (
               <p className="mt-1 text-[11px] text-muted-foreground">
                 AI-drafted · review for accuracy before publishing.
