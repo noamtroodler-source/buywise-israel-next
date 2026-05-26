@@ -1,5 +1,10 @@
 import { formatDistanceToNow } from 'date-fns';
-import { IntelFeedItem } from '@/hooks/useIntel';
+import {
+  IntelFeedItem,
+  displayHeadline,
+  isDisplayedInEnglish,
+  trackIntelClick,
+} from '@/hooks/useIntel';
 import { CATEGORY_BY_ID } from '@/lib/intel/categories';
 import { IntelImage } from './IntelImage';
 import { cn } from '@/lib/utils';
@@ -29,7 +34,8 @@ export function IntelWatchlist({ articles, title = "What we're watching" }: Prop
 
 function WatchRow({ article }: { article: IntelFeedItem }) {
   const cat = CATEGORY_BY_ID[article.category] ?? CATEGORY_BY_ID.general;
-  const isHebrew = article.source_language === 'he';
+  const headline = displayHeadline(article);
+  const ltr = isDisplayedInEnglish(article);
   let when = '';
   try {
     when = formatDistanceToNow(new Date(article.published_at), { addSuffix: true });
@@ -40,11 +46,12 @@ function WatchRow({ article }: { article: IntelFeedItem }) {
       href={article.url}
       target="_blank"
       rel="noopener noreferrer nofollow"
+      onClick={() => trackIntelClick(article)}
       className="group flex items-start gap-3 py-3"
     >
       {article.image_url && (
         <div className="w-20 shrink-0 overflow-hidden rounded-sm">
-          <IntelImage src={article.image_url} alt={article.headline} aspect="square" />
+          <IntelImage src={article.image_url} alt={headline} aspect="square" />
         </div>
       )}
       <div className="min-w-0 flex-1">
@@ -53,9 +60,9 @@ function WatchRow({ article }: { article: IntelFeedItem }) {
             'text-[14px] font-semibold leading-snug text-foreground transition-colors group-hover:text-primary',
             'line-clamp-3',
           )}
-          dir={isHebrew ? 'rtl' : 'ltr'}
+          dir={ltr ? 'ltr' : 'rtl'}
         >
-          {article.headline}
+          {headline}
         </h4>
         <div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground tabular-nums">
           <span className="font-medium text-foreground/70">{article.source_name}</span>

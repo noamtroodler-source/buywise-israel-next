@@ -1,6 +1,14 @@
 import { ExternalLink } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { IntelFeedItem } from '@/hooks/useIntel';
+import { Badge } from '@/components/ui/badge';
+import {
+  IntelFeedItem,
+  displayHeadline,
+  displayExcerpt,
+  isDisplayedInEnglish,
+  isTranslatedFromHebrew,
+  trackIntelClick,
+} from '@/hooks/useIntel';
 import { CATEGORY_BY_ID } from '@/lib/intel/categories';
 import { IntelTakeBlock } from './IntelTakeBlock';
 import { IntelImage } from './IntelImage';
@@ -11,16 +19,21 @@ interface Props {
 
 export function IntelTodaysTake({ article }: Props) {
   const cat = CATEGORY_BY_ID[article.category] ?? CATEGORY_BY_ID.general;
-  const isHebrew = article.source_language === 'he';
+  const headline = displayHeadline(article);
+  const excerpt = displayExcerpt(article);
+  const ltr = isDisplayedInEnglish(article);
+  const translated = isTranslatedFromHebrew(article);
   let when = '';
   try {
     when = formatDistanceToNow(new Date(article.published_at), { addSuffix: true });
   } catch { /* noop */ }
 
+  const onOpen = () => trackIntelClick(article);
+
   return (
     <article className="group">
-      <a href={article.url} target="_blank" rel="noopener noreferrer nofollow" className="block">
-        <IntelImage src={article.image_url} alt={article.headline} aspect="video" rounded />
+      <a href={article.url} target="_blank" rel="noopener noreferrer nofollow" onClick={onOpen} className="block">
+        <IntelImage src={article.image_url} alt={headline} aspect="video" rounded />
       </a>
 
       <p className="mt-5 text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">
@@ -30,29 +43,32 @@ export function IntelTodaysTake({ article }: Props) {
         href={article.url}
         target="_blank"
         rel="noopener noreferrer nofollow"
+        onClick={onOpen}
         className="mt-2 block"
       >
         <h2
           className="text-3xl font-bold leading-[1.1] tracking-tight text-foreground transition-colors hover:text-primary md:text-[2.5rem]"
-          dir={isHebrew ? 'rtl' : 'ltr'}
+          dir={ltr ? 'ltr' : 'rtl'}
         >
-          {article.headline}
+          {headline}
         </h2>
       </a>
       <div className="mt-3 flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground tabular-nums">
         <span className="font-semibold text-foreground/80">{article.source_name}</span>
         {when && <span>· {when}</span>}
-        {isHebrew && (
-          <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide">HE</span>
+        {translated && (
+          <Badge variant="outline" className="border-muted-foreground/30 text-[10px] uppercase tracking-wide">
+            HE → EN
+          </Badge>
         )}
       </div>
 
-      {article.excerpt && (
+      {excerpt && (
         <p
           className="mt-4 text-base leading-relaxed text-muted-foreground md:text-[17px]"
-          dir={isHebrew ? 'rtl' : 'ltr'}
+          dir={ltr ? 'ltr' : 'rtl'}
         >
-          {article.excerpt}
+          {excerpt}
         </p>
       )}
 
@@ -61,7 +77,7 @@ export function IntelTodaysTake({ article }: Props) {
           label={article.take_label ?? 'BuyWise Take'}
           body={article.take_body}
         />
-      ) : isHebrew ? (
+      ) : !ltr ? (
         <p className="mt-4 text-sm italic text-muted-foreground">
           Hebrew source — English BuyWise Take coming shortly.
         </p>
@@ -71,6 +87,7 @@ export function IntelTodaysTake({ article }: Props) {
         href={article.url}
         target="_blank"
         rel="noopener noreferrer nofollow"
+        onClick={onOpen}
         className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
       >
         Read on {article.source_name}

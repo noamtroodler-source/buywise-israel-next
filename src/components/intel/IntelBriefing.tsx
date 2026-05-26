@@ -1,5 +1,10 @@
 import { formatDistanceToNow } from 'date-fns';
-import { IntelFeedItem } from '@/hooks/useIntel';
+import {
+  IntelFeedItem,
+  displayHeadline,
+  isDisplayedInEnglish,
+  trackIntelClick,
+} from '@/hooks/useIntel';
 import { CATEGORY_BY_ID } from '@/lib/intel/categories';
 import { IntelImage } from './IntelImage';
 
@@ -30,16 +35,19 @@ export function IntelBriefing({ articles }: Props) {
 
 function BriefItem({ article }: { article: IntelFeedItem }) {
   const cat = CATEGORY_BY_ID[article.category] ?? CATEGORY_BY_ID.general;
-  const isHebrew = article.source_language === 'he';
+  const headline = displayHeadline(article);
+  const ltr = isDisplayedInEnglish(article);
   let when = '';
   try {
     when = formatDistanceToNow(new Date(article.published_at), { addSuffix: true });
   } catch { /* noop */ }
 
+  const onOpen = () => trackIntelClick(article);
+
   return (
     <article className="group">
-      <a href={article.url} target="_blank" rel="noopener noreferrer nofollow" className="block">
-        <IntelImage src={article.image_url} alt={article.headline} aspect="video" rounded />
+      <a href={article.url} target="_blank" rel="noopener noreferrer nofollow" onClick={onOpen} className="block">
+        <IntelImage src={article.image_url} alt={headline} aspect="video" rounded />
       </a>
       <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-primary">
         {cat.label}
@@ -48,13 +56,14 @@ function BriefItem({ article }: { article: IntelFeedItem }) {
         href={article.url}
         target="_blank"
         rel="noopener noreferrer nofollow"
+        onClick={onOpen}
         className="mt-1.5 block"
       >
         <h3
           className="text-[17px] font-bold leading-snug text-foreground transition-colors hover:text-primary"
-          dir={isHebrew ? 'rtl' : 'ltr'}
+          dir={ltr ? 'ltr' : 'rtl'}
         >
-          {article.headline}
+          {headline}
         </h3>
       </a>
       {article.take_body && (

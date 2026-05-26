@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { getOrCreateGuestId } from '@/utils/guestId';
 
 export type IntelCategory =
   | 'property-market'
@@ -19,20 +20,67 @@ export interface IntelFeedItem {
   source_language: 'en' | 'he';
   source_tier: number;
   headline: string;
+  headline_en: string | null;
   excerpt: string | null;
+  excerpt_en: string | null;
+  translated_at: string | null;
   url: string;
   image_url: string | null;
   published_at: string;
   category: IntelCategory;
+  category_confidence: number | null;
+  auto_categorized: boolean | null;
   relevance_score: number;
   is_featured: boolean;
   is_pinned: boolean;
   is_hidden: boolean;
+  is_duplicate: boolean | null;
+  dedup_group_id: string | null;
   created_at: string;
   take_id: string | null;
   take_label: string | null;
   take_body: string | null;
   take_published_at: string | null;
+  take_ai_drafted: boolean | null;
+}
+
+/** English headline if translated, otherwise the original. */
+export function displayHeadline(a: Pick<IntelFeedItem, 'headline' | 'headline_en'>): string {
+  return (a.headline_en && a.headline_en.trim()) || a.headline;
+}
+
+/** English excerpt if translated, otherwise the original (may be null). */
+export function displayExcerpt(a: Pick<IntelFeedItem, 'excerpt' | 'excerpt_en'>): string | null {
+  if (a.excerpt_en && a.excerpt_en.trim()) return a.excerpt_en;
+  return a.excerpt ?? null;
+}
+
+/** True when the article is shown in English (either originally English, or translated). */
+export function isDisplayedInEnglish(a: Pick<IntelFeedItem, 'source_language' | 'headline_en'>): boolean {
+  return a.source_language === 'en' || !!a.headline_en;
+}
+
+/** True when the displayed headline came from a Hebrew source via translation. */
+export function isTranslatedFromHebrew(a: Pick<IntelFeedItem, 'source_language' | 'headline_en'>): boolean {
+  return a.source_language === 'he' && !!a.headline_en;
+}
+
+/** Fire-and-forget outbound click log. Never blocks navigation. */
+export function trackIntelClick(article: Pick<IntelFeedItem, 'id'>) {
+  try {
+    const sessionId = getOrCreateGuestId();
+    supabase
+      .from('intel_article_clicks')
+      .insert({
+        article_id: article.id,
+        session_id: sessionId,
+        referrer_path: typeof window !== 'undefined' ? window.location.pathname : null,
+        user_agent: typeof navigator !== 'undefined' ? navigator.userAgent.slice(0, 500) : null,
+      })
+      .then(() => {});
+  } catch {
+    /* noop */
+  }
 }
 
 export interface IntelFeedFilters {
@@ -57,12 +105,19 @@ export function useIntelFeed(filters: IntelFeedFilters = {}) {
   return useQuery({
     queryKey: ['intel-feed', { category, source, sortBy, hasTake, search, limit }],
     queryFn: async (): Promise<IntelFeedItem[]> => {
-      let q = supabase.from('intel_feed_v').select('*').eq('is_hidden', false);
+      let q = supabase
+        .from('intel_feed_v')
+        .select('*')
+        .eq('is_hidden', false)
+        .or('is_duplicate.is.null,is_duplicate.eq.false');
 
       if (category !== 'all') q = q.eq('category', category);
       if (source !== 'all') q = q.eq('source_name', source);
       if (hasTake) q = q.not('take_id', 'is', null);
-      if (search.trim()) q = q.ilike('headline', `%${search.trim()}%`);
+      if (search.trim()) {
+        const term = `%${search.trim()}%`;
+        q = q.or(`headline.ilike.${term},headline_en.ilike.${term}`);
+      }
 
       if (sortBy === 'relevance') {
         q = q.order('is_pinned', { ascending: false })
@@ -85,11 +140,11 @@ export function useIntelFeatured() {
   return useQuery({
     queryKey: ['intel-featured'],
     queryFn: async (): Promise<IntelFeedItem | null> => {
-      // Prefer explicitly featured + has a published take, then highest score
       const { data, error } = await supabase
         .from('intel_feed_v')
         .select('*')
         .eq('is_hidden', false)
+        .or('is_duplicate.is.null,is_duplicate.eq.false')
         .or('is_featured.eq.true,relevance_score.eq.5')
         .order('is_featured', { ascending: false })
         .order('take_id', { ascending: false, nullsFirst: false })

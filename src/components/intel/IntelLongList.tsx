@@ -1,6 +1,12 @@
 import { useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { IntelFeedItem } from '@/hooks/useIntel';
+import {
+  IntelFeedItem,
+  displayHeadline,
+  isDisplayedInEnglish,
+  isTranslatedFromHebrew,
+  trackIntelClick,
+} from '@/hooks/useIntel';
 import { CATEGORY_BY_ID } from '@/lib/intel/categories';
 import { cn } from '@/lib/utils';
 
@@ -46,7 +52,9 @@ export function IntelLongList({ articles, pageSize = 30 }: Props) {
 
 function LongRow({ article, zebra }: { article: IntelFeedItem; zebra: boolean }) {
   const cat = CATEGORY_BY_ID[article.category] ?? CATEGORY_BY_ID.general;
-  const isHebrew = article.source_language === 'he';
+  const headline = displayHeadline(article);
+  const ltr = isDisplayedInEnglish(article);
+  const translated = isTranslatedFromHebrew(article);
   let when = '';
   try {
     when = formatDistanceToNow(new Date(article.published_at), { addSuffix: true });
@@ -58,6 +66,7 @@ function LongRow({ article, zebra }: { article: IntelFeedItem; zebra: boolean })
         href={article.url}
         target="_blank"
         rel="noopener noreferrer nofollow"
+        onClick={() => trackIntelClick(article)}
         className="flex items-baseline gap-3 px-3 py-2.5 sm:gap-4"
       >
         <span className="hidden w-24 shrink-0 text-[11px] uppercase tracking-wider text-muted-foreground tabular-nums sm:inline">
@@ -68,9 +77,14 @@ function LongRow({ article, zebra }: { article: IntelFeedItem; zebra: boolean })
         </span>
         <h4
           className="flex-1 text-[14.5px] leading-snug text-foreground transition-colors group-hover:text-primary"
-          dir={isHebrew ? 'rtl' : 'ltr'}
+          dir={ltr ? 'ltr' : 'rtl'}
         >
-          {article.headline}
+          {headline}
+          {translated && (
+            <span className="ml-2 align-middle text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
+              HE→EN
+            </span>
+          )}
         </h4>
         <span className="hidden shrink-0 text-[10px] uppercase tracking-wider text-muted-foreground md:inline">
           {cat.label}
