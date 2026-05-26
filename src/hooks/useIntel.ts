@@ -141,16 +141,23 @@ export function useIntelFeed(filters: IntelFeedFilters = {}) {
   });
 }
 
-export function useIntelFeatured() {
+export function useIntelFeatured(hasTake = false) {
   return useQuery({
-    queryKey: ['intel-featured'],
+    queryKey: ['intel-featured', { hasTake }],
     queryFn: async (): Promise<IntelFeedItem | null> => {
-      const { data, error } = await supabase
+      let q = supabase
         .from('intel_feed_v')
         .select('*')
         .eq('is_hidden', false)
-        .or('is_duplicate.is.null,is_duplicate.eq.false')
-        .or('is_featured.eq.true,relevance_score.eq.5')
+        .or('is_duplicate.is.null,is_duplicate.eq.false');
+
+      if (hasTake) {
+        q = q.not('take_id', 'is', null);
+      } else {
+        q = q.or('is_featured.eq.true,relevance_score.eq.5');
+      }
+
+      const { data, error } = await q
         .order('is_featured', { ascending: false })
         .order('take_id', { ascending: false, nullsFirst: false })
         .order('published_at', { ascending: false })
