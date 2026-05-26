@@ -40,8 +40,13 @@ export interface IntelFeedItem {
   take_id: string | null;
   take_label: string | null;
   take_body: string | null;
+  signal: string | null;
+  why_you_care: string | null;
+  our_move: string | null;
   take_published_at: string | null;
   take_ai_drafted: boolean | null;
+  has_deep_read: boolean | null;
+  deep_read_slug: string | null;
 }
 
 /** English headline if translated, otherwise the original. */
