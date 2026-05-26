@@ -210,13 +210,26 @@ async function findDuplicateGroup(
 // Fetch + parse a single source
 // ---------------------------------------------------------------
 
+async function deepReadLiveCapHit(supabase: any): Promise<boolean> {
+  const cutoff = new Date(Date.now() - DEEP_READ_LIVE_WINDOW_DAYS * 86400_000).toISOString();
+  const { count } = await supabase
+    .from("intel_takes")
+    .select("id", { count: "exact", head: true })
+    .eq("tier", "deep_read")
+    .eq("status", "published")
+    .gte("published_at", cutoff);
+  return (count ?? 0) >= DEEP_READ_LIVE_CAP;
+}
+
+interface FetchCtx { deepReadsQueuedThisCycle: number }
+
 async function fetchSource(supabase: any, source: {
   id: string;
   name: string;
   url: string;
   language: string;
   tier: number;
-}) {
+}, ctx: FetchCtx) {
   let added = 0;
   let error: string | null = null;
 
