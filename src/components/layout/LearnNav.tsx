@@ -34,7 +34,7 @@ export function LearnNav() {
                           {isVisited("/intel") && (
                             <span className="h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />
                           )}
-                          BuyWise Desk
+                          BuyWise Intel
                           <span className="ml-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">New</span>
                         </span>
                         <span className="text-xs text-muted-foreground/70 group-hover:text-accent-foreground/70">
