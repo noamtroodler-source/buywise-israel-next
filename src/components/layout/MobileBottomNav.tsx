@@ -98,7 +98,7 @@ const publicMenuSections = [
     title: 'Explore',
     links: [
       { label: 'Explore Areas', to: '/areas' },
-      { label: 'Tools & Calculators', to: '/tools' },
+      { label: 'BuyWise Toolkit', to: '/tools' },
       { label: 'BuyWise Playbook', to: '/guides' },
       { label: 'Blog', to: '/blog' },
     ],
