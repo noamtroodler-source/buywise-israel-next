@@ -70,7 +70,7 @@ const allTools: Record<string, Tool> = {
   },
   rentvsbuy: { 
     id: 'rentvsbuy', 
-    label: 'Rent vs Buy Calculator', 
+    label: 'BuyWise Compass', 
     description: 'Compare renting versus buying in Israel — and when ownership makes sense.', 
     icon: Scale,
   },
