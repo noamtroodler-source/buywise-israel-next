@@ -51,7 +51,7 @@ export const NAV_CONFIG: Record<string, NavSection> = {
           { label: 'BuyWise Affordability', href: '/tools?tool=affordability', description: 'What can you afford?', phase: 'define' },
           { label: 'BuyWise True Cost', href: '/tools?tool=totalcost', description: 'Taxes, fees & closing costs', phase: 'check' },
           { label: 'BuyWise Returns', href: '/tools?tool=investment', description: 'ROI & cash flow analysis', phase: 'check' },
-          { label: 'Rent vs Buy', href: '/tools?tool=rentvsbuy', description: 'Compare your options', phase: 'define' },
+          { label: 'BuyWise Compass', href: '/tools?tool=rentvsbuy', description: 'Rent vs buy decision tool', phase: 'define' },
           { label: 'BuyWise Decoder', href: '/tools?tool=listing-decoder', description: 'Translate & analyze listings', phase: 'check', badge: 'beta' },
         ]
       },
