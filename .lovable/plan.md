@@ -1,66 +1,50 @@
 
-# Make BuyWise Takes Unmissable on /intel
+# Fix broken Intel layout (overlap + escaping accordion)
 
-Three coordinated changes so readers see our angle before the wire-service noise.
+The new inline-Take accordion I added to Watchlist and Long List broke the column flow:
 
-## 1. Promote the Take above the headline (hero + Briefing cards)
+- Watchlist used `pl-[5.75rem]` assuming a fixed thumbnail width. The accordion sat as a sibling *below* the `<a>` row instead of inside the content column, so it ignored `min-w-0` and pushed the row wider than the watchlist column, bleeding into the sidebar.
+- Long List used `sm:pl-[13rem]` the same way.
+- Result on `/intel`: watchlist headlines collide with sidebar content; "TAKE" chips float in the gap; "BuyWise Brief" card sits on top of watchlist text.
 
-On `IntelTodaysTake` and any Briefing card that has a Take, insert a one-line "Buyer Impact" chip *above* the headline:
+## What to fix
 
-```text
-TODAY'S TAKE · MORTGAGE & RATES
-● BUYER IMPACT  Rate cut, but shekel still strong — payments ease, dollar buys less.
-Shekel gains sharply despite interest rate cut
-```
+### 1. `IntelWatchlist.tsx` — keep the accordion inside the content column
 
-- Pulled from `signal` (truncated to ~90 chars, no rewrites).
-- Brand-blue pill + short summary line, clickable → scrolls to the full 3-beat block below.
-- Hidden entirely when no Take exists (no empty chip).
-- Full Signal / Why you care / Our move block stays where it is for the deep read.
+- Restructure each row so the `<a>` link and the accordion are both children of `min-w-0 flex-1`, with the thumbnail still floated left.
+- Drop `pl-[5.75rem]`. Use natural flow: thumbnail (w-20 shrink-0) + a single `min-w-0 flex-1` column that contains headline → meta → Take accordion stacked vertically.
+- Add `min-w-0` and `max-w-full` to the accordion button so long signal text truncates instead of expanding the row.
+- Wrap the expanded beats block with `min-w-0` and `break-words` so it can't push outward.
 
-## 2. Fix the misleading "Take" link in Watchlist + Long List
+### 2. `IntelLongList.tsx` — same treatment
 
-Today every Watchlist row shows a blue "Take" link even when no Take exists. Replace with two real states:
+- Drop `sm:pl-[13rem]`. Render the accordion as a sibling of the row link but inside a `px-3` container that respects the list's full width (not an indent that pushes outward).
+- Constrain the accordion button to `max-w-full` and `min-w-0`; clamp signal preview to one line.
+- Indent visually with a left border or muted background instead of fixed pixel padding.
 
-- **Has a Take:** Inline collapsed row showing `▸ Buyer impact: <signal first sentence>`. Click toggles an accordion that reveals all three beats inline — no navigation, no modal.
-- **No Take:** Show nothing. Row stays clean with just headline + source + time.
+### 3. Defensive guards on the page columns
 
-Applies to `IntelWatchlist`, `IntelLongList`, and `IntelArticleCard` (non-featured variant).
+- `src/pages/Intel.tsx`: add `min-w-0` to the Today's Take + Watchlist grid columns so nothing inside can overflow horizontally.
+  - `lg:grid-cols-[1.6fr,1fr]` parent → both children need `min-w-0`.
+  - Top-level `lg:grid-cols-[1fr,320px]` parent → main column already has `min-w-0`; verify and keep.
 
-## 3. "With BuyWise Take" filter toggle
+### 4. Beat tabs row — keep toggle from clipping
 
-Next to the beat tabs (All · Mortgages · Tax & Legal · …), add a small right-aligned toggle:
+- `IntelBeatTabs.tsx`: my new flex wrapper put the toggle next to a horizontally-scrolling `<nav>`. On narrow widths the toggle gets squeezed.
+- Mark the desktop toggle as `shrink-0` (already done) and add `min-w-0` to the nav wrapper so the toggle stays visible and the tabs scroll horizontally inside their own container.
 
-```text
-[ All · Mortgages · Tax & Legal · Market · Cities · … ]      ◯ With BuyWise Take
-```
+## Out of scope
 
-- Persists in URL as `?takes=1` (matches existing `category` param pattern).
-- When on, filters the feed to articles where `take_body` or `signal` is present.
-- Counter shows current matches: `With BuyWise Take (23)`.
-- Off by default so the firehose still works for power users.
+- No DB or edge-function changes.
+- No copy changes (chip text and labels stay the same).
+- No new components — just structural fixes to the four files above.
 
 ## Technical Section
 
-**Files to touch (frontend only — no DB or edge changes):**
+Files to edit:
+- `src/components/intel/IntelWatchlist.tsx` — restructure `WatchRow`: thumbnail + single content column; accordion nested inside content column with `min-w-0`.
+- `src/components/intel/IntelLongList.tsx` — restructure `LongRow`: accordion is a `<div className="px-3 pb-3">` sibling using a left border for visual indent, no pixel padding tied to the row's date/source columns.
+- `src/pages/Intel.tsx` — add `min-w-0` to the Today's Take grid columns.
+- `src/components/intel/IntelBeatTabs.tsx` — confirm nav wrapper has `min-w-0 flex-1` so toggle has room.
 
-- `src/components/intel/IntelTakeBlock.tsx` — extract a small `TakeChip` subcomponent (pill + signal preview) reusable above headlines.
-- `src/components/intel/IntelTodaysTake.tsx` — render `TakeChip` between the category eyebrow and the H2.
-- `src/components/intel/IntelBriefing.tsx` (or whichever component renders Briefing cards) — same chip above each headline when Take present.
-- `src/components/intel/IntelWatchlist.tsx` — remove fake "Take" link; add collapsible inline Take row with accordion state (local `useState`, lucide `ChevronRight`/`ChevronDown`).
-- `src/components/intel/IntelLongList.tsx` — same accordion treatment.
-- `src/components/intel/IntelArticleCard.tsx` — keep current behavior but ensure no "Take" affordance shows when `take_body`/`signal` are null.
-- `src/components/intel/IntelBeatTabs.tsx` — add right-aligned "With BuyWise Take" toggle (shadcn `Toggle` or simple button); emit change up.
-- `src/pages/Intel.tsx` — read `takes` query param, pass to `useIntelFeed` filter, pipe `setTakes` into `IntelBeatTabs`. Filter `pool` / `featured` selection when on.
-- `src/hooks/useIntel.ts` — accept optional `withTakeOnly: boolean` in `useIntelFeed`; add `.not('take_body', 'is', null)` to query when set. Same for `useIntelFeatured` (fall back to most recent Take-bearing article when on).
-
-**Styling:** Use existing primary/blue tokens. Chip uses the same `bg-primary` + `text-primary-foreground` already used by the BUYER IMPACT label. No new colors.
-
-**Telemetry:** Wrap the new chip click and accordion toggle in existing `trackIntelClick` pattern (add a `surface` param: `take_chip`, `take_inline_expand`).
-
-**Edge cases:**
-- Hebrew articles with translated Take → chip uses translated `signal_en` if present.
-- Long signal sentences truncated with `line-clamp-1` to keep the chip a single line.
-- Filter toggle + category filter compose (e.g. `?category=mortgages&takes=1`).
-
-**Out of scope (this pass):** No DB schema changes, no edge-function changes, no Deep Read changes.
+Test after: at 873px viewport (current preview), at 1280px, and at 1440px. Confirm no horizontal overflow on the watchlist column and the sidebar sits cleanly to the right.
