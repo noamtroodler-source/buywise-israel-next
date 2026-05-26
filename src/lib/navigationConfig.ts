@@ -48,11 +48,11 @@ export const NAV_CONFIG: Record<string, NavSection> = {
         title: 'Calculators',
         items: [
           { label: 'Mortgage Calculator', href: '/tools?tool=mortgage', description: 'Monthly payments & rates', phase: 'move_forward' },
-          { label: 'Affordability', href: '/tools?tool=affordability', description: 'What can you afford?', phase: 'define' },
-          { label: 'True Cost', href: '/tools?tool=totalcost', description: 'Taxes, fees & closing costs', phase: 'check' },
-          { label: 'Investment Returns', href: '/tools?tool=investment', description: 'ROI & cash flow analysis', phase: 'check' },
+          { label: 'BuyWise Affordability', href: '/tools?tool=affordability', description: 'What can you afford?', phase: 'define' },
+          { label: 'BuyWise True Cost', href: '/tools?tool=totalcost', description: 'Taxes, fees & closing costs', phase: 'check' },
+          { label: 'BuyWise Returns', href: '/tools?tool=investment', description: 'ROI & cash flow analysis', phase: 'check' },
           { label: 'Rent vs Buy', href: '/tools?tool=rentvsbuy', description: 'Compare your options', phase: 'define' },
-          { label: 'Listing Decoder', href: '/tools?tool=listing-decoder', description: 'Translate & analyze listings', phase: 'check', badge: 'beta' },
+          { label: 'BuyWise Decoder', href: '/tools?tool=listing-decoder', description: 'Translate & analyze listings', phase: 'check', badge: 'beta' },
         ]
       },
       {
