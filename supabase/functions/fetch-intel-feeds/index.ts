@@ -1,33 +1,23 @@
 // BuyWise Intel — RSS ingestion edge function
 // Runs hourly via pg_cron. Fetches enabled sources, dedupes by URL,
-// categorizes + scores, extracts hero image URLs (we never download the
-// image — only store the source's hot-link URL per zero-storage policy).
+// enriches (translates Hebrew + AI categorizes + scores) via Lovable AI,
+// runs cross-source dedup against the last 48h, and stores hero image URLs.
+// Zero-storage policy: image URLs are hot-linked, never downloaded.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { parseFeed } from "https://deno.land/x/rss@1.0.0/mod.ts";
+import { enrichArticle, jaccardSimilarity, type IntelCategory } from "../_shared/intel-ai.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 // ---------------------------------------------------------------
-// Categorization + relevance scoring
+// Keyword fallback categorization (used when AI fails)
 // ---------------------------------------------------------------
 
-type Category =
-  | "property-market"
-  | "mortgage-rates"
-  | "tax-legal"
-  | "city-spotlight"
-  | "new-developments"
-  | "macro-economy"
-  | "aliyah-immigration"
-  | "policy-regulation"
-  | "general";
-
-const CATEGORY_KEYWORDS: Record<Category, { en: string[]; he: string[] }> = {
+const CATEGORY_KEYWORDS: Record<IntelCategory, { en: string[]; he: string[] }> = {
   "property-market": {
     en: ["home prices", "apartment", "real estate", "housing market", "property prices", "price index", "rental", "tenant", "landlord", "yield"],
     he: ["מחירי דירות", "שוק הדיור", "נדל\"ן", "שכירות", "דירה", "תשואה"],
@@ -63,55 +53,25 @@ const CATEGORY_KEYWORDS: Record<Category, { en: string[]; he: string[] }> = {
   general: { en: [], he: [] },
 };
 
-const HIGH_VALUE_KEYWORDS = [
-  "price drop", "interest rate cut", "rate hike", "tax change", "new tax",
-  "ירידת מחירים", "העלאת ריבית", "הורדת ריבית", "שינוי מס",
-];
-
-function categorize(text: string, language: string): Category {
+function keywordCategorize(text: string, language: string): IntelCategory {
   const lower = text.toLowerCase();
-  let best: Category = "general";
+  let best: IntelCategory = "general";
   let bestScore = 0;
-  for (const [cat, kw] of Object.entries(CATEGORY_KEYWORDS) as [Category, { en: string[]; he: string[] }][]) {
+  for (const [cat, kw] of Object.entries(CATEGORY_KEYWORDS) as [IntelCategory, { en: string[]; he: string[] }][]) {
     if (cat === "general") continue;
     const list = language === "he" ? kw.he : kw.en;
     let score = 0;
-    for (const k of list) {
-      if (lower.includes(k.toLowerCase())) score++;
-    }
-    if (score > bestScore) {
-      bestScore = score;
-      best = cat;
-    }
+    for (const k of list) if (lower.includes(k.toLowerCase())) score++;
+    if (score > bestScore) { bestScore = score; best = cat; }
   }
   return best;
 }
 
-function scoreRelevance(headline: string, excerpt: string, category: Category, tier: number, publishedAt: Date): number {
-  const text = `${headline} ${excerpt}`.toLowerCase();
-  let score = 3;
-  if (category !== "general") score = 4;
-  for (const k of HIGH_VALUE_KEYWORDS) {
-    if (text.includes(k.toLowerCase())) {
-      score = 5;
-      break;
-    }
-  }
-  if (tier === 2) score = Math.max(1, score - 1);
-  const ageHours = (Date.now() - publishedAt.getTime()) / 36e5;
-  if (ageHours > 72) score = Math.max(1, score - 1);
-  return Math.max(1, Math.min(5, score));
-}
-
 function stripHtml(s: string): string {
   return s
-    // Drop script/style blocks entirely
     .replace(/<(script|style)[\s\S]*?<\/\1>/gi, "")
-    // Strip well-formed tags
     .replace(/<[^>]*>/g, "")
-    // Strip dangling/unclosed tag fragments like "<img align='right' src='https://..."
     .replace(/<[a-z!\/][^<]*$/i, "")
-    // Strip stray attribute leftovers e.g. "align='right' src='..."
     .replace(/\b(?:align|src|href|width|height|style|class)\s*=\s*(['"])[^'"]*\1/gi, "")
     .replace(/&nbsp;/g, " ")
     .replace(/&amp;/g, "&")
@@ -126,26 +86,19 @@ function stripHtml(s: string): string {
 function firstTwoSentences(s: string): string {
   const clean = stripHtml(s);
   if (!clean) return "";
-  // Guard: if anything still looks like markup, drop it
   if (/[<>]/.test(clean)) return "";
   const parts = clean.match(/[^.!?]+[.!?]+/g);
   if (!parts || parts.length === 0) return clean.slice(0, 240);
   return parts.slice(0, 2).join(" ").trim().slice(0, 280);
 }
 
-/** Extract a hero image URL from an RSS item. Tries (in order):
- *  enclosure, media:content, media:thumbnail, first <img> in description/content. */
 function extractImageUrl(item: any, rawDescription: string): string | null {
-  // 1. enclosure (standard RSS 2.0)
   const enclosures = item.attachments ?? item.enclosures ?? [];
   for (const a of enclosures) {
     const url = a?.url ?? a?.href;
     const type = a?.mimeType ?? a?.type ?? "";
-    if (url && (type.startsWith("image/") || /\.(jpe?g|png|webp|gif)(\?|$)/i.test(url))) {
-      return url;
-    }
+    if (url && (type.startsWith("image/") || /\.(jpe?g|png|webp|gif)(\?|$)/i.test(url))) return url;
   }
-  // 2. media:content / media:thumbnail (Yedioth, Calcalist, Globes typically)
   const mediaContent = item["media:content"] ?? item.mediaContent;
   if (mediaContent) {
     const arr = Array.isArray(mediaContent) ? mediaContent : [mediaContent];
@@ -162,22 +115,17 @@ function extractImageUrl(item: any, rawDescription: string): string | null {
       if (u) return u;
     }
   }
-  // 3. First <img> in description / content HTML
   const html = rawDescription || "";
   const m = html.match(/<img[^>]+src=["']([^"']+)["']/i);
   if (m?.[1]) return m[1];
   return null;
 }
 
-/** Fallback: scan raw RSS XML for per-item image URLs keyed by article link.
- *  Handles enclosure, media:content, media:thumbnail, and inline <img>. */
 function buildRawImageMap(xml: string): Map<string, string> {
   const map = new Map<string, string>();
-  // Match both <item>...</item> (RSS) and <entry>...</entry> (Atom)
   const itemRe = /<(item|entry)\b[\s\S]*?<\/\1>/gi;
   const matches = xml.match(itemRe) ?? [];
   for (const block of matches) {
-    // Find link: prefer <link>http</link> for RSS, then <link href="..."/> for Atom
     let link: string | null = null;
     const linkText = block.match(/<link[^>]*>\s*<!\[CDATA\[([^\]]+)\]\]>\s*<\/link>/i)
       ?? block.match(/<link[^>]*>([^<\s]+)<\/link>/i);
@@ -187,13 +135,11 @@ function buildRawImageMap(xml: string): Map<string, string> {
       if (atom?.[1]) link = atom[1].trim();
     }
     if (!link) continue;
-
     let img: string | null = null;
     const enclosure = block.match(/<enclosure[^>]+url=["']([^"']+)["'][^>]*type=["']image\//i)
       ?? block.match(/<enclosure[^>]+type=["']image\/[^"']+["'][^>]*url=["']([^"']+)["']/i)
       ?? block.match(/<enclosure[^>]+url=["']([^"']+\.(?:jpe?g|png|webp|gif)(?:\?[^"']*)?)["']/i);
     if (enclosure?.[1]) img = enclosure[1];
-
     if (!img) {
       const mc = block.match(/<media:content[^>]+url=["']([^"']+)["']/i)
         ?? block.match(/<media:thumbnail[^>]+url=["']([^"']+)["']/i);
@@ -209,10 +155,54 @@ function buildRawImageMap(xml: string): Map<string, string> {
 }
 
 // ---------------------------------------------------------------
+// Cross-source dedup (Jaccard ≥ 0.6 inside a 48h, same-category window)
+// ---------------------------------------------------------------
+
+interface DedupCandidate {
+  id: string;
+  headline_en: string | null;
+  headline: string;
+  source_tier: number;
+  dedup_group_id: string | null;
+}
+
+async function findDuplicateGroup(
+  supabase: any,
+  newHeadlineEn: string,
+  category: IntelCategory,
+  publishedAt: Date,
+): Promise<{ groupId: string | null; isLowerTierThanExisting: boolean }> {
+  const since = new Date(publishedAt.getTime() - 48 * 3600 * 1000).toISOString();
+  const until = new Date(publishedAt.getTime() + 48 * 3600 * 1000).toISOString();
+
+  const { data: candidates } = await supabase
+    .from("intel_articles")
+    .select("id, headline, headline_en, source_tier, dedup_group_id")
+    .eq("category", category)
+    .gte("published_at", since)
+    .lte("published_at", until)
+    .limit(60);
+
+  if (!candidates || candidates.length === 0) return { groupId: null, isLowerTierThanExisting: false };
+
+  let best: { row: DedupCandidate; score: number } | null = null;
+  for (const c of candidates as DedupCandidate[]) {
+    const other = c.headline_en || c.headline;
+    const score = jaccardSimilarity(newHeadlineEn, other);
+    if (score >= 0.6 && (!best || score > best.score)) best = { row: c, score };
+  }
+  if (!best) return { groupId: null, isLowerTierThanExisting: false };
+  return {
+    groupId: best.row.dedup_group_id ?? best.row.id, // reuse existing group or seed with first article's id
+    isLowerTierThanExisting: false, // refined by caller
+  };
+}
+
+// ---------------------------------------------------------------
 // Fetch + parse a single source
 // ---------------------------------------------------------------
 
-async function fetchSource(supabase: ReturnType<typeof createClient>, source: {
+async function fetchSource(supabase: any, source: {
   id: string;
   name: string;
   url: string;
@@ -242,18 +232,73 @@ async function fetchSource(supabase: ReturnType<typeof createClient>, source: {
       if (!url) continue;
       const headline = stripHtml(item.title?.value ?? "");
       if (!headline) continue;
+
+      // Quick skip: if URL already exists, only top up missing image and move on.
+      const { data: existing } = await supabase
+        .from("intel_articles")
+        .select("id, image_url")
+        .eq("url", url)
+        .maybeSingle();
+
       const rawExcerpt =
         item.description?.value ??
-        // @ts-ignore — content varies by feed
+        // @ts-ignore content varies by feed
         item.content?.value ?? "";
       const excerpt = firstTwoSentences(rawExcerpt);
       const publishedAt = item.published ?? item.updated ?? new Date();
-      const category = categorize(`${headline} ${excerpt}`, source.language);
-      const relevance = scoreRelevance(headline, excerpt, category, source.tier, new Date(publishedAt));
       const imageUrl =
         extractImageUrl(item as any, rawExcerpt) ??
         rawImageMap.get(url) ??
         null;
+
+      if (existing) {
+        if (imageUrl && !existing.image_url) {
+          await supabase.from("intel_articles").update({ image_url: imageUrl }).eq("id", existing.id);
+        }
+        continue;
+      }
+
+      // --- AI enrichment (translate + categorize + score) ---
+      const enriched = await enrichArticle({
+        headline,
+        excerpt: excerpt || null,
+        language: source.language as "en" | "he",
+      });
+
+      const category: IntelCategory = enriched?.category ?? keywordCategorize(`${headline} ${excerpt}`, source.language);
+      const categoryConfidence = enriched?.category_confidence ?? null;
+      const headlineEn = enriched?.headline_en ?? (source.language === "en" ? headline : null);
+      const excerptEn = enriched?.excerpt_en ?? (source.language === "en" ? (excerpt || null) : null);
+      const translatedAt = enriched ? new Date().toISOString() : null;
+      const baseRelevance = enriched?.relevance_score ?? 3;
+      // tier 2 sources get a small relevance penalty
+      const relevance = Math.max(1, Math.min(5, source.tier === 2 ? baseRelevance - 1 : baseRelevance));
+
+      // --- Cross-source dedup ---
+      const headlineForDedup = headlineEn || headline;
+      const dedup = await findDuplicateGroup(supabase, headlineForDedup, category, new Date(publishedAt));
+
+      let dedupGroupId: string | null = null;
+      let isDuplicate = false;
+      if (dedup.groupId) {
+        dedupGroupId = dedup.groupId;
+        // Check tier of existing group members. If existing has lower tier number (more authoritative),
+        // mark new one as duplicate. Otherwise mark new as primary and promote.
+        const { data: groupMembers } = await supabase
+          .from("intel_articles")
+          .select("id, source_tier")
+          .eq("dedup_group_id", dedupGroupId);
+        const minExistingTier = Math.min(...(groupMembers ?? [{ source_tier: 99 }]).map((m: any) => m.source_tier));
+        if (source.tier > minExistingTier) {
+          isDuplicate = true;
+        } else if (source.tier < minExistingTier) {
+          // New article is more authoritative — demote existing
+          await supabase
+            .from("intel_articles")
+            .update({ is_duplicate: true })
+            .eq("dedup_group_id", dedupGroupId);
+        }
+      }
 
       const { error: insertErr } = await supabase
         .from("intel_articles")
@@ -263,28 +308,23 @@ async function fetchSource(supabase: ReturnType<typeof createClient>, source: {
           source_language: source.language,
           source_tier: source.tier,
           headline,
+          headline_en: headlineEn,
           excerpt: excerpt || null,
+          excerpt_en: excerptEn,
+          translated_at: translatedAt,
           url,
           image_url: imageUrl,
           published_at: publishedAt,
           category,
+          category_confidence: categoryConfidence,
+          auto_categorized: true,
           relevance_score: relevance,
+          dedup_group_id: dedupGroupId,
+          is_duplicate: isDuplicate,
         });
 
-      if (!insertErr) {
-        added++;
-      } else if (insertErr.message?.includes("duplicate") || insertErr.message?.includes("unique")) {
-        // Backfill: if we already had this article without an image, add it now.
-        if (imageUrl) {
-          await supabase
-            .from("intel_articles")
-            .update({ image_url: imageUrl })
-            .eq("url", url)
-            .is("image_url", null);
-        }
-      } else {
-        console.error(`[${source.name}] insert error:`, insertErr.message);
-      }
+      if (!insertErr) added++;
+      else console.error(`[${source.name}] insert error:`, insertErr.message);
     }
   } catch (e) {
     error = e instanceof Error ? e.message : String(e);
@@ -306,23 +346,14 @@ async function fetchSource(supabase: ReturnType<typeof createClient>, source: {
   return { source: source.name, added, error };
 }
 
-// ---------------------------------------------------------------
-// Handler
-// ---------------------------------------------------------------
-
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  const supabase = createClient(supabaseUrl, serviceKey, {
-    auth: { persistSession: false },
-  });
+  const supabase = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
 
   try {
-    // Optional: ?source_id=xxx to fetch a single source
     const url = new URL(req.url);
     const singleId = url.searchParams.get("source_id");
 
