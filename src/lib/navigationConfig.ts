@@ -83,7 +83,7 @@ export const NAV_CONFIG: Record<string, NavSection> = {
         title: 'Tools for Renters',
         items: [
           { label: 'BuyWise Affordability', href: '/tools?tool=affordability', description: 'Budget planning', phase: 'define' },
-          { label: 'Rent vs Buy', href: '/tools?tool=rentvsbuy', description: 'Should you rent or buy?', phase: 'define' },
+          { label: 'BuyWise Compass', href: '/tools?tool=rentvsbuy', description: 'Should you rent or buy?', phase: 'define' },
           { label: 'Document Checklist', href: '/tools?tool=documents', description: 'What to prepare', phase: 'move_forward', badge: 'beta' },
         ]
       },
