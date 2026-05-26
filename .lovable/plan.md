@@ -1,169 +1,134 @@
+# BuyWise Intel — Buildout Plan to 100%
 
-# BuyWise Intel — FT × DealBook Redesign Plan
+Goal: take `/intel` (and `/admin/intel`) from "live but rough" to a genuinely best-in-class Israeli real-estate news desk for international buyers.
 
-Goal: turn `/intel` from a 3-tier card stack into a **calm, dense, editorial market page** that feels like FT's homepage (information-rich, restrained, serif authority) layered with NYT DealBook's signature move (one big editor's Take at the top, then a long clean list of headlines underneath). The BuyWise twist: every editorial beat is framed for an international buyer making a real purchase decision in Israel.
+Grounding from the current state:
+- 4 of 10 enabled sources are Hebrew → ~40% of feed is unreadable to target audience
+- 168 of 279 articles (60%) sit in `category = 'general'` → Beat tabs are mostly empty
+- `image_url` column exists but is mostly NULL
+- `last_error` / `last_fetched_at` tracked but not surfaced
+- No dedup, no click tracking, no AI assistance for Takes
+- The Weekly Brief is explicitly out of scope per your last message
 
----
-
-## The new page shape
-
-```text
-┌─────────────────────────────────────────────────────────────┐
-│  EYEBROW: "Tuesday · May 26 · Tel Aviv"   [Subscribe →]    │  ← Dateline strip
-├─────────────────────────────────────────────────────────────┤
-│  BuyWise Intel                                              │
-│  Israeli property news, decoded for international buyers.   │  ← Quiet masthead
-├─────────────────────────────────────────────────────────────┤
-│  MARKET BAR: BoI rate · Prime · ₪/$ · TA index · Avg ₪/sqm │  ← FT ticker row
-├──────────────────────────┬──────────────────────────────────┤
-│                          │                                  │
-│   TODAY'S TAKE           │   What we're watching            │  ← DealBook spine
-│   (lead story + Take)    │   • headline                     │
-│                          │   • headline                     │
-│   "By the BuyWise desk"  │   • headline                     │
-│                          │   • headline (8–12 items)        │
-│                          │                                  │
-├──────────────────────────┴──────────────────────────────────┤
-│  THE BRIEFING — 3 mid-weight stories, each with 1-line Take │  ← FT "Opinion" row
-├─────────────────────────────────────────────────────────────┤
-│  BY THE BEAT  [Mortgages] [Tax] [Aliyah] [Cities] [Policy]  │  ← Beat tabs, not chips
-│  Compact two-column list per beat, 5 per beat               │
-├─────────────────────────────────────────────────────────────┤
-│  THE LONG LIST — chronological, dense, zebra rows           │  ← FT "Latest news"
-└─────────────────────────────────────────────────────────────┘
-```
-
-Sidebar (desktop only, sticky): Brief subscribe → "How we choose stories" → Sources we read.
+Sequencing rule: do data-quality fixes (1–4) before UX polish (5–9). Without 1–4, polish dresses up a noisy feed.
 
 ---
 
-## What changes vs today
+## Phase 1 — Data quality (the feed must be readable and accurate)
 
-| Today | New |
-|---|---|
-| Big eyebrow + 50px headline + long subtitle | Dateline strip + quiet serif masthead |
-| Tier 1 featured card | **Today's Take** — lead story w/ named desk byline, anchored left of the spine |
-| Tier 2 "Stories worth slowing down for" grid | **The Briefing** — 3 horizontal items, 1-line Take each |
-| Filter bar (category dropdown + source + sort + search) | **Beat tabs** (Mortgages / Tax / Aliyah / Cities / Policy / Macro) — FT-style underlined nav. Search collapsed into icon. Source filter moves to sidebar. |
-| Single "Latest" list of everything else | Split: **What we're watching** (curated headlines next to Today's Take) + **The Long List** (full chronological feed, zebra rows, dense) |
-| No market context | **Market bar**: BoI rate, Prime, ₪/$, TA-125, avg ₪/sqm Israel (real values, link to source) |
+### Step 1. Hebrew translation pipeline
+**Why first:** unlocks ~40% of the feed for the audience.
 
----
+- DB migration: add `headline_en TEXT`, `excerpt_en TEXT`, `translated_at TIMESTAMPTZ` to `intel_articles`.
+- Update `fetch-intel-feeds`: when `source_language = 'he'`, call Lovable AI Gateway (`google/gemini-3-flash-preview`) per article with a tight system prompt: "Translate this Israeli real-estate headline and excerpt into clear, neutral English for international buyers. Preserve numbers, agency names, and place names. Return JSON." Use tool-calling for structured output.
+- Backfill edge function `translate-intel-backlog` — one-shot, paginates through existing Hebrew articles with no `translated_at`, rate-limited (2/sec).
+- Frontend: `IntelTodaysTake`, `IntelWatchlist`, `IntelBriefing`, `IntelLongList` render `headline_en || headline` and `excerpt_en || excerpt`. Add a tiny `HE→EN` badge when translation was used, with original headline in a `<details>` or tooltip.
+- Admin: in `/admin/intel`, show both original and translated; allow editing the translation inline (writes to `headline_en`).
 
-## The BuyWise twist (what makes it ours, not a clone)
+### Step 2. AI-powered auto-categorization
+**Why second:** Beat tabs are currently misleading (60% bucket is wrong).
 
-1. **Every Take ends with a "What this means for you" line** — one sentence aimed at an international buyer (e.g. *"If you're closing in Q3, lock your rate this week."*). DealBook gives analysis; we give a decision.
-2. **Beat tabs map to buyer jobs**, not news desks — Mortgages, Tax & Legal, Aliyah, Cities, New Developments, Policy. Same enum we already have; just relabeled and reordered.
-3. **Dateline shows Israel time + week-of-purchase context** ("Week 22 · BoI decision in 14 days") when relevant.
-4. **Market bar values come from our existing tables** (`calculator_constants`, `national_market_benchmarks`) — no new data sources. Never fabricate; show "—" if a value is stale.
-5. **Hebrew sources stay Hebrew in headline**, but every Hebrew story in Today's Take or The Briefing must have an English BuyWise Take or it falls to The Long List. (Already half-implemented; we make it a hard rule in the view.)
-6. **Source attribution stays loud** ("Globes" · "Calcalist") — FT respects sources; we respect ours and avoid any "we wrote this" ambiguity (per data-integrity standard).
-7. **No images in the feed.** FT-style text-first density. Only Today's Take may carry a small thumbnail if the source provides one. This is the biggest single calm-down move.
+- Extend the same translation call to also return `category` from the existing enum + a 1–5 `relevance_score`. Single AI call per article = cheap.
+- For English articles, run a categorize-only call (no translation).
+- Add `category_confidence NUMERIC(3,2)` and `auto_categorized BOOLEAN DEFAULT true`. Admin overrides set `auto_categorized = false` so backfills never overwrite manual choices.
+- Backfill edge function `recategorize-intel-backlog` for the 168 "general" rows.
+- Admin: filter "low confidence (<0.6)" to triage borderline cases.
 
----
+### Step 3. Cross-source deduplication
+**Why third:** when BoI changes rates, the same story arrives from 5 outlets and floods the Long List.
 
-## Section-by-section spec
+- Add `dedup_group_id UUID` and `is_duplicate BOOLEAN DEFAULT false` columns.
+- In `fetch-intel-feeds`, after categorization, run a similarity check against articles published in the last 48h:
+  - Cheap pre-filter: same `category` + token-Jaccard ≥ 0.5 on title.
+  - Confirmation: Jaro-Winkler ≥ 0.85 on the English headline (post-translation).
+- On match: assign same `dedup_group_id`; mark the lower-tier source's article as `is_duplicate = true`.
+- `intel_feed_v` filters `is_duplicate = false` by default.
+- Admin: "Show duplicates" toggle reveals hidden duplicates with a "Promote this version" action.
 
-### 1. Dateline strip
-Thin row, `border-b`, muted. Left: `Tuesday · May 26 · Tel Aviv`. Right: `Get the weekly brief →` (anchor to subscribe card). No background color.
+### Step 4. Image enrichment (or commit to text-first)
+**Decision needed before building** — see Question 1 below.
 
-### 2. Masthead
-Serif display font (use existing `font-serif` token — likely Cormorant/Instrument Serif from brand). `text-4xl md:text-5xl`. Single-line tagline below in body sans, muted. Max-width ~640px. No gradient, no chip.
+If we go the image route:
+- Extend fetcher to fetch each article URL once and extract `og:image` / `twitter:image` via a lightweight regex (no full DOM parse needed).
+- Store in existing `image_url` column. Add `image_checked_at` so we don't refetch every cron run.
+- Frontend: Today's Take hero shows image; Watchlist remains text-only; Briefing cards get a thumbnail.
 
-### 3. Market bar
-Horizontal row of 5 stats, divider lines between, monospace numerals. Sticky on scroll past masthead (optional v2). Sourced from existing constants tables; each stat has a tiny `as of …` tooltip. If we don't have a live value, omit that slot rather than fake it.
-
-### 4. Today's Take + What we're watching (the spine)
-Two-column grid, `lg:grid-cols-[1.6fr,1fr]`, divided by a vertical hairline.
-- **Left (Today's Take):** serif headline (2xl–3xl), source/timestamp line, 2-sentence excerpt, then the **BuyWise Take block** with byline `By the BuyWise desk`, ending in the "What this means for you" line. One "Read on {source}" link.
-- **Right (What we're watching):** section label, then 8–12 headline rows. Each row: tiny category dot, headline (sans, `text-[15px]`, 2-line clamp), `source · 2h`. No excerpts. No images. Hover underlines. This is the DealBook right-rail pattern.
-
-### 5. The Briefing
-Eyebrow "The Briefing". 3 columns on desktop, stacked on mobile. Each: small category label, sans headline (lg), one-line Take in italic serif, source line. Border-top hairline divider between items, no card chrome.
-
-### 6. Beat tabs + per-beat lists
-Underlined tab row (FT/NYT style), not pill chips. Selecting a beat filters the section below to 5 items in a **two-column dense list** with tiny excerpts. "See all {Beat} →" link routes to `/intel?category={slug}` (existing URL contract preserved).
-
-### 7. The Long List
-Eyebrow "Latest". Full-width single column, zebra rows (`even:bg-muted/30`), each row: timestamp · source · headline · category chip (tiny, right-aligned). No borders between rows except the zebra. Tap target full-row. Pagination or "Load more" at 30/60/120.
-
-### 8. Sidebar (desktop)
-Sticky. Three small modules, each with hairline divider:
-1. **The BuyWise Weekly Brief** — subscribe card, reskinned to match (no gradient, just border + button).
-2. **How we choose stories** — 3 bullets explaining curation (relevance to buyers, source tier, dated decisions).
-3. **Sources we read** — collapsible list of source names with tier badges, links to `homepage_url`.
-
-### 9. Mobile
-Spine collapses: Today's Take first, then "What we're watching" as a horizontal scroll of headline cards (no, scratch that — keep vertical list, FT mobile is vertical). Beat tabs become a scrollable horizontal row. Long List unchanged. Subscribe at the end.
+If text-first:
+- Drop the image column from the schema and the IntelTodaysTake hero slot. Lean fully into the DealBook editorial aesthetic.
 
 ---
 
-## Visual system (BuyWise design tokens)
+## Phase 2 — Operational lift (so you can actually run this daily)
 
-- **Type:** masthead + Take headlines use the existing serif token; everything else stays sans. This creates the "editorial" feel without importing new fonts.
-- **Color:** no new colors. Category dots reuse `CATEGORY_BY_ID` colors at low saturation. Primary stays as the single accent (links, eyebrows, beat-tab underline).
-- **Density:** kill card shadows in the feed entirely. Use hairline borders (`border-border/60`) and whitespace as the only structure. Card chrome only on the sidebar modules and the Take block.
-- **Numerals:** `tabular-nums` for the market bar and all timestamps.
-- **Motion:** none beyond subtle hover underline + 150ms color on links. No fade-ins.
+### Step 5. AI-assisted BuyWise Take drafting
+**Why:** without this, the human bottleneck caps you at ~5 Takes/day. With it, ~30/day is realistic.
 
----
+- New edge function `draft-intel-take` — input: `article_id`. Output: `{ take_label, take_body }` using Gemini 3 Flash with a system prompt locking the Trusted-Friend voice and the "what this means for international buyers" framing (2–3 sentences max).
+- Admin `/admin/intel`: in the Take editor dialog, add "Draft with AI" button → populates fields → admin edits → saves. Saved Takes record `ai_drafted BOOLEAN` for analytics.
+- Add "Regenerate" + a label dropdown (Buyer Impact / Mortgage Math / Tax Watch / Market Read / Policy Watch) the AI picks from.
 
-## Data & component work
+### Step 6. Source health monitoring
+**Why:** broken feeds currently go undetected for weeks.
 
-### New components (`src/components/intel/`)
-- `IntelDateline.tsx` — date strip
-- `IntelMarketBar.tsx` — 5-stat row, pulls from existing constants/benchmarks hooks
-- `IntelTodaysTake.tsx` — lead-story layout with desk byline
-- `IntelWatchlist.tsx` — right-rail headline list (reuses `IntelHeadlineRow` styling, tighter)
-- `IntelBriefing.tsx` — 3-column mid-tier
-- `IntelBeatTabs.tsx` — underlined tab nav (replaces parts of `IntelFilterBar`)
-- `IntelBeatList.tsx` — per-beat 2-col dense list
-- `IntelLongList.tsx` — zebra full feed with "Load more"
-- `IntelCurationNote.tsx` — sidebar "How we choose" module
+- New view `intel_source_health_v`: source name, enabled, last_fetched_at, last_error, hours_since_fetch, recent_article_count (7d).
+- `/admin/intel` top banner: red alert when any enabled source has `hours_since_fetch > 48` OR `last_error IS NOT NULL`. Click → opens the Sources tab pre-filtered to broken sources.
+- Add "Test fetch" button per source in admin (calls fetcher for one source only).
 
-### Refactor
-- `IntelFilterBar.tsx` → demoted to a small search-icon + source-filter; source moves into sidebar
-- `IntelArticleCard.tsx` → keep, but `variant="featured"` updated to match Today's Take spec; default variant unused in new layout (long list uses row component)
-- `IntelTakeBlock.tsx` → add optional `byline` and `decisionLine` props; render byline as `By the BuyWise desk` and the decision line in a stronger weight
-- `IntelHeadlineRow.tsx` → tighten for right-rail use; add `dense` variant
-- `Intel.tsx` → rewrite composition to the new spine; URL params (`category`, `source`, `sort`, `q`) preserved
+### Step 7. Outbound click tracking
+**Why:** you need to know which Takes drive engagement before you can optimize.
 
-### Data
-- No schema changes required for v1. Reuse `intel_feed_v`, `intel_takes`, `intel_sources`.
-- **Optional v1.1:** add a `decision_line` column to `intel_takes` (nullable text) for the explicit "What this means for you" sentence. Falls back to last sentence of `take_body` if null. **Migration deferred** — confirm with user before adding.
-- Market bar reuses existing hooks (`useCalculatorConstants`, `useNationalAveragePrices` or equivalent); if a stat lacks a hook, omit the slot rather than introduce mock data (per no-fabrication core rule).
-
-### Admin
-- No admin UI changes required for v1.
-- v1.1 (if decision_line ships): add a second textarea to the Take editor in `useAdminIntel` flows.
+- New table `intel_article_clicks` (id, article_id, user_id nullable, session_id, referrer_path, created_at). RLS: anyone can insert, admins can read.
+- Edge function `track-intel-click` (verify_jwt = false) → records click, returns 302 redirect to `intel_articles.url`.
+- Frontend: "Read at source" link points to `/functions/v1/track-intel-click?id=...` instead of direct URL.
+- Admin: "Top performing Takes (30d)" widget on `/admin/intel` dashboard tab. Columns: headline, take_label, clicks, CTR (clicks / impressions — impressions can come later from existing page-view tracking).
 
 ---
 
-## Build order (one PR each, shippable independently)
+## Phase 3 — UX polish & discoverability
 
-1. **Skeleton swap** — rewrite `Intel.tsx` composition, dateline + masthead + new spine, reusing existing components. No new data. Lowest risk, biggest visual win.
-2. **The Long List + Briefing** — new row components, zebra styling, kill card chrome in feed.
-3. **Beat tabs** — replace filter bar with underlined tabs; demote source filter into sidebar.
-4. **Market bar** — wire 3–5 real stats from existing tables; gracefully omit missing ones.
-5. **Decision line** (optional, requires user OK on migration) — schema + admin field + render.
-6. **Polish pass** — sticky market bar, mobile beat-tab scroll, sidebar curation note, analytics events (`intel_take_read`, `intel_headline_click`, `intel_beat_change`).
+### Step 8. Mobile beat tabs overflow
+- Replace wrapping flex with horizontally scrollable container; add gradient edge fades and snap-scroll; active tab auto-scrolls into view. Pattern already used in the city detail page tabs — reuse it.
+
+### Step 9. Beat-specific empty states
+- Replace generic `IntelEmptyState` content with per-beat copy when filtered ("No mortgage news in the last 7 days — the market is quiet"). Driven by a small map in `IntelEmptyState.tsx`.
+
+### Step 10. SEO & discoverability
+- Add `/intel` to dynamic sitemap generator (one entry per beat: `/intel?category=mortgage-rates` etc.).
+- JSON-LD upgrade: switch from generic `CollectionPage` to `CollectionPage` containing `ItemList` of the visible articles (top 10 by relevance), each as `NewsArticle`. Crawlers get a real article index.
+- Per-article rel=nofollow on outbound source links (already done? verify).
+- Add Open Graph image to `/intel` route — generate one branded "BuyWise Intel" hero card via imagegen.
+
+### Step 11. Admin UX polish
+- "Undo" toast on hide/feature/pin actions.
+- Keyboard shortcuts on admin list: `H` hide, `P` pin, `F` feature, `T` open Take editor (newsroom muscle memory).
+- Bulk select + bulk hide (for cleaning up dedup misses).
 
 ---
 
-## Out of scope (call out so we don't scope-creep)
+## Out of scope (intentionally, per your direction)
+- Weekly Brief email send pipeline + unsubscribe
+- BuyWise Intel RSS output for syndication
+- Comment / discussion system
 
-- Hebrew → English auto-translation (separate project, needs AI budget decision)
-- Push notifications / RSS out / sitemap entry (already on the earlier follow-up list, track separately)
-- Personalization by buyer profile (interesting but a v2 — would need profile join)
-- Comments, saves, share buttons on articles
-- Any redesign of `/learn` nav or other Learn pages
+These can be Phase 4 once Phases 1–3 are live.
+
+---
+
+## Technical notes
+- All AI calls go through Lovable AI Gateway (`LOVABLE_API_KEY` already provisioned). Default model `google/gemini-3-flash-preview`. Tool-calling for structured output (translation + categorization in one call).
+- All edge functions follow existing standards (`EdgeRuntime.waitUntil`, `corsHeaders` from `npm:@supabase/supabase-js@2/cors`, no path-based invokes).
+- Migrations: 4 needed total (translation cols, dedup cols, category confidence, click tracking table). Each carries the required `GRANT` block.
+- No new public-key secrets required.
+- Existing `intel_feed_v` view gets one update (filter duplicates by default) — recreated as part of the dedup migration.
 
 ---
 
 ## Open questions before build
 
-1. Confirm the serif token to use for the masthead and Take headlines (project already has one in the brand identity memory — I'll pick the existing serif unless you prefer a specific one).
-2. OK to add the `decision_line` column to `intel_takes` in step 5, or keep the "What this means for you" sentence as just a writing convention inside `take_body`?
-3. For the market bar, which 5 stats matter most to you? My default: BoI rate, Prime, ₪/$ (or ₪/€), TA-125 close, national avg ₪/sqm. Swap any?
+1. **Step 4 — images or text-first?** RSS rarely fills `og:image` cleanly, and scraping every URL adds latency + failure modes. My recommendation: **commit to text-first DealBook aesthetic** and drop the image slot entirely. It's more honest to the voice and removes a constant maintenance tax. But your call.
 
-If you're good with the shape, I'll start with step 1 (skeleton swap) — that alone will make the page feel like a different product.
+2. **Step 1 — translation tone.** When a Hebrew headline is colorful ("הריבית קופצת — והממשלה לוחצת"), do you want literal English ("Interest jumps — and the government pushes") or a normalized BuyWise voice ("BoI rate up; coalition pressure intensifies")? I'd go normalized for headlines, literal for excerpts.
+
+3. **Step 5 — Take label taxonomy.** I proposed 5 labels (Buyer Impact / Mortgage Math / Tax Watch / Market Read / Policy Watch). Want to confirm, edit, or let me ship with these as defaults that admin can extend?
+
+Answer those three and I'll move to build mode and ship Phase 1 first.
