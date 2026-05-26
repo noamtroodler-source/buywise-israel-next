@@ -4,6 +4,7 @@ import { Layout } from '@/components/layout/Layout';
 import { SEOHead } from '@/components/seo/SEOHead';
 import { useIntelFeed, useIntelFeatured, useIntelSources, IntelCategory } from '@/hooks/useIntel';
 import { IntelArticleCard } from '@/components/intel/IntelArticleCard';
+import { IntelHeadlineRow } from '@/components/intel/IntelHeadlineRow';
 import { IntelFilterBar } from '@/components/intel/IntelFilterBar';
 import { IntelSidebar, BriefSubscribeCard } from '@/components/intel/IntelSidebar';
 import { IntelSkeleton, IntelEmptyState } from '@/components/intel/IntelStates';
@@ -20,17 +21,16 @@ export default function Intel() {
   const category = (params.get('category') as IntelCategory | 'all') ?? 'all';
   const source = params.get('source') ?? 'all';
   const sortBy = (params.get('sort') as 'recent' | 'relevance') ?? 'recent';
-  const hasTake = params.get('take') === '1';
   const search = params.get('q') ?? '';
   const safeCategory = ALL_CATEGORIES.includes(category) ? category : 'all';
 
-  const update = (next: Record<string, string | boolean | undefined>) => {
+  const update = (next: Record<string, string | undefined>) => {
     const merged = new URLSearchParams(params);
     Object.entries(next).forEach(([k, v]) => {
-      if (v === undefined || v === '' || v === 'all' || v === false || v === 'recent') {
+      if (v === undefined || v === '' || v === 'all' || v === 'recent') {
         merged.delete(k);
       } else {
-        merged.set(k, v === true ? '1' : String(v));
+        merged.set(k, String(v));
       }
     });
     setParams(merged, { replace: true });
@@ -44,15 +44,26 @@ export default function Intel() {
     category: safeCategory,
     source,
     sortBy,
-    hasTake,
     search,
     limit: 60,
   });
 
-  // De-dupe featured from the grid
-  const gridArticles = useMemo(
-    () => (featured ? articles.filter((a) => a.id !== featured.id) : articles),
+  // Remove featured + "general" noise from list pools
+  const visible = useMemo(
+    () => articles.filter((a) => (featured ? a.id !== featured.id : true)),
     [articles, featured],
+  );
+
+  // Split: cards with Takes get hero/grid treatment, everything else falls to the compact list
+  const withTakes = useMemo(
+    () => visible.filter((a) => !!a.take_body).slice(0, 4),
+    [visible],
+  );
+  const takeIds = new Set(withTakes.map((a) => a.id));
+  const headlines = useMemo(
+    () => visible.filter((a) => !takeIds.has(a.id)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [visible, withTakes],
   );
 
   const jsonLd = {
@@ -73,32 +84,31 @@ export default function Intel() {
       />
 
       <div className="container mx-auto px-4 py-10 lg:py-14">
-        <header className="mb-8 max-w-3xl">
-          <p className="text-sm font-medium uppercase tracking-wider text-primary">Learn · Intel</p>
-          <h1 className="mt-2 text-4xl font-bold tracking-tight text-foreground md:text-5xl">
+        {/* Quieter, calmer header */}
+        <header className="mb-10 max-w-3xl">
+          <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+            Learn · Intel
+          </p>
+          <h1 className="mt-3 text-4xl font-semibold tracking-tight text-foreground md:text-5xl">
             BuyWise Intel
           </h1>
-          <p className="mt-3 text-lg text-muted-foreground">
-            The Israeli stories that actually matter for international buyers —
-            curated hourly, with a short BuyWise Take so you know what each one
-            means for your decision.
+          <p className="mt-4 text-base text-muted-foreground md:text-lg">
+            Israeli property, mortgage, and tax news that actually matters for international buyers — with a short BuyWise Take on the stories worth slowing down for.
           </p>
         </header>
 
-        <div className="grid gap-10 lg:grid-cols-[1fr,300px]">
+        <div className="grid gap-12 lg:grid-cols-[1fr,300px]">
           <div className="min-w-0">
             <IntelFilterBar
               category={safeCategory}
               source={source}
               sortBy={sortBy}
-              hasTake={hasTake}
               search={search}
               sources={sources as any}
               onChange={(n) => update({
                 category: n.category,
                 source: n.source,
                 sort: n.sortBy,
-                take: n.hasTake,
                 q: n.search,
               })}
               onReset={reset}
@@ -109,19 +119,46 @@ export default function Intel() {
             ) : !articles.length ? (
               <IntelEmptyState onReset={reset} />
             ) : (
-              <>
+              <div className="space-y-14">
+                {/* Tier 1 — Featured */}
                 {featured && (
-                  <div className="mb-6">
+                  <section>
                     <IntelArticleCard article={featured} variant="featured" />
-                  </div>
+                  </section>
                 )}
 
-                <div className="grid gap-5 md:grid-cols-2">
-                  {gridArticles.map((a, i) => (
-                    <FeedItem key={a.id} index={i} article={a} />
-                  ))}
-                </div>
-              </>
+                {/* Tier 2 — BuyWise Takes */}
+                {withTakes.length > 0 && (
+                  <section>
+                    <SectionHeader
+                      eyebrow="The BuyWise Take"
+                      title="Stories worth slowing down for"
+                      subtitle="Our editorial read on what each story means for your decision."
+                    />
+                    <div className="grid gap-5 md:grid-cols-2">
+                      {withTakes.map((a) => (
+                        <IntelArticleCard key={a.id} article={a} />
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {/* Tier 3 — Compact headlines */}
+                {headlines.length > 0 && (
+                  <section>
+                    <SectionHeader
+                      eyebrow="Latest"
+                      title="The rest of the feed"
+                      subtitle="Headlines we're tracking. Click through to the original source."
+                    />
+                    <div className="rounded-lg border border-border/60 bg-card px-5">
+                      {headlines.map((a) => (
+                        <IntelHeadlineRow key={a.id} article={a} />
+                      ))}
+                    </div>
+                  </section>
+                )}
+              </div>
             )}
           </div>
 
@@ -131,7 +168,7 @@ export default function Intel() {
         </div>
 
         {/* Mobile: subscribe card at the end */}
-        <div className="mt-10 lg:hidden">
+        <div className="mt-12 lg:hidden">
           <BriefSubscribeCard />
         </div>
       </div>
@@ -139,14 +176,12 @@ export default function Intel() {
   );
 }
 
-function FeedItem({ article, index }: { article: any; index: number }) {
-  // Inject a soft prompt every 10 cards (mobile) — kept lightweight, no extra CTA noise
-  if (index > 0 && index % 10 === 0) {
-    return (
-      <>
-        <IntelArticleCard article={article} />
-      </>
-    );
-  }
-  return <IntelArticleCard article={article} />;
+function SectionHeader({ eyebrow, title, subtitle }: { eyebrow: string; title: string; subtitle?: string }) {
+  return (
+    <div className="mb-5">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">{eyebrow}</p>
+      <h2 className="mt-1.5 text-2xl font-semibold tracking-tight text-foreground">{title}</h2>
+      {subtitle && <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>}
+    </div>
+  );
 }
