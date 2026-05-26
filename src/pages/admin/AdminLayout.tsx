@@ -5,7 +5,7 @@ import {
   FileText, MapPin, BarChart3, Settings, ClipboardCheck, Sliders,
   Mail, ToggleLeft, BookOpen, Megaphone, Star, Package, Globe,
   Wrench, ChevronRight, PenLine, Bug, Zap, TrendingUp, Flame, Shield,
-  History, Gavel, Combine, Flag, Activity
+  History, Gavel, Combine, Flag, Activity, Newspaper
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -129,6 +129,7 @@ export function AdminLayout() {
     { href: '/admin/scraping-sources', label: 'Scraping Sources', icon: Globe, badge: pendingClaimsCount },
     { href: '/admin/duplicates', label: 'Duplicates', icon: Building, badge: pendingDuplicateCount },
     { href: '/admin/blog', label: 'Blog Posts', icon: FileText },
+    { href: '/admin/intel', label: 'BuyWise Intel', icon: Newspaper },
     { href: '/admin/glossary', label: 'Glossary', icon: BookOpen },
   ];
 
