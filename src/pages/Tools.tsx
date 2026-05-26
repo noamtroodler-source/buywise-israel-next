@@ -364,7 +364,7 @@ export default function Tools() {
                   animate={{ opacity: 1, y: 0 }}
                 >
                   <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
-                    Property Tools & Calculators
+                    The BuyWise <span className="text-primary">Toolkit</span>
                   </h1>
                   <p className="text-muted-foreground max-w-xl mx-auto mb-6">
                     Let's figure out what you can afford, what it really costs, and where you stand — together.
