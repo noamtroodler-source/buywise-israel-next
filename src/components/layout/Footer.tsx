@@ -48,7 +48,7 @@ export function Footer() {
             <h4 className="text-sm font-semibold text-foreground">Resources</h4>
             <nav className="flex flex-col gap-2">
               <Link to="/guides" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                Buyer's Guides
+                BuyWise Playbook
               </Link>
               <Link to="/glossary" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 Hebrew Glossary
