@@ -33,13 +33,17 @@ export interface AgencyAgent {
   activeListingsCount?: number;
 }
 
+// Public-safe columns (excludes default_invite_code which is admin-only)
+const PUBLIC_AGENCY_COLUMNS =
+  'id,name,slug,logo_url,description,founded_year,website,email,phone,is_verified,cities_covered,specializations,social_links,created_at,updated_at,status,office_address,office_hours,is_partner,is_accepting_agents';
+
 export function useAgency(slug: string) {
   return useQuery({
     queryKey: ['agency', slug],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('agencies')
-        .select('*')
+        .select(PUBLIC_AGENCY_COLUMNS)
         .eq('slug', slug)
         .single();
 
@@ -62,9 +66,10 @@ export function useAgencies() {
       // Fetch agencies
       const { data: agencies, error } = await supabase
         .from('agencies')
-        .select('*')
+        .select(PUBLIC_AGENCY_COLUMNS)
         .eq('status', 'active')
         .order('name');
+
 
       if (error) throw error;
       if (!agencies || agencies.length === 0) return [] as AgencyWithCounts[];
