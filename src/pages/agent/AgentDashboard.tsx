@@ -300,8 +300,8 @@ export default function AgentDashboard() {
             </motion.div>
           ) : null}
 
-          {/* Pending Verification Alert */}
-          {agentProfile?.status === 'pending' && (
+          {/* Pending Verification Alert — hidden for agency owners/admins (auto-verified) */}
+          {agentProfile?.status === 'pending' && !isAgencyAdmin && (
             <Alert className="bg-primary/5 border-primary/20 rounded-xl">
               <ShieldAlert className="h-5 w-5 text-primary" />
               <AlertTitle className="text-foreground">License Verification Pending</AlertTitle>

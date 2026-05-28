@@ -89,7 +89,7 @@ export default function EditProperty() {
   const submitForReview = useSubmitForReview();
   
   // Check if agent is verified (status is 'active')
-  const isAgentVerified = agentProfile?.status === 'active';
+  const isAgentVerified = agentProfile?.status === 'active' || isAgencyAdmin;
 
   const [formData, setFormData] = useState({
     title: '',

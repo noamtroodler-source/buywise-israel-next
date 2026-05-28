@@ -19,6 +19,7 @@ import {
   StepReview 
 } from '@/components/agent/wizard/steps';
 import { useCreateProperty, useAgentProfile } from '@/hooks/useAgentProperties';
+import { useMyAgency } from '@/hooks/useAgencyManagement';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { SaveStatusIndicator } from '@/components/shared/SaveStatusIndicator';
 import { PropertySubmittedDialog } from '@/components/agent/PropertySubmittedDialog';
@@ -84,7 +85,9 @@ function WizardContent() {
   const [highestVisitedStep, setHighestVisitedStep] = useState(0);
   const hasCheckedDraft = useRef(false);
 
-  const isAgentVerified = agentProfile?.status === 'active';
+  const { isAgencyAdmin } = useMyAgency();
+  // Agency owners/admins are auto-verified (they don't need to approve themselves)
+  const isAgentVerified = agentProfile?.status === 'active' || isAgencyAdmin;
   const { canCreate: canCreateListing, isOverLimit } = useListingLimitCheck('agency');
   const duplicateCheck = useDuplicateCheck();
 

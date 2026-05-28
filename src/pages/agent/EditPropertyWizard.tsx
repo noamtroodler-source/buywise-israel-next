@@ -116,7 +116,7 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
   const [hasLoaded, setHasLoaded] = useState(false);
   const [marketFitConfirmed, setMarketFitConfirmed] = useState(false);
   
-  const isAgentVerified = agentProfile?.status === 'active';
+  const isAgentVerified = agentProfile?.status === 'active' || isAgencyAdmin;
   const { canCreate: canCreateListing } = useListingLimitCheck('agency');
 
   // Auto-save for dirty tracking + beforeunload warning
