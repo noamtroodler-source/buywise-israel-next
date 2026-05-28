@@ -773,12 +773,7 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                         Price Context
                       </div>
                     )}
-                    {hasPremiumContext && (
-                  <div className="inline-flex w-fit items-center gap-1 rounded-lg border border-primary/15 bg-primary/5 px-2 py-1 text-xs font-medium text-primary">
-                    <Sparkles className="h-3 w-3" />
-                    Premium context
-                  </div>
-                    )}
+                    {/* Premium context badge removed per design */}
                   </div>
                 )}
 
