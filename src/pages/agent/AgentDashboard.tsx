@@ -17,6 +17,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useLeadStats } from '@/hooks/useAgentLeads';
 import { useAgentProfile, useAgentProperties, AgentProperty } from '@/hooks/useAgentProperties';
+import { useMyAgency } from '@/hooks/useAgencyManagement';
 import { OnboardingChecklist } from '@/components/agent/OnboardingChecklist';
 import { NotificationBell } from '@/components/agent/NotificationBell';
 import { STALE_THRESHOLD_DAYS } from '@/hooks/useAgentProfile';
@@ -39,6 +40,7 @@ import {
 
 export default function AgentDashboard() {
   const { data: agentProfile, isLoading: profileLoading } = useAgentProfile();
+  const { isAgencyAdmin } = useMyAgency();
   const { data: properties = [], isLoading: propertiesLoading } = useAgentProperties();
   const { data: leadStats } = useLeadStats();
   const { trackDashboardView } = useAdvertiserTracking();
@@ -300,8 +302,8 @@ export default function AgentDashboard() {
             </motion.div>
           ) : null}
 
-          {/* Pending Verification Alert */}
-          {agentProfile?.status === 'pending' && (
+          {/* Pending Verification Alert — hidden for agency owners/admins (auto-verified) */}
+          {agentProfile?.status === 'pending' && !isAgencyAdmin && (
             <Alert className="bg-primary/5 border-primary/20 rounded-xl">
               <ShieldAlert className="h-5 w-5 text-primary" />
               <AlertTitle className="text-foreground">License Verification Pending</AlertTitle>

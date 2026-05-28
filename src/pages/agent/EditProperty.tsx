@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { ImageUpload } from '@/components/agent/ImageUpload';
 import { useProperty } from '@/hooks/useProperties';
 import { useUpdateProperty, useSubmitForReview, VerificationStatus, useAgentProfile } from '@/hooks/useAgentProperties';
+import { useMyAgency } from '@/hooks/useAgencyManagement';
 import { PropertyType, ListingStatus } from '@/types/database';
 import { AddressAutocomplete } from '@/components/agent/wizard/AddressAutocomplete';
 import { GoogleMapsProvider } from '@/components/maps/GoogleMapsProvider';
@@ -85,11 +86,12 @@ export default function EditProperty() {
   const navigate = useNavigate();
   const { data: property, isLoading } = useProperty(id || '');
   const { data: agentProfile } = useAgentProfile();
+  const { isAgencyAdmin } = useMyAgency();
   const updateProperty = useUpdateProperty();
   const submitForReview = useSubmitForReview();
   
   // Check if agent is verified (status is 'active')
-  const isAgentVerified = agentProfile?.status === 'active';
+  const isAgentVerified = agentProfile?.status === 'active' || isAgencyAdmin;
 
   const [formData, setFormData] = useState({
     title: '',
