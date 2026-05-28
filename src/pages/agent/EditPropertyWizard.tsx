@@ -19,6 +19,7 @@ import {
 } from '@/components/agent/wizard/steps';
 import { useProperty } from '@/hooks/useProperties';
 import { useUpdateProperty, useSubmitForReview, VerificationStatus, useAgentProfile } from '@/hooks/useAgentProperties';
+import { useMyAgency } from '@/hooks/useAgencyManagement';
 import { PropertySubmittedDialog } from '@/components/agent/PropertySubmittedDialog';
 import { useListingLimitCheck } from '@/hooks/useListingLimitCheck';
 import { useAutoSave } from '@/hooks/useAutoSave';
@@ -108,6 +109,7 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
     if (errs.length > 0) stepErrors[i] = errs.length;
   }
   const { data: agentProfile } = useAgentProfile();
+  const { isAgencyAdmin } = useMyAgency();
   const updateProperty = useUpdateProperty();
   const submitForReview = useSubmitForReview();
   const { data: cities = [] } = useCities();
